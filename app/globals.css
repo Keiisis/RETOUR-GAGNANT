@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Fond & Texte (Bleu Nuit & Blanc) */
+    --background: 0 0% 100%;
+    --foreground: 218 32% 15%; /* #1a2332 */
+
+    /* Cartes */
+    --card: 0 0% 100%;
+    --card-foreground: 218 32% 15%;
+
+    /* Popovers */
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 32% 15%;
+
+    /* Primaire (Vert Espoir #28a745) */
+    --primary: 134 61% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondaire (Or Prospérité #ffc107) */
+    --secondary: 45 100% 51%;
+    --secondary-foreground: 218 32% 15%;
+
+    /* Muted (Gris Clair #f8f9fa) */
+    --muted: 210 17% 98%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent (Similaire à Muted pour hover) */
+    --accent: 210 17% 98%;
+    --accent-foreground: 218 32% 15%;
+
+    /* Destructive (Rouge Héritage #dc3545) */
+    --destructive: 354 70% 54%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Bordures & Inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 134 61% 41%; /* Ring = Primary */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Mode Sombre (Optionnel, basé sur Bleu Nuit) */
+    --background: 218 32% 15%;
+    --foreground: 210 40% 98%;
+
+    --card: 218 32% 15%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 218 32% 15%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 134 61% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 100% 51%;
+    --secondary-foreground: 218 32% 15%;
+
+    --muted: 217 19% 27%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 19% 27%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 354 70% 54%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 19% 27%;
+    --input: 217 19% 27%;
+    --ring: 134 61% 41%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
