@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Landplot, Settings, Users, MessageSquare, Image as ImageIcon, ShieldCheck, LogOut } from 'lucide-react';
+import { LayoutDashboard, Map, Settings, Users, MessageSquare, Image as ImageIcon, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminLayout({
@@ -14,7 +14,7 @@ export default function AdminLayout({
 
     const menuItems = [
         { title: 'Tableau de Bord', icon: LayoutDashboard, href: '/admin' },
-        { title: 'Patrimoine', icon: Landplot, href: '/admin/patrimoine' },
+        { title: 'Patrimoine', icon: Map, href: '/admin/patrimoine' },
         { title: 'Services', icon: ShieldCheck, href: '/admin/services' },
         { title: 'Témoignages', icon: Users, href: '/admin/testimonials' },
         { title: 'Galerie', icon: ImageIcon, href: '/admin/gallery' },
