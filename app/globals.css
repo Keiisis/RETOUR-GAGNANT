@@ -6,73 +6,39 @@
   :root {
     /* Fond & Texte (Bleu Nuit & Blanc) */
     --background: 0 0% 100%;
-    --foreground: 218 32% 15%; /* #1a2332 */
+    --foreground: 218 32% 15%;
+    /* #1a2332 */
 
     /* Cartes */
     --card: 0 0% 100%;
-    --card-foreground: 218 32% 15%;
+    --card-foreground: 145 100% 10%;
 
-    /* Popovers */
     --popover: 0 0% 100%;
-    --popover-foreground: 218 32% 15%;
+    --popover-foreground: 145 100% 10%;
 
-    /* Primaire (Vert Espoir #28a745) */
-    --primary: 134 61% 41%;
+    --primary: 156 100% 26%;
+    /* Benin Green HSL approx */
     --primary-foreground: 0 0% 100%;
 
-    /* Secondaire (Or Prospérité #ffc107) */
-    --secondary: 45 100% 51%;
-    --secondary-foreground: 218 32% 15%;
+    --secondary: 49 96% 54%;
+    /* Benin Yellow HSL approx */
+    --secondary-foreground: 145 100% 10%;
 
-    /* Muted (Gris Clair #f8f9fa) */
-    --muted: 210 17% 98%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 145 20% 96%;
+    --muted-foreground: 145 10% 40%;
 
-    /* Accent (Similaire à Muted pour hover) */
-    --accent: 210 17% 98%;
-    --accent-foreground: 218 32% 15%;
+    --accent: 352 86% 49%;
+    /* Benin Red HSL approx */
+    --accent-foreground: 0 0% 100%;
 
-    /* Destructive (Rouge Héritage #dc3545) */
-    --destructive: 354 70% 54%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Bordures & Inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 134 61% 41%; /* Ring = Primary */
+    --border: 145 20% 90%;
+    --input: 145 20% 90%;
+    --ring: 156 100% 26%;
 
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    /* Mode Sombre (Optionnel, basé sur Bleu Nuit) */
-    --background: 218 32% 15%;
-    --foreground: 210 40% 98%;
-
-    --card: 218 32% 15%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 218 32% 15%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 134 61% 41%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 45 100% 51%;
-    --secondary-foreground: 218 32% 15%;
-
-    --muted: 217 19% 27%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 19% 27%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 354 70% 54%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 217 19% 27%;
-    --input: 217 19% 27%;
-    --ring: 134 61% 41%;
+    --radius: 0.75rem;
   }
 }
 
@@ -80,7 +46,45 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-benin-gradient {
+    background: linear-gradient(135deg, #008751 0%, #006039 100%);
+  }
+
+  .text-benin-gradient {
+    background: linear-gradient(135deg, #008751 0%, #FCD116 50%, #E8112D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-shadow-hard {
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-flag {
+    box-shadow: 0 10px 30px -10px rgba(0, 135, 81, 0.2);
+  }
+
+  /* Glass Card on Light Background */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 135, 81, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  }
+
+  .glass-card-premium {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(252, 209, 22, 0.5);
+    /* Yellow border */
+    box-shadow: 0 10px 40px -10px rgba(0, 135, 81, 0.15);
   }
 }
