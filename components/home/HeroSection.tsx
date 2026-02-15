@@ -98,7 +98,7 @@ export default function HeroSection() {
                         </Button>
                     </Link>
                     <Link href="/services">
-                        <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/15 text-lg px-8 h-16 rounded-full backdrop-blur-md hover:border-[#FCD116]/50 transition-all duration-300">
+                        <Button size="lg" className="bg-transparent border border-white/30 text-white hover:bg-white/15 text-lg px-8 h-16 rounded-full backdrop-blur-md hover:border-[#FCD116]/50 transition-all duration-300">
                             Explorer nos Offres
                         </Button>
                     </Link>
