@@ -10,6 +10,7 @@ import HeritageCarousel from "@/components/home/HeritageCarousel";
 import ImmersiveGallery from "@/components/home/ImmersiveGallery";
 import NationalitySection from "@/components/home/NationalitySection";
 import PartnersSection from "@/components/home/PartnersSection";
+import ManifestoSection from "@/components/home/ManifestoSection";
 
 export default function Home() {
   return (
@@ -43,6 +44,10 @@ export default function Home() {
 
       {/* Nationality Section (New) */}
       <NationalitySection />
+
+      {/* Manifesto Kinetic Typography (New) */}
+      <ManifestoSection />
+
 
       {/* Heritage Section (Infinite Scroll) */}
       <HeritageCarousel />
