@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 const FALLBACK_SERVICES = [
     {
         id: 1,
-        title: "Passeport & Administratif",
+        title: "Passeport & Documents",
         description: "Obtention rapide de vos documents officiels. Le Sceptre (Récade) ouvre toutes les portes.",
         icon: undefined,
         iconType: "passport",
@@ -17,8 +17,8 @@ const FALLBACK_SERVICES = [
     },
     {
         id: 2,
-        title: "Logement Premium",
-        description: "Location et achat. Votre forteresse (Tata) sécurisée au Bénin.",
+        title: "Acheter ou Louer",
+        description: "Sécurisez vos transactions foncières. Votre forteresse (Tata) au Bénin.",
         icon: undefined,
         iconType: "tata",
         slug: "logement",
@@ -26,7 +26,7 @@ const FALLBACK_SERVICES = [
     {
         id: 3,
         title: "Création d'Entreprise",
-        description: "Lancez votre business. Au rythme du Tam-Tam des affaires.",
+        description: "Lancez votre business. Etudes de marché, créations de sociétés et implantation, Recherche de Partenaires.",
         icon: undefined,
         iconType: "drum",
         slug: "business",
@@ -34,15 +34,15 @@ const FALLBACK_SERVICES = [
     {
         id: 4,
         title: "Guide Culturel",
-        description: "Reconnectez-vous avec vos racines. La richesse des Cauris.",
+        description: "Reconnectez-vous avec vos racines. La richesse des Cauris. Cérémonie du Nom et validation à l'état civil.",
         icon: undefined,
-        iconType: "tree",
+        iconType: "cowrie",
         slug: "culture",
     },
     {
         id: 5,
         title: "Construction",
-        description: "Bâtissez pour la postérité. L'ancrage de l'Assin.",
+        description: "Bâtissez pour la postérité. Aide aux suivis de chantiers. L'ancrage de l'Assin.",
         icon: undefined,
         iconType: "assin",
         slug: "construction",
@@ -52,7 +52,7 @@ const FALLBACK_SERVICES = [
         title: "Investissement",
         description: "Opportunités d'affaires rentables. Faites fructifier votre héritage.",
         icon: undefined,
-        iconType: "cowrie",
+        iconType: "tree",
         slug: "investissement",
     },
 ];

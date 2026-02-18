@@ -91,15 +91,20 @@ export default function HeroSection() {
                     L'alliance parfaite entre modernisation et héritage culturel pour votre installation au Bénin.
                 </p>
 
-                <div className="flex flex-col md:flex-row gap-6 justify-center items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-700">
-                    <Link href="/rendez-vous">
-                        <Button size="lg" className="bg-[#008751] text-white hover:bg-[#E8112D] text-lg px-10 h-16 rounded-full shadow-[0_8px_32px_rgba(0,135,81,0.4)] hover:shadow-[0_8px_32px_rgba(232,17,45,0.4)] hover:scale-105 transition-all duration-300">
-                            Commencer l'Aventure
+                <div className="flex flex-col md:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-700 w-full max-w-4xl mx-auto flex-wrap">
+                    <Link href="/services/passeport">
+                        <Button size="lg" className="bg-[#008751] text-white hover:bg-[#006e42] text-base md:text-lg px-8 h-14 md:h-16 rounded-full shadow-[0_8px_32px_rgba(0,135,81,0.4)] hover:shadow-lg hover:scale-105 transition-all duration-300 w-full md:w-auto">
+                            Obtenir la Nationalité
                         </Button>
                     </Link>
-                    <Link href="/services">
-                        <Button size="lg" className="bg-transparent border border-white/30 text-white hover:bg-white/15 text-lg px-8 h-16 rounded-full backdrop-blur-md hover:border-[#FCD116]/50 transition-all duration-300">
-                            Explorer nos Offres
+                    <Link href="/services/investissement">
+                        <Button size="lg" className="bg-[#FCD116] text-[#1a2332] hover:bg-[#e5bc14] text-base md:text-lg px-8 h-14 md:h-16 rounded-full shadow-[0_8px_32px_rgba(252,209,22,0.4)] hover:shadow-lg hover:scale-105 transition-all duration-300 font-bold w-full md:w-auto border border-yellow-400/50">
+                            Investir au Bénin
+                        </Button>
+                    </Link>
+                    <Link href="/services/logement">
+                        <Button size="lg" className="bg-[#E8112D] text-white hover:bg-[#c40e25] text-base md:text-lg px-8 h-14 md:h-16 rounded-full shadow-[0_8px_32px_rgba(232,17,45,0.4)] hover:shadow-lg hover:scale-105 transition-all duration-300 w-full md:w-auto">
+                            Visiter & S'installer
                         </Button>
                     </Link>
                 </div>

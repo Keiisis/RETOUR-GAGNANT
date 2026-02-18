@@ -123,7 +123,7 @@ export default function ImmersiveGallery() {
                         Immersion Visuelle
                     </span>
                     <h2 className="text-5xl md:text-7xl font-bold font-heading text-white drop-shadow-2xl">
-                        L'Âme du{" "}
+                        Vision du{" "}
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">
                             Bénin
                         </span>

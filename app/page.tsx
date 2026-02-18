@@ -8,6 +8,8 @@ import HeroSection from "@/components/home/HeroSection";
 import ProcessSteps from "@/components/home/ProcessSteps";
 import HeritageCarousel from "@/components/home/HeritageCarousel";
 import ImmersiveGallery from "@/components/home/ImmersiveGallery";
+import NationalitySection from "@/components/home/NationalitySection";
+import PartnersSection from "@/components/home/PartnersSection";
 
 export default function Home() {
   return (
@@ -15,8 +17,8 @@ export default function Home() {
       {/* Hero Section (Immersive Video/Particles) */}
       <HeroSection />
 
-      {/* Stats Section */}
-      <StatsSection />
+      {/* Stats Section (Disabled for now) */}
+      {/* <StatsSection /> */}
 
       {/* Services Preview */}
       <section className="py-12 md:py-20 bg-background">
@@ -39,6 +41,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Nationality Section (New) */}
+      <NationalitySection />
+
       {/* Heritage Section (Infinite Scroll) */}
       <HeritageCarousel />
 
@@ -50,6 +55,9 @@ export default function Home() {
 
       {/* Testimonials */}
       <TestimonialsCarousel />
+
+      {/* Partners Section (New) */}
+      <PartnersSection />
 
       {/* Call to Action */}
       <section className="py-16 md:py-24 bg-[#1a2332] text-white relative overflow-hidden">
