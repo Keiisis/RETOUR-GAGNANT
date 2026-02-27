@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
 export default function HeroSection() {
+    const heroVideo = "/videos/hero.mp4";
+    const heroTitle = "INVESTISSEZ DANS L'HÉRITAGE DU BÉNIN";
+    const heroSubtitle = "Découvrez des opportunités uniques entre tradition et modernité";
     const [isVideoLoaded, setIsVideoLoaded] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -49,7 +52,7 @@ export default function HeroSection() {
                     poster="/images/hero-bg.jpg"
                     className="w-full h-full object-cover"
                 >
-                    <source src="/videos/hero.mp4" type="video/mp4" />
+                    <source src={heroVideo || "/videos/hero.mp4"} type="video/mp4" />
                 </video>
             </div>
 
@@ -83,12 +86,11 @@ export default function HeroSection() {
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-heading leading-[1.1] mb-6 md:mb-8 text-white drop-shadow-2xl animate-in zoom-in-95 duration-1000 delay-200">
-                    Votre Retour <br />
-                    <span className="text-[#FCD116] drop-shadow-[0_4px_30px_rgba(252,209,22,0.4)]">Gagnant</span>
+                    {heroTitle}
                 </h1>
 
                 <p className="text-xl md:text-2xl text-white/85 font-medium max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-500">
-                    L'alliance parfaite entre modernisation et héritage culturel pour votre installation au Bénin.
+                    {heroSubtitle}
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-700 w-full max-w-4xl mx-auto flex-wrap">
@@ -104,7 +106,7 @@ export default function HeroSection() {
                     </Link>
                     <Link href="/services/logement">
                         <Button size="lg" className="bg-[#E8112D] text-white hover:bg-[#c40e25] text-base md:text-lg px-8 h-14 md:h-16 rounded-full shadow-[0_8px_32px_rgba(232,17,45,0.4)] hover:shadow-lg hover:scale-105 transition-all duration-300 w-full md:w-auto">
-                            Visiter & S'installer
+                            Visiter & S&apos;installer
                         </Button>
                     </Link>
                 </div>

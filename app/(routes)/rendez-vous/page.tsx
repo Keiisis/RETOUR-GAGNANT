@@ -346,7 +346,7 @@ export default function RendezVousPage() {
                                             )}
 
                                             {status === 'error' && (
-                                                <p className="text-[#E8112D] text-sm text-center">Erreur. Réessayez ou contactez-nous par WhatsApp.</p>
+                                                <p className="text-[#E8112D] text-sm text-center">Erreçur. Réessayez ou contactez-nous par WhatsApp.</p>
                                             )}
 
                                             <div className="flex justify-between pt-4">

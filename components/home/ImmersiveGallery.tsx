@@ -34,12 +34,33 @@ export default function ImmersiveGallery() {
 
     useEffect(() => { setIsMounted(true); }, []);
 
+    const fallbackImages: GalleryImage[] = [
+        { id: 1, src: "https://images.unsplash.com/photo-1590059110034-436f901c0c29?q=80&w=1200", filename: "benin-culture-1" },
+        { id: 2, src: "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?q=80&w=1200", filename: "africa-heritage" },
+        { id: 3, src: "https://images.unsplash.com/photo-1523805081326-78667e783548?q=80&w=1200", filename: "ouidah-spirit" },
+        { id: 4, src: "https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?q=80&w=1200", filename: "cotonou-life" },
+    ];
+
     // Auto-scan gallery folder
     useEffect(() => {
         fetch("/api/gallery")
             .then((r) => r.json())
-            .then((data) => setImages(data.images || []))
-            .catch(() => { });
+            .then((data) => {
+                if (data.images && data.images.length > 0) {
+                    // Filter out any images that might have an empty src to prevent Next.js Image errors
+                    const validImages = data.images.filter((img: any) => img.src && img.src.trim() !== "");
+                    if (validImages.length > 0) {
+                        setImages(validImages);
+                    } else {
+                        setImages(fallbackImages);
+                    }
+                } else {
+                    setImages(fallbackImages);
+                }
+            })
+            .catch(() => {
+                setImages(fallbackImages);
+            });
     }, []);
 
     // Hero slideshow timer — changes main image every 4 seconds

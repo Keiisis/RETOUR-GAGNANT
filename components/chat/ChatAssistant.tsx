@@ -1,41 +1,179 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Headphones, Loader2, CheckCircle, ArrowLeft, Mic, MicOff } from "lucide-react";
 
 interface Message {
     role: "user" | "assistant";
     content: string;
 }
 
+type ChatMode = "ai" | "checking_agents" | "offline_form" | "success";
+
 export default function ChatAssistant() {
     const [isOpen, setIsOpen] = useState(false);
+    const [mode, setMode] = useState<ChatMode>("ai");
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
-            content: "Bienvenue chez Retour Gagnant ! 🇧🇯 Je suis votre assistant. Comment puis-je vous aider dans votre projet de retour au Bénin ?",
+            content: "Bienvenue chez Retour Gagnant ! 🇧🇯 Je suis votre assistant virtuel. Comment puis-je vous aider dans votre projet de retour au Bénin ?",
         },
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Support Form state
+    const [activeAgents, setActiveAgents] = useState<number | null>(null);
+    const [nom, setNom] = useState("");
+    const [prenom, setPrenom] = useState("");
+    const [email, setEmail] = useState("");
+    const [whatsapp, setWhatsapp] = useState("");
+    const [supportMsg, setSupportMsg] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Voice recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [voiceTranscript, setVoiceTranscript] = useState("");
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const recognitionRef = useRef<any>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Send voice message: saves to voice API + sends through AI chat
+    const sendVoiceMessage = useCallback(async (transcript: string, duration: number) => {
+        if (!transcript.trim()) return;
+
+        const voiceContent = `🎙️ [Message vocal — ${duration}s] : ${transcript.trim()}`;
+
+        // 1. Add to chat as user message
+        setInput("");
+        setMessages((prev) => [...prev, { role: "user", content: voiceContent }]);
+        setIsLoading(true);
+
+        // 2. Save to voice_messages table in background
+        fetch("/api/support/voice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                transcript: transcript.trim(),
+                duration: duration,
+                source: "chat",
+            }),
+        }).catch((err) => console.error("Voice save error:", err));
+
+        // 3. Send to AI chat for a response
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        ...messages.map((m) => ({ role: m.role, content: m.content })),
+                        { role: "user", content: transcript.trim() },
+                    ],
+                }),
+            });
+
+            const data = await res.json();
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: data.reply || "Désolé, une erreur s'est produite. Veuillez réessayer." },
+            ]);
+        } catch {
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "Connexion interrompue. Veuillez réessayer." },
+            ]);
+        } finally {
+            setIsLoading(false);
+            setVoiceTranscript("");
+        }
+    }, [messages]);
+
+    const stopRecording = useCallback(() => {
+        // Capture current transcript/duration before cleaning up
+        const finalTranscript = voiceTranscript;
+        const finalDuration = recordingDuration;
+
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
+        }
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+        setIsRecording(false);
+        setRecordingDuration(0);
+        setInput("");
+
+        // Auto-send the voice message if we have a transcript
+        if (finalTranscript.trim()) {
+            sendVoiceMessage(finalTranscript, finalDuration);
+        }
+    }, [voiceTranscript, recordingDuration, sendVoiceMessage]);
+
+    const startRecording = useCallback(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Votre navigateur ne supporte pas la reconnaissance vocale. Essayez Chrome ou Edge.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "fr-FR";
+        recognition.interimResults = true;
+        recognition.continuous = true;
+
+        recognition.onresult = (event: any) => {
+            let finalTranscript = "";
+            for (let i = 0; i < event.results.length; i++) {
+                finalTranscript += event.results[i][0].transcript;
+            }
+            setVoiceTranscript(finalTranscript);
+            setInput(finalTranscript);
+        };
+
+        recognition.onerror = () => {
+            if (recognitionRef.current) {
+                recognitionRef.current = null;
+            }
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+            setIsRecording(false);
+            setRecordingDuration(0);
+        };
+
+        recognition.onend = () => {
+            // Don't do anything here — stopRecording handles the send
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsRecording(true);
+        setRecordingDuration(0);
+        setVoiceTranscript("");
+        setInput("");
+
+        timerRef.current = setInterval(() => {
+            setRecordingDuration(prev => prev + 1);
+        }, 1000);
+    }, []);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    // Auto-open the assistant after 10 seconds
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsOpen(true);
-        }, 10000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (mode === "ai") scrollToBottom();
+    }, [messages, mode]);
 
     const sendMessage = async () => {
         if (!input.trim() || isLoading) return;
@@ -72,17 +210,63 @@ export default function ChatAssistant() {
         }
     };
 
+    const handleCheckSupport = async () => {
+        setMode("checking_agents");
+        try {
+            const res = await fetch("/api/support/status");
+            const data = await res.json();
+
+            // Simulation UI flow pour "0 agents"
+            setTimeout(() => {
+                setActiveAgents(data.onlineAgents || 0);
+                if ((data.onlineAgents || 0) === 0) {
+                    setMode("offline_form");
+                }
+            }, 1500); // Fake delay to show ultra smooth checking animation
+        } catch {
+            setTimeout(() => {
+                setActiveAgents(0);
+                setMode("offline_form");
+            }, 1000);
+        }
+    };
+
+    const handleSupportSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nom.trim() || !prenom.trim() || !email.trim() || !whatsapp.trim() || !supportMsg.trim()) return;
+
+        setIsSubmitting(true);
+        try {
+            await fetch("/api/support/offline", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, prenom, email, whatsapp, message: supportMsg })
+            });
+            setMode("success");
+            // Reset fields
+            setNom("");
+            setPrenom("");
+            setEmail("");
+            setWhatsapp("");
+            setSupportMsg("");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <>
             {/* Floating Button */}
             <motion.button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-[#008751] text-white shadow-[0_8px_30px_rgba(0,135,81,0.4)] flex items-center justify-center hover:bg-[#006039] transition-all hover:scale-110"
+                className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gradient-to-tr from-[#008751] to-[#00b06a] text-white shadow-[0_8px_30px_rgba(0,135,81,0.4)] flex items-center justify-center hover:scale-110 transition-transform"
                 whileTap={{ scale: 0.9 }}
-                animate={!isOpen ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
+                animate={!isOpen ? { scale: [1, 1.05, 1], boxShadow: ["0 8px 30px rgba(0,135,81,0.4)", "0 8px 40px rgba(0,135,81,0.6)", "0 8px 30px rgba(0,135,81,0.4)"] } : {}}
+                transition={{ repeat: Infinity, duration: 2.5 }}
             >
-                {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+                {isOpen ? <X size={26} /> : <MessageCircle size={26} />}
             </motion.button>
 
             {/* Chat Window */}
@@ -92,86 +276,246 @@ export default function ChatAssistant() {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] max-h-[550px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+                        className="fixed bottom-24 right-6 z-50 w-[400px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-black/5"
                     >
                         {/* Header */}
-                        <div className="bg-[#008751] text-white px-5 py-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                <Bot size={22} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold font-heading text-sm">Assistant Retour Gagnant</h3>
-                                <span className="text-xs text-white/70 flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-[#FCD116] rounded-full animate-pulse" />
-                                    En ligne
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[350px] bg-[#fafafa]">
-                            {messages.map((msg, i) => (
-                                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                                    {msg.role === "assistant" && (
-                                        <div className="w-7 h-7 rounded-full bg-[#008751] flex items-center justify-center shrink-0 mt-1">
-                                            <Bot size={14} className="text-white" />
-                                        </div>
-                                    )}
-                                    <div
-                                        className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
-                                                ? "bg-[#008751] text-white rounded-br-sm"
-                                                : "bg-white text-gray-800 border border-gray-100 rounded-bl-sm shadow-sm"
-                                            }`}
-                                    >
-                                        {msg.content}
-                                    </div>
-                                    {msg.role === "user" && (
-                                        <div className="w-7 h-7 rounded-full bg-[#FCD116] flex items-center justify-center shrink-0 mt-1">
-                                            <User size={14} className="text-[#1a2332]" />
-                                        </div>
-                                    )}
+                        <div className="bg-gradient-to-r from-[#008751] to-[#006039] text-white px-6 py-5 flex items-center justify-between shadow-md relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
+                                    {mode === "ai" ? <Bot size={24} className="text-[#FCD116]" /> : <Headphones size={24} className="text-[#FCD116]" />}
                                 </div>
-                            ))}
-                            {isLoading && (
-                                <div className="flex gap-2 items-center">
-                                    <div className="w-7 h-7 rounded-full bg-[#008751] flex items-center justify-center shrink-0">
-                                        <Bot size={14} className="text-white" />
-                                    </div>
-                                    <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm border border-gray-100 shadow-sm">
-                                        <div className="flex gap-1">
-                                            <span className="w-2 h-2 bg-[#008751] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                                            <span className="w-2 h-2 bg-[#FCD116] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                                            <span className="w-2 h-2 bg-[#E8112D] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                                        </div>
-                                    </div>
+                                <div className="flex flex-col">
+                                    <h3 className="font-black font-heading tracking-wide text-[15px]">
+                                        {mode === "ai" ? "Assistant Virtuel" : "Assistance Humaine"}
+                                    </h3>
+                                    <span className="text-[11px] text-white/80 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                                        <span className={`w-2 h-2 rounded-full animate-pulse ${mode === "ai" ? "bg-[#FCD116]" : "bg-blue-400"}`} />
+                                        {mode === "ai" ? "IA En Ligne" : "Pôle Client"}
+                                    </span>
                                 </div>
-                            )}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Input */}
-                        <div className="p-3 border-t border-gray-100 bg-white">
-                            <form
-                                onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-                                className="flex gap-2"
-                            >
-                                <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Posez votre question..."
-                                    className="flex-1 px-4 py-3 rounded-xl bg-[#fafafa] border border-gray-200 text-sm focus:outline-none focus:border-[#008751] transition-colors"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={isLoading || !input.trim()}
-                                    className="w-11 h-11 rounded-xl bg-[#008751] text-white flex items-center justify-center hover:bg-[#006039] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <Send size={16} />
+                            </div>
+                            {mode !== "ai" && mode !== "checking_agents" && (
+                                <button onClick={() => setMode("ai")} className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 transition-colors">
+                                    <ArrowLeft size={18} />
                                 </button>
-                            </form>
+                            )}
                         </div>
+
+                        {/* ===================== AI MODE ===================== */}
+                        {mode === "ai" && (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[#f8f9fc]">
+                                    {messages.map((msg, i) => (
+                                        <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                            {msg.role === "assistant" && (
+                                                <div className="w-8 h-8 rounded-full bg-[#008751] flex items-center justify-center shrink-0 mt-1 shadow-md">
+                                                    <Bot size={16} className="text-white" />
+                                                </div>
+                                            )}
+                                            <div
+                                                className={`max-w-[80%] px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.role === "user"
+                                                    ? "bg-[#008751] text-white rounded-br-sm"
+                                                    : "bg-white text-gray-800 border border-black/5 rounded-bl-sm"
+                                                    }`}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isLoading && (
+                                        <div className="flex gap-2 items-center">
+                                            <div className="w-8 h-8 rounded-full bg-[#008751] flex items-center justify-center shrink-0 shadow-md">
+                                                <Bot size={16} className="text-white" />
+                                            </div>
+                                            <div className="bg-white px-5 py-4 rounded-2xl rounded-bl-sm border border-black/5 shadow-sm">
+                                                <div className="flex gap-1.5">
+                                                    <span className="w-2 h-2 bg-[#008751] rounded-full animate-bounce [animation-delay:0ms]" />
+                                                    <span className="w-2 h-2 bg-[#FCD116] rounded-full animate-bounce [animation-delay:150ms]" />
+                                                    <span className="w-2 h-2 bg-[#E8112D] rounded-full animate-bounce [animation-delay:300ms]" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
+
+                                {/* Action Banner Parler à un agent */}
+                                <div className="bg-[#f8f9fc] px-5 pb-3">
+                                    <button
+                                        onClick={handleCheckSupport}
+                                        title="Parler à l'assistance"
+                                        aria-label="Parler à l'assistance"
+                                        className="w-full flex items-center justify-center gap-2 bg-white border border-[#FCD116]/40 hover:border-[#FCD116] text-black font-bold uppercase tracking-widest text-[11px] py-3 rounded-xl shadow-sm hover:shadow-md transition-all group"
+                                    >
+                                        <Headphones size={16} className="text-[#008751] group-hover:scale-110 transition-transform" />
+                                        Parler à l'assistance
+                                    </button>
+                                </div>
+
+                                <div className="p-4 border-t border-black/5 bg-white">
+                                    <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            placeholder={isRecording ? "🎙️ Parlez maintenant..." : "Posez votre question..."}
+                                            className="flex-1 px-5 py-3.5 rounded-xl bg-[#f8f9fc] border border-black/5 text-[14px] focus:outline-none focus:border-[#008751] transition-colors"
+                                            disabled={isLoading || isRecording}
+                                        />
+                                        {/* Mic Button */}
+                                        <button
+                                            type="button"
+                                            title={isRecording ? "Arrêter l'enregistrement" : "Enregistrer un message vocal"}
+                                            aria-label={isRecording ? "Arrêter l'enregistrement" : "Enregistrer un message vocal"}
+                                            onClick={isRecording ? stopRecording : startRecording}
+                                            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-md ${isRecording
+                                                ? "bg-[#E8112D] text-white animate-pulse"
+                                                : "bg-[#FCD116]/10 text-[#008751] border border-[#FCD116]/30 hover:bg-[#FCD116]/20"
+                                                }`}
+                                        >
+                                            {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            title="Envoyer le message"
+                                            aria-label="Envoyer le message"
+                                            disabled={isLoading || !input.trim()}
+                                            className="w-12 h-12 rounded-xl bg-[#008751] text-white flex items-center justify-center hover:bg-[#006039] disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 shadow-md"
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </form>
+                                    {/* Recording Indicator */}
+                                    {isRecording && (
+                                        <div className="mt-2 flex items-center gap-3 px-4 py-2 rounded-xl bg-[#E8112D]/5 border border-[#E8112D]/20">
+                                            <span className="w-3 h-3 bg-[#E8112D] rounded-full animate-pulse" />
+                                            <div className="flex gap-[2px] items-end h-4">
+                                                {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                                                    <span key={i} className="w-[3px] bg-[#E8112D]/60 rounded-full animate-pulse" style={{ height: `${Math.random() * 14 + 4}px`, animationDelay: `${i * 80}ms` }} />
+                                                ))}
+                                            </div>
+                                            <span className="text-[11px] font-bold text-[#E8112D] uppercase tracking-widest">
+                                                {recordingDuration}s — En écoute...
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {/* ===================== CHECKING MODE ===================== */}
+                        {mode === "checking_agents" && (
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#f8f9fc]">
+                                <Loader2 size={48} className="animate-spin text-[#008751] mb-6" />
+                                <h4 className="font-black text-lg text-gray-800 font-heading mb-2">Recherche d'agents</h4>
+                                <p className="text-gray-500 text-[13px] leading-relaxed">
+                                    Nous vérifions la disponibilité de nos conseillers en temps réel. Un instant s'il vous plaît...
+                                </p>
+                            </div>
+                        )}
+
+                        {/* ===================== FORM MODE (Zero Agents) ===================== */}
+                        {mode === "offline_form" && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto bg-[#f8f9fc]">
+                                <div className="p-6">
+                                    <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl mb-6">
+                                        <p className="text-orange-800 text-[13px] font-medium leading-relaxed">
+                                            Actuellement, <strong className="font-black">({activeAgents}) agent connecté</strong>.
+                                            Mais ne vous inquiétez pas ! Remplissez ce formulaire et notre équipe technique vous contactera en ultra priorité.
+                                        </p>
+                                    </div>
+
+                                    <form onSubmit={handleSupportSubmit} className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Nom</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={nom}
+                                                    onChange={e => setNom(e.target.value)}
+                                                    placeholder="Votre nom"
+                                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Prénom</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={prenom}
+                                                    onChange={e => setPrenom(e.target.value)}
+                                                    placeholder="Votre prénom"
+                                                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Email de contact</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={email}
+                                                onChange={e => setEmail(e.target.value)}
+                                                placeholder="votreemail@domaine.com"
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Numéro WhatsApp</label>
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={whatsapp}
+                                                onChange={e => setWhatsapp(e.target.value)}
+                                                placeholder="+229 XX XX XX XX"
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Votre préoccupation</label>
+                                            <textarea
+                                                required
+                                                rows={4}
+                                                value={supportMsg}
+                                                onChange={e => setSupportMsg(e.target.value)}
+                                                placeholder="Décrivez votre besoin en détail..."
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751] resize-none"
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full py-4 mt-2 bg-[#FCD116] hover:bg-[#008751] hover:text-white text-black font-black uppercase tracking-widest text-[12px] rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                            {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande"}
+                                        </button>
+                                    </form>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* ===================== SUCCESS MODE ===================== */}
+                        {mode === "success" && (
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#f8f9fc]">
+                                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center border-4 border-white shadow-lg mb-6">
+                                    <CheckCircle size={40} className="text-[#008751]" />
+                                </div>
+                                <h4 className="font-black text-xl text-gray-800 font-heading mb-3">Demande Reçue !</h4>
+                                <p className="text-gray-500 text-[14px] leading-relaxed mb-8">
+                                    Une alerte prioritaire vient d'être envoyée à notre équipe et un mail intelligent vous a été transmis pour confirmation. Nous revenons vers vous sur WhatsApp très rapidement !
+                                </p>
+                                <button
+                                    onClick={() => setMode("ai")}
+                                    className="px-6 py-3 bg-[#008751] text-white font-bold rounded-xl shadow-md hover:bg-[#006039] transition-colors"
+                                >
+                                    Retour à l'IA
+                                </button>
+                            </motion.div>
+                        )}
+
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { MapPin } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 interface HeritageItem {
     id: number;
@@ -122,36 +123,25 @@ export default function HeritageCarousel() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Short timeout to fallback quickly if server is down
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const { data, error } = await supabase
+                    .from('patrimoine')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                const response = await fetch('http://localhost:1337/api/patrimoines', {
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
+                if (error) throw error;
 
-                if (!response.ok) {
-                    return; // Silently fail to fallback
-                }
-
-                const json = await response.json();
-
-                // Map Strapi data to component format
-                if (json.data && Array.isArray(json.data)) {
-                    const mappedItems = json.data.map((item: any, index: number) => ({
+                if (data && data.length > 0) {
+                    const mappedItems = data.map((item: any, index: number) => ({
                         id: item.id,
                         title: item.title,
                         description: item.description,
-                        imageName: item.imageName,
-                        // Auto-assign location/colors for demo purposes if not in DB
-                        location: "Bénin",
+                        imageName: item.imagename || item.imageName || item.image_url,
+                        location: item.location || "Bénin",
                         color: colorPalette[index % colorPalette.length]
                     }));
                     setItems(mappedItems);
                 }
             } catch (err) {
-                // Suppress error overlay by not throwing
                 console.warn('Heritage items using fallback data');
             } finally {
                 setLoading(false);

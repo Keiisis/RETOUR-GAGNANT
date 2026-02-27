@@ -160,7 +160,7 @@ export default function ContactPage() {
                                             </div>
 
                                             {status === 'error' && (
-                                                <p className="text-[#E8112D] text-sm">Une erreur est survenue. Réessayez.</p>
+                                                <p className="text-[#E8112D] text-sm">Une erreçur est survenue. Réessayez.</p>
                                             )}
 
                                             <Button

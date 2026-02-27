@@ -1,139 +1,307 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-const SYSTEM_PROMPT = `Tu es l'Assistant Virtuel de Retour Gagnant Bénin. Tu es le premier contact des visiteurs du site web.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-=== TON IDENTITÉ ===
-Nom : Assistant Retour Gagnant
-Personnalité : Chaleureux, professionnel, rassurant, fier de ses racines béninoises
-Ton : Tu tutoies naturellement, tu es enthousiaste mais jamais excessif
-Langue : Français exclusivement
+const PROVIDER_ENDPOINTS: Record<string, string> = {
+    groq: 'https://api.groq.com/openai/v1/chat/completions',
+    openai: 'https://api.openai.com/v1/chat/completions',
+    anthropic: 'https://api.anthropic.com/v1/messages',
+    google: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+}
 
-=== TA MISSION ===
-- Accueillir chaleureusement les visiteurs
-- Répondre à toutes les questions sur les services de Retour Gagnant
-- Guider les clients vers la bonne solution
-- Rassurer sur la fiabilité et l'expertise de l'entreprise
-- Rediriger vers un rendez-vous gratuit quand c'est pertinent
+const PROVIDER_MODELS: Record<string, string> = {
+    groq: 'llama-3.3-70b-versatile',
+    openai: 'gpt-4o-mini',
+    anthropic: 'claude-3-5-sonnet-20241022',
+    google: 'gemini-2.0-flash',
+}
 
-=== L'ENTREPRISE ===
-Retour Gagnant est une entreprise premium d'accompagnement de la diaspora béninoise pour leur retour au pays. L'entreprise facilite toutes les démarches administratives, immobilières et business pour les Béninois de la diaspora (France, USA, Canada, Belgique, etc.) qui souhaitent s'installer ou investir au Bénin.
+const CONTEXT_PROMPTS: Record<string, string> = {
+    frontend: `
+=== MODE CLIENT (FRONTEND) ===
+Tu parles à un visiteur/client du site web.
+- Sois chaleureçux, accueillant et rassurant
+- Tutoie naturellement
+- Ne divulgue JAMAIS d'informations confidentielles (données clients, finances, processus internes)
+- Redirige vers un rendez-vous gratuit quand pertinent
+- Sois concis : 3-4 phrases max
+- Ne donne JAMAIS de prix précis, di que c'est sur devis personnalisé`,
 
-Siège : Haie Vive, Cotonou, République du Bénin
-Contact : contact@retourgagnant.bj | +229 01 23 45 67
-Valeurs : Excellence, Tradition, Modernité, Confiance
-Slogan : "L'alliance parfaite entre modernisation et héritage culturel"
+    agent: `
+=== MODE AGENT ===
+Tu assistes un agent/collaborateur de Retour Gagnant.
+- Sois direct et professionnel
+- Tu peux accéder aux données opérationnelles
+- Aide à rédiger des réponses clients, des emails, des rapports
+- Donne des conseils sur les procédures internes
+- Tu peux mentionner les processus internes et les étapes
+- Vouvoie l'agent par défaut`,
 
-=== SERVICES DÉTAILLÉS ===
+    admin: `
+=== MODE ADMINISTRATEUR ===
+Tu assistes l'administrateur principal de Retour Gagnant.
+- Accès complet aux informations système
+- Aide à analyser les métriques, les performances
+- Suggère des optimisations business
+- Peux générer des rapports détaillés
+- Peux aider à configuréer le système
+- Sois exhaustif et analytique dans tes réponses
+- Vouvoie l'administrateur`,
+}
 
-1. **Passeport & Administratif**
-   - Obtention et renouvellement de passeport béninois
-   - Carte d'identité nationale
-   - Casier judiciaire
-   - Acte de naissance, mariage, décès
-   - Légalisation de documents
-   - Visa et titres de séjour
-   - Délai : Variable selon le document (2 à 6 semaines)
+const getAiConfig = async (): Promise<{
+    provider: string
+    apiKey: string
+    model: string
+    systemPrompt: string
+    personality: string
+    tone: string
+    maxTokens: number
+    temperature: number
+} | null> => {
+    try {
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        const { data, error } = await supabase
+            .from('ai_config')
+            .select('*')
+            .eq('is_active', true)
+            .order('id', { ascending: false })
+            .limit(1)
+            .single()
 
-2. **Logement Premium**
-   - Recherche de logement à Cotonou, Porto-Novo, Parakou
-   - Location courte et longue durée
-   - Achat immobilier sécurisé avec vérification juridique
-   - Négociation des prix et accompagnement notarial
-   - Quartiers populaires : Haie Vive, Fidjrossè, Ganhi, Akpakpa
+        if (error || !data) return null
 
-3. **Création d'Entreprise**
-   - Étude de marché au Bénin
-   - Rédaction des statuts et immatriculation au RCCM
-   - Obtention du NIF (Numéro d'Identification Fiscale)
-   - Domiciliation d'entreprise
-   - Accompagnement bancaire et comptable
-   - Secteurs porteurs : Agro-alimentaire, Tech, Immobilier, Commerce, Tourisme
+        return {
+            provider: data.provider,
+            apiKey: data.api_key,
+            model: data.model,
+            systemPrompt: data.system_prompt,
+            personality: data.personality,
+            tone: data.tone,
+            maxTokens: data.max_tokens || 400,
+            temperature: parseFloat(data.temperature) || 0.7,
+        }
+    } catch {
+        return null
+    }
+}
 
-4. **Guide Culturel & Tourisme Mémoriel**
-   - Visite des sites historiques : Ouidah (Route des Esclaves, Porte du Non-Retour)
-   - Palais royaux d'Abomey (UNESCO)
-   - Cité lacustre de Ganvié
-   - Parc national de la Pendjari
-   - Découverte gastronomique et artisanale
-   - Circuits personnalisés
+const callGroqOrOpenAI = async (
+    endpoint: string,
+    apiKey: string,
+    model: string,
+    messages: Array<{ role: string; content: string }>,
+    temperature: number,
+    maxTokens: number
+) => {
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model,
+            messages,
+            temperature,
+            max_tokens: maxTokens,
+        }),
+    })
 
-5. **Construction & Suivi de Chantier**
-   - Achat de terrain vérifié et sécurisé
-   - Plans architecturaux
-   - Suivi de chantier à distance avec rapports photos/vidéos
-   - Gestion des artisans et fournisseurs
-   - Livraison clés en main
+    if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`API error: ${response.status} - ${errorText}`)
+    }
 
-6. **Investissement**
-   - Opportunités d'affaires rentables au Bénin
-   - Partenariats locaux vérifiés
-   - Gestion locative
-   - Investissement immobilier
-   - Conseil financier et fiscal
+    const data = await response.json()
+    return data.choices?.[0]?.message?.content || 'Désolé, je n\'ai pas pu générer de réponse.'
+}
 
-=== PAGES DU SITE ===
-- Accueil : / (présentation générale, vidéo hero, services, témoignages)
-- Services : /services (tous les services détaillés)
-- A Propos : /a-propos (histoire, mission, équipe)
-- Contact : /contact (formulaire, coordonnées, carte)
-- Rendez-vous : /rendez-vous (réservation d'appel gratuit)
+const callAnthropic = async (
+    apiKey: string,
+    model: string,
+    systemPrompt: string,
+    messages: Array<{ role: string; content: string }>,
+    temperature: number,
+    maxTokens: number
+) => {
+    const userMessages = messages.filter((m) => m.role !== 'system')
 
-=== RÈGLES STRICTES ===
-- Réponds TOUJOURS en français
-- Sois concis : 3-4 phrases max par réponse
-- Propose un rendez-vous gratuit dès que c'est pertinent (page /rendez-vous)
-- Ne fais JAMAIS de promesses irréalistes sur les délais ou les prix
-- Si tu ne connais pas la réponse exacte, redirige vers le contact humain
-- Ne donne JAMAIS de faux prix, dis que les tarifs sont sur devis personnalisé
-- Sois toujours positif sur le Bénin et son potentiel`;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json',
+            'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+            model,
+            system: systemPrompt,
+            messages: userMessages,
+            max_tokens: maxTokens,
+            temperature,
+        }),
+    })
+
+    if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Anthropic error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data.content?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.'
+}
+
+const callGemini = async (
+    apiKey: string,
+    model: string,
+    systemPrompt: string,
+    messages: Array<{ role: string; content: string }>,
+    temperature: number,
+    maxTokens: number
+) => {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+
+    const contents = messages
+        .filter((m) => m.role !== 'system')
+        .map((m) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+        }))
+
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: {
+                temperature,
+                maxOutputTokens: maxTokens,
+            },
+        }),
+    })
+
+    if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Gemini error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.'
+}
 
 export async function POST(request: NextRequest) {
     try {
-        const { messages } = await request.json();
-        const apiKey = process.env.GROQ_API_KEY;
+        const { messages, context = 'frontend' } = await request.json()
 
-        if (!apiKey) {
-            return NextResponse.json(
-                { reply: "L'assistant n'est pas configuré. Contactez-nous au +229 01 23 45 67." },
-                { status: 500 }
-            );
+        // Get AI config from DB
+        const config = await getAiConfig()
+
+        if (!config || !config.apiKey) {
+            // Fallback to env var
+            const envKey = process.env.GROQ_API_KEY
+            if (!envKey) {
+                return NextResponse.json(
+                    { reply: 'L\'assistant n\'est pas configuréé. Contactez-nous au +229 01 23 45 67.' },
+                    { status: 500 }
+                )
+            }
+
+            // Use env fallback with Groq
+            const fallbackPrompt = `Tu es l'Assistant Virtuel de Retour Gagnant Bénin.${CONTEXT_PROMPTS[context] || CONTEXT_PROMPTS.frontend}`
+            const reply = await callGroqOrOpenAI(
+                PROVIDER_ENDPOINTS.groq,
+                envKey,
+                PROVIDER_MODELS.groq,
+                [{ role: 'system', content: fallbackPrompt }, ...messages],
+                0.7,
+                400
+            )
+            return NextResponse.json({ reply })
         }
 
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: SYSTEM_PROMPT },
-                    ...messages,
-                ],
-                temperature: 0.7,
-                max_tokens: 400,
-            }),
-        });
+        // Fetch DB Context
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        const { data: dbProducts } = await supabase.from('products').select('title, category, price, stock').eq('is_active', true).limit(50)
+        const { data: dbServices } = await supabase.from('services').select('title, description').limit(20)
 
-        if (!response.ok) {
-            const error = await response.text();
-            console.error("Groq API error:", error);
-            return NextResponse.json(
-                { reply: "Je rencontre un souci technique. N'hésite pas à nous appeler au +229 01 23 45 67." },
-                { status: 500 }
-            );
+        const dynamicContext = `
+=== DONNÉES EN TEMPS RÉEL DU SITE (ACCÈS DIRECT) ===
+Tu as un accès DIRECT ET EN TEMPS RÉEL aux données du site web. N'indique JAMAIS "je n'ai pas accès en temps réel" ou "je ne connais pas le stock". Voici les données extractes de la base de données :
+
+PRODUITS DISPONIBLES EN BOUTIQUE :
+${dbProducts ? JSON.stringify(dbProducts, null, 2) : 'Aucun produit actif pour le moment.'}
+
+SERVICES OFFICIELS PROPOSÉS :
+${dbServices ? JSON.stringify(dbServices, null, 2) : 'Aucun service configuréé.'}
+
+INSTRUCTION STRICTE : Utilise ces données json pour répondre directement aux questions de manière fluide et naturelle. Par exemple, si on te demande les articles disponibles, cite-les avec style, ne donne pas du code JSON à l'utilisateur. Refuse poliment de donner des informations administratives ou des données utilisateurs confidentielles.
+`
+
+        // Build context-aware system prompt
+        const contextPrompt = CONTEXT_PROMPTS[context] || CONTEXT_PROMPTS.frontend
+        const fullSystemPrompt = `${config.systemPrompt}
+
+=== PERSONNALITÉ ===
+${config.personality}
+
+=== TON ===
+${config.tone}
+
+${contextPrompt}
+${dynamicContext}`
+
+        let reply: string
+
+        switch (config.provider) {
+            case 'anthropic':
+                reply = await callAnthropic(
+                    config.apiKey,
+                    config.model || PROVIDER_MODELS.anthropic,
+                    fullSystemPrompt,
+                    messages,
+                    config.temperature,
+                    config.maxTokens
+                )
+                break
+
+            case 'google':
+                reply = await callGemini(
+                    config.apiKey,
+                    config.model || PROVIDER_MODELS.google,
+                    fullSystemPrompt,
+                    messages,
+                    config.temperature,
+                    config.maxTokens
+                )
+                break
+
+            case 'openai':
+            case 'groq':
+            default: {
+                const endpoint = PROVIDER_ENDPOINTS[config.provider] || PROVIDER_ENDPOINTS.groq
+                reply = await callGroqOrOpenAI(
+                    endpoint,
+                    config.apiKey,
+                    config.model || PROVIDER_MODELS[config.provider] || PROVIDER_MODELS.groq,
+                    [{ role: 'system', content: fullSystemPrompt }, ...messages],
+                    config.temperature,
+                    config.maxTokens
+                )
+                break
+            }
         }
 
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
-
-        return NextResponse.json({ reply });
-    } catch (error) {
-        console.error("Chat API error:", error);
+        return NextResponse.json({ reply, provider: config.provider, model: config.model })
+    } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('Chat API error:', errMsg)
         return NextResponse.json(
-            { reply: "Une erreur est survenue. Contactez-nous directement." },
+            { reply: 'Je rencontre un souci technique. N\'hésite pas à nous appeler au +229 01 23 45 67.' },
             { status: 500 }
-        );
+        )
     }
 }

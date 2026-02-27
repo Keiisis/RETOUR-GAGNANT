@@ -19,6 +19,7 @@ const FALLBACK_SERVICES: Record<string, {
     price: string;
     color: string;
     icon_type: string;
+    image_url?: string;
     pricing_options: Array<{ label: string; price: string }>;
 }> = {
     passeport: {
@@ -36,6 +37,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "À partir de 50.000 FCFA",
         color: "#008751",
         icon_type: "passport",
+        image_url: "/assets/icones/icone_Passeport_Documents.png",
         pricing_options: [
             { label: "Pack Basique (Dossier simple)", price: "50.000 FCFA" },
             { label: "Pack Sérénité (Gestion complète)", price: "85.000 FCFA" },
@@ -57,6 +59,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "À partir de 75.000 FCFA",
         color: "#FCD116",
         icon_type: "tata",
+        image_url: "/assets/icones/icone_Acheter_ou_louer.png",
         pricing_options: [
             { label: "Recherche Location Meublée", price: "75.000 FCFA" },
             { label: "Chasse Achat Terrain/Maison", price: "250.000 FCFA" },
@@ -78,6 +81,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "À partir de 150.000 FCFA",
         color: "#E8112D",
         icon_type: "drum",
+        image_url: "/assets/icones/icone_Creation_d_Entreprise.png",
         pricing_options: [
             { label: "Création Entreprise Simple", price: "150.000 FCFA" },
             { label: "Pack Business Ready (Banque+Siège)", price: "350.000 FCFA" },
@@ -99,6 +103,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "À partir de 100.000 FCFA",
         color: "#008751",
         icon_type: "cowrie",
+        image_url: "/assets/icones/icone_Guide_culturel.png",
         pricing_options: [
             { label: "Journée Pèlerinage Ouidah", price: "100.000 FCFA" },
             { label: "Week-end Immersion Royale", price: "250.000 FCFA" },
@@ -108,7 +113,7 @@ const FALLBACK_SERVICES: Record<string, {
     construction: {
         title: "Construction & Patrimoine",
         subtitle: "Bâtissez la maison qui rendra votre famille fière pour des générations",
-        description: "On a tous entendu les histoires d'horreur : chantiers abandonnés, ciment volé, maçons fantômes. Ça suffit. Votre argent a été durement gagné, il mérite d'être transformé en pierre solide, pas en poussière. Nous importons la rigueur occidentale sur les chantiers béninois. Gestion de projet draconienne, rapports quotidiens, preuves par drone. Construire au Bénin redevient ce que ça aurait toujours dû être : l'accomplissement d'une vie, la fierté d'un nom gravé dans le béton.",
+        description: "On a tous entendu les histoires d'horreçur : chantiers abandonnés, ciment volé, maçons fantômes. Ça suffit. Votre argent a été durement gagné, il mérite d'être transformé en pierre solide, pas en poussière. Nous importons la rigueur occidentale sur les chantiers béninois. Gestion de projet draconienne, rapports quotidiens, preçuves par drone. Construire au Bénin redevient ce que ça aurait toujours dû être : l'accomplissement d'une vie, la fierté d'un nom gravé dans le béton.",
         features: [
             "Plans 3D Architecturaux Modernes & Fonctionnels",
             "Surveillance de Chantier par Drone & Caméras IP",
@@ -120,6 +125,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "Sur Devis",
         color: "#FCD116",
         icon_type: "assin",
+        image_url: "/assets/icones/icone_Construction.png",
         pricing_options: [
             { label: "Surveillance Chantier (Mensuel)", price: "150.000 FCFA" },
             { label: "Étude Architecturale 3D", price: "300.000 FCFA" },
@@ -133,7 +139,7 @@ const FALLBACK_SERVICES: Record<string, {
         features: [
             "Sourcing d'Affaires 'Off-Market' (Terrains, Immeubles)",
             "Projets Agricoles Rentables (Ananas, Cajou, Soja)",
-            "Due Diligence & Audit de Risque Rigoureux",
+            "Due Diligence & Audit de Risque Rigoureçux",
             "Partenariats Public-Privé & Appels d'Offres",
             "Gestion de Portefeuille d'Actifs Locaux",
             "Optimisation Fiscale des Revenus Locaux",
@@ -141,6 +147,7 @@ const FALLBACK_SERVICES: Record<string, {
         price: "Gratuit",
         color: "#E8112D",
         icon_type: "cowrie",
+        image_url: "/assets/icones/icone_Investissement.png",
         pricing_options: [
             { label: "Premier Rendez-vous Conseil", price: "Gratuit" },
             { label: "Dossier Étude Opportunité", price: "200.000 FCFA" },
@@ -149,51 +156,54 @@ const FALLBACK_SERVICES: Record<string, {
     },
 };
 
+import { createClient } from '@supabase/supabase-js';
+
+// ... other imports stay the same ...
+
 export default function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = use(params);
-    const [service, setService] = useState(FALLBACK_SERVICES[slug] || {
-        title: slug ? slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ') : 'Service',
-        subtitle: "Découvrez nos solutions sur mesure",
-        description: "Chargement des détails du service...",
-        features: [],
-        price: "Nous consulter",
-        color: "#008751",
-        icon_type: "passport",
-        pricing_options: [{ label: "Standard", price: "Nous consulter" }]
-    });
+    const [service, setService] = useState(FALLBACK_SERVICES[slug] || null);
 
     useEffect(() => {
         const fetchService = async () => {
-            if (!slug || !FALLBACK_SERVICES[slug]) return;
+            if (!slug) return;
 
             try {
-                const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-                const res = await fetch(`${STRAPI_URL}/api/services?filters[slug][$eq]=${slug}`);
-                if (!res.ok) throw new Error('Network response was not ok');
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+                const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-                const json = await res.json();
+                if (supabaseUrl && supabaseKey) {
+                    const supabase = createClient(supabaseUrl, supabaseKey);
 
-                if (json.data && json.data.length > 0) {
-                    const attr = json.data[0].attributes;
+                    const { data, error } = await supabase
+                        .from('services')
+                        .select('*')
+                        .eq('slug', slug);
 
-                    let fetchedPricing = FALLBACK_SERVICES[slug].pricing_options;
-                    if (attr.pricing_options) {
-                        fetchedPricing = attr.pricing_options;
+                    if (!error && data && data.length > 0) {
+                        const attr = data[0];
+
+                        setService({
+                            title: attr.title || FALLBACK_SERVICES[slug]?.title || attr.title,
+                            subtitle: attr.description || FALLBACK_SERVICES[slug]?.subtitle || "",
+                            description: attr.description || FALLBACK_SERVICES[slug]?.description || "",
+                            features: FALLBACK_SERVICES[slug]?.features || ["Analyse experte", "Suivi personnalisé"],
+                            price: FALLBACK_SERVICES[slug]?.price || "Nous consulter",
+                            color: attr.color || FALLBACK_SERVICES[slug]?.color || "#008751",
+                            icon_type: attr.icon_type || FALLBACK_SERVICES[slug]?.icon_type || "passport",
+                            image_url: attr.image_url || FALLBACK_SERVICES[slug]?.image_url || "",
+                            pricing_options: FALLBACK_SERVICES[slug]?.pricing_options || [{ label: "Standard", price: "Nous consulter" }]
+                        });
+                        return;
                     }
-
-                    setService({
-                        title: attr.title || FALLBACK_SERVICES[slug].title,
-                        subtitle: attr.subtitle || FALLBACK_SERVICES[slug].subtitle,
-                        description: attr.description || FALLBACK_SERVICES[slug].description,
-                        features: attr.features_text ? attr.features_text.split('\n').filter(Boolean) : FALLBACK_SERVICES[slug].features,
-                        price: attr.price || FALLBACK_SERVICES[slug].price,
-                        color: attr.color || FALLBACK_SERVICES[slug].color,
-                        icon_type: attr.icon_type || FALLBACK_SERVICES[slug].icon_type,
-                        pricing_options: fetchedPricing
-                    });
                 }
             } catch (error) {
-                console.log("Using fallback content (Strapi not ready or empty for this service)");
+                console.log("Using fallback content (Supabase not ready or empty for this service)");
+            }
+
+            // Fallback if Supabase fails
+            if (FALLBACK_SERVICES[slug]) {
+                setService(FALLBACK_SERVICES[slug]);
             }
         };
 
@@ -245,11 +255,37 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                             className="max-w-4xl flex flex-col md:flex-row items-center gap-8"
                         >
                             <div className="shrink-0 drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">
-                                <GoldenIcon
-                                    // @ts-ignore
-                                    type={service.icon_type}
-                                    className="w-32 h-32 md:w-40 md:h-40"
-                                />
+                                {service.image_url ? (
+                                    <motion.div
+                                        className="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center origin-center"
+                                        animate={{
+                                            y: [0, -15, 0],
+                                            rotate: [0, 4, -4, 0]
+                                        }}
+                                        transition={{
+                                            duration: 6,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        <img
+                                            src={service.image_url}
+                                            alt={service.title}
+                                            className="w-full h-full object-contain bg-transparent drop-shadow-[0_15px_35px_rgba(0,0,0,0.4)]"
+                                        />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        animate={{ y: [0, -10, 0] }}
+                                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                                    >
+                                        <GoldenIcon
+                                            // @ts-ignore
+                                            type={service.icon_type}
+                                            className="w-32 h-32 md:w-40 md:h-40"
+                                        />
+                                    </motion.div>
+                                )}
                             </div>
                             <div>
                                 <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4">{service.title}</h1>

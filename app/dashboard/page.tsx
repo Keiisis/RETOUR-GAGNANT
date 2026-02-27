@@ -16,7 +16,7 @@ export default function DashboardHome() {
                 transition={{ duration: 0.8 }}
             >
                 <h1 className="text-4xl md:text-5xl font-heading font-bold mb-2">
-                    Heureux de vous revoir, <span className="text-[#FCD116]">Roi.</span>
+                    Heureçux de vous revoir, <span className="text-[#FCD116]">Roi.</span>
                 </h1>
                 <p className="text-gray-400 text-lg max-w-2xl">
                     Votre empire se construit pierre par pierre. Voici l'état de vos terres au Bénin.

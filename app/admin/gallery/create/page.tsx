@@ -1,0 +1,146 @@
+'use client';
+
+import { useForm, useNavigation } from "@refinedev/core";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    ArrowLeft, Save, ImageIcon, CloudUpload,
+    Sparkles, Loader2, Info, Plus, X,
+    FileImage, Hash, Tag, Type
+} from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+export default function GalleryCreate() {
+    const { list } = useNavigation();
+
+    const { onFinish, formLoading } = useForm({
+        resource: "gallery",
+        redirect: "list",
+        action: "create"
+    });
+
+    const [formData, setFormData] = useState<any>({
+        url: "",
+        title: "",
+        category: "general",
+        alt: ""
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        onFinish(formData);
+    };
+
+    return (
+        <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-[#0a0f18]/40 p-6 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={() => list("gallery")}
+                        className="p-4 bg-white/5 border border-white/5 rounded-2xl text-gray-500 hover:text-[#FCD116] transition-all"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <div>
+                        <h1 className="text-3xl font-black font-heading text-white tracking-tight italic">NOUVEL <span className="text- benin-gradient">ACTE VISUEL</span></h1>
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">Imagerie & Esthétique Diaspora</p>
+                    </div>
+                </div>
+
+                <Button
+                    onClick={handleSave}
+                    disabled={formLoading}
+                    className="w-full md:w-auto bg-benin-gradient text-white h-16 px-10 rounded-[1.5rem] font-black tracking-widest gap-3 shadow-2xl"
+                >
+                    {formLoading ? <Loader2 size={24} className="animate-spin" /> : <Save size={20} />}
+                    ENREGISTRER L'IMAGE
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Form Section */}
+                <div className="space-y-8">
+                    <Card className="bg-[#0a0f18] border-white/5 p-10 rounded-[3rem] shadow-3xl">
+                        <form className="space-y-8">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
+                                    <CloudUpload size={14} className="text-[#3b82f6]" /> URL de l'Image
+                                </label>
+                                <input
+                                    name="url"
+                                    value={formData.url}
+                                    onChange={handleChange}
+                                    placeholder="https://..."
+                                    className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
+                                    <Type size={14} /> Titre de l'image
+                                </label>
+                                <input
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="Ex: Villa Cotonou 2024"
+                                    className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
+                                    <Tag size={14} /> Catégorie Nexus
+                                </label>
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleChange}
+                                    className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none appearance-none"
+                                >
+                                    <option value="general">Général</option>
+                                    <option value="heritage">Patrimoine</option>
+                                    <option value="construction">Chantiers</option>
+                                    <option value="tourisme">Tourisme</option>
+                                </select>
+                            </div>
+                        </form>
+                    </Card>
+                </div>
+
+                {/* Preview Section */}
+                <div className="space-y-8">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">Développement Visuel</span>
+                    <div className="aspect-square relative rounded-[3.5rem] overflow-hidden border-4 border-white/5 shadow-3xl bg-white/[0.02] flex flex-col items-center justify-center p-10">
+                        {formData.url ? (
+                            <>
+                                <Image src={formData.url} alt="Preview" fill className="object-cover animate-in fade-in duration-1000" />
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-12 text-center text-white">
+                                    <h3 className="text-2xl font-black font-heading mb-2">{formData.title || 'Sans Titre'}</h3>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#FCD116]">{formData.category}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center space-y-4">
+                                <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6">
+                                    <ImageIcon size={40} className="text-gray-800" />
+                                </div>
+                                <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">En attente de liaison...</p>
+                                <p className="text-[8px] text-gray-800 uppercase">L'aperçu se générera automatiquement</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

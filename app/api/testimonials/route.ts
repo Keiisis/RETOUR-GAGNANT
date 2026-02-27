@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
     try {
@@ -13,40 +14,24 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Try to submit to Strapi backend
-        const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337";
+        // Save to Supabase
+        const { error: supabaseError } = await supabase
+            .from('testimonials')
+            .insert([{
+                name,
+                role: role || "",
+                location: location || "",
+                text,
+                service,
+                rating: 5,
+                approved: false, // Admin must approve
+            }]);
 
-        try {
-            const res = await fetch(`${strapiUrl}/api/testimonials`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    data: {
-                        name,
-                        role: role || "",
-                        location: location || "",
-                        text,
-                        service,
-                        rating: 5,
-                        approved: false, // Admin must approve before it shows on frontend
-                    },
-                }),
-            });
-
-            if (res.ok) {
-                return NextResponse.json({ success: true, message: "Témoignage soumis avec succès !" });
-            }
-        } catch {
-            // Strapi might not be running — still accept the submission
-            console.log("Strapi not available, testimonial saved locally");
-        }
-
-        // Return success even if Strapi is down (for UX)
-        return NextResponse.json({ success: true, message: "Témoignage soumis avec succès !" });
+        if (supabaseError) throw supabaseError;
     } catch (error) {
         console.error("Testimonial submission error:", error);
         return NextResponse.json(
-            { error: "Erreur lors de l'envoi." },
+            { error: "Erreçur lors de l'envoi." },
             { status: 500 }
         );
     }

@@ -2,9 +2,10 @@
 
 import { GoldenIcon } from "@/components/ui/GoldenIcon";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Home, Briefcase, HardHat, TrendingUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const FALLBACK_SERVICES = [
     {
@@ -14,6 +15,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "passport",
         slug: "passeport",
+        imageUrl: "/assets/icones/icone_Passeport_Documents.png",
     },
     {
         id: 2,
@@ -22,6 +24,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "tata",
         slug: "logement",
+        imageUrl: "/assets/icones/icone_Acheter_ou_louer.png",
     },
     {
         id: 3,
@@ -30,6 +33,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "drum",
         slug: "business",
+        imageUrl: "/assets/icones/icone_Creation_d_Entreprise.png",
     },
     {
         id: 4,
@@ -38,6 +42,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "cowrie",
         slug: "culture",
+        imageUrl: "/assets/icones/icone_Guide_culturel.png",
     },
     {
         id: 5,
@@ -46,6 +51,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "assin",
         slug: "construction",
+        imageUrl: "/assets/icones/icone_Construction.png",
     },
     {
         id: 6,
@@ -54,6 +60,7 @@ const FALLBACK_SERVICES = [
         icon: undefined,
         iconType: "tree",
         slug: "investissement",
+        imageUrl: "/assets/icones/icone_Investissement.png",
     },
 ];
 
@@ -63,27 +70,27 @@ export default function ServicesGrid() {
     useEffect(() => {
         const fetchServices = async () => {
             try {
-                const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-                const res = await fetch(`${STRAPI_URL}/api/services`);
-                if (!res.ok) throw new Error('Network response was not ok');
-                const json = await res.json();
+                const { data, error } = await supabase
+                    .from('services')
+                    .select('*')
+                    .order('order', { ascending: true });
 
-                if (json.data && json.data.length > 0) {
-                    const mappedServices = json.data.map((item: any) => ({
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const mappedServices = data.map((item: any) => ({
                         id: item.id,
-                        title: item.attributes.title,
-                        description: item.attributes.subtitle || "Découvrez ce service", // Use subtitle as short description
+                        title: item.title,
+                        description: item.description || "Découvrez ce service",
                         icon: undefined,
-                        iconType: item.attributes.icon_type || "passport",
-                        slug: item.attributes.slug,
+                        iconType: item.icon_type || "passport",
+                        slug: item.slug || "",
+                        imageUrl: item.image_url || "",
                     }));
-
-                    // Sort by ID to maintain order if desired, or relying on Strapi default sort
-                    mappedServices.sort((a: any, b: any) => a.id - b.id);
                     setServicesList(mappedServices);
                 }
             } catch (error) {
-                console.log("Using fallback services grid (Strapi fetch failed or empty)");
+                console.log("Using fallback services grid (Supabase fetch failed or empty)");
             }
         };
 
@@ -92,7 +99,7 @@ export default function ServicesGrid() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {servicesList.map((service) => (
+            {servicesList.map((service: any) => (
                 <div
                     key={service.id}
                     className="group relative glass-card-premium hover:border-[#FCD116] rounded-2xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-flag bg-white"
@@ -102,13 +109,21 @@ export default function ServicesGrid() {
                     </div>
 
                     <div className="mb-6 flex justify-center md:justify-start">
-                        <GoldenIcon
-                            // @ts-ignore
-                            icon={service.icon}
-                            // @ts-ignore
-                            type={service.iconType}
-                            className="group-hover:scale-110 transition-transform duration-500"
-                        />
+                        {service.imageUrl ? (
+                            <div className="w-24 h-24 flex items-center justify-center">
+                                <img
+                                    src={service.imageUrl}
+                                    alt={service.title}
+                                    className="w-full h-full object-contain bg-transparent group-hover:scale-110 group-hover:-translate-y-2 group-hover:drop-shadow-[0_12px_25px_rgba(252,209,22,0.4)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-500"
+                                />
+                            </div>
+                        ) : (
+                            <GoldenIcon
+                                icon={service.icon}
+                                type={service.iconType}
+                                className="group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500"
+                            />
+                        )}
                     </div>
 
                     <h3 className="text-xl font-bold font-heading text-[#1a2332] mb-3 group-hover:text-[#008751] transition-colors">

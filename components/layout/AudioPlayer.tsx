@@ -4,11 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function AudioPlayer({
-    src = '/audio/benin-ambiance.mp3',
-}: {
-    src?: string;
-}) {
+export default function AudioPlayer() {
+    const src = '/audio/benin-ambiance.mp3';
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isMuted, setIsMuted] = useState(true);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);

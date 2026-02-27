@@ -4,17 +4,52 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2, Send, Loader2, AlertCircle } from "lucide-react";
 
 export default function NationalitySection() {
-    const [submitted, setSubmitted] = useState(false);
+    const [submitted, setSubmitted] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const [reference, setReference] = useState('')
+    const [formData, setFormData] = useState({
+        nom: '',
+        prenom: '',
+        email: '',
+        nationalite_actuelle: '',
+        motivation: '',
+    })
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Implement actual form submission logic
-        setSubmitted(true);
-        setTimeout(() => setSubmitted(false), 5000); // Reset after 5s for demo
-    };
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
+
+        try {
+            const response = await fetch('/api/nationality', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            })
+
+            const data = await response.json()
+
+            if (response.ok && data.success) {
+                setReference(data.reference)
+                setSubmitted(true)
+            } else {
+                setError(data.error || 'Une erreçur est survenue. Veuillez réessayer.')
+            }
+        } catch {
+            setError('Impossible de soumettre la demande. Vérifiez votre connexion.')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <section className="py-20 bg-gradient-to-b from-white to-[#fafafa] relative overflow-hidden" id="nationalite">
@@ -63,56 +98,116 @@ export default function NationalitySection() {
                                     <CheckCircle2 size={32} />
                                 </div>
                                 <h4 className="text-xl font-bold text-[#008751]">Demande Reçue !</h4>
+                                {reference && (
+                                    <p className="text-sm font-mono text-gray-500 bg-gray-50 py-2 px-4 rounded-lg inline-block">
+                                        Référence : <span className="font-bold text-[#008751]">{reference}</span>
+                                    </p>
+                                )}
                                 <p className="text-gray-600">
                                     Un expert de notre équipe va évaluer votre profil et vous recontactera sous 24h ouvrées.
+                                    Un email de confirmation a été envoyé.
                                 </p>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setSubmitted(false)
+                                        setFormData({ nom: '', prenom: '', email: '', nationalite_actuelle: '', motivation: '' })
+                                        setReference('')
+                                    }}
+                                    className="text-[#008751] hover:bg-[#008751]/10 mt-4"
+                                >
+                                    Soumettre une autre demande
+                                </Button>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-gray-700">Nom</label>
-                                        <Input placeholder="Votre nom" required className="bg-gray-50 border-gray-200" />
+                                        <Input
+                                            name="nom"
+                                            value={formData.nom}
+                                            onChange={handleChange}
+                                            placeholder="Votre nom"
+                                            required
+                                            className="bg-gray-50 border-gray-200"
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-gray-700">Prénom</label>
-                                        <Input placeholder="Votre prénom" required className="bg-gray-50 border-gray-200" />
+                                        <Input
+                                            name="prenom"
+                                            value={formData.prenom}
+                                            onChange={handleChange}
+                                            placeholder="Votre prénom"
+                                            required
+                                            className="bg-gray-50 border-gray-200"
+                                        />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Email</label>
-                                    <Input type="email" placeholder="email@exemple.com" required className="bg-gray-50 border-gray-200" />
+                                    <Input
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="email@exemple.com"
+                                        required
+                                        className="bg-gray-50 border-gray-200"
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Nationalité Actuelle</label>
                                     <select
-                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        defaultValue=""
+                                        name="nationalite_actuelle"
+                                        value={formData.nationalite_actuelle}
+                                        onChange={handleChange}
+                                        className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                     >
-                                        <option value="" disabled>Sélectionnez...</option>
-                                        <option value="france">Française</option>
-                                        <option value="usa">Américaine</option>
-                                        <option value="canada">Canadienne</option>
-                                        <option value="autre">Autre</option>
+                                        <option value="">Sélectionnez...</option>
+                                        <option value="Française">Française</option>
+                                        <option value="Américaine">Américaine</option>
+                                        <option value="Canadienne">Canadienne</option>
+                                        <option value="Belge">Belge</option>
+                                        <option value="Suisse">Suisse</option>
+                                        <option value="Autre">Autre</option>
                                     </select>
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">Votre Situation / Motivation</label>
                                     <Textarea
+                                        name="motivation"
+                                        value={formData.motivation}
+                                        onChange={handleChange}
                                         placeholder="Décrivez brièvement votre lien avec le Bénin..."
                                         className="bg-gray-50 border-gray-200 min-h-[100px]"
                                     />
                                 </div>
 
-                                <Button type="submit" className="w-full bg-[#1a2332] hover:bg-[#1a2332]/90 text-white font-semibold py-6 rounded-xl transition-all shadow-lg hover:shadow-xl mt-2">
-                                    <Send className="w-4 h-4 mr-2" />
-                                    Demander mon étude gratuite
+                                {error && (
+                                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+                                        <AlertCircle size={16} />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-[#1a2332] hover:bg-[#1a2332]/90 text-white font-semibold py-6 rounded-xl transition-all shadow-lg hover:shadow-xl mt-2"
+                                >
+                                    {loading ? (
+                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Envoi en cours...</>
+                                    ) : (
+                                        <><Send className="w-4 h-4 mr-2" /> Demander mon étude gratuite</>
+                                    )}
                                 </Button>
                                 <p className="text-xs text-center text-gray-400 mt-4">
-                                    Vos données sont confidentielles et sécurisées.
+                                    Vos données sont confidentielles, sécurisées et automatiquement supprimées après traitement.
                                 </p>
                             </form>
                         )}
@@ -120,5 +215,5 @@ export default function NationalitySection() {
                 </div>
             </div>
         </section>
-    );
+    )
 }

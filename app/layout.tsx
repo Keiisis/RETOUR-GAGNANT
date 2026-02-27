@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Inter } from "next/font/google";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import AudioPlayer from "@/components/layout/AudioPlayer";
-import ChatAssistant from "@/components/chat/ChatAssistant";
+import { LayoutShell } from "@/components/layout/LayoutShell";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -23,7 +20,7 @@ export const metadata: Metadata = {
   description: "Votre partenaire de confiance pour un retour réussi au Bénin. Services administratifs, immobiliers et business.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -34,13 +31,7 @@ export default function RootLayout({
         className={`${poppins.variable} ${inter.variable} font-sans bg-background text-foreground antialiased`}
         suppressHydrationWarning={true}
       >
-        <Header />
-        <AudioPlayer />
-        <main className="min-h-screen pt-20">
-          {children}
-        </main>
-        <ChatAssistant />
-        <Footer />
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

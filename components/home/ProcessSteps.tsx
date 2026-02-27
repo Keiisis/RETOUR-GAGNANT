@@ -1,35 +1,53 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { GoldenIcon } from "@/components/ui/GoldenIcon";
+import { supabase } from "@/lib/supabase";
+
+interface Step {
+    id: number
+    title: string
+    description: string
+    icon_type: string
+    order: number
+}
+
+const fallbackSteps: Step[] = [
+    { id: 1, title: "Prise de Contact", description: "Échange initial pour comprendre votre projet de retour.", icon_type: "cowrie", order: 1 },
+    { id: 2, title: "Planification", description: "Stratégie sur-mesure et feuille de route claire.", icon_type: "recade", order: 2 },
+    { id: 3, title: "Mise en Œuvre", description: "Lancement des procédures administratives et logistiques.", icon_type: "drum", order: 3 },
+    { id: 4, title: "Installation", description: "Accueil VIP à Cotonou et remise des clés/documents.", icon_type: "tata", order: 4 },
+]
 
 export default function ProcessSteps() {
-    const steps = [
-        {
-            id: 1,
-            title: "Prise de Contact",
-            desc: "Échange initial pour comprendre votre projet de retour.",
-            type: "cowrie"
-        },
-        {
-            id: 2,
-            title: "Planification",
-            desc: "Stratégie sur-mesure et feuille de route claire.",
-            type: "recade"
-        },
-        {
-            id: 3,
-            title: "Mise en Œuvre",
-            desc: "Lancement des procédures administratives et logistiques.",
-            type: "drum"
-        },
-        {
-            id: 4,
-            title: "Installation",
-            desc: "Accueil VIP à Cotonou et remise des clés/documents.",
-            type: "tata"
+    const [steps, setSteps] = useState<Step[]>(fallbackSteps)
+
+    useEffect(() => {
+        const fetchSteps = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('process_steps')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('order', { ascending: true })
+
+                if (!error && data && data.length > 0) {
+                    setSteps(data.map((item: any) => ({
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        icon_type: item.icon_type || 'cowrie',
+                        order: item.order,
+                    })))
+                }
+            } catch {
+                // Keep fallback
+            }
         }
-    ];
+
+        fetchSteps()
+    }, [])
 
     return (
         <section className="py-24 relative overflow-hidden bg-[#151b26]">
@@ -56,13 +74,13 @@ export default function ProcessSteps() {
                                         {index + 1}
                                     </div>
                                     {/* @ts-ignore */}
-                                    <GoldenIcon type={step.type} size={32} />
+                                    <GoldenIcon type={step.icon_type} size={32} />
                                 </div>
 
                                 {/* Content */}
                                 <div className="text-center space-y-3 px-4">
                                     <h3 className="text-xl font-bold text-white group-hover:text-[#FDB931] transition-colors">{step.title}</h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
+                                    <p className="text-gray-400 text-sm leading-relaxed">{step.description}</p>
                                 </div>
                             </div>
                         ))}
@@ -70,5 +88,5 @@ export default function ProcessSteps() {
                 </div>
             </div>
         </section>
-    );
+    )
 }

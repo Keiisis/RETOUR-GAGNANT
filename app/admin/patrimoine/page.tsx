@@ -1,121 +1,213 @@
 'use client';
 
-import { useState } from 'react';
+import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Plus, Edit2, Trash2, MapPin, Search,
+    Filter, Loader2, BookOpen, Layers,
+    Sparkles, ArrowRight, Star, ImageIcon,
+    Settings2, ChevronRight, Globe, ScrollText
+} from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Edit2, Trash2, Save, X } from "lucide-react";
-import Image from 'next/image';
+import { cn } from "@/lib/utils";
 
-// Initial Data (Simulated from Database)
-const INITIAL_ITEMS = [
-    { id: 1, title: "Porte du Non-Retour", description: "Symbole mémoriel historique de la traite transatlantique.", imageName: "Porte du Non-Retour.jpg" },
-    { id: 2, title: "Palais Royaux d'Abomey", description: "Vestiges de la puissance du Royaume de Dahomey.", imageName: "Palais Royaux Abomey.jpg" },
-    { id: 3, title: "Cité Lacustre de Ganvié", description: "La Venise de l'Afrique, entièrement bâtie sur l'eau.", imageName: "Cité Lacustre Ganvié.jpg" },
-    { id: 4, title: "Tata Somba", description: "Architecture forteresse unique au monde.", imageName: "TATA SOMBA.jpg" },
-    { id: 5, title: "Zangbeto", description: "Gardien de la nuit et police traditionnelle vaudou.", imageName: "Zangpeto.jpg" },
-    { id: 6, title: "Chutes de Kota", description: "Un havre de fraîcheur et de nature préservée.", imageName: "Chutes de Kota.jpg" },
-    // ... complete list could be added
-];
+export default function PatrimonioList() {
+    const { create, edit } = useNavigation();
+    const queryResult = useList({
+        resource: "patrimoine",
+        pagination: { pageSize: 12 },
+        sorters: [{ field: "created_at", order: "desc" }]
+    });
 
-export default function PatrimoineAdmin() {
-    const [items, setItems] = useState(INITIAL_ITEMS);
-    const [isEditing, setIsEditing] = useState<number | null>(null); // ID being edited
+    const { mutate: deleteItem } = useDelete();
+    const { mutate: updateItem } = useUpdate();
     const [searchTerm, setSearchTerm] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
-    // Simulate Filtering
-    const filteredItems = items.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.includes(searchTerm)
+    const data = (queryResult as any).data || (queryResult as any).query?.data; const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading; const items = data?.data || [];
+    const filteredItems = items.filter((item: any) =>
+        item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.location?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleDelete = (id: number) => {
-        if (confirm("Êtes-vous sûr de vouloir supprimer cet élément ?")) {
-            setItems(items.filter(i => i.id !== id));
-        }
-    };
-
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold font-heading text-white">Gestion du Patrimoine</h1>
-                <Button className="bg-[#008751] hover:bg-[#006B40] text-white gap-2">
-                    <Plus size={18} /> Ajouter un élément
-                </Button>
-            </div>
+        <div className="space-y-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+            {/* ═══════════════════════════════════════════ */}
+            {/* ARCHIVE HEADER */}
+            {/* ═══════════════════════════════════════════ */}
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-[#FCD116]">
+                        <ScrollText size={20} />
+                        <span className="text-[10px] font-black uppercase tracking-[0.5em]">Curateur National des Trésors</span>
+                    </div>
+                    <h1 className="text-7xl font-black text-white font-heading tracking-tighter leading-none">
+                        HERITAGE <span className="text- benin-gradient">VAULT</span>
+                    </h1>
+                    <p className="text-gray-500 max-w-2xl font-medium text-lg leading-relaxed">
+                        Gérez le patrimoine culturel et historique du Bénin. Chaque archive est un pont entre le passé glorieux et le futur numérique.
+                    </p>
+                </div>
 
-            {/* Search & Filter */}
-            <div className="bg-[#1a2332] p-4 rounded-xl border border-white/5 flex gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-[#0f141e] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-[#FCD116] outline-none"
-                    />
+                <div className="flex flex-wrap items-center gap-6 w-full xl:w-auto">
+                    <div className="relative flex-1 min-w-[320px]">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Rechercher dans les archives..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-[#0a0f18] border-2 border-white/5 rounded-[2rem] py-5 pl-14 pr-6 text-white text-sm font-bold focus:outline-none focus:border-[#FCD116]/40 transition-all placeholder:text-gray-700"
+                        />
+                    </div>
+
+                    <Button
+                        onClick={() => create("patrimoine")}
+                        className="h-16 px-10 rounded-[1.5rem] bg-white text-black font-black tracking-[0.2em] gap-3 shadow-[0_20px_40px_-5px_rgba(255,255,255,0.1)] hover:bg-[#FCD116] transition-all transform active:scale-95 group"
+                    >
+                        <Plus size={24} className="group-hover:rotate-90 transition-transform" /> ARCHIVER UN TRÉSOR
+                    </Button>
                 </div>
             </div>
 
-            {/* Content List */}
-            <div className="grid grid-cols-1 gap-4">
-                {filteredItems.map(item => (
-                    <Card key={item.id} className="bg-[#1a2332] border-white/5 hover:border-white/10 transition-all group overflow-hidden">
-                        <CardContent className="p-0 flex items-center h-32">
-                            {/* Image Thumbnail */}
-                            <div className="w-48 h-full relative shrink-0">
-                                <Image
-                                    src={`/assets/patrimoine/${item.imageName}`}
-                                    alt={item.title}
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                    onError={(e) => e.currentTarget.src = '/images/placeholder.jpg'}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
-                            </div>
+            {/* ═══════════════════════════════════════════ */}
+            {/* HERITAGE GRID - CINEMATIC CARDS */}
+            {/* ═══════════════════════════════════════════ */}
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-60">
+                    <div className="relative">
+                        <div className="w-24 h-24 border-b-2 border-t-2 border-[#FCD116] rounded-full animate-spin" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <BookOpen size={32} className="text-[#FCD116] animate-pulse" />
+                        </div>
+                    </div>
+                    <p className="mt-8 text-[10px] text-gray-600 font-black uppercase tracking-[0.6em] animate-pulse">Ouverture des Sceaux...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-10">
+                    <AnimatePresence mode="popLayout">
+                        {filteredItems.map((item: any, index: number) => (
+                            <motion.div
+                                key={item.id}
+                                layout
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.6, delay: index * 0.08 }}
+                            >
+                                <Card className="group relative bg-[#0a0f18] border-white/5 rounded-[3rem] overflow-hidden shadow-3xl hover:border-[#FCD116]/30 transition-all duration-700 h-[500px]">
+                                    {/* Ambient Glow */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-benin-gradient opacity-0 group-hover:opacity-10 blur-[60px] transition-opacity" />
 
-                            {/* Content or Edit Form */}
-                            <div className="flex-1 p-6 flex justify-between items-center gap-6">
-                                {isEditing === item.id ? (
-                                    <div className="flex-1 gap-4 grid grid-cols-2">
-                                        <input defaultValue={item.title} className="bg-[#0f141e] p-2 rounded text-white border border-white/10" />
-                                        <input defaultValue={item.imageName} className="bg-[#0f141e] p-2 rounded text-white border border-white/10" />
-                                        <textarea defaultValue={item.description} className="col-span-2 bg-[#0f141e] p-2 rounded text-white border border-white/10" rows={2} />
+                                    {/* Image Base */}
+                                    <div className="absolute inset-0">
+                                        <Image
+                                            src={(item.imagename || item.imageName) ? ((item.imagename || item.imageName).startsWith('http') ? (item.imagename || item.imageName) : `/assets/patrimoine/${item.imagename || item.imageName}`) : '/images/placeholder.jpg'}
+                                            alt={item.title}
+                                            fill
+                                            className="object-cover group-hover:scale-110 transition-transform duration-1000 grayscale-[0.2] group-hover:grayscale-0"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f18] via-[#0a0f18]/40 to-transparent" />
                                     </div>
-                                ) : (
-                                    <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                                        <p className="text-gray-400 text-sm line-clamp-2">{item.description}</p>
-                                        <span className="text-xs text-[#FCD116] mt-2 block font-mono">{item.imageName}</span>
-                                    </div>
-                                )}
 
-                                {/* Actions */}
-                                <div className="flex gap-2">
-                                    {isEditing === item.id ? (
-                                        <>
-                                            <Button size="icon" onClick={() => setIsEditing(null)} className="bg-green-600 hover:bg-green-700">
-                                                <Save size={18} />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(null)}>
-                                                <X size={18} />
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(item.id)} className="hover:bg-white/10 hover:text-[#FCD116]">
+                                    {/* Top Metadata */}
+                                    <div className="absolute top-8 left-8 right-8 flex justify-between items-start opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-[-10px] group-hover:translate-y-0">
+                                        <div className="px-5 py-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2">
+                                            <MapPin size={14} className="text-[#FCD116]" />
+                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">{item.location || 'BÉNIN'}</span>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); edit("patrimoine", item.id); }}
+                                                className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+                                            >
                                                 <Edit2 size={18} />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)} className="hover:bg-red-900/20 hover:text-[#E8112D]">
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm("Défendre cette archive ou la supprimer ?")) deleteItem({ resource: "patrimoine", id: item.id });
+                                                }}
+                                                className="w-12 h-12 bg-red-500/20 backdrop-blur-xl border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                                            >
                                                 <Trash2 size={18} />
-                                            </Button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Info */}
+                                    <div className="absolute bottom-0 left-0 w-full p-10 space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-[#008751]" />
+                                            <span className="text-[10px] font-black text-[#008751] uppercase tracking-[0.4em]">Archive Déployée</span>
+                                        </div>
+
+                                        <h3 className="text-3xl font-black text-white font-heading leading-none group-hover:text-[#FCD116] transition-colors">
+                                            {item.title}
+                                        </h3>
+
+                                        <p className="text-gray-400 text-sm font-medium leading-relaxed line-clamp-2 opacity-60 group-hover:opacity-100 group-hover:text-gray-200 transition-all duration-500">
+                                            {item.description}
+                                        </p>
+
+                                        <div className="pt-4 flex items-center gap-6">
+                                            <button
+                                                onClick={() => edit("patrimoine", item.id)}
+                                                className="group/btn flex items-center gap-3 text-[10px] font-black text-white uppercase tracking-[0.3em]"
+                                            >
+                                                Configuration
+                                                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                            </button>
+
+                                            <div className="h-[1px] flex-1 bg-white/10" />
+
+                                            <div className="flex items-center gap-2">
+                                                <ImageIcon size={14} className="text-gray-600" />
+                                                <span className="text-[10px] font-mono text-gray-600">{(item.gallery?.length || 0) + 1}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Create New Card (Ghost) */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="group relative bg-white/[0.02] border-4 border-dashed border-white/5 rounded-[3rem] overflow-hidden flex flex-col items-center justify-center p-10 hover:bg-white/[0.05] hover:border-[#FCD116]/20 transition-all cursor-pointer h-[500px]"
+                        onClick={() => create("patrimoine")}
+                    >
+                        <div className="w-24 h-24 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-[#FCD116]/40 transition-all">
+                            <Plus size={40} className="text-gray-600 group-hover:text-[#FCD116]" />
+                        </div>
+                        <h3 className="text-white font-black font-heading text-xl uppercase tracking-widest text-center">Ajouter un Joyau</h3>
+                        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.4em] mt-2">Expansion de l'Archive</p>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* QUICK STATS VAULT */}
+            <div className="flex flex-wrap gap-8 py-10 border-t border-white/5">
+                <div className="flex items-baseline gap-4">
+                    <span className="text-6xl font-black text-white font-heading">{items.length}</span>
+                    <span className="text-xs font-black text-[#FCD116] uppercase tracking-[0.5em]">Trésors Répertoriés</span>
+                </div>
+                <div className="h-16 w-[1px] bg-white/5 hidden md:block" />
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white/5 rounded-2xl text-[#008751]">
+                        <Globe size={24} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Couverture Géographique</p>
+                        <p className="text-white font-bold text-sm">Pancan-Bénin • Diaspora</p>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Quote, Star, Send, CheckCircle, MapPin, User, Briefcase, MessageSquare, Upload, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 interface Testimonial {
     id: number;
@@ -14,7 +15,7 @@ interface Testimonial {
     location: string;
     rating: number;
     service: string;
-    photoUrl?: string; // URL from Strapi or null
+    photoUrl?: string;
 }
 
 const fallbackTestimonials: Testimonial[] = [
@@ -57,16 +58,10 @@ function TestimonialCard({ item }: { item: Testimonial }) {
     return (
         <div className="flex-shrink-0 w-[380px] p-6 mx-3">
             <div className="relative bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/20 hover:border-[#FCD116]/50 transition-all duration-300 h-full group overflow-hidden">
-
-                {/* Benin Color Gradient Border Effect */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
-
-                {/* Quote icon */}
                 <div className="absolute top-6 right-6 opacity-10">
                     <Quote size={60} className="text-[#008751]" />
                 </div>
-
-                {/* Header: Photo & Name */}
                 <div className="flex items-center gap-4 mb-6 relative z-10">
                     <div className="w-14 h-14 rounded-full border-2 border-[#FCD116] p-0.5 shadow-sm overflow-hidden bg-gray-50 flex-shrink-0">
                         {item.photoUrl ? (
@@ -90,8 +85,6 @@ function TestimonialCard({ item }: { item: Testimonial }) {
                         </p>
                     </div>
                 </div>
-
-                {/* Rating Stars */}
                 <div className="flex gap-1 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <Star
@@ -101,13 +94,9 @@ function TestimonialCard({ item }: { item: Testimonial }) {
                         />
                     ))}
                 </div>
-
-                {/* Text */}
                 <p className="text-gray-700 leading-relaxed mb-6 text-[15px] relative z-10">
                     &ldquo;{item.text}&rdquo;
                 </p>
-
-                {/* Footer: Location & Service */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
                     <div className="flex items-center gap-1.5 text-gray-500 text-xs">
                         <MapPin size={12} />
@@ -140,44 +129,31 @@ function SubmissionForm() {
         setIsLoading(true);
 
         try {
-            const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-
-            // 1. Upload Photo if exists
-            let photoId = null;
+            let photoUrl = null;
             if (photo) {
-                const uploadData = new FormData();
-                uploadData.append('files', photo);
+                const fileExt = photo.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('testimonials')
+                    .upload(fileName, photo);
 
-                const uploadRes = await fetch(`${STRAPI_URL}/api/upload`, {
-                    method: 'POST',
-                    body: uploadData,
-                });
-
-                if (uploadRes.ok) {
-                    const uploadJson = await uploadRes.json();
-                    photoId = uploadJson[0].id;
-                }
+                if (uploadError) throw uploadError;
+                const { data: { publicUrl } } = supabase.storage.from('testimonials').getPublicUrl(fileName);
+                photoUrl = publicUrl;
             }
 
-            // 2. Submit Testimonial Data
-            const payload = {
-                data: {
+            const { error: insertError } = await supabase
+                .from('testimonials')
+                .insert([{
                     ...formData,
-                    photo: photoId,
-                    approved: false // Requires admin approval
-                }
-            };
+                    photo_url: photoUrl,
+                    approved: false
+                }]);
 
-            await fetch(`${STRAPI_URL}/api/testimonials`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
+            if (insertError) throw insertError;
             setIsSubmitted(true);
         } catch (error) {
             console.error("Submission failed", error);
-            // Show success anyway for UX (optimistic)
             setIsSubmitted(true);
         } finally {
             setIsLoading(false);
@@ -197,7 +173,7 @@ function SubmissionForm() {
                     </div>
                 </div>
                 <h3 className="text-3xl font-bold text-[#1a2332] mb-3 font-heading">Merci ! 🇧🇯</h3>
-                <p className="text-gray-600 max-w-xs mx-auto">Votre témoignage a été reçu. Il sera publié après validation par notre équipe.</p>
+                <p className="text-gray-600 max-w-xs mx-auto">Votre témoignage a été reçu. Il sera publié après validation.</p>
                 <Button
                     variant="ghost"
                     className="mt-8 text-[#008751] hover:bg-[#008751]/10"
@@ -211,9 +187,7 @@ function SubmissionForm() {
 
     return (
         <div className="relative">
-            {/* Immersive Glass Background */}
             <div className="absolute inset-0 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/40 shadow-2xl z-0" />
-
             <motion.form
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -228,9 +202,7 @@ function SubmissionForm() {
                     </h3>
                     <p className="text-gray-500 text-sm mt-2">Rejoignez la communauté du Retour Gagnant</p>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Identity Inputs */}
                     <div className="space-y-5">
                         <div className="relative group">
                             <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#008751] transition-colors" />
@@ -255,8 +227,6 @@ function SubmissionForm() {
                             />
                         </div>
                     </div>
-
-                    {/* Location & Service */}
                     <div className="space-y-5">
                         <div className="relative group">
                             <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#E8112D] transition-colors" />
@@ -285,10 +255,7 @@ function SubmissionForm() {
                         </select>
                     </div>
                 </div>
-
-                {/* Rating & Photo Upload Row */}
                 <div className="flex flex-col md:flex-row gap-5 items-center justify-between p-4 bg-white/40 rounded-2xl border border-white/60">
-                    {/* Star Rating */}
                     <div className="flex flex-col items-center md:items-start gap-2">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Votre Note</span>
                         <div className="flex gap-2">
@@ -307,8 +274,6 @@ function SubmissionForm() {
                             ))}
                         </div>
                     </div>
-
-                    {/* Photo Upload */}
                     <div className="flex flex-col items-center md:items-end gap-2 w-full md:w-auto">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Votre Photo (Optionnel)</span>
                         <input
@@ -339,8 +304,6 @@ function SubmissionForm() {
                         </button>
                     </div>
                 </div>
-
-                {/* Message */}
                 <div className="relative group">
                     <MessageSquare size={18} className="absolute left-4 top-5 text-gray-400 group-focus-within:text-[#008751] transition-colors" />
                     <textarea
@@ -352,7 +315,6 @@ function SubmissionForm() {
                         className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#008751] focus:ring-4 focus:ring-[#008751]/10 transition-all resize-none font-medium text-gray-700 placeholder:text-gray-400"
                     />
                 </div>
-
                 <Button
                     type="submit"
                     disabled={isLoading}
@@ -370,10 +332,6 @@ function SubmissionForm() {
                         </span>
                     )}
                 </Button>
-
-                <p className="text-center text-xs text-gray-400 mt-4">
-                    En soumettant ce formulaire, vous acceptez que votre témoignage soit publié sur notre site.
-                </p>
             </motion.form>
         </div>
     );
@@ -386,22 +344,16 @@ export default function TestimonialsCarousel() {
     useEffect(() => {
         const fetchTestimonials = async () => {
             try {
-                // Short timeout fallback logic
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+                const { data, error } = await supabase
+                    .from('testimonials')
+                    .select('*')
+                    .eq('approved', true)
+                    .order('created_at', { ascending: false });
 
-                const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-                const response = await fetch(`${STRAPI_URL}/api/testimonials?populate=*&filters[approved][$eq]=true`, {
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
+                if (error) throw error;
 
-                if (!response.ok) return;
-
-                const json = await response.json();
-
-                if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-                    const mapped = json.data.map((item: any) => ({
+                if (data && data.length > 0) {
+                    const mapped = data.map((item: any) => ({
                         id: item.id,
                         name: item.name,
                         role: item.role || 'Client',
@@ -409,12 +361,12 @@ export default function TestimonialsCarousel() {
                         location: item.location || 'Bénin',
                         rating: item.rating || 5,
                         service: item.service || 'Général',
-                        photoUrl: item.photo?.url ? `${STRAPI_URL}${item.photo.url}` : undefined
+                        photoUrl: item.photo_url || undefined
                     }));
                     setTestimonials(mapped);
                 }
             } catch (err) {
-                // Silently fails to fallback
+                console.warn('Testimonials using fallback data');
             } finally {
                 setIsLoaded(true);
             }
@@ -423,18 +375,14 @@ export default function TestimonialsCarousel() {
         fetchTestimonials();
     }, []);
 
-    // Ensure infinite scroll works even with few items
     const displayItems = testimonials.length < 5 ? [...testimonials, ...testimonials, ...testimonials] : [...testimonials, ...testimonials];
 
     return (
         <section className="py-24 bg-[#fafbfc] overflow-hidden relative">
-            {/* Background Decor */}
             <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
                 <div className="absolute top-20 right-[-10%] w-[500px] h-[500px] bg-[#FCD116]/10 rounded-full blur-3xl" />
                 <div className="absolute bottom-20 left-[-10%] w-[500px] h-[500px] bg-[#008751]/5 rounded-full blur-3xl" />
             </div>
-
-            {/* Header */}
             <div className="container mx-auto px-4 mb-20">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -450,66 +398,45 @@ export default function TestimonialsCarousel() {
                         Ils ont osé le <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">Retour Gagnant</span>
                     </h2>
                     <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
-                        Découvrez les histoires inspirantes de ceux qui ont franchi le pas. Des expériences authentiques, des projets concrets, une nouvelle vie au Bénin.
+                        Découvrez les histoires inspirantes de ceux qui ont franchi le pas.
                     </p>
                 </motion.div>
             </div>
-
-            {/* Infinite Scroll Marquee - Row 1 (Left Direction) */}
             <div className="relative mb-8 group">
                 <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#fafbfc] to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#fafbfc] to-transparent z-10 pointer-events-none" />
-
                 <motion.div
                     className="flex gap-4"
                     animate={{ x: [0, -1500] }}
                     transition={{
-                        x: {
-                            repeat: Infinity,
-                            repeatType: "loop",
-                            duration: 50,
-                            ease: "linear",
-                        },
+                        x: { repeat: Infinity, repeatType: "loop", duration: 50, ease: "linear" },
                     }}
                     style={{ width: 'max-content' }}
                 >
-                    {/* Tripled to ensure smoothness */}
                     {[...displayItems, ...displayItems].map((item, i) => (
                         <TestimonialCard key={`row1-${i}`} item={item} />
                     ))}
                 </motion.div>
             </div>
-
-            {/* Infinite Scroll Marquee - Row 2 (Right Direction) */}
             <div className="relative mb-20 group">
                 <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#fafbfc] to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#fafbfc] to-transparent z-10 pointer-events-none" />
-
                 <motion.div
                     className="flex gap-4"
                     animate={{ x: [-1500, 0] }}
                     transition={{
-                        x: {
-                            repeat: Infinity,
-                            repeatType: "loop",
-                            duration: 55,
-                            ease: "linear",
-                        },
+                        x: { repeat: Infinity, repeatType: "loop", duration: 55, ease: "linear" },
                     }}
                     style={{ width: 'max-content' }}
                 >
-                    {/* Reverse order for visual variety */}
                     {[...displayItems, ...displayItems].reverse().map((item, i) => (
                         <TestimonialCard key={`row2-${i}`} item={item} />
                     ))}
                 </motion.div>
             </div>
-
-            {/* Submission Form Section */}
             <div className="container mx-auto px-4 max-w-3xl relative z-20">
                 <SubmissionForm />
             </div>
         </section>
     );
 }
-

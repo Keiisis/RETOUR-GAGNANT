@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
     try {
@@ -14,32 +13,26 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Save to Strapi
-        try {
-            await fetch(`${STRAPI_URL}/api/form-submissions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    data: {
-                        nom,
-                        prenom: prenom || '',
-                        email,
-                        telephone: telephone || '',
-                        sujet: `RDV (${service}) : ${body.date || 'Date N/A'} - ${body.timeSlot || 'Créneau N/A'} [${body.contactMethod}]`,
-                        message: message || '',
-                        type: 'rendez-vous',
-                        lu: false,
-                    }
-                }),
-            });
-        } catch {
-            console.log('Strapi not available — appointment data logged only');
-        }
+        // Save to Supabase
+        const { error: supabaseError } = await supabase
+            .from('messages')
+            .insert([{
+                nom,
+                prenom: prenom || '',
+                email,
+                telephone: telephone || '',
+                sujet: `RDV (${service}) : ${body.date || 'Date N/A'} - ${body.timeSlot || 'Créneau N/A'} [${body.contactMethod}]`,
+                message: message || '',
+                type: 'rendez-vous',
+                lu: false,
+            }]);
+
+        if (supabaseError) throw supabaseError;
 
         return NextResponse.json({ success: true, message: 'Demande de rendez-vous envoyée !' });
     } catch (error) {
         return NextResponse.json(
-            { error: 'Erreur lors de la soumission.' },
+            { error: 'Erreçur lors de la soumission.' },
             { status: 500 }
         );
     }
