@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     MessageSquare, Search, Mail, Clock, CheckCircle2,
-    Send, Reply, User, AlertCircle
+    Send, Reply, User, AlertCircle, Bot
 } from 'lucide-react'
 
 interface Message {
@@ -20,12 +20,21 @@ interface Message {
     created_at: string
 }
 
+interface ChatMessage {
+    id: string
+    conversation_id: string
+    role: 'client' | 'agent'
+    content: string
+    created_at: string
+}
+
 export default function AgentMessagesPage() {
     const [messages, setMessages] = useState<Message[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'unread' | 'contact' | 'support'>('all')
     const [selected, setSelected] = useState<Message | null>(null)
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
     const [replyText, setReplyText] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -39,10 +48,25 @@ export default function AgentMessagesPage() {
         setLoading(false)
     }
 
+    const fetchChatHistory = async (conversationId: string) => {
+        const { data } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: true })
+
+        setChatHistory((data || []) as ChatMessage[])
+        setTimeout(scrollToBottom, 100)
+    }
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+
     useEffect(() => {
         fetchMessages()
 
-        // Abonnement Supabase Realtime (WebSocket)
+        // Abonnement Supabase Realtime (WebSocket) pour les conversations globales (tickets)
         const channel = supabase
             .channel('realtime_messages')
             .on(
@@ -51,7 +75,6 @@ export default function AgentMessagesPage() {
                 (payload) => {
                     const newMsg = payload.new as Message
                     setMessages(prev => [newMsg, ...prev])
-                    // Si on est sur "tous" ou "non lus", jouer un son de notification (optionnel)
                 }
             )
             .on(
@@ -72,23 +95,56 @@ export default function AgentMessagesPage() {
         }
     }, [selected])
 
+    // Abonnement aux messages du chat selectionné
+    useEffect(() => {
+        if (!selected) return
+
+        fetchChatHistory(selected.id)
+
+        const chatChannel = supabase
+            .channel(`chat_messages_${selected.id}`)
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${selected.id}` },
+                (payload) => {
+                    const newChat = payload.new as ChatMessage
+                    setChatHistory(prev => [...prev, newChat])
+                    setTimeout(scrollToBottom, 100)
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(chatChannel)
+        }
+    }, [selected?.id])
+
     const markAsRead = async (msg: Message) => {
         if (!msg.lu) {
             await supabase.from('messages').update({ lu: true }).eq('id', msg.id)
-            // Realtime UPDATE prendra le relais pour la mise à jour locale
         }
         setSelected(msg)
     }
 
-    const handleReply = () => {
+    const handleReply = async () => {
         if (!selected || !replyText.trim()) return
-        const subject = encodeURIComponent(`Re: ${selected.sujet || 'Votre message'}`)
-        const body = encodeURIComponent(`${replyText}\n\n---\nMessage original de ${selected.nom} ${selected.prenom}:\n${selected.message}`)
-        window.open(`mailto:${selected.email}?subject=${subject}&body=${body}`, '_blank')
 
-        // On marque le message actuel comme lu si ce n'était pas le cas
-        if (!selected.lu) markAsRead(selected)
-        setReplyText('')
+        const content = replyText.trim()
+        setReplyText('') // Reset input immediately for UX
+
+        // Insert into chat_messages
+        await supabase
+            .from('chat_messages')
+            .insert({
+                conversation_id: selected.id,
+                role: 'agent',
+                content: content
+            })
+
+        // Also mark as read if it wasn't
+        if (!selected.lu) {
+            markAsRead(selected)
+        }
     }
 
     const filtered = messages.filter(m => {
@@ -223,9 +279,9 @@ export default function AgentMessagesPage() {
                                     </span>
                                 </div>
 
-                                {/* User Message Bubble */}
+                                {/* First Message Bubble (From messages table) */}
                                 <div className="flex items-start gap-3 max-w-[85%]">
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-1 mt-auto">
+                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-auto">
                                         <User size={14} className="text-gray-400" />
                                     </div>
                                     <div>
@@ -235,6 +291,31 @@ export default function AgentMessagesPage() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Live Thread Bubbles */}
+                                {chatHistory.map((chat) => (
+                                    <div key={chat.id} className={`flex items-start gap-3 ${chat.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                                        {chat.role === 'client' && (
+                                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-auto">
+                                                <User size={14} className="text-gray-400" />
+                                            </div>
+                                        )}
+                                        <div className={`max-w-[70%] text-sm p-4 leading-relaxed shadow-lg
+                                            ${chat.role === 'agent'
+                                                ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
+                                                : 'bg-white/10 border border-white/5 text-gray-200 rounded-2xl rounded-tl-sm'
+                                            }`}
+                                        >
+                                            <p className="whitespace-pre-wrap">{chat.content}</p>
+                                        </div>
+                                        {chat.role === 'agent' && (
+                                            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-auto border border-blue-500/50">
+                                                <Bot size={14} className="text-blue-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
                                 <div ref={messagesEndRef} />
                             </div>
 
@@ -248,7 +329,7 @@ export default function AgentMessagesPage() {
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleReply();
                                         }}
-                                        placeholder={`Répondre à ${selected.nom}...`}
+                                        placeholder={`Répondre en direct à ${selected.nom}...`}
                                         className="flex-1 bg-transparent py-3 px-4 text-sm text-white placeholder:text-gray-600 focus:outline-none"
                                     />
                                     <button
@@ -260,8 +341,8 @@ export default function AgentMessagesPage() {
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2 mt-2 px-2">
-                                    <AlertCircle size={10} className="text-gray-500" />
-                                    <p className="text-[10px] text-gray-500 font-medium">Le message sera traité via votre client mail natif pour garantir la délivrabilité.</p>
+                                    <AlertCircle size={10} className="text-blue-400" />
+                                    <p className="text-[10px] text-gray-400 font-medium">Réponse en direct instantanée (WebSocket connecté).</p>
                                 </div>
                             </div>
                         </>
@@ -297,3 +378,4 @@ export default function AgentMessagesPage() {
         </div>
     )
 }
+

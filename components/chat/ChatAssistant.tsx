@@ -3,16 +3,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Bot, User, Headphones, Loader2, CheckCircle, ArrowLeft, Mic, MicOff } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 interface Message {
     role: "user" | "assistant";
     content: string;
 }
 
-type ChatMode = "ai" | "checking_agents" | "offline_form" | "success";
+type ChatMode = "ai" | "checking_agents" | "offline_form" | "live_form" | "live_chat" | "success";
 
 export default function ChatAssistant() {
     const [isOpen, setIsOpen] = useState(false);
+    const [sessionId, setSessionId] = useState<string | null>(null);
+    const [liveMessages, setLiveMessages] = useState<any[]>([]);
     const [mode, setMode] = useState<ChatMode>("ai");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -28,6 +31,33 @@ export default function ChatAssistant() {
     const [activeAgents, setActiveAgents] = useState<number | null>(null);
     const [nom, setNom] = useState("");
     const [prenom, setPrenom] = useState("");
+
+    const fetchLiveMessages = async (id: string) => {
+        const { data } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('conversation_id', id)
+            .order('created_at', { ascending: true });
+        if (data) setLiveMessages(data);
+        setTimeout(scrollToBottom, 100);
+    };
+
+    useEffect(() => {
+        if (mode === "live_chat" && sessionId) {
+            const channel = supabase.channel(`client_chat_${sessionId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'chat_messages',
+                    filter: `conversation_id=eq.${sessionId}`
+                }, (payload) => {
+                    setLiveMessages(prev => [...prev, payload.new]);
+                    setTimeout(scrollToBottom, 100);
+                })
+                .subscribe();
+            return () => { supabase.removeChannel(channel); };
+        }
+    }, [mode, sessionId]);
     const [email, setEmail] = useState("");
     const [whatsapp, setWhatsapp] = useState("");
     const [supportMsg, setSupportMsg] = useState("");
@@ -172,8 +202,8 @@ export default function ChatAssistant() {
     };
 
     useEffect(() => {
-        if (mode === "ai") scrollToBottom();
-    }, [messages, mode]);
+        if (mode === "ai" || mode === "live_chat") scrollToBottom();
+    }, [messages, liveMessages, mode]);
 
     const sendMessage = async () => {
         if (!input.trim() || isLoading) return;
@@ -217,9 +247,13 @@ export default function ChatAssistant() {
             const data = await res.json();
 
             setTimeout(() => {
-                setActiveAgents(data.onlineAgents || 0);
-                // Toujours basculer vers le formulaire car le chat live n'est pas encore actif
-                setMode("offline_form");
+                const onlineCount = data.onlineAgents || 0;
+                setActiveAgents(onlineCount);
+                if (onlineCount > 0) {
+                    setMode("live_form");
+                } else {
+                    setMode("offline_form");
+                }
             }, 1000);
         } catch {
             setTimeout(() => {
@@ -227,6 +261,44 @@ export default function ChatAssistant() {
                 setMode("offline_form");
             }, 1000);
         }
+    };
+
+    const handleLiveStart = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nom.trim() || !email.trim() || !supportMsg.trim()) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch("/api/support/start_live", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, email, question: supportMsg })
+            });
+            const data = await res.json();
+            if (data.sessionId) {
+                setSessionId(data.sessionId);
+                setMode("live_chat");
+                fetchLiveMessages(data.sessionId);
+                // Reset input
+                setInput("");
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const sendLiveMessage = async () => {
+        if (!input.trim() || !sessionId) return;
+        const msg = input.trim();
+        setInput("");
+
+        await supabase.from('chat_messages').insert({
+            conversation_id: sessionId,
+            role: 'client',
+            content: msg
+        });
     };
 
     const handleSupportSubmit = async (e: React.FormEvent) => {
@@ -399,6 +471,84 @@ export default function ChatAssistant() {
                                     )}
                                 </div>
                             </>
+                        )}
+
+                        {/* ===================== LIVE CHAT MODE ===================== */}
+                        {mode === "live_chat" && (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[#f8f9fc]">
+                                    {liveMessages.map((msg, i) => (
+                                        <div key={i} className={`flex gap-3 ${msg.role === "client" ? "justify-end" : "justify-start"}`}>
+                                            {msg.role === "agent" && (
+                                                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shrink-0 mt-1 shadow-md">
+                                                    <Headphones size={16} className="text-white" />
+                                                </div>
+                                            )}
+                                            <div
+                                                className={`max-w-[80%] px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.role === "client"
+                                                    ? "bg-[#008751] text-white rounded-br-sm"
+                                                    : "bg-white text-gray-800 border border-black/5 rounded-bl-sm"
+                                                    }`}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
+
+                                <div className="p-4 border-t border-black/5 bg-white">
+                                    <form onSubmit={(e) => { e.preventDefault(); sendLiveMessage(); }} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            placeholder="Répondre..."
+                                            className="flex-1 px-5 py-3.5 rounded-xl bg-[#f8f9fc] border border-black/5 text-[14px] focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                        <button
+                                            type="submit"
+                                            title="Envoyer le message"
+                                            aria-label="Envoyer le message"
+                                            disabled={!input.trim()}
+                                            className="w-12 h-12 rounded-xl bg-[#008751] text-white flex items-center justify-center hover:bg-[#006039] disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 shadow-md"
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </form>
+                                </div>
+                            </>
+                        )}
+
+                        {/* ===================== LIVE FORM MODE ===================== */}
+                        {mode === "live_form" && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto bg-[#f8f9fc]">
+                                <div className="p-6">
+                                    <div className="border p-4 rounded-xl mb-6 bg-emerald-50 border-emerald-100">
+                                        <p className="text-[13px] font-medium leading-relaxed text-emerald-800">
+                                            <strong className="font-black">({activeAgents}) agent(s) en ligne</strong> ! Renseignez vos informations pour démarrer un chat en direct immédiatement.
+                                        </p>
+                                    </div>
+                                    <form onSubmit={handleLiveStart} className="space-y-4">
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Votre Nom</label>
+                                            <input type="text" required value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom complet" className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Email</label>
+                                            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email de contact" className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751]" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block">Quelle est votre question ?</label>
+                                            <textarea required rows={3} value={supportMsg} onChange={e => setSupportMsg(e.target.value)} placeholder="Votre premier message..." className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#008751] resize-none" />
+                                        </div>
+                                        <button type="submit" disabled={isSubmitting} className="w-full py-4 mt-2 bg-[#008751] hover:bg-[#006039] text-white font-black uppercase tracking-widest text-[12px] rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                            {isSubmitting ? "Connexion..." : "Lancer le Chat Live"}
+                                        </button>
+                                    </form>
+                                </div>
+                            </motion.div>
                         )}
 
                         {/* ===================== CHECKING MODE ===================== */}
