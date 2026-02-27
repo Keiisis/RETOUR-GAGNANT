@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
-    Compass, Search, Phone, Mail, TrendingUp, CheckCircle2,
-    Clock, User, ChevronRight, Star, Globe, Briefcase
+    Compass, Search, Phone, Mail,
+    CheckCircle2, Globe, Briefcase, Star
 } from 'lucide-react'
 
 interface Lead {
@@ -29,10 +29,6 @@ export default function AgentLeadsPage() {
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'hot' | 'not_contacted'>('all')
 
-    useEffect(() => {
-        fetchLeads()
-    }, [])
-
     const fetchLeads = async () => {
         const { data } = await supabase
             .from('eligibility_results')
@@ -42,6 +38,10 @@ export default function AgentLeadsPage() {
         setLeads((data || []) as Lead[])
         setLoading(false)
     }
+
+    useEffect(() => {
+        fetchLeads()
+    }, [])
 
     const toggleContacted = async (lead: Lead) => {
         const newVal = !lead.contacted
@@ -108,7 +108,7 @@ export default function AgentLeadsPage() {
                     <div className="flex gap-1 bg-white/5 rounded-xl p-1">
                         {[
                             { key: 'all', label: 'Tous' },
-                            { key: 'hot', label: '🔥 Hot' },
+                            { key: 'hot', label: 'Hot Leads' },
                             { key: 'not_contacted', label: 'À contacter' },
                         ].map((f) => (
                             <button
@@ -179,7 +179,7 @@ export default function AgentLeadsPage() {
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-bold text-white">{lead.client_nom} {lead.client_prenom}</p>
-                                                {lead.has_origins && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">🇧🇯 Origines</span>}
+                                                {lead.has_origins && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-1"><Globe size={10} /> Origines</span>}
                                             </div>
                                             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                                                 <span className="flex items-center gap-1"><Mail size={11} />{lead.client_email}</span>
@@ -203,8 +203,8 @@ export default function AgentLeadsPage() {
                                         <button
                                             onClick={() => toggleContacted(lead)}
                                             className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${lead.contacted
-                                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                                    : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                                                ? 'bg-emerald-500/20 text-emerald-400'
+                                                : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
                                                 }`}
                                         >
                                             {lead.contacted ? '✓ Contacté' : 'À contacter'}
