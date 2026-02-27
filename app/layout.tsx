@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins, Inter } from "next/font/google";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import "./globals.css";
@@ -18,6 +18,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "RETOUR GAGNANT BENIN - Accompagnement Premium",
   description: "Votre partenaire de confiance pour un retour réussi au Bénin. Services administratifs, immobiliers et business.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Retour Gagnant",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#008751",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default async function RootLayout({
