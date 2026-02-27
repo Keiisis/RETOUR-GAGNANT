@@ -82,7 +82,10 @@ export default function AgentMessagesPage() {
                 { event: 'UPDATE', schema: 'public', table: 'messages' },
                 (payload) => {
                     const updatedMsg = payload.new as Message
-                    setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m))
+                    setMessages(prev => {
+                        const others = prev.filter(m => m.id !== updatedMsg.id)
+                        return [updatedMsg, ...others]
+                    })
                     if (selected?.id === updatedMsg.id) {
                         setSelected(updatedMsg)
                     }
