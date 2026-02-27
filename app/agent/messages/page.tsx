@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
-    MessageSquare, Search, Mail, Phone, Clock, CheckCircle2,
-    Eye, ChevronDown, Filter, Headphones
+    MessageSquare, Search, Mail, Clock, CheckCircle2,
+    Send, Reply, User, AlertCircle
 } from 'lucide-react'
 
 interface Message {
@@ -27,14 +27,7 @@ export default function AgentMessagesPage() {
     const [filter, setFilter] = useState<'all' | 'unread' | 'contact' | 'support'>('all')
     const [selected, setSelected] = useState<Message | null>(null)
     const [replyText, setReplyText] = useState('')
-
-    const handleReply = () => {
-        if (!selected || !replyText.trim()) return
-        const subject = encodeURIComponent(`Re: ${selected.sujet || 'Votre message'}`)
-        const body = encodeURIComponent(`${replyText}\n\n---\nMessage original de ${selected.nom} ${selected.prenom}:\n${selected.message}`)
-        window.open(`mailto:${selected.email}?subject=${subject}&body=${body}`, '_blank')
-        setReplyText('')
-    }
+    const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const fetchMessages = async () => {
         const { data } = await supabase
@@ -48,14 +41,54 @@ export default function AgentMessagesPage() {
 
     useEffect(() => {
         fetchMessages()
-    }, [])
+
+        // Abonnement Supabase Realtime (WebSocket)
+        const channel = supabase
+            .channel('realtime_messages')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'messages' },
+                (payload) => {
+                    const newMsg = payload.new as Message
+                    setMessages(prev => [newMsg, ...prev])
+                    // Si on est sur "tous" ou "non lus", jouer un son de notification (optionnel)
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'messages' },
+                (payload) => {
+                    const updatedMsg = payload.new as Message
+                    setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m))
+                    if (selected?.id === updatedMsg.id) {
+                        setSelected(updatedMsg)
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [selected])
 
     const markAsRead = async (msg: Message) => {
         if (!msg.lu) {
             await supabase.from('messages').update({ lu: true }).eq('id', msg.id)
-            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, lu: true } : m))
+            // Realtime UPDATE prendra le relais pour la mise à jour locale
         }
         setSelected(msg)
+    }
+
+    const handleReply = () => {
+        if (!selected || !replyText.trim()) return
+        const subject = encodeURIComponent(`Re: ${selected.sujet || 'Votre message'}`)
+        const body = encodeURIComponent(`${replyText}\n\n---\nMessage original de ${selected.nom} ${selected.prenom}:\n${selected.message}`)
+        window.open(`mailto:${selected.email}?subject=${subject}&body=${body}`, '_blank')
+
+        // On marque le message actuel comme lu si ce n'était pas le cas
+        if (!selected.lu) markAsRead(selected)
+        setReplyText('')
     }
 
     const filtered = messages.filter(m => {
@@ -72,134 +105,142 @@ export default function AgentMessagesPage() {
     const unreadCount = messages.filter(m => !m.lu).length
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-            </div>
-        )
+        return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
     }
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-white">Messagerie</h1>
-                    <p className="text-gray-500 text-sm mt-1">
-                        {messages.length} message(s) • {unreadCount} non lu(s)
-                    </p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <MessageSquare size={16} className="text-blue-400" />
+                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                            Live Chat
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                        </span>
+                    </div>
+                    <h1 className="text-2xl font-black text-white">Console Live</h1>
+                    <p className="text-gray-500 text-sm mt-1">{messages.length} conversation(s) • {unreadCount} en attente</p>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Rechercher..."
-                            title="Rechercher un message"
-                            className="bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm w-56"
-                        />
+                        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher..." className="bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 text-sm w-56" />
                     </div>
-
-                    {/* Filter Tabs */}
                     <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-                        {[
-                            { key: 'all', label: 'Tous' },
-                            { key: 'unread', label: 'Non Lus' },
-                            { key: 'contact', label: 'Contact' },
-                            { key: 'support', label: 'Support' },
-                        ].map((f) => (
-                            <button
-                                key={f.key}
-                                onClick={() => setFilter(f.key as typeof filter)}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filter === f.key
-                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                    : 'text-gray-500 hover:text-white'
-                                    }`}
-                            >
-                                {f.label}
-                            </button>
+                        {[{ key: 'all', label: 'Toutes' }, { key: 'unread', label: 'En attente' }, { key: 'contact', label: 'Contact' }, { key: 'support', label: 'Support' }].map((f) => (
+                            <button key={f.key} onClick={() => setFilter(f.key as typeof filter)} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filter === f.key ? 'bg-blue-500/20 text-blue-400' : 'text-gray-500 hover:text-white'}`}>{f.label}</button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Split View: List + Detail */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 min-h-[600px]">
-                {/* Messages List */}
-                <div className="xl:col-span-2 bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
-                    <div className="divide-y divide-white/5 max-h-[650px] overflow-y-auto">
-                        {filtered.length === 0 ? (
-                            <div className="p-12 text-center text-gray-500 text-sm">Aucun message trouvé</div>
-                        ) : (
-                            filtered.map((m) => (
-                                <div
-                                    key={m.id}
-                                    onClick={() => markAsRead(m)}
-                                    className={`p-4 cursor-pointer transition-all hover:bg-white/[0.03] ${selected?.id === m.id ? 'bg-emerald-500/5 border-l-2 border-emerald-500' : ''
-                                        } ${!m.lu ? 'bg-white/[0.02]' : ''}`}
-                                >
-                                    <div className="flex items-start justify-between mb-1">
-                                        <div className="flex items-center gap-2">
-                                            {!m.lu && <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />}
-                                            <span className={`text-sm font-semibold ${!m.lu ? 'text-white' : 'text-gray-400'}`}>
-                                                {m.nom} {m.prenom}
+            <div className="grid grid-cols-1 xl:grid-cols-7 gap-4 min-h-[600px] h-[calc(100vh-200px)]">
+                {/* Liste des discussions */}
+                <div className="xl:col-span-3 bg-white/[0.03] border border-white/5 rounded-2xl flex flex-col overflow-hidden">
+                    <div className="p-4 border-b border-white/5 bg-white/[0.01]">
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                            Files d'attente
+                        </h2>
+                    </div>
+                    <div className="flex-1 overflow-y-auto divide-y divide-white/5 custom-scrollbar">
+                        <AnimatePresence>
+                            {filtered.length === 0 ? (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center text-gray-500 text-sm">
+                                    <CheckCircle2 className="mx-auto mb-2 text-gray-700" size={32} />
+                                    La file est vide
+                                </motion.div>
+                            ) : (
+                                filtered.map((m) => (
+                                    <motion.div
+                                        layout
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        key={m.id}
+                                        onClick={() => markAsRead(m)}
+                                        className={`p-4 cursor-pointer transition-all hover:bg-white/[0.03] ${selected?.id === m.id ? 'bg-blue-500/10 border-l-2 border-blue-500' : 'border-l-2 border-transparent'} ${!m.lu ? 'bg-white/[0.02]' : ''}`}
+                                    >
+                                        <div className="flex items-start justify-between mb-1">
+                                            <div className="flex items-center gap-2">
+                                                {!m.lu ? (
+                                                    <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)] flex-shrink-0" />
+                                                ) : (
+                                                    <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center">
+                                                        <User size={12} className="text-gray-500" />
+                                                    </div>
+                                                )}
+                                                <span className={`text-sm ${!m.lu ? 'text-white font-bold' : 'text-gray-400 font-semibold'}`}>{m.nom} {m.prenom}</span>
+                                            </div>
+                                            <span className={`text-[10px] ${!m.lu ? 'text-blue-400 font-bold' : 'text-gray-600'} flex-shrink-0`}>
+                                                {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-gray-600 flex-shrink-0">
-                                            {new Date(m.created_at).toLocaleDateString('fr-FR')}
-                                        </span>
-                                    </div>
-                                    <p className={`text-xs ${!m.lu ? 'text-gray-300' : 'text-gray-500'} truncate`}>{m.sujet}</p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${m.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                                            }`}>
-                                            {m.type === 'support' ? '🎙️ Support' : '✉️ Contact'}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                                        <p className={`text-xs pl-8 ${!m.lu ? 'text-gray-300 font-medium' : 'text-gray-500'} truncate`}>{m.sujet}</p>
+                                        <div className="flex justify-between items-center pl-8 mt-2">
+                                            <span className="text-[10px] text-gray-600 truncate mr-2">{m.message}</span>
+                                            <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${m.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                {m.type}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                {/* Message Detail */}
-                <div className="xl:col-span-3 bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
+                {/* Vue Chat (Message actuel) */}
+                <div className="xl:col-span-4 bg-white/[0.03] border border-white/5 rounded-2xl flex flex-col overflow-hidden relative">
                     {selected ? (
-                        <div className="p-6 h-full flex flex-col">
-                            <div className="flex items-start justify-between mb-6 pb-4 border-b border-white/5">
-                                <div>
-                                    <h3 className="text-lg font-bold text-white mb-1">{selected.sujet}</h3>
-                                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                                        <span className="flex items-center gap-1">
-                                            <Mail size={12} className="text-emerald-400" />
-                                            {selected.email}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Clock size={12} />
-                                            {new Date(selected.created_at).toLocaleString('fr-FR')}
-                                        </span>
+                        <>
+                            {/* Chat Header */}
+                            <div className="p-4 border-b border-white/5 bg-[#0a0f14]/80 backdrop-blur-md z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
+                                        <User size={18} className="text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                            {selected.nom} {selected.prenom}
+                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${selected.type === 'support' ? 'border-purple-500/30 text-purple-400' : 'border-blue-500/30 text-blue-400'}`}>{selected.type}</span>
+                                        </h3>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                                            <span className="flex items-center gap-1"><Mail size={10} /> {selected.email}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${selected.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                                    }`}>
-                                    {selected.type}
-                                </span>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto">
-                                <div className="bg-white/[0.03] rounded-xl p-5 border border-white/5">
-                                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                                        {selected.message}
-                                    </p>
+                            {/* Chat Body */}
+                            <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                                <div className="flex justify-center">
+                                    <span className="text-[10px] uppercase font-bold text-gray-600 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                                        {new Date(selected.created_at).toLocaleDateString('fr-FR')} à {new Date(selected.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
+
+                                {/* User Message Bubble */}
+                                <div className="flex items-start gap-3 max-w-[85%]">
+                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-1 mt-auto">
+                                        <User size={14} className="text-gray-400" />
+                                    </div>
+                                    <div>
+                                        <div className="bg-white/10 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-sm text-gray-200 leading-relaxed shadow-lg">
+                                            <p className="font-bold text-white mb-2 pb-2 border-b border-white/10 text-xs">Objet: {selected.sujet}</p>
+                                            <p className="whitespace-pre-wrap">{selected.message}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Quick Response */}
-                            <div className="mt-4 pt-4 border-t border-white/5">
-                                <div className="flex gap-2">
+                            {/* Chat Input */}
+                            <div className="p-4 bg-white/[0.02] border-t border-white/5">
+                                <div className="bg-[#0a0f14] border border-white/10 rounded-2xl p-2 flex gap-2">
                                     <input
                                         type="text"
                                         value={replyText}
@@ -207,32 +248,52 @@ export default function AgentMessagesPage() {
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleReply();
                                         }}
-                                        placeholder="Écrivez votre réponse ici..."
-                                        title="Réponse rapide"
-                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-gray-500 hover:border-emerald-500/30 focus:outline-none focus:border-emerald-500 focus:bg-white/10 transition-all"
+                                        placeholder={`Répondre à ${selected.nom}...`}
+                                        className="flex-1 bg-transparent py-3 px-4 text-sm text-white placeholder:text-gray-600 focus:outline-none"
                                     />
                                     <button
                                         onClick={handleReply}
                                         disabled={!replyText.trim()}
-                                        className="bg-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Ouvrir dans la messagerie et répondre"
+                                        className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white disabled:opacity-50 disabled:bg-white/5 disabled:text-gray-500 rounded-xl px-6 font-bold text-sm transition-all flex items-center gap-2"
                                     >
-                                        Répondre par Email
+                                        <Send size={16} /> <span className="hidden sm:inline">Envoyer</span>
                                     </button>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-2 text-right">
-                                    Cela ouvrira votre application de messagerie par défaut avec votre texte.
-                                </p>
+                                <div className="flex items-center gap-2 mt-2 px-2">
+                                    <AlertCircle size={10} className="text-gray-500" />
+                                    <p className="text-[10px] text-gray-500 font-medium">Le message sera traité via votre client mail natif pour garantir la délivrabilité.</p>
+                                </div>
                             </div>
-                        </div>
+                        </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 p-8">
-                            <MessageSquare size={40} className="text-gray-700" />
-                            <p className="text-sm font-semibold">Sélectionnez un message pour le lire</p>
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4 p-8 bg-[url('/grid.svg')] bg-center opacity-70">
+                            <div className="w-20 h-20 rounded-3xl bg-white/[0.02] border border-white/10 flex items-center justify-center">
+                                <MessageSquare size={32} className="text-gray-600" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-white font-bold mb-1">Aucune discussion sélectionnée</h3>
+                                <p className="text-sm">Cliquez sur un message dans la file pour ouvrir le chat</p>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+            `}</style>
         </div>
     )
 }
