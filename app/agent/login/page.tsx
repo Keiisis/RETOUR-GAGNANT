@@ -6,10 +6,6 @@ import { Shield, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, Chec
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-// ═══════════════════════════════════════════
-// Password strength evaluation
-// ═══════════════════════════════════════════
-
 const evaluatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
     let score = 0
     if (password.length >= 8) score++

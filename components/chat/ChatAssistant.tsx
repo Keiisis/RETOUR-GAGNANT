@@ -216,13 +216,11 @@ export default function ChatAssistant() {
             const res = await fetch("/api/support/status");
             const data = await res.json();
 
-            // Simulation UI flow pour "0 agents"
             setTimeout(() => {
                 setActiveAgents(data.onlineAgents || 0);
-                if ((data.onlineAgents || 0) === 0) {
-                    setMode("offline_form");
-                }
-            }, 1500); // Fake delay to show ultra smooth checking animation
+                // Toujours basculer vers le formulaire car le chat live n'est pas encore actif
+                setMode("offline_form");
+            }, 1000);
         } catch {
             setTimeout(() => {
                 setActiveAgents(0);
@@ -418,10 +416,13 @@ export default function ChatAssistant() {
                         {mode === "offline_form" && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto bg-[#f8f9fc]">
                                 <div className="p-6">
-                                    <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl mb-6">
-                                        <p className="text-orange-800 text-[13px] font-medium leading-relaxed">
-                                            Actuellement, <strong className="font-black">({activeAgents}) agent connecté</strong>.
-                                            Mais ne vous inquiétez pas ! Remplissez ce formulaire et notre équipe technique vous contactera en ultra priorité.
+                                    <div className={`border p-4 rounded-xl mb-6 ${activeAgents && activeAgents > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
+                                        <p className={`text-[13px] font-medium leading-relaxed ${activeAgents && activeAgents > 0 ? 'text-emerald-800' : 'text-orange-800'}`}>
+                                            {activeAgents && activeAgents > 0 ? (
+                                                <>Actuellement, <strong className="font-black">({activeAgents}) agent(s) en ligne</strong> ! Remplissez avec votre nom et la nature de votre requête pour être pris en charge immédiatement par votre conseiller.</>
+                                            ) : (
+                                                <>Actuellement, <strong className="font-black">(0) agent connecté</strong>. Mais ne vous inquiétez pas ! Laissez votre message et notre équipe vous recontactera en ultra priorité.</>
+                                            )}
                                         </p>
                                     </div>
 

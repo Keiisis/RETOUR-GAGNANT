@@ -8,11 +8,15 @@ export async function GET() {
     try {
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Let's count agents from userProfiles that are active. 
-        // In a real live environment, we would use Supabase Realtime Presence.
-        // For now, since the user asks that when it's 0 it triggers the form, we will just simulate 0 or perform a check.
+        const { count, error } = await supabase
+            .from('user_profiles')
+            .select('*', { count: 'exact', head: true })
+            .in('role', ['agent', 'admin'])
+            .eq('is_active', true);
 
-        return NextResponse.json({ onlineAgents: 0, message: "Système interrogé avec succès" });
+        if (error) throw error;
+
+        return NextResponse.json({ onlineAgents: count || 0, message: "Système interrogé avec succès" });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ onlineAgents: 0 }, { status: 500 });

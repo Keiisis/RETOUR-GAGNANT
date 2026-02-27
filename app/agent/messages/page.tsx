@@ -26,10 +26,15 @@ export default function AgentMessagesPage() {
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'unread' | 'contact' | 'support'>('all')
     const [selected, setSelected] = useState<Message | null>(null)
+    const [replyText, setReplyText] = useState('')
 
-    useEffect(() => {
-        fetchMessages()
-    }, [])
+    const handleReply = () => {
+        if (!selected || !replyText.trim()) return
+        const subject = encodeURIComponent(`Re: ${selected.sujet || 'Votre message'}`)
+        const body = encodeURIComponent(`${replyText}\n\n---\nMessage original de ${selected.nom} ${selected.prenom}:\n${selected.message}`)
+        window.open(`mailto:${selected.email}?subject=${subject}&body=${body}`, '_blank')
+        setReplyText('')
+    }
 
     const fetchMessages = async () => {
         const { data } = await supabase
@@ -40,6 +45,10 @@ export default function AgentMessagesPage() {
         setMessages((data || []) as Message[])
         setLoading(false)
     }
+
+    useEffect(() => {
+        fetchMessages()
+    }, [])
 
     const markAsRead = async (msg: Message) => {
         if (!msg.lu) {
@@ -106,8 +115,8 @@ export default function AgentMessagesPage() {
                                 key={f.key}
                                 onClick={() => setFilter(f.key as typeof filter)}
                                 className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filter === f.key
-                                        ? 'bg-emerald-500/20 text-emerald-400'
-                                        : 'text-gray-500 hover:text-white'
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'text-gray-500 hover:text-white'
                                     }`}
                             >
                                 {f.label}
@@ -188,23 +197,32 @@ export default function AgentMessagesPage() {
                                 </div>
                             </div>
 
-                            {/* Quick Response (Placeholder) */}
+                            {/* Quick Response */}
                             <div className="mt-4 pt-4 border-t border-white/5">
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
-                                        placeholder="Répondre rapidement... (bientôt disponible)"
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleReply();
+                                        }}
+                                        placeholder="Écrivez votre réponse ici..."
                                         title="Réponse rapide"
-                                        disabled
-                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-gray-500 placeholder:text-gray-700"
+                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-gray-500 hover:border-emerald-500/30 focus:outline-none focus:border-emerald-500 focus:bg-white/10 transition-all"
                                     />
                                     <button
-                                        disabled
-                                        className="bg-emerald-500/20 text-emerald-400/50 px-4 py-3 rounded-xl font-bold text-sm"
+                                        onClick={handleReply}
+                                        disabled={!replyText.trim()}
+                                        className="bg-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Ouvrir dans la messagerie et répondre"
                                     >
-                                        Envoyer
+                                        Répondre par Email
                                     </button>
                                 </div>
+                                <p className="text-[10px] text-gray-500 mt-2 text-right">
+                                    Cela ouvrira votre application de messagerie par défaut avec votre texte.
+                                </p>
                             </div>
                         </div>
                     ) : (
