@@ -12,7 +12,7 @@ import {
     Menu, Bell, Search, Headphones, X,
     TrendingUp, BookOpen, CircleDot, ChevronRight,
     Shield, PanelLeftClose, PanelLeft,
-    Command
+    Command, UserCog
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════
@@ -155,11 +155,36 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         checkAuth()
     }, [isLoginPage, router])
 
+    // ─── Heartbeat: real-time presence tracking ───
+    useEffect(() => {
+        if (isLoginPage || !agent?.id) return
+
+        const sendHeartbeat = () => {
+            fetch('/api/agent/heartbeat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: agent.id }),
+            }).catch(() => { /* silent */ })
+        }
+
+        sendHeartbeat() // Send immediately on load
+        const interval = setInterval(sendHeartbeat, 60_000) // Every 60s
+
+        return () => clearInterval(interval)
+    }, [isLoginPage, agent?.id])
+
     // ─── Logout ───
     const handleLogout = useCallback(async () => {
+        // Clear last_seen_at on logout
+        if (agent?.id) {
+            await supabase
+                .from('user_profiles')
+                .update({ last_seen_at: null })
+                .eq('id', agent.id)
+        }
         await supabase.auth.signOut()
         router.replace('/agent/login')
-    }, [router])
+    }, [router, agent?.id])
 
     // ─── Inactivity auto-logout ───
     useInactivityLogout(handleLogout)
@@ -249,6 +274,12 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: 'Devis & Paiements', icon: Send, href: '/agent/devis' },
                 { title: 'Performances', icon: TrendingUp, href: '/agent/performances' },
                 { title: 'Base de Connaissance', icon: BookOpen, href: '/agent/wiki' },
+            ],
+        },
+        {
+            label: 'COMPTE',
+            items: [
+                { title: 'Mon Profil', icon: UserCog, href: '/agent/profil' },
             ],
         },
     ]
