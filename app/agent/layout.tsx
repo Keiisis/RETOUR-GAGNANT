@@ -104,6 +104,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     const [searchOpen, setSearchOpen] = useState(false)
     const [notifOpen, setNotifOpen] = useState(false)
 
+    // Unread Counters
+    const [unreadMessages, setUnreadMessages] = useState(0)
+    const [unreadVoices, setUnreadVoices] = useState(0)
+
     const isLoginPage = pathname === '/agent/login'
 
     // ─── Scroll detection ───
@@ -172,6 +176,33 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
         return () => clearInterval(interval)
     }, [isLoginPage, agent?.id])
+
+    // ─── Realtime Unread Counts ───
+    useEffect(() => {
+        if (isLoginPage) return
+
+        // Initial fetch
+        const fetchUnread = async () => {
+            const [msgRes, voiceRes] = await Promise.all([
+                supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false),
+                supabase.from('voice_messages').select('id', { count: 'exact' }).eq('is_read', false)
+            ])
+            setUnreadMessages(msgRes.count || 0)
+            setUnreadVoices(voiceRes.count || 0)
+        }
+
+        fetchUnread()
+
+        // Realtime Subscription
+        const channel = supabase.channel('agent_layout_badges')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchUnread)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, fetchUnread)
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [isLoginPage])
 
     // ─── Logout ───
     const handleLogout = useCallback(async () => {
@@ -256,8 +287,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         {
             label: 'COMMUNICATION',
             items: [
-                { title: 'Messages', icon: MessageSquare, href: '/agent/messages' },
-                { title: 'Vocaux', icon: Headphones, href: '/agent/vocaux' },
+                { title: 'Messages', icon: MessageSquare, href: '/agent/messages', badge: unreadMessages },
+                { title: 'Vocaux', icon: Headphones, href: '/agent/vocaux', badge: unreadVoices },
             ],
         },
         {
