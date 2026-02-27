@@ -108,7 +108,12 @@ export default function AgentMessagesPage() {
                 { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${selected.id}` },
                 (payload) => {
                     const newChat = payload.new as ChatMessage
-                    setChatHistory(prev => [...prev, newChat])
+                    setChatHistory(prev => {
+                        if (prev.find(m => m.id === newChat.id || (m.role === newChat.role && m.content === newChat.content))) {
+                            return prev;
+                        }
+                        return [...prev, newChat]
+                    })
                     setTimeout(scrollToBottom, 100)
                 }
             )
@@ -131,6 +136,17 @@ export default function AgentMessagesPage() {
 
         const content = replyText.trim()
         setReplyText('') // Reset input immediately for UX
+
+        // Optimistic update
+        const tempMsg: ChatMessage = {
+            id: `temp-${Date.now()}`,
+            conversation_id: selected.id,
+            role: 'agent',
+            content: content,
+            created_at: new Date().toISOString()
+        }
+        setChatHistory(prev => [...prev, tempMsg])
+        setTimeout(scrollToBottom, 100)
 
         // Insert into chat_messages
         await supabase

@@ -38,9 +38,20 @@ export default function ChatAssistant() {
             .select('*')
             .eq('conversation_id', id)
             .order('created_at', { ascending: true });
-        if (data) setLiveMessages(data);
-        setTimeout(scrollToBottom, 100);
+        if (data) {
+            setLiveMessages(data);
+            setTimeout(scrollToBottom, 100);
+        }
     };
+
+    useEffect(() => {
+        const savedSession = sessionStorage.getItem('supportSessionId');
+        if (savedSession) {
+            setSessionId(savedSession);
+            setMode("live_chat");
+            fetchLiveMessages(savedSession);
+        }
+    }, []);
 
     useEffect(() => {
         if (mode === "live_chat" && sessionId) {
@@ -51,7 +62,14 @@ export default function ChatAssistant() {
                     table: 'chat_messages',
                     filter: `conversation_id=eq.${sessionId}`
                 }, (payload) => {
-                    setLiveMessages(prev => [...prev, payload.new]);
+                    const newMsg = payload.new;
+                    setLiveMessages(prev => {
+                        // Prevent duplicates from optimistic UI
+                        if (prev.find(m => m.id === newMsg.id || (m.role === newMsg.role && m.content === newMsg.content))) {
+                            return prev;
+                        }
+                        return [...prev, newMsg];
+                    });
                     setTimeout(scrollToBottom, 100);
                 })
                 .subscribe();
@@ -277,6 +295,7 @@ export default function ChatAssistant() {
             const data = await res.json();
             if (data.sessionId) {
                 setSessionId(data.sessionId);
+                sessionStorage.setItem('supportSessionId', data.sessionId);
                 setMode("live_chat");
                 fetchLiveMessages(data.sessionId);
                 // Reset input
