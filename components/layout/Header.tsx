@@ -16,8 +16,8 @@ export default function Header() {
         { label: "Services", href: "/services" },
         { label: "Blog", href: "/blog" },
         { label: "Contact", href: "/contact" },
+        { label: "Notre Histoire", href: "/notre-histoire" },
         { label: "Boutique", href: "/boutique" },
-        { label: "Mon Compte", href: "/mon-compte" },
     ];
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

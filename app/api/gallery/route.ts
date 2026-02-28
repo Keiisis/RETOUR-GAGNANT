@@ -38,8 +38,17 @@ export async function GET() {
                 filename: item.filename || item.title || `image-${index}`,
             }));
 
-        // 3. Combine both (local first for speed, then supabase)
-        const allImages = [...localFiles, ...supabaseFiles];
+        // 3. Combine both — deduplicate by filename to avoid double-counting
+        // Local images take priority (faster to load)
+        const localFilenames = new Set(localFiles.map((f: any) => f.filename.toLowerCase()));
+        const uniqueSupabase = supabaseFiles.filter((item: any) => {
+            const fname = (item.filename || '').toLowerCase();
+            // Also check if filename is contained in the src path of local images
+            const srcBasename = item.src ? item.src.split('/').pop()?.toLowerCase() : '';
+            return !localFilenames.has(fname) && !localFilenames.has(srcBasename || '');
+        });
+
+        const allImages = [...localFiles, ...uniqueSupabase];
 
         return NextResponse.json({ images: allImages });
     } catch (error) {
