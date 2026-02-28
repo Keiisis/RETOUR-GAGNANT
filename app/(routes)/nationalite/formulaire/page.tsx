@@ -51,6 +51,7 @@ export default function NationaliteFormPage() {
 
     const [rawDocs, setRawDocs] = useState<{ label: string, name: string, file: File }[]>([])
     const [uploadProgress, setUploadProgress] = useState(0)
+    const [bgImageUrl, setBgImageUrl] = useState<string>('/images/bg-default-afro.jpg')
 
     const [form, setForm] = useState({
         knows_about_law: false, is_afro_descendant: true, afro_descendant_description: '',
@@ -69,6 +70,8 @@ export default function NationaliteFormPage() {
 
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setPaymentSettings(d)).catch(() => { })
+        supabase.from('nationality_page_content').select('content_fr').eq('section_key', 'form_bg_image').single()
+            .then(({ data }) => { if (data?.content_fr) setBgImageUrl(data.content_fr) })
     }, [])
 
     const u = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }))
@@ -243,43 +246,80 @@ export default function NationaliteFormPage() {
         </div>
     )
 
+    const AnimatedBackground = () => (
+        <div className="fixed inset-0 w-full h-full z-0 overflow-hidden pointer-events-none bg-[#0a0f14]">
+            <motion.div
+                className="absolute inset-0 bg-cover bg-[center_top_10%] bg-no-repeat"
+                style={{ backgroundImage: `url('${bgImageUrl}')` }}
+                initial={{ scale: 1.1, opacity: 0 }}
+                animate={{ scale: 1, opacity: 0.8 }}
+                transition={{
+                    scale: { duration: 30, ease: "linear", repeat: Infinity, repeatType: "reverse" },
+                    opacity: { duration: 1.5 }
+                }}
+            />
+            {/* Cinematic Gradient Overlays to preserve legibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/90 via-[#0a0f14]/60 to-[#0a0f14]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f14]/80 via-transparent to-[#0a0f14]/80 hidden md:block" />
+
+            {/* Glassmorphism subtle blur */}
+            <div className="absolute inset-0 backdrop-blur-[8px]" />
+
+            {/* Dynamic Interactive Elements */}
+            <motion.div
+                className="absolute top-1/4 left-[5%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-[#008751]/10 rounded-full blur-[100px]"
+                animate={{ x: [0, 60, 0], y: [0, -40, 0], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+                className="absolute bottom-1/4 right-[5%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] bg-[#FCD116]/10 rounded-full blur-[100px]"
+                animate={{ x: [0, -50, 0], y: [0, 50, 0], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+        </div>
+    )
+
     // ═══ LAW POPUP ═══
     if (step === 0) return (
-        <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+        <div className="min-h-screen relative flex items-center justify-center px-4">
+            <AnimatedBackground />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 bg-black/40 backdrop-blur-3xl border border-white/10 shadow-2xl rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
                 <h2 className="text-xl font-black text-white text-center mb-2">Savez-vous ce qu'est la reconnaissance de la nationalité aux afro-descendants en République du Bénin ?</h2>
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-400 mb-4 text-center">Lisez et cochez la mention "J'ai lu et compris" pour poursuivre</div>
-                <div className="text-sm text-gray-400 leading-relaxed space-y-3 mb-6">
+                <div className="text-sm text-gray-300 leading-relaxed space-y-3 mb-6">
                     <p>La reconnaissance de la nationalité béninoise aux afrodescendants est un acte de mémoire, de justice et une porte ouverte vers le retour aux racines des descendants des Africains déportés lors de la traite négrière transatlantique, comme membres légitimes de la Nation béninoise.</p>
                     <p>La loi 2024-31 du 02 Septembre 2024 portant reconnaissance de la nationalité béninoise aux afro-descendants organise en ce sens un mode d'acquisition de la nationalité béninoise par toute personne qui d'après sa généalogie, a un ascendant africain subsaharien déporté hors du continent africain dans le cadre de la traite des noirs et du commerce triangulaire.</p>
                     <p className="font-bold text-white">La loi s'adresse à l'afro-descendant :</p>
                     <ul className="list-disc pl-5 space-y-1"><li>âgé d'au moins 18 ans,</li><li>résidant hors du continent africain,</li><li>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</li></ul>
                     <p><span className="font-bold text-white">La preuve de l'afro-descendance peut être apportée par :</span> des actes d'état civil, des certificats officiels, des tests d'ADN génétiques, des actes notariés, des arbres généalogiques, des extraits d'archives historiques, et tout autre document probant.</p>
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer mb-6 bg-white/5 rounded-xl p-4">
+                <label className="flex items-center gap-3 cursor-pointer mb-6 bg-white/5 hover:bg-white/10 transition-colors rounded-xl p-4">
                     <input type="checkbox" checked={lawAccepted} onChange={e => setLawAccepted(e.target.checked)} className="w-5 h-5 accent-emerald-500" />
                     <span className="text-sm font-bold text-emerald-400">J'ai lu et compris</span>
                 </label>
                 <div className="flex gap-3">
-                    <Link href="/nationalite" className="flex-1 bg-white/5 text-gray-400 font-bold text-sm py-3 rounded-xl text-center hover:bg-white/10 transition-all">Retour</Link>
-                    <button onClick={() => { if (lawAccepted) { u('knows_about_law', true); setStep(1) } }} disabled={!lawAccepted} className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm py-3 rounded-xl disabled:opacity-30 transition-all flex items-center justify-center gap-2">Continuer <ArrowRight size={16} /></button>
+                    <Link href="/nationalite" className="flex-1 bg-white/5 text-gray-300 hover:text-white font-bold text-sm py-3 rounded-xl text-center hover:bg-white/10 transition-all backdrop-blur-md">Retour</Link>
+                    <button onClick={() => { if (lawAccepted) { u('knows_about_law', true); setStep(1) } }} disabled={!lawAccepted} className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm py-3 rounded-xl disabled:opacity-30 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">Continuer <ArrowRight size={16} /></button>
                 </div>
             </motion.div>
         </div>
     )
 
     return (
-        <div className="min-h-screen bg-[#0a0f14] py-8 px-4">
+        <div className="min-h-screen relative py-8 px-4 overflow-hidden">
+            <AnimatedBackground />
+
             {/* Payment SDKs */}
             <Script src="https://cdn.kkiapay.me/k.js" strategy="lazyOnload" />
             <Script src="https://cdn.fedapay.com/checkout.js?v=1.1.7" strategy="lazyOnload" />
             <div id="fedapay-nat-btn" className="hidden" />
 
-            <div className="max-w-3xl mx-auto">
+            <div className="relative z-10 max-w-3xl mx-auto">
                 <div className="text-center mb-6">
-                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white mb-3 transition-colors"><ChevronLeft size={14} /> Retour</Link>
-                    <h1 className="text-2xl md:text-3xl font-black text-white">Reconnaissance de Nationalité</h1>
-                    <p className="text-xs text-gray-500 mt-1">Veuillez remplir le formulaire ci-dessous</p>
+                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-white mb-3 transition-colors bg-black/20 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/5"><ChevronLeft size={14} /> Retour à l'accueil</Link>
+                    <h1 className="text-3xl md:text-4xl font-black text-white drop-shadow-lg">Reconnaissance de Nationalité</h1>
+                    <p className="text-sm text-gray-300 mt-2 font-medium">Veuillez remplir le formulaire ci-dessous</p>
                 </div>
 
                 {/* Progress */}
