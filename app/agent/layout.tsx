@@ -127,22 +127,40 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         }
 
         const checkAuth = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+            console.log("AgentLayout: Client checkAuth", { user: user?.email, error: userError?.message });
 
             if (!user) {
+                console.log("AgentLayout: No user, redirecting to login");
                 router.replace('/agent/login')
                 return
             }
 
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('user_profiles')
                 .select('id, role, full_name, avatar_url')
                 .eq('id', user.id)
                 .single()
 
-            if (!profile || (profile.role !== 'agent' && profile.role !== 'admin')) {
+            console.log("AgentLayout: Profile fetch", { profile, error: profileError?.message });
+
+            if (profileError || !profile) {
+                // RLS bloque ou profil inexistant → fallback, le middleware a déjà validé
+                console.log("Client: Profil non lisible. Fallback agent.");
+                setAgent({
+                    id: user.id,
+                    email: user.email || '',
+                    full_name: 'Agent',
+                    role: 'agent',
+                })
+                setLoading(false)
+                return
+            }
+
+            // STRICT: Seul le rôle 'agent' peut accéder au dashboard agent
+            if (profile.role !== 'agent') {
                 await supabase.auth.signOut()
-                router.replace('/agent/login')
+                router.replace('/agent/login?error=unauthorized')
                 return
             }
 

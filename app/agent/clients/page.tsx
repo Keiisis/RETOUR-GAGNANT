@@ -52,7 +52,7 @@ export default function AgentClientsPage() {
             email: (d.email as string) || '',
             telephone: (d.telephone as string) || (d.client_phone as string) || '',
             notes: (d.notes as string) || '',
-            status: (d.status as string) || 'en_cours',
+            status: (d.statut as string) || 'reception',
             service: (d.service as string) || 'Non spécifié',
             created_at: (d.created_at as string) || '',
         }))
@@ -106,7 +106,7 @@ export default function AgentClientsPage() {
             email: editEmail,
             telephone: editTelephone,
             notes: editNotes,
-            status: editStatus,
+            statut: editStatus,
         }
 
         await supabase.from('dossier_tracking').update(updateData).eq('id', selectedClient.id)
@@ -132,8 +132,11 @@ export default function AgentClientsPage() {
     )
 
     const statusConfig: Record<string, { color: string; label: string }> = {
-        en_cours: { color: 'bg-blue-500/20 text-blue-400', label: 'En cours' },
-        en_attente: { color: 'bg-amber-500/20 text-amber-400', label: 'En attente' },
+        reception: { color: 'bg-sky-500/20 text-sky-400', label: 'Réception' },
+        verification: { color: 'bg-cyan-500/20 text-cyan-400', label: 'Vérification' },
+        traitement: { color: 'bg-blue-500/20 text-blue-400', label: 'Traitement' },
+        validation: { color: 'bg-amber-500/20 text-amber-400', label: 'Validation' },
+        finalisation: { color: 'bg-purple-500/20 text-purple-400', label: 'Finalisation' },
         termine: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Terminé' },
         annule: { color: 'bg-red-500/20 text-red-400', label: 'Annulé' },
         prospect: { color: 'bg-purple-500/20 text-purple-400', label: 'Prospect' },
@@ -164,7 +167,7 @@ export default function AgentClientsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                     { label: 'Total', value: clients.length, color: 'text-white' },
-                    { label: 'En cours', value: clients.filter(c => c.status === 'en_cours').length, color: 'text-blue-400' },
+                    { label: 'En cours', value: clients.filter(c => ['traitement', 'validation', 'finalisation'].includes(c.status)).length, color: 'text-blue-400' },
                     { label: 'Terminés', value: clients.filter(c => c.status === 'termine').length, color: 'text-emerald-400' },
                     { label: 'Prospects', value: clients.filter(c => c.status === 'prospect').length, color: 'text-purple-400' },
                 ].map((stat) => (
@@ -249,11 +252,13 @@ export default function AgentClientsPage() {
                                     <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="Email" title="Email" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50" />
                                     <input type="text" value={editTelephone} onChange={e => setEditTelephone(e.target.value)} placeholder="Téléphone" title="Téléphone" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50" />
                                     <select value={editStatus} onChange={e => setEditStatus(e.target.value)} title="Statut" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50">
-                                        <option value="en_cours">En cours</option>
-                                        <option value="en_attente">En attente</option>
+                                        <option value="reception">Réception</option>
+                                        <option value="verification">Vérification</option>
+                                        <option value="traitement">Traitement</option>
+                                        <option value="validation">Validation</option>
+                                        <option value="finalisation">Finalisation</option>
                                         <option value="termine">Terminé</option>
                                         <option value="annule">Annulé</option>
-                                        <option value="prospect">Prospect</option>
                                     </select>
                                     <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} placeholder="Notes" title="Notes" rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 resize-none" />
                                     <div className="flex gap-3 pt-2">

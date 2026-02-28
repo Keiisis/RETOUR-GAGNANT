@@ -144,8 +144,8 @@ export default function AgentDashboard() {
 
                 setStats({
                     totalDossiers: allDossiers.length,
-                    dossiersEnCours: allDossiers.filter((d) => d.status !== 'termine').length,
-                    dossiersTermines: allDossiers.filter((d) => d.status === 'termine').length,
+                    dossiersEnCours: allDossiers.filter((d) => d.statut !== 'termine').length,
+                    dossiersTermines: allDossiers.filter((d) => d.statut === 'termine').length,
                     newMessages: msgCountRes.count || 0,
                     newVocaux: voixCountRes.count || 0,
                     leadsOracle: allLeads.length,
@@ -220,8 +220,11 @@ export default function AgentDashboard() {
     const statusColor = (status: string) => {
         switch (status) {
             case 'termine': return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-            case 'en_cours': return 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-            case 'en_attente': return 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+            case 'traitement': return 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+            case 'validation': return 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+            case 'verification': return 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20'
+            case 'finalisation': return 'bg-purple-500/15 text-purple-400 border border-purple-500/20'
+            case 'reception': return 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
             default: return 'bg-white/5 text-nexus-text-muted border border-white/10'
         }
     }
@@ -229,8 +232,11 @@ export default function AgentDashboard() {
     const statusLabel = (status: string) => {
         switch (status) {
             case 'termine': return 'Terminé'
-            case 'en_cours': return 'En cours'
-            case 'en_attente': return 'En attente'
+            case 'traitement': return 'Traitement'
+            case 'validation': return 'Validation'
+            case 'verification': return 'Vérification'
+            case 'finalisation': return 'Finalisation'
+            case 'reception': return 'Réception'
             default: return status
         }
     }
@@ -380,8 +386,8 @@ export default function AgentDashboard() {
                                             <p className="text-[10px] text-nexus-text-muted">{d.client_nom as string} {d.client_prenom as string}</p>
                                         </div>
                                     </div>
-                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${statusColor(d.status as string)}`}>
-                                        {statusLabel(d.status as string)}
+                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${statusColor(d.statut as string)}`}>
+                                        {statusLabel(d.statut as string)}
                                     </span>
                                 </div>
                             ))

@@ -12,7 +12,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
-type DossierStatus = 'nouveau' | 'en_attente' | 'en_cours' | 'termine'
+type DossierStatus = 'reception' | 'verification' | 'traitement' | 'validation' | 'finalisation' | 'termine'
 
 interface Dossier {
     id: string
@@ -22,17 +22,19 @@ interface Dossier {
     client_email: string
     client_phone: string
     service_type: string
-    status: DossierStatus
-    steps: Record<string, unknown>[]
+    statut: DossierStatus
+    etapes: Record<string, unknown>[]
     created_at: string
     notes?: string
 }
 
 const columns: { id: DossierStatus; label: string; color: string; icon: LucideIcon }[] = [
-    { id: 'nouveau', label: 'Nouveau', color: 'border-sky-500/30 bg-sky-500/5', icon: Plus },
-    { id: 'en_attente', label: 'En Attente Client', color: 'border-amber-500/30 bg-amber-500/5', icon: Clock },
-    { id: 'en_cours', label: 'En Traitement', color: 'border-emerald-500/30 bg-emerald-500/5', icon: Loader2 },
-    { id: 'termine', label: 'Finalisé', color: 'border-green-500/30 bg-green-500/5', icon: CheckCircle2 },
+    { id: 'reception', label: 'Réception', color: 'border-sky-500/30 bg-sky-500/5', icon: Plus },
+    { id: 'verification', label: 'Vérification', color: 'border-amber-500/30 bg-amber-500/5', icon: Clock },
+    { id: 'traitement', label: 'Traitement', color: 'border-emerald-500/30 bg-emerald-500/5', icon: Loader2 },
+    { id: 'validation', label: 'Validation', color: 'border-blue-500/30 bg-blue-500/5', icon: Eye },
+    { id: 'finalisation', label: 'Finalisation', color: 'border-purple-500/30 bg-purple-500/5', icon: ArrowRight },
+    { id: 'termine', label: 'Terminé', color: 'border-green-500/30 bg-green-500/5', icon: CheckCircle2 },
 ]
 
 export default function AgentDossiersPage() {
@@ -56,10 +58,10 @@ export default function AgentDossiersPage() {
     }, [])
 
     const updateStatus = async (dossierId: string, newStatus: DossierStatus) => {
-        setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, status: newStatus } : d))
+        setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, statut: newStatus } : d))
         await supabase
             .from('dossier_tracking')
-            .update({ status: newStatus })
+            .update({ statut: newStatus })
             .eq('id', dossierId)
     }
 
@@ -86,7 +88,7 @@ export default function AgentDossiersPage() {
     )
 
     const getDossiersByStatus = (status: DossierStatus) =>
-        filtered.filter(d => d.status === status)
+        filtered.filter(d => d.statut === status)
 
     if (loading) {
         return (
@@ -134,8 +136,8 @@ export default function AgentDossiersPage() {
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                         className={`rounded-2xl border transition-colors duration-300 p-4 min-h-[500px] flex flex-col ${snapshot.isDraggingOver
-                                                ? 'bg-emerald-500/10 border-emerald-500/50'
-                                                : column.color
+                                            ? 'bg-emerald-500/10 border-emerald-500/50'
+                                            : column.color
                                             }`}
                                     >
                                         {/* Column Header */}
@@ -179,9 +181,11 @@ export default function AgentDossiersPage() {
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
                                                                         const nextStatus: Record<string, DossierStatus> = {
-                                                                            nouveau: 'en_attente',
-                                                                            en_attente: 'en_cours',
-                                                                            en_cours: 'termine',
+                                                                            reception: 'verification',
+                                                                            verification: 'traitement',
+                                                                            traitement: 'validation',
+                                                                            validation: 'finalisation',
+                                                                            finalisation: 'termine',
                                                                         }
                                                                         updateStatus(d.id, nextStatus[column.id])
                                                                     }}
@@ -271,9 +275,9 @@ export default function AgentDossiersPage() {
                                             key={col.id}
                                             onClick={() => {
                                                 updateStatus(selectedDossier.id, col.id)
-                                                setSelectedDossier({ ...selectedDossier, status: col.id })
+                                                setSelectedDossier({ ...selectedDossier, statut: col.id })
                                             }}
-                                            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${selectedDossier.status === col.id
+                                            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${selectedDossier.statut === col.id
                                                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                                                 : 'bg-white/5 text-gray-500 border-white/10 hover:text-white'
                                                 }`}

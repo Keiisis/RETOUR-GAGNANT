@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -98,35 +99,42 @@ export async function middleware(request: NextRequest) {
         const { data: { user }, error: authError } = await supabase.auth.getUser()
 
         if (authError || !user) {
+            console.error("Middleware Auth: Pas de user ou erreur auth", authError);
             const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
             return NextResponse.redirect(new URL(loginUrl, request.url))
         }
 
-        // Vérifier le rôle
-        const { data: profile } = await supabase
+        // Vérifier le rôle avec la clé de service de manière isolée pour contourner les RLS
+        const adminSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+
+        const { data: profile, error: profileError } = await adminSupabase
             .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single()
 
-        if (!profile) {
+        if (profileError || !profile) {
+            console.error("Middleware Auth: Erreur de récupératon du profil", profileError?.message);
             const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
             return NextResponse.redirect(new URL(loginUrl, request.url))
         }
 
-        // Agent routes: require 'agent' or 'admin' role
-        if (isAgentRoute && profile.role !== 'agent' && profile.role !== 'admin') {
-            return NextResponse.redirect(new URL('/agent/login', request.url))
+        // STRICT ISOLATION: Agent routes → agent ONLY | Admin routes → admin ONLY
+        if (isAgentRoute && profile.role !== 'agent') {
+            return NextResponse.redirect(new URL('/agent/login?error=unauthorized', request.url))
         }
 
-        // Admin routes: require 'admin' role only
         if (isAdminRoute && profile.role !== 'admin') {
-            return NextResponse.redirect(new URL('/admin/login', request.url))
+            return NextResponse.redirect(new URL('/admin/login?error=unauthorized', request.url))
         }
 
         return response
-    } catch {
+    } catch (e: any) {
         // On error, redirect to login
+        console.error("Middleware Catch Error:", e.message);
         const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
         return NextResponse.redirect(new URL(loginUrl, request.url))
     }

@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
             auth: {
                 user: settings.smtp_user,
                 pass: settings.smtp_pass
+            },
+            tls: {
+                rejectUnauthorized: false
             }
         });
 

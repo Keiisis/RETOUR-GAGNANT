@@ -7,6 +7,7 @@ import {
     Mail, ArrowRight, Loader2, Shield, Sparkles, FileText,
     MessageSquare, CalendarCheck, CheckCircle2, Receipt, HeadphonesIcon, LogOut
 } from 'lucide-react'
+import LiveSupportChat from '@/components/chat/LiveSupportChat'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = any
@@ -386,14 +387,8 @@ export default function MonComptePage() {
                     )}
 
                     {activeTab === 'support' && (
-                        <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-[600px] w-full rounded-2xl overflow-hidden bg-white/[0.02] border border-white/5 relative">
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0 text-center p-6">
-                                <HeadphonesIcon size={48} className="text-gray-700 mb-4" />
-                                <h3 className="text-lg font-bold text-white mb-2">Support Direct / Live Chat</h3>
-                                <p className="text-sm text-gray-500 max-w-sm">
-                                    Une fenêtre de dialogue s&apos;est normalement connectée avec un agent sur cette page ou utilisez le bouton d&apos;assistance flottant pour démarrer une nouvelle session de chat instantanée.
-                                </p>
-                            </div>
+                        <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
+                            <LiveSupportChat email={email} clientName={clientName} />
                         </motion.div>
                     )}
                 </AnimatePresence>

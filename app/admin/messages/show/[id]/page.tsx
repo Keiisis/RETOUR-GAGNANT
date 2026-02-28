@@ -7,10 +7,11 @@ import {
     Trash2, User, MoreVertical, ShieldCheck,
     MessageSquare, Reply, ExternalLink, Globe,
     Download, Printer, AlertCircle, CheckCircle2,
-    Inbox, HardDrive, Share2, Sparkles, Loader2
+    Inbox, HardDrive, Share2, Sparkles, Loader2, Send
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,68 @@ export default function MessageShow() {
 
     const [isDrafting, setIsDrafting] = useState(false);
     const [draft, setDraft] = useState("");
+
+    const [liveMessages, setLiveMessages] = useState<any[]>([]);
+    const [chatInput, setChatInput] = useState("");
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Live chat effect
+    useEffect(() => {
+        if (!record || record.type !== 'support') return;
+
+        const fetchMessages = async () => {
+            const { data } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('conversation_id', id)
+                .order('created_at', { ascending: true });
+            if (data) setLiveMessages(data);
+        };
+        fetchMessages();
+
+        const channel = supabase.channel(`admin_chat_${id}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `conversation_id=eq.${id}`
+            }, (payload) => {
+                const newMsg = payload.new;
+                setLiveMessages(prev => {
+                    if (prev.find(m => m.id === newMsg.id)) return prev;
+                    return [...prev, newMsg];
+                });
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [record, id]);
+
+    // Send admin msg
+    const sendAdminMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!chatInput.trim()) return;
+
+        const msg = chatInput.trim();
+        setChatInput("");
+
+        await supabase.from('chat_messages').insert({
+            conversation_id: id,
+            role: 'agent',
+            content: msg
+        });
+    };
+
+    useEffect(() => {
+        if (record?.type === 'support') {
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+        }
+    }, [liveMessages, record]);
 
     const handleDraftReply = async () => {
         if (!record?.message) return;
@@ -123,119 +186,195 @@ export default function MessageShow() {
                 {/* LEFT COLUMN: THE MESSAGE BODY */}
                 {/* ═══════════════════════════════════════════ */}
                 <div className="lg:col-span-8 space-y-8">
-                    <Card className="bg-[#0a0f18] border-white/5 rounded-[3rem] shadow-3xl overflow-hidden relative">
-                        {/* Dossier Aesthetic Strip */}
-                        <div className="absolute top-0 right-0 w-32 h-full bg-white/[0.01] pointer-events-none" />
-
-                        <div className="p-12 space-y-10">
-                            {/* Subject Line */}
-                            <div className="space-y-2">
-                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Sujet de la Liaison</span>
-                                <h2 className="text-3xl font-black text-white font-heading leading-tight italic">
-                                    "{record.sujet || (record.type === 'rdv' ? 'Demande de Rendez-vous Stratégique' : 'Interaction Générale')}"
-                                </h2>
-                            </div>
-
-                            {/* Message Body */}
-                            <div className="relative">
-                                <div className="absolute -left-6 top-0 bottom-0 w-1 bg-benin-gradient opacity-20" />
-                                <div className="bg-white/[0.02] p-8 rounded-3xl border border-white/5 min-h-[300px]">
-                                    <p className="text-xl text-gray-300 leading-relaxed font-serif">
-                                        {record.message}
-                                    </p>
+                    {record.type === 'support' ? (
+                        <Card className="bg-[#0a0f18] border-white/5 rounded-[3rem] shadow-3xl overflow-hidden relative flex flex-col h-[750px]">
+                            {/* Live Chat Header */}
+                            <div className="p-8 border-b border-white/5 bg-gradient-to-r from-[#FCD116]/10 to-transparent flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-[#FCD116]/10 border border-[#FCD116]/20 flex items-center justify-center">
+                                    <MessageSquare className="text-[#FCD116]" size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-white font-heading tracking-tight">Support Direct Session</h2>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Liaison Active</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Interaction Type Specifics */}
-                            {record.type === 'rdv' && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <DataField label="Date Souhaitée" value={record.date_rdv || 'Non spécifiée'} icon={Calendar} color="#3b82f6" />
-                                    <DataField label="Durée / Motif" value={record.duree || 'Standard (30min)'} icon={Clock} color="#FCD116" />
-                                </div>
-                            )}
-
-                            {/* Metadata Footer */}
-                            <div className="pt-10 border-t border-white/5 flex flex-wrap gap-8 items-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 font-mono">
-                                <div className="flex items-center gap-2">
-                                    <Globe size={14} /> BJ NODE L-09
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheck size={14} /> AES-256 ENCRYPTED
-                                </div>
-                                <div className="ml-auto text-gray-800">
-                                    UUID: {record.id}
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Quick Response Suggestion IA */}
-                    <AnimatePresence mode="wait">
-                        {!draft ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                            >
-                                <Card className="bg-benin-gradient p-[1px] rounded-[2.5rem] shadow-3xl group">
-                                    <div className="bg-[#0a0f18] rounded-[2.45rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-[#FCD116]">
-                                                {isDrafting ? <Loader2 size={32} className="animate-spin" /> : <HardDrive size={32} className="animate-pulse" />}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-white font-black font-heading text-lg">Générer une réponse stratégique ?</h4>
-                                                <p className="text-sm text-gray-500 font-medium">L'IA KAGE peut rédiger un brouillon adapté au ton du client.</p>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            onClick={handleDraftReply}
-                                            disabled={isDrafting}
-                                            className="w-full md:w-auto bg-[#FCD116] text-black font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl hover:bg-white transition-all"
+                            {/* Chat Messages */}
+                            <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-premium relative bg-white/[0.01]">
+                                {liveMessages.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
+                                        <Loader2 className="animate-spin mb-4" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">Synchronisation Nexus...</p>
+                                    </div>
+                                ) : (
+                                    liveMessages.map((msg, idx) => (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                                            key={idx}
+                                            className={`flex gap-3 ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}
                                         >
-                                            {isDrafting ? "ANALYSE EN COURS..." : "ANALYSER & RÉDIGER"}
-                                        </Button>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                            >
-                                <Card className="bg-[#0a0f18] border-2 border-[#008751]/30 rounded-[2.5rem] p-10 shadow-3xl">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-3 text-[#008751]">
-                                            <Sparkles size={20} />
-                                            <h4 className="font-black font-heading uppercase tracking-widest text-sm text-white">Brouillon Stratégique Généré</h4>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setDraft("")}
-                                            className="text-gray-500 hover:text-white"
-                                        >
-                                            Effacer
-                                        </Button>
-                                    </div>
-                                    <div className="bg-white/5 p-6 rounded-2xl border border-white/5 mb-6">
-                                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap italic">
-                                            {draft}
-                                        </p>
-                                    </div>
+                                            {msg.role === 'client' && (
+                                                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-1">
+                                                    <User size={14} className="text-gray-400" />
+                                                </div>
+                                            )}
+                                            <div className={`max-w-[80%] px-5 py-4 rounded-2xl text-[14px] leading-relaxed shadow-xl ${msg.role === 'agent'
+                                                ? 'bg-[#008751] text-white rounded-tr-sm border border-[#008751]/30'
+                                                : 'bg-white/[0.03] text-gray-300 rounded-tl-sm border border-white/10'
+                                                }`}>
+                                                {msg.content}
+                                            </div>
+                                            {msg.role === 'agent' && (
+                                                <div className="w-8 h-8 rounded-full bg-[#FCD116]/10 border border-[#FCD116]/20 flex items-center justify-center shrink-0 mt-1 shadow-[0_0_15px_rgba(252,209,22,0.15)]">
+                                                    <ShieldCheck size={14} className="text-[#FCD116]" />
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    ))
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className="p-6 bg-[#0a0f18] border-t border-white/5 z-10">
+                                <form onSubmit={sendAdminMessage} className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        placeholder="Rédigez votre réponse en direct pour ce client..."
+                                        className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-[#FCD116]/50 transition-all font-medium text-sm"
+                                    />
                                     <Button
-                                        className="w-full bg-[#008751] text-white font-black tracking-widest h-14 rounded-xl"
-                                        onClick={() => {
-                                            const body = encodeURIComponent(draft);
-                                            window.location.href = `mailto:${record.email}?subject=RE: ${record.sujet || 'Retour Gagnant'}&body=${body}`;
-                                        }}
+                                        type="submit"
+                                        disabled={!chatInput.trim()}
+                                        className="w-14 h-[58px] p-0 rounded-2xl bg-[#008751] hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-xl"
                                     >
-                                        UTILISER CE BROUILLON (MAILTO)
+                                        <Send size={20} className="text-white ml-0.5" />
                                     </Button>
-                                </Card>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                </form>
+                            </div>
+                        </Card>
+                    ) : (
+                        <>
+                            <Card className="bg-[#0a0f18] border-white/5 rounded-[3rem] shadow-3xl overflow-hidden relative">
+                                {/* Dossier Aesthetic Strip */}
+                                <div className="absolute top-0 right-0 w-32 h-full bg-white/[0.01] pointer-events-none" />
+
+                                <div className="p-12 space-y-10">
+                                    {/* Subject Line */}
+                                    <div className="space-y-2">
+                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Sujet de la Liaison</span>
+                                        <h2 className="text-3xl font-black text-white font-heading leading-tight italic">
+                                            "{record.sujet || (record.type === 'rdv' ? 'Demande de Rendez-vous Stratégique' : 'Interaction Générale')}"
+                                        </h2>
+                                    </div>
+
+                                    {/* Message Body */}
+                                    <div className="relative">
+                                        <div className="absolute -left-6 top-0 bottom-0 w-1 bg-benin-gradient opacity-20" />
+                                        <div className="bg-white/[0.02] p-8 rounded-3xl border border-white/5 min-h-[300px]">
+                                            <p className="text-xl text-gray-300 leading-relaxed font-serif">
+                                                {record.message}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Interaction Type Specifics */}
+                                    {record.type === 'rdv' && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <DataField label="Date Souhaitée" value={record.date_rdv || 'Non spécifiée'} icon={Calendar} color="#3b82f6" />
+                                            <DataField label="Durée / Motif" value={record.duree || 'Standard (30min)'} icon={Clock} color="#FCD116" />
+                                        </div>
+                                    )}
+
+                                    {/* Metadata Footer */}
+                                    <div className="pt-10 border-t border-white/5 flex flex-wrap gap-8 items-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 font-mono">
+                                        <div className="flex items-center gap-2">
+                                            <Globe size={14} /> BJ NODE L-09
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <ShieldCheck size={14} /> AES-256 ENCRYPTED
+                                        </div>
+                                        <div className="ml-auto text-gray-800">
+                                            UUID: {record.id}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Quick Response Suggestion IA */}
+                            <AnimatePresence mode="wait">
+                                {!draft ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                    >
+                                        <Card className="bg-benin-gradient p-[1px] rounded-[2.5rem] shadow-3xl group">
+                                            <div className="bg-[#0a0f18] rounded-[2.45rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-[#FCD116]">
+                                                        {isDrafting ? <Loader2 size={32} className="animate-spin" /> : <HardDrive size={32} className="animate-pulse" />}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-white font-black font-heading text-lg">Générer une réponse stratégique ?</h4>
+                                                        <p className="text-sm text-gray-500 font-medium">L'IA KAGE peut rédiger un brouillon adapté au ton du client.</p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    onClick={handleDraftReply}
+                                                    disabled={isDrafting}
+                                                    className="w-full md:w-auto bg-[#FCD116] text-black font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-xl hover:bg-white transition-all"
+                                                >
+                                                    {isDrafting ? "ANALYSE EN COURS..." : "ANALYSER & RÉDIGER"}
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <Card className="bg-[#0a0f18] border-2 border-[#008751]/30 rounded-[2.5rem] p-10 shadow-3xl">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-3 text-[#008751]">
+                                                    <Sparkles size={20} />
+                                                    <h4 className="font-black font-heading uppercase tracking-widest text-sm text-white">Brouillon Stratégique Généré</h4>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setDraft("")}
+                                                    className="text-gray-500 hover:text-white"
+                                                >
+                                                    Effacer
+                                                </Button>
+                                            </div>
+                                            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 mb-6">
+                                                <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap italic">
+                                                    {draft}
+                                                </p>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-[#008751] text-white font-black tracking-widest h-14 rounded-xl"
+                                                onClick={() => {
+                                                    const body = encodeURIComponent(draft);
+                                                    window.location.href = `mailto:${record.email}?subject=RE: ${record.sujet || 'Retour Gagnant'}&body=${body}`;
+                                                }}
+                                            >
+                                                UTILISER CE BROUILLON (MAILTO)
+                                            </Button>
+                                        </Card>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </>
+                    )}
                 </div>
 
                 {/* ═══════════════════════════════════════════ */}

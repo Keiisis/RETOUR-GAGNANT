@@ -31,12 +31,12 @@ export async function getEmailConfig(): Promise<EmailConfig> {
     });
 
     return {
-        host: map['email_smtp_host'] || '',
-        port: parseInt(map['email_smtp_port'] || '587'),
-        user: map['email_smtp_user'] || '',
-        pass: map['email_smtp_pass'] || '',
-        fromName: map['email_from_name'] || 'Retour Gagnant Bénin',
-        fromEmail: map['email_from_email'] || '',
+        host: map['smtp_host'] || '',
+        port: parseInt(map['smtp_port'] || '587'),
+        user: map['smtp_user'] || '',
+        pass: map['smtp_pass'] || '',
+        fromName: map['smtp_from_name'] || 'Retour Gagnant Bénin',
+        fromEmail: map['smtp_from_email'] || '',
         adminEmail: map['email_admin_destination'] || '',
     };
 }
@@ -61,6 +61,9 @@ export async function createTransporter() {
             user: config.user,
             pass: config.pass,
         },
+        tls: {
+            rejectUnauthorized: false
+        }
     });
 }
 

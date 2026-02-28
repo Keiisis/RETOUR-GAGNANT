@@ -59,9 +59,9 @@ export default function AgentPerformancesPage() {
             const devis = devisRes.data || []
             const events = eventsRes.data || []
 
-            const termines = dossiers.filter((d: Record<string, unknown>) => d.status === 'termine')
-            const enCours = dossiers.filter((d: Record<string, unknown>) => d.status === 'en_cours')
-            const nouveaux = dossiers.filter((d: Record<string, unknown>) => d.status === 'nouveau')
+            const termines = dossiers.filter((d: Record<string, unknown>) => d.statut === 'termine')
+            const enCours = dossiers.filter((d: Record<string, unknown>) => ['traitement', 'validation', 'finalisation'].includes(d.statut as string))
+            const nouveaux = dossiers.filter((d: Record<string, unknown>) => d.statut === 'reception')
             const lus = messages.filter((m: Record<string, unknown>) => m.lu === true)
             const rdvMessages = messages.filter((m: Record<string, unknown>) => m.type === 'rendez-vous')
             const contactes = leads.filter((l: Record<string, unknown>) => l.contacted === true)

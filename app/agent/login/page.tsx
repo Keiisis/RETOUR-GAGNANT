@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -34,6 +34,17 @@ export default function AgentLoginPage() {
     const [loginSuccess, setLoginSuccess] = useState(false)
     const router = useRouter()
 
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('error') === 'unauthorized') {
+                setError('Accès refusé. Ce portail est réservé aux agents accrédités.');
+                // Nettoyer l'URL
+                window.history.replaceState({}, '', '/agent/login');
+            }
+        }
+    }, [])
+
     const passwordStrength = evaluatePasswordStrength(password)
 
     const triggerShake = useCallback(() => {
@@ -57,17 +68,8 @@ export default function AgentLoginPage() {
                 throw new Error('Identifiants incorrects. Veuillez réessayer.')
             }
 
-            // Vérifier le rôle "agent" ou "admin"
-            const { data: profile } = await supabase
-                .from('user_profiles')
-                .select('role')
-                .eq('id', data.user.id)
-                .single()
-
-            if (!profile || (profile.role !== 'agent' && profile.role !== 'admin')) {
-                await supabase.auth.signOut()
-                throw new Error('Accès refusé. Ce portail est réservé aux agents accrédités.')
-            }
+            // La vérification ferme de sécurité "agent" ou "admin"
+            // est déléguée au Middleware serveur (qui a la Service Key).
 
             // Success animation
             setLoginSuccess(true)
