@@ -55,6 +55,7 @@ function AdminLayoutContent({
         { title: 'Services', icon: ShieldCheck, href: '/admin/services' },
         { title: 'Parcours', icon: Sparkles, href: '/admin/process-steps' },
         { title: 'Demandes Nat.', icon: Globe, href: '/admin/nationalite' },
+        { title: 'FAQ Nationalité', icon: HelpCircle, href: '/admin/nationalite/faq' },
         { title: 'Emails', icon: Mail, href: '/admin/email-templates' },
         { title: 'Témoignages', icon: Users, href: '/admin/testimonials' },
         { title: 'Galerie', icon: ImageIcon, href: '/admin/gallery' },

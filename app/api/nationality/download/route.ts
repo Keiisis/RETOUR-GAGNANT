@@ -115,8 +115,25 @@ Généré par Retour Gagnant Bénin le ${new Date().toLocaleString('fr-FR')}
 
         zip.file(`Dossier_${app.application_ref}.txt`, summary);
 
-        // 2. Add JSON export
         zip.file(`data_${app.application_ref}.json`, JSON.stringify(app, null, 2));
+
+        // 3. Add actual documents from Storage
+        if (Array.isArray(app.documents_uploaded)) {
+            for (const docLine of app.documents_uploaded) {
+                const parts = docLine.split(': ');
+                if (parts.length > 1) {
+                    const storagePath = parts[1].trim();
+                    if (!storagePath.startsWith('[Erreur')) {
+                        const { data, error: dlError } = await supabase.storage.from('nationality_documents').download(storagePath);
+                        if (data && !dlError) {
+                            const buffer = await data.arrayBuffer();
+                            const filename = storagePath.split('/').pop() || storagePath;
+                            zip.file(`documents/${filename}`, buffer);
+                        }
+                    }
+                }
+            }
+        }
 
         const zipBlob = await zip.generateAsync({ type: 'arraybuffer' });
 

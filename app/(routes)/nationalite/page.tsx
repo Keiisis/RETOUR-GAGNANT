@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import {
@@ -195,22 +195,39 @@ export default function NationalitePage() {
                     <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.4em]">Questions</span>
                         <h2 className="text-3xl md:text-4xl font-black text-white mt-3">Foire aux Questions</h2>
+                        <p className="text-xs text-gray-500 mt-2">{faqs.length} questions pour tout comprendre</p>
                     </motion.div>
 
-                    <div className="space-y-3">
-                        {faqs.map((faq) => (
-                            <div key={faq.id} className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all">
-                                <button onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)} className="w-full p-5 flex items-center justify-between text-left">
-                                    <span className="text-sm font-bold text-white pr-4">{faq.question_fr}</span>
-                                    {openFaq === faq.id ? <ChevronUp size={18} className="text-emerald-400 shrink-0" /> : <ChevronDown size={18} className="text-gray-500 shrink-0" />}
-                                </button>
-                                {openFaq === faq.id && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="px-5 pb-5">
-                                        <p className="text-sm text-gray-400 leading-relaxed">{faq.answer_fr}</p>
-                                    </motion.div>
-                                )}
-                            </div>
-                        ))}
+                    <div className="space-y-2">
+                        {faqs.map((faq, idx) => {
+                            const isOpen = openFaq === faq.id
+                            return (
+                                <motion.div key={faq.id} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.04 }}
+                                    className={`rounded-2xl overflow-hidden transition-all duration-500 ${isOpen ? 'bg-gradient-to-br from-emerald-500/[0.06] to-white/[0.02] border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.05)]' : 'bg-white/[0.02] border border-white/[0.04] hover:border-white/10'}`}>
+                                    <button onClick={() => setOpenFaq(isOpen ? null : faq.id)} className="w-full p-5 md:p-6 flex items-start gap-4 text-left group">
+                                        <span className={`text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 mt-0.5 ${isOpen ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-600 group-hover:text-white group-hover:bg-white/10'}`}>{idx + 1}</span>
+                                        <span className={`text-sm font-bold flex-1 pr-4 transition-colors duration-300 ${isOpen ? 'text-emerald-400' : 'text-white'}`}>{faq.question_fr}</span>
+                                        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} className="shrink-0 mt-0.5">
+                                            <ChevronDown size={18} className={`transition-colors duration-300 ${isOpen ? 'text-emerald-400' : 'text-gray-600'}`} />
+                                        </motion.div>
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ height: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }, opacity: { duration: 0.25, delay: 0.1 } }}>
+                                                <div className="px-5 md:px-6 pb-6 pl-[3.5rem] md:pl-16">
+                                                    <div className="w-8 h-px bg-gradient-to-r from-emerald-500/50 to-transparent mb-4" />
+                                                    <div className="text-sm text-gray-400 leading-[1.8] whitespace-pre-line">{faq.answer_fr}</div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            )
+                        })}
                     </div>
                 </div>
             </section>

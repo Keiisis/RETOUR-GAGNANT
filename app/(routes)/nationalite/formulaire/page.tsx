@@ -7,7 +7,7 @@ import Script from 'next/script'
 import {
     ArrowLeft, ArrowRight, CheckCircle2, Globe2,
     FileText, Upload, Send, ChevronLeft, Loader2, AlertCircle,
-    CreditCard, Heart, Home, Shield, ChevronRight
+    CreditCard, Heart, Home, Shield, ChevronRight, X
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -49,6 +49,9 @@ export default function NationaliteFormPage() {
     const [paymentProcessing, setPaymentProcessing] = useState(false)
     const [paymentError, setPaymentError] = useState('')
 
+    const [rawDocs, setRawDocs] = useState<{ label: string, name: string, file: File }[]>([])
+    const [uploadProgress, setUploadProgress] = useState(0)
+
     const [form, setForm] = useState({
         knows_about_law: false, is_afro_descendant: true, afro_descendant_description: '',
         ancestor1_nom: '', ancestor1_prenom: '', ancestor1_date_naissance: '', ancestor1_lien_parente: '',
@@ -62,7 +65,6 @@ export default function NationaliteFormPage() {
         pays_delivrance: '', lieu_delivrance: '', autorite_delivrance: '',
         pere_nom: '', pere_prenom: '', pere_date_naissance: '',
         mere_nom: '', mere_prenom: '', mere_date_naissance: '',
-        documents_uploaded: [] as string[],
     })
 
     useEffect(() => {
@@ -82,6 +84,9 @@ export default function NationaliteFormPage() {
     ].filter(p => p.isReady)
 
     const handleKkiapay = () => {
+        if (!process.env.NEXT_PUBLIC_SITE_URL && window.location.hostname === 'localhost') {
+            // Bypass logic for local dev without exact webhooks if needed (but user asked for no sim, so we keep real)
+        }
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
         try {
             window.openKkiapayWidget({
@@ -95,6 +100,7 @@ export default function NationaliteFormPage() {
             window.addKkiapayListener('failed', () => {
                 setPaymentError('Le paiement Kkiapay a échoué.'); setPaymentProcessing(false)
             })
+            // handle widget close manually if needed
         } catch { setPaymentError('Impossible d\'ouvrir Kkiapay'); setPaymentProcessing(false) }
     }
 
@@ -143,6 +149,11 @@ export default function NationaliteFormPage() {
             if (!form.pays_residence) e.push('Pays de résidence requis')
         }
         if (step === 3 && !form.type_document_identite) e.push('Type de document requis')
+        if (step === 4) {
+            const req = ['Pièce d\'identité en cours de validité', 'Justificatif de domicile', 'Preuve d\'afro descendance', 'Casier judiciaire ou Certificat d\'antécédents criminels']
+            const uploaded = rawDocs.map(d => d.label)
+            req.forEach(l => { if (!uploaded.includes(l)) e.push(`Document manquant : ${l}`) })
+        }
         if (step === 5 && !paymentDone) e.push('Veuillez effectuer le paiement avant de continuer')
         return e
     }
@@ -152,12 +163,31 @@ export default function NationaliteFormPage() {
 
     const submit = async () => {
         setSubmitting(true)
+        setUploadProgress(10)
         const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
+
+        let finalUploadedUrls: string[] = []
+
+        // Upload documents
+        for (let i = 0; i < rawDocs.length; i++) {
+            const doc = rawDocs[i]
+            const ext = doc.file.name.split('.').pop()
+            const filename = `${ref}/${doc.label.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${ext}`
+            const { data, error } = await supabase.storage.from('nationality_documents').upload(filename, doc.file)
+            if (data && !error) {
+                finalUploadedUrls.push(`${doc.label}: ${filename}`)
+            } else {
+                finalUploadedUrls.push(`${doc.label}: [Erreur upload] ${doc.name}`)
+            }
+            setUploadProgress(10 + Math.floor((i + 1) / rawDocs.length * 40))
+        }
+
         const { error } = await supabase.from('nationality_applications').insert({
-            ...form, application_ref: ref, status: 'soumis', submitted_at: new Date().toISOString(),
+            ...form, documents_uploaded: finalUploadedUrls, application_ref: ref, status: 'soumis', submitted_at: new Date().toISOString(),
             last_step_completed: 6, payment_method: paymentProvider || 'none',
             payment_ref: paymentTxId, payment_status: paymentDone ? 'en_attente' : 'non_paye',
         })
+        setUploadProgress(100)
         if (!error) {
             setAppRef(ref)
             try {
@@ -343,11 +373,11 @@ export default function NationaliteFormPage() {
                                 <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between hover:border-emerald-500/20 transition-all">
                                     <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}<span className="text-red-400 ml-1">*</span></span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
                                     <label className="cursor-pointer shrink-0"><div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR FICHIER(S)' : 'CHOISIR UN FICHIER'}</p></div>
-                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { u('documents_uploaded', [...form.documents_uploaded, ...Array.from(f).map(fi => `${doc.label}: ${fi.name}`)]) } }} />
+                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { const newDocs = Array.from(f).map(fi => ({ label: doc.label, name: fi.name, file: fi })); setRawDocs(p => [...p, ...newDocs]) } }} />
                                     </label>
                                 </div>
                             ))}
-                            {form.documents_uploaded.length > 0 && <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 space-y-1.5">{form.documents_uploaded.map((d, i) => <div key={i} className="text-xs text-emerald-400 flex items-center gap-2"><CheckCircle2 size={12} /> {d}</div>)}</div>}
+                            {rawDocs.length > 0 && <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 space-y-1.5">{rawDocs.map((d, i) => <div key={i} className="text-xs text-emerald-400 flex items-center justify-between"><span className="flex items-center gap-2"><CheckCircle2 size={12} /> {d.label}: {d.name}</span><button onClick={() => setRawDocs(p => p.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-400 p-1"><X size={12} /></button></div>)}</div>}
                         </div>}
 
                         {step === 5 && <div className="space-y-5">
