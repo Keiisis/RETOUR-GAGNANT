@@ -142,7 +142,7 @@ export default function HeroSection() {
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-700 w-full max-w-4xl mx-auto flex-wrap">
-                    <Link href="/services/passeport">
+                    <Link href="/nationalite">
                         <Button size="lg" className="bg-[#008751] text-white hover:bg-[#006e42] text-base md:text-lg px-8 h-14 md:h-16 rounded-full shadow-[0_8px_32px_rgba(0,135,81,0.4)] hover:shadow-lg hover:scale-105 transition-all duration-300 w-full md:w-auto">
                             Obtenir la Nationalité
                         </Button>
