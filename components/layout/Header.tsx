@@ -14,6 +14,7 @@ export default function Header() {
         { label: "Accueil", href: "/" },
         { label: "Patrimoine", href: "/patrimoine" },
         { label: "Services", href: "/services" },
+        { label: "Nationalité", href: "/nationalite" },
         { label: "Blog", href: "/blog" },
         { label: "Contact", href: "/contact" },
         { label: "Notre Histoire", href: "/notre-histoire" },

@@ -54,7 +54,7 @@ function AdminLayoutContent({
         { title: 'Patrimoine', icon: Map, href: '/admin/patrimoine' },
         { title: 'Services', icon: ShieldCheck, href: '/admin/services' },
         { title: 'Parcours', icon: Sparkles, href: '/admin/process-steps' },
-        { title: 'Nationalité', icon: Flag, href: '/admin/nationality-requests' },
+        { title: 'Demandes Nat.', icon: Globe, href: '/admin/nationalite' },
         { title: 'Emails', icon: Mail, href: '/admin/email-templates' },
         { title: 'Témoignages', icon: Users, href: '/admin/testimonials' },
         { title: 'Galerie', icon: ImageIcon, href: '/admin/gallery' },
