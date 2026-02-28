@@ -3,12 +3,21 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import Script from 'next/script'
 import {
-    ArrowLeft, ArrowRight, CheckCircle2, Globe2, User,
+    ArrowLeft, ArrowRight, CheckCircle2, Globe2,
     FileText, Upload, Send, ChevronLeft, Loader2, AlertCircle,
-    CreditCard, X, Heart, Sparkles, Home
+    CreditCard, Heart, Home, Shield, ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
+
+declare global {
+    interface Window {
+        openKkiapayWidget: (config: Record<string, unknown>) => void
+        addKkiapayListener: (event: string, callback: (data: Record<string, unknown>) => void) => void
+        FedaPay: { init: (selector: string, config: Record<string, unknown>) => void }
+    }
+}
 
 const STEPS = [
     { num: 1, label: 'Afro-descendance' },
@@ -24,18 +33,21 @@ const PROFESSIONS = ['Salarié(e)', 'Entrepreneur/Commerçant', 'Profession lib�
 const GENRES = ['Masculin', 'Féminin', 'Non-binaire', 'Préfère ne pas préciser']
 const LIENS = ['Père', 'Mère', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Arrière-grand-père', 'Arrière-grand-mère', 'Autre']
 
-interface PaymentMethod { id: string; name: string; type: string; instructions: string; is_active: boolean; logo_url: string }
+type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
 export default function NationaliteFormPage() {
-    const [step, setStep] = useState(0) // 0 = popup loi
+    const [step, setStep] = useState(0)
     const [submitting, setSubmitting] = useState(false)
     const [showWelcome, setShowWelcome] = useState(false)
     const [appRef, setAppRef] = useState('')
     const [errors, setErrors] = useState<string[]>([])
     const [lawAccepted, setLawAccepted] = useState(false)
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-    const [selectedPayment, setSelectedPayment] = useState('')
-    const [paymentProof, setPaymentProof] = useState('')
+    const [paymentSettings, setPaymentSettings] = useState<Record<string, string>>({})
+    const [paymentDone, setPaymentDone] = useState(false)
+    const [paymentProvider, setPaymentProvider] = useState<PaymentProvider | null>(null)
+    const [paymentTxId, setPaymentTxId] = useState('')
+    const [paymentProcessing, setPaymentProcessing] = useState(false)
+    const [paymentError, setPaymentError] = useState('')
 
     const [form, setForm] = useState({
         knows_about_law: false, is_afro_descendant: true, afro_descendant_description: '',
@@ -54,15 +66,65 @@ export default function NationaliteFormPage() {
     })
 
     useEffect(() => {
-        supabase.from('payment_methods').select('*').eq('is_active', true).order('sort_order').then(({ data }) => {
-            setPaymentMethods((data || []) as PaymentMethod[])
-        })
+        fetch('/api/settings/payment').then(r => r.json()).then(d => setPaymentSettings(d)).catch(() => { })
     }, [])
 
     const u = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }))
     const IC = "w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 placeholder:text-gray-600 transition-all"
     const LC = "text-xs font-bold text-gray-400 mb-1.5 block"
     const RQ = "text-red-400 ml-0.5"
+
+    // Payment providers from existing settings
+    const providers = [
+        { id: 'kkiapay' as PaymentProvider, name: 'Kkiapay', subtitle: 'Mobile Money / Carte', color: 'bg-[#4A90D9]/20 border-[#4A90D9]/40 text-[#4A90D9]', isReady: paymentSettings.kkiapay_enabled === 'true' && !!paymentSettings.kkiapay_public_key },
+        { id: 'fedapay' as PaymentProvider, name: 'FedaPay', subtitle: 'Mobile Money / Carte', color: 'bg-[#2ECC71]/20 border-[#2ECC71]/40 text-[#2ECC71]', isReady: paymentSettings.fedapay_enabled === 'true' && !!paymentSettings.fedapay_public_key },
+        { id: 'zeyow' as PaymentProvider, name: 'Zeyow', subtitle: 'Carte Virtuelle', color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', isReady: paymentSettings.zeyow_enabled === 'true' && !!paymentSettings.zeyow_redirect_url },
+    ].filter(p => p.isReady)
+
+    const handleKkiapay = () => {
+        setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
+        try {
+            window.openKkiapayWidget({
+                amount: 250, position: 'center', key: paymentSettings.kkiapay_public_key,
+                sandbox: paymentSettings.kkiapay_sandbox === 'true', phone: form.telephone,
+                data: { context: 'nationality', email: form.email },
+            })
+            window.addKkiapayListener('success', (response) => {
+                setPaymentTxId(String(response.transactionId || '')); setPaymentDone(true); setPaymentProcessing(false)
+            })
+            window.addKkiapayListener('failed', () => {
+                setPaymentError('Le paiement Kkiapay a échoué.'); setPaymentProcessing(false)
+            })
+        } catch { setPaymentError('Impossible d\'ouvrir Kkiapay'); setPaymentProcessing(false) }
+    }
+
+    const handleFedapay = () => {
+        setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('fedapay')
+        try {
+            window.FedaPay.init('#fedapay-nat-btn', {
+                public_key: paymentSettings.fedapay_public_key,
+                environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
+                transaction: { amount: 250, description: `Reconnaissance Nationalité — ${form.prenom} ${form.nom}` },
+                customer: { email: form.email || undefined, phone_number: { number: form.telephone } },
+                onComplete: (resp: Record<string, unknown>) => {
+                    const tx = resp.transaction as Record<string, unknown> | undefined
+                    if (resp.reason === 'APPROVED' || (tx && tx.status === 'approved')) {
+                        setPaymentTxId(String(tx?.id || resp.id || '')); setPaymentDone(true)
+                    } else { setPaymentError('Paiement FedaPay non approuvé.') }
+                    setPaymentProcessing(false)
+                },
+            })
+        } catch { setPaymentError('Impossible d\'initialiser FedaPay'); setPaymentProcessing(false) }
+    }
+
+    const handleZeyow = () => {
+        setPaymentProvider('zeyow')
+        const redirectUrl = paymentSettings.zeyow_redirect_url
+        if (!redirectUrl) { setPaymentError('Zeyow non configuré.'); return }
+        window.location.href = `${redirectUrl}?amount=250&phone=${form.telephone}&email=${form.email}&context=nationality`
+    }
+
+    const payHandlers: Record<PaymentProvider, () => void> = { kkiapay: handleKkiapay, fedapay: handleFedapay, zeyow: handleZeyow }
 
     const validate = (): string[] => {
         const e: string[] = []
@@ -79,10 +141,9 @@ export default function NationaliteFormPage() {
             if (!form.genre) e.push('Genre requis')
             if (!form.date_naissance) e.push('Date de naissance requise')
             if (!form.pays_residence) e.push('Pays de résidence requis')
-            if (!form.nationalite) e.push('Nationalité requise')
         }
         if (step === 3 && !form.type_document_identite) e.push('Type de document requis')
-        if (step === 5 && !selectedPayment) e.push('Sélectionnez un moyen de paiement')
+        if (step === 5 && !paymentDone) e.push('Veuillez effectuer le paiement avant de continuer')
         return e
     }
 
@@ -94,8 +155,8 @@ export default function NationaliteFormPage() {
         const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
         const { error } = await supabase.from('nationality_applications').insert({
             ...form, application_ref: ref, status: 'soumis', submitted_at: new Date().toISOString(),
-            last_step_completed: 6, payment_method: selectedPayment, payment_ref: paymentProof,
-            payment_status: 'en_attente',
+            last_step_completed: 6, payment_method: paymentProvider || 'none',
+            payment_ref: paymentTxId, payment_status: paymentDone ? 'en_attente' : 'non_paye',
         })
         if (!error) {
             setAppRef(ref)
@@ -103,9 +164,8 @@ export default function NationaliteFormPage() {
                 await fetch('/api/email/send', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        to: form.email,
-                        subject: `Retour Gagnant Bénin — Demande ${ref} reçue`,
-                        message: `Bonjour ${form.prenom} ${form.nom},\n\nVotre demande de reconnaissance de nationalité béninoise a été enregistrée avec succès sous la référence :\n\n${ref}\n\nNotre équipe va examiner votre dossier et vérifier votre paiement. Vous recevrez une notification à chaque étape.\n\nBienvenue chez vous.\n\nL'équipe Retour Gagnant Bénin`,
+                        to: form.email, subject: `Retour Gagnant Bénin — Demande ${ref} reçue`,
+                        message: `Bonjour ${form.prenom} ${form.nom},\n\nVotre demande de reconnaissance de nationalité béninoise a été enregistrée sous la référence :\n\n${ref}\n\nNotre équipe va examiner votre dossier et vérifier votre paiement.\n\nBienvenue chez vous.\n\nL'équipe Retour Gagnant Bénin`,
                         clientName: `${form.prenom} ${form.nom}`, context: 'nationality_application', relatedId: ref
                     })
                 })
@@ -118,54 +178,32 @@ export default function NationaliteFormPage() {
     // ═══ WELCOME HOME ANIMATION ═══
     if (showWelcome) return (
         <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4 overflow-hidden relative">
-            {/* Particle effects */}
             {Array.from({ length: 30 }).map((_, i) => (
                 <motion.div key={i} className="absolute rounded-full"
                     style={{ width: Math.random() * 8 + 2, height: Math.random() * 8 + 2, background: ['#008751', '#FCD116', '#E8112D'][i % 3], left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
                     animate={{ y: [0, -200, 0], opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
                     transition={{ duration: 3 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 3 }} />
             ))}
-
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 1 }} className="relative z-10 text-center max-w-lg">
-                {/* Pulsing glow */}
                 <motion.div className="absolute -inset-20 bg-gradient-to-r from-[#008751]/20 via-[#FCD116]/10 to-[#E8112D]/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
-
                 <motion.div initial={{ y: 30 }} animate={{ y: 0 }} transition={{ delay: 0.3 }} className="relative">
                     <motion.div className="w-24 h-24 mx-auto mb-6 relative" animate={{ rotateY: [0, 360] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
                         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D] opacity-30 blur-xl" />
-                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/30 border-2 border-[#FCD116]/30 flex items-center justify-center">
-                            <Home size={36} className="text-[#FCD116]" />
-                        </div>
+                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/30 border-2 border-[#FCD116]/30 flex items-center justify-center"><Home size={36} className="text-[#FCD116]" /></div>
                     </motion.div>
-
                     <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="text-4xl md:text-5xl font-black text-white leading-tight mb-4">
-                        Bienvenue
-                        <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">Chez Vous</span>
+                        Bienvenue<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">Chez Vous</span>
                     </motion.h1>
-
-                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="text-gray-400 text-sm mb-2">
-                        Votre demande a été enregistrée avec succès
-                    </motion.p>
-
+                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="text-gray-400 text-sm mb-2">Votre demande a été enregistrée avec succès</motion.p>
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1, type: 'spring' }} className="inline-block bg-white/5 backdrop-blur-xl border border-[#FCD116]/20 rounded-2xl px-6 py-3 mb-6">
                         <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Référence</p>
                         <p className="text-xl font-mono font-black text-[#FCD116]">{appRef}</p>
                     </motion.div>
-
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="text-xs text-gray-500 mb-8">
-                        Un email de confirmation a été envoyé à <span className="text-emerald-400">{form.email}</span>
-                    </motion.p>
-
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="text-xs text-gray-500 mb-8">Confirmation envoyée à <span className="text-emerald-400">{form.email}</span></motion.p>
                     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.5 }} className="space-y-3">
-                        <p className="text-xs text-gray-600 italic max-w-sm mx-auto">
-                            "La terre de vos ancêtres vous attend les bras ouverts. Ce n'est pas un retour, c'est une renaissance."
-                        </p>
-                        <div className="flex items-center justify-center gap-1 text-[10px] text-gray-600">
-                            <Heart size={10} className="text-[#E8112D]" /> Retour Gagnant Bénin
-                        </div>
+                        <p className="text-xs text-gray-600 italic max-w-sm mx-auto">"La terre de vos ancêtres vous attend les bras ouverts. Ce n'est pas un retour, c'est une renaissance."</p>
+                        <div className="flex items-center justify-center gap-1 text-[10px] text-gray-600"><Heart size={10} className="text-[#E8112D]" /> Retour Gagnant Bénin</div>
                     </motion.div>
-
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link href="/nationalite" className="bg-white/10 hover:bg-white/15 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all">Retour à la page</Link>
                         <Link href="/" className="text-xs text-gray-500 hover:text-white transition-colors">Accueil</Link>
@@ -175,7 +213,7 @@ export default function NationaliteFormPage() {
         </div>
     )
 
-    // ═══ LAW POPUP (step 0) ═══
+    // ═══ LAW POPUP ═══
     if (step === 0) return (
         <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
@@ -185,11 +223,7 @@ export default function NationaliteFormPage() {
                     <p>La reconnaissance de la nationalité béninoise aux afrodescendants est un acte de mémoire, de justice et une porte ouverte vers le retour aux racines des descendants des Africains déportés lors de la traite négrière transatlantique, comme membres légitimes de la Nation béninoise.</p>
                     <p>La loi 2024-31 du 02 Septembre 2024 portant reconnaissance de la nationalité béninoise aux afro-descendants organise en ce sens un mode d'acquisition de la nationalité béninoise par toute personne qui d'après sa généalogie, a un ascendant africain subsaharien déporté hors du continent africain dans le cadre de la traite des noirs et du commerce triangulaire.</p>
                     <p className="font-bold text-white">La loi s'adresse à l'afro-descendant :</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                        <li>âgé d'au moins 18 ans,</li>
-                        <li>résidant hors du continent africain,</li>
-                        <li>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</li>
-                    </ul>
+                    <ul className="list-disc pl-5 space-y-1"><li>âgé d'au moins 18 ans,</li><li>résidant hors du continent africain,</li><li>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</li></ul>
                     <p><span className="font-bold text-white">La preuve de l'afro-descendance peut être apportée par :</span> des actes d'état civil, des certificats officiels, des tests d'ADN génétiques, des actes notariés, des arbres généalogiques, des extraits d'archives historiques, et tout autre document probant.</p>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer mb-6 bg-white/5 rounded-xl p-4">
@@ -206,6 +240,11 @@ export default function NationaliteFormPage() {
 
     return (
         <div className="min-h-screen bg-[#0a0f14] py-8 px-4">
+            {/* Payment SDKs */}
+            <Script src="https://cdn.kkiapay.me/k.js" strategy="lazyOnload" />
+            <Script src="https://cdn.fedapay.com/checkout.js?v=1.1.7" strategy="lazyOnload" />
+            <div id="fedapay-nat-btn" className="hidden" />
+
             <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-6">
                     <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white mb-3 transition-colors"><ChevronLeft size={14} /> Retour</Link>
@@ -256,58 +295,55 @@ export default function NationaliteFormPage() {
                                 <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={form.prenom} onChange={e => u('prenom', e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
                                 <div><label className={LC}>Genre<span className={RQ}>*</span></label><select value={form.genre} onChange={e => u('genre', e.target.value)} className={IC}><option value="">Choisir</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                 <div><label className={LC}>Date de naissance<span className={RQ}>*</span></label><input type="date" value={form.date_naissance} onChange={e => u('date_naissance', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Pays de naissance<span className={RQ}>*</span></label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div><label className={LC}>Pays de naissance</label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
                                 <div><label className={LC}>Ville de naissance</label><input value={form.ville_naissance} onChange={e => u('ville_naissance', e.target.value)} className={IC} placeholder="Ville" /></div>
                                 <div><label className={LC}>Nationalité<span className={RQ}>*</span></label><select value={form.nationalite} onChange={e => u('nationalite', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
                                 <div><label className={LC}>Pays de résidence<span className={RQ}>*</span></label><select value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div className="md:col-span-2"><label className={LC}>Adresse complète</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder="Adresse complète" /></div>
+                                <div className="md:col-span-2"><label className={LC}>Adresse complète</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder="Adresse" /></div>
                                 <div><label className={LC}>Téléphone</label><input value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder="+229 XX XX XX XX" /></div>
                                 <div><label className={LC}>Email<span className={RQ}>*</span></label><input type="email" value={form.email} onChange={e => u('email', e.target.value)} className={IC} placeholder="email@exemple.com" /></div>
-                                <div><label className={LC}>Profession<span className={RQ}>*</span></label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+                                <div><label className={LC}>Profession</label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                             </div>
                             <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4">
                                 <button onClick={() => u('demande_depuis_benin', !form.demande_depuis_benin)} className={`w-12 h-6 rounded-full transition-all relative ${form.demande_depuis_benin ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${form.demande_depuis_benin ? 'left-6' : 'left-0.5'}`} /></button>
-                                <span className="text-sm text-gray-400">Demande depuis le territoire béninois ?</span>
+                                <span className="text-sm text-gray-400">Demande depuis le Bénin ?</span>
                             </div>
                         </div>}
 
                         {step === 3 && <div className="space-y-5">
                             <h2 className="text-lg font-black text-white">Document d'identité & Parents</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label className={LC}>Type de document<span className={RQ}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">Choisir</option><option value="passeport">Passeport</option><option value="cni">Carte Nationale d'Identité</option><option value="carte_electeur">Carte d'électeur</option><option value="permis_conduire">Permis de conduire</option><option value="autre">Autre</option></select></div>
-                                <div><label className={LC}>Autorité de délivrance<span className={RQ}>*</span></label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} placeholder="Autorité" /></div>
-                                <div><label className={LC}>Numéro du document<span className={RQ}>*</span></label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} placeholder="Numéro" /></div>
-                                <div><label className={LC}>Pays de délivrance<span className={RQ}>*</span></label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div><label className={LC}>Date d'expiration<span className={RQ}>*</span></label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Lieu de délivrance<span className={RQ}>*</span></label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={IC} placeholder="Lieu" /></div>
+                                <div><label className={LC}>Type de document<span className={RQ}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">Choisir</option><option value="passeport">Passeport</option><option value="cni">CNI</option><option value="carte_electeur">Carte d'électeur</option><option value="autre">Autre</option></select></div>
+                                <div><label className={LC}>Autorité de délivrance</label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} /></div>
+                                <div><label className={LC}>Numéro du document</label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} /></div>
+                                <div><label className={LC}>Pays de délivrance</label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div><label className={LC}>Date d'expiration</label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={IC} /></div>
+                                <div><label className={LC}>Lieu de délivrance</label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={IC} /></div>
                             </div>
-                            <div className="border-t border-white/5 pt-5">
-                                <h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
+                            <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{['Père', 'Mère'].map(p => {
                                     const k = p === 'Père' ? 'pere' : 'mere'; return (<div key={p} className="space-y-3">
                                         <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{p}</span>
-                                        <div><label className={LC}>Nom<span className={RQ}>*</span></label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={IC} placeholder="Nom" /></div>
-                                        <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                        <div><label className={LC}>Nom</label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={IC} /></div>
+                                        <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={IC} /></div>
                                         <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`${k}_date_naissance`]} onChange={e => u(`${k}_date_naissance`, e.target.value)} className={IC} /></div>
                                     </div>)
-                                })}</div>
-                            </div>
+                                })}</div></div>
                         </div>}
 
                         {step === 4 && <div className="space-y-4">
                             <h2 className="text-lg font-black text-white">Pièces à joindre</h2>
-                            <p className="text-xs text-gray-500">Formats : PNG, JPG, JPEG, PDF. Taille max : 5 Mo par fichier.</p>
-                            {[{ label: 'Pièce d\'identité en cours de validité', required: true, multi: false },
-                            { label: 'Justificatif de domicile', required: true, multi: false },
-                            { label: 'Preuve de profession', required: true, multi: false },
-                            { label: 'Preuve d\'afro descendance', required: true, multi: true, hint: 'Vous pouvez charger plusieurs documents ici !' },
-                            { label: 'Casier judiciaire ou Certificat d\'antécédents criminels ou équivalent', required: true, multi: false },
+                            <p className="text-xs text-gray-500">Formats : PNG, JPG, JPEG, PDF. Taille max : 5 Mo.</p>
+                            {[{ label: 'Pièce d\'identité en cours de validité', multi: false },
+                            { label: 'Justificatif de domicile', multi: false },
+                            { label: 'Preuve de profession', multi: false },
+                            { label: 'Preuve d\'afro descendance', multi: true, hint: 'Vous pouvez charger plusieurs documents ici !' },
+                            { label: 'Casier judiciaire ou Certificat d\'antécédents criminels', multi: false },
                             ].map((doc, i) => (
-                                <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between group hover:border-emerald-500/20 transition-all">
-                                    <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}{doc.required && <span className="text-red-400 ml-1">*</span>}</span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
-                                    <label className="cursor-pointer shrink-0">
-                                        <div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR UN OU PLUSIEURS FICHIERS' : 'CHOISIR UN FICHIER'}</p></div>
-                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { const names = Array.from(f).map(fi => `${doc.label}: ${fi.name}`); u('documents_uploaded', [...form.documents_uploaded, ...names]) } }} />
+                                <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between hover:border-emerald-500/20 transition-all">
+                                    <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}<span className="text-red-400 ml-1">*</span></span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
+                                    <label className="cursor-pointer shrink-0"><div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR FICHIER(S)' : 'CHOISIR UN FICHIER'}</p></div>
+                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { u('documents_uploaded', [...form.documents_uploaded, ...Array.from(f).map(fi => `${doc.label}: ${fi.name}`)]) } }} />
                                     </label>
                                 </div>
                             ))}
@@ -320,21 +356,29 @@ export default function NationaliteFormPage() {
                                 <p className="text-3xl font-black text-[#FCD116]">250 $</p>
                                 <p className="text-xs text-gray-500 mt-1">Frais de traitement de dossier (USD)</p>
                             </div>
-                            {paymentMethods.length === 0 ? (
-                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center"><p className="text-xs text-amber-400">Aucun moyen de paiement configuré. Contactez-nous directement.</p></div>
+
+                            {paymentDone ? (
+                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 text-center">
+                                    <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-2" />
+                                    <p className="text-sm font-bold text-emerald-400">Paiement effectué via {paymentProvider}</p>
+                                    {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
+                                </div>
+                            ) : paymentProcessing ? (
+                                <div className="flex flex-col items-center py-8"><Loader2 size={32} className="animate-spin text-[#FCD116]" /><p className="text-sm text-gray-400 mt-3">Traitement en cours...</p></div>
                             ) : (
                                 <div className="space-y-3">
                                     <p className="text-xs text-gray-400 font-bold">Sélectionnez votre moyen de paiement :</p>
-                                    {paymentMethods.map(pm => (
-                                        <button key={pm.id} onClick={() => setSelectedPayment(pm.name)} className={`w-full text-left bg-white/[0.03] border rounded-xl p-4 transition-all flex items-center gap-4 ${selectedPayment === pm.name ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/5 hover:border-white/10'}`}>
-                                            <CreditCard size={20} className={selectedPayment === pm.name ? 'text-emerald-400' : 'text-gray-600'} />
-                                            <div><p className="text-sm font-bold text-white">{pm.name}</p>{pm.instructions && <p className="text-xs text-gray-500 mt-0.5">{pm.instructions}</p>}</div>
-                                            {selectedPayment === pm.name && <CheckCircle2 size={18} className="text-emerald-400 ml-auto" />}
+                                    {providers.length === 0 ? (
+                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center"><CreditCard size={24} className="text-gray-600 mx-auto mb-2" /><p className="text-xs text-amber-400">Aucune passerelle de paiement active. Contactez l'administrateur.</p></div>
+                                    ) : providers.map(p => (
+                                        <button key={p.id} onClick={payHandlers[p.id]} className={`w-full flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group text-left`}>
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${p.color}`}><CreditCard size={22} /></div>
+                                            <div className="flex-1"><p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p><p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p></div>
+                                            <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
                                         </button>
                                     ))}
-                                    {selectedPayment && (
-                                        <div className="mt-3"><label className={LC}>Référence de paiement / Preuve de transaction</label><input value={paymentProof} onChange={e => setPaymentProof(e.target.value)} className={IC} placeholder="Numéro de transaction, référence..." /></div>
-                                    )}
+                                    {paymentError && <p className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {paymentError}</p>}
+                                    <div className="flex items-center gap-2 text-gray-600 justify-center mt-2"><Shield size={14} /><span className="text-[10px] font-bold uppercase tracking-widest">Transaction 100% sécurisée</span></div>
                                 </div>
                             )}
                         </div>}
@@ -343,11 +387,10 @@ export default function NationaliteFormPage() {
                             <h2 className="text-lg font-black text-white">Récapitulatif de votre demande</h2>
                             {[
                                 { title: 'Identité', items: [['Nom complet', `${form.prenom} ${form.nom}`], ['Genre', form.genre], ['Né(e) le', form.date_naissance], ['Nationalité', form.nationalite], ['Résidence', form.pays_residence], ['Email', form.email], ['Profession', form.profession]] },
-                                { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`], ['Ancêtre 2', form.ancestor2_nom ? `${form.ancestor2_prenom} ${form.ancestor2_nom} — ${form.ancestor2_lien_parente}` : '']] },
-                                { title: 'Document', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document], ['Expire le', form.date_expiration_document]] },
+                                { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`]] },
+                                { title: 'Document', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document]] },
                                 { title: 'Parents', items: [['Père', `${form.pere_prenom} ${form.pere_nom}`], ['Mère', `${form.mere_prenom} ${form.mere_nom}`]] },
-                                { title: 'Paiement', items: [['Montant', '250 $ USD'], ['Méthode', selectedPayment], ['Référence', paymentProof]] },
-                                { title: 'Documents joints', items: form.documents_uploaded.map((d, i) => [`Fichier ${i + 1}`, d]) },
+                                { title: 'Paiement', items: [['Montant', '250 $ USD'], ['Passerelle', paymentProvider || 'N/A'], ['Transaction', paymentTxId || 'N/A']] },
                             ].map((sec, si) => (
                                 <div key={si} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
                                     <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">{sec.title}</h3>
@@ -363,7 +406,7 @@ export default function NationaliteFormPage() {
                     {step < 6 ? (
                         <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]">Suivant <ArrowRight size={16} /></button>
                     ) : (
-                        <button onClick={submit} disabled={submitting} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                        <button onClick={submit} disabled={submitting} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                             {submitting ? <><Loader2 size={16} className="animate-spin" /> Envoi...</> : <><Send size={16} /> Confirmer et Soumettre</>}
                         </button>
                     )}
