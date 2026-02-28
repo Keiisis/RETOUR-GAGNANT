@@ -385,9 +385,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             {/* Header */}
             <div className={cn('relative', compact ? 'p-3 pb-4' : 'p-5 pb-6')}>
                 <div className={cn('flex items-center', compact ? 'justify-center' : 'gap-3')}>
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-[1.5px] flex-shrink-0 shadow-nexus-glow">
-                        <div className="w-full h-full bg-nexus-deep rounded-[10px] flex items-center justify-center">
-                            <Shield size={18} className="text-emerald-400" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-[1.5px] flex-shrink-0 shadow-nexus-glow">
+                        <div className="w-full h-full bg-nexus-deep rounded-[10px] flex items-center justify-center overflow-hidden">
+                            <img
+                                src="/images/icon-192x192.png"
+                                alt="Logo"
+                                className="w-7 h-7 object-contain"
+                            />
                         </div>
                     </div>
                     {!compact && (

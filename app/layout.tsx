@@ -24,6 +24,16 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Retour Gagnant",
   },
+  icons: {
+    icon: [
+      { url: "/images/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/images/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/images/icon-192x192.png",
+  },
   formatDetection: {
     telephone: false,
   },

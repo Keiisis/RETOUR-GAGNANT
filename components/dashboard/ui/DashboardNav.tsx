@@ -15,53 +15,99 @@ const navItems = [
     { name: 'Mon Profil', href: '/dashboard/profile', icon: User, color: CLIENT_THEME.colors.text },
 ];
 
-export default function DashboardNav() {
+interface DashboardNavProps {
+    onNavigate?: () => void;
+}
+
+export default function DashboardNav({ onNavigate }: DashboardNavProps) {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed left-6 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-6">
-            {navItems.map((item, i) => {
-                const isActive = pathname === item.href;
+        <>
+            {/* ═══ DESKTOP: Floating vertical nav ═══ */}
+            <nav className="fixed left-6 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-6">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href;
 
-                return (
-                    <Link key={item.href} href={item.href} className="group relative">
-                        {/* Tooltip Label (appear on hover) */}
-                        <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">
-                            {item.name}
-                        </span>
+                    return (
+                        <Link key={item.href} href={item.href} className="group relative">
+                            {/* Tooltip Label */}
+                            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">
+                                {item.name}
+                            </span>
 
-                        {/* 3D Button Container */}
-                        <div className="relative w-12 h-12 perspective-500">
-                            <motion.div
-                                className={cn(
-                                    "w-full h-full rounded-xl flex items-center justify-center border transition-all duration-300 shadow-xl",
-                                    isActive
-                                        ? "bg-white/10 border-[#FCD116] shadow-[0_0_15px_rgba(252,209,22,0.3)]"
-                                        : "bg-black/40 border-white/10 hover:border-white/30"
-                                )}
-                                whileHover={{
-                                    scale: 1.1,
-                                    rotateX: 10,
-                                    rotateY: -10,
-                                    z: 20
-                                }}
-                                style={{ transformStyle: 'preserve-3d' }}
-                            >
-                                <item.icon
-                                    size={20}
-                                    style={{ color: isActive ? item.color : '#8899a6' }}
-                                    strokeWidth={isActive ? 2.5 : 2}
+                            {/* 3D Button Container */}
+                            <div className="relative w-12 h-12 perspective-500">
+                                <motion.div
+                                    className={cn(
+                                        "w-full h-full rounded-xl flex items-center justify-center border transition-all duration-300 shadow-xl",
+                                        isActive
+                                            ? "bg-white/10 border-[#FCD116] shadow-[0_0_15px_rgba(252,209,22,0.3)]"
+                                            : "bg-black/40 border-white/10 hover:border-white/30"
+                                    )}
+                                    whileHover={{
+                                        scale: 1.1,
+                                        rotateX: 10,
+                                        rotateY: -10,
+                                        z: 20
+                                    }}
+                                    style={{ transformStyle: 'preserve-3d' }}
+                                >
+                                    <item.icon
+                                        size={20}
+                                        style={{ color: isActive ? item.color : '#8899a6' }}
+                                        strokeWidth={isActive ? 2.5 : 2}
+                                    />
+
+                                    {isActive && (
+                                        <div className="absolute inset-0 rounded-xl bg-[#FCD116]/10 blur-md -z-10" />
+                                    )}
+                                </motion.div>
+                            </div>
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            {/* ═══ MOBILE: Full nav list (shown inside sidebar overlay) ═══ */}
+            <nav className="lg:hidden flex flex-col gap-1 p-2">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onNavigate}
+                            className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                isActive
+                                    ? "bg-[#FCD116]/10 text-[#FCD116]"
+                                    : "text-gray-400 hover:bg-white/5 hover:text-white"
+                            )}
+                        >
+                            {isActive && (
+                                <motion.div
+                                    layoutId="client-nav-active"
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-[#FCD116] shadow-[0_0_12px_rgba(252,209,22,0.6)]"
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                 />
-
-                                {/* Inner Glow for active state */}
-                                {isActive && (
-                                    <div className="absolute inset-0 rounded-xl bg-[#FCD116]/10 blur-md -z-10" />
+                            )}
+                            <item.icon
+                                size={18}
+                                style={{ color: isActive ? item.color : undefined }}
+                                className={cn(
+                                    'flex-shrink-0 transition-all',
+                                    !isActive && 'group-hover:text-[#FCD116]/70'
                                 )}
-                            </motion.div>
-                        </div>
-                    </Link>
-                );
-            })}
-        </nav>
+                            />
+                            <span className="text-[13px] font-semibold">
+                                {item.name}
+                            </span>
+                        </Link>
+                    );
+                })}
+            </nav>
+        </>
     );
 }
