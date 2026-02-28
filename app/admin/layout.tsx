@@ -71,13 +71,9 @@ function AdminLayoutContent({
             {/* Header */}
             <div className={cn('relative', compact ? 'p-3 pb-4' : 'p-5 pb-6')}>
                 <div className={cn('flex items-center', compact ? 'justify-center' : 'gap-3')}>
-                    <div className="w-10 h-10 rounded-xl bg-benin-gradient p-0.5 flex-shrink-0 shadow-[0_0_20px_rgba(252,209,22,0.2)]">
-                        <div className="w-full h-full bg-[#0a0f18] rounded-[10px] flex items-center justify-center overflow-hidden grayscale-[0.3] hover:grayscale-0 transition-all">
-                            <img
-                                src="/images/icon-192x192.png"
-                                alt="Logo"
-                                className="w-7 h-7 object-contain"
-                            />
+                    <div className="w-10 h-10 rounded-xl bg-benin-gradient p-0.5 flex-shrink-0 shadow-[0_0_20px_rgba(252,209,22,0.3)]">
+                        <div className="w-full h-full bg-[#0a0f18] rounded-[10px] flex items-center justify-center">
+                            <Globe size={20} className="text-[#FCD116]" />
                         </div>
                     </div>
                     {!compact && (

@@ -46,23 +46,20 @@ export default function Header() {
             >
                 <div className="container mx-auto px-4 sm:px-6 lg:px-12 flex justify-between items-center max-w-[1600px]">
                     {/* Logo Section */}
-                    <Link href="/" className="flex items-center gap-3 sm:gap-4 group shrink-0">
-                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 xl:w-20 xl:h-20 overflow-hidden rounded-full border border-white/10 group-hover:border-[#FCD116]/50 transition-all duration-500 bg-white shadow-lg p-1">
-                            <div className="relative w-full h-full rounded-full overflow-hidden">
-                                <Image
-                                    src="/images/icon-192x192.png"
-                                    alt="Retour Gagnant Logo"
-                                    fill
-                                    className="object-contain scale-110"
-                                    priority
-                                />
-                            </div>
+                    <Link href="/" className="flex items-center gap-4 group shrink-0">
+                        <div className="relative w-14 h-14 xl:w-20 xl:h-20 overflow-hidden rounded-full border border-white/10 group-hover:border-[#FCD116]/50 transition-colors bg-white shadow-lg">
+                            <Image
+                                src="/images/logo.jpg"
+                                alt="Retour Gagnant Logo"
+                                fill
+                                className="object-cover"
+                            />
                         </div>
-                        <div className="hidden xs:flex flex-col">
-                            <span className="font-heading font-black text-xl sm:text-2xl xl:text-3xl tracking-tighter text-[#008751] group-hover:text-white transition-colors duration-500">
+                        <div className="hidden sm:flex flex-col">
+                            <span className="font-heading font-black text-2xl xl:text-3xl tracking-tighter text-[#008751] group-hover:text-white transition-colors duration-500">
                                 RETOUR <span className="text-[#E8112D]">GAGNANT</span>
                             </span>
-                            <span className="text-[9px] xl:text-[12px] font-bold tracking-[0.4em] uppercase font-sans text-white/50 group-hover:text-[#FCD116] transition-colors duration-500">
+                            <span className="text-[10px] xl:text-[12px] font-bold tracking-[0.4em] uppercase font-sans text-white/50 group-hover:text-[#FCD116] transition-colors duration-500">
                                 BENIN
                             </span>
                         </div>

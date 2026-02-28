@@ -61,13 +61,9 @@ export default function ClientDashboardLayout({
                         </button>
 
                         <Link href="/" className="flex items-center gap-2 md:gap-3 group">
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-benin-gradient p-0.5 shadow-lg group-hover:scale-110 transition-transform overflow-hidden px-1">
-                                <div className="w-full h-full bg-[#05080a] rounded-[9px] flex items-center justify-center overflow-hidden">
-                                    <img
-                                        src="/images/icon-192x192.png"
-                                        alt="Logo"
-                                        className="w-full h-full object-contain scale-110"
-                                    />
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-benin-gradient p-0.5 shadow-lg group-hover:scale-110 transition-transform">
+                                <div className="w-full h-full bg-[#05080a] rounded-[9px] flex items-center justify-center">
+                                    <ShieldCheck size={16} className="text-[#FCD116] md:w-5 md:h-5" />
                                 </div>
                             </div>
                             <span className="font-heading font-bold text-base md:text-xl tracking-tight text-white">
