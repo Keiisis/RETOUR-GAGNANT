@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from "react";
 export default function HeroSection() {
     const heroVideo = "/videos/hero.mp4";
     const heroTitle = "INVESTISSEZ DANS L'HÉRITAGE DU BÉNIN";
-    const heroSubtitle = "Découvrez des opportunités uniques entre tradition et modernité";
+    const heroSubtitle = "Accompagnement Premium pour un retour réussi au Bénin";
     const [isVideoLoaded, setIsVideoLoaded] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -85,8 +85,10 @@ export default function HeroSection() {
                     </span>
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-heading leading-[1.1] mb-6 md:mb-8 text-white drop-shadow-2xl animate-in zoom-in-95 duration-1000 delay-200">
-                    {heroTitle}
+                <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-heading leading-[1.1] mb-6 md:mb-8 drop-shadow-2xl animate-in zoom-in-95 duration-1000 delay-200">
+                    <span className="text-[#008751]">VOTRE</span>{" "}
+                    <span className="text-[#FCD116] drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">RETOUR</span>{" "}
+                    <span className="text-[#E8112D]">GAGNANT</span>
                 </h1>
 
                 <p className="text-xl md:text-2xl text-white/85 font-medium max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-500">
