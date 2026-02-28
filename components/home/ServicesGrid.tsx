@@ -64,6 +64,27 @@ const FALLBACK_SERVICES = [
     },
 ];
 
+// Map DB icon names to fallback slugs for image lookup
+const SLUG_BY_TITLE: Record<string, string> = {
+    'Construction Immobilière': 'construction',
+    'Gestion de Patrimoine': 'investissement',
+    'Conciergerie Diaspora': 'culture',
+    'Passeport & Documents': 'passeport',
+    'Acheter ou Louer': 'logement',
+    'Création d\'Entreprise': 'business',
+    'Guide Culturel': 'culture',
+    'Investissement': 'investissement',
+    'Construction': 'construction',
+}
+const IMG_BY_SLUG: Record<string, string> = {
+    passeport: '/assets/icones/icone_Passeport_Documents.png',
+    logement: '/assets/icones/icone_Acheter_ou_louer.png',
+    business: '/assets/icones/icone_Creation_d_Entreprise.png',
+    culture: '/assets/icones/icone_Guide_culturel.png',
+    construction: '/assets/icones/icone_Construction.png',
+    investissement: '/assets/icones/icone_Investissement.png',
+}
+
 export default function ServicesGrid() {
     const [servicesList, setServicesList] = useState(FALLBACK_SERVICES);
 
@@ -78,15 +99,18 @@ export default function ServicesGrid() {
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const mappedServices = data.map((item: any) => ({
-                        id: item.id,
-                        title: item.title,
-                        description: item.description || "Découvrez ce service",
-                        icon: undefined,
-                        iconType: item.icon_type || "passport",
-                        slug: item.slug || "",
-                        imageUrl: item.image_url || "",
-                    }));
+                    const mappedServices = data.map((item: any) => {
+                        const slug = item.slug || SLUG_BY_TITLE[item.title] || item.title.toLowerCase().replace(/\s+/g, '-');
+                        return {
+                            id: item.id,
+                            title: item.title,
+                            description: item.description || "Découvrez ce service",
+                            icon: undefined,
+                            iconType: item.icon_type || "passport",
+                            slug,
+                            imageUrl: item.image_url || IMG_BY_SLUG[slug] || '',
+                        };
+                    });
                     setServicesList(mappedServices);
                 }
             } catch (error) {

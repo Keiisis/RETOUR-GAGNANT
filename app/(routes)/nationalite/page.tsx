@@ -56,8 +56,8 @@ export default function NationalitePage() {
         <div className="min-h-screen bg-[#0a0f14]">
             {/* ═══ HERO ═══ */}
             <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1590059110034-436f901c0c29?w=1920&q=80')] bg-cover bg-center" />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/80 via-[#0a0f14]/60 to-[#0a0f14]" />
+                <div className="absolute inset-0 bg-cover bg-[center_top_10%]" style={{ backgroundImage: `url('${content.form_bg_image || '/images/bg-nationalite-afro.jpg'}')` }} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/50 via-[#0a0f14]/30 to-[#0a0f14]" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,135,81,0.15),transparent_70%)]" />
 
                 {/* Decorative lines */}

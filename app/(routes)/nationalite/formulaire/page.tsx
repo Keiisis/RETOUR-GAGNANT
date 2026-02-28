@@ -252,18 +252,18 @@ export default function NationaliteFormPage() {
                 className="absolute inset-0 bg-cover bg-[center_top_10%] bg-no-repeat"
                 style={{ backgroundImage: `url('${bgImageUrl}')` }}
                 initial={{ scale: 1.1, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.8 }}
+                animate={{ scale: 1, opacity: 1 }}
                 transition={{
                     scale: { duration: 30, ease: "linear", repeat: Infinity, repeatType: "reverse" },
                     opacity: { duration: 1.5 }
                 }}
             />
-            {/* Cinematic Gradient Overlays to preserve legibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/90 via-[#0a0f14]/60 to-[#0a0f14]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f14]/80 via-transparent to-[#0a0f14]/80 hidden md:block" />
+            {/* Light overlay — image stays clearly visible */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/50 via-[#0a0f14]/20 to-[#0a0f14]/70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f14]/30 via-transparent to-[#0a0f14]/30 hidden md:block" />
 
-            {/* Glassmorphism subtle blur */}
-            <div className="absolute inset-0 backdrop-blur-[8px]" />
+            {/* Very subtle blur — just depth, no hiding */}
+            <div className="absolute inset-0 backdrop-blur-[1px]" />
 
             {/* Dynamic Interactive Elements */}
             <motion.div
