@@ -166,18 +166,42 @@ INSERT INTO nationality_required_docs (label_fr, description_fr, doc_type, sort_
 ('Casier judiciaire', 'Extrait de casier judiciaire de moins de 3 mois, délivré par l''autorité compétente du pays de résidence.', 'casier', 5)
 ON CONFLICT DO NOTHING;
 
+-- 5. payment_methods — Admin-configurable payment methods
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'mobile_money', -- mobile_money, card, bank_transfer, crypto, paypal, wave, other
+    instructions TEXT DEFAULT '',
+    logo_url TEXT DEFAULT '',
+    is_active BOOLEAN DEFAULT true,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Seed default payment methods
+INSERT INTO payment_methods (name, type, instructions, sort_order) VALUES
+('MTN Mobile Money', 'mobile_money', 'Envoyez 250 $ au +229 XX XX XX XX — Nom: Retour Gagnant', 1),
+('Moov Money', 'mobile_money', 'Envoyez 250 $ au +229 XX XX XX XX — Nom: Retour Gagnant', 2),
+('Wave', 'wave', 'Envoyez 250 $ via Wave au +229 XX XX XX XX', 3),
+('Virement bancaire', 'bank_transfer', 'IBAN: BJ XX XXXX XXXX — Banque: XXXX — Référence: votre nom complet', 4),
+('PayPal', 'paypal', 'Envoyez 250 $ USD à payments@retourgagnant.bj', 5)
+ON CONFLICT DO NOTHING;
+
 -- Enable RLS
 ALTER TABLE nationality_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nationality_page_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nationality_faq ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nationality_required_docs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 
 -- Policies
 CREATE POLICY "Allow public read on page content" ON nationality_page_content FOR SELECT USING (true);
 CREATE POLICY "Allow public read on faq" ON nationality_faq FOR SELECT USING (true);
 CREATE POLICY "Allow public read on required docs" ON nationality_required_docs FOR SELECT USING (true);
+CREATE POLICY "Allow public read on payment methods" ON payment_methods FOR SELECT USING (true);
 CREATE POLICY "Allow public insert applications" ON nationality_applications FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow service role all on applications" ON nationality_applications FOR ALL USING (true);
 CREATE POLICY "Allow service role all on page content" ON nationality_page_content FOR ALL USING (true);
 CREATE POLICY "Allow service role all on faq" ON nationality_faq FOR ALL USING (true);
 CREATE POLICY "Allow service role all on required docs" ON nationality_required_docs FOR ALL USING (true);
+CREATE POLICY "Allow service role all on payment methods" ON payment_methods FOR ALL USING (true);

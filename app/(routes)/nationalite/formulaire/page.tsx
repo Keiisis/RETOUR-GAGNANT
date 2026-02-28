@@ -5,27 +5,37 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     ArrowLeft, ArrowRight, CheckCircle2, Globe2, User,
-    FileText, Upload, Send, Shield, ChevronLeft, Loader2, AlertCircle
+    FileText, Upload, Send, ChevronLeft, Loader2, AlertCircle,
+    CreditCard, X, Heart, Sparkles, Home
 } from 'lucide-react'
 import Link from 'next/link'
 
 const STEPS = [
     { num: 1, label: 'Afro-descendance' },
     { num: 2, label: 'Infos personnelles' },
-    { num: 3, label: 'Document d\'identité' },
+    { num: 3, label: 'Document & Parents' },
     { num: 4, label: 'Pièces jointes' },
-    { num: 5, label: 'Récapitulatif' },
+    { num: 5, label: 'Paiement' },
+    { num: 6, label: 'Récapitulatif' },
 ]
 
-const COUNTRIES = ['Bénin', 'France', 'États-Unis', 'Brésil', 'Haïti', 'Canada', 'Royaume-Uni', 'Jamaïque', 'Trinidad', 'Colombie', 'Cuba', 'Guadeloupe', 'Martinique', 'Guyane', 'Suriname', 'Barbade', 'Bahamas', 'Allemagne', 'Belgique', 'Suisse', 'Pays-Bas', 'Italie', 'Espagne', 'Portugal', 'Ghana', 'Togo', 'Nigeria', 'Sénégal', 'Côte d\'Ivoire', 'Cameroun', 'Autre']
-const PROFESSIONS = ['Salarié(e)', 'Entrepreneur/Commerçant', 'Profession libérale', 'Étudiant(e)', 'Fonctionnaire', 'Retraité(e)', 'Artisan', 'Agriculteur', 'Sans emploi', 'Autre']
+const COUNTRIES = ['Bénin', 'France', 'États-Unis', 'Brésil', 'Haïti', 'Canada', 'Royaume-Uni', 'Jamaïque', 'Trinidad et Tobago', 'Colombie', 'Cuba', 'Guadeloupe', 'Martinique', 'Guyane française', 'Suriname', 'Barbade', 'Bahamas', 'République Dominicaine', 'Porto Rico', 'Antigua-et-Barbuda', 'Allemagne', 'Belgique', 'Suisse', 'Pays-Bas', 'Italie', 'Espagne', 'Portugal', 'Ghana', 'Togo', 'Nigeria', 'Sénégal', 'Côte d\'Ivoire', 'Cameroun', 'Congo', 'Gabon', 'Mali', 'Burkina Faso', 'Guinée', 'Niger', 'Tchad', 'Autre']
+const PROFESSIONS = ['Salarié(e)', 'Entrepreneur/Commerçant', 'Profession libérale', 'Étudiant(e)', 'Fonctionnaire', 'Retraité(e)', 'Artisan', 'Agriculteur', 'Artiste', 'Ingénieur', 'Médecin', 'Avocat', 'Enseignant', 'Sans emploi', 'Autre']
+const GENRES = ['Masculin', 'Féminin', 'Non-binaire', 'Préfère ne pas préciser']
+const LIENS = ['Père', 'Mère', 'Grand-père paternel', 'Grand-mère paternelle', 'Grand-père maternel', 'Grand-mère maternelle', 'Arrière-grand-père', 'Arrière-grand-mère', 'Autre']
+
+interface PaymentMethod { id: string; name: string; type: string; instructions: string; is_active: boolean; logo_url: string }
 
 export default function NationaliteFormPage() {
-    const [step, setStep] = useState(1)
+    const [step, setStep] = useState(0) // 0 = popup loi
     const [submitting, setSubmitting] = useState(false)
-    const [submitted, setSubmitted] = useState(false)
+    const [showWelcome, setShowWelcome] = useState(false)
     const [appRef, setAppRef] = useState('')
     const [errors, setErrors] = useState<string[]>([])
+    const [lawAccepted, setLawAccepted] = useState(false)
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
+    const [selectedPayment, setSelectedPayment] = useState('')
+    const [paymentProof, setPaymentProof] = useState('')
 
     const [form, setForm] = useState({
         knows_about_law: false, is_afro_descendant: true, afro_descendant_description: '',
@@ -43,69 +53,153 @@ export default function NationaliteFormPage() {
         documents_uploaded: [] as string[],
     })
 
+    useEffect(() => {
+        supabase.from('payment_methods').select('*').eq('is_active', true).order('sort_order').then(({ data }) => {
+            setPaymentMethods((data || []) as PaymentMethod[])
+        })
+    }, [])
+
     const u = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }))
-    const inputCls = "w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 placeholder:text-gray-600 transition-all"
-    const labelCls = "text-xs font-bold text-gray-400 mb-1.5 block"
-    const reqCls = "text-red-400 ml-0.5"
+    const IC = "w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 placeholder:text-gray-600 transition-all"
+    const LC = "text-xs font-bold text-gray-400 mb-1.5 block"
+    const RQ = "text-red-400 ml-0.5"
 
     const validate = (): string[] => {
         const e: string[] = []
-        if (step === 1 && !form.afro_descendant_description) e.push('Décrivez votre afro-descendance')
+        if (step === 1) {
+            if (!form.afro_descendant_description) e.push('Décrivez votre afro-descendance')
+            if (!form.ancestor1_nom) e.push('Nom de l\'ancêtre 1 requis')
+            if (!form.ancestor1_lien_parente) e.push('Lien de parenté requis')
+        }
         if (step === 2) {
             if (!form.nom) e.push('Nom requis')
             if (!form.prenom) e.push('Prénom requis')
             if (!form.email) e.push('Email requis')
+            if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.push('Email invalide')
+            if (!form.genre) e.push('Genre requis')
+            if (!form.date_naissance) e.push('Date de naissance requise')
             if (!form.pays_residence) e.push('Pays de résidence requis')
+            if (!form.nationalite) e.push('Nationalité requise')
         }
         if (step === 3 && !form.type_document_identite) e.push('Type de document requis')
+        if (step === 5 && !selectedPayment) e.push('Sélectionnez un moyen de paiement')
         return e
     }
 
-    const next = () => {
-        const e = validate()
-        if (e.length > 0) { setErrors(e); return }
-        setErrors([])
-        setStep(s => Math.min(s + 1, 5))
-    }
+    const next = () => { const e = validate(); if (e.length > 0) { setErrors(e); return }; setErrors([]); setStep(s => Math.min(s + 1, 6)) }
     const prev = () => { setErrors([]); setStep(s => Math.max(s - 1, 1)) }
 
     const submit = async () => {
         setSubmitting(true)
-        const ref = `RG-NAT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+        const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
         const { error } = await supabase.from('nationality_applications').insert({
-            ...form,
-            application_ref: ref,
-            status: 'soumis',
-            submitted_at: new Date().toISOString(),
-            last_step_completed: 5,
-            documents_uploaded: form.documents_uploaded,
+            ...form, application_ref: ref, status: 'soumis', submitted_at: new Date().toISOString(),
+            last_step_completed: 6, payment_method: selectedPayment, payment_ref: paymentProof,
+            payment_status: 'en_attente',
         })
         if (!error) {
             setAppRef(ref)
-            setSubmitted(true)
             try {
                 await fetch('/api/email/send', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        to: form.email, subject: `Retour Gagnant — Demande de nationalité ${ref}`,
-                        message: `Bonjour ${form.prenom} ${form.nom},\n\nVotre demande de reconnaissance de nationalité béninoise a été enregistrée sous la référence ${ref}.\n\nNotre équipe va examiner votre dossier et vous recontactera dans les plus brefs délais.\n\nL'équipe Retour Gagnant`,
+                        to: form.email,
+                        subject: `Retour Gagnant Bénin — Demande ${ref} reçue`,
+                        message: `Bonjour ${form.prenom} ${form.nom},\n\nVotre demande de reconnaissance de nationalité béninoise a été enregistrée avec succès sous la référence :\n\n${ref}\n\nNotre équipe va examiner votre dossier et vérifier votre paiement. Vous recevrez une notification à chaque étape.\n\nBienvenue chez vous.\n\nL'équipe Retour Gagnant Bénin`,
                         clientName: `${form.prenom} ${form.nom}`, context: 'nationality_application', relatedId: ref
                     })
                 })
             } catch { }
+            setShowWelcome(true)
         }
         setSubmitting(false)
     }
 
-    if (submitted) return (
+    // ═══ WELCOME HOME ANIMATION ═══
+    if (showWelcome) return (
+        <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4 overflow-hidden relative">
+            {/* Particle effects */}
+            {Array.from({ length: 30 }).map((_, i) => (
+                <motion.div key={i} className="absolute rounded-full"
+                    style={{ width: Math.random() * 8 + 2, height: Math.random() * 8 + 2, background: ['#008751', '#FCD116', '#E8112D'][i % 3], left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+                    animate={{ y: [0, -200, 0], opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
+                    transition={{ duration: 3 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 3 }} />
+            ))}
+
+            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 1 }} className="relative z-10 text-center max-w-lg">
+                {/* Pulsing glow */}
+                <motion.div className="absolute -inset-20 bg-gradient-to-r from-[#008751]/20 via-[#FCD116]/10 to-[#E8112D]/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
+
+                <motion.div initial={{ y: 30 }} animate={{ y: 0 }} transition={{ delay: 0.3 }} className="relative">
+                    <motion.div className="w-24 h-24 mx-auto mb-6 relative" animate={{ rotateY: [0, 360] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D] opacity-30 blur-xl" />
+                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/30 border-2 border-[#FCD116]/30 flex items-center justify-center">
+                            <Home size={36} className="text-[#FCD116]" />
+                        </div>
+                    </motion.div>
+
+                    <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+                        Bienvenue
+                        <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">Chez Vous</span>
+                    </motion.h1>
+
+                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="text-gray-400 text-sm mb-2">
+                        Votre demande a été enregistrée avec succès
+                    </motion.p>
+
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1, type: 'spring' }} className="inline-block bg-white/5 backdrop-blur-xl border border-[#FCD116]/20 rounded-2xl px-6 py-3 mb-6">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Référence</p>
+                        <p className="text-xl font-mono font-black text-[#FCD116]">{appRef}</p>
+                    </motion.div>
+
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="text-xs text-gray-500 mb-8">
+                        Un email de confirmation a été envoyé à <span className="text-emerald-400">{form.email}</span>
+                    </motion.p>
+
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.5 }} className="space-y-3">
+                        <p className="text-xs text-gray-600 italic max-w-sm mx-auto">
+                            "La terre de vos ancêtres vous attend les bras ouverts. Ce n'est pas un retour, c'est une renaissance."
+                        </p>
+                        <div className="flex items-center justify-center gap-1 text-[10px] text-gray-600">
+                            <Heart size={10} className="text-[#E8112D]" /> Retour Gagnant Bénin
+                        </div>
+                    </motion.div>
+
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Link href="/nationalite" className="bg-white/10 hover:bg-white/15 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all">Retour à la page</Link>
+                        <Link href="/" className="text-xs text-gray-500 hover:text-white transition-colors">Accueil</Link>
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        </div>
+    )
+
+    // ═══ LAW POPUP (step 0) ═══
+    if (step === 0) return (
         <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/[0.03] border border-emerald-500/20 rounded-3xl p-10 text-center max-w-md">
-                <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6"><CheckCircle2 size={36} className="text-emerald-400" /></div>
-                <h2 className="text-2xl font-black text-white mb-3">Demande Soumise</h2>
-                <p className="text-sm text-gray-400 mb-4">Votre référence :</p>
-                <p className="text-xl font-mono font-black text-[#FCD116] mb-6">{appRef}</p>
-                <p className="text-xs text-gray-500 mb-8">Un email de confirmation a été envoyé à {form.email}</p>
-                <Link href="/nationalite" className="bg-white/10 hover:bg-white/15 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all">Retour</Link>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+                <h2 className="text-xl font-black text-white text-center mb-2">Savez-vous ce qu'est la reconnaissance de la nationalité aux afro-descendants en République du Bénin ?</h2>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-400 mb-4 text-center">Lisez et cochez la mention "J'ai lu et compris" pour poursuivre</div>
+                <div className="text-sm text-gray-400 leading-relaxed space-y-3 mb-6">
+                    <p>La reconnaissance de la nationalité béninoise aux afrodescendants est un acte de mémoire, de justice et une porte ouverte vers le retour aux racines des descendants des Africains déportés lors de la traite négrière transatlantique, comme membres légitimes de la Nation béninoise.</p>
+                    <p>La loi 2024-31 du 02 Septembre 2024 portant reconnaissance de la nationalité béninoise aux afro-descendants organise en ce sens un mode d'acquisition de la nationalité béninoise par toute personne qui d'après sa généalogie, a un ascendant africain subsaharien déporté hors du continent africain dans le cadre de la traite des noirs et du commerce triangulaire.</p>
+                    <p className="font-bold text-white">La loi s'adresse à l'afro-descendant :</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                        <li>âgé d'au moins 18 ans,</li>
+                        <li>résidant hors du continent africain,</li>
+                        <li>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</li>
+                    </ul>
+                    <p><span className="font-bold text-white">La preuve de l'afro-descendance peut être apportée par :</span> des actes d'état civil, des certificats officiels, des tests d'ADN génétiques, des actes notariés, des arbres généalogiques, des extraits d'archives historiques, et tout autre document probant.</p>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer mb-6 bg-white/5 rounded-xl p-4">
+                    <input type="checkbox" checked={lawAccepted} onChange={e => setLawAccepted(e.target.checked)} className="w-5 h-5 accent-emerald-500" />
+                    <span className="text-sm font-bold text-emerald-400">J'ai lu et compris</span>
+                </label>
+                <div className="flex gap-3">
+                    <Link href="/nationalite" className="flex-1 bg-white/5 text-gray-400 font-bold text-sm py-3 rounded-xl text-center hover:bg-white/10 transition-all">Retour</Link>
+                    <button onClick={() => { if (lawAccepted) { u('knows_about_law', true); setStep(1) } }} disabled={!lawAccepted} className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm py-3 rounded-xl disabled:opacity-30 transition-all flex items-center justify-center gap-2">Continuer <ArrowRight size={16} /></button>
+                </div>
             </motion.div>
         </div>
     )
@@ -113,187 +207,163 @@ export default function NationaliteFormPage() {
     return (
         <div className="min-h-screen bg-[#0a0f14] py-8 px-4">
             <div className="max-w-3xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white mb-4 transition-colors"><ChevronLeft size={14} /> Retour</Link>
+                <div className="text-center mb-6">
+                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white mb-3 transition-colors"><ChevronLeft size={14} /> Retour</Link>
                     <h1 className="text-2xl md:text-3xl font-black text-white">Reconnaissance de Nationalité</h1>
-                    <p className="text-sm text-gray-500 mt-2">Veuillez remplir le formulaire ci-dessous</p>
+                    <p className="text-xs text-gray-500 mt-1">Veuillez remplir le formulaire ci-dessous</p>
                 </div>
 
-                {/* Step indicator */}
-                <div className="flex items-center justify-between mb-10 overflow-x-auto pb-2">
+                {/* Progress */}
+                <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
                     {STEPS.map((s, i) => (
                         <div key={s.num} className="flex items-center">
-                            <div className={`flex items-center gap-2 shrink-0 ${step >= s.num ? 'text-emerald-400' : 'text-gray-600'}`}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${step > s.num ? 'bg-emerald-500 text-white' : step === s.num ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-600'}`}>{step > s.num ? <CheckCircle2 size={14} /> : s.num}</div>
-                                <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block whitespace-nowrap">{s.label}</span>
+                            <div className={`flex items-center gap-1.5 shrink-0 ${step >= s.num ? 'text-emerald-400' : 'text-gray-600'}`}>
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${step > s.num ? 'bg-emerald-500 text-white' : step === s.num ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400' : 'bg-white/5 border border-white/10'}`}>{step > s.num ? <CheckCircle2 size={12} /> : s.num}</div>
+                                <span className="text-[9px] font-bold uppercase tracking-wider hidden lg:block whitespace-nowrap">{s.label}</span>
                             </div>
-                            {i < 4 && <div className={`w-8 sm:w-16 h-px mx-2 ${step > s.num ? 'bg-emerald-500/50' : 'bg-white/10'}`} />}
+                            {i < 5 && <div className={`w-6 lg:w-12 h-px mx-1.5 ${step > s.num ? 'bg-emerald-500/50' : 'bg-white/10'}`} />}
                         </div>
                     ))}
                 </div>
 
-                {/* Errors */}
-                {errors.length > 0 && (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
-                        {errors.map((e, i) => <p key={i} className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {e}</p>)}
-                    </div>
-                )}
+                {errors.length > 0 && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">{errors.map((e, i) => <p key={i} className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {e}</p>)}</div>}
 
-                {/* Form content */}
                 <AnimatePresence mode="wait">
-                    <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-                        className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
+                    <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
 
-                        {step === 1 && (
-                            <div className="space-y-6">
-                                <h2 className="text-lg font-black text-white mb-2">Votre identification Afro-descendante</h2>
-                                <div>
-                                    <label className={labelCls}>Connaissez-vous la loi sur la reconnaissance de nationalité ?</label>
-                                    <div className="flex gap-3 mt-1">
-                                        {[true, false].map(v => <button key={String(v)} onClick={() => u('knows_about_law', v)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${form.knows_about_law === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Êtes-vous afro-descendant(e) ?<span className={reqCls}>*</span></label>
-                                    <div className="flex gap-3 mt-1">
-                                        {[true, false].map(v => <button key={String(v)} onClick={() => u('is_afro_descendant', v)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${form.is_afro_descendant === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Comment êtes-vous afro-descendant(e) ?<span className={reqCls}>*</span></label>
-                                    <textarea rows={4} value={form.afro_descendant_description} onChange={e => u('afro_descendant_description', e.target.value)} placeholder="Décrivez en quelques mots votre ascendance afro-descendante..." className={inputCls + ' resize-none'} />
-                                </div>
-                                <div className="border-t border-white/5 pt-6">
-                                    <h3 className="text-sm font-black text-white mb-4">Informations sur vos ancêtres</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {[1, 2].map(n => (
-                                            <div key={n} className="space-y-3">
-                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{n === 1 ? '1ère' : '2ème'} Personne</span>
-                                                <div><label className={labelCls}>Nom{n === 1 && <span className={reqCls}>*</span>}</label><input value={(form as any)[`ancestor${n}_nom`]} onChange={e => u(`ancestor${n}_nom`, e.target.value)} className={inputCls} placeholder="Nom" /></div>
-                                                <div><label className={labelCls}>Prénom(s)</label><input value={(form as any)[`ancestor${n}_prenom`]} onChange={e => u(`ancestor${n}_prenom`, e.target.value)} className={inputCls} placeholder="Prénom(s)" /></div>
-                                                <div><label className={labelCls}>Lien de parenté{n === 1 && <span className={reqCls}>*</span>}</label><input value={(form as any)[`ancestor${n}_lien_parente`]} onChange={e => u(`ancestor${n}_lien_parente`, e.target.value)} className={inputCls} placeholder="Ex: Grand-père" /></div>
-                                                <div><label className={labelCls}>Nationalité</label><select value={(form as any)[`ancestor${n}_nationalite`]} onChange={e => u(`ancestor${n}_nationalite`, e.target.value)} className={inputCls}><option value="">Saisir un pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {step === 1 && <div className="space-y-5">
+                            <h2 className="text-lg font-black text-white">Votre identification Afro-descendante</h2>
+                            <div><label className={LC}>Êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><div className="flex gap-3 mt-1">{[true, false].map(v => <button key={String(v)} onClick={() => u('is_afro_descendant', v)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${form.is_afro_descendant === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
+                            <div><label className={LC}>Comment êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><textarea rows={4} value={form.afro_descendant_description} onChange={e => u('afro_descendant_description', e.target.value)} placeholder="Décrivez en quelques mots votre ascendance..." className={IC + ' resize-none'} /></div>
+                            <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos ancêtres</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[1, 2].map(n => (<div key={n} className="space-y-3">
+                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{n === 1 ? '1ère' : '2ème'} Personne</span>
+                                    <div><label className={LC}>Nom{n === 1 && <span className={RQ}>*</span>}</label><input value={(form as any)[`ancestor${n}_nom`]} onChange={e => u(`ancestor${n}_nom`, e.target.value)} className={IC} placeholder="Nom" /></div>
+                                    <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`ancestor${n}_prenom`]} onChange={e => u(`ancestor${n}_prenom`, e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                    <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`ancestor${n}_date_naissance`]} onChange={e => u(`ancestor${n}_date_naissance`, e.target.value)} className={IC} /></div>
+                                    <div><label className={LC}>Lien de parenté{n === 1 && <span className={RQ}>*</span>}</label><select value={(form as any)[`ancestor${n}_lien_parente`]} onChange={e => u(`ancestor${n}_lien_parente`, e.target.value)} className={IC}><option value="">Choisir</option>{LIENS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
+                                    <div><label className={LC}>Vivant(e) ?</label><div className="flex gap-2">{[true, false].map(v => <button key={String(v)} onClick={() => u(`ancestor${n}_vivant`, v)} className={`flex-1 py-2 rounded-lg text-xs font-bold ${(form as any)[`ancestor${n}_vivant`] === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
+                                    <div><label className={LC}>Nationalité</label><select value={(form as any)[`ancestor${n}_nationalite`]} onChange={e => u(`ancestor${n}_nationalite`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className={LC}>Pays de résidence</label><select value={(form as any)[`ancestor${n}_pays_residence`]} onChange={e => u(`ancestor${n}_pays_residence`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className={LC}>Autres informations</label><textarea rows={2} value={(form as any)[`ancestor${n}_autres_infos`]} onChange={e => u(`ancestor${n}_autres_infos`, e.target.value)} className={IC + ' resize-none'} placeholder="Informations complémentaires..." /></div>
+                                </div>))}</div></div>
+                        </div>}
 
-                        {step === 2 && (
-                            <div className="space-y-5">
-                                <h2 className="text-lg font-black text-white mb-2">Informations Personnelles</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label className={labelCls}>Nom<span className={reqCls}>*</span></label><input value={form.nom} onChange={e => u('nom', e.target.value)} className={inputCls} placeholder="Nom de famille" /></div>
-                                    <div><label className={labelCls}>Prénom(s)<span className={reqCls}>*</span></label><input value={form.prenom} onChange={e => u('prenom', e.target.value)} className={inputCls} placeholder="Prénom(s)" /></div>
-                                    <div><label className={labelCls}>Genre<span className={reqCls}>*</span></label><select value={form.genre} onChange={e => u('genre', e.target.value)} className={inputCls}><option value="">Choisir</option><option value="Masculin">Masculin</option><option value="Féminin">Féminin</option><option value="Autre">Autre</option></select></div>
-                                    <div><label className={labelCls}>Date de naissance<span className={reqCls}>*</span></label><input type="date" value={form.date_naissance} onChange={e => u('date_naissance', e.target.value)} className={inputCls} /></div>
-                                    <div><label className={labelCls}>Pays de naissance<span className={reqCls}>*</span></label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={inputCls}><option value="">Saisir un pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={labelCls}>Ville de naissance</label><input value={form.ville_naissance} onChange={e => u('ville_naissance', e.target.value)} className={inputCls} placeholder="Ville" /></div>
-                                    <div><label className={labelCls}>Pays de résidence<span className={reqCls}>*</span></label><select value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={inputCls}><option value="">Saisir un pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={labelCls}>Adresse de résidence</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={inputCls} placeholder="Adresse complète" /></div>
-                                    <div><label className={labelCls}>Nationalité<span className={reqCls}>*</span></label><select value={form.nationalite} onChange={e => u('nationalite', e.target.value)} className={inputCls}><option value="">Saisir un pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={labelCls}>Téléphone</label><input value={form.telephone} onChange={e => u('telephone', e.target.value)} className={inputCls} placeholder="+229 XX XX XX XX" /></div>
-                                    <div><label className={labelCls}>Email<span className={reqCls}>*</span></label><input type="email" value={form.email} onChange={e => u('email', e.target.value)} className={inputCls} placeholder="email@exemple.com" /></div>
-                                    <div><label className={labelCls}>Profession<span className={reqCls}>*</span></label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={inputCls}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-                                </div>
-                                <div className="flex items-center gap-3 mt-4 bg-white/[0.03] border border-white/5 rounded-xl p-4">
-                                    <button onClick={() => u('demande_depuis_benin', !form.demande_depuis_benin)} className={`w-12 h-6 rounded-full transition-all relative ${form.demande_depuis_benin ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${form.demande_depuis_benin ? 'left-6' : 'left-0.5'}`} /></button>
-                                    <span className="text-sm text-gray-400">Faites-vous votre demande depuis le territoire béninois ?</span>
-                                </div>
+                        {step === 2 && <div className="space-y-5">
+                            <h2 className="text-lg font-black text-white">Informations Personnelles</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className={LC}>Nom<span className={RQ}>*</span></label><input value={form.nom} onChange={e => u('nom', e.target.value)} className={IC} placeholder="Nom de famille" /></div>
+                                <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={form.prenom} onChange={e => u('prenom', e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                <div><label className={LC}>Genre<span className={RQ}>*</span></label><select value={form.genre} onChange={e => u('genre', e.target.value)} className={IC}><option value="">Choisir</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                <div><label className={LC}>Date de naissance<span className={RQ}>*</span></label><input type="date" value={form.date_naissance} onChange={e => u('date_naissance', e.target.value)} className={IC} /></div>
+                                <div><label className={LC}>Pays de naissance<span className={RQ}>*</span></label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div><label className={LC}>Ville de naissance</label><input value={form.ville_naissance} onChange={e => u('ville_naissance', e.target.value)} className={IC} placeholder="Ville" /></div>
+                                <div><label className={LC}>Nationalité<span className={RQ}>*</span></label><select value={form.nationalite} onChange={e => u('nationalite', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div><label className={LC}>Pays de résidence<span className={RQ}>*</span></label><select value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div className="md:col-span-2"><label className={LC}>Adresse complète</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder="Adresse complète" /></div>
+                                <div><label className={LC}>Téléphone</label><input value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder="+229 XX XX XX XX" /></div>
+                                <div><label className={LC}>Email<span className={RQ}>*</span></label><input type="email" value={form.email} onChange={e => u('email', e.target.value)} className={IC} placeholder="email@exemple.com" /></div>
+                                <div><label className={LC}>Profession<span className={RQ}>*</span></label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                             </div>
-                        )}
+                            <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4">
+                                <button onClick={() => u('demande_depuis_benin', !form.demande_depuis_benin)} className={`w-12 h-6 rounded-full transition-all relative ${form.demande_depuis_benin ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${form.demande_depuis_benin ? 'left-6' : 'left-0.5'}`} /></button>
+                                <span className="text-sm text-gray-400">Demande depuis le territoire béninois ?</span>
+                            </div>
+                        </div>}
 
-                        {step === 3 && (
-                            <div className="space-y-5">
-                                <h2 className="text-lg font-black text-white mb-2">Document d'identité & Parents</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label className={labelCls}>Type de document<span className={reqCls}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={inputCls}><option value="">Choisir</option><option value="passport">Passeport</option><option value="cni">Carte Nationale d'Identité</option><option value="carte_electeur">Carte d'électeur</option><option value="autre">Autre</option></select></div>
-                                    <div><label className={labelCls}>Numéro du document</label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={inputCls} /></div>
-                                    <div><label className={labelCls}>Date d'expiration</label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={inputCls} /></div>
-                                    <div><label className={labelCls}>Pays de délivrance</label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={inputCls}><option value="">Saisir un pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={labelCls}>Lieu de délivrance</label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={inputCls} /></div>
-                                    <div><label className={labelCls}>Autorité de délivrance</label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={inputCls} /></div>
-                                </div>
-                                <div className="border-t border-white/5 pt-6 mt-6">
-                                    <h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {['Père', 'Mère'].map(p => {
-                                            const k = p === 'Père' ? 'pere' : 'mere'; return (
-                                                <div key={p} className="space-y-3">
-                                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{p}</span>
-                                                    <div><label className={labelCls}>Nom</label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={inputCls} /></div>
-                                                    <div><label className={labelCls}>Prénom(s)</label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={inputCls} /></div>
-                                                    <div><label className={labelCls}>Date de naissance</label><input type="date" value={(form as any)[`${k}_date_naissance`]} onChange={e => u(`${k}_date_naissance`, e.target.value)} className={inputCls} /></div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
+                        {step === 3 && <div className="space-y-5">
+                            <h2 className="text-lg font-black text-white">Document d'identité & Parents</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className={LC}>Type de document<span className={RQ}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">Choisir</option><option value="passeport">Passeport</option><option value="cni">Carte Nationale d'Identité</option><option value="carte_electeur">Carte d'électeur</option><option value="permis_conduire">Permis de conduire</option><option value="autre">Autre</option></select></div>
+                                <div><label className={LC}>Autorité de délivrance<span className={RQ}>*</span></label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} placeholder="Autorité" /></div>
+                                <div><label className={LC}>Numéro du document<span className={RQ}>*</span></label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} placeholder="Numéro" /></div>
+                                <div><label className={LC}>Pays de délivrance<span className={RQ}>*</span></label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                <div><label className={LC}>Date d'expiration<span className={RQ}>*</span></label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={IC} /></div>
+                                <div><label className={LC}>Lieu de délivrance<span className={RQ}>*</span></label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={IC} placeholder="Lieu" /></div>
                             </div>
-                        )}
+                            <div className="border-t border-white/5 pt-5">
+                                <h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{['Père', 'Mère'].map(p => {
+                                    const k = p === 'Père' ? 'pere' : 'mere'; return (<div key={p} className="space-y-3">
+                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{p}</span>
+                                        <div><label className={LC}>Nom<span className={RQ}>*</span></label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={IC} placeholder="Nom" /></div>
+                                        <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                        <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`${k}_date_naissance`]} onChange={e => u(`${k}_date_naissance`, e.target.value)} className={IC} /></div>
+                                    </div>)
+                                })}</div>
+                            </div>
+                        </div>}
 
-                        {step === 4 && (
-                            <div className="space-y-5">
-                                <h2 className="text-lg font-black text-white mb-2">Pièces à joindre</h2>
-                                <p className="text-xs text-gray-500">Téléversez vos documents justificatifs. Formats acceptés : PDF, JPG, PNG (max 5 MB par fichier).</p>
-                                {['Preuve d\'afro-descendance', 'Pièce d\'identité (scan)', 'Casier judiciaire', 'Justificatif de domicile', 'Preuve de profession'].map((doc, i) => (
-                                    <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <FileText size={16} className="text-emerald-400" />
-                                            <span className="text-sm text-gray-300">{doc}</span>
-                                        </div>
-                                        <label className="cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
-                                            <Upload size={12} /> Ajouter
-                                            <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => {
-                                                const f = e.target.files?.[0]
-                                                if (f) u('documents_uploaded', [...form.documents_uploaded, `${doc}: ${f.name}`])
-                                            }} />
-                                        </label>
-                                    </div>
-                                ))}
-                                {form.documents_uploaded.length > 0 && (
-                                    <div className="space-y-2 mt-4">{form.documents_uploaded.map((d, i) => (
-                                        <div key={i} className="text-xs text-emerald-400 flex items-center gap-2"><CheckCircle2 size={12} /> {d}</div>
-                                    ))}</div>
-                                )}
-                            </div>
-                        )}
+                        {step === 4 && <div className="space-y-4">
+                            <h2 className="text-lg font-black text-white">Pièces à joindre</h2>
+                            <p className="text-xs text-gray-500">Formats : PNG, JPG, JPEG, PDF. Taille max : 5 Mo par fichier.</p>
+                            {[{ label: 'Pièce d\'identité en cours de validité', required: true, multi: false },
+                            { label: 'Justificatif de domicile', required: true, multi: false },
+                            { label: 'Preuve de profession', required: true, multi: false },
+                            { label: 'Preuve d\'afro descendance', required: true, multi: true, hint: 'Vous pouvez charger plusieurs documents ici !' },
+                            { label: 'Casier judiciaire ou Certificat d\'antécédents criminels ou équivalent', required: true, multi: false },
+                            ].map((doc, i) => (
+                                <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between group hover:border-emerald-500/20 transition-all">
+                                    <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}{doc.required && <span className="text-red-400 ml-1">*</span>}</span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
+                                    <label className="cursor-pointer shrink-0">
+                                        <div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR UN OU PLUSIEURS FICHIERS' : 'CHOISIR UN FICHIER'}</p></div>
+                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { const names = Array.from(f).map(fi => `${doc.label}: ${fi.name}`); u('documents_uploaded', [...form.documents_uploaded, ...names]) } }} />
+                                    </label>
+                                </div>
+                            ))}
+                            {form.documents_uploaded.length > 0 && <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 space-y-1.5">{form.documents_uploaded.map((d, i) => <div key={i} className="text-xs text-emerald-400 flex items-center gap-2"><CheckCircle2 size={12} /> {d}</div>)}</div>}
+                        </div>}
 
-                        {step === 5 && (
-                            <div className="space-y-6">
-                                <h2 className="text-lg font-black text-white mb-2">Récapitulatif de votre demande</h2>
-                                {[
-                                    { title: 'Infos personnelles', items: [['Nom', `${form.prenom} ${form.nom}`], ['Genre', form.genre], ['Date de naissance', form.date_naissance], ['Pays de résidence', form.pays_residence], ['Email', form.email], ['Profession', form.profession]] },
-                                    { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`]] },
-                                    { title: 'Document d\'identité', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document], ['Pays', form.pays_delivrance]] },
-                                    { title: 'Frais de traitement', items: [['Montant', '250 $ USD']] },
-                                ].map((sec, si) => (
-                                    <div key={si} className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
-                                        <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] mb-3">{sec.title}</h3>
-                                        {sec.items.map(([k, v], i) => v && (
-                                            <div key={i} className="flex justify-between py-1.5 border-b border-white/[0.03] last:border-0">
-                                                <span className="text-xs text-gray-500">{k}</span>
-                                                <span className="text-xs text-white font-bold">{v}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
+                        {step === 5 && <div className="space-y-5">
+                            <h2 className="text-lg font-black text-white">Paiement des frais de traitement</h2>
+                            <div className="bg-gradient-to-r from-emerald-900/20 to-yellow-900/10 border border-emerald-500/10 rounded-2xl p-6 text-center">
+                                <p className="text-3xl font-black text-[#FCD116]">250 $</p>
+                                <p className="text-xs text-gray-500 mt-1">Frais de traitement de dossier (USD)</p>
                             </div>
-                        )}
+                            {paymentMethods.length === 0 ? (
+                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center"><p className="text-xs text-amber-400">Aucun moyen de paiement configuré. Contactez-nous directement.</p></div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <p className="text-xs text-gray-400 font-bold">Sélectionnez votre moyen de paiement :</p>
+                                    {paymentMethods.map(pm => (
+                                        <button key={pm.id} onClick={() => setSelectedPayment(pm.name)} className={`w-full text-left bg-white/[0.03] border rounded-xl p-4 transition-all flex items-center gap-4 ${selectedPayment === pm.name ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/5 hover:border-white/10'}`}>
+                                            <CreditCard size={20} className={selectedPayment === pm.name ? 'text-emerald-400' : 'text-gray-600'} />
+                                            <div><p className="text-sm font-bold text-white">{pm.name}</p>{pm.instructions && <p className="text-xs text-gray-500 mt-0.5">{pm.instructions}</p>}</div>
+                                            {selectedPayment === pm.name && <CheckCircle2 size={18} className="text-emerald-400 ml-auto" />}
+                                        </button>
+                                    ))}
+                                    {selectedPayment && (
+                                        <div className="mt-3"><label className={LC}>Référence de paiement / Preuve de transaction</label><input value={paymentProof} onChange={e => setPaymentProof(e.target.value)} className={IC} placeholder="Numéro de transaction, référence..." /></div>
+                                    )}
+                                </div>
+                            )}
+                        </div>}
+
+                        {step === 6 && <div className="space-y-5">
+                            <h2 className="text-lg font-black text-white">Récapitulatif de votre demande</h2>
+                            {[
+                                { title: 'Identité', items: [['Nom complet', `${form.prenom} ${form.nom}`], ['Genre', form.genre], ['Né(e) le', form.date_naissance], ['Nationalité', form.nationalite], ['Résidence', form.pays_residence], ['Email', form.email], ['Profession', form.profession]] },
+                                { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`], ['Ancêtre 2', form.ancestor2_nom ? `${form.ancestor2_prenom} ${form.ancestor2_nom} — ${form.ancestor2_lien_parente}` : '']] },
+                                { title: 'Document', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document], ['Expire le', form.date_expiration_document]] },
+                                { title: 'Parents', items: [['Père', `${form.pere_prenom} ${form.pere_nom}`], ['Mère', `${form.mere_prenom} ${form.mere_nom}`]] },
+                                { title: 'Paiement', items: [['Montant', '250 $ USD'], ['Méthode', selectedPayment], ['Référence', paymentProof]] },
+                                { title: 'Documents joints', items: form.documents_uploaded.map((d, i) => [`Fichier ${i + 1}`, d]) },
+                            ].map((sec, si) => (
+                                <div key={si} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                    <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">{sec.title}</h3>
+                                    {sec.items.filter(([, v]) => v).map(([k, v], i) => <div key={i} className="flex justify-between py-1 border-b border-white/[0.03] last:border-0"><span className="text-xs text-gray-500">{k}</span><span className="text-xs text-white font-bold text-right max-w-[60%]">{v}</span></div>)}
+                                </div>
+                            ))}
+                        </div>}
                     </motion.div>
                 </AnimatePresence>
 
-                {/* Navigation */}
-                <div className="flex items-center justify-between mt-8">
+                <div className="flex items-center justify-between mt-6">
                     {step > 1 ? <button onClick={prev} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors font-bold"><ArrowLeft size={16} /> Précédent</button> : <div />}
-                    {step < 5 ? (
-                        <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2">
-                            Suivant <ArrowRight size={16} />
-                        </button>
+                    {step < 6 ? (
+                        <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]">Suivant <ArrowRight size={16} /></button>
                     ) : (
-                        <button onClick={submit} disabled={submitting} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={submit} disabled={submitting} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                             {submitting ? <><Loader2 size={16} className="animate-spin" /> Envoi...</> : <><Send size={16} /> Confirmer et Soumettre</>}
                         </button>
                     )}
