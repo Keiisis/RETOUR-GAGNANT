@@ -258,12 +258,12 @@ export default function NationaliteFormPage() {
                     opacity: { duration: 1.5 }
                 }}
             />
-            {/* Light overlay — image stays clearly visible */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f14]/50 via-[#0a0f14]/20 to-[#0a0f14]/70" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f14]/30 via-transparent to-[#0a0f14]/30 hidden md:block" />
+            {/* Immersive overlay — deep contrasting colors to detach from the photo */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#020b14]/90 via-[#061c13]/70 to-[#1a0808]/90" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
 
-            {/* Very subtle blur — just depth, no hiding */}
-            <div className="absolute inset-0 backdrop-blur-[1px]" />
+            {/* Cinematic blur to create depth and focus on the form */}
+            <div className="absolute inset-0 backdrop-blur-[8px]" />
 
             {/* Dynamic Interactive Elements */}
             <motion.div
@@ -284,7 +284,7 @@ export default function NationaliteFormPage() {
     if (step === 0) return (
         <div className="min-h-screen relative flex items-center justify-center px-4">
             <AnimatedBackground />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 bg-black/40 backdrop-blur-3xl border border-white/10 shadow-2xl rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 bg-[#0b1411]/80 backdrop-blur-2xl border border-emerald-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
                 <h2 className="text-xl font-black text-white text-center mb-2">Savez-vous ce qu'est la reconnaissance de la nationalité aux afro-descendants en République du Bénin ?</h2>
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-400 mb-4 text-center">Lisez et cochez la mention "J'ai lu et compris" pour poursuivre</div>
                 <div className="text-sm text-gray-300 leading-relaxed space-y-3 mb-6">
@@ -338,136 +338,140 @@ export default function NationaliteFormPage() {
                 {errors.length > 0 && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">{errors.map((e, i) => <p key={i} className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {e}</p>)}</div>}
 
                 <AnimatePresence mode="wait">
-                    <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
+                    <motion.div key={step} initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 1.05, y: -10 }} transition={{ duration: 0.3, ease: "easeOut" }} className="bg-[#0b1411]/80 backdrop-blur-2xl border border-emerald-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] shadow-emerald-900/20 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+                        {/* Shimmer effect inside card */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-amber-500/5 pointer-events-none" />
+                        <div className="relative z-10">
 
-                        {step === 1 && <div className="space-y-5">
-                            <h2 className="text-lg font-black text-white">Votre identification Afro-descendante</h2>
-                            <div><label className={LC}>Êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><div className="flex gap-3 mt-1">{[true, false].map(v => <button key={String(v)} onClick={() => u('is_afro_descendant', v)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${form.is_afro_descendant === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
-                            <div><label className={LC}>Comment êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><textarea rows={4} value={form.afro_descendant_description} onChange={e => u('afro_descendant_description', e.target.value)} placeholder="Décrivez en quelques mots votre ascendance..." className={IC + ' resize-none'} /></div>
-                            <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos ancêtres</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[1, 2].map(n => (<div key={n} className="space-y-3">
-                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{n === 1 ? '1ère' : '2ème'} Personne</span>
-                                    <div><label className={LC}>Nom{n === 1 && <span className={RQ}>*</span>}</label><input value={(form as any)[`ancestor${n}_nom`]} onChange={e => u(`ancestor${n}_nom`, e.target.value)} className={IC} placeholder="Nom" /></div>
-                                    <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`ancestor${n}_prenom`]} onChange={e => u(`ancestor${n}_prenom`, e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
-                                    <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`ancestor${n}_date_naissance`]} onChange={e => u(`ancestor${n}_date_naissance`, e.target.value)} className={IC} /></div>
-                                    <div><label className={LC}>Lien de parenté{n === 1 && <span className={RQ}>*</span>}</label><select value={(form as any)[`ancestor${n}_lien_parente`]} onChange={e => u(`ancestor${n}_lien_parente`, e.target.value)} className={IC}><option value="">Choisir</option>{LIENS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
-                                    <div><label className={LC}>Vivant(e) ?</label><div className="flex gap-2">{[true, false].map(v => <button key={String(v)} onClick={() => u(`ancestor${n}_vivant`, v)} className={`flex-1 py-2 rounded-lg text-xs font-bold ${(form as any)[`ancestor${n}_vivant`] === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
-                                    <div><label className={LC}>Nationalité</label><select value={(form as any)[`ancestor${n}_nationalite`]} onChange={e => u(`ancestor${n}_nationalite`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={LC}>Pays de résidence</label><select value={(form as any)[`ancestor${n}_pays_residence`]} onChange={e => u(`ancestor${n}_pays_residence`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                    <div><label className={LC}>Autres informations</label><textarea rows={2} value={(form as any)[`ancestor${n}_autres_infos`]} onChange={e => u(`ancestor${n}_autres_infos`, e.target.value)} className={IC + ' resize-none'} placeholder="Informations complémentaires..." /></div>
-                                </div>))}</div></div>
-                        </div>}
+                            {step === 1 && <div className="space-y-5">
+                                <h2 className="text-lg font-black text-white">Votre identification Afro-descendante</h2>
+                                <div><label className={LC}>Êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><div className="flex gap-3 mt-1">{[true, false].map(v => <button key={String(v)} onClick={() => u('is_afro_descendant', v)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${form.is_afro_descendant === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
+                                <div><label className={LC}>Comment êtes-vous afro-descendant(e) ?<span className={RQ}>*</span></label><textarea rows={4} value={form.afro_descendant_description} onChange={e => u('afro_descendant_description', e.target.value)} placeholder="Décrivez en quelques mots votre ascendance..." className={IC + ' resize-none'} /></div>
+                                <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos ancêtres</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[1, 2].map(n => (<div key={n} className="space-y-3">
+                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{n === 1 ? '1ère' : '2ème'} Personne</span>
+                                        <div><label className={LC}>Nom{n === 1 && <span className={RQ}>*</span>}</label><input value={(form as any)[`ancestor${n}_nom`]} onChange={e => u(`ancestor${n}_nom`, e.target.value)} className={IC} placeholder="Nom" /></div>
+                                        <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`ancestor${n}_prenom`]} onChange={e => u(`ancestor${n}_prenom`, e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                        <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`ancestor${n}_date_naissance`]} onChange={e => u(`ancestor${n}_date_naissance`, e.target.value)} className={IC} /></div>
+                                        <div><label className={LC}>Lien de parenté{n === 1 && <span className={RQ}>*</span>}</label><select value={(form as any)[`ancestor${n}_lien_parente`]} onChange={e => u(`ancestor${n}_lien_parente`, e.target.value)} className={IC}><option value="">Choisir</option>{LIENS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
+                                        <div><label className={LC}>Vivant(e) ?</label><div className="flex gap-2">{[true, false].map(v => <button key={String(v)} onClick={() => u(`ancestor${n}_vivant`, v)} className={`flex-1 py-2 rounded-lg text-xs font-bold ${(form as any)[`ancestor${n}_vivant`] === v ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400' : 'bg-white/5 border border-white/10 text-gray-500'}`}>{v ? 'Oui' : 'Non'}</button>)}</div></div>
+                                        <div><label className={LC}>Nationalité</label><select value={(form as any)[`ancestor${n}_nationalite`]} onChange={e => u(`ancestor${n}_nationalite`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                        <div><label className={LC}>Pays de résidence</label><select value={(form as any)[`ancestor${n}_pays_residence`]} onChange={e => u(`ancestor${n}_pays_residence`, e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                        <div><label className={LC}>Autres informations</label><textarea rows={2} value={(form as any)[`ancestor${n}_autres_infos`]} onChange={e => u(`ancestor${n}_autres_infos`, e.target.value)} className={IC + ' resize-none'} placeholder="Informations complémentaires..." /></div>
+                                    </div>))}</div></div>
+                            </div>}
 
-                        {step === 2 && <div className="space-y-5">
-                            <h2 className="text-lg font-black text-white">Informations Personnelles</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label className={LC}>Nom<span className={RQ}>*</span></label><input value={form.nom} onChange={e => u('nom', e.target.value)} className={IC} placeholder="Nom de famille" /></div>
-                                <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={form.prenom} onChange={e => u('prenom', e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
-                                <div><label className={LC}>Genre<span className={RQ}>*</span></label><select value={form.genre} onChange={e => u('genre', e.target.value)} className={IC}><option value="">Choisir</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                <div><label className={LC}>Date de naissance<span className={RQ}>*</span></label><input type="date" value={form.date_naissance} onChange={e => u('date_naissance', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Pays de naissance</label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div><label className={LC}>Ville de naissance</label><input value={form.ville_naissance} onChange={e => u('ville_naissance', e.target.value)} className={IC} placeholder="Ville" /></div>
-                                <div><label className={LC}>Nationalité<span className={RQ}>*</span></label><select value={form.nationalite} onChange={e => u('nationalite', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div><label className={LC}>Pays de résidence<span className={RQ}>*</span></label><select value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div className="md:col-span-2"><label className={LC}>Adresse complète</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder="Adresse" /></div>
-                                <div><label className={LC}>Téléphone</label><input value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder="+229 XX XX XX XX" /></div>
-                                <div><label className={LC}>Email<span className={RQ}>*</span></label><input type="email" value={form.email} onChange={e => u('email', e.target.value)} className={IC} placeholder="email@exemple.com" /></div>
-                                <div><label className={LC}>Profession</label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-                            </div>
-                            <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4">
-                                <button onClick={() => u('demande_depuis_benin', !form.demande_depuis_benin)} className={`w-12 h-6 rounded-full transition-all relative ${form.demande_depuis_benin ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${form.demande_depuis_benin ? 'left-6' : 'left-0.5'}`} /></button>
-                                <span className="text-sm text-gray-400">Demande depuis le Bénin ?</span>
-                            </div>
-                        </div>}
-
-                        {step === 3 && <div className="space-y-5">
-                            <h2 className="text-lg font-black text-white">Document d'identité & Parents</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label className={LC}>Type de document<span className={RQ}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">Choisir</option><option value="passeport">Passeport</option><option value="cni">CNI</option><option value="carte_electeur">Carte d'électeur</option><option value="autre">Autre</option></select></div>
-                                <div><label className={LC}>Autorité de délivrance</label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Numéro du document</label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Pays de délivrance</label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                                <div><label className={LC}>Date d'expiration</label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={IC} /></div>
-                                <div><label className={LC}>Lieu de délivrance</label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={IC} /></div>
-                            </div>
-                            <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{['Père', 'Mère'].map(p => {
-                                    const k = p === 'Père' ? 'pere' : 'mere'; return (<div key={p} className="space-y-3">
-                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{p}</span>
-                                        <div><label className={LC}>Nom</label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={IC} /></div>
-                                        <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={IC} /></div>
-                                        <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`${k}_date_naissance`]} onChange={e => u(`${k}_date_naissance`, e.target.value)} className={IC} /></div>
-                                    </div>)
-                                })}</div></div>
-                        </div>}
-
-                        {step === 4 && <div className="space-y-4">
-                            <h2 className="text-lg font-black text-white">Pièces à joindre</h2>
-                            <p className="text-xs text-gray-500">Formats : PNG, JPG, JPEG, PDF. Taille max : 5 Mo.</p>
-                            {[{ label: 'Pièce d\'identité en cours de validité', multi: false },
-                            { label: 'Justificatif de domicile', multi: false },
-                            { label: 'Preuve de profession', multi: false },
-                            { label: 'Preuve d\'afro descendance', multi: true, hint: 'Vous pouvez charger plusieurs documents ici !' },
-                            { label: 'Casier judiciaire ou Certificat d\'antécédents criminels', multi: false },
-                            ].map((doc, i) => (
-                                <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between hover:border-emerald-500/20 transition-all">
-                                    <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}<span className="text-red-400 ml-1">*</span></span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
-                                    <label className="cursor-pointer shrink-0"><div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR FICHIER(S)' : 'CHOISIR UN FICHIER'}</p></div>
-                                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { const newDocs = Array.from(f).map(fi => ({ label: doc.label, name: fi.name, file: fi })); setRawDocs(p => [...p, ...newDocs]) } }} />
-                                    </label>
+                            {step === 2 && <div className="space-y-5">
+                                <h2 className="text-lg font-black text-white">Informations Personnelles</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label className={LC}>Nom<span className={RQ}>*</span></label><input value={form.nom} onChange={e => u('nom', e.target.value)} className={IC} placeholder="Nom de famille" /></div>
+                                    <div><label className={LC}>Prénom(s)<span className={RQ}>*</span></label><input value={form.prenom} onChange={e => u('prenom', e.target.value)} className={IC} placeholder="Prénom(s)" /></div>
+                                    <div><label className={LC}>Genre<span className={RQ}>*</span></label><select value={form.genre} onChange={e => u('genre', e.target.value)} className={IC}><option value="">Choisir</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                    <div><label className={LC}>Date de naissance<span className={RQ}>*</span></label><input type="date" value={form.date_naissance} onChange={e => u('date_naissance', e.target.value)} className={IC} /></div>
+                                    <div><label className={LC}>Pays de naissance</label><select value={form.pays_naissance} onChange={e => u('pays_naissance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className={LC}>Ville de naissance</label><input value={form.ville_naissance} onChange={e => u('ville_naissance', e.target.value)} className={IC} placeholder="Ville" /></div>
+                                    <div><label className={LC}>Nationalité<span className={RQ}>*</span></label><select value={form.nationalite} onChange={e => u('nationalite', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className={LC}>Pays de résidence<span className={RQ}>*</span></label><select value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div className="md:col-span-2"><label className={LC}>Adresse complète</label><input value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder="Adresse" /></div>
+                                    <div><label className={LC}>Téléphone</label><input value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder="+229 XX XX XX XX" /></div>
+                                    <div><label className={LC}>Email<span className={RQ}>*</span></label><input type="email" value={form.email} onChange={e => u('email', e.target.value)} className={IC} placeholder="email@exemple.com" /></div>
+                                    <div><label className={LC}>Profession</label><select value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">Choisir</option>{PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                                 </div>
-                            ))}
-                            {rawDocs.length > 0 && <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 space-y-1.5">{rawDocs.map((d, i) => <div key={i} className="text-xs text-emerald-400 flex items-center justify-between"><span className="flex items-center gap-2"><CheckCircle2 size={12} /> {d.label}: {d.name}</span><button onClick={() => setRawDocs(p => p.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-400 p-1"><X size={12} /></button></div>)}</div>}
-                        </div>}
-
-                        {step === 5 && <div className="space-y-5">
-                            <h2 className="text-lg font-black text-white">Paiement des frais de traitement</h2>
-                            <div className="bg-gradient-to-r from-emerald-900/20 to-yellow-900/10 border border-emerald-500/10 rounded-2xl p-6 text-center">
-                                <p className="text-3xl font-black text-[#FCD116]">250 $</p>
-                                <p className="text-xs text-gray-500 mt-1">Frais de traitement de dossier (USD)</p>
-                            </div>
-
-                            {paymentDone ? (
-                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 text-center">
-                                    <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-2" />
-                                    <p className="text-sm font-bold text-emerald-400">Paiement effectué via {paymentProvider}</p>
-                                    {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
+                                <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4">
+                                    <button onClick={() => u('demande_depuis_benin', !form.demande_depuis_benin)} className={`w-12 h-6 rounded-full transition-all relative ${form.demande_depuis_benin ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow ${form.demande_depuis_benin ? 'left-6' : 'left-0.5'}`} /></button>
+                                    <span className="text-sm text-gray-400">Demande depuis le Bénin ?</span>
                                 </div>
-                            ) : paymentProcessing ? (
-                                <div className="flex flex-col items-center py-8"><Loader2 size={32} className="animate-spin text-[#FCD116]" /><p className="text-sm text-gray-400 mt-3">Traitement en cours...</p></div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <p className="text-xs text-gray-400 font-bold">Sélectionnez votre moyen de paiement :</p>
-                                    {providers.length === 0 ? (
-                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center"><CreditCard size={24} className="text-gray-600 mx-auto mb-2" /><p className="text-xs text-amber-400">Aucune passerelle de paiement active. Contactez l'administrateur.</p></div>
-                                    ) : providers.map(p => (
-                                        <button key={p.id} onClick={payHandlers[p.id]} className={`w-full flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group text-left`}>
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${p.color}`}><CreditCard size={22} /></div>
-                                            <div className="flex-1"><p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p><p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p></div>
-                                            <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
-                                        </button>
-                                    ))}
-                                    {paymentError && <p className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {paymentError}</p>}
-                                    <div className="flex items-center gap-2 text-gray-600 justify-center mt-2"><Shield size={14} /><span className="text-[10px] font-bold uppercase tracking-widest">Transaction 100% sécurisée</span></div>
-                                </div>
-                            )}
-                        </div>}
+                            </div>}
 
-                        {step === 6 && <div className="space-y-5">
-                            <h2 className="text-lg font-black text-white">Récapitulatif de votre demande</h2>
-                            {[
-                                { title: 'Identité', items: [['Nom complet', `${form.prenom} ${form.nom}`], ['Genre', form.genre], ['Né(e) le', form.date_naissance], ['Nationalité', form.nationalite], ['Résidence', form.pays_residence], ['Email', form.email], ['Profession', form.profession]] },
-                                { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`]] },
-                                { title: 'Document', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document]] },
-                                { title: 'Parents', items: [['Père', `${form.pere_prenom} ${form.pere_nom}`], ['Mère', `${form.mere_prenom} ${form.mere_nom}`]] },
-                                { title: 'Paiement', items: [['Montant', '250 $ USD'], ['Passerelle', paymentProvider || 'N/A'], ['Transaction', paymentTxId || 'N/A']] },
-                            ].map((sec, si) => (
-                                <div key={si} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                                    <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">{sec.title}</h3>
-                                    {sec.items.filter(([, v]) => v).map(([k, v], i) => <div key={i} className="flex justify-between py-1 border-b border-white/[0.03] last:border-0"><span className="text-xs text-gray-500">{k}</span><span className="text-xs text-white font-bold text-right max-w-[60%]">{v}</span></div>)}
+                            {step === 3 && <div className="space-y-5">
+                                <h2 className="text-lg font-black text-white">Document d'identité & Parents</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label className={LC}>Type de document<span className={RQ}>*</span></label><select value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">Choisir</option><option value="passeport">Passeport</option><option value="cni">CNI</option><option value="carte_electeur">Carte d'électeur</option><option value="autre">Autre</option></select></div>
+                                    <div><label className={LC}>Autorité de délivrance</label><input value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} /></div>
+                                    <div><label className={LC}>Numéro du document</label><input value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} /></div>
+                                    <div><label className={LC}>Pays de délivrance</label><select value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">Pays</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                                    <div><label className={LC}>Date d'expiration</label><input type="date" value={form.date_expiration_document} onChange={e => u('date_expiration_document', e.target.value)} className={IC} /></div>
+                                    <div><label className={LC}>Lieu de délivrance</label><input value={form.lieu_delivrance} onChange={e => u('lieu_delivrance', e.target.value)} className={IC} /></div>
                                 </div>
-                            ))}
-                        </div>}
+                                <div className="border-t border-white/5 pt-5"><h3 className="text-sm font-black text-white mb-4">Informations sur vos parents</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{['Père', 'Mère'].map(p => {
+                                        const k = p === 'Père' ? 'pere' : 'mere'; return (<div key={p} className="space-y-3">
+                                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{p}</span>
+                                            <div><label className={LC}>Nom</label><input value={(form as any)[`${k}_nom`]} onChange={e => u(`${k}_nom`, e.target.value)} className={IC} /></div>
+                                            <div><label className={LC}>Prénom(s)</label><input value={(form as any)[`${k}_prenom`]} onChange={e => u(`${k}_prenom`, e.target.value)} className={IC} /></div>
+                                            <div><label className={LC}>Date de naissance</label><input type="date" value={(form as any)[`${k}_date_naissance`]} onChange={e => u(`${k}_date_naissance`, e.target.value)} className={IC} /></div>
+                                        </div>)
+                                    })}</div></div>
+                            </div>}
+
+                            {step === 4 && <div className="space-y-4">
+                                <h2 className="text-lg font-black text-white">Pièces à joindre</h2>
+                                <p className="text-xs text-gray-500">Formats : PNG, JPG, JPEG, PDF. Taille max : 5 Mo.</p>
+                                {[{ label: 'Pièce d\'identité en cours de validité', multi: false },
+                                { label: 'Justificatif de domicile', multi: false },
+                                { label: 'Preuve de profession', multi: false },
+                                { label: 'Preuve d\'afro descendance', multi: true, hint: 'Vous pouvez charger plusieurs documents ici !' },
+                                { label: 'Casier judiciaire ou Certificat d\'antécédents criminels', multi: false },
+                                ].map((doc, i) => (
+                                    <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-5 flex items-center justify-between hover:border-emerald-500/20 transition-all">
+                                        <div className="flex items-center gap-4"><FileText size={18} className="text-emerald-400/60" /><div><span className="text-sm text-white">{doc.label}<span className="text-red-400 ml-1">*</span></span>{doc.hint && <p className="text-[10px] text-gray-600">{doc.hint}</p>}</div></div>
+                                        <label className="cursor-pointer shrink-0"><div className="text-right"><p className="text-[10px] text-gray-600">Glisser déposer ou</p><p className="text-xs font-bold text-emerald-400">{doc.multi ? 'CHOISIR FICHIER(S)' : 'CHOISIR UN FICHIER'}</p></div>
+                                            <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple={doc.multi} onChange={e => { const f = e.target.files; if (f) { const newDocs = Array.from(f).map(fi => ({ label: doc.label, name: fi.name, file: fi })); setRawDocs(p => [...p, ...newDocs]) } }} />
+                                        </label>
+                                    </div>
+                                ))}
+                                {rawDocs.length > 0 && <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 space-y-1.5">{rawDocs.map((d, i) => <div key={i} className="text-xs text-emerald-400 flex items-center justify-between"><span className="flex items-center gap-2"><CheckCircle2 size={12} /> {d.label}: {d.name}</span><button onClick={() => setRawDocs(p => p.filter((_, idx) => idx !== i))} className="text-red-500 hover:text-red-400 p-1"><X size={12} /></button></div>)}</div>}
+                            </div>}
+
+                            {step === 5 && <div className="space-y-5">
+                                <h2 className="text-lg font-black text-white">Paiement des frais de traitement</h2>
+                                <div className="bg-gradient-to-r from-emerald-900/20 to-yellow-900/10 border border-emerald-500/10 rounded-2xl p-6 text-center">
+                                    <p className="text-3xl font-black text-[#FCD116]">250 $</p>
+                                    <p className="text-xs text-gray-500 mt-1">Frais de traitement de dossier (USD)</p>
+                                </div>
+
+                                {paymentDone ? (
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 text-center">
+                                        <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-2" />
+                                        <p className="text-sm font-bold text-emerald-400">Paiement effectué via {paymentProvider}</p>
+                                        {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
+                                    </div>
+                                ) : paymentProcessing ? (
+                                    <div className="flex flex-col items-center py-8"><Loader2 size={32} className="animate-spin text-[#FCD116]" /><p className="text-sm text-gray-400 mt-3">Traitement en cours...</p></div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="text-xs text-gray-400 font-bold">Sélectionnez votre moyen de paiement :</p>
+                                        {providers.length === 0 ? (
+                                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center"><CreditCard size={24} className="text-gray-600 mx-auto mb-2" /><p className="text-xs text-amber-400">Aucune passerelle de paiement active. Contactez l'administrateur.</p></div>
+                                        ) : providers.map(p => (
+                                            <button key={p.id} onClick={payHandlers[p.id]} className={`w-full flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group text-left`}>
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${p.color}`}><CreditCard size={22} /></div>
+                                                <div className="flex-1"><p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p><p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p></div>
+                                                <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
+                                            </button>
+                                        ))}
+                                        {paymentError && <p className="text-xs text-red-400 flex items-center gap-2"><AlertCircle size={12} /> {paymentError}</p>}
+                                        <div className="flex items-center gap-2 text-gray-600 justify-center mt-2"><Shield size={14} /><span className="text-[10px] font-bold uppercase tracking-widest">Transaction 100% sécurisée</span></div>
+                                    </div>
+                                )}
+                            </div>}
+
+                            {step === 6 && <div className="space-y-5">
+                                <h2 className="text-lg font-black text-white">Récapitulatif de votre demande</h2>
+                                {[
+                                    { title: 'Identité', items: [['Nom complet', `${form.prenom} ${form.nom}`], ['Genre', form.genre], ['Né(e) le', form.date_naissance], ['Nationalité', form.nationalite], ['Résidence', form.pays_residence], ['Email', form.email], ['Profession', form.profession]] },
+                                    { title: 'Afro-descendance', items: [['Description', form.afro_descendant_description], ['Ancêtre 1', `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`]] },
+                                    { title: 'Document', items: [['Type', form.type_document_identite], ['Numéro', form.numero_document]] },
+                                    { title: 'Parents', items: [['Père', `${form.pere_prenom} ${form.pere_nom}`], ['Mère', `${form.mere_prenom} ${form.mere_nom}`]] },
+                                    { title: 'Paiement', items: [['Montant', '250 $ USD'], ['Passerelle', paymentProvider || 'N/A'], ['Transaction', paymentTxId || 'N/A']] },
+                                ].map((sec, si) => (
+                                    <div key={si} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                        <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">{sec.title}</h3>
+                                        {sec.items.filter(([, v]) => v).map(([k, v], i) => <div key={i} className="flex justify-between py-1 border-b border-white/[0.03] last:border-0"><span className="text-xs text-gray-500">{k}</span><span className="text-xs text-white font-bold text-right max-w-[60%]">{v}</span></div>)}
+                                    </div>
+                                ))}
+                            </div>}
+                        </div>
                     </motion.div>
                 </AnimatePresence>
 
