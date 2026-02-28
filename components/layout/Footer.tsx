@@ -72,11 +72,11 @@ export default function Footer() {
                         <h4 className="text-lg font-bold font-heading mb-6 text-[#FCD116]">Services Clés</h4>
                         <ul className="space-y-4 text-gray-300">
                             {[
-                                { name: 'Obtention Passeport', href: '/services/passeport-administratif' },
-                                { name: 'Achat Immobilier', href: '/services/immobilier' },
-                                { name: 'Création Entreprise', href: '/services/creation-entreprise' },
-                                { name: 'Tourisme Mémoriel', href: '/services/tourisme' },
-                                { name: 'Suivi Chantier', href: '/services/suivi-chantier' }
+                                { name: 'Obtention Passeport', href: '/services/passeport' },
+                                { name: 'Achat Immobilier', href: '/services/logement' },
+                                { name: 'Création Entreprise', href: '/services/business' },
+                                { name: 'Tourisme & Culture', href: '/services/culture' },
+                                { name: 'Suivi de Chantier', href: '/services/construction' }
                             ].map((item) => (
                                 <li key={item.name}>
                                     <Link href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">

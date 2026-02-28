@@ -85,11 +85,13 @@ function ScrolledDiaporama({ images, containerRef }: { images: GalleryImage[], c
     const wallRotateZ = useTransform(smoothProgress, [0, 1], [4, -4]);
 
     const rowConfigs = useMemo(() => {
+        const total = images.length;
+        const q = Math.ceil(total / 4);
         return [
-            { items: images.slice(0, 30), x: x1 },
-            { items: images.slice(30, 60), x: x2 },
-            { items: images.slice(60, 90), x: x1 },
-            { items: images.slice(90, 134), x: x2 },
+            { items: images.slice(0, q), x: x1 },
+            { items: images.slice(q, q * 2), x: x2 },
+            { items: images.slice(q * 2, q * 3), x: x1 },
+            { items: images.slice(q * 3, total), x: x2 },
         ];
     }, [images, x1, x2]);
 
@@ -161,7 +163,7 @@ function ScrolledDiaporama({ images, containerRef }: { images: GalleryImage[], c
                                     IMMERSION TOTALE
                                 </motion.button>
                                 <p className="text-white/30 text-2xl font-extralight leading-relaxed max-w-xl border-l-[3px] border-[#E8112D] pl-12 font-serif italic">
-                                    "Une traversée onirique à travers 134 fragments de notre patrie. Laissez-vous porter par le flux du temps."
+                                    "Une traversée onirique à travers {images.length || 238} fragments de notre patrie. Laissez-vous porter par le flux du temps."
                                 </p>
                             </div>
                         </div>

@@ -238,6 +238,10 @@ ${dbProducts ? JSON.stringify(dbProducts, null, 2) : 'Aucun produit actif pour l
 SERVICES OFFICIELS PROPOSÉS :
 ${dbServices ? JSON.stringify(dbServices, null, 2) : 'Aucun service configuréé.'}
 
+INFORMATIONS IMPORTANTES (L'ORACLE):
+Nous proposons un service phare nommé "L'Oracle" ou "Test d'Éligibilité" directement sur la page d'accueil (section #nationalite).
+Si un client te demande s'il est éligible, s'il a le droit à la nationalité, comment obtenir le passeport, ou affiche une hésitation sur ses origines : Encourage-le VIVEMENT et chaleureusement à passer ce test d'éligibilité en allant vers la section "Identité & Citoyenneté". L'Oracle analysera son profil gratuitement et enverra ses données aux agents !
+
 INSTRUCTION STRICTE : Utilise ces données json pour répondre directement aux questions de manière fluide et naturelle. Par exemple, si on te demande les articles disponibles, cite-les avec style, ne donne pas du code JSON à l'utilisateur. Refuse poliment de donner des informations administratives ou des données utilisateurs confidentielles.
 `
 
