@@ -210,12 +210,44 @@ export default function AgentLeadsPage() {
                                             {lead.contacted ? '✓ Contacté' : 'À contacter'}
                                         </button>
 
+                                        {/* Email Button */}
+                                        <button
+                                            onClick={async () => {
+                                                const message = window.prompt(`Message pour ${lead.client_nom}:`, `Bonjour ${lead.client_nom},\n\nSuite à votre simulation sur l'Oracle de Retour Gagnant Bénin (Score: ${lead.eligibility_score}%), nous vous contactons pour discuter de votre projet autour du service "${lead.recommended_service}".\n\nQuand seriez-vous disponible pour un appel ?\n\nL'équipe Retour Gagnant.`);
+                                                if (!message) return;
+
+                                                try {
+                                                    await fetch('/api/email/send', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            to: lead.client_email,
+                                                            subject: `Retour Gagnant — Votre projet (${lead.recommended_service})`,
+                                                            message: message,
+                                                            clientName: `${lead.client_prenom} ${lead.client_nom}`.trim(),
+                                                            context: 'agent_reply',
+                                                            relatedId: lead.id
+                                                        })
+                                                    });
+                                                    alert('Email envoyé avec succès !');
+                                                    if (!lead.contacted) toggleContacted(lead);
+                                                } catch (err) {
+                                                    alert("Erreur lors de l'envoi de l'email.");
+                                                }
+                                            }}
+                                            className="flex items-center gap-1 text-xs font-bold bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg transition-all"
+                                            title="Envoyer un Email"
+                                        >
+                                            <Mail size={12} /> Répondre
+                                        </button>
+
                                         {/* WhatsApp */}
                                         {lead.client_whatsapp && (
                                             <a
-                                                href={`https://wa.me/${lead.client_whatsapp.replace(/\s+/g, '')}`}
+                                                href={`https://wa.me/${lead.client_whatsapp.replace(/\s+/g, '')}?text=Bonjour%20${lead.client_prenom},%20suite%20%C3%A0%20votre%20simulation%20sur%20l'Oracle%20Retour%20Gagnant...`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                onClick={() => { if (!lead.contacted) toggleContacted(lead); }}
                                                 className="flex items-center gap-1 text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-lg transition-all"
                                                 title="Contacter sur WhatsApp"
                                             >

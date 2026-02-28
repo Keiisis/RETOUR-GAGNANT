@@ -3,9 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 import { groq } from '@ai-sdk/groq';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { sendEmail, EMAIL_TEMPLATES, getEmailConfig } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 interface OracleAnswers {
     lien_benin?: string;
@@ -44,13 +45,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Réponses incomplètes' }, { status: 400 })
         }
 
+        const clientName = `${prenom || ''} ${nom || ''}`.trim();
+
         // Determine recommended service
         const rec = recommendations[answers.objective] || recommendations['culture']
         const hasOrigins = answers.origin === 'oui' || answers.origin === 'partiel'
         const bonusScore = hasOrigins ? 5 : 0
         const finalScore = Math.min(rec.score + bonusScore, 100);
 
-        // Generate dynamic insights using Groq
+        // Generate dynamic insights
         let dynamicInsights = [
             "Vos origines offrent un excellent potentiel pour cette démarche.",
             "L'analyse des documents mentionnés est très positive."
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
                 const { object } = await generateObject({
                     model: groq('llama-3.3-70b-versatile'),
                     schema: z.object({
-                        insights: z.array(z.string()).describe("3 points clés très pertinents, vendeurs et rassurants (max une phrase par point) concernant l'éligibilité de cette personne à la nationalité béninoise, ou son retour au Bénin. Parlez directement à la personne (ex: 'Votre profil...', 'Le fait que vous ayez...')"),
+                        insights: z.array(z.string()).describe("3 points clés très pertinents, vendeurs et rassurants (max une phrase par point) concernant l'éligibilité de cette personne à la nationalité béninoise, ou son retour au Bénin. Parlez directement à la personne."),
                     }),
                     prompt: `Analysez ce profil d'une personne voulant obtenir la nationalité béninoise ou retourner au Bénin :
 Prenom: ${prenom}
@@ -71,22 +74,18 @@ Preuves d'origine: ${(answers.preuve_origine || []).join(', ')}
 Motivation principale: ${answers.motivation || 'Non défini'}
 Message libre: ${answers.message_libre || 'Aucun'}
 
-Générez 3 insights ou commentaires inspirants pertinents basés précisément sur ces éléments. Exprimez-vous de manière professionnelle, rassurante et très "premium".`,
+Générez 3 insights ou commentaires inspirants pertinents. Exprimez-vous de manière professionnelle, rassurante et très "premium".`,
                 });
 
                 dynamicInsights = object.insights;
-            } else {
-                console.log("GROQ_API_KEY non configurée, utilisation des insights par défaut.");
             }
         } catch (aiError) {
             console.error("Erreur lors de la génération avec Groq:", aiError);
-            // On continue avec les insights par défaut si l'IA échoue
         }
-
 
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        const { error } = await supabase.from('eligibility_results').insert({
+        const { data: insertedLead, error } = await supabase.from('eligibility_results').insert({
             client_nom: nom || '',
             client_prenom: prenom || '',
             client_email: email || '',
@@ -98,9 +97,39 @@ Générez 3 insights ou commentaires inspirants pertinents basés précisément 
             has_origins: hasOrigins,
             objective: answers.objective,
             is_contacted: false,
-        })
+        }).select('id').single();
 
         if (error) throw error
+        const leadId = insertedLead?.id || '';
+
+        // Fire-and-forget emails
+        (async () => {
+            try {
+                if (email) {
+                    const aiReply = `Félicitations pour avoir complété le test de l'Oracle. Votre profil indique un score d'éligibilité de ${finalScore}%. Nous sommes ravis de vous accompagner vers "${rec.service}".`;
+                    await sendEmail({
+                        to: email,
+                        subject: `Retour Gagnant — Les résultats de l'Oracle`,
+                        html: EMAIL_TEMPLATES.autoReply(clientName || 'Cher client', aiReply),
+                        context: 'auto_reply',
+                        relatedId: leadId,
+                    });
+                }
+
+                const config = await getEmailConfig();
+                if (config.adminEmail) {
+                    await sendEmail({
+                        to: config.adminEmail,
+                        subject: `🔮 Nouveau Lead Oracle — ${clientName || email}`,
+                        html: EMAIL_TEMPLATES.newLeadNotification(clientName || 'Inconnu', email || 'Inconnu', finalScore, rec.service, 'L\'Oracle'),
+                        context: 'lead_notification',
+                        relatedId: leadId,
+                    });
+                }
+            } catch (emailErr) {
+                console.log('[ORACLE] Email send failed (non-blocking):', emailErr);
+            }
+        })();
 
         return NextResponse.json({
             success: true,

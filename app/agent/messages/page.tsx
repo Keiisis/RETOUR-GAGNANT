@@ -134,7 +134,7 @@ export default function AgentMessagesPage() {
         setSelected(msg)
     }
 
-    const handleReply = async () => {
+    const handleReply = async (method: 'chat' | 'email') => {
         if (!selected || !replyText.trim()) return
 
         const content = replyText.trim()
@@ -163,6 +163,26 @@ export default function AgentMessagesPage() {
         // Also mark as read if it wasn't
         if (!selected.lu) {
             markAsRead(selected)
+        }
+
+        // If email method, send the email
+        if (method === 'email') {
+            try {
+                await fetch('/api/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: selected.email,
+                        subject: `Retour Gagnant — Réponse à : ${selected.sujet}`,
+                        message: content,
+                        clientName: `${selected.nom} ${selected.prenom}`.trim() || 'Client',
+                        context: 'agent_reply',
+                        relatedId: selected.id
+                    })
+                });
+            } catch (err) {
+                console.error("Erreur lors de l'envoi de l'email :", err);
+            }
         }
     }
 
@@ -346,22 +366,31 @@ export default function AgentMessagesPage() {
                                         value={replyText}
                                         onChange={(e) => setReplyText(e.target.value)}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleReply();
+                                            if (e.key === 'Enter') handleReply('chat');
                                         }}
                                         placeholder={`Répondre en direct à ${selected.nom}...`}
                                         className="flex-1 bg-transparent py-3 px-4 text-sm text-white placeholder:text-gray-600 focus:outline-none"
                                     />
                                     <button
-                                        onClick={handleReply}
+                                        onClick={() => handleReply('chat')}
                                         disabled={!replyText.trim()}
-                                        className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white disabled:opacity-50 disabled:bg-white/5 disabled:text-gray-500 rounded-xl px-6 font-bold text-sm transition-all flex items-center gap-2"
+                                        className="bg-purple-500/20 text-purple-400 hover:bg-purple-500 hover:text-white disabled:opacity-50 disabled:bg-white/5 disabled:text-gray-500 rounded-xl px-4 font-bold text-sm transition-all flex items-center gap-2"
+                                        title="Répondre sur le Chat en direct"
                                     >
-                                        <Send size={16} /> <span className="hidden sm:inline">Envoyer</span>
+                                        <MessageSquare size={16} /> <span className="hidden sm:inline">Invité (Chat)</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleReply('email')}
+                                        disabled={!replyText.trim()}
+                                        className="bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white disabled:opacity-50 disabled:bg-white/5 disabled:text-gray-500 rounded-xl px-4 font-bold text-sm transition-all flex items-center gap-2"
+                                        title="Répondre par Email"
+                                    >
+                                        <Mail size={16} /> <span className="hidden sm:inline">Envoyer (Email)</span>
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2 mt-2 px-2">
                                     <AlertCircle size={10} className="text-blue-400" />
-                                    <p className="text-[10px] text-gray-400 font-medium">Réponse en direct instantanée (WebSocket connecté).</p>
+                                    <p className="text-[10px] text-gray-400 font-medium">Répondez depuis cette console, l'email sera envoyé via l'adresse officielle.</p>
                                 </div>
                             </div>
                         </>
