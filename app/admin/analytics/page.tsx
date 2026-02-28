@@ -47,7 +47,7 @@ export default function AdminAnalyticsPage() {
 
             let leadsQuery = supabase.from('eligibility_results').select('*')
             let messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true })
-            let blogQuery = supabase.from('blog_posts').select('views')
+            const blogQuery = supabase.from('blog_posts').select('views')
 
             if (fromDate) {
                 leadsQuery = leadsQuery.gte('created_at', fromDate)

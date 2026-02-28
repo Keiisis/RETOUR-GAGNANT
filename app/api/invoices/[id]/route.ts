@@ -1,15 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { escapeHtml } from '@/lib/security'
 import QRCode from 'qrcode'
 
 // Generate a downloadable HTML invoice for an order
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
   try {
-    const { id: orderId } = await params
+    const { id: orderId } = await context.params
 
     const { data: order, error } = await supabase
       .from('orders')
@@ -53,7 +54,7 @@ export async function GET(
         width: 120,
         margin: 1
       });
-    } catch (err) { console.error("QR Error"); }
+    } catch { console.error("QR Error"); }
 
     const html = `
 <!DOCTYPE html>

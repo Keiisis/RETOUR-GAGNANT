@@ -169,7 +169,7 @@ export default function NationaliteFormPage() {
         setUploadProgress(10)
         const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
 
-        let finalUploadedUrls: string[] = []
+        const finalUploadedUrls: string[] = []
 
         // Upload documents
         for (let i = 0; i < rawDocs.length; i++) {

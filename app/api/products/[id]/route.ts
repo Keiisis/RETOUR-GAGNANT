@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    request: NextRequest,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    context: any
 ) {
-    const { id } = await params
+    const { id } = await context.params
     try {
         const { data, error } = await supabase
             .from('products')

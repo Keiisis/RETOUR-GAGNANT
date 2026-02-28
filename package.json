@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^3.0.25",
+    "@ai-sdk/groq": "^3.0.26",
     "@ai-sdk/openai": "^3.0.36",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@google/generative-ai": "^0.24.1",
@@ -24,7 +24,7 @@
     "@refinedev/supabase": "^6.0.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.0",
-    "ai": "^6.0.104",
+    "ai": "^6.0.105",
     "antd": "^5.29.3",
     "autoprefixer": "^10.4.24",
     "axios": "^1.13.5",
