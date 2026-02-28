@@ -3,31 +3,65 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function HeroSection() {
-    const heroVideo = "/videos/hero.mp4";
-    const heroTitle = "INVESTISSEZ DANS L'HÉRITAGE DU BÉNIN";
-    const heroSubtitle = "Accompagnement Premium pour un retour réussi au Bénin";
     const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+    const [content, setContent] = useState({
+        title: "VOTRE RETOUR GAGNANT",
+        subtitle: "Réalisez vos ambitions au cœur du Bénin : là où vos racines deviennent des héritages d'exception.",
+        video: "/videos/hero.mp4"
+    });
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const fetchHeroContent = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('key, value')
+                    .or('key.eq.frontend_hero_title,key.eq.frontend_hero_subtitle,key.eq.frontend_hero_video');
+
+                if (data && !error) {
+                    const newContent = { ...content };
+                    data.forEach(item => {
+                        if (item.key === 'frontend_hero_title') newContent.title = item.value;
+                        if (item.key === 'frontend_hero_subtitle') newContent.subtitle = item.value;
+                        if (item.key === 'frontend_hero_video') newContent.video = item.value;
+                    });
+                    setContent(newContent);
+                }
+            } catch (err) {
+                console.error("Error fetching hero content:", err);
+            }
+        };
+
+        fetchHeroContent();
+
+        // Subscription for real-time updates (optional but good for UX)
+        const channel = supabase
+            .channel('hero_settings_changes')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' }, fetchHeroContent)
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        // Multiple ways to detect that the video is ready/playing
         const handleReady = () => setIsVideoLoaded(true);
-
         video.addEventListener('loadeddata', handleReady);
         video.addEventListener('canplay', handleReady);
         video.addEventListener('playing', handleReady);
 
-        // If already loaded (cached), trigger immediately
         if (video.readyState >= 2) {
             handleReady();
         }
 
-        // Fallback: after 2 seconds, show video area regardless
         const timeout = setTimeout(() => setIsVideoLoaded(true), 2000);
 
         return () => {
@@ -36,12 +70,26 @@ export default function HeroSection() {
             video.removeEventListener('playing', handleReady);
             clearTimeout(timeout);
         };
-    }, []);
+    }, [content.video]);
+
+    // Helper to render the title with Benin colors if it matches the main one
+    const renderTitle = (title: string) => {
+        if (title.toUpperCase().includes("VOTRE RETOUR GAGNANT")) {
+            return (
+                <>
+                    <span className="text-[#008751]">VOTRE</span>{" "}
+                    <span className="text-[#FCD116] drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">RETOUR</span>{" "}
+                    <span className="text-[#E8112D]">GAGNANT</span>
+                </>
+            );
+        }
+        return title;
+    };
 
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0a1628] -mt-20">
             {/* === LAYER 1: Video Background (Full Screen) === */}
-            <div className={`absolute inset-0 z-[1] transition-all duration-[2000ms] ease-out will-change-opacity ${isVideoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
+            <div key={content.video} className={`absolute inset-0 z-[1] transition-all duration-[2000ms] ease-out will-change-opacity ${isVideoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                 <video
                     ref={videoRef}
                     autoPlay
@@ -52,7 +100,7 @@ export default function HeroSection() {
                     poster="/images/hero-bg.jpg"
                     className="w-full h-full object-cover"
                 >
-                    <source src={heroVideo || "/videos/hero.mp4"} type="video/mp4" />
+                    <source src={content.video} type="video/mp4" />
                 </video>
             </div>
 
@@ -86,13 +134,11 @@ export default function HeroSection() {
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-heading leading-[1.1] mb-6 md:mb-8 drop-shadow-2xl animate-in zoom-in-95 duration-1000 delay-200">
-                    <span className="text-[#008751]">VOTRE</span>{" "}
-                    <span className="text-[#FCD116] drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">RETOUR</span>{" "}
-                    <span className="text-[#E8112D]">GAGNANT</span>
+                    {renderTitle(content.title)}
                 </h1>
 
                 <p className="text-xl md:text-2xl text-white/85 font-medium max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-500">
-                    {heroSubtitle}
+                    {content.subtitle}
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-700 w-full max-w-4xl mx-auto flex-wrap">
@@ -120,7 +166,6 @@ export default function HeroSection() {
                 <div className="w-[1px] h-10 bg-gradient-to-b from-white/60 to-transparent" />
             </div>
 
-            {/* === Custom Animations === */}
             <style jsx>{`
                 @keyframes spin-slow {
                     from { transform: rotate(0deg); }
