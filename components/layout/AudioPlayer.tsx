@@ -105,7 +105,7 @@ export default function AudioPlayer() {
 
             <motion.button
                 onClick={toggleMute}
-                className="fixed top-24 right-5 z-50 w-11 h-11 rounded-full bg-[#0f141e]/80 backdrop-blur-md text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-white/10"
+                className="fixed bottom-24 right-5 md:top-24 md:bottom-auto md:right-5 z-50 w-11 h-11 rounded-full bg-[#0f141e]/80 backdrop-blur-md text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-white/10"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1 }}

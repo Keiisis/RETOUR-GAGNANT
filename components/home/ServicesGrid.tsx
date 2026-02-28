@@ -4,6 +4,7 @@ import { GoldenIcon } from "@/components/ui/GoldenIcon";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -134,11 +135,13 @@ export default function ServicesGrid() {
 
                     <div className="mb-6 flex justify-center md:justify-start">
                         {service.imageUrl ? (
-                            <div className="w-24 h-24 flex items-center justify-center">
-                                <img
+                            <div className="w-24 h-24 flex items-center justify-center relative">
+                                <Image
                                     src={service.imageUrl}
                                     alt={service.title}
-                                    className="w-full h-full object-contain bg-transparent group-hover:scale-110 group-hover:-translate-y-2 group-hover:drop-shadow-[0_12px_25px_rgba(252,209,22,0.4)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-500"
+                                    fill
+                                    className="object-contain bg-transparent group-hover:scale-110 group-hover:-translate-y-2 group-hover:drop-shadow-[0_12px_25px_rgba(252,209,22,0.4)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-500"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 />
                             </div>
                         ) : (

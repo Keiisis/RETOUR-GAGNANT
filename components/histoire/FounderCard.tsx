@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Quote } from 'lucide-react'
+import Image from 'next/image'
 
 export interface FounderData {
     name: string
@@ -25,10 +26,12 @@ export function FounderCard({ founder, index }: { founder: FounderData, index: n
             {/* Photo area */}
             <div className="relative h-72 bg-gradient-to-b from-[#0a0f18] to-[#05080a] overflow-hidden">
                 {founder.image ? (
-                    <img
+                    <Image
                         src={founder.image}
                         alt={founder.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center">
