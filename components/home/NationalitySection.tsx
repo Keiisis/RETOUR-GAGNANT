@@ -7,7 +7,7 @@ import {
     Sparkles, ChevronRight, ChevronLeft, Loader2, Star,
     ArrowRight, Phone, Mail, User, Compass, Fingerprint,
     Landmark, ScrollText, Dna, BookOpen, Scaling, CheckSquare,
-    MessageSquare, Home
+    MessageSquare, Home, FileCheck2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -479,8 +479,8 @@ export default function NationalitySection() {
                                                             transition={{ delay: i * 0.05 }}
                                                             onClick={() => selectChoice(opt.value)}
                                                             className={`relative p-5 rounded-2xl border-2 text-left transition-all overflow-hidden ${isSelected
-                                                                    ? 'bg-[#008751]/5 border-[#008751] shadow-[0_8px_20px_rgba(0,135,81,0.15)] ring-1 ring-[#008751]/20'
-                                                                    : 'bg-white border-gray-100 shadow-sm hover:border-[#008751]/40 hover:shadow-md'
+                                                                ? 'bg-[#008751]/5 border-[#008751] shadow-[0_8px_20px_rgba(0,135,81,0.15)] ring-1 ring-[#008751]/20'
+                                                                : 'bg-white border-gray-100 shadow-sm hover:border-[#008751]/40 hover:shadow-md'
                                                                 }`}
                                                         >
                                                             {isSelected && (
@@ -517,8 +517,8 @@ export default function NationalitySection() {
                                                                 transition={{ delay: i * 0.05 }}
                                                                 onClick={() => toggleMulti(opt.value)}
                                                                 className={`p-5 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${selected
-                                                                        ? 'bg-[#008751]/5 border-[#008751]'
-                                                                        : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'
+                                                                    ? 'bg-[#008751]/5 border-[#008751]'
+                                                                    : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'
                                                                     }`}
                                                             >
                                                                 <div className="flex items-center gap-4">
