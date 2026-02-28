@@ -16,7 +16,7 @@ import Link from "next/link";
 interface OptionData {
     value: string;
     label: string;
-    icon: React.ElementType;
+    icon: any;
     detail?: string;
 }
 
@@ -24,7 +24,7 @@ interface StepConfig {
     id: string;
     title: string;
     subtitle: string;
-    icon: React.ElementType;
+    icon: any;
     type: 'choice' | 'input' | 'multi' | 'textarea';
     options?: OptionData[];
     inputConfig?: { name: string; placeholder: string; type?: string; required?: boolean }[];
@@ -454,7 +454,10 @@ export default function NationalitySection() {
                                     {/* Question Header */}
                                     <div className="flex flex-col items-center text-center mb-10">
                                         <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 shadow-inner relative">
-                                            <step.icon size={28} className="text-[#1a2332]" strokeWidth={1.5} />
+                                            {(() => {
+                                                const Icon = step.icon;
+                                                return <Icon size={28} className="text-[#1a2332]" strokeWidth={1.5} />;
+                                            })()}
                                             {step.id === 'contact_info' && <motion.div className="absolute -top-1 -right-1 w-3 h-3 bg-[#008751] rounded-full border-2 border-white" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} />}
                                         </div>
                                         <h2 className="text-3xl font-black text-gray-900 font-heading mb-3">{step.title}</h2>
@@ -488,7 +491,10 @@ export default function NationalitySection() {
                                                             )}
                                                             <div className="relative z-10 flex items-start gap-4">
                                                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#008751] text-white' : 'bg-gray-50 text-gray-400'}`}>
-                                                                    <opt.icon size={20} strokeWidth={isSelected ? 2 : 1.5} />
+                                                                    {(() => {
+                                                                        const Icon = opt.icon;
+                                                                        return <Icon size={20} strokeWidth={isSelected ? 2 : 1.5} />;
+                                                                    })()}
                                                                 </div>
                                                                 <div>
                                                                     <span className={`text-base font-bold block ${isSelected ? 'text-[#008751]' : 'text-gray-800'}`}>{opt.label}</span>
@@ -522,7 +528,10 @@ export default function NationalitySection() {
                                                                     }`}
                                                             >
                                                                 <div className="flex items-center gap-4">
-                                                                    <opt.icon size={22} className={selected ? 'text-[#008751]' : 'text-gray-400'} strokeWidth={1.5} />
+                                                                    {(() => {
+                                                                        const Icon = opt.icon;
+                                                                        return <Icon size={22} className={selected ? 'text-[#008751]' : 'text-gray-400'} strokeWidth={1.5} />;
+                                                                    })()}
                                                                     <span className={`text-sm font-bold ${selected ? 'text-[#008751]' : 'text-gray-700'}`}>{opt.label}</span>
                                                                 </div>
                                                                 <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${selected ? 'bg-[#008751] border-[#008751]' : 'border-gray-200'}`}>
