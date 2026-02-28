@@ -11,6 +11,85 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useEffect } from "react";
+
+/* ────────────────── IMMERSIVE COMPONENTS ────────────────── */
+const FloatingParticles = () => {
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            {[...Array(20)].map((_, i) => (
+                <motion.div
+                    key={`particle-${i}`}
+                    className="absolute bg-white rounded-full opacity-20"
+                    style={{
+                        width: Math.random() * 6 + 2 + 'px',
+                        height: Math.random() * 6 + 2 + 'px',
+                        left: Math.random() * 100 + '%',
+                        top: Math.random() * 100 + '%',
+                    }}
+                    animate={{
+                        y: [0, Math.random() * -100 - 50],
+                        x: [0, Math.random() * 50 - 25],
+                        opacity: [0, 0.4, 0],
+                        scale: [0, 1, 0.5],
+                    }}
+                    transition={{
+                        duration: Math.random() * 5 + 5,
+                        repeat: Infinity,
+                        ease: "linear",
+                        delay: Math.random() * 5,
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
+
+const ScoreRing = ({ score }: { score: number }) => {
+    return (
+        <div className="relative w-48 h-48 mx-auto mb-8 flex items-center justify-center">
+            {/* Glowing background */}
+            <motion.div
+                className="absolute inset-0 bg-[#008751]/20 rounded-full blur-2xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity }}
+            />
+            {/* SVG Ring */}
+            <svg className="w-full h-full transform -rotate-90 filter drop-shadow-xl" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#f3f4f6" strokeWidth="8" />
+                <motion.circle
+                    cx="50" cy="50" r="45" fill="none"
+                    stroke="url(#gradient)" strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray="283"
+                    initial={{ strokeDashoffset: 283 }}
+                    animate={{ strokeDashoffset: 283 - (283 * score) / 100 }}
+                    transition={{ duration: 2, ease: "easeOut", delay: 0.5 }}
+                />
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#008751" />
+                        <stop offset="50%" stopColor="#FCD116" />
+                        <stop offset="100%" stopColor="#E8112D" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            {/* Inner Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-full m-2 shadow-inner border border-gray-100/50">
+                <motion.span
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1.5, type: "spring" }}
+                    className="text-5xl font-black font-heading text-transparent bg-clip-text bg-gradient-to-br from-[#1a2332] to-[#008751]"
+                >
+                    {score}%
+                </motion.span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Potentiel</span>
+            </div>
+        </div>
+    );
+};
+
 
 /* ────────────────── TYPES ────────────────── */
 interface OptionData {
@@ -639,6 +718,7 @@ export default function NationalitySection() {
                             className="max-w-2xl mx-auto text-center"
                         >
                             <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-14 border border-gray-100 relative overflow-hidden">
+                                <FloatingParticles />
 
                                 {/* Background Accent */}
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#008751] rounded-full filter blur-[150px] opacity-10 pointer-events-none" />
@@ -647,29 +727,21 @@ export default function NationalitySection() {
                                 <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
 
                                 <div className="relative z-10">
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ type: 'spring', delay: 0.2 }}
-                                        className="w-20 h-20 mx-auto bg-gradient-to-br from-[#008751]/10 to-transparent rounded-3xl flex items-center justify-center mb-8 border border-[#008751]/20"
-                                    >
-                                        <CheckSquare size={36} className="text-[#008751]" />
-                                    </motion.div>
+                                    <ScoreRing score={result.score} />
 
                                     <h2 className="text-3xl md:text-5xl font-black font-heading text-[#1a2332] mb-4">
-                                        Analyse <span className="text-[#008751]">Réussie</span>
+                                        Félicitations <span className="text-[#008751]">{contactInfo.prenom}</span> !
                                     </h2>
 
                                     <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 mb-8 mt-8">
                                         <p className="text-gray-600 text-lg leading-relaxed">
-                                            Merci <strong>{contactInfo.prenom}</strong>. Nos experts examinent actuellement vos informations.
-                                            Vos réponses démontrent un profil pertinent pour nos services.
+                                            L'Oracle de Retour Gagnant a analysé vos réponses avec succès. Votre profil offre d'excellentes perspectives pour l'obtention de la nationalité béninoise.
                                         </p>
                                     </div>
 
                                     {/* Insights AI Stylisés */}
                                     <div className="space-y-4 mb-10 text-left">
-                                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-2">Points clés de votre dossier :</h4>
+                                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-2">Analyse de votre profil :</h4>
                                         {result.insights.map((insight, i) => (
                                             <motion.div
                                                 key={i}
@@ -689,7 +761,7 @@ export default function NationalitySection() {
                                     {/* Reference */}
                                     {result.reference && (
                                         <div className="mb-10">
-                                            <span className="text-xs text-gray-400 uppercase tracking-widest block mb-2 font-bold">Votre numéro de suivi</span>
+                                            <span className="text-xs text-gray-400 uppercase tracking-widest block mb-2 font-bold">Votre code d'analyse (N.A.G)</span>
                                             <div className="inline-block bg-[#1a2332] text-white px-6 py-3 rounded-xl font-mono text-lg font-bold tracking-wider shadow-lg">
                                                 {result.reference}
                                             </div>
@@ -704,15 +776,18 @@ export default function NationalitySection() {
                                         className="flex flex-col sm:flex-row gap-4"
                                     >
                                         <Link href="/rendez-vous" className="flex-1">
-                                            <Button className="w-full h-16 bg-[#008751] hover:bg-[#006a41] text-white font-bold rounded-2xl text-base shadow-[0_10px_30px_rgba(0,135,81,0.3)] hover:shadow-[0_15px_35px_rgba(0,135,81,0.4)] transition-all group">
-                                                Prendre un Appel Conseil
-                                                <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                            <Button className="w-full h-16 bg-[#008751] hover:bg-[#006a41] text-white font-bold rounded-2xl text-base shadow-[0_10px_30px_rgba(0,135,81,0.3)] hover:shadow-[0_15px_35px_rgba(0,135,81,0.4)] transition-all group overflow-hidden relative">
+                                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                                    Consulter un Expert Privé
+                                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                                </span>
                                             </Button>
                                         </Link>
                                     </motion.div>
 
                                     <p className="text-sm font-medium text-gray-400 mt-6 flex items-center justify-center gap-2">
-                                        <Shield size={16} /> Un agent vous contactera d'ici 24h ouvrées.
+                                        <Shield size={16} /> Ces données ont été bien transmises sécuritairement à nos agents.
                                     </p>
                                 </div>
                             </div>
