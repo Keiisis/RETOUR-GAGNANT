@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import {
     BookOpen, Search, ChevronRight, FileText, Globe,
     Building2, Landmark, Users, Scale, Banknote,
-    Plus, X, Trash2, Edit3, Save, Loader2
+    Plus, X, Trash2, Edit3, Save, Loader2, Sparkles, Send
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -38,6 +38,8 @@ export default function AgentWikiPage() {
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [selectedArticle, setSelectedArticle] = useState<WikiArticle | null>(null)
+    const [aiResponse, setAiResponse] = useState<string | null>(null)
+    const [aiLoading, setAiLoading] = useState(false)
 
     // Form state
     const [showForm, setShowForm] = useState(false)
@@ -98,11 +100,10 @@ export default function AgentWikiPage() {
             title: formTitle,
             content: formContent,
             tags: tagsArray,
-            updated_at: new Date().toISOString(),
         }
 
         if (editingArticle) {
-            await supabase.from('wiki_articles').update(articleData).eq('id', editingArticle.id)
+            await supabase.from('wiki_articles').update({ ...articleData, updated_at: new Date().toISOString() }).eq('id', editingArticle.id)
         } else {
             await supabase.from('wiki_articles').insert(articleData)
         }
@@ -116,6 +117,29 @@ export default function AgentWikiPage() {
         await supabase.from('wiki_articles').delete().eq('id', id)
         setArticles(prev => prev.filter(a => a.id !== id))
         setSelectedArticle(null)
+    }
+
+    const askAI = async () => {
+        if (!search.trim() || aiLoading) return
+        setAiLoading(true)
+        setAiResponse(null)
+        try {
+            const res = await fetch('/api/wiki/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: search,
+                    context: articles.map(a => ({ title: a.title, content: a.content }))
+                })
+            })
+            const data = await res.json()
+            setAiResponse(data.answer)
+        } catch (error) {
+            console.error(error)
+            setAiResponse("L'IA n'a pas pu répondre à cette requête.")
+        } finally {
+            setAiLoading(false)
+        }
     }
 
     if (loading) {
@@ -145,11 +169,51 @@ export default function AgentWikiPage() {
                 </button>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un article, un sujet..." title="Rechercher" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm" />
+            <div className="flex gap-2">
+                <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setAiResponse(null) }}
+                        onKeyDown={e => e.key === 'Enter' && askAI()}
+                        placeholder="Rechercher un article, un sujet..."
+                        title="Rechercher"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm"
+                    />
+                </div>
+                <button
+                    onClick={askAI}
+                    disabled={!search.trim() || aiLoading}
+                    className="flex shrink-0 items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl text-sm font-bold hover:from-emerald-500/30 hover:to-teal-500/30 disabled:opacity-50 transition-all font-mono tracking-widest uppercase"
+                >
+                    {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                    <span className="hidden sm:inline">Demander à l'IA</span>
+                </button>
             </div>
+
+            {/* AI Response Block */}
+            <AnimatePresence>
+                {aiResponse && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl p-5 relative">
+                            <button onClick={() => setAiResponse(null)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"><X size={14} /></button>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Sparkles size={16} className="text-emerald-400" />
+                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Assistant IA Retour Gagnant</span>
+                            </div>
+                            <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap pr-6">
+                                {aiResponse}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Category Tabs */}
             <div className="flex gap-2 flex-wrap">

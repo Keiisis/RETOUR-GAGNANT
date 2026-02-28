@@ -10,6 +10,7 @@ import {
     ArrowRight
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 type DossierStatus = 'nouveau' | 'en_attente' | 'en_cours' | 'termine'
 
@@ -55,12 +56,27 @@ export default function AgentDossiersPage() {
     }, [])
 
     const updateStatus = async (dossierId: string, newStatus: DossierStatus) => {
+        setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, status: newStatus } : d))
         await supabase
             .from('dossier_tracking')
             .update({ status: newStatus })
             .eq('id', dossierId)
+    }
 
-        setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, status: newStatus } : d))
+    const onDragEnd = (result: DropResult) => {
+        const { destination, source, draggableId } = result
+
+        if (!destination) return
+
+        if (
+            destination.droppableId === source.droppableId &&
+            destination.index === source.index
+        ) {
+            return
+        }
+
+        const newStatus = destination.droppableId as DossierStatus
+        updateStatus(draggableId, newStatus)
     }
 
     const filtered = dossiers.filter(d =>
@@ -85,8 +101,8 @@ export default function AgentDossiersPage() {
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-white">Mes Dossiers</h1>
-                    <p className="text-gray-500 text-sm mt-1">{dossiers.length} dossier(s) au total</p>
+                    <h1 className="text-2xl font-black text-white">Mes Dossiers (Kanban)</h1>
+                    <p className="text-gray-500 text-sm mt-1">{dossiers.length} dossier(s) au total • <span className="text-emerald-400">Glissez-déposez pour changer le statut</span></p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -105,75 +121,93 @@ export default function AgentDossiersPage() {
             </div>
 
             {/* Kanban Board */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                {columns.map((column) => {
-                    const items = getDossiersByStatus(column.id)
-                    const ColumnIcon = column.icon
-                    return (
-                        <div key={column.id} className={`rounded-2xl border ${column.color} p-4 min-h-[400px]`}>
-                            {/* Column Header */}
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <ColumnIcon size={16} className="text-gray-400" />
-                                    <span className="text-sm font-bold text-white">{column.label}</span>
-                                </div>
-                                <span className="text-[10px] font-bold bg-white/10 px-2 py-1 rounded-full text-gray-300">
-                                    {items.length}
-                                </span>
-                            </div>
+            <DragDropContext onDragEnd={onDragEnd}>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+                    {columns.map((column) => {
+                        const items = getDossiersByStatus(column.id)
+                        const ColumnIcon = column.icon
 
-                            {/* Cards */}
-                            <div className="space-y-3">
-                                {items.map((d, i) => (
-                                    <motion.div
-                                        key={d.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        className="bg-[#0a1210] border border-white/5 rounded-xl p-4 cursor-pointer hover:border-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all group"
-                                        onClick={() => { setSelectedDossier(d); setNoteText(d.notes || '') }}
+                        return (
+                            <Droppable droppableId={column.id} key={column.id}>
+                                {(provided, snapshot) => (
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                        className={`rounded-2xl border transition-colors duration-300 p-4 min-h-[500px] flex flex-col ${snapshot.isDraggingOver
+                                                ? 'bg-emerald-500/10 border-emerald-500/50'
+                                                : column.color
+                                            }`}
                                     >
-                                        <div className="flex items-start justify-between mb-2">
-                                            <span className="text-xs font-mono text-emerald-400 font-bold">{d.num_dossier}</span>
-                                            <Eye size={14} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
-                                        </div>
-                                        <p className="text-sm font-semibold text-white mb-1">{d.client_nom} {d.client_prenom}</p>
-                                        <p className="text-[11px] text-gray-500">{d.service_type}</p>
-                                        <div className="flex items-center gap-1 mt-3 text-[10px] text-gray-600">
-                                            <Calendar size={10} />
-                                            {new Date(d.created_at).toLocaleDateString('fr-FR')}
+                                        {/* Column Header */}
+                                        <div className="flex items-center justify-between mb-4 shrink-0">
+                                            <div className="flex items-center gap-2">
+                                                <ColumnIcon size={16} className="text-gray-400" />
+                                                <span className="text-sm font-bold text-white">{column.label}</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold bg-white/10 px-2 py-1 rounded-full text-gray-300">
+                                                {items.length}
+                                            </span>
                                         </div>
 
-                                        {/* Quick Status Change */}
-                                        {column.id !== 'termine' && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    const nextStatus: Record<string, DossierStatus> = {
-                                                        nouveau: 'en_attente',
-                                                        en_attente: 'en_cours',
-                                                        en_cours: 'termine',
-                                                    }
-                                                    updateStatus(d.id, nextStatus[column.id])
-                                                }}
-                                                className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-400/80 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg py-1.5 transition-all"
-                                            >
-                                                Avancer <ArrowRight size={10} />
-                                            </button>
-                                        )}
-                                    </motion.div>
-                                ))}
+                                        {/* Cards Container */}
+                                        <div className="flex-1 space-y-3">
+                                            {items.map((d, index) => (
+                                                <Draggable key={d.id} draggableId={d.id} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            className={`bg-[#0a1210] border rounded-xl p-4 cursor-grab hover:border-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all group ${snapshot.isDragging ? 'border-emerald-500 shadow-2xl scale-105 z-50' : 'border-white/5'
+                                                                }`}
+                                                            onClick={() => { setSelectedDossier(d); setNoteText(d.notes || '') }}
+                                                        >
+                                                            <div className="flex items-start justify-between mb-2">
+                                                                <span className="text-xs font-mono text-emerald-400 font-bold">{d.num_dossier}</span>
+                                                                <Eye size={14} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
+                                                            </div>
+                                                            <p className="text-sm font-semibold text-white mb-1">{d.client_nom} {d.client_prenom}</p>
+                                                            <p className="text-[11px] text-gray-500">{d.service_type}</p>
+                                                            <div className="flex items-center gap-1 mt-3 text-[10px] text-gray-600">
+                                                                <Calendar size={10} />
+                                                                {new Date(d.created_at).toLocaleDateString('fr-FR')}
+                                                            </div>
 
-                                {items.length === 0 && (
-                                    <div className="text-center py-8 text-gray-600 text-xs">
-                                        Aucun dossier
+                                                            {/* Quick Status Change */}
+                                                            {column.id !== 'termine' && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        const nextStatus: Record<string, DossierStatus> = {
+                                                                            nouveau: 'en_attente',
+                                                                            en_attente: 'en_cours',
+                                                                            en_cours: 'termine',
+                                                                        }
+                                                                        updateStatus(d.id, nextStatus[column.id])
+                                                                    }}
+                                                                    className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-400/80 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg py-1.5 transition-all opacity-0 group-hover:opacity-100"
+                                                                >
+                                                                    Avancer <ArrowRight size={10} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                            {items.length === 0 && !snapshot.isDraggingOver && (
+                                                <div className="text-center py-8 text-gray-600/50 text-xs border border-dashed border-white/5 rounded-xl">
+                                                    Déposez un dossier ici
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
+                            </Droppable>
+                        )
+                    })}
+                </div>
+            </DragDropContext>
 
             {/* Dossier Detail Modal */}
             <AnimatePresence>

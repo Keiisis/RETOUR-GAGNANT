@@ -8,6 +8,7 @@ import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import ClientBell from './ClientBell';
 
 export default function Header() {
     const navLinks = [
@@ -100,8 +101,10 @@ export default function Header() {
                         </div>
                     </nav>
 
-                    {/* Rendez-vous Button */}
-                    <div className="hidden lg:flex items-center shrink-0">
+                    {/* User Area & Rendez-vous Button */}
+                    <div className="hidden lg:flex items-center gap-6 shrink-0">
+                        <ClientBell />
+
                         <Link href="/rendez-vous">
                             <Button className="font-black rounded-full px-6 xl:px-8 h-12 xl:h-14 text-[11px] xl:text-[13px] uppercase tracking-widest shadow-[0_0_20px_rgba(252,209,22,0.15)] transition-all duration-500 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(252,209,22,0.4)] bg-[#FCD116] text-[#0f141e] border-none relative overflow-hidden group">
                                 <span className="relative z-10">Rendez-vous</span>

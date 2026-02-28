@@ -1,25 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     Mail, ArrowRight, Loader2, Shield, Sparkles, FileText,
-    MessageSquare, CalendarCheck, CheckCircle2
+    MessageSquare, CalendarCheck, CheckCircle2, Receipt, HeadphonesIcon, LogOut
 } from 'lucide-react'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRecord = any
 
 export default function MonComptePage() {
     const [email, setEmail] = useState('')
-    const [sent, setSent] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const [dossiers, setDossiers] = useState<any[]>([])
-    const [oracleResults, setOracleResults] = useState<any[]>([])
-    const [documents, setDocuments] = useState<any[]>([])
-    const [contracts, setContracts] = useState<any[]>([])
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [dossiers, setDossiers] = useState<AnyRecord[]>([])
+    const [oracleResults, setOracleResults] = useState<AnyRecord[]>([])
+    const [documents, setDocuments] = useState<AnyRecord[]>([])
+    const [contracts, setContracts] = useState<AnyRecord[]>([])
+    const [orders, setOrders] = useState<AnyRecord[]>([])
     const [authenticated, setAuthenticated] = useState(false)
     const [clientName, setClientName] = useState('')
-    const [activeTab, setActiveTab] = useState<'dossiers' | 'oracle' | 'documents' | 'contrats'>('dossiers')
+    const [activeTab, setActiveTab] = useState<'dossiers' | 'oracle' | 'documents' | 'contrats' | 'factures' | 'support'>('dossiers')
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('rg_client_email')
+        if (savedEmail && !authenticated && !loading) {
+            setEmail(savedEmail)
+        }
+    }, [authenticated, loading])
 
     const handleLogin = async () => {
         if (!email.trim()) return
@@ -28,11 +40,12 @@ export default function MonComptePage() {
 
         try {
             // Fetch client data directly by email (no auth needed — read access)
-            const [dossierRes, oracleRes, docRes, contractRes] = await Promise.all([
+            const [dossierRes, oracleRes, docRes, contractRes, orderRes] = await Promise.all([
                 supabase.from('dossier_tracking').select('*').eq('client_email', email).order('created_at', { ascending: false }),
                 supabase.from('eligibility_results').select('*').eq('client_email', email).order('created_at', { ascending: false }),
                 supabase.from('client_documents').select('*').eq('client_email', email).order('created_at', { ascending: false }),
                 supabase.from('contracts').select('*').eq('client_email', email).order('created_at', { ascending: false }),
+                supabase.from('orders').select('*').eq('customer_email', email).order('created_at', { ascending: false }),
             ])
 
             const allDossiers = (dossierRes.data || [])
@@ -48,7 +61,9 @@ export default function MonComptePage() {
             setOracleResults(allOracle)
             setDocuments(docRes.data || [])
             setContracts(contractRes.data || [])
-            setClientName(allDossiers[0]?.client_prenom || allOracle[0]?.client_prenom || '')
+            setOrders(orderRes.data || [])
+            setClientName(allDossiers[0]?.client_prenom || allOracle[0]?.client_prenom || orderRes.data?.[0]?.customer_name || '')
+            localStorage.setItem('rg_client_email', email) // 🔐 Sauvegarde l'identité pour la Cloche
             setAuthenticated(true)
         } catch {
             setError('Erreur de connexion. Réessayez.')
@@ -148,6 +163,7 @@ export default function MonComptePage() {
                             { icon: Sparkles, label: 'Résultats Oracle' },
                             { icon: MessageSquare, label: 'Documents' },
                             { icon: CalendarCheck, label: 'Contrats' },
+                            { icon: Receipt, label: 'Factures' },
                         ].map((f, i) => (
                             <div key={i} className="bg-white/[0.02] border border-white/5 rounded-xl p-3 flex items-center gap-2 text-xs text-gray-500">
                                 <f.icon size={14} className="text-emerald-500/50" /> {f.label}
@@ -165,6 +181,8 @@ export default function MonComptePage() {
         { key: 'oracle', label: 'Résultats Oracle', icon: Sparkles, count: oracleResults.length },
         { key: 'documents', label: 'Documents', icon: MessageSquare, count: documents.length },
         { key: 'contrats', label: 'Contrats', icon: CalendarCheck, count: contracts.length },
+        { key: 'factures', label: 'Factures', icon: Receipt, count: orders.length },
+        { key: 'support', label: 'Support Direct', icon: HeadphonesIcon, count: 0 },
     ]
 
     const statusColors: Record<string, string> = {
@@ -181,12 +199,25 @@ export default function MonComptePage() {
         <div className="min-h-screen bg-[#0a0f14] py-8 px-4">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">Bienvenue</span>
-                    <h1 className="text-2xl font-black text-white">
-                        {clientName ? `Bonjour ${clientName}` : 'Mon Espace Client'}
-                    </h1>
-                    <p className="text-sm text-gray-500 mt-1">{email}</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 flex justify-between items-start">
+                    <div>
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">Bienvenue</span>
+                        <h1 className="text-2xl font-black text-white">
+                            {clientName ? `Bonjour ${clientName}` : 'Mon Espace Client'}
+                        </h1>
+                        <p className="text-sm text-gray-500 mt-1">{email}</p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('rg_client_email')
+                            setAuthenticated(false)
+                            setDossiers([])
+                            setEmail('')
+                        }}
+                        className="text-xs text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"
+                    >
+                        <LogOut size={14} /> Déconnexion
+                    </button>
                 </motion.div>
 
                 {/* Tabs */}
@@ -224,13 +255,14 @@ export default function MonComptePage() {
                                         </span>
                                     </div>
                                     {/* Progress bar */}
-                                    <div className="w-full bg-white/5 rounded-full h-2 mb-3">
-                                        <div className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all" style={{ width: `${d.progression}%` }} />
+                                    <div className="w-full bg-white/5 rounded-full h-2 mb-2">
+                                        {/* eslint-disable-next-line react/style-prop-object */}
+                                        <div className="bg-emerald-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${d.progression}%` }} />
                                     </div>
                                     <p className="text-[10px] text-gray-500">{d.progression}% complété</p>
                                     {/* Steps */}
                                     <div className="mt-4 space-y-2">
-                                        {(d.etapes || []).map((etape: any) => (
+                                        {(d.etapes || []).map((etape: AnyRecord) => (
                                             <div key={etape.id} className="flex items-center gap-2 text-xs">
                                                 {etape.status === 'completed' ? (
                                                     <CheckCircle2 size={14} className="text-emerald-400" />
@@ -325,6 +357,43 @@ export default function MonComptePage() {
                                     )}
                                 </div>
                             ))}
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'factures' && (
+                        <motion.div key="factures" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                            {orders.length === 0 ? (
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-12 text-center text-gray-500 text-sm">Aucune commande ni facture</div>
+                            ) : orders.map(o => (
+                                <div key={o.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <p className="text-base font-bold text-white">{o.product_title || 'Commande'}</p>
+                                            <p className="text-[10px] text-gray-500">{new Date(o.created_at).toLocaleDateString('fr-FR')} • {o.amount?.toLocaleString()} {o.currency}</p>
+                                        </div>
+                                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${o.payment_status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : o.payment_status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                            {o.payment_status === 'completed' ? 'Payé' : o.payment_status === 'pending' ? 'En attente' : 'Échoué'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-4 border-t border-white/5 pt-4">
+                                        <a href={`/api/invoices/${o.id}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold bg-white/5 hover:bg-white/10 text-white py-2 rounded-lg transition-colors w-full">
+                                            <Receipt size={14} /> Télécharger la facture PDF (HTML)
+                                        </a>
+                                    </div>
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'support' && (
+                        <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-[600px] w-full rounded-2xl overflow-hidden bg-white/[0.02] border border-white/5 relative">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0 text-center p-6">
+                                <HeadphonesIcon size={48} className="text-gray-700 mb-4" />
+                                <h3 className="text-lg font-bold text-white mb-2">Support Direct / Live Chat</h3>
+                                <p className="text-sm text-gray-500 max-w-sm">
+                                    Une fenêtre de dialogue s&apos;est normalement connectée avec un agent sur cette page ou utilisez le bouton d&apos;assistance flottant pour démarrer une nouvelle session de chat instantanée.
+                                </p>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
