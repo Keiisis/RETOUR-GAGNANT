@@ -9,7 +9,8 @@ import {
     Image as ImageIcon, ShieldCheck, LogOut, Bell,
     Menu, Globe, Sparkles, User, HelpCircle,
     ShoppingBag, Receipt, UserCog, Tag,
-    Flag, Mail, FileText, Compass, X, PanelLeftClose, PanelLeft
+    Flag, Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
+    BarChart3, BookOpen, FileSignature, FolderOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -44,8 +45,12 @@ function AdminLayoutContent({
 
     const menuItems = [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
+        { title: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
         { title: 'Dossiers', icon: FileText, href: '/admin/dossiers' },
         { title: 'Leads Oracle', icon: Compass, href: '/admin/leads-oracle' },
+        { title: 'Documents', icon: FolderOpen, href: '/admin/documents' },
+        { title: 'Contrats', icon: FileSignature, href: '/admin/contrats' },
+        { title: 'Blog', icon: BookOpen, href: '/admin/blog' },
         { title: 'Patrimoine', icon: Map, href: '/admin/patrimoine' },
         { title: 'Services', icon: ShieldCheck, href: '/admin/services' },
         { title: 'Parcours', icon: Sparkles, href: '/admin/process-steps' },
