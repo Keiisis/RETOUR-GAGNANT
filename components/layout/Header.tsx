@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import ClientBell from './ClientBell';
+import { useCart } from '@/lib/store/cartStore';
 
 export default function Header() {
+    const { itemCount, openCart } = useCart();
     const navLinks = [
         { label: "Accueil", href: "/" },
         { label: "Patrimoine", href: "/patrimoine" },
@@ -24,7 +26,6 @@ export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
-    const isHomePage = pathname === '/';
 
     useEffect(() => {
         const handleScroll = () => {
@@ -103,6 +104,19 @@ export default function Header() {
 
                     {/* User Area & Rendez-vous Button */}
                     <div className="hidden lg:flex items-center gap-6 shrink-0">
+                        {/* Cart Button */}
+                        <button
+                            onClick={openCart}
+                            className="relative p-2 text-white/70 hover:text-[#FCD116] transition-colors"
+                        >
+                            <ShoppingBag size={24} />
+                            {itemCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#E8112D] text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#05080a]">
+                                    {itemCount}
+                                </span>
+                            )}
+                        </button>
+
                         <ClientBell />
 
                         <Link href="/rendez-vous">
@@ -113,17 +127,32 @@ export default function Header() {
                         </Link>
                     </div>
 
-                    {/* Mobile Toggle */}
-                    <button
-                        className="lg:hidden p-2 sm:p-3 shrink-0 rounded-xl hover:bg-white/5 transition-colors"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        aria-label="Toggle Menu"
-                    >
-                        {isMobileMenuOpen ?
-                            <X size={26} className="text-white" /> :
-                            <Menu size={26} className="text-white" />
-                        }
-                    </button>
+                    {/* Mobile Toggle and Cart */}
+                    <div className="flex items-center gap-2 lg:hidden">
+                        <button
+                            onClick={openCart}
+                            className="relative p-2 text-white/70 hover:text-[#FCD116] transition-colors shrink-0"
+                            aria-label="Ouvrir le panier"
+                        >
+                            <ShoppingBag size={24} />
+                            {itemCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-[#E8112D] text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#05080a]">
+                                    {itemCount}
+                                </span>
+                            )}
+                        </button>
+
+                        <button
+                            className="p-2 sm:p-3 shrink-0 rounded-xl hover:bg-white/5 transition-colors"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label="Toggle Menu"
+                        >
+                            {isMobileMenuOpen ?
+                                <X size={26} className="text-white" /> :
+                                <Menu size={26} className="text-white" />
+                            }
+                        </button>
+                    </div>
                 </div>
             </header>
 

@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import AudioPlayer from '@/components/layout/AudioPlayer'
 import ChatAssistant from '@/components/chat/ChatAssistant'
+import { CartDrawer } from '@/components/boutique/CartDrawer'
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -23,6 +24,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         <>
             <Header />
             <AudioPlayer />
+            <CartDrawer />
             <main className="min-h-screen pt-20">
                 {children}
             </main>
