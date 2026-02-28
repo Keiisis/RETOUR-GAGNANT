@@ -258,12 +258,9 @@ export default function NationaliteFormPage() {
                     opacity: { duration: 1.5 }
                 }}
             />
-            {/* Immersive overlay — deep contrasting colors to detach from the photo */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#020b14]/90 via-[#061c13]/70 to-[#1a0808]/90" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
-
-            {/* Cinematic blur to create depth and focus on the form */}
-            <div className="absolute inset-0 backdrop-blur-[8px]" />
+            {/* Immersive overlay — lighter to keep culture image visible and sharp */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#020b14]/60 via-[#061c13]/40 to-[#1a0808]/60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
 
             {/* Dynamic Interactive Elements */}
             <motion.div
