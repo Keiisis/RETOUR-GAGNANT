@@ -10,9 +10,17 @@ interface LiveSupportChatProps {
     clientName: string;
 }
 
+interface ChatMessage {
+    id: string;
+    role: string;
+    content: string;
+    created_at?: string;
+    conversation_id?: string;
+}
+
 export default function LiveSupportChat({ email, clientName }: LiveSupportChatProps) {
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<Record<string, unknown>[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +77,7 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
                 table: 'chat_messages',
                 filter: `conversation_id=eq.${sessionId}`
             }, (payload) => {
-                const newMsg = payload.new;
+                const newMsg = payload.new as ChatMessage;
                 setMessages(prev => {
                     if (prev.find(m => m.id === newMsg.id)) return prev;
                     return [...prev, newMsg];
