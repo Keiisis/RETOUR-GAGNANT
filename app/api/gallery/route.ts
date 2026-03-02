@@ -1,58 +1,57 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import fs from "fs";
-import path from "path";
+import { NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ywvsfhqdtkgzavxsumnk.supabase.co'
 
 export async function GET() {
     try {
-        // 1. Get local images
-        const galleryDir = path.join(process.cwd(), "public", "images", "gallery");
-        let localFiles: any[] = [];
-
-        try {
-            if (fs.existsSync(galleryDir)) {
-                const files = fs.readdirSync(galleryDir);
-                localFiles = files
-                    .filter(file => /\.(jpg|jpeg|png|webp|avif)$/i.test(file))
-                    .map((file, index) => ({
-                        id: `local-${index}`,
-                        src: `/images/gallery/${file}`,
-                        filename: file,
-                    }));
-            }
-        } catch (dirError) {
-            console.error("Local gallery read error:", dirError);
-        }
-
-        // 2. Get Supabase images
-        const { data: supabaseData, error: supabaseError } = await supabase
+        // 1. Try Supabase gallery table first (admin-managed entries)
+        const { data: tableData } = await supabase
             .from('gallery')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
 
-        const supabaseFiles = (supabaseData || [])
-            .filter((item: any) => (item.url && item.url.trim() !== "") || (item.src && item.src.trim() !== "") || (item.image_url && item.image_url.trim() !== ""))
+        const tableImages = (tableData || [])
+            .filter((item: any) => {
+                const url = item.url || item.src || item.image_url
+                return url && url.trim() !== ''
+            })
             .map((item: any, index: number) => ({
-                id: item.id || `supabase-${index}`,
+                id: item.id || `db-${index}`,
                 src: item.url || item.src || item.image_url,
                 filename: item.filename || item.title || `image-${index}`,
-            }));
+            }))
 
-        // 3. Combine both — deduplicate by filename to avoid double-counting
-        // Local images take priority (faster to load)
-        const localFilenames = new Set(localFiles.map((f: any) => f.filename.toLowerCase()));
-        const uniqueSupabase = supabaseFiles.filter((item: any) => {
-            const fname = (item.filename || '').toLowerCase();
-            // Also check if filename is contained in the src path of local images
-            const srcBasename = item.src ? item.src.split('/').pop()?.toLowerCase() : '';
-            return !localFilenames.has(fname) && !localFilenames.has(srcBasename || '');
-        });
+        // 2. List files directly from Supabase Storage bucket "gallery"
+        const { data: storageFiles, error: storageError } = await supabase
+            .storage
+            .from('gallery')
+            .list('', { limit: 500, sortBy: { column: 'name', order: 'asc' } })
 
-        const allImages = [...localFiles, ...uniqueSupabase];
+        let storageImages: any[] = []
+        if (!storageError && storageFiles) {
+            const tableFilenames = new Set(
+                tableImages.map((img: any) => {
+                    const srcBasename = img.src ? img.src.split('/').pop()?.toLowerCase() : ''
+                    return srcBasename
+                })
+            )
 
-        return NextResponse.json({ images: allImages });
+            storageImages = storageFiles
+                .filter((file: any) => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file.name))
+                .filter((file: any) => !tableFilenames.has(file.name.toLowerCase()))
+                .map((file: any, index: number) => ({
+                    id: `storage-${index}`,
+                    src: `${SUPABASE_URL}/storage/v1/object/public/gallery/${encodeURIComponent(file.name)}`,
+                    filename: file.name,
+                }))
+        }
+
+        const allImages = [...tableImages, ...storageImages]
+
+        return NextResponse.json({ images: allImages })
     } catch (error) {
-        console.error("Gallery fetch error:", error);
-        return NextResponse.json({ images: [] });
+        console.error('Gallery fetch error:', error)
+        return NextResponse.json({ images: [] })
     }
 }
