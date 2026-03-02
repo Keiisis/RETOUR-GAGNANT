@@ -1,22 +1,20 @@
 'use client';
 
-import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
-import { motion } from "framer-motion";
+import { useList, useNavigation } from "@refinedev/core";
 import {
-    Settings, Shield, Globe, Zap, Database,
-    Bell, Cloud, Code, Smartphone, Save,
-    RotateCcw, AlertTriangle, CheckCircle2,
-    Sliders, Palette, Share2, Info, Loader2,
+    Settings, Zap, Database,
+    Save, RotateCcw,
+    Sliders, Palette, Share2, Loader2,
     CreditCard, Mail, MonitorPlay
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default function SettingsList() {
     const { edit } = useNavigation();
+    const [deployMsg, setDeployMsg] = useState<string | null>(null);
     const queryResult = useList({
         resource: "settings",
     });
@@ -40,16 +38,28 @@ export default function SettingsList() {
                     <h1 className="text-6xl font-black text-white font-heading tracking-tighter">
                         SYSTÈME <span className="text- benin-gradient">CONFIG</span>
                     </h1>
-                    <p className="text-gray-500 max-w-xl font-medium text-sm">Contrôlez les paramètres globaux, les API et l'identité visuelle de Retour Gagnant.</p>
+                    <p className="text-gray-500 max-w-xl font-medium text-sm">Contrôlez les paramètres globaux, les API et l&apos;identité visuelle de Retour Gagnant.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="h-14 px-6 rounded-2xl border-white/5 bg-white/5 text-gray-400 font-bold text-xs uppercase tracking-widest hover:bg-white/10">
-                        <RotateCcw size={16} className="mr-2" /> Réinitialiser
-                    </Button>
-                    <Button className="h-14 px-8 rounded-2xl bg-[#008751] text-white font-black tracking-widest gap-2 shadow-xl shadow-green-500/20">
-                        <Save size={20} /> DÉPLOYER LES MODIFS
-                    </Button>
+                <div className="flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            onClick={() => window.location.reload()}
+                            className="h-14 px-6 rounded-2xl border-white/5 bg-white/5 text-gray-400 font-bold text-xs uppercase tracking-widest hover:bg-white/10"
+                        >
+                            <RotateCcw size={16} className="mr-2" /> Réinitialiser
+                        </Button>
+                        <Button
+                            onClick={() => { setDeployMsg('Toutes les modifications sont automatiquement synchronisées avec le serveur.'); setTimeout(() => setDeployMsg(null), 4000); }}
+                            className="h-14 px-8 rounded-2xl bg-[#008751] text-white font-black tracking-widest gap-2 shadow-xl shadow-green-500/20"
+                        >
+                            <Save size={20} /> DÉPLOYER LES MODIFS
+                        </Button>
+                    </div>
+                    {deployMsg && (
+                        <p className="text-xs text-[#008751] font-bold">{deployMsg}</p>
+                    )}
                 </div>
             </div>
 
@@ -110,8 +120,8 @@ export default function SettingsList() {
                                     <Mail size={24} className="text-[#3b82f6]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-white font-heading">Serveur d'Emails (SMTP)</h3>
-                                    <p className="text-xs text-gray-500 mt-1">Configurez l'envoi des factures, notifications webhooks via Gmail ou SMTP privé.</p>
+                                    <h3 className="text-lg font-black text-white font-heading">Serveur d&apos;Emails (SMTP)</h3>
+                                    <p className="text-xs text-gray-500 mt-1">Configurez l&apos;envoi des factures, notifications webhooks via Gmail ou SMTP privé.</p>
                                 </div>
                             </div>
                             <div className="text-gray-600 group-hover:text-[#3b82f6] transition-colors shrink-0">
@@ -151,7 +161,7 @@ export default function SettingsList() {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-black text-white font-heading">Personnalisation FrontEnd</h3>
-                                    <p className="text-xs text-gray-500 mt-1">Gérez le design visuel public : Vidéo d'accueil, textes, liens de la barre de navigation, immersion totale.</p>
+                                    <p className="text-xs text-gray-500 mt-1">Gérez le design visuel public : Vidéo d&apos;accueil, textes, liens de la barre de navigation, immersion totale.</p>
                                 </div>
                             </div>
                             <div className="text-gray-600 group-hover:text-purple-500 transition-colors shrink-0">
@@ -169,7 +179,7 @@ export default function SettingsList() {
                 <CardHeader className="p-10 border-b border-white/5 flex flex-row items-center justify-between">
                     <div>
                         <CardTitle className="text-2xl font-black text-white font-heading">Paramètres de la Table</CardTitle>
-                        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Éléments configuréables depuis Supabase</p>
+                        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Éléments configurables depuis Supabase</p>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -202,7 +212,7 @@ export default function SettingsList() {
                         ) : (
                             <div className="p-20 text-center opacity-30">
                                 <Sliders size={48} className="mx-auto mb-4" />
-                                <p className="text-sm font-bold uppercase tracking-widest text-gray-500">Aucune donnée de configuréation brute trouvée.</p>
+                                <p className="text-sm font-bold uppercase tracking-widest text-gray-500">Aucune donnée de configuration brute trouvée.</p>
                             </div>
                         )}
                     </div>

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Identifiants SMTP manquants dans la base de données." }, { status: 400 });
         }
 
-        // 2. Transporter configuréation
+        // 2. Transporter configuration
         const transporter = nodemailer.createTransport({
             host: settings.smtp_host,
             port: Number(settings.smtp_port) || 465,
@@ -69,6 +69,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, messageId: info.messageId });
     } catch (e: any) {
         console.error("Test email error", e);
-        return NextResponse.json({ success: false, error: e.message || "Erreçur de connexion SMTP" }, { status: 500 });
+        return NextResponse.json({ success: false, error: e.message || "Erreur de connexion SMTP" }, { status: 500 });
     }
 }

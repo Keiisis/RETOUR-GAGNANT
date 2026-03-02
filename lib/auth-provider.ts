@@ -77,6 +77,22 @@ export const authProvider: AuthProvider = {
         }
         return null;
     },
+    forgotPassword: async ({ email }: { email: string }) => {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${siteUrl}/admin/reset-password`,
+        })
+        if (error) {
+            return {
+                success: false,
+                error: {
+                    message: "Erreur lors de l'envoi du lien de réinitialisation",
+                    name: error.message,
+                },
+            }
+        }
+        return { success: true }
+    },
     onError: async (error) => {
         console.error(error);
         return { error };

@@ -129,7 +129,7 @@ export default function AIConfigPage() {
             if (response.ok && data.reply) {
                 setTestResult({ ok: true, message: data.reply })
             } else {
-                setTestResult({ ok: false, message: data.reply || 'Erreçur de connexion' })
+                setTestResult({ ok: false, message: data.reply || 'Erreur de connexion' })
             }
         } catch {
             setTestResult({ ok: false, message: 'Impossible de contacter l\'API' })
@@ -142,7 +142,7 @@ export default function AIConfigPage() {
         return (
             <div className="flex flex-col items-center justify-center py-32 space-y-4">
                 <Loader2 className="animate-spin text-[#FCD116]" size={40} />
-                <p className="text-gray-500 font-mono text-sm">Chargement de la configuréation IA...</p>
+                <p className="text-gray-500 font-mono text-sm">Chargement de la configuration IA...</p>
             </div>
         )
     }
@@ -206,7 +206,7 @@ export default function AIConfigPage() {
                         )}
                         <div>
                             <h4 className={cn('font-bold text-sm mb-1', testResult.ok ? 'text-[#008751]' : 'text-red-400')}>
-                                {testResult.ok ? 'IA Opérationnelle ✓' : 'Erreçur de connexion'}
+                                {testResult.ok ? 'IA Opérationnelle ✓' : 'Erreur de connexion'}
                             </h4>
                             <p className="text-gray-400 text-sm leading-relaxed">{testResult.message}</p>
                         </div>
@@ -389,7 +389,7 @@ export default function AIConfigPage() {
                                     <input
                                         value={form.personality}
                                         onChange={(e) => setForm((prev) => ({ ...prev, personality: e.target.value }))}
-                                        placeholder="Ex: Chaleureçux, professionnel..."
+                                        placeholder="Ex: Chaleureux, professionnel..."
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm focus:outline-none"
                                     />
                                 </div>
@@ -413,7 +413,7 @@ export default function AIConfigPage() {
                             <div className="space-y-3 text-xs text-gray-500">
                                 <div className="flex gap-2 items-start">
                                     <span className="w-2 h-2 rounded-full bg-[#008751] mt-1.5 shrink-0" />
-                                    <span><strong className="text-white">Frontend</strong> — Ton chaleureçux, pas d'infos confidentielles</span>
+                                    <span><strong className="text-white">Frontend</strong> — Ton chaleureux, pas d&apos;infos confidentielles</span>
                                 </div>
                                 <div className="flex gap-2 items-start">
                                     <span className="w-2 h-2 rounded-full bg-[#3b82f6] mt-1.5 shrink-0" />

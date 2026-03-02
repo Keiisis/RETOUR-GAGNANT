@@ -6,11 +6,11 @@ import {
     CreditCard, Shield, Save, Loader2, ArrowLeft,
     CheckCircle2, AlertCircle, Eye, EyeOff,
     ToggleLeft, ToggleRight, ExternalLink, Zap,
-    Server, Key, Globe, TestTube2, Rocket
+    Key, Globe, TestTube2, Rocket
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -68,7 +68,34 @@ const GATEWAYS: GatewayConfig[] = [
         icon: 'Z',
         docsUrl: 'https://zeyow.com',
         fields: [
-            { key: 'zeyow_redirect_url', label: 'URL de Redirection', placeholder: 'https://pay.zeyow.com/checkout', type: 'url', required: true, isSecret: false, helpText: 'URL vers laquelle le client est redirige pour payer' },
+            { key: 'zeyow_redirect_url', label: 'URL de Redirection', placeholder: 'https://pay.zeyow.com/checkout', type: 'url', required: true, isSecret: false, helpText: 'URL vers laquelle le client est redirige pour payer. Le webhook Zeyow doit pointer vers /api/webhooks/zeyow' },
+        ],
+    },
+    {
+        id: 'stripe',
+        name: 'Stripe',
+        description: 'Cartes bancaires internationales (Visa, Mastercard, AMEX). Supporte XOF.',
+        classes: 'bg-[#635BFF]/15 border-[#635BFF]/30 text-[#635BFF]',
+        icon: 'S',
+        docsUrl: 'https://dashboard.stripe.com/apikeys',
+        fields: [
+            { key: 'stripe_public_key', label: 'Cle Publique (Publishable Key)', placeholder: 'pk_live_xxx... ou pk_test_xxx...', type: 'text', required: true, isSecret: false, helpText: 'Cle publique Stripe — commence par pk_live_ (production) ou pk_test_ (sandbox)' },
+            { key: 'stripe_secret_key', label: 'Cle Secrete (Secret Key)', placeholder: 'sk_live_xxx... ou sk_test_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Cle secrete Stripe — commence par sk_live_ ou sk_test_. Ne jamais exposer.' },
+            { key: 'stripe_webhook_secret', label: 'Webhook Signing Secret', placeholder: 'whsec_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Secret de signature des webhooks Stripe. Configurer le webhook vers /api/webhooks/stripe dans le Dashboard Stripe.' },
+        ],
+    },
+    {
+        id: 'paypal',
+        name: 'PayPal Business',
+        description: 'Compte PayPal Business. Paiements internationaux via compte PayPal ou carte.',
+        classes: 'bg-[#009CDE]/15 border-[#009CDE]/30 text-[#009CDE]',
+        icon: 'P',
+        docsUrl: 'https://developer.paypal.com/dashboard/',
+        fields: [
+            { key: 'paypal_client_id', label: 'Client ID', placeholder: 'AXxx...', type: 'text', required: true, isSecret: false, helpText: 'Client ID de votre application PayPal (sandbox ou live)' },
+            { key: 'paypal_client_secret', label: 'Client Secret', placeholder: 'EXxx...', type: 'password', required: true, isSecret: true, helpText: 'Client Secret de votre application PayPal. Ne jamais exposer.' },
+            { key: 'paypal_currency', label: 'Devise PayPal', placeholder: 'XOF', type: 'text', required: false, isSecret: false, helpText: 'Devise pour les transactions PayPal (XOF, EUR, USD...). XOF par defaut.' },
+            { key: 'paypal_webhook_id', label: 'Webhook ID (optionnel)', placeholder: 'WH-xxx...', type: 'password', required: false, isSecret: true, helpText: 'ID du webhook PayPal pour verification de signature. Configurer /api/webhooks/paypal dans le Developer Dashboard.' },
         ],
     },
 ]
@@ -202,7 +229,7 @@ export default function PaymentSettingsPage() {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
                 <div className="flex items-center gap-4">
                     <Link href="/admin/settings">
-                        <button className="p-3 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors" title="Retour aux reglages">
+                        <button type="button" className="p-3 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors" title="Retour aux reglages">
                             <ArrowLeft size={18} />
                         </button>
                     </Link>
@@ -333,6 +360,7 @@ export default function PaymentSettingsPage() {
 
                                             {/* Enable/Disable toggle */}
                                             <button
+                                                type="button"
                                                 onClick={() => toggleGateway(gateway.id)}
                                                 className="flex items-center gap-2 group"
                                                 title={enabled ? 'Desactiver cette passerelle' : 'Activer cette passerelle'}
@@ -376,6 +404,7 @@ export default function PaymentSettingsPage() {
                                                 </div>
                                             </div>
                                             <button
+                                                type="button"
                                                 onClick={() => toggleSandbox(gateway.id)}
                                                 className={cn(
                                                     'px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all',

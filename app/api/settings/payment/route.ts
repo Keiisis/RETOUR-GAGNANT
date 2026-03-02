@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET() {
     try {
-        // Fetch ALL payment-related settings (including enabled/sandbox flags)
         const { data, error } = await supabase
             .from('settings')
             .select('key, value')
@@ -16,8 +15,14 @@ export async function GET() {
 
         const settings: Record<string, string> = {}
         for (const item of data || []) {
-            // NEVER expose private/secret keys to client-side
-            if (item.key.includes('private') || item.key.includes('secret')) continue
+            // Ne jamais exposer les clés privées/secrètes au client
+            if (
+                item.key.includes('private') ||
+                item.key.includes('secret') ||
+                item.key === 'paypal_client_secret' ||
+                item.key === 'stripe_webhook_secret' ||
+                item.key === 'paypal_webhook_id'
+            ) continue
             settings[item.key] = item.value || ''
         }
 

@@ -24,6 +24,12 @@ export default function BoutiqueLayout({
                 strategy="lazyOnload"
             />
 
+            {/* Stripe.js SDK — chargé globalement pour PaymentModal et CartCheckoutModal */}
+            <Script
+                src="https://js.stripe.com/v3/"
+                strategy="lazyOnload"
+            />
+
             <MaintenanceGuard>
                 {children}
             </MaintenanceGuard>

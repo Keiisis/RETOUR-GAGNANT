@@ -22,7 +22,7 @@ const CONTEXT_PROMPTS: Record<string, string> = {
     frontend: `
 === MODE CLIENT (FRONTEND) ===
 Tu parles à un visiteur/client du site web.
-- Sois chaleureçux, accueillant et rassurant
+- Sois chaleureux, accueillant et rassurant
 - Tutoie naturellement
 - Ne divulgue JAMAIS d'informations confidentielles (données clients, finances, processus internes)
 - Redirige vers un rendez-vous gratuit quand pertinent
@@ -46,7 +46,7 @@ Tu assistes l'administrateur principal de Retour Gagnant.
 - Aide à analyser les métriques, les performances
 - Suggère des optimisations business
 - Peux générer des rapports détaillés
-- Peux aider à configuréer le système
+- Peux aider à configurer le système
 - Sois exhaustif et analytique dans tes réponses
 - Vouvoie l'administrateur`,
 }
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
             const envKey = process.env.GROQ_API_KEY
             if (!envKey) {
                 return NextResponse.json(
-                    { reply: 'L\'assistant n\'est pas configuréé. Contactez-nous au +229 01 23 45 67.' },
+                    { reply: 'L\'assistant n\'est pas configuré. Contactez-nous au +229 01 23 45 67.' },
                     { status: 500 }
                 )
             }
@@ -236,7 +236,7 @@ PRODUITS DISPONIBLES EN BOUTIQUE :
 ${dbProducts ? JSON.stringify(dbProducts, null, 2) : 'Aucun produit actif pour le moment.'}
 
 SERVICES OFFICIELS PROPOSÉS :
-${dbServices ? JSON.stringify(dbServices, null, 2) : 'Aucun service configuréé.'}
+${dbServices ? JSON.stringify(dbServices, null, 2) : 'Aucun service configuré.'}
 
 INFORMATIONS IMPORTANTES (L'ORACLE):
 Nous proposons un service phare nommé "L'Oracle" ou "Test d'Éligibilité" directement sur la page d'accueil (section #nationalite).

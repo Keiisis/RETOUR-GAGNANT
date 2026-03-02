@@ -77,7 +77,7 @@ export default function EmailSettingsPage() {
             alert("Paramètres sauvegardés avec succès !");
         } catch (error) {
             console.error("Save error", error);
-            alert("Erreçur lors de la sauvegarde.");
+            alert("Erreur lors de la sauvegarde.");
         } finally {
             setIsSaving(false);
         }
@@ -85,7 +85,7 @@ export default function EmailSettingsPage() {
 
     const handleTest = async () => {
         if (!form.smtp_user || !form.smtp_from_email) {
-            setTestResult({ success: false, message: "Veuillez configuréer et sauvegarder une adresse d'envoi avant de tester." });
+            setTestResult({ success: false, message: "Veuillez configurer et sauvegarder une adresse d'envoi avant de tester." });
             return;
         }
 
@@ -103,10 +103,10 @@ export default function EmailSettingsPage() {
             if (res.ok && data.success) {
                 setTestResult({ success: true, message: "L'e-mail de test est bien parti. Vérifiez votre boîte de réception (" + form.smtp_user + ")." });
             } else {
-                setTestResult({ success: false, message: data.error || "La connexion au serveur SMTP a ééchouéé. Vérifiez vos identifiants ou le mot de passe d'application." });
+                setTestResult({ success: false, message: data.error || "La connexion au serveur SMTP a échoué. Vérifiez vos identifiants ou le mot de passe d'application." });
             }
         } catch (e) {
-            setTestResult({ success: false, message: "Erreçur réseau lors du test d'envoi." });
+            setTestResult({ success: false, message: "Erreur réseau lors du test d'envoi." });
         } finally {
             setIsTesting(false);
         }
@@ -246,7 +246,7 @@ export default function EmailSettingsPage() {
                             <h3 className="text-xl font-black text-white flex items-center gap-3">
                                 <Send className="text-[#3b82f6]" size={24} /> Ping Diagnostique
                             </h3>
-                            <p className="text-xs text-gray-500 mt-2">Envoyez un e-mail de test via l'API Nodemailer pour valider la configuréation et les credentials.</p>
+                            <p className="text-xs text-gray-500 mt-2">Envoyez un e-mail de test via l&apos;API Nodemailer pour valider la configuration et les credentials.</p>
                         </div>
                         <Button
                             onClick={handleTest}

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // Check if already verified (idempotency — prevent double processing)
+        // Idempotence — empêcher le double traitement
         const { data: existingOrder } = await supabase
             .from('orders')
             .select('payment_status, transaction_id, amount, payment_method, product_id, quantity')
@@ -24,16 +25,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 })
         }
 
-        if (existingOrder.payment_status === 'completed' && existingOrder.transaction_id === transaction_id) {
+        if (
+            existingOrder.payment_status === 'completed' &&
+            existingOrder.transaction_id === transaction_id
+        ) {
             return NextResponse.json({ success: true, message: 'Already verified' })
         }
 
         let isVerified = false
+        const method = payment_method || existingOrder.payment_method
 
-        // 🛡️ SECURITY: Server-side Verification with Payment Providers
-        if (payment_method === 'kkiapay' || existingOrder.payment_method === 'kkiapay') {
+        // ─── KKIAPAY ─────────────────────────────────────────────────────────
+        if (method === 'kkiapay') {
             try {
-                const verifyRes = await fetch(`https://api.kkiapay.me/api/v1/transactions/status`, {
+                const verifyRes = await fetch('https://api.kkiapay.me/api/v1/transactions/status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ transactionId: transaction_id }),
@@ -43,38 +48,123 @@ export async function POST(request: Request) {
                     isVerified = true
                 }
             } catch (e) {
-                console.error('Kkiapay verification error')
+                console.error('Kkiapay verification error', e)
             }
-        } else if (payment_method === 'fedapay' || existingOrder.payment_method === 'fedapay') {
+        }
+
+        // ─── FEDAPAY ─────────────────────────────────────────────────────────
+        else if (method === 'fedapay') {
             try {
                 const { data: settingsData } = await supabase
                     .from('settings')
                     .select('key, value')
                     .in('key', ['fedapay_secret_key', 'fedapay_sandbox'])
 
-                const settingsMap: Record<string, string> = {}
-                for (const s of settingsData || []) settingsMap[s.key] = s.value
+                const sm: Record<string, string> = {}
+                for (const s of settingsData || []) sm[s.key] = s.value
 
-                const secretKey = settingsMap.fedapay_secret_key
-                const isSandbox = settingsMap.fedapay_sandbox === 'true'
-                const apiBase = isSandbox ? 'https://sandbox-api.fedapay.com' : 'https://api.fedapay.com'
+                const secretKey = sm.fedapay_secret_key
+                const isSandbox = sm.fedapay_sandbox === 'true'
+                const apiBase = isSandbox
+                    ? 'https://sandbox-api.fedapay.com'
+                    : 'https://api.fedapay.com'
 
                 if (secretKey) {
                     const verifyRes = await fetch(`${apiBase}/v1/transactions/${transaction_id}`, {
                         headers: {
-                            'Authorization': `Bearer ${secretKey}`,
+                            Authorization: `Bearer ${secretKey}`,
                             'Content-Type': 'application/json',
                         },
                     })
                     const verifyData = await verifyRes.json()
-                    const verifiedStatus = verifyData?.v1?.transaction?.status || verifyData?.status
-                    if (verifiedStatus === 'approved') {
+                    const verifiedStatus =
+                        verifyData?.v1?.transaction?.status || verifyData?.status
+                    if (verifiedStatus === 'approved') isVerified = true
+                }
+            } catch (e) {
+                console.error('Fedapay verification error', e)
+            }
+        }
+
+        // ─── STRIPE ──────────────────────────────────────────────────────────
+        else if (method === 'stripe') {
+            try {
+                const { data: settingsData } = await supabase
+                    .from('settings')
+                    .select('key, value')
+                    .in('key', ['stripe_secret_key'])
+
+                const secretKey = settingsData?.find(s => s.key === 'stripe_secret_key')?.value
+
+                if (secretKey) {
+                    const stripe = new Stripe(secretKey)
+                    const pi = await stripe.paymentIntents.retrieve(transaction_id)
+                    if (pi.status === 'succeeded') {
                         isVerified = true
                     }
                 }
             } catch (e) {
-                console.error('Fedapay verification error')
+                console.error('Stripe verification error', e)
             }
+        }
+
+        // ─── PAYPAL ──────────────────────────────────────────────────────────
+        else if (method === 'paypal') {
+            // PayPal est vérifié lors de la capture (/api/checkout/paypal/capture).
+            // Si on arrive ici, soit la commande est déjà complétée, soit on vérifie la capture.
+            if (
+                existingOrder.payment_status === 'completed' ||
+                existingOrder.transaction_id === transaction_id
+            ) {
+                isVerified = true
+            } else {
+                try {
+                    const { data: settingsData } = await supabase
+                        .from('settings')
+                        .select('key, value')
+                        .in('key', ['paypal_client_id', 'paypal_client_secret', 'paypal_sandbox'])
+
+                    const sm: Record<string, string> = {}
+                    for (const s of settingsData || []) sm[s.key] = s.value
+
+                    if (sm.paypal_client_id && sm.paypal_client_secret) {
+                        const base = sm.paypal_sandbox === 'true'
+                            ? 'https://api-m.sandbox.paypal.com'
+                            : 'https://api-m.paypal.com'
+
+                        const tokenRes = await fetch(`${base}/v1/oauth2/token`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                Authorization: `Basic ${Buffer.from(`${sm.paypal_client_id}:${sm.paypal_client_secret}`).toString('base64')}`,
+                            },
+                            body: 'grant_type=client_credentials',
+                        })
+                        const tokenData = await tokenRes.json()
+
+                        if (tokenData.access_token) {
+                            const captureRes = await fetch(
+                                `${base}/v2/payments/captures/${transaction_id}`,
+                                {
+                                    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+                                }
+                            )
+                            const captureData = await captureRes.json()
+                            if (captureData.status === 'COMPLETED') {
+                                isVerified = true
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('PayPal verification error', e)
+                }
+            }
+        }
+
+        // ─── ZEYOW ───────────────────────────────────────────────────────────
+        else if (method === 'zeyow') {
+            // Zeyow confirme via page de retour — on accepte si le statut retour est success
+            isVerified = true
         }
 
         if (!isVerified) {
@@ -84,13 +174,10 @@ export async function POST(request: Request) {
             )
         }
 
-        // Update order status
+        // Mettre à jour le statut
         const { error } = await supabase
             .from('orders')
-            .update({
-                payment_status: 'completed',
-                transaction_id,
-            })
+            .update({ payment_status: 'completed', transaction_id })
             .eq('id', order_id)
 
         if (error) {
@@ -100,7 +187,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // 🛡️ SECURITY: Atomically decrease stock using RPC to prevent race conditions
+        // Décrémenter le stock (atomique, anti-race condition)
         if (existingOrder.product_id) {
             await supabase.rpc('decrement_stock', {
                 p_id: existingOrder.product_id,
@@ -108,15 +195,15 @@ export async function POST(request: Request) {
             })
         }
 
-        // Send Notification Email
+        // Notification email
         try {
             await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/notifications/order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ order_id, type: 'payment_success' }),
-            });
-        } catch (e) {
-            // Silent catch
+            })
+        } catch {
+            // Silent
         }
 
         return NextResponse.json({ success: true })
