@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Target, Heart, Globe, Users, Award, ArrowRight } from 'lucide-react';
+import { usePageSections } from '@/lib/hooks/usePageSections';
 
 const values = [
     { icon: Target, title: "Excellence", desc: "Un service irréprochable à chaque étape de votre retour." },
@@ -21,6 +22,10 @@ const team = [
 ];
 
 export default function AProposPage() {
+    const { sections } = usePageSections('a-propos')
+    const dynamicValues = sections.values || values
+    const dynamicTeam = sections.team || team
+
     return (
         <div className="min-h-screen">
             {/* Hero */}
@@ -114,22 +119,25 @@ export default function AProposPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
-                        {values.map((v, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="bg-white rounded-2xl p-8 text-center shadow-sm hover:shadow-lg transition-shadow border border-gray-100"
-                            >
-                                <div className="w-14 h-14 rounded-xl bg-[#008751]/10 flex items-center justify-center mx-auto mb-4">
-                                    <v.icon className="text-[#008751]" size={28} />
-                                </div>
-                                <h3 className="font-bold text-lg text-[#1a2332] mb-2">{v.title}</h3>
-                                <p className="text-gray-500 text-sm">{v.desc}</p>
-                            </motion.div>
-                        ))}
+                        {dynamicValues.map((v: any, i: number) => {
+                            const IconComp = v.icon && typeof v.icon !== 'string' ? v.icon : null
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="bg-white rounded-2xl p-8 text-center shadow-sm hover:shadow-lg transition-shadow border border-gray-100"
+                                >
+                                    <div className="w-14 h-14 rounded-xl bg-[#008751]/10 flex items-center justify-center mx-auto mb-4">
+                                        {IconComp ? <IconComp className="text-[#008751]" size={28} /> : <Target className="text-[#008751]" size={28} />}
+                                    </div>
+                                    <h3 className="font-bold text-lg text-[#1a2332] mb-2">{v.title}</h3>
+                                    <p className="text-gray-500 text-sm">{v.desc || v.description}</p>
+                                </motion.div>
+                            )
+                        })}
                     </div>
                 </div>
             </section>
@@ -145,7 +153,7 @@ export default function AProposPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-                        {team.map((m, i) => (
+                        {dynamicTeam.map((m: any, i: number) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.95 }}

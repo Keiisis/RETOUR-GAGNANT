@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { TimelineSection, TimelineItem } from '@/components/histoire/TimelineSection'
 import { FounderCard, FounderData } from '@/components/histoire/FounderCard'
+import { usePageSections } from '@/lib/hooks/usePageSections'
 
 /* ═══════════════════════════════════════════════════════════════
    DONNÉES ÉDITABLES — Remplacez par le vrai contenu des promoteurs
@@ -108,6 +109,12 @@ const stats = [
 /* ═══════════════════════════════════════════════════════════════ */
 
 export default function NotreHistoirePage() {
+    const { sections } = usePageSections('notre-histoire')
+    const dynFounders: FounderData[] = sections.founders || founders
+    const dynTimeline: TimelineItem[] = sections.timeline || timelineItems
+    const dynStats = sections.stats || stats
+    const dynValues = sections.values || values
+
     const heroRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
         target: heroRef,
@@ -268,7 +275,7 @@ export default function NotreHistoirePage() {
                         </h2>
                     </motion.div>
 
-                    <TimelineSection items={timelineItems} />
+                    <TimelineSection items={dynTimeline} />
                 </div>
             </section>
 
@@ -278,7 +285,7 @@ export default function NotreHistoirePage() {
             <section className="py-20 relative">
                 <div className="container mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {stats.map((stat, i) => (
+                        {dynStats.map((stat: any, i: number) => (
                             <motion.div
                                 key={stat.label}
                                 initial={{ opacity: 0, y: 30 }}
@@ -336,7 +343,7 @@ export default function NotreHistoirePage() {
                     </motion.div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {founders.map((founder, i) => (
+                        {dynFounders.map((founder: FounderData, i: number) => (
                             <FounderCard key={founder.name} founder={founder} index={i} />
                         ))}
                     </div>
@@ -369,28 +376,31 @@ export default function NotreHistoirePage() {
                     </motion.div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {values.map((val, i) => (
-                            <motion.div
-                                key={val.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: i * 0.1 }}
-                                className="flex gap-6 p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-[#008751]/20 transition-all group"
-                            >
-                                <div className="w-14 h-14 rounded-2xl bg-[#008751]/10 border border-[#008751]/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                    <val.icon size={24} className="text-[#008751]" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-white font-heading tracking-tight mb-2">
-                                        {val.title}
-                                    </h3>
-                                    <p className="text-sm text-gray-400 leading-relaxed">
-                                        {val.description}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))}
+                        {dynValues.map((val: any, i: number) => {
+                            const IconComp = val.icon && typeof val.icon !== 'string' ? val.icon : Target
+                            return (
+                                <motion.div
+                                    key={val.title}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                                    className="flex gap-6 p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-[#008751]/20 transition-all group"
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-[#008751]/10 border border-[#008751]/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                        <IconComp size={24} className="text-[#008751]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-white font-heading tracking-tight mb-2">
+                                            {val.title}
+                                        </h3>
+                                        <p className="text-sm text-gray-400 leading-relaxed">
+                                            {val.description}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
                     </div>
                 </div>
             </section>

@@ -59,6 +59,8 @@ function AdminLayoutContent({
         { title: 'Emails', icon: Mail, href: '/admin/email-templates' },
         { title: 'Témoignages', icon: Users, href: '/admin/testimonials' },
         { title: 'Galerie', icon: ImageIcon, href: '/admin/gallery' },
+        { title: 'Partenaires', icon: Flag, href: '/admin/partenaires' },
+        { title: 'Contenu Pages', icon: Globe, href: '/admin/page-content' },
         { title: 'Boutique', icon: ShoppingBag, href: '/admin/boutique' },
         { title: 'Commandes', icon: Receipt, href: '/admin/orders' },
         { title: 'Coupons', icon: Tag, href: '/admin/coupons' },
