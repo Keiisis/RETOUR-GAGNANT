@@ -13,18 +13,36 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'userId requis' }, { status: 400 })
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('[Heartbeat] Variables env manquantes:', {
+                url: !!supabaseUrl,
+                key: !!supabaseServiceKey,
+            })
+            return NextResponse.json({ error: 'Config serveur manquante' }, { status: 500 })
+        }
 
-        const { error } = await supabase
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        const now = new Date().toISOString()
+
+        const { error, count } = await supabase
             .from('user_profiles')
-            .update({ last_seen_at: new Date().toISOString() })
+            .update({ last_seen_at: now }, { count: 'exact' })
             .eq('id', userId)
 
-        if (error) throw error
+        if (error) {
+            console.error('[Heartbeat] Erreur UPDATE:', error.message, '| userId:', userId)
+            return NextResponse.json({ error: error.message }, { status: 500 })
+        }
 
-        return NextResponse.json({ success: true })
+        if (count === 0) {
+            // Ligne introuvable → tenter un UPSERT minimal pour créer la ligne si absente
+            console.warn('[Heartbeat] 0 lignes affectées pour userId:', userId, '— ligne absente?')
+            return NextResponse.json({ success: false, warning: 'Aucune ligne affectée — profil inexistant?', userId })
+        }
+
+        return NextResponse.json({ success: true, updated: count, timestamp: now })
     } catch (error) {
-        console.error('Heartbeat error:', error)
+        console.error('[Heartbeat] Exception:', error)
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
     }
 }
