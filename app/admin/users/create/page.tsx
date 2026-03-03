@@ -15,6 +15,7 @@ export default function CreateUserPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
+    const [wasUpdated, setWasUpdated] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
 
     const handleCreate = async () => {
@@ -43,6 +44,7 @@ export default function CreateUserPage() {
                 return
             }
 
+            setWasUpdated(!!data.updated)
             setSuccess(true)
             setTimeout(() => router.push('/admin/users'), 2500)
         } catch {
@@ -58,9 +60,14 @@ export default function CreateUserPage() {
                 <div className="w-24 h-24 rounded-2xl bg-[#008751]/20 border-2 border-[#008751]/40 flex items-center justify-center">
                     <CheckCircle2 size={40} className="text-[#008751]" />
                 </div>
-                <h2 className="text-3xl font-black text-white font-heading tracking-tighter">Compte Créé !</h2>
+                <h2 className="text-3xl font-black text-white font-heading tracking-tighter">
+                    {wasUpdated ? 'Compte Mis à Jour !' : 'Compte Créé !'}
+                </h2>
                 <p className="text-gray-400 text-sm text-center max-w-xs">
-                    <span className="text-white font-bold">{fullName}</span> peut maintenant se connecter avec ses identifiants.
+                    {wasUpdated
+                        ? <>Le compte existant de <span className="text-white font-bold">{fullName}</span> a été mis à jour avec le nouveau mot de passe.</>
+                        : <><span className="text-white font-bold">{fullName}</span> peut maintenant se connecter avec ses identifiants.</>
+                    }
                 </p>
                 <p className="text-[10px] text-gray-600 font-mono bg-white/5 px-4 py-2 rounded-lg">{email}</p>
                 <p className="text-[10px] text-gray-600">Redirection en cours...</p>
