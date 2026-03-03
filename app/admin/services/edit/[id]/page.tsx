@@ -1,330 +1,512 @@
-'use client';
+'use client'
 
-import { useForm, useNavigation } from "@refinedev/core";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import {
-    ArrowLeft, Save, ShieldCheck, Zap,
-    Layers, Sparkles, Loader2, Info,
-    LayoutGrid, ChevronRight, Palette,
-    Type, AlignLeft, CheckCircle2, Star,
-    Briefcase
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useParams } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Service } from "../../page";
+    ArrowLeft, Save, Loader2, Plus, Trash2,
+    Layers, Type, AlignLeft, Palette, Hash,
+    CheckCircle2, DollarSign, Image as ImageIcon,
+    GripVertical, Sparkles,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-export default function ServicesEdit() {
-    const { id } = useParams();
-    const { list } = useNavigation();
+interface PricingOption {
+    label: string
+    price: string
+}
 
-    const { onFinish, query, formLoading } = useForm<Service>({
-        resource: "services",
-        id: id as string,
-        redirect: "list",
-        action: "edit"
-    });
+const COLORS = ['#008751', '#FCD116', '#E8112D', '#3b82f6', '#8b5cf6', '#f97316']
 
-    const record = query?.data?.data;
-    const [formData, setFormData] = useState<Partial<Service>>({
-        title: "",
-        description: "",
-        icon: "ShieldCheck",
-        image_url: "",
-        color: "#008751",
-        order: 0
-    });
+const ICON_TYPES = [
+    { value: 'passport', label: 'Passeport' },
+    { value: 'tata', label: 'Immobilier' },
+    { value: 'drum', label: 'Business' },
+    { value: 'cowrie', label: 'Culture / Invest.' },
+    { value: 'assin', label: 'Construction' },
+    { value: 'shield', label: 'Défaut' },
+]
+
+export default function ServiceEditPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
+    const router = useRouter()
+    const [loadingService, setLoadingService] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState(false)
+    const [isOptimizing, setIsOptimizing] = useState(false)
+
+    const [title, setTitle] = useState('')
+    const [slug, setSlug] = useState('')
+    const [subtitle, setSubtitle] = useState('')
+    const [description, setDescription] = useState('')
+    const [color, setColor] = useState('#008751')
+    const [iconType, setIconType] = useState('shield')
+    const [imageUrl, setImageUrl] = useState('')
+    const [priceDisplay, setPriceDisplay] = useState('')
+    const [orderIndex, setOrderIndex] = useState(0)
+    const [isActive, setIsActive] = useState(true)
+    const [features, setFeatures] = useState<string[]>([''])
+    const [pricingOptions, setPricingOptions] = useState<PricingOption[]>([{ label: '', price: '' }])
 
     useEffect(() => {
-        if (record) {
-            setFormData({
-                title: record.title || "",
-                description: record.description || "",
-                icon: record.icon || "ShieldCheck",
-                image_url: record.image_url || "",
-                color: record.color || "#008751",
-                order: record.order || 0
-            });
+        const fetchService = async () => {
+            try {
+                const res = await fetch(`/api/admin/services/${id}`)
+                if (!res.ok) throw new Error('Service introuvable')
+                const data = await res.json()
+                const s = data.service
+                setTitle(s.title || '')
+                setSlug(s.slug || '')
+                setSubtitle(s.subtitle || '')
+                setDescription(s.description || '')
+                setColor(s.color || '#008751')
+                setIconType(s.icon_type || 'shield')
+                setImageUrl(s.image_url || '')
+                setPriceDisplay(s.price_display || '')
+                setOrderIndex(s.order_index ?? 0)
+                setIsActive(s.is_active !== false)
+                setFeatures(s.features?.length ? s.features : [''])
+                setPricingOptions(s.pricing_options?.length ? s.pricing_options : [{ label: '', price: '' }])
+            } catch (e) {
+                setError(e instanceof Error ? e.message : 'Erreur chargement')
+            } finally {
+                setLoadingService(false)
+            }
         }
-    }, [record]);
+        fetchService()
+    }, [id])
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    const addFeature = () => setFeatures(prev => [...prev, ''])
+    const removeFeature = (i: number) => setFeatures(prev => prev.filter((_, idx) => idx !== i))
+    const updateFeature = (i: number, v: string) => setFeatures(prev => prev.map((f, idx) => idx === i ? v : f))
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        onFinish(formData);
-    };
-
-    const [isOptimizing, setIsOptimizing] = useState(false);
+    const addPricingOption = () => setPricingOptions(prev => [...prev, { label: '', price: '' }])
+    const removePricingOption = (i: number) => setPricingOptions(prev => prev.filter((_, idx) => idx !== i))
+    const updatePricingOption = (i: number, field: 'label' | 'price', v: string) =>
+        setPricingOptions(prev => prev.map((o, idx) => idx === i ? { ...o, [field]: v } : o))
 
     const handleOptimize = async () => {
-        if (!formData.description) return;
-        setIsOptimizing(true);
+        if (!description) return
+        setIsOptimizing(true)
         try {
-            const resp = await fetch('/api/ai/optimize', {
+            const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    text: formData.description,
-                    type: 'service'
-                })
-            });
-            const data = await resp.json();
-            if (data.text) {
-                setFormData((prev) => ({ ...prev, description: data.text }));
-            }
-        } catch (error) {
-            console.error(error);
+                    messages: [{
+                        role: 'user',
+                        content: `Tu es un expert marketing pour Retour Gagnant Bénin. Améliore cette description de service "${title}" pour qu'elle soit percutante, professionnelle et séduisante pour la diaspora béninoise. Garde le même sens mais améliore le style. Réponds uniquement avec la description améliorée, sans introduction.\n\nDescription actuelle:\n${description}`
+                    }],
+                    context: 'admin'
+                }),
+            })
+            const data = await res.json()
+            if (data.reply) setDescription(data.reply)
+        } catch {
+            // silently ignore
         } finally {
-            setIsOptimizing(false);
+            setIsOptimizing(false)
         }
-    };
+    }
 
-    if (formLoading) {
+    const handleSave = async () => {
+        if (!title.trim() || !slug.trim()) {
+            setError('Le titre et le slug sont obligatoires')
+            return
+        }
+        setSaving(true)
+        setError('')
+        try {
+            const res = await fetch(`/api/admin/services/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title.trim(),
+                    slug: slug.trim(),
+                    subtitle: subtitle.trim(),
+                    description: description.trim(),
+                    features: features.filter(f => f.trim()),
+                    pricing_options: pricingOptions.filter(o => o.label.trim()),
+                    color,
+                    icon_type: iconType,
+                    image_url: imageUrl.trim() || null,
+                    price_display: priceDisplay.trim(),
+                    order_index: orderIndex,
+                    is_active: isActive,
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                setError(data.error || 'Erreur lors de la sauvegarde')
+                return
+            }
+            setSuccess(true)
+            setTimeout(() => router.push('/admin/services'), 2000)
+        } catch {
+            setError('Erreur réseau — veuillez réessayer')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (loadingService) {
         return (
-            <div className="flex flex-col items-center justify-center py-60">
-                <div className="w-20 h-20 border-t-2 border-[#008751] border-b-2 border-white/10 rounded-full animate-spin" />
-                <p className="mt-8 text-[10px] text-gray-600 font-black uppercase tracking-[0.6em] animate-pulse">Initialisation du Laboratoire...</p>
+            <div className="flex justify-center py-32">
+                <Loader2 className="animate-spin text-[#008751]" size={36} />
             </div>
-        );
+        )
+    }
+
+    if (success) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 space-y-6 animate-in fade-in duration-500">
+                <div className="w-24 h-24 rounded-2xl bg-[#008751]/20 border-2 border-[#008751]/40 flex items-center justify-center">
+                    <CheckCircle2 size={40} className="text-[#008751]" />
+                </div>
+                <h2 className="text-3xl font-black text-white font-heading tracking-tighter">Service Sauvegardé !</h2>
+                <p className="text-gray-400 text-sm">Redirection vers la liste...</p>
+            </div>
+        )
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in zoom-in-95 duration-1000 pb-20">
-            {/* ═══════════════════════════════════════════ */}
-            {/* ENGINEERING HEADER */}
-            {/* ═══════════════════════════════════════════ */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10 bg-[#0a0f18]/40 p-8 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-3xl">
-                <div className="flex items-center gap-6">
+        <div className="space-y-8 animate-in fade-in duration-700 pb-20 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
                     <button
-                        onClick={() => list("services")}
-                        className="p-5 bg-white/5 border border-white/10 rounded-[1.5rem] text-gray-500 hover:text-[#008751] hover:bg-white/10 transition-all shadow-2xl group"
+                        type="button"
+                        onClick={() => router.push('/admin/services')}
+                        className="p-3 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors"
+                        title="Retour"
                     >
-                        <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+                        <ArrowLeft size={18} />
                     </button>
                     <div>
-                        <div className="flex items-center gap-2 text-[#008751] mb-1">
-                            <Layers size={14} />
-                            <span className="text-[10px] font-black uppercase tracking-[0.5em]">Module d'Architecture v2.0</span>
+                        <div className="flex items-center gap-2 text-[#FCD116]">
+                            <Layers size={16} />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Modifier le Service</span>
                         </div>
-                        <h1 className="text-4xl font-black text-white font-heading tracking-tight leading-none uppercase">
-                            CONFIGURATION <span className="text-benin-gradient">SOLUTION</span>
-                        </h1>
+                        <h1 className="text-3xl font-black text-white font-heading tracking-tighter truncate max-w-xs">{title || 'Édition'}</h1>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-4 w-full xl:w-auto">
-                    <Button
-                        onClick={handleSave}
-                        disabled={formLoading}
-                        className="flex-1 xl:flex-none h-16 px-12 rounded-[1.5rem] bg-[#008751] text-white font-black tracking-[0.2em] gap-3 shadow-[0_20px_40px_-5px_rgba(0,135,81,0.3)] hover:scale-[1.02] transition-all border-none"
-                    >
-                        <Save size={20} /> DEPLOYER LA VERSION
-                    </Button>
-                </div>
+                <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving || !title || !slug}
+                    className="flex items-center gap-2 bg-[#FCD116] hover:bg-[#ffe566] text-black font-black text-xs tracking-widest px-6 py-3 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    SAUVEGARDER
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                {/* ═══════════════════════════════════════════ */}
-                {/* CORE SPECS FORM */}
-                {/* ═══════════════════════════════════════════ */}
-                <div className="xl:col-span-8 space-y-10">
-                    <Card className="bg-[#0a0f18] border-white/5 p-12 rounded-[3.5rem] shadow-3xl overflow-hidden relative">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#008751]/5 rounded-full blur-[100px] pointer-events-none" />
+            {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+            )}
 
-                        <form className="space-y-12 relative z-10">
-                            {/* Service Identity */}
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-[#008751] uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <Type size={14} /> Titre de la Solution
-                                </label>
-                                <input
-                                    name="title"
-                                    value={formData.title || ''}
-                                    onChange={handleChange}
-                                    placeholder="Ex: Accompagnement Immobilier"
-                                    className="w-full bg-white/5 border-2 border-white/5 rounded-[1.5rem] py-6 px-8 text-white text-3xl font-black font-heading focus:outline-none focus:border-[#008751]/40 transition-all placeholder:text-gray-800"
-                                />
-                            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main form */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Identité */}
+                    <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 space-y-5">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <Type size={12} /> Identité du Service
+                        </p>
 
-                            {/* visual specs */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                        <Palette size={14} /> Accent Chromatique
-                                    </label>
-                                    <div className="flex items-center gap-4 p-4 bg-white/5 border-2 border-white/5 rounded-2xl">
-                                        {["#008751", "#FCD116", "#E8112D", "#3b82f6", "#8b5cf6"].map((c) => (
-                                            <button
-                                                key={c}
-                                                type="button"
-                                                onClick={() => setFormData((prev) => ({ ...prev, color: c }))}
-                                                className={cn(
-                                                    "w-10 h-10 rounded-xl transition-all border-2",
-                                                    formData.color === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
-                                                )}
-                                                style={{ backgroundColor: c }}
-                                            />
-                                        ))}
-                                        <input
-                                            type="color"
-                                            value={formData.color || '#000000'}
-                                            onChange={(e) => setFormData((prev) => ({ ...prev, color: e.target.value }))}
-                                            className="w-10 h-10 bg-transparent border-none cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                        <LayoutGrid size={14} /> Priorité Module
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="order"
-                                        value={formData.order ?? 0}
-                                        onChange={handleChange}
-                                        className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xl font-black focus:outline-none focus:border-white/20 transition-all"
-                                    />
-                                </div>
-                            </div>
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Titre *</label>
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={e => setTitle(e.target.value)}
+                                placeholder="Ex: Passeport & Documents VIP"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-white text-lg font-bold focus:outline-none focus:border-[#FCD116]/40 transition-colors"
+                            />
+                        </div>
 
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <LayoutGrid size={14} /> Image URL (Icone personnalisée)
-                                </label>
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                                Slug URL * <span className="text-gray-600 font-normal normal-case">(correspond à /services/[slug])</span>
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-600 text-sm">/services/</span>
                                 <input
                                     type="text"
-                                    name="image_url"
-                                    value={formData.image_url || ''}
-                                    onChange={handleChange}
-                                    placeholder="/assets/icones/icone-example.png"
-                                    className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-base focus:outline-none focus:border-white/20 transition-all placeholder:text-gray-800"
+                                    value={slug}
+                                    onChange={e => setSlug(e.target.value)}
+                                    placeholder="passeport-documents"
+                                    className="flex-1 bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-white font-mono text-sm focus:outline-none focus:border-[#FCD116]/30 transition-colors"
                                 />
                             </div>
+                        </div>
 
-                            {/* Detailed description */}
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <AlignLeft size={14} /> Définition Stratégique
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Sous-titre</label>
+                            <input
+                                type="text"
+                                value={subtitle}
+                                onChange={e => setSubtitle(e.target.value)}
+                                placeholder="Tagline courte et percutante"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-white/10 transition-colors"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <AlignLeft size={12} /> Description
                                 </label>
-                                <textarea
-                                    name="description"
-                                    value={formData.description || ''}
-                                    onChange={handleChange}
-                                    rows={10}
-                                    placeholder="Décrivez en détail la portée et les bénéfices de ce service..."
-                                    className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] py-8 px-10 text-gray-300 text-lg font-medium focus:outline-none focus:border-[#008751]/30 transition-all resize-none leading-relaxed italic"
-                                />
-                            </div>
-                        </form>
-                    </Card>
-
-                    {/* Service Utilities */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Card className="bg-benin-gradient/10 border-[#008751]/20 p-8 rounded-[2.5rem] flex items-start gap-6">
-                            <div className="p-4 bg-[#008751]/20 rounded-2xl text-[#008751] shadow-xl">
-                                <Sparkles size={28} />
-                            </div>
-                            <div>
-                                <h4 className="text-white font-bold text-sm mb-2 uppercase tracking-widest">Optimisation IA</h4>
-                                <p className="text-[11px] text-gray-500 leading-relaxed">Laissez KAGE IA affiner la description pour maximiser l'intérêt de la diaspora.</p>
-                                <Button
+                                <button
+                                    type="button"
                                     onClick={handleOptimize}
-                                    disabled={isOptimizing || !formData.description}
-                                    variant="link"
-                                    className="text-[#008751] p-0 h-auto text-[10px] font-black uppercase tracking-widest mt-4 gap-2"
+                                    disabled={isOptimizing || !description}
+                                    className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#008751] hover:text-[#00c97a] disabled:opacity-40 transition-colors"
                                 >
-                                    {isOptimizing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                                    Lancer l&apos;Analyse
-                                </Button>
+                                    {isOptimizing ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                                    Améliorer avec l&apos;IA
+                                </button>
                             </div>
-                        </Card>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                rows={6}
+                                placeholder="Description complète et persuasive du service..."
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-gray-300 text-sm focus:outline-none focus:border-white/10 transition-colors resize-none leading-relaxed"
+                            />
+                        </div>
+                    </div>
 
-                        <Card className="bg-white/[0.02] border-white/5 p-8 rounded-[2.5rem] flex items-start gap-6">
-                            <div className="p-4 bg-white/5 rounded-2xl text-gray-500">
-                                <ShieldCheck size={28} />
-                            </div>
-                            <div>
-                                <h4 className="text-white font-bold text-sm mb-2 uppercase tracking-widest">Contrôle Qualité</h4>
-                                <p className="text-[11px] text-gray-500 leading-relaxed">Vérifiez que tous les modules connexes (RDV, Contact) sont correctement liés.</p>
-                                <Button variant="link" className="text-gray-400 p-0 h-auto text-[10px] font-black uppercase tracking-widest mt-4">Vérifier les Liaisons</Button>
-                            </div>
-                        </Card>
+                    {/* Fonctionnalités */}
+                    <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                <CheckCircle2 size={12} /> Ce que nous proposons (features)
+                            </p>
+                            <button
+                                type="button"
+                                onClick={addFeature}
+                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#008751] hover:text-[#00c97a] transition-colors"
+                            >
+                                <Plus size={12} /> Ajouter
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {features.map((f, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <GripVertical size={14} className="text-gray-700 flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={f}
+                                        onChange={e => updateFeature(i, e.target.value)}
+                                        placeholder={`Fonctionnalité ${i + 1}...`}
+                                        className="flex-1 bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-white/10 transition-colors"
+                                    />
+                                    {features.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFeature(i)}
+                                            className="p-2 rounded-lg text-gray-600 hover:text-red-400 transition-colors"
+                                            title="Supprimer cette fonctionnalité"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Calculateur de prix */}
+                    <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                <DollarSign size={12} /> Calculateur Intelligent (options tarifaires)
+                            </p>
+                            <button
+                                type="button"
+                                onClick={addPricingOption}
+                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#FCD116] hover:text-[#ffe566] transition-colors"
+                            >
+                                <Plus size={12} /> Ajouter une option
+                            </button>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                                Prix affiché (ex: À partir de 50.000 FCFA)
+                            </label>
+                            <input
+                                type="text"
+                                value={priceDisplay}
+                                onChange={e => setPriceDisplay(e.target.value)}
+                                placeholder="À partir de 50.000 FCFA"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-[#FCD116]/30 transition-colors"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            {pricingOptions.map((opt, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <GripVertical size={14} className="text-gray-700 flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        value={opt.label}
+                                        onChange={e => updatePricingOption(i, 'label', e.target.value)}
+                                        placeholder="Nom du pack..."
+                                        className="flex-1 bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-white/10 transition-colors"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={opt.price}
+                                        onChange={e => updatePricingOption(i, 'price', e.target.value)}
+                                        placeholder="Prix (ex: 85.000 FCFA)"
+                                        className="w-40 bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-[#FCD116]/30 transition-colors"
+                                    />
+                                    {pricingOptions.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removePricingOption(i)}
+                                            className="p-2 rounded-lg text-gray-600 hover:text-red-400 transition-colors"
+                                            title="Supprimer cette option"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* ═══════════════════════════════════════════ */}
-                {/* LIVE LAB RENDERING */}
-                {/* ═══════════════════════════════════════════ */}
-                <div className="xl:col-span-4 space-y-10">
-                    <div className="sticky top-10 space-y-10">
-                        <div className="space-y-4">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] ml-2">Apparence en Production</span>
+                {/* Sidebar */}
+                <div className="space-y-6">
+                    {/* Apparence */}
+                    <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 space-y-5">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <Palette size={12} /> Apparence
+                        </p>
 
-                            {/* Service Card Preview - Matching ServicesGrid style */}
-                            <Card className="group relative bg-[#0a0f18] border-white/5 rounded-[3.5rem] p-12 overflow-hidden hover:border-[#008751]/50 transition-all duration-700 shadow-3xl h-[600px] flex flex-col justify-between">
-                                <div className="absolute -top-20 -right-20 w-64 h-64 opacity-5 group-hover:opacity-10 transition-opacity" style={{ backgroundColor: formData.color || undefined, borderRadius: '50%', filter: 'blur(100px)' }} />
-
-                                <div className="relative z-10">
-                                    <div className="flex justify-between items-start mb-12">
-                                        <div className="w-24 h-24 rounded-[2.5rem] bg-benin-gradient p-[1px] shadow-2xl group-hover:rotate-6 transition-transform duration-500">
-                                            <div className="w-full h-full bg-[#0a0f18] rounded-[2.5rem] flex items-center justify-center">
-                                                {formData.image_url ? (
-                                                    <img src={formData.image_url} alt="" className="w-20 h-20 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)]" />
-                                                ) : (
-                                                    <ShieldCheck size={40} style={{ color: formData.color || '#008751' }} />
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Star size={16} fill="#FCD116" className="text-[#FCD116]" />
-                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Premium</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: formData.color || '#008751' }} />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: formData.color || '#008751' }}>Actif</span>
-                                        </div>
-                                        <h3 className="text-4xl font-black text-white font-heading tracking-tight leading-none group-hover:text-[#FCD116] transition-colors">
-                                            {formData.title || 'Nouvelle Solution'}
-                                        </h3>
-                                        <p className="text-gray-400 text-base leading-relaxed font-medium line-clamp-6 group-hover:text-gray-200 transition-colors italic">
-                                            {formData.description || 'Commencez à rédiger pour voir l&apos;aperçu ici...'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="pt-10">
-                                    <button className="h-16 w-full bg-white/[0.03] border border-white/5 rounded-3xl flex items-center justify-center gap-4 text-xs font-black text-white uppercase tracking-[0.3em] group/btn transition-all hover:bg-white hover:text-black">
-                                        Explorer
-                                        <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                                    </button>
-                                </div>
-                            </Card>
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Couleur</label>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {COLORS.map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setColor(c)}
+                                        className={cn(
+                                            'w-8 h-8 rounded-lg transition-all border-2',
+                                            color === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
+                                        )}
+                                        style={{ backgroundColor: c }}
+                                        title={c}
+                                    />
+                                ))}
+                                <input
+                                    type="color"
+                                    value={color}
+                                    onChange={e => setColor(e.target.value)}
+                                    className="w-8 h-8 bg-transparent border border-white/10 rounded-lg cursor-pointer"
+                                    title="Couleur personnalisée"
+                                />
+                            </div>
+                            <div className="mt-2 h-1 rounded-full" style={{ background: color }} />
                         </div>
 
-                        {/* Node Metadata Card */}
-                        <Card className="bg-[#0a0f18] border-white/5 p-8 rounded-[2.5rem] shadow-3xl">
-                            <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-2">
-                                    <Briefcase size={12} /> Module ID: {id}
-                                </h4>
-                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase">Statut Réseau</span>
-                                    <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[8px] font-black uppercase tracking-widest border border-green-500/20">Optimal</span>
-                                </div>
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Type d&apos;icône</label>
+                            <select
+                                value={iconType}
+                                onChange={e => setIconType(e.target.value)}
+                                title="Type d'icône"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none"
+                            >
+                                {ICON_TYPES.map(t => (
+                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                                <ImageIcon size={12} /> URL Image / Icône
+                            </label>
+                            <input
+                                type="text"
+                                value={imageUrl}
+                                onChange={e => setImageUrl(e.target.value)}
+                                placeholder="/assets/icones/icone_exemple.png"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-xs font-mono focus:outline-none focus:border-white/10 transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Paramètres */}
+                    <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6 space-y-5">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <Hash size={12} /> Paramètres
+                        </p>
+
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                                Ordre d&apos;affichage
+                            </label>
+                            <input
+                                type="number"
+                                value={orderIndex}
+                                onChange={e => setOrderIndex(Number(e.target.value))}
+                                min={0}
+                                title="Ordre d'affichage"
+                                placeholder="0"
+                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-white/10 transition-colors"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-white">Actif sur le site</p>
+                                <p className="text-[10px] text-gray-600">Visible par les visiteurs</p>
                             </div>
-                        </Card>
+                            <button
+                                type="button"
+                                onClick={() => setIsActive(!isActive)}
+                                className={cn(
+                                    'w-12 h-6 rounded-full transition-colors relative',
+                                    isActive ? 'bg-[#008751]' : 'bg-white/10'
+                                )}
+                                title={isActive ? 'Désactiver' : 'Activer'}
+                            >
+                                <span className={cn(
+                                    'absolute top-1 w-4 h-4 bg-white rounded-full transition-all',
+                                    isActive ? 'left-7' : 'left-1'
+                                )} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Preview */}
+                    <div
+                        className="rounded-2xl p-5 border"
+                        style={{ borderColor: color + '30', backgroundColor: color + '08' }}
+                    >
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Aperçu</p>
+                        {imageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={imageUrl} alt="" className="w-12 h-12 object-contain mb-3" />
+                        )}
+                        <div className="w-3 h-0.5 rounded-full mb-2" style={{ backgroundColor: color }} />
+                        <p className="text-sm font-black text-white">{title || 'Titre du service'}</p>
+                        <p className="text-[10px] text-gray-500 mt-1">{subtitle || 'Sous-titre...'}</p>
+                        {priceDisplay && (
+                            <p className="text-xs font-bold mt-2" style={{ color }}>{priceDisplay}</p>
+                        )}
+                        <p className="text-[10px] text-gray-600 mt-2">
+                            {features.filter(f => f.trim()).length} feature(s) · {pricingOptions.filter(o => o.label.trim()).length} option(s)
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
-    );
+    )
 }

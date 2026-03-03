@@ -1,186 +1,249 @@
-'use client';
+'use client'
 
-import { useList, useNavigation, useDelete } from "@refinedev/core";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Plus, Trash2, Edit2, ShieldCheck, Zap,
-    ArrowRight, Search, Loader2, LayoutGrid,
-    Menu, Star, Settings2, Sparkles, Layers
-} from "lucide-react";
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { BaseRecord } from "@refinedev/core";
+    Plus, Trash2, Edit2, Search, Loader2,
+    Layers, RefreshCw, ToggleLeft, ToggleRight,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
-export interface Service extends BaseRecord {
-    id: string;
-    title: string;
-    description: string;
-    color?: string | null;
-    icon?: string | null;
-    image_url?: string | null;
-    order?: number | null;
-    created_at?: string;
+interface Service {
+    id: string
+    title: string
+    slug: string
+    subtitle: string
+    description: string
+    features: string[]
+    pricing_options: Array<{ label: string; price: string }>
+    color: string
+    icon_type: string
+    image_url: string | null
+    price_display: string
+    order_index: number
+    is_active: boolean
+    created_at: string
 }
 
-export default function ServicesList() {
-    const { create, edit } = useNavigation();
-    const queryResult = useList<Service>({
-        resource: "services",
-        pagination: { pageSize: 12 },
-        sorters: [{ field: "created_at", order: "asc" }]
-    });
+export default function AdminServicesPage() {
+    const router = useRouter()
+    const [services, setServices] = useState<Service[]>([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+    const [error, setError] = useState('')
 
-    const { mutate: deleteItem } = useDelete();
-    const [searchTerm, setSearchTerm] = useState("");
+    const fetchServices = useCallback(async () => {
+        setLoading(true)
+        setError('')
+        try {
+            const res = await fetch('/api/admin/services')
+            if (!res.ok) throw new Error('Erreur chargement services')
+            const data = await res.json()
+            setServices(data.services || [])
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Erreur inconnue')
+        } finally {
+            setLoading(false)
+        }
+    }, [])
 
-    const returnedData = (queryResult as unknown as { data?: { data?: Service[] } }).data || (queryResult as unknown as { query?: { data?: { data?: Service[] } } }).query?.data;
-    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading || (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
-    const items: Service[] = returnedData?.data || [];
+    useEffect(() => { fetchServices() }, [fetchServices])
 
-    const filteredItems = items.filter((item) =>
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const toggleActive = async (service: Service) => {
+        const res = await fetch(`/api/admin/services/${service.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: !service.is_active }),
+        })
+        if (res.ok) {
+            setServices(prev => prev.map(s => s.id === service.id ? { ...s, is_active: !s.is_active } : s))
+        }
+    }
+
+    const deleteService = async (service: Service) => {
+        if (!confirm(`Supprimer définitivement "${service.title}" ?\nCette action est irréversible.`)) return
+        const res = await fetch(`/api/admin/services/${service.id}`, { method: 'DELETE' })
+        if (res.ok) {
+            setServices(prev => prev.filter(s => s.id !== service.id))
+        }
+    }
+
+    const filtered = services.filter(s =>
+        s.title?.toLowerCase().includes(search.toLowerCase()) ||
+        s.slug?.toLowerCase().includes(search.toLowerCase())
+    )
 
     return (
-        <div className="space-y-12 animate-in fade-in zoom-in-95 duration-1000">
-            {/* ═══════════════════════════════════════════ */}
-            {/* LAB HEADER */}
-            {/* ═══════════════════════════════════════════ */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-                <div className="space-y-3">
+        <div className="space-y-8 animate-in fade-in duration-700">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                <div className="space-y-2">
                     <div className="flex items-center gap-2 text-[#008751]">
                         <Layers size={18} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.5em]">Ingénierie de Services v2.0</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em]">Gestion des Services</span>
                     </div>
-                    <h1 className="text-6xl font-black text-white font-heading tracking-tighter leading-none">
-                        SOLUTIONS <span className="text- benin-gradient">PREMIUM</span>
+                    <h1 className="text-4xl font-black text-white font-heading tracking-tighter">
+                        SERVICES <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] to-[#FCD116]">PREMIUM</span>
                     </h1>
-                    <p className="text-gray-500 max-w-xl font-medium text-sm leading-relaxed">
-                        Concevez et déployez des offres d'accompagnement haut de gamme pour la diaspora béninoise.
+                    <p className="text-sm text-gray-500">
+                        {services.length} service(s) — {services.filter(s => s.is_active).length} actif(s)
                     </p>
                 </div>
-
-                <div className="flex items-center gap-4 bg-[#0a0f18] p-2 rounded-[2rem] border border-white/5 shadow-2xl">
-                    <div className="relative w-72">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                        type="button"
+                        onClick={fetchServices}
+                        className="p-3 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors"
+                        title="Rafraîchir"
+                    >
+                        <RefreshCw size={16} />
+                    </button>
+                    <div className="relative">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={15} />
                         <input
                             type="text"
-                            placeholder="Rechercher une solution..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-white text-xs font-bold focus:outline-none focus:border-[#008751]/40 transition-all placeholder:text-gray-600"
+                            placeholder="Rechercher..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="bg-[#0a0f18] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#008751]/30 text-sm w-56"
                         />
                     </div>
-                    <Button
-                        onClick={() => create("services")}
-                        className="bg-[#008751] hover:bg-[#00a86b] text-white h-12 px-6 rounded-2xl font-black tracking-widest gap-2 shadow-xl shadow-green-500/10 transition-all"
+                    <Link
+                        href="/admin/services/create"
+                        className="flex items-center gap-2 bg-[#008751] hover:bg-[#00a36b] text-white font-black text-xs tracking-widest px-5 py-3 rounded-xl transition-all shadow-lg"
                     >
-                        <Plus size={18} /> CRÉER
-                    </Button>
+                        <Plus size={16} /> CRÉER UN SERVICE
+                    </Link>
                 </div>
             </div>
 
-            {/* ═══════════════════════════════════════════ */}
-            {/* SERVICES LAB GRID */}
-            {/* ═══════════════════════════════════════════ */}
-            {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-40">
-                    <div className="w-16 h-16 relative">
-                        <div className="absolute inset-0 border-4 border-[#008751]/20 rounded-2xl" />
-                        <div className="absolute inset-0 border-4 border-[#008751] rounded-2xl animate-spin border-t-transparent" />
-                        <Zap size={24} className="absolute inset-0 m-auto text-[#008751] animate-pulse" />
+            {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+            )}
+
+            {/* Grid */}
+            <div className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
+                {loading ? (
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="animate-spin text-[#008751]" size={36} />
                     </div>
-                    <p className="mt-6 text-[10px] text-gray-600 font-black uppercase tracking-[0.4em]">Initialisation des modules...</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-10">
-                    <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item, index: number) => (
-                            <motion.div
-                                key={item.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                            >
-                                <Card className="group relative bg-[#0a0f18] border-white/5 rounded-[3rem] p-10 overflow-hidden hover:border-[#008751]/50 transition-all duration-700 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] h-full flex flex-col justify-between">
-                                    {/* Design Elements */}
-                                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#008751]/5 rounded-full blur-[100px] group-hover:bg-[#008751]/10 transition-colors" />
-                                    <div className="absolute top-10 right-10 opacity-5 group-hover:opacity-20 transition-opacity">
-                                        <ShieldCheck size={120} className="text-white" />
+                ) : filtered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 space-y-3">
+                        <Layers size={40} className="text-gray-700" />
+                        <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Aucun service trouvé</p>
+                        <Link href="/admin/services/create" className="text-[#008751] text-xs font-bold hover:underline">
+                            + Créer le premier service
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-white/5">
+                        {/* Table header */}
+                        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-white/[0.02] text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                            <div className="col-span-1">Ordre</div>
+                            <div className="col-span-3">Service</div>
+                            <div className="col-span-2">Slug</div>
+                            <div className="col-span-3">Prix</div>
+                            <div className="col-span-1">Options</div>
+                            <div className="col-span-1">Statut</div>
+                            <div className="col-span-1 text-right">Actions</div>
+                        </div>
+                        <AnimatePresence mode="popLayout">
+                            {filtered.map(service => (
+                                <motion.div
+                                    key={service.id}
+                                    layout
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-5 hover:bg-white/[0.02] transition-colors items-center"
+                                >
+                                    {/* Order */}
+                                    <div className="col-span-1">
+                                        <span className="text-xs font-black text-gray-600">#{service.order_index}</span>
                                     </div>
 
-                                    <div>
-                                        {/* Icon & Index */}
-                                        <div className="flex justify-between items-start mb-10">
-                                            <div className="w-20 h-20 rounded-[2rem] bg-benin-gradient p-[1px] shadow-2xl group-hover:rotate-6 transition-transform duration-500">
-                                                <div className="w-full h-full bg-[#0a0f18] rounded-[2rem] flex items-center justify-center">
-                                                    <ShieldCheck size={32} className="text-[#008751]" />
-                                                </div>
-                                            </div>
-                                            <span className="text-4xl font-black text-white/5 font-heading">0{index + 1}</span>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2">
-                                                <Sparkles size={14} className="text-[#FCD116]" />
-                                                <span className="text-[10px] font-black text-[#008751] uppercase tracking-[0.3em]">Module Actif</span>
-                                            </div>
-                                            <h3 className="text-3xl font-black text-white font-heading tracking-tight group-hover:text-[#FCD116] transition-colors">{item.title}</h3>
-                                            <p className="text-gray-500 text-sm leading-relaxed font-medium line-clamp-3 group-hover:text-gray-300 transition-colors italic">
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Hub */}
-                                    <div className="mt-12 flex items-center justify-between gap-6">
-                                        <div className="flex gap-3">
-                                            <button
-                                                onClick={() => edit("services", item.id)}
-                                                className="w-14 h-14 bg-white/5 text-gray-400 rounded-2xl flex items-center justify-center hover:bg-white hover:text-black transition-all shadow-xl"
-                                                title="Éditer la solution"
-                                            >
-                                                <Settings2 size={20} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (confirm("Désactiver et archiver cette solution ?")) deleteItem({ resource: "services", id: item.id });
-                                                }}
-                                                className="w-14 h-14 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl"
-                                                title="Supprimer la solution"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </div>
-
-                                        <button
-                                            onClick={() => edit("services", item.id)}
-                                            className="h-14 flex-1 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-xs font-black text-white uppercase tracking-widest hover:bg-white/10 hover:border-[#008751]/30 transition-all group/btn"
+                                    {/* Title + color indicator */}
+                                    <div className="col-span-3 flex items-center gap-3">
+                                        <div
+                                            className="w-8 h-8 rounded-lg flex-shrink-0"
+                                            style={{ backgroundColor: (service.color || '#008751') + '20', border: `1px solid ${service.color || '#008751'}40` }}
                                         >
-                                            <span>Configuration</span>
-                                            <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                                            {service.image_url ? (
+                                                <img src={service.image_url} alt="" className="w-full h-full object-contain p-1" />
+                                            ) : (
+                                                <div className="w-full h-full rounded-lg" style={{ backgroundColor: service.color || '#008751' }} />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-white truncate">{service.title}</p>
+                                            <p className="text-[10px] text-gray-500 truncate">{service.subtitle}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Slug */}
+                                    <div className="col-span-2">
+                                        <span className="text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-1 rounded">
+                                            /{service.slug}
+                                        </span>
+                                    </div>
+
+                                    {/* Price */}
+                                    <div className="col-span-3">
+                                        <p className="text-xs font-bold text-white">{service.price_display || '—'}</p>
+                                    </div>
+
+                                    {/* Pricing options count */}
+                                    <div className="col-span-1">
+                                        <span className="text-[10px] text-gray-500">
+                                            {(service.pricing_options || []).length} option(s)
+                                        </span>
+                                    </div>
+
+                                    {/* Active toggle */}
+                                    <div className="col-span-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleActive(service)}
+                                            className={cn(
+                                                'transition-colors',
+                                                service.is_active ? 'text-[#008751]' : 'text-gray-600'
+                                            )}
+                                            title={service.is_active ? 'Désactiver' : 'Activer'}
+                                        >
+                                            {service.is_active
+                                                ? <ToggleRight size={20} />
+                                                : <ToggleLeft size={20} />
+                                            }
                                         </button>
                                     </div>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
 
-                    {filteredItems.length === 0 && !isLoading && (
-                        <div className="col-span-full py-40 border-4 border-dashed border-white/5 rounded-[4rem] text-center bg-white/[0.02]">
-                            <LayoutGrid size={64} className="mx-auto text-gray-800 mb-6" />
-                            <h3 className="text-gray-400 font-black uppercase tracking-[0.3em] text-sm">Le laboratoire est vide.</h3>
-                            <p className="text-gray-600 text-xs mt-2 uppercase font-bold tracking-widest">Lancez une nouvelle série d'offres.</p>
-                        </div>
-                    )}
-                </div>
-            )}
+                                    {/* Actions */}
+                                    <div className="col-span-1 flex items-center justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push(`/admin/services/edit/${service.id}`)}
+                                            className="p-2 rounded-xl bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white transition-all"
+                                            title="Modifier"
+                                        >
+                                            <Edit2 size={13} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteService(service)}
+                                            className="p-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all"
+                                            title="Supprimer"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </div>
         </div>
-    );
+    )
 }

@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, ChevronRight, ArrowRight, Calendar } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { GoldenIcon } from '@/components/ui/GoldenIcon';
@@ -181,23 +181,25 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                         .eq('slug', slug);
 
                     if (!error && data && data.length > 0) {
-                        const attr = data[0];
+                        const db = data[0];
+                        const fallback = FALLBACK_SERVICES[slug];
 
+                        // DB fields take priority; fallback only fills what's missing
                         setService({
-                            title: attr.title || FALLBACK_SERVICES[slug]?.title || attr.title,
-                            subtitle: attr.description || FALLBACK_SERVICES[slug]?.subtitle || "",
-                            description: attr.description || FALLBACK_SERVICES[slug]?.description || "",
-                            features: FALLBACK_SERVICES[slug]?.features || ["Analyse experte", "Suivi personnalisé"],
-                            price: FALLBACK_SERVICES[slug]?.price || "Nous consulter",
-                            color: attr.color || FALLBACK_SERVICES[slug]?.color || "#008751",
-                            icon_type: attr.icon_type || FALLBACK_SERVICES[slug]?.icon_type || "passport",
-                            image_url: attr.image_url || FALLBACK_SERVICES[slug]?.image_url || "",
-                            pricing_options: FALLBACK_SERVICES[slug]?.pricing_options || [{ label: "Standard", price: "Nous consulter" }]
+                            title: db.title || fallback?.title || '',
+                            subtitle: db.subtitle || fallback?.subtitle || '',
+                            description: db.description || fallback?.description || '',
+                            features: (db.features?.length ? db.features : null) ?? fallback?.features ?? ['Analyse experte', 'Suivi personnalisé'],
+                            price: db.price_display || fallback?.price || 'Nous consulter',
+                            color: db.color || fallback?.color || '#008751',
+                            icon_type: db.icon_type || fallback?.icon_type || 'passport',
+                            image_url: db.image_url || fallback?.image_url || '',
+                            pricing_options: (db.pricing_options?.length ? db.pricing_options : null) ?? fallback?.pricing_options ?? [{ label: 'Standard', price: 'Nous consulter' }],
                         });
                         return;
                     }
                 }
-            } catch (error) {
+            } catch {
                 console.log("Using fallback content (Supabase not ready or empty for this service)");
             }
 
@@ -210,15 +212,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         fetchService();
     }, [slug]);
 
-    const [showIntro, setShowIntro] = useState(false);
-
-    useEffect(() => {
-        // Only show intro for 'passeport' page and only once per session if desired
-        // For now, we show it every time user lands on /services/passeport
-        if (slug === 'passeport') {
-            setShowIntro(true);
-        }
-    }, [slug]);
+    const [showIntro, setShowIntro] = useState(slug === 'passeport');
 
     if (!service) {
         return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Chargement...</div>;
@@ -280,7 +274,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                                     >
                                         <GoldenIcon
-                                            // @ts-ignore
+                                            // @ts-expect-error — icon_type is a valid prop but not typed
                                             type={service.icon_type}
                                             className="w-32 h-32 md:w-40 md:h-40"
                                         />
