@@ -8,7 +8,13 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
-import { Setting } from "../../page";
+
+interface Setting {
+    id: string;
+    key: string;
+    value: string;
+    category?: string;
+}
 
 export default function SettingsEdit() {
     const params = useParams();
