@@ -191,20 +191,25 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     useEffect(() => {
         if (isLoginPage || !agent?.id) return
 
-        // Mise à jour directe via le client authentifié (évite les problèmes de service key)
+        const agentId = agent.id
+
         const sendHeartbeat = async () => {
-            try {
-                await supabase
+            // 1) Essai via l'API (Service Role Key → bypass RLS garanti)
+            const apiOk = await fetch('/api/agent/heartbeat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: agentId }),
+            }).then(r => r.ok).catch(() => false)
+
+            // 2) Fallback : client browser (si API indispo — dev local sans serveur)
+            if (!apiOk) {
+                const { error } = await supabase
                     .from('user_profiles')
                     .update({ last_seen_at: new Date().toISOString() })
-                    .eq('id', agent.id)
-            } catch {
-                // Fallback API en cas d'échec
-                fetch('/api/agent/heartbeat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: agent.id }),
-                }).catch(() => { /* silent */ })
+                    .eq('id', agentId)
+                if (error) {
+                    console.warn('[Heartbeat] browser client également en échec:', error.message)
+                }
             }
         }
 
