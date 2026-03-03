@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, ShoppingBag, CreditCard, Phone, User, Mail,
-    CheckCircle2, AlertCircle, Loader2, Shield, ChevronRight, Tag, Lock
+    CheckCircle2, AlertCircle, Loader2, Shield, ChevronRight, Tag, Lock, MapPin
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/lib/store/cartStore'
@@ -65,6 +65,16 @@ type Step = 'info' | 'payment' | 'stripe-form' | 'paypal-form' | 'processing' | 
 
 const formatPrice = (price: number) => new Intl.NumberFormat('fr-FR').format(price)
 
+const SHIPPING_ZONES = [
+    { id: 'benin', label: 'Bénin (Livraison gratuite)', flag: '🇧🇯', fee: 0 },
+    { id: 'afrique-ouest', label: 'Afrique de l\'Ouest', flag: '🌍', fee: 5000 },
+    { id: 'europe', label: 'Europe', flag: '🇪🇺', fee: 15000 },
+    { id: 'international', label: 'International', flag: '🌐', fee: 25000 },
+    { id: 'digital', label: 'Service digital (pas de livraison)', flag: '💻', fee: 0 },
+] as const
+
+type ShippingZoneId = typeof SHIPPING_ZONES[number]['id']
+
 export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const { items, totalAmount, clearCart } = useCart()
     const [step, setStep] = useState<Step>('info')
@@ -96,7 +106,12 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const paypalOrderIdRef = useRef<string | null>(null)
 
     const currency = items[0]?.currency || 'XOF'
-    const finalTotal = totalAmount - (appliedCoupon?.discount_amount || 0)
+
+    // Shipping
+    const [shippingZone, setShippingZone] = useState<ShippingZoneId>('digital')
+    const shippingFee = SHIPPING_ZONES.find(z => z.id === shippingZone)?.fee || 0
+
+    const finalTotal = Math.max(0, totalAmount - (appliedCoupon?.discount_amount || 0) + shippingFee)
 
     useEffect(() => {
         if (!isOpen) return
@@ -120,6 +135,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             setCouponError('')
             setStripeClientSecret(null)
             setStripeReady(false)
+            setShippingZone('digital')
             cardMountedRef.current = false
             paypalRenderedRef.current = false
             paypalOrderIdRef.current = null
@@ -321,6 +337,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                     payment_method: paymentMethod,
                     cart_items: orderItems,
                     coupon_id: appliedCoupon?.id || null,
+                    shipping_zone: shippingZone,
+                    shipping_fee: shippingFee,
                     amount: finalTotal,
                 }),
             })
@@ -627,6 +645,14 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 <span className="font-bold">-{formatPrice(appliedCoupon.discount_amount)} {currency}</span>
                             </div>
                         )}
+                        {shippingFee > 0 && (
+                            <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
+                                <span className="flex items-center gap-1 font-bold">
+                                    <MapPin size={12} /> Livraison ({SHIPPING_ZONES.find(z => z.id === shippingZone)?.label})
+                                </span>
+                                <span className="font-bold text-white">+{formatPrice(shippingFee)} {currency}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total</span>
                             <span className="text-xl font-black text-[#FCD116] font-heading">
@@ -660,6 +686,35 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     <div className="relative">
                                         <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
                                         <input id="cart-email" type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="votre@email.com" className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:outline-none focus:border-[#FCD116]/30 transition-colors" />
+                                    </div>
+                                </div>
+
+                                {/* Shipping Zone Selector */}
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block flex items-center gap-1">
+                                        <MapPin size={12} /> Zone de livraison
+                                    </label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {SHIPPING_ZONES.map(zone => (
+                                            <button
+                                                key={zone.id}
+                                                type="button"
+                                                onClick={() => setShippingZone(zone.id)}
+                                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all text-xs ${shippingZone === zone.id
+                                                        ? 'bg-[#FCD116]/10 border-[#FCD116]/30 text-white'
+                                                        : 'bg-white/[0.02] border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
+                                                    }`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span>{zone.flag}</span>
+                                                    <span className="font-bold">{zone.label}</span>
+                                                </span>
+                                                <span className={`font-black ${zone.fee === 0 ? 'text-[#008751]' : 'text-white'
+                                                    }`}>
+                                                    {zone.fee === 0 ? 'Gratuit' : `+${formatPrice(zone.fee)} ${currency}`}
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 

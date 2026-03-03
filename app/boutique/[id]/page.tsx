@@ -11,8 +11,9 @@ import {
     RefreshCcw, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Product } from '@/components/boutique/ProductCard'
+import { Product, ProductCard } from '@/components/boutique/ProductCard'
 import { PaymentModal } from '@/components/boutique/PaymentModal'
+import { ProductReviews } from '@/components/boutique/ProductReviews'
 import { useCart } from '@/lib/store/cartStore'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode } from '@/lib/currency'
@@ -268,6 +269,12 @@ export default function ProductDetailPage() {
                 </div>
             </section>
 
+            {/* Customer Reviews */}
+            <ProductReviews productId={productId} />
+
+            {/* Related Products */}
+            <RelatedProducts currentProduct={product} />
+
             {/* Payment Modal */}
             {product && (
                 <PaymentModal
@@ -278,5 +285,54 @@ export default function ProductDetailPage() {
                 />
             )}
         </main>
+    )
+}
+
+/* ─── Related Products Section ─────────────────────────────────── */
+function RelatedProducts({ currentProduct }: { currentProduct: Product }) {
+    const [related, setRelated] = useState<Product[]>([])
+
+    useEffect(() => {
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => {
+                if (data.products) {
+                    const filtered = (data.products as Product[])
+                        .filter(p => p.id !== currentProduct.id && p.is_active)
+                        .filter(p => p.category.toLowerCase() === currentProduct.category.toLowerCase())
+                        .slice(0, 4)
+
+                    // If not enough from same category, fill with other products
+                    if (filtered.length < 4) {
+                        const others = (data.products as Product[])
+                            .filter(p => p.id !== currentProduct.id && p.is_active && !filtered.some(f => f.id === p.id))
+                            .slice(0, 4 - filtered.length)
+                        filtered.push(...others)
+                    }
+
+                    setRelated(filtered)
+                }
+            })
+            .catch(() => { /* ignore */ })
+    }, [currentProduct.id, currentProduct.category])
+
+    if (related.length === 0) return null
+
+    return (
+        <section className="container mx-auto px-6 pb-20">
+            <div className="border-t border-white/5 pt-16">
+                <div className="flex items-center gap-3 mb-10">
+                    <div className="h-[2px] w-8 bg-[#FCD116]" />
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
+                        Vous aimerez aussi
+                    </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {related.map((p, i) => (
+                        <ProductCard key={p.id} product={p} index={i} />
+                    ))}
+                </div>
+            </div>
+        </section>
     )
 }

@@ -1,10 +1,12 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingBag, ArrowUpRight, ShoppingCart } from 'lucide-react'
+import { ShoppingBag, ArrowUpRight, ShoppingCart, Heart } from 'lucide-react'
 import { useCart } from '@/lib/store/cartStore'
+import { useWishlist } from '@/lib/store/wishlistStore'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode } from '@/lib/currency'
 
@@ -24,10 +26,29 @@ export interface Product {
 
 export function ProductCard({ product, index }: { product: Product, index: number }) {
     const { addItem } = useCart()
+    const { toggleItem, isInWishlist } = useWishlist()
+    const [heartBounce, setHeartBounce] = useState(false)
+    const isFav = isInWishlist(product.id)
 
     const hasDiscount = product.sale_price && product.sale_price < product.price
     const displayPrice = hasDiscount ? product.sale_price : product.price
     const isOutOfStock = product.stock <= 0
+
+    const handleToggleWishlist = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setHeartBounce(true)
+        setTimeout(() => setHeartBounce(false), 400)
+        toggleItem({
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            sale_price: product.sale_price ?? undefined,
+            currency: product.currency,
+            image_url: product.images?.[0],
+            category: product.category,
+        })
+    }
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('fr-FR').format(price)
@@ -105,8 +126,22 @@ export function ProductCard({ product, index }: { product: Product, index: numbe
                                 )}
                             </div>
 
-                            <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-500 ease-out">
-                                <ArrowUpRight size={18} />
+                            <div className="flex flex-col gap-2">
+                                <motion.button
+                                    onClick={handleToggleWishlist}
+                                    animate={heartBounce ? { scale: [1, 1.4, 1] } : {}}
+                                    transition={{ duration: 0.4 }}
+                                    className={`w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-all duration-300 pointer-events-auto ${isFav
+                                            ? 'bg-[#E8112D]/80 border-[#E8112D]/50 text-white shadow-lg shadow-[#E8112D]/30'
+                                            : 'bg-black/20 border-white/10 text-white opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0'
+                                        } ${isFav ? 'opacity-100 translate-x-0' : ''}`}
+                                    title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                                >
+                                    <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
+                                </motion.button>
+                                <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-500 ease-out">
+                                    <ArrowUpRight size={18} />
+                                </div>
                             </div>
                         </div>
 

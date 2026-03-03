@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(request: Request) {
     try {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
         const body = await request.json()
 
         const {
-            product_id, // For backward compatibility/single items
+            product_id,
             product_title,
             quantity,
             amount,
@@ -16,7 +20,9 @@ export async function POST(request: Request) {
             customer_phone,
             payment_method,
             cart_items,
-            coupon_id
+            coupon_id,
+            shipping_zone,
+            shipping_fee,
         } = body
 
         // Validation
@@ -27,7 +33,40 @@ export async function POST(request: Request) {
             )
         }
 
-        // Create the order with pending status
+        // ═══ STOCK RESERVATION (Atomic) ═══════════════════════════
+        // Reserve stock for each product before creating the order.
+        // If any reservation fails, roll back all previous ones.
+        const itemsToReserve = cart_items && cart_items.length > 0
+            ? cart_items
+            : [{ product_id, quantity: quantity || 1 }]
+
+        const reservedItems: { product_id: string, quantity: number }[] = []
+
+        for (const item of itemsToReserve) {
+            if (!item.product_id) continue
+
+            const { data: result, error: rpcError } = await supabase.rpc('reserve_stock', {
+                p_product_id: item.product_id,
+                p_quantity: item.quantity || 1,
+            })
+
+            if (rpcError || (result && !result.success)) {
+                // Rollback all previously reserved items
+                for (const reserved of reservedItems) {
+                    await supabase.rpc('release_stock', {
+                        p_product_id: reserved.product_id,
+                        p_quantity: reserved.quantity,
+                    })
+                }
+
+                const errorMsg = result?.error || rpcError?.message || 'Erreur de réservation du stock'
+                return NextResponse.json({ error: errorMsg }, { status: 409 })
+            }
+
+            reservedItems.push({ product_id: item.product_id, quantity: item.quantity || 1 })
+        }
+
+        // ═══ ORDER CREATION ═══════════════════════════════════════
         const { data, error } = await supabase
             .from('orders')
             .insert({
@@ -42,15 +81,24 @@ export async function POST(request: Request) {
                 payment_method,
                 payment_status: 'pending',
                 cart_items: cart_items || [],
-                coupon_id: coupon_id || null
+                coupon_id: coupon_id || null,
+                shipping_zone: shipping_zone || null,
+                shipping_fee: shipping_fee || 0,
             })
             .select('id')
             .single()
 
         if (error) {
+            // Rollback stock if order creation fails
+            for (const reserved of reservedItems) {
+                await supabase.rpc('release_stock', {
+                    p_product_id: reserved.product_id,
+                    p_quantity: reserved.quantity,
+                })
+            }
             console.error('Order creation error:', error)
             return NextResponse.json(
-                { error: 'Erreçur lors de la creation de la commande' },
+                { error: 'Erreur lors de la création de la commande' },
                 { status: 500 }
             )
         }
@@ -63,7 +111,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ order_id: data.id })
     } catch {
         return NextResponse.json(
-            { error: 'Erreçur serveur' },
+            { error: 'Erreur serveur' },
             { status: 500 }
         )
     }
