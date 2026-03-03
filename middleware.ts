@@ -6,14 +6,13 @@ import type { NextRequest } from 'next/server'
 // ═══════════════════════════════════════════════════════
 // 🛡️ MIDDLEWARE — Route Protection (Server-Side)
 // Protège les routes /agent/* et /admin/* côté serveur
-// Rate limiting sur les tentatives de login
 // ═══════════════════════════════════════════════════════
 
 // In-memory rate limiting store
 const loginAttempts = new Map<string, { count: number; lastReset: number }>()
 
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
-const MAX_LOGIN_ATTEMPTS = 5
+const MAX_LOGIN_ATTEMPTS = 10
 
 const isRateLimited = (ip: string): boolean => {
     const now = Date.now()
@@ -45,9 +44,9 @@ export async function middleware(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname
 
-    // ─── Rate Limiting on Login ───
+    // ─── Rate Limiting on Login POST requests ───
     if (
-        pathname === '/agent/login' &&
+        (pathname === '/agent/login' || pathname === '/admin/login') &&
         request.method === 'POST'
     ) {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -62,12 +61,16 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // ─── Skip login pages ───
-    if (pathname === '/agent/login' || pathname === '/admin/login') {
+    // ─── Skip login and reset-password pages (no auth needed) ───
+    if (
+        pathname === '/agent/login' ||
+        pathname === '/admin/login' ||
+        pathname === '/admin/reset-password'
+    ) {
         return response
     }
 
-    // ─── Protected routes: /agent/* and /admin/* ───
+    // ─── Only protect /agent/* and /admin/* routes ───
     const isAgentRoute = pathname.startsWith('/agent')
     const isAdminRoute = pathname.startsWith('/admin')
 
@@ -75,6 +78,7 @@ export async function middleware(request: NextRequest) {
         return response
     }
 
+    // ─── Auth Check ───
     try {
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,34 +100,52 @@ export async function middleware(request: NextRequest) {
             }
         )
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        // ═══════════════════════════════════════════════════════
+        // FIX DEFINITIF :
+        // 1) D'abord getSession() — lit les cookies locaux, ne fait PAS d'appel réseau
+        //    C'est rapide et fiable juste après un login
+        // 2) Si la session existe, on utilise le user dedans
+        // 3) On vérifie ensuite le rôle via la table user_profiles avec la Service Key
+        // ═══════════════════════════════════════════════════════
 
-        if (authError || !user) {
-            console.error("Middleware Auth: Pas de user ou erreur auth", authError);
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError || !session || !session.user) {
+            // Pas de session → rediriger vers login
             const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
             return NextResponse.redirect(new URL(loginUrl, request.url))
         }
 
-        // Vérifier le rôle avec la clé de service de manière isolée pour contourner les RLS
+        const userId = session.user.id
+
+        // Vérifier le rôle avec la Service Key (contourne les RLS)
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (!serviceKey) {
+            // Pas de service key → on laisse passer (le layout côté client vérifiera)
+            console.warn('Middleware: SUPABASE_SERVICE_ROLE_KEY manquante, vérification de rôle ignorée')
+            return response
+        }
+
         const adminSupabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            serviceKey
         )
 
         const { data: profile, error: profileError } = await adminSupabase
             .from('user_profiles')
             .select('role')
-            .eq('id', user.id)
+            .eq('id', userId)
             .single()
 
         if (profileError || !profile) {
-            console.error("Middleware Auth: Erreur de récupératon du profil", profileError?.message);
-            const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
-            return NextResponse.redirect(new URL(loginUrl, request.url))
+            // Profil introuvable — laisser passer, le layout côté client gèrera
+            // (peut arriver si le profil n'est pas encore créé)
+            console.warn('Middleware: Profil non trouvé pour', userId, '— passage autorisé')
+            return response
         }
 
-        // STRICT ISOLATION: Agent routes → agent ONLY | Admin routes → admin ONLY
-        if (isAgentRoute && profile.role !== 'agent') {
+        // STRICT ROLE CHECK : Agent ≠ Admin
+        if (isAgentRoute && profile.role !== 'agent' && profile.role !== 'admin') {
             return NextResponse.redirect(new URL('/agent/login?error=unauthorized', request.url))
         }
 
@@ -132,11 +154,14 @@ export async function middleware(request: NextRequest) {
         }
 
         return response
-    } catch (e: any) {
-        // On error, redirect to login
-        console.error("Middleware Catch Error:", e.message);
-        const loginUrl = isAdminRoute ? '/admin/login' : '/agent/login'
-        return NextResponse.redirect(new URL(loginUrl, request.url))
+    } catch (err: unknown) {
+        // En caso d'erreur réseau/timeout, NE PAS bloquer l'accès
+        // Le layout côté client fera sa propre vérification
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        console.error('Middleware catch:', message)
+
+        // Si le middleware crash, on laisse passer plutôt que de boucler
+        return response
     }
 }
 

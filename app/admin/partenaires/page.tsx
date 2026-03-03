@@ -20,7 +20,7 @@ interface PartnerRow {
     phone: string
     email: string
     sort_order: number
-    products: any[]
+    products: { id: string; name: string; price: number }[]
 }
 
 const CATEGORIES = ['Immobilier', 'Agro-Business', 'Art & Culture', 'Services & Tech', 'Mode & Beauté', 'Autre']
@@ -38,7 +38,10 @@ export default function AdminPartenaires() {
         setLoading(false)
     }
 
-    useEffect(() => { fetchPartners() }, [])
+    useEffect(() => {
+        const init = async () => { await fetchPartners() }
+        init()
+    }, [])
 
     const startEdit = (p: PartnerRow) => {
         setEditing(p.id)
@@ -52,12 +55,13 @@ export default function AdminPartenaires() {
 
     const handleSave = async () => {
         setSaving(true)
+        const partnerData = { ...form }
+        delete (partnerData as any).id
+
         if (editing === 'new') {
-            const { id, ...rest } = form as any
-            await supabase.from('partners').insert([rest])
+            await supabase.from('partners').insert([partnerData])
         } else {
-            const { id, ...rest } = form as any
-            await supabase.from('partners').update(rest).eq('id', editing)
+            await supabase.from('partners').update(partnerData).eq('id', editing)
         }
         setEditing(null)
         setForm({})
@@ -91,33 +95,33 @@ export default function AdminPartenaires() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Nom *</label>
-                            <Input value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Input title="Nom du partenaire" placeholder="Nom" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Catégorie</label>
-                            <select value={form.category || ''} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm">
+                            <select title="Catégorie du partenaire" value={form.category || ''} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm">
                                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Localisation</label>
-                            <Input value={form.location || ''} onChange={e => setForm({ ...form, location: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Input title="Localisation" placeholder="Ville, Pays" value={form.location || ''} onChange={e => setForm({ ...form, location: e.target.value })} className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Site web</label>
-                            <Input value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Input title="Site web" placeholder="https://..." value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Téléphone</label>
-                            <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Input title="Téléphone" placeholder="+229..." value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block">Email</label>
-                            <Input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Input title="Email" placeholder="contact@..." value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div className="md:col-span-2">
                             <label className="text-xs text-gray-400 mb-1 block">Description</label>
-                            <textarea value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm" />
+                            <textarea title="Description" placeholder="Description du partenaire..." value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm" />
                         </div>
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">

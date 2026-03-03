@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button'
 import { Product } from '@/components/boutique/ProductCard'
 import { PaymentModal } from '@/components/boutique/PaymentModal'
 import { useCart } from '@/lib/store/cartStore'
+import { Price } from '@/components/ui/Price'
+import { CurrencyCode } from '@/lib/currency'
 
-const formatPrice = (price: number) => new Intl.NumberFormat('fr-FR').format(price)
 
 export default function ProductDetailPage() {
     const params = useParams()
@@ -188,11 +189,11 @@ export default function ProductDetailPage() {
                         {/* Price */}
                         <div className="flex items-baseline gap-4">
                             <span className="text-4xl font-black text-white font-heading tracking-tighter">
-                                {formatPrice(displayPrice)} <span className="text-base text-gray-500">{product.currency}</span>
+                                <Price amount={displayPrice} currency={product.currency as CurrencyCode} showSelector />
                             </span>
                             {hasDiscount && (
                                 <span className="text-xl text-gray-600 line-through">
-                                    {formatPrice(product.price)} {product.currency}
+                                    <Price amount={product.price} currency={product.currency as CurrencyCode} />
                                 </span>
                             )}
                         </div>
@@ -245,7 +246,7 @@ export default function ProductDetailPage() {
                             {/* Total */}
                             {!isOutOfStock && quantity > 1 && (
                                 <p className="text-xs text-gray-500 text-center">
-                                    Total: <span className="text-white font-bold">{formatPrice(displayPrice * quantity)} {product.currency}</span>
+                                    Total: <span className="text-white font-bold"><Price amount={displayPrice * quantity} currency={product.currency as CurrencyCode} /></span>
                                 </p>
                             )}
                         </div>

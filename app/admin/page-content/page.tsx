@@ -11,7 +11,7 @@ interface PageSection {
     page: string
     section_key: string
     title: string
-    content: any
+    content: Record<string, unknown> | unknown[]
     sort_order: number
     is_active: boolean
 }
@@ -21,6 +21,7 @@ const PAGE_LABELS: Record<string, string> = {
     'notre-histoire': '📜 Notre Histoire',
     'contact': '📞 Contact',
     'simulateur': '🔮 Simulateur Oracle',
+    'nationalite': '🌍 Nationalité (Formulaire)',
 }
 
 export default function AdminPageContent() {
@@ -43,7 +44,12 @@ export default function AdminPageContent() {
         setLoading(false)
     }
 
-    useEffect(() => { fetchSections() }, [])
+    useEffect(() => {
+        const load = async () => {
+            await fetchSections()
+        }
+        load()
+    }, [])
 
     const pages = [...new Set(sections.map(s => s.page))]
 
@@ -139,11 +145,13 @@ export default function AdminPageContent() {
                                                 <div className="space-y-3">
                                                     <div>
                                                         <label className="text-xs text-gray-400 mb-1 block">Titre de la section</label>
-                                                        <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-white/5 border-white/10 text-white" />
+                                                        <Input title="Titre de la section" placeholder="Titre" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-white/5 border-white/10 text-white" />
                                                     </div>
                                                     <div>
                                                         <label className="text-xs text-gray-400 mb-1 block">Contenu (JSON)</label>
                                                         <textarea
+                                                            title="Contenu JSON"
+                                                            placeholder='{"key": "value"}'
                                                             value={editContent}
                                                             onChange={e => setEditContent(e.target.value)}
                                                             rows={12}
@@ -156,9 +164,9 @@ export default function AdminPageContent() {
                                                 <div className="text-xs text-gray-500">
                                                     {Array.isArray(section.content) ? (
                                                         <div className="flex flex-wrap gap-2">
-                                                            {section.content.map((item: any, i: number) => (
+                                                            {(section.content as Record<string, unknown>[]).map((item: Record<string, unknown>, i: number) => (
                                                                 <span key={i} className="bg-white/5 px-2 py-1 rounded text-gray-400">
-                                                                    {item.title || item.name || item.label || item.value || `#${i + 1}`}
+                                                                    {(item.title as string) || (item.name as string) || (item.label as string) || (item.value as string) || `#${i + 1}`}
                                                                 </span>
                                                             ))}
                                                         </div>

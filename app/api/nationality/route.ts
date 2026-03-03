@@ -55,7 +55,7 @@ const sendConfirmationEmail = async (data: {
 
             if (!response.ok) {
                 const errData = await response.json()
-                console.error('[EMAIL] Erreçur Resend (Domaine non vérifié ?):', errData)
+                console.error('[EMAIL] Erreur Resend (Domaine non vérifié ?):', errData)
                 return false
             }
             return true
@@ -64,7 +64,7 @@ const sendConfirmationEmail = async (data: {
         console.log('[EMAIL] Mode simulation (RESEND_API_KEY manquant) -> Envoi à :', data.email)
         return false // On retourne false pour ne pas marquer "envoyé" s'il n'y a pas de clé vraie
     } catch (error) {
-        console.error('[EMAIL] Erreçur fatale lors de l\'envoi:', error)
+        console.error('[EMAIL] Erreur fatale lors de l\'envoi:', error)
         return false
     }
 }
@@ -72,7 +72,7 @@ const sendConfirmationEmail = async (data: {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { nom, prenom, email, nationalite_actuelle, motivation } = body
+        const { nom, prenom, email, nationalite, motivation, afro_descendant_description, payment_ref, payment_method, documents } = body
 
         if (!nom || !prenom || !email) {
             return NextResponse.json(
@@ -81,38 +81,45 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // 1. Insert nationality request into DB
-        const { data: inserted, error: insertError } = await supabase
-            .from('nationality_requests')
+        const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
+
+        // 1. Insert nationality application into DB (Centralized table)
+        const { error: insertError } = await supabase
+            .from('nationality_applications')
             .insert([{
+                ...body, // On spread tout pour avoir les champs dynamiques (assurant qu'ils matchent les colonnes)
+                application_ref: ref,
+                status: 'soumis',
+                submitted_at: new Date().toISOString(),
+                // On s'assure que les champs calculés ou re-mappés sont corrects
                 nom,
                 prenom,
                 email,
-                nationalite_actuelle: nationalite_actuelle || 'Non spécifiée',
-                motivation: motivation || '',
-                statut: 'nouveau',
+                nationalite: nationalite || 'Non spécifiée',
+                afro_descendant_description: afro_descendant_description || motivation || '',
+                documents_uploaded: documents || [],
+                payment_status: payment_ref ? 'payé' : 'en_attente',
+                payment_ref,
+                payment_method
             }])
-            .select()
-            .single()
 
         if (insertError) {
             console.error('Insert error:', insertError)
             return NextResponse.json(
-                { error: 'Erreçur lors de l\'enregistrement' },
+                { error: 'Erreur lors de l\'enregistrement dans la base de données' },
                 { status: 500 }
             )
         }
 
-        const refId = String(inserted.id).padStart(6, '0')
-
         // 2. Create message for admin/agents
         await supabase.from('messages').insert([{
-            name: `${prenom} ${nom}`,
+            nom: `${prenom} ${nom}`,
             email,
-            subject: `Demande de nationalité #RG-${refId}`,
-            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nNationalité actuelle: ${nationalite_actuelle || 'Non spécifiée'}\nMotivation: ${motivation || 'Non précisée'}\n\nRéférence: #RG-${refId}`,
+            sujet: `Demande de nationalité #${ref}`,
+            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nRéférence: ${ref}\n\nMotivation: ${afro_descendant_description || motivation || 'Non précisée'}\n\nStatut Paiement: ${payment_ref ? 'Payé' : 'Non payé'}`,
             type: 'nationality',
-            is_read: false,
+            lu: false,
+            payload: body
         }])
 
         // 3. Send auto email to client
@@ -120,21 +127,13 @@ export async function POST(request: NextRequest) {
             nom,
             prenom,
             email,
-            nationalite: nationalite_actuelle || 'Non spécifiée',
-            refId,
+            nationalite: nationalite || 'Non spécifiée',
+            refId: ref,
         })
-
-        // 4. Update email_sent status
-        if (emailSent) {
-            await supabase
-                .from('nationality_requests')
-                .update({ email_sent: true })
-                .eq('id', inserted.id)
-        }
 
         return NextResponse.json({
             success: true,
-            reference: `#RG-${refId}`,
+            reference: ref,
             emailSent,
             message: 'Votre demande a été reçue avec succès.',
         })
@@ -142,7 +141,7 @@ export async function POST(request: NextRequest) {
         const errMsg = error instanceof Error ? error.message : 'Unknown error'
         console.error('Nationality API error:', errMsg)
         return NextResponse.json(
-            { error: 'Une erreçur est survenue. Veuillez réessayer.' },
+            { error: 'Une erreur est survenue lors du traitement. Veuillez réessayer.' },
             { status: 500 }
         )
     }

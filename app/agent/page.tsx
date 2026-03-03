@@ -7,7 +7,7 @@ import {
     FileText, MessageSquare, Compass, ArrowUpRight,
     TrendingUp, Headphones, Calendar, Users,
     ChevronRight, BarChart3, Phone, Mail,
-    Activity, Clock, Target, Sparkles
+    Activity, Clock, Target, Sparkles, Globe
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -23,6 +23,7 @@ interface DashboardStats {
     newVocaux: number
     leadsOracle: number
     leadsNonContactes: number
+    nationalityApps: number
 }
 
 // ═══════════════════════════════════════════
@@ -110,6 +111,7 @@ export default function AgentDashboard() {
         newVocaux: 0,
         leadsOracle: 0,
         leadsNonContactes: 0,
+        nationalityApps: 0,
     })
     const [recentDossiers, setRecentDossiers] = useState<Record<string, unknown>[]>([])
     const [recentMessages, setRecentMessages] = useState<Record<string, unknown>[]>([])
@@ -131,29 +133,38 @@ export default function AgentDashboard() {
                 }
 
                 // Parallel fetching (react-best-practices: async-parallel)
-                const [dossiersRes, msgCountRes, voixCountRes, leadsRes, msgsRes] = await Promise.all([
-                    supabase.from('dossier_tracking').select('*').order('created_at', { ascending: false }),
+                const [
+                    dossiersRes,
+                    msgCountRes,
+                    voixCountRes,
+                    leadsRes,
+                    msgsRes,
+                    nationalityCountRes
+                ] = await Promise.all([
+                    supabase.from('dossier_tracking').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
                     supabase.from('messages').select('*', { count: 'exact', head: true }).eq('lu', false),
                     supabase.from('voice_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
                     supabase.from('eligibility_results').select('*').order('created_at', { ascending: false }),
                     supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(5),
+                    supabase.from('nationality_applications').select('*', { count: 'exact', head: true }),
                 ])
 
-                const allDossiers = dossiersRes.data || []
-                const allLeads = leadsRes.data || []
+                const allDossiers = (dossiersRes.data as Record<string, unknown>[]) || []
+                const allLeads = (leadsRes.data as Record<string, unknown>[]) || []
 
                 setStats({
-                    totalDossiers: allDossiers.length,
-                    dossiersEnCours: allDossiers.filter((d) => d.statut !== 'termine').length,
-                    dossiersTermines: allDossiers.filter((d) => d.statut === 'termine').length,
+                    totalDossiers: dossiersRes.count || allDossiers.length,
+                    dossiersEnCours: allDossiers.filter(d => d.statut !== 'termine').length,
+                    dossiersTermines: allDossiers.filter(d => d.statut === 'termine').length,
                     newMessages: msgCountRes.count || 0,
                     newVocaux: voixCountRes.count || 0,
                     leadsOracle: allLeads.length,
-                    leadsNonContactes: allLeads.filter((l) => !l.contacted).length,
+                    leadsNonContactes: allLeads.filter(l => !l.contacted).length,
+                    nationalityApps: nationalityCountRes.count || 0,
                 })
 
                 setRecentDossiers(allDossiers.slice(0, 5))
-                setRecentMessages(msgsRes.data || [])
+                setRecentMessages((msgsRes.data as Record<string, unknown>[]) || [])
             } catch (err) {
                 // Security: don't expose error details
                 if (process.env.NODE_ENV === 'development') {
@@ -207,6 +218,16 @@ export default function AgentDashboard() {
             href: '/agent/leads',
             sparkData: [5, 4, 6, 3, 7, 5, stats.leadsNonContactes],
             sparkColor: '#F59E0B',
+        },
+        {
+            label: 'Demandes Nat.',
+            value: stats.nationalityApps,
+            icon: Globe,
+            gradient: 'from-blue-600 to-cyan-700',
+            borderGlow: 'hover:shadow-[0_0_30px_rgba(25,118,210,0.15)]',
+            href: '/agent/nationalite',
+            sparkData: [1, 2, 3, 2, 4, 3, stats.nationalityApps],
+            sparkColor: '#1976D2',
         },
     ]
 

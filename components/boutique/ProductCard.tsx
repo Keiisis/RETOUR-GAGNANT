@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingBag, ArrowUpRight, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/lib/store/cartStore'
+import { Price } from '@/components/ui/Price'
+import { CurrencyCode } from '@/lib/currency'
 
 export interface Product {
     id: string
@@ -148,15 +150,12 @@ export function ProductCard({ product, index }: { product: Product, index: numbe
                             <div className="flex flex-col">
                                 {hasDiscount && (
                                     <span className="text-xs sm:text-sm text-gray-500 line-through font-medium mb-1">
-                                        {formatPrice(product.price)} XOF
+                                        <Price amount={product.price} currency={product.currency as CurrencyCode} />
                                     </span>
                                 )}
                                 <div className="flex items-baseline gap-1.5">
                                     <span className="text-2xl sm:text-3xl font-black text-white font-heading tracking-tighter">
-                                        {formatPrice(displayPrice!)}
-                                    </span>
-                                    <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                        {product.currency}
+                                        <Price amount={displayPrice!} currency={product.currency as CurrencyCode} />
                                     </span>
                                 </div>
                             </div>

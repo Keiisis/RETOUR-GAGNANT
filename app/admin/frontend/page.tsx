@@ -112,13 +112,16 @@ export default function AdminFrontendHub() {
                                 {/* Top row */}
                                 <div className="flex items-start justify-between mb-4">
                                     <div
-                                        className="w-11 h-11 rounded-xl flex items-center justify-center border"
-                                        style={{
-                                            backgroundColor: `${section.color}15`,
-                                            borderColor: `${section.color}30`,
-                                        }}
+                                        className={`w-11 h-11 rounded-xl flex items-center justify-center border ${section.color === '#008751' ? 'bg-[#008751]/10 border-[#008751]/30' :
+                                                section.color === '#E8112D' ? 'bg-[#E8112D]/10 border-[#E8112D]/30' :
+                                                    'bg-[#FCD116]/10 border-[#FCD116]/30'
+                                            }`}
                                     >
-                                        <section.icon size={20} style={{ color: section.color }} />
+                                        <section.icon size={20} className={
+                                            section.color === '#008751' ? 'text-[#008751]' :
+                                                section.color === '#E8112D' ? 'text-[#E8112D]' :
+                                                    'text-[#FCD116]'
+                                        } />
                                     </div>
                                     <ArrowRight
                                         size={16}
@@ -136,11 +139,10 @@ export default function AdminFrontendHub() {
 
                                 {/* Badge */}
                                 <span
-                                    className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                                    style={{
-                                        backgroundColor: `${section.color}10`,
-                                        color: section.color,
-                                    }}
+                                    className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${section.color === '#008751' ? 'bg-[#008751]/10 text-[#008751]' :
+                                            section.color === '#E8112D' ? 'bg-[#E8112D]/10 text-[#E8112D]' :
+                                                'bg-[#FCD116]/10 text-[#FCD116]'
+                                        }`}
                                 >
                                     {section.count}
                                 </span>

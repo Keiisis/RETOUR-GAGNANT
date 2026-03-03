@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+
 import { supabase } from '@/lib/supabase'
 
 const evaluatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
@@ -32,7 +32,7 @@ export default function AgentLoginPage() {
     const [error, setError] = useState('')
     const [shake, setShake] = useState(false)
     const [loginSuccess, setLoginSuccess] = useState(false)
-    const router = useRouter()
+
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -58,24 +58,25 @@ export default function AgentLoginPage() {
         setError('')
 
         try {
-            const { data, error: authError } = await supabase.auth.signInWithPassword({
+            const { error: authError } = await supabase.auth.signInWithPassword({
                 email: email.trim().toLowerCase(),
                 password,
             })
 
             if (authError) {
-                // Sécurité : message générique
                 throw new Error('Identifiants incorrects. Veuillez réessayer.')
             }
 
-            // La vérification ferme de sécurité "agent" ou "admin"
-            // est déléguée au Middleware serveur (qui a la Service Key).
+            // Force la session à être lue et les cookies à être écrits
+            // AVANT de naviguer — c'est la clé pour éviter la boucle middleware
+            await supabase.auth.getSession()
 
             // Success animation
             setLoginSuccess(true)
+            // Petit délai pour laisser les cookies se propager côté serveur
             setTimeout(() => {
-                router.push('/agent')
-            }, 800)
+                window.location.href = '/agent'
+            }, 1000)
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Une erreur est survenue. Veuillez réessayer.'
             setError(message)
@@ -84,6 +85,7 @@ export default function AgentLoginPage() {
             if (!loginSuccess) setIsLoading(false)
         }
     }
+
 
     return (
         <div className="min-h-screen bg-nexus-deep flex items-center justify-center p-4 relative overflow-hidden">

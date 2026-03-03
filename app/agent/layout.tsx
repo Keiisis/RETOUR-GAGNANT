@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -12,7 +12,7 @@ import {
     Menu, Bell, Search, Headphones, X,
     TrendingUp, BookOpen, CircleDot, ChevronRight,
     Shield, PanelLeftClose, PanelLeft,
-    Command, UserCog
+    Command, UserCog, Globe
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════
@@ -95,7 +95,7 @@ const useInactivityLogout = (onLogout: () => void) => {
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const router = useRouter()
+
     const [agent, setAgent] = useState<AgentProfile | null>(null)
     const [loading, setLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -127,14 +127,15 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         }
 
         const checkAuth = async () => {
-            const { data: { user }, error: userError } = await supabase.auth.getUser()
-            console.log("AgentLayout: Client checkAuth", { user: user?.email, error: userError?.message });
+            // Utilise getSession() — lit les cookies locaux, rapide et fiable
+            const { data: { session } } = await supabase.auth.getSession()
 
-            if (!user) {
-                console.log("AgentLayout: No user, redirecting to login");
-                router.replace('/agent/login')
+            if (!session || !session.user) {
+                window.location.href = '/agent/login'
                 return
             }
+
+            const user = session.user
 
             const { data: profile, error: profileError } = await supabase
                 .from('user_profiles')
@@ -142,11 +143,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 .eq('id', user.id)
                 .single()
 
-            console.log("AgentLayout: Profile fetch", { profile, error: profileError?.message });
-
             if (profileError || !profile) {
                 // RLS bloque ou profil inexistant → fallback, le middleware a déjà validé
-                console.log("Client: Profil non lisible. Fallback agent.");
                 setAgent({
                     id: user.id,
                     email: user.email || '',
@@ -157,10 +155,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 return
             }
 
-            // STRICT: Seul le rôle 'agent' peut accéder au dashboard agent
-            if (profile.role !== 'agent') {
+            // Agents et admins peuvent accéder à l'espace agent
+            if (profile.role !== 'agent' && profile.role !== 'admin') {
                 await supabase.auth.signOut()
-                router.replace('/agent/login?error=unauthorized')
+                window.location.href = '/agent/login?error=unauthorized'
                 return
             }
 
@@ -175,7 +173,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         }
 
         checkAuth()
-    }, [isLoginPage, router])
+    }, [isLoginPage])
+
 
     // ─── Heartbeat: real-time presence tracking ───
     useEffect(() => {
@@ -232,8 +231,9 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 .eq('id', agent.id)
         }
         await supabase.auth.signOut()
-        router.replace('/agent/login')
-    }, [router, agent?.id])
+        window.location.href = '/agent/login'
+    }, [agent?.id])
+
 
     // ─── Inactivity auto-logout ───
     useInactivityLogout(handleLogout)
@@ -300,6 +300,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: 'Tableau de Bord', icon: LayoutDashboard, href: '/agent' },
                 { title: 'Mes Dossiers', icon: FileText, href: '/agent/dossiers' },
                 { title: 'Leads Oracle', icon: Compass, href: '/agent/leads' },
+                { title: 'Demandes Nat.', icon: Globe, href: '/agent/nationalite' },
             ],
         },
         {
