@@ -353,19 +353,19 @@ export default function TestimonialsCarousel() {
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const mapped = data.map((item: any) => ({
-                        id: item.id,
-                        name: item.name,
-                        role: item.role || 'Client',
-                        text: item.text,
-                        location: item.location || 'Bénin',
-                        rating: item.rating || 5,
-                        service: item.service || 'Général',
-                        photoUrl: item.photo_url || undefined
+                    const mapped = data.map((item: Record<string, unknown>) => ({
+                        id: Number(item.id),
+                        name: String(item.name || ''),
+                        role: item.role ? String(item.role) : 'Client',
+                        text: String(item.text || ''),
+                        location: item.location ? String(item.location) : 'Bénin',
+                        rating: Number(item.rating) || 5,
+                        service: item.service ? String(item.service) : 'Général',
+                        photoUrl: item.photo_url ? String(item.photo_url) : undefined
                     }));
                     setTestimonials(mapped);
                 }
-            } catch (err) {
+            } catch {
                 console.warn('Testimonials using fallback data');
             } finally {
                 setIsLoaded(true);

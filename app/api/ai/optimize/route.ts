@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         const optimizedText = data.choices?.[0]?.message?.content || text;
 
         return NextResponse.json({ text: optimizedText });
-    } catch (error: any) {
+    } catch (error) {
         console.error("AI Optimization Error:", error);
         return NextResponse.json({ text: "Une erreçur est survenue lors de l'optimisation." }, { status: 500 });
     }

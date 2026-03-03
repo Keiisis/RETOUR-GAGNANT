@@ -16,12 +16,18 @@ export default function EditProductPage() {
     const productQuery = useOne({
         resource: 'products',
         id: productId,
-    }) as any
-    const { mutate: updateProduct, isPending } = useUpdate() as any
-    const isLoadingProduct = productQuery.isLoading ?? productQuery.query?.isLoading ?? productQuery.query?.isFetching ?? false
-    const isSaving = isPending ?? false
+    })
+    const updateResult = useUpdate()
+    const updateProduct = updateResult.mutate
+    const queryInternal = productQuery as unknown as Record<string, unknown>
+    const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
+    const isLoadingProduct = queryObj.isLoading ?? queryObj.isFetching ?? false
+    const isSaving = (updateResult as unknown as { isLoading?: boolean }).isLoading
+        ?? (updateResult as unknown as { isPending?: boolean }).isPending
+        ?? false
 
-    const product = productQuery.data?.data ?? productQuery.query?.data?.data ?? productQuery.result
+    const product = (productQuery as unknown as { data?: { data?: Record<string, unknown> } }).data?.data
+        ?? (queryInternal.result as Record<string, unknown> | undefined)
 
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -36,15 +42,15 @@ export default function EditProductPage() {
 
     useEffect(() => {
         if (product) {
-            setTitle(product.title || '')
-            setDescription(product.description || '')
-            setLongDescription(product.long_description || '')
+            setTitle(String(product.title || ''))
+            setDescription(String(product.description || ''))
+            setLongDescription(String(product.long_description || ''))
             setPrice(String(product.price || ''))
             setSalePrice(product.sale_price ? String(product.sale_price) : '')
-            setCategory(product.category || 'Artisanat')
+            setCategory(String(product.category || 'Artisanat'))
             setStock(String(product.stock || 0))
-            setImages(product.images || [])
-            setIsActive(product.is_active ?? true)
+            setImages(Array.isArray(product.images) ? product.images as string[] : [])
+            setIsActive(typeof product.is_active === 'boolean' ? product.is_active : true)
         }
     }, [product])
 

@@ -62,10 +62,11 @@ export async function POST(request: NextRequest) {
         const text = data.choices?.[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
 
         return NextResponse.json({ text });
-    } catch (error: any) {
+    } catch (error) {
         console.error("AI Admin Help Error:", error);
+        const message = error instanceof Error ? error.message : 'Unknown error'
         return NextResponse.json(
-            { text: "Une erreçur est survenue : " + error.message },
+            { text: "Une erreur est survenue : " + message },
             { status: 500 }
         );
     }

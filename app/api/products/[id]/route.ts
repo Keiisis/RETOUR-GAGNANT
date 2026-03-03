@@ -3,8 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(
     request: NextRequest,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    context: any
+    context: { params: Promise<{ id: string }> }
 ) {
     const { id } = await context.params
     try {

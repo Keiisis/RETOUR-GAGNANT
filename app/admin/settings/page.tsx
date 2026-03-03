@@ -11,18 +11,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BaseRecord } from "@refinedev/core";
+
+export interface Setting extends BaseRecord {
+    id: string;
+    key: string;
+    value: string;
+}
 
 export default function SettingsList() {
     const { edit } = useNavigation();
     const [deployMsg, setDeployMsg] = useState<string | null>(null);
-    const queryResult = useList({
+    const queryResult = useList<Setting>({
         resource: "settings",
     });
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data;
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading;
+    const returnedData = (queryResult as unknown as { data?: { data: Setting[] }, query?: { data?: { data: Setting[] } } }).data ||
+        (queryResult as unknown as { query?: { data?: { data: Setting[] } } }).query?.data;
+    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading ||
+        (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
 
-    const items = data?.data || [];
+    const items = returnedData?.data || [];
 
     return (
         <div className="space-y-12 animate-in fade-in duration-1000">
@@ -189,7 +198,7 @@ export default function SettingsList() {
                                 <Loader2 className="animate-spin text-[#FCD116]" />
                             </div>
                         ) : items.length > 0 ? (
-                            items.map((item: any) => (
+                            items.map((item) => (
                                 <div key={item.id} className="flex items-center justify-between p-10 hover:bg-white/[0.02] transition-colors group">
                                     <div className="flex items-center gap-6">
                                         <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-gray-400 group-hover:bg-[#FCD116]/10 group-hover:text-[#FCD116] transition-all">
@@ -232,7 +241,21 @@ export default function SettingsList() {
     );
 }
 
-function SettingCategory({ title, icon: Icon, color, description, items }: any) {
+interface SettingCategoryItem {
+    label: string;
+    value: string;
+    type: 'color' | 'text' | 'status' | string;
+}
+
+interface SettingCategoryProps {
+    title: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    color: string;
+    description: string;
+    items: SettingCategoryItem[];
+}
+
+function SettingCategory({ title, icon: Icon, color, description, items }: SettingCategoryProps) {
     return (
         <Card className="bg-[#0a0f18] border-white/5 rounded-[2.5rem] p-8 hover:border-white/10 transition-all group overflow-hidden relative shadow-2xl">
             <div className="absolute -top-10 -right-10 w-32 h-32 blur-[60px] opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity" style={{ backgroundColor: color }} />
@@ -251,7 +274,7 @@ function SettingCategory({ title, icon: Icon, color, description, items }: any) 
                 <p className="text-xs text-gray-500 font-medium leading-relaxed">{description}</p>
 
                 <div className="space-y-3 pt-4">
-                    {items.map((it: any, idx: number) => (
+                    {items.map((it, idx: number) => (
                         <div key={idx} className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
                             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{it.label}</span>
                             {it.type === 'color' ? (

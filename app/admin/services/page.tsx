@@ -11,10 +11,22 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BaseRecord } from "@refinedev/core";
+
+export interface Service extends BaseRecord {
+    id: string;
+    title: string;
+    description: string;
+    color?: string | null;
+    icon?: string | null;
+    image_url?: string | null;
+    order?: number | null;
+    created_at?: string;
+}
 
 export default function ServicesList() {
     const { create, edit } = useNavigation();
-    const queryResult = useList({
+    const queryResult = useList<Service>({
         resource: "services",
         pagination: { pageSize: 12 },
         sorters: [{ field: "created_at", order: "asc" }]
@@ -23,8 +35,11 @@ export default function ServicesList() {
     const { mutate: deleteItem } = useDelete();
     const [searchTerm, setSearchTerm] = useState("");
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data; const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading; const items = data?.data || [];
-    const filteredItems = items.filter((item: any) =>
+    const returnedData = (queryResult as unknown as { data?: { data?: Service[] } }).data || (queryResult as unknown as { query?: { data?: { data?: Service[] } } }).query?.data;
+    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading || (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
+    const items: Service[] = returnedData?.data || [];
+
+    const filteredItems = items.filter((item) =>
         item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -83,7 +98,7 @@ export default function ServicesList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-10">
                     <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item: any, index: number) => (
+                        {filteredItems.map((item, index: number) => (
                             <motion.div
                                 key={item.id}
                                 layout

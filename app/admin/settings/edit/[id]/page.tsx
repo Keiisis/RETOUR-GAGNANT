@@ -8,18 +8,23 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
+import { Setting } from "../../page";
 
 export default function SettingsEdit() {
     const params = useParams();
     const id = params.id as string;
     const { list } = useNavigation();
 
-    const queryResult = useOne({
+    const queryResult = useOne<Setting>({
         resource: "settings",
         id,
-    }) as any;
-    const itemData = queryResult.data || queryResult.query?.data;
-    const isFetching = queryResult.isLoading || queryResult.query?.isLoading;
+    });
+    const queryInternal = queryResult as unknown as Record<string, unknown>
+    const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
+    const itemData = queryResult.result
+        ? { data: queryResult.result }
+        : (queryInternal.data as { data?: Setting } | undefined)
+    const isFetching = queryObj.isLoading ?? false
 
     const { onFinish, formLoading } = useForm({
         resource: "settings",
@@ -28,7 +33,7 @@ export default function SettingsEdit() {
         redirect: "list",
     });
 
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<Setting>>({
         key: "",
         value: ""
     });
@@ -44,7 +49,7 @@ export default function SettingsEdit() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev: Partial<Setting>) => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -98,7 +103,7 @@ export default function SettingsEdit() {
                             </label>
                             <input
                                 name="key"
-                                value={formData.key}
+                                value={formData.key || ''}
                                 onChange={handleChange}
                                 placeholder="ex: contact_email"
                                 className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-5 px-6 text-white text-sm font-bold font-mono focus:outline-none focus:border-[#FCD116]/40 transition-all"
@@ -114,7 +119,7 @@ export default function SettingsEdit() {
                         </label>
                         <textarea
                             name="value"
-                            value={formData.value}
+                            value={formData.value || ''}
                             onChange={handleChange}
                             rows={8}
                             placeholder="ex: contact@retour-gagnant.com"

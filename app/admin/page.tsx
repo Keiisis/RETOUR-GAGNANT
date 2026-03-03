@@ -15,6 +15,21 @@ import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+interface TopProduct {
+    product_title: string;
+    amount: number;
+    quantity: number;
+}
+
+interface RecentMessage {
+    id: string;
+    nom: string;
+    prenom: string;
+    sujet: string;
+    type: string;
+    created_at: string;
+}
+
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
         patrimoine: 0,
@@ -28,8 +43,8 @@ export default function AdminDashboard() {
         productsCount: 0,
         pendingOrders: 0,
     });
-    const [topProducts, setTopProducts] = useState<any[]>([]);
-    const [recentMessages, setRecentMessages] = useState<any[]>([]);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [recentMessages, setRecentMessages] = useState<RecentMessage[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -65,7 +80,7 @@ export default function AdminDashboard() {
                 ]);
 
                 const completedOrders = ordersRes.data || [];
-                const totalRevenue = completedOrders.reduce((sum: number, o: any) => sum + (o.amount || 0), 0);
+                const totalRevenue = completedOrders.reduce((sum: number, o) => sum + (o.amount || 0), 0);
 
                 setCommerceStats({
                     totalRevenue,
@@ -126,7 +141,7 @@ export default function AdminDashboard() {
                         VIBE <span className="text- benin-gradient">CONTROL</span>
                     </h2>
                     <p className="text-gray-500 max-w-xl font-medium">
-                        Bienvenue dans le centre de commandement de Retour Gagnant. Pilotez l'expérience digitale du futur du Bénin.
+                        Bienvenue dans le centre de commandement de Retour Gagnant. Pilotez l&apos;expérience digitale du futur du Bénin.
                     </p>
                 </div>
 
@@ -220,7 +235,7 @@ export default function AdminDashboard() {
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-white/5">
-                                {topProducts.map((p: any, i: number) => (
+                                {topProducts.map((p: TopProduct, i: number) => (
                                     <div key={i} className="flex items-center justify-between px-8 py-5 hover:bg-white/[0.02] transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="w-8 h-8 rounded-lg bg-[#008751]/10 border border-[#008751]/20 flex items-center justify-center text-xs font-black text-[#008751]">{i + 1}</div>
@@ -247,7 +262,7 @@ export default function AdminDashboard() {
                     <Card className="bg-[#0a0f18] border-white/5 rounded-[2.5rem] shadow-3xl overflow-hidden group">
                         <CardHeader className="p-8 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.02]">
                             <div>
-                                <CardTitle className="text-white font-heading text-xl">Flux d'Activité</CardTitle>
+                                <CardTitle className="text-white font-heading text-xl">Flux d&apos;Activité</CardTitle>
                                 <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Temps Réel • Messages Entrants</p>
                             </div>
                             <Button variant="ghost" className="text-[#FCD116] hover:bg-[#FCD116]/10 font-bold text-xs uppercase tracking-tighter">Tout Surveiller</Button>
@@ -341,7 +356,7 @@ export default function AdminDashboard() {
     );
 }
 
-function MetricCard({ title, value, icon: Icon, color, glow, loading }: any) {
+function MetricCard({ title, value, icon: Icon, color, glow, loading }: { title: string, value: string | number, icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>, color: string, glow: string, loading: boolean }) {
     return (
         <Card className="relative bg-[#0a0f18] border-white/5 rounded-[2.5rem] p-8 overflow-hidden group hover:border-white/10 transition-all cursor-pointer">
             <div className="absolute top-0 right-0 w-32 h-32 blur-[80px] pointer-events-none transition-all group-hover:scale-150" style={{ backgroundColor: glow }} />
@@ -364,7 +379,7 @@ function MetricCard({ title, value, icon: Icon, color, glow, loading }: any) {
     );
 }
 
-function 健康Status({ label, value, color }: any) {
+function 健康Status({ label, value, color }: { label: string, value: number, color: string }) {
     return (
         <div className="space-y-3">
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
@@ -384,7 +399,7 @@ function 健康Status({ label, value, color }: any) {
     );
 }
 
-function QuickAction({ icon: Icon, label }: any) {
+function QuickAction({ icon: Icon, label }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string }) {
     return (
         <button className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/5 rounded-[1.5rem] hover:bg-white/10 hover:border-white/20 transition-all group">
             <Icon size={24} className="text-gray-400 group-hover:text-[#FCD116] transition-colors mb-3" />

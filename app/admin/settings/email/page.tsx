@@ -10,13 +10,20 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+interface SettingItem {
+    id: string;
+    key: string;
+    value: string;
+    description?: string;
+}
+
 export default function EmailSettingsPage() {
-    const queryResult = useList({
+    const queryResult = useList<SettingItem>({
         resource: "settings",
         pagination: { mode: "off" }
-    }) as any;
-    const settingsData = queryResult.data || queryResult.query?.data;
-    const isLoading = queryResult.isLoading || queryResult.query?.isLoading;
+    });
+    const settingsData = queryResult.query?.data;
+    const isLoading = queryResult.query?.isLoading;
 
     const { mutate: updateSetting } = useUpdate();
     const [isSaving, setIsSaving] = useState(false);
@@ -40,9 +47,9 @@ export default function EmailSettingsPage() {
             const newForm = { ...form };
             const newIds: Record<string, string> = {};
 
-            settingsData.data.forEach((item: any) => {
+            settingsData.data.forEach((item) => {
                 if (item.key in newForm) {
-                    (newForm as any)[item.key] = item.value || "";
+                    (newForm as Record<string, string>)[item.key] = item.value || "";
                     newIds[item.key] = item.id;
                 }
             });
@@ -132,7 +139,7 @@ export default function EmailSettingsPage() {
                         <ArrowLeft size={24} />
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-black font-heading text-white tracking-tight italic"><span className="text-[#3b82f6]">SERVEUR</span> D'EMAILS</h1>
+                        <h1 className="text-3xl font-black font-heading text-white tracking-tight italic"><span className="text-[#3b82f6]">SERVEUR</span> D&apos;EMAILS</h1>
                         <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">SMTP & Facturation Web</p>
                     </div>
                 </div>
@@ -208,7 +215,7 @@ export default function EmailSettingsPage() {
                                 />
                                 {isGmail && (
                                     <p className="text-[9px] text-[#3b82f6]/70 mt-2 px-1">
-                                        Sur Gmail, n'utilisez pas votre vrai mot de passe. Allez dans compte Google {">"} Sécurité {">"} Validation en 2 étapes {">"} <b>Mots de passe des applications</b>.
+                                        Sur Gmail, n&apos;utilisez pas votre vrai mot de passe. Allez dans compte Google {">"} Sécurité {">"} Validation en 2 étapes {">"} <b>Mots de passe des applications</b>.
                                     </p>
                                 )}
                             </div>
@@ -278,4 +285,4 @@ export default function EmailSettingsPage() {
     );
 }
 
-function cx(...classes: any[]) { return classes.filter(Boolean).join(' '); }
+function cx(...classes: (string | undefined | null | false)[]) { return classes.filter(Boolean).join(' '); }

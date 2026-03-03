@@ -131,17 +131,25 @@ export default function HeritageCarousel() {
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const mappedItems = data.map((item: any, index: number) => ({
+                    const mappedItems = data.map((item: {
+                        id: number;
+                        title: string;
+                        description: string;
+                        imagename?: string;
+                        imageName?: string;
+                        image_url?: string;
+                        location?: string;
+                    }, index: number) => ({
                         id: item.id,
                         title: item.title,
                         description: item.description,
-                        imageName: item.imagename || item.imageName || item.image_url,
+                        imageName: item.imagename || item.imageName || item.image_url || "",
                         location: item.location || "Bénin",
                         color: colorPalette[index % colorPalette.length]
                     }));
                     setItems(mappedItems);
                 }
-            } catch (err) {
+            } catch {
                 console.warn('Heritage items using fallback data');
             } finally {
                 setLoading(false);
@@ -168,7 +176,7 @@ export default function HeritageCarousel() {
                     Patrimoine & <span className="text-benin-gradient">Culture</span>
                 </h2>
                 <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                    Plongez au cœur de l'histoire et des traditions qui font la fierté du Bénin. Un héritage vivant à préserver et à transmettre.
+                    Plongez au cœur de l&apos;histoire et des traditions qui font la fierté du Bénin. Un héritage vivant à préserver et à transmettre.
                 </p>
             </div>
 

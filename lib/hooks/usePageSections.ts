@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export function usePageSections(page: string) {
-    const [sections, setSections] = useState<Record<string, any>>({})
+    const [sections, setSections] = useState<Record<string, Record<string, unknown>>>({})
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -15,8 +15,8 @@ export function usePageSections(page: string) {
                     .eq('is_active', true)
 
                 if (!error && data) {
-                    const map: Record<string, any> = {}
-                    data.forEach((row: any) => {
+                    const map: Record<string, Record<string, unknown>> = {}
+                    data.forEach((row: { section_key: string, content: Record<string, unknown> }) => {
                         map[row.section_key] = row.content
                     })
                     setSections(map)

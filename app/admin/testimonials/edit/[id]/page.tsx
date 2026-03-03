@@ -1,25 +1,23 @@
 'use client';
 
 import { useForm, useNavigation } from "@refinedev/core";
-import { motion } from "framer-motion";
 import {
     ArrowLeft, Save, User, Quote, Star,
-    MapPin, ShieldCheck, MessageSquareQuote,
-    Loader2, Sparkles, CheckCircle2, XCircle,
-    Camera
+    Loader2, Sparkles, ShieldCheck
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Testimonial } from "../../page";
 
 export default function TestimonialsEdit() {
     const { id } = useParams();
     const { list } = useNavigation();
 
-    const { onFinish, query, formLoading } = useForm<any>({
+    const { onFinish, query, formLoading } = useForm<Testimonial>({
         resource: "testimonials",
         id: id as string,
         redirect: "list",
@@ -27,7 +25,7 @@ export default function TestimonialsEdit() {
     });
 
     const record = query?.data?.data;
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<Testimonial>>({
         name: "",
         location: "",
         text: "",
@@ -53,7 +51,7 @@ export default function TestimonialsEdit() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -77,7 +75,7 @@ export default function TestimonialsEdit() {
             });
             const data = await resp.json();
             if (data.text) {
-                setFormData((prev: any) => ({ ...prev, text: data.text }));
+                setFormData((prev) => ({ ...prev, text: data.text }));
             }
         } catch (error) {
             console.error(error);
@@ -102,6 +100,7 @@ export default function TestimonialsEdit() {
                 <div className="flex items-center gap-6">
                     <button
                         onClick={() => list("testimonials")}
+                        title="Retour à la liste"
                         className="p-4 bg-[#0a0f18] border border-white/5 rounded-2xl text-gray-500 hover:text-white hover:border-[#3b82f6]/30 transition-all shadow-2xl group"
                     >
                         <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
@@ -111,7 +110,7 @@ export default function TestimonialsEdit() {
                             <Quote size={14} />
                             <span className="text-[10px] font-black uppercase tracking-[0.4em]">Modération de Témoignage</span>
                         </div>
-                        <h1 className="text-4xl font-black text-white font-heading tracking-tight italic">ÉDITION <span className="text- benin-gradient">AMBASSADEUR</span></h1>
+                        <h1 className="text-4xl font-black text-white font-heading tracking-tight italic">ÉDITION <span className="text-benin-gradient">AMBASSADEUR</span></h1>
                     </div>
                 </div>
 
@@ -120,7 +119,7 @@ export default function TestimonialsEdit() {
                     disabled={formLoading}
                     className="w-full md:w-auto bg-white text-black h-16 px-10 rounded-[1.5rem] font-black tracking-widest gap-3 shadow-2xl hover:bg-[#FCD116] transition-all"
                 >
-                    <Save size={20} /> SAUVEGARDER L'AVIS
+                    <Save size={20} /> SAUVEGARDER L&apos;AVIS
                 </Button>
             </div>
 
@@ -134,10 +133,10 @@ export default function TestimonialsEdit() {
                             {/* Author Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">Identité de l'auteur</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">Identité de l&apos;auteur</label>
                                     <input
                                         name="name"
-                                        value={formData.name}
+                                        value={formData.name || ''}
                                         onChange={handleChange}
                                         placeholder="Ex: Koffi Mensah"
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -147,7 +146,7 @@ export default function TestimonialsEdit() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">Localisation / Diaspora</label>
                                     <input
                                         name="location"
-                                        value={formData.location}
+                                        value={formData.location || ''}
                                         onChange={handleChange}
                                         placeholder="Ex: Paris, France"
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -161,7 +160,7 @@ export default function TestimonialsEdit() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">Service Concerné</label>
                                     <input
                                         name="service"
-                                        value={formData.service}
+                                        value={formData.service || ''}
                                         onChange={handleChange}
                                         placeholder="Ex: Construction Immobilière"
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -174,13 +173,13 @@ export default function TestimonialsEdit() {
                                             <button
                                                 key={s}
                                                 type="button"
-                                                onClick={() => setFormData((prev: any) => ({ ...prev, rating: s }))}
+                                                onClick={() => setFormData((prev) => ({ ...prev, rating: s }))}
                                                 className={cn(
                                                     "transition-all transform hover:scale-125",
-                                                    formData.rating >= s ? "text-[#FCD116]" : "text-gray-800"
+                                                    (formData.rating ?? 5) >= s ? "text-[#FCD116]" : "text-gray-800"
                                                 )}
                                             >
-                                                <Star size={24} fill={formData.rating >= s ? "currentColor" : "none"} />
+                                                <Star size={24} fill={(formData.rating ?? 5) >= s ? "currentColor" : "none"} />
                                             </button>
                                         ))}
                                     </div>
@@ -203,7 +202,7 @@ export default function TestimonialsEdit() {
                                 </label>
                                 <textarea
                                     name="text"
-                                    value={formData.text}
+                                    value={formData.text || ''}
                                     onChange={handleChange}
                                     rows={8}
                                     placeholder="Copiez ici le témoignage brut reçu..."
@@ -216,7 +215,7 @@ export default function TestimonialsEdit() {
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1">URL de la photo de profil</label>
                                 <input
                                     name="photo"
-                                    value={formData.photo}
+                                    value={formData.photo || ''}
                                     onChange={handleChange}
                                     placeholder="https://..."
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -238,10 +237,11 @@ export default function TestimonialsEdit() {
                             <div className="flex items-center justify-between p-6 bg-white/5 rounded-[1.5rem] border border-white/5">
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-white uppercase tracking-widest">Statut de Publication</p>
-                                    <p className="text-xs text-gray-500">Visible sur la page d'accueil</p>
+                                    <p className="text-xs text-gray-500">Visible sur la page d&apos;accueil</p>
                                 </div>
                                 <button
-                                    onClick={() => setFormData((prev: any) => ({ ...prev, approved: !prev.approved }))}
+                                    onClick={() => setFormData((prev) => ({ ...prev, approved: !prev.approved }))}
+                                    title={formData.approved ? "Désactiver" : "Activer"}
                                     className={cn(
                                         "w-16 h-8 rounded-full transition-all relative p-1",
                                         formData.approved ? "bg-green-500" : "bg-gray-800"
@@ -257,7 +257,7 @@ export default function TestimonialsEdit() {
                             <div className="flex items-center gap-6 p-6 bg-[#3b82f6]/5 rounded-[1.5rem] border border-[#3b82f6]/10">
                                 <Sparkles size={24} className="text-[#3b82f6]" />
                                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed uppercase tracking-wider">
-                                    Les témoignages approuvéés sont affichés de manière aléatoire dans le carrousel principal.
+                                    Les témoignages approuvés sont affichés de manière aléatoire dans le carrousel principal.
                                 </p>
                             </div>
                         </div>
@@ -284,7 +284,7 @@ export default function TestimonialsEdit() {
                                     </div>
                                     <div className="flex gap-1">
                                         {[...Array(5)].map((_, i) => (
-                                            <Star key={i} size={12} className={i < formData.rating ? "fill-[#FCD116] text-[#FCD116]" : "text-gray-800"} />
+                                            <Star key={i} size={12} className={i < (formData.rating ?? 5) ? "fill-[#FCD116] text-[#FCD116]" : "text-gray-800"} />
                                         ))}
                                     </div>
                                 </div>
@@ -292,7 +292,7 @@ export default function TestimonialsEdit() {
                                 <div className="relative">
                                     <Quote size={40} className="absolute -top-4 -left-4 text-white/5" />
                                     <p className="text-gray-400 text-sm leading-relaxed font-medium italic relative">
-                                        "{formData.text || 'Entrez un témoignage pour voir le rendu...'}"
+                                        &quot;{formData.text || 'Entrez un témoignage pour voir le rendu...'}&quot;
                                     </p>
                                 </div>
 

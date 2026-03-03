@@ -112,15 +112,15 @@ export default function DashboardHome() {
 }
 
 // Sub-components for cleaner code
-function ActionCard({ title, status, date, description }: any) {
+function ActionCard({ title, status, date, description }: { title: string, status: string, date?: string, description?: string }) {
     const isCompleted = status === 'completed';
     const isActive = status === 'active';
     const isLocked = status === 'locked';
 
     return (
         <div className={`p-6 rounded-xl border transition-all ${isActive
-                ? 'bg-[#0f141e] border-[#FCD116] shadow-[0_0_20px_rgba(252,209,22,0.1)] transform scale-105'
-                : 'bg-white/5 border-white/5 opacity-80'
+            ? 'bg-[#0f141e] border-[#FCD116] shadow-[0_0_20px_rgba(252,209,22,0.1)] transform scale-105'
+            : 'bg-white/5 border-white/5 opacity-80'
             }`}>
             <div className="flex justify-between items-start mb-2">
                 {isCompleted && <CheckCircle className="text-[#008751]" size={24} />}
@@ -138,7 +138,7 @@ function ActionCard({ title, status, date, description }: any) {
     )
 }
 
-function NotifItem({ icon: Icon, color, title, desc, time }: any) {
+function NotifItem({ icon: Icon, color, title, desc, time }: { icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>, color: string, title: string, desc: string, time: string }) {
     return (
         <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
             <div className="p-2 rounded bg-white/5 group-hover:bg-white/10">
@@ -155,7 +155,7 @@ function NotifItem({ icon: Icon, color, title, desc, time }: any) {
     )
 }
 
-function DocItem({ name, size }: any) {
+function DocItem({ name, size }: { name: string, size: string }) {
     return (
         <div className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-white/20 cursor-pointer bg-black/20">
             <div className="flex items-center gap-3">

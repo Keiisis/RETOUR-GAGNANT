@@ -282,7 +282,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 document.head.appendChild(script)
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, settings.paypal_client_id, settings.paypal_currency])
 
     const validateInfo = () => {
@@ -523,8 +523,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             id: 'kkiapay' as PaymentProvider,
             name: 'Kkiapay',
             subtitle: 'Mobile Money (MTN, Moov) / Carte',
-            classes: 'bg-[#4A90D9]/20 border-[#4A90D9]/40 text-[#4A90D9]',
-            icon: 'K',
+            classes: 'bg-[#4A90D9]/10 border-[#4A90D9]/30',
+            logo: '/assets/icones moyens de paiement/kkiapay.png',
             handler: handleKkiapay,
             isReady: settings.kkiapay_enabled === 'true' && !!settings.kkiapay_public_key,
         },
@@ -532,8 +532,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             id: 'fedapay' as PaymentProvider,
             name: 'FedaPay',
             subtitle: 'Mobile Money / Carte bancaire',
-            classes: 'bg-[#2ECC71]/20 border-[#2ECC71]/40 text-[#2ECC71]',
-            icon: 'F',
+            classes: 'bg-[#2ECC71]/10 border-[#2ECC71]/30',
+            logo: '/assets/icones moyens de paiement/fedapay.png',
             handler: handleFedapay,
             isReady: settings.fedapay_enabled === 'true' && !!settings.fedapay_public_key,
         },
@@ -541,8 +541,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             id: 'zeyow' as PaymentProvider,
             name: 'Zeyow',
             subtitle: 'Carte Virtuelle',
-            classes: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]',
-            icon: 'Z',
+            classes: 'bg-[#FF6B35]/10 border-[#FF6B35]/30',
+            logo: '/assets/icones moyens de paiement/zeyow.jpg',
             handler: handleZeyow,
             isReady: settings.zeyow_enabled === 'true' && !!settings.zeyow_redirect_url,
         },
@@ -550,8 +550,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             id: 'stripe' as PaymentProvider,
             name: 'Stripe',
             subtitle: 'Carte bancaire internationale',
-            classes: 'bg-[#635BFF]/20 border-[#635BFF]/40 text-[#635BFF]',
-            icon: 'S',
+            classes: 'bg-[#635BFF]/10 border-[#635BFF]/30',
+            logo: '/assets/icones moyens de paiement/Stripe.png',
             handler: handleStripe,
             isReady: settings.stripe_enabled === 'true' && !!settings.stripe_public_key,
         },
@@ -559,8 +559,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             id: 'paypal' as PaymentProvider,
             name: 'PayPal',
             subtitle: 'Compte PayPal Business',
-            classes: 'bg-[#009CDE]/20 border-[#009CDE]/40 text-[#009CDE]',
-            icon: 'P',
+            classes: 'bg-[#009CDE]/10 border-[#009CDE]/30',
+            logo: '/assets/icones moyens de paiement/paypal.png',
             handler: handlePayPal,
             isReady: settings.paypal_enabled === 'true' && !!settings.paypal_client_id,
         },
@@ -714,21 +714,27 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                         <p className="text-sm text-gray-400 text-center">Aucune passerelle active.</p>
                                     </div>
                                 ) : providers.map(p => (
-                                    <button
+                                    <motion.button
                                         key={p.id}
                                         type="button"
                                         onClick={p.handler}
-                                        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group text-left"
+                                        whileHover={{ scale: 1.02, y: -2 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 hover:bg-white/[0.05] transition-all group text-left"
                                     >
-                                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-base border ${p.classes}`}>
-                                            {p.icon}
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border overflow-hidden ${p.classes}`}>
+                                            <img
+                                                src={p.logo}
+                                                alt={p.name}
+                                                className="w-7 h-7 object-contain transition-transform duration-300 group-hover:scale-110"
+                                            />
                                         </div>
                                         <div className="flex-1">
                                             <p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p>
                                             <p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p>
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
-                                    </button>
+                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                                    </motion.button>
                                 ))}
                                 <div className="flex items-center gap-2 text-gray-600 justify-center mt-3">
                                     <Shield size={13} />
@@ -795,8 +801,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {step === 'paypal-form' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-8 h-8 rounded-lg bg-[#009CDE]/20 border border-[#009CDE]/30 flex items-center justify-center">
-                                        <span className="text-[#009CDE] font-black text-sm">P</span>
+                                    <div className="w-8 h-8 rounded-lg bg-[#009CDE]/10 border border-[#009CDE]/30 flex items-center justify-center overflow-hidden">
+                                        <img src="/assets/icones moyens de paiement/paypal.png" alt="PayPal" className="w-5 h-5 object-contain" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-white">Paiement via PayPal</p>

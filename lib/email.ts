@@ -108,8 +108,14 @@ export async function sendEmail(options: {
         });
 
         return { success: true };
-    } catch (err: any) {
-        console.error('[EMAIL] Send error:', err.message);
+    } catch (err) {
+        let errorMessage = 'Unknown error';
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        } else if (typeof err === 'string') {
+            errorMessage = err;
+        }
+        console.error('[EMAIL] Send error:', errorMessage);
 
         // Log the failure
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -120,10 +126,10 @@ export async function sendEmail(options: {
             context: options.context || 'manual',
             related_id: options.relatedId || null,
             status: 'failed',
-            smtp_response: err.message,
+            smtp_response: errorMessage,
         });
 
-        return { success: false, error: err.message };
+        return { success: false, error: errorMessage };
     }
 }
 

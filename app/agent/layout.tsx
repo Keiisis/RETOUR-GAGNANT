@@ -173,6 +173,17 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         }
 
         checkAuth()
+
+        // Écoute les changements de session (expiration, déconnexion depuis un autre onglet)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+                if (event === 'SIGNED_OUT') {
+                    window.location.href = '/agent/login'
+                }
+            }
+        })
+
+        return () => { subscription.unsubscribe() }
     }, [isLoginPage])
 
 
@@ -180,16 +191,25 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     useEffect(() => {
         if (isLoginPage || !agent?.id) return
 
-        const sendHeartbeat = () => {
-            fetch('/api/agent/heartbeat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: agent.id }),
-            }).catch(() => { /* silent */ })
+        // Mise à jour directe via le client authentifié (évite les problèmes de service key)
+        const sendHeartbeat = async () => {
+            try {
+                await supabase
+                    .from('user_profiles')
+                    .update({ last_seen_at: new Date().toISOString() })
+                    .eq('id', agent.id)
+            } catch {
+                // Fallback API en cas d'échec
+                fetch('/api/agent/heartbeat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: agent.id }),
+                }).catch(() => { /* silent */ })
+            }
         }
 
         sendHeartbeat() // Send immediately on load
-        const interval = setInterval(sendHeartbeat, 60_000) // Every 60s
+        const interval = setInterval(sendHeartbeat, 30_000) // Every 30s (était 60s)
 
         return () => clearInterval(interval)
     }, [isLoginPage, agent?.id])

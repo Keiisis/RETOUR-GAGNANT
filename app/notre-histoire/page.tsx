@@ -5,7 +5,7 @@ import { useRef } from 'react'
 import Link from 'next/link'
 import {
     Target, Users, Heart, Shield, Compass,
-    ArrowRight, Lightbulb, TrendingUp, Star,
+    ArrowRight, Lightbulb, Star,
     Globe, Handshake, Award
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -110,10 +110,10 @@ const stats = [
 
 export default function NotreHistoirePage() {
     const { sections } = usePageSections('notre-histoire')
-    const dynFounders: FounderData[] = sections.founders || founders
-    const dynTimeline: TimelineItem[] = sections.timeline || timelineItems
-    const dynStats = sections.stats || stats
-    const dynValues = sections.values || values
+    const dynFounders = (sections.founders || founders) as unknown as FounderData[]
+    const dynTimeline = (sections.timeline || timelineItems) as unknown as TimelineItem[]
+    const dynStats = (sections.stats || stats) as unknown as typeof stats
+    const dynValues = (sections.values || values) as unknown as typeof values
 
     const heroRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
@@ -155,13 +155,13 @@ export default function NotreHistoirePage() {
                         </div>
 
                         <h1 className="text-5xl sm:text-6xl md:text-8xl font-black font-heading tracking-tighter leading-[0.9] mb-8">
-                            Nés d'une{' '}
+                            N&eacute;s d&apos;une{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">
                                 Vision
                             </span>
                             <br />
                             <span className="text-gray-400 text-3xl sm:text-4xl md:text-5xl font-light italic tracking-normal">
-                                Portés par une Mission
+                                Port&eacute;s par une Mission
                             </span>
                         </h1>
 
@@ -231,14 +231,14 @@ export default function NotreHistoirePage() {
                                 juridiques et logistiques.
                             </p>
                             <p>
-                                Les démarches étaient opaques, les interlocuteurs dispersés, et les arnaques fréquentes.
-                                Combien de projets de retour ont été abandonnés faute d'accompagnement ? Combien de rêves
-                                ont été brisés par la bureaucratie ?
+                                Les d&eacute;marches &eacute;taient opaques, les interlocuteurs dispers&eacute;s, et les arnaques fr&eacute;quentes.
+                                Combien de projets de retour ont &eacute;t&eacute; abandonn&eacute;s faute d&apos;accompagnement ? Combien de r&ecirc;ves
+                                ont &eacute;t&eacute; bris&eacute;s par la bureaucratie ?
                             </p>
                             <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 border-l-2 border-l-[#FCD116]">
                                 <p className="text-white/80 italic font-medium">
-                                    "Il fallait que quelqu'un se lève et dise : plus jamais un retour ne sera un parcours du combattant.
-                                    C'est cette conviction qui a tout déclenché."
+                                    &quot;Il fallait que quelqu&apos;un se l&egrave;ve et dise : plus jamais un retour ne sera un parcours du combattant.
+                                    C&apos;est cette conviction qui a tout d&eacute;clench&eacute;.&quot;
                                 </p>
                             </div>
                         </div>
@@ -268,9 +268,9 @@ export default function NotreHistoirePage() {
                             <span className="w-12 h-[2px] bg-[#008751]" />
                         </div>
                         <h2 className="text-4xl md:text-5xl font-black font-heading tracking-tighter">
-                            De l'Idée  la{' '}
+                            De l&apos;Id&eacute;e &agrave; la{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] to-[#FCD116]">
-                                Réalité
+                                R&eacute;alit&eacute;
                             </span>
                         </h2>
                     </motion.div>
@@ -285,7 +285,7 @@ export default function NotreHistoirePage() {
             <section className="py-20 relative">
                 <div className="container mx-auto px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {dynStats.map((stat: any, i: number) => (
+                        {dynStats.map((stat: (typeof stats)[number], i: number) => (
                             <motion.div
                                 key={stat.label}
                                 initial={{ opacity: 0, y: 30 }}
@@ -337,8 +337,8 @@ export default function NotreHistoirePage() {
                             </span>
                         </h2>
                         <p className="text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
-                            Rencontrez les promoteurs qui ont donné vie à cette vision et qui continuent de porter
-                            l'ambition de Retour Gagnant chaque jour.
+                            Rencontrez les promoteurs qui ont donn&eacute; vie &agrave; cette vision et qui continuent de porter
+                            l&apos;ambition de Retour Gagnant chaque jour.
                         </p>
                     </motion.div>
 
@@ -376,7 +376,7 @@ export default function NotreHistoirePage() {
                     </motion.div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {dynValues.map((val: any, i: number) => {
+                        {dynValues.map((val: (typeof values)[number], i: number) => {
                             const IconComp = val.icon && typeof val.icon !== 'string' ? val.icon : Target
                             return (
                                 <motion.div

@@ -45,8 +45,9 @@ export async function POST(request: Request) {
         if (msgError) throw msgError;
 
         return NextResponse.json({ sessionId: sessionData.id });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Live Chat Start Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

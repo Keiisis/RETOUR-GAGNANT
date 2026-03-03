@@ -12,17 +12,18 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Service } from "../page";
 
 export default function ServicesCreate() {
     const { list } = useNavigation();
 
-    const { onFinish, formLoading } = useForm<any>({
+    const { onFinish, formLoading } = useForm<Service>({
         resource: "services",
         redirect: "list",
         action: "create"
     });
 
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<Service>>({
         title: "",
         description: "",
         icon: "ShieldCheck",
@@ -33,7 +34,7 @@ export default function ServicesCreate() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -57,7 +58,7 @@ export default function ServicesCreate() {
             });
             const data = await resp.json();
             if (data.text) {
-                setFormData((prev: any) => ({ ...prev, description: data.text }));
+                setFormData((prev) => ({ ...prev, description: data.text }));
             }
         } catch (error) {
             console.error(error);
@@ -112,7 +113,7 @@ export default function ServicesCreate() {
                                 </label>
                                 <input
                                     name="title"
-                                    value={formData.title}
+                                    value={formData.title || ''}
                                     onChange={handleChange}
                                     placeholder="Ex: Accompagnement Immobilier"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-[1.5rem] py-6 px-8 text-white text-3xl font-black font-heading focus:outline-none focus:border-[#008751]/40 transition-all placeholder:text-gray-800"
@@ -129,7 +130,7 @@ export default function ServicesCreate() {
                                             <button
                                                 key={c}
                                                 type="button"
-                                                onClick={() => setFormData((prev: any) => ({ ...prev, color: c }))}
+                                                onClick={() => setFormData((prev) => ({ ...prev, color: c }))}
                                                 className={cn(
                                                     "w-10 h-10 rounded-xl transition-all border-2",
                                                     formData.color === c ? "border-white scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
@@ -146,7 +147,7 @@ export default function ServicesCreate() {
                                     <input
                                         type="number"
                                         name="order"
-                                        value={formData.order}
+                                        value={formData.order ?? 0}
                                         onChange={handleChange}
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xl font-black focus:outline-none"
                                     />
@@ -160,7 +161,7 @@ export default function ServicesCreate() {
                                 <input
                                     type="text"
                                     name="image_url"
-                                    value={formData.image_url}
+                                    value={formData.image_url || ''}
                                     onChange={handleChange}
                                     placeholder="/assets/icones/icone-example.png"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-base focus:outline-none focus:border-white/20 transition-all placeholder:text-gray-800"
@@ -173,7 +174,7 @@ export default function ServicesCreate() {
                                 </label>
                                 <textarea
                                     name="description"
-                                    value={formData.description}
+                                    value={formData.description || ''}
                                     onChange={handleChange}
                                     rows={10}
                                     placeholder="Décrivez en détail la portée et les bénéfices de ce service..."
@@ -188,14 +189,14 @@ export default function ServicesCreate() {
                     <div className="sticky top-10 space-y-10">
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] ml-2">Aperçu en Direct</span>
                         <Card className="group relative bg-[#0a0f18] border-white/5 rounded-[3.5rem] p-12 overflow-hidden shadow-3xl h-[600px] flex flex-col justify-between">
-                            <div className="absolute -top-20 -right-20 w-64 h-64 opacity-10 blur-[100px]" style={{ backgroundColor: formData.color }} />
+                            <div className="absolute -top-20 -right-20 w-64 h-64 opacity-10 blur-[100px]" style={{ backgroundColor: formData.color || undefined }} />
                             <div className="relative z-10">
                                 <div className="w-24 h-24 rounded-[2.5rem] bg-benin-gradient p-[1px] mb-12 shadow-2xl">
                                     <div className="w-full h-full bg-[#0a0f18] rounded-[2.5rem] flex items-center justify-center">
                                         {formData.image_url ? (
                                             <img src={formData.image_url} alt="" className="w-20 h-20 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)]" />
                                         ) : (
-                                            <ShieldCheck size={40} style={{ color: formData.color }} />
+                                            <ShieldCheck size={40} style={{ color: formData.color || undefined }} />
                                         )}
                                     </div>
                                 </div>

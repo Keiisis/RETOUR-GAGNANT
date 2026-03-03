@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FileSignature, Plus, Send, CheckCircle2, Clock,
-    X, Save, User, Mail, DollarSign, FileText, Search
+    X, Save, User, Mail, DollarSign, FileText, Search,
+    LucideIcon
 } from 'lucide-react'
 
 interface Contract {
@@ -76,7 +77,7 @@ export default function AdminContractsPage() {
         fetchContracts()
     }
 
-    const statusConfig: Record<string, { label: string, color: string, icon: any }> = {
+    const statusConfig: Record<string, { label: string, color: string, icon: LucideIcon }> = {
         brouillon: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400', icon: FileText },
         envoye: { label: 'Envoyé', color: 'bg-blue-500/20 text-blue-400', icon: Send },
         signe: { label: 'Signé', color: 'bg-emerald-500/20 text-emerald-400', icon: CheckCircle2 },

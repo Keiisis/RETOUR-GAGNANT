@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FolderOpen, CheckCircle2, XCircle, Clock, FileText,
-    User, Mail, Calendar, Search
+    User, Mail, Calendar, Search, LucideIcon
 } from 'lucide-react'
 
 interface ClientDocument {
@@ -44,7 +44,7 @@ export default function AdminDocumentsPage() {
         fetchDocs()
     }
 
-    const statusConfig: Record<string, { label: string, color: string, Icon: any }> = {
+    const statusConfig: Record<string, { label: string, color: string, Icon: LucideIcon }> = {
         en_attente: { label: 'En attente', color: 'bg-amber-500/20 text-amber-400', Icon: Clock },
         valide: { label: 'Validé', color: 'bg-emerald-500/20 text-emerald-400', Icon: CheckCircle2 },
         rejete: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400', Icon: XCircle },

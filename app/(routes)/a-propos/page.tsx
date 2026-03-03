@@ -1,20 +1,32 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Target, Heart, Globe, Users, Award, ArrowRight } from 'lucide-react';
 import { usePageSections } from '@/lib/hooks/usePageSections';
 
-const values = [
+interface ValueItem {
+    icon?: React.ElementType
+    title: string
+    desc?: string
+    description?: string
+}
+
+const values: ValueItem[] = [
     { icon: Target, title: "Excellence", desc: "Un service irréprochable à chaque étape de votre retour." },
     { icon: Heart, title: "Engagement", desc: "Votre réussite est notre mission première." },
     { icon: Globe, title: "Proximité", desc: "Présents au Bénin et dans la diaspora." },
     { icon: Users, title: "Confiance", desc: "Plus de 500 familles nous ont fait confiance." },
 ];
 
-const team = [
+interface TeamMember {
+    name: string
+    role: string
+    emoji: string
+}
+
+const team: TeamMember[] = [
     { name: "Équipe Juridique", role: "Passeports & Documents", emoji: "⚖️" },
     { name: "Équipe Immobilier", role: "Logement & Construction", emoji: "🏠" },
     { name: "Équipe Business", role: "Investissement & Entreprise", emoji: "💼" },
@@ -23,8 +35,8 @@ const team = [
 
 export default function AProposPage() {
     const { sections } = usePageSections('a-propos')
-    const dynamicValues = sections.values || values
-    const dynamicTeam = sections.team || team
+    const dynamicValues = (sections.values as unknown as ValueItem[]) || values
+    const dynamicTeam = (sections.team as unknown as TeamMember[]) || team
 
     return (
         <div className="min-h-screen">
@@ -53,7 +65,7 @@ export default function AProposPage() {
                         </h1>
                         <p className="text-xl text-white/70 leading-relaxed">
                             Retour Gagnant accompagne la diaspora béninoise dans toutes les étapes de son retour.
-                            Du passeport à l'investissement, nous transformons votre rêve de retour en réalité concrète.
+                            Du passeport à l&apos;investissement, nous transformons votre rêve de retour en réalité concrète.
                         </p>
                     </motion.div>
                 </div>
@@ -74,14 +86,14 @@ export default function AProposPage() {
                                 Née de la diaspora,<br />pour la diaspora
                             </h2>
                             <p className="text-gray-600 leading-relaxed text-lg">
-                                Fondée par des membres de la diaspora béninoise ayant eux-mêmes vécu l'expérience
-                                du retour, Retour Gagnant est née d'un constat simple : rentrer au pays ne devrait
+                                Fondée par des membres de la diaspora béninoise ayant eux-mêmes vécu l&apos;expérience
+                                du retour, Retour Gagnant est née d&apos;un constat simple : rentrer au pays ne devrait
                                 pas être un parcours du combattant.
                             </p>
                             <p className="text-gray-600 leading-relaxed">
-                                Aujourd'hui, nous avons accompagné plus de 500 projets de retour réussis.
+                                Aujourd&apos;hui, nous avons accompagné plus de 500 projets de retour réussis.
                                 Des passeports aux investissements immobiliers, en passant par la création
-                                d'entreprises, nous sommes le partenaire de confiance de la diaspora.
+                                d&apos;entreprise, nous sommes le partenaire de confiance de la diaspora.
                             </p>
                             <Link href="/rendez-vous">
                                 <Button className="bg-[#008751] text-white hover:bg-[#006B40] mt-4 font-semibold px-8 py-6 text-base rounded-xl">
@@ -119,7 +131,7 @@ export default function AProposPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
-                        {dynamicValues.map((v: any, i: number) => {
+                        {dynamicValues.map((v, i) => {
                             const IconComp = v.icon && typeof v.icon !== 'string' ? v.icon : null
                             return (
                                 <motion.div
@@ -153,7 +165,7 @@ export default function AProposPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-                        {dynamicTeam.map((m: any, i: number) => (
+                        {dynamicTeam.map((m, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.95 }}

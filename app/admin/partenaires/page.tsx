@@ -56,7 +56,7 @@ export default function AdminPartenaires() {
     const handleSave = async () => {
         setSaving(true)
         const partnerData = { ...form }
-        delete (partnerData as any).id
+        delete partnerData.id
 
         if (editing === 'new') {
             await supabase.from('partners').insert([partnerData])

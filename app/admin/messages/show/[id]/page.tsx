@@ -16,10 +16,33 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+interface ChatMessage {
+    id: string;
+    conversation_id: string;
+    role: 'agent' | 'client';
+    content: string;
+    created_at: string;
+}
+
+interface MessageRecord {
+    id: string;
+    type: string;
+    nom: string;
+    prenom: string;
+    email: string;
+    telephone?: string;
+    sujet?: string;
+    message: string;
+    created_at: string;
+    lu?: boolean;
+    date_rdv?: string;
+    duree?: string;
+}
+
 export default function MessageShow() {
     const { id } = useParams();
     const { list } = useNavigation();
-    const { query } = useShow<any>({
+    const { query } = useShow<MessageRecord>({
         resource: "messages",
         id: id as string,
     });
@@ -33,7 +56,7 @@ export default function MessageShow() {
     const [isDrafting, setIsDrafting] = useState(false);
     const [draft, setDraft] = useState("");
 
-    const [liveMessages, setLiveMessages] = useState<any[]>([]);
+    const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +81,7 @@ export default function MessageShow() {
                 table: 'chat_messages',
                 filter: `conversation_id=eq.${id}`
             }, (payload) => {
-                const newMsg = payload.new;
+                const newMsg = payload.new as ChatMessage;
                 setLiveMessages(prev => {
                     if (prev.find(m => m.id === newMsg.id)) return prev;
                     return [...prev, newMsg];
@@ -322,7 +345,7 @@ export default function MessageShow() {
                                                     </div>
                                                     <div>
                                                         <h4 className="text-white font-black font-heading text-lg">Générer une réponse stratégique ?</h4>
-                                                        <p className="text-sm text-gray-500 font-medium">L'IA KAGE peut rédiger un brouillon adapté au ton du client.</p>
+                                                        <p className="text-sm text-gray-500 font-medium">L&apos;IA KAGE peut rédiger un brouillon adapté au ton du client.</p>
                                                     </div>
                                                 </div>
                                                 <Button
@@ -446,7 +469,7 @@ export default function MessageShow() {
     );
 }
 
-function ContactInfo({ icon: Icon, value, label }: any) {
+function ContactInfo({ icon: Icon, value, label }: { icon: React.ComponentType<{ size?: number; className?: string }>, value: string, label: string }) {
     return (
         <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all text-left">
             <div>
@@ -460,7 +483,7 @@ function ContactInfo({ icon: Icon, value, label }: any) {
     );
 }
 
-function DataField({ label, value, icon: Icon, color }: any) {
+function DataField({ label, value, icon: Icon, color }: { label: string, value: string, icon: React.ComponentType<{ size?: number; className?: string }>, color: string }) {
     return (
         <div className="p-6 bg-white/[0.03] border border-white/5 rounded-3xl flex items-center gap-5">
             <div className="p-3 rounded-xl bg-white/5" style={{ color }}>
@@ -474,7 +497,7 @@ function DataField({ label, value, icon: Icon, color }: any) {
     );
 }
 
-function ToolButton({ icon: Icon, label }: any) {
+function ToolButton({ icon: Icon, label }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string }) {
     return (
         <button className="flex flex-col items-center justify-center p-6 bg-[#0a0f18] border border-white/5 rounded-[1.5rem] hover:bg-white/10 transition-all group">
             <Icon size={20} className="text-gray-600 group-hover:text-white transition-colors mb-2" />

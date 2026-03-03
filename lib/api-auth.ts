@@ -102,11 +102,11 @@ export const verifyApiAuth = async (
         }
 
         return { authenticated: true, userId: user.id }
-    } catch (e: any) {
+    } catch (e) {
         return {
             authenticated: false,
             error: NextResponse.json(
-                { error: 'Erreur d\'authentification: ' + e.message },
+                { error: 'Erreur d\'authentification: ' + (e instanceof Error ? e.message : String(e)) },
                 { status: 500 }
             ),
         }

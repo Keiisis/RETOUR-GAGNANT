@@ -9,14 +9,24 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+interface EmailTemplate {
+    id: number;
+    name: string;
+    slug: string;
+    subject: string;
+    html_body: string;
+    variables?: string[];
+    created_at?: string;
+    updated_at?: string;
+}
+
 export default function EmailTemplatesList() {
-    const queryResult = useList({
+    const queryResult = useList<EmailTemplate>({
         resource: 'email_templates',
         sorters: [{ field: 'created_at', order: 'desc' }],
     })
-
-    const data = (queryResult as any).data || (queryResult as any).query?.data
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading
+    const data = queryResult.query?.data
+    const isLoading = queryResult.query?.isLoading
     const { mutate: updateTemplate } = useUpdate()
 
     const items = data?.data || []
@@ -27,7 +37,7 @@ export default function EmailTemplatesList() {
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
 
-    const handleEdit = (item: any) => {
+    const handleEdit = (item: EmailTemplate) => {
         setEditingId(item.id)
         setEditForm({ subject: item.subject, html_body: item.html_body })
         setPreviewId(null)
@@ -74,7 +84,7 @@ export default function EmailTemplatesList() {
             </div>
 
             {/* Template Cards */}
-            {items.map((item: any) => (
+            {items.map((item: EmailTemplate) => (
                 <Card key={item.id} className="bg-[#0a0f18] border-white/5 rounded-[2rem] overflow-hidden">
                     <div className="p-8 flex items-center justify-between border-b border-white/5">
                         <div className="flex items-center gap-5">
@@ -124,7 +134,7 @@ export default function EmailTemplatesList() {
                     {editingId === item.id && (
                         <div className="p-8 space-y-6 animate-in fade-in">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Objet de l'email</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">Objet de l&apos;email</label>
                                 <input
                                     value={editForm.subject}
                                     onChange={(e) => setEditForm((p) => ({ ...p, subject: e.target.value }))}

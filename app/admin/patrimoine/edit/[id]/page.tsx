@@ -2,37 +2,34 @@
 
 import { useForm, useNavigation, useList } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowLeft, Save, MapPin, Image as ImageIcon,
-    Sparkles, Loader2, Info, Plus, Trash2,
-    Grid, Check, X
-} from "lucide-react";
+import { ArrowLeft, Save, MapPin, Image as ImageIcon, Sparkles, Loader2, Plus, Trash2, Grid, Check, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Patrimoine } from "../../page";
 
 export default function PatrimonioEdit() {
     const { id } = useParams();
     const { list } = useNavigation();
 
-    const { onFinish, query, formLoading } = useForm<any>({
+    const { onFinish, query, formLoading } = useForm<Patrimoine>({
         resource: "patrimoine",
         id: id as string,
         redirect: "list",
         action: "edit"
     });
 
-    const { query: galleryQuery } = useList<any>({
+    const { query: galleryQuery } = useList<{ id: string, url?: string, image_url?: string }>({
         resource: "gallery",
         pagination: { pageSize: 100 }
     });
 
     const galleryData = galleryQuery?.data;
     const record = query?.data?.data;
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<Patrimoine>>({
         title: "",
         location: "",
         description: "",
@@ -56,7 +53,7 @@ export default function PatrimonioEdit() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const toggleGalleryImage = (url: string) => {
@@ -67,7 +64,7 @@ export default function PatrimonioEdit() {
         } else {
             currentGallery.push(url);
         }
-        setFormData((prev: any) => ({ ...prev, gallery: currentGallery }));
+        setFormData((prev) => ({ ...prev, gallery: currentGallery }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -91,7 +88,7 @@ export default function PatrimonioEdit() {
             });
             const data = await resp.json();
             if (data.text) {
-                setFormData((prev: any) => ({ ...prev, description: data.text }));
+                setFormData((prev) => ({ ...prev, description: data.text }));
             }
         } catch (error) {
             console.error(error);
@@ -104,7 +101,7 @@ export default function PatrimonioEdit() {
         return (
             <div className="flex flex-col items-center justify-center py-32 space-y-4">
                 <Loader2 className="animate-spin text-[#FCD116]" size={40} />
-                <p className="text-gray-500 font-mono text-sm">Synchronisation avec l'archive...</p>
+                <p className="text-gray-500 font-mono text-sm">Synchronisation avec l&apos;archive...</p>
             </div>
         );
     }
@@ -121,7 +118,7 @@ export default function PatrimonioEdit() {
                         <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-black font-heading text-white tracking-tight">Configuration de l'Archive</h1>
+                        <h1 className="text-3xl font-black font-heading text-white tracking-tight">Configuration de l&apos;Archive</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Node ID:</span>
                             <span className="text-[#FCD116] font-mono text-xs">{id}</span>
@@ -153,7 +150,7 @@ export default function PatrimonioEdit() {
                                 </label>
                                 <input
                                     name="title"
-                                    value={formData.title}
+                                    value={formData.title || ''}
                                     onChange={handleChange}
                                     placeholder="Ex: Palais Royaux d'Abomey"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-[1.5rem] py-5 px-8 text-white focus:outline-none focus:border-[#FCD116]/30 transition-all text-2xl font-black font-heading placeholder:text-gray-700"
@@ -167,7 +164,7 @@ export default function PatrimonioEdit() {
                                     </label>
                                     <input
                                         name="location"
-                                        value={formData.location}
+                                        value={formData.location || ''}
                                         onChange={handleChange}
                                         placeholder="Ex: Abomey, Sud Bénin"
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:border-[#008751]/40 transition-all"
@@ -179,7 +176,7 @@ export default function PatrimonioEdit() {
                                     </label>
                                     <input
                                         name="imagename"
-                                        value={formData.imagename}
+                                        value={formData.imagename || ''}
                                         onChange={handleChange}
                                         placeholder="image.jpg ou https://..."
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -193,7 +190,7 @@ export default function PatrimonioEdit() {
                                 </label>
                                 <textarea
                                     name="description"
-                                    value={formData.description}
+                                    value={formData.description || ''}
                                     onChange={handleChange}
                                     rows={8}
                                     placeholder="Déployez l'histoire captivante de ce lieu..."
@@ -210,7 +207,7 @@ export default function PatrimonioEdit() {
                         <div className="flex justify-between items-center mb-8">
                             <div className="space-y-1">
                                 <h3 className="text-2xl font-black text-white font-heading">Galerie Média</h3>
-                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Gérez l'immersion visuelle</p>
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Gérez l&apos;immersion visuelle</p>
                             </div>
                             <Button
                                 onClick={() => setIsGalleryModalOpen(true)}
@@ -355,18 +352,21 @@ export default function PatrimonioEdit() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 scrollbar-hide">
-                                {galleryData?.data?.map((img: any) => {
-                                    const isSelected = formData.gallery?.includes(img.url || img.image_url);
+                                {galleryData?.data?.map((img) => {
+                                    const imageSource = img.url || img.image_url;
+                                    const isSelected = formData.gallery?.includes(imageSource || "");
                                     return (
                                         <div
                                             key={img.id}
-                                            onClick={() => toggleGalleryImage(img.url || img.image_url)}
+                                            onClick={() => {
+                                                if (imageSource) toggleGalleryImage(imageSource);
+                                            }}
                                             className={cn(
                                                 "aspect-square relative rounded-[2rem] overflow-hidden cursor-pointer transition-all duration-500 group border-2",
                                                 isSelected ? "border-[#FCD116] scale-95 shadow-[0_0_30px_rgba(252,209,22,0.3)]" : "border-transparent group-hover:border-white/20"
                                             )}
                                         >
-                                            <Image src={img.url || img.image_url} alt="Gallery" fill className="object-cover" />
+                                            <Image src={imageSource || ''} alt="Gallery" fill className="object-cover" />
                                             <div className={cn(
                                                 "absolute inset-0 transition-all duration-500",
                                                 isSelected ? "bg-[#FCD116]/20" : "bg-black/40 group-hover:bg-black/0"

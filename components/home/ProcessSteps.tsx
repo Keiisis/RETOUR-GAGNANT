@@ -33,12 +33,12 @@ export default function ProcessSteps() {
                     .order('order', { ascending: true })
 
                 if (!error && data && data.length > 0) {
-                    setSteps(data.map((item: any) => ({
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        icon_type: item.icon_type || 'cowrie',
-                        order: item.order,
+                    setSteps(data.map((item: Record<string, unknown>) => ({
+                        id: Number(item.id),
+                        title: String(item.title),
+                        description: String(item.description),
+                        icon_type: String(item.icon_type) || 'cowrie',
+                        order: Number(item.order),
                     })))
                 }
             } catch {

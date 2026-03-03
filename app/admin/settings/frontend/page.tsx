@@ -11,14 +11,21 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+interface SettingItem {
+    id: string;
+    key: string;
+    value: string;
+    description?: string;
+}
+
 export default function FrontendSettingsPage() {
-    const queryResult = useList({
+    const queryResult = useList<SettingItem>({
         resource: "settings",
         pagination: { mode: "off" }
-    }) as any;
+    });
 
-    const settingsData = queryResult.data || queryResult.query?.data;
-    const isLoading = queryResult.isLoading || queryResult.query?.isLoading;
+    const settingsData = queryResult.query?.data;
+    const isLoading = queryResult.query?.isLoading;
 
     const { mutate: updateSetting } = useUpdate();
     const [isSaving, setIsSaving] = useState(false);
@@ -43,9 +50,9 @@ export default function FrontendSettingsPage() {
             const newIds: Record<string, string> = {};
             let loadedLinks: { label: string, href: string }[] = [];
 
-            settingsData.data.forEach((item: any) => {
+            settingsData.data.forEach((item) => {
                 if (item.key in newForm) {
-                    (newForm as any)[item.key] = item.value || "";
+                    (newForm as Record<string, string>)[item.key] = item.value || "";
                     newIds[item.key] = item.id;
                 }
 
@@ -127,7 +134,7 @@ export default function FrontendSettingsPage() {
         return (
             <div className="min-h-[50vh] flex flex-col items-center justify-center">
                 <Loader2 className="animate-spin text-purple-500 mb-4" size={40} />
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Chargement de l'interface visuelle...</p>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Chargement de l&apos;interface visuelle...</p>
             </div>
         );
     }
@@ -165,7 +172,7 @@ export default function FrontendSettingsPage() {
                             </div>
                             <div>
                                 <h3 className="text-xl font-black text-white">Identité Visuelle</h3>
-                                <p className="text-xs text-gray-500">Textes d'accroche et couleurs</p>
+                                <p className="text-xs text-gray-500">Textes d&apos;accroche et couleurs</p>
                             </div>
                         </div>
 
@@ -188,7 +195,7 @@ export default function FrontendSettingsPage() {
                                     value={form.frontend_hero_subtitle}
                                     onChange={handleChange}
                                     rows={4}
-                                    placeholder="Bâtissons l'avenir..."
+                                    placeholder="Bâtissons l&apos;avenir..."
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-purple-500/50 transition-all font-medium text-sm"
                                 />
                             </div>
@@ -202,7 +209,7 @@ export default function FrontendSettingsPage() {
                                         type="color"
                                         name="frontend_colors_primary"
                                         value={form.frontend_colors_primary}
-                                        onChange={handleChange as any}
+                                        onChange={handleChange}
                                         className="w-14 h-14 rounded-2xl cursor-pointer bg-transparent border-none outline-none overflow-hidden"
                                     />
                                     <input
@@ -232,7 +239,7 @@ export default function FrontendSettingsPage() {
 
                         <div className="space-y-6">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">URL Vidéo d'Arrière-plan (MP4 ou lien web)</label>
+                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">URL Vidéo d&apos;Arrière-plan (MP4 ou lien web)</label>
                                 <input
                                     name="frontend_hero_video"
                                     value={form.frontend_hero_video}
@@ -244,7 +251,7 @@ export default function FrontendSettingsPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">URL Musique d'Ambiance (MP3)</label>
+                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">URL Musique d&apos;Ambiance (MP3)</label>
                                 <input
                                     name="frontend_hero_audio"
                                     value={form.frontend_hero_audio}
@@ -252,7 +259,7 @@ export default function FrontendSettingsPage() {
                                     placeholder="/audio/ambient.mp3"
                                     className="w-full bg-[#131b2c] border border-blue-500/30 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-blue-500 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] transition-all font-mono text-sm"
                                 />
-                                <p className="text-[10px] text-gray-500 font-bold ml-1">Le son s'activera au clic ou à l'interaction de l'utilisateur.</p>
+                                <p className="text-[10px] text-gray-500 font-bold ml-1">Le son s&apos;activera au clic ou à l&apos;interaction de l&apos;utilisateur.</p>
                             </div>
 
                             {form.frontend_hero_video && (

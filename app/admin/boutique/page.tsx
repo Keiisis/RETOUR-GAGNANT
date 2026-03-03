@@ -4,7 +4,7 @@ import { useList, useNavigation, useDelete, useUpdate } from '@refinedev/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Plus, Trash2, Search, ShoppingBag,
-    Loader2, Edit3, Eye, EyeOff, Star, Filter
+    Loader2, Edit3, Eye, EyeOff, Star
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -12,9 +12,23 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+interface ProductItem {
+    id: string
+    title?: string
+    description?: string
+    category?: string
+    price?: number
+    sale_price?: number
+    stock?: number
+    is_active?: boolean
+    is_featured?: boolean
+    images?: string[]
+    created_at?: string
+}
+
 export default function AdminBoutiquePage() {
     const { create, edit } = useNavigation()
-    const queryResult = useList({
+    const queryResult = useList<ProductItem>({
         resource: 'products',
         pagination: { pageSize: 50 },
         sorters: [{ field: 'created_at', order: 'desc' }],
@@ -24,10 +38,10 @@ export default function AdminBoutiquePage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data;
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading;
-    const items = data?.data || []
-    const filtered = items.filter((item: any) => {
+    const data = queryResult.query?.data;
+    const isLoading = queryResult.query?.isLoading;
+    const items: ProductItem[] = data?.data || []
+    const filtered = items.filter((item) => {
         const matchSearch = (item.title?.toLowerCase() || '').includes(searchTerm.toLowerCase())
         const matchFilter = filter === 'all' ||
             (filter === 'active' && item.is_active) ||
@@ -107,7 +121,7 @@ export default function AdminBoutiquePage() {
                         </div>
 
                         <AnimatePresence mode="popLayout">
-                            {filtered.map((item: any, index: number) => (
+                            {filtered.map((item, index: number) => (
                                 <motion.div
                                     key={item.id}
                                     layout
@@ -119,9 +133,9 @@ export default function AdminBoutiquePage() {
                                     {/* Image */}
                                     <div className="col-span-1">
                                         <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/5">
-                                            {item.images && (item.images as string[])[0] ? (
+                                            {item.images && item.images[0] ? (
                                                 <Image
-                                                    src={(item.images as string[])[0]}
+                                                    src={item.images[0]}
                                                     alt={item.title || ''}
                                                     width={56}
                                                     height={56}
@@ -150,9 +164,9 @@ export default function AdminBoutiquePage() {
 
                                     {/* Price */}
                                     <div className="col-span-1">
-                                        <p className="text-sm font-black text-white">{formatPrice(item.price as number)}</p>
+                                        <p className="text-sm font-black text-white">{formatPrice(item.price || 0)}</p>
                                         {item.sale_price && (
-                                            <p className="text-[10px] text-[#E8112D] font-bold">{formatPrice(item.sale_price as number)}</p>
+                                            <p className="text-[10px] text-[#E8112D] font-bold">{formatPrice(item.sale_price)}</p>
                                         )}
                                     </div>
 
@@ -160,7 +174,7 @@ export default function AdminBoutiquePage() {
                                     <div className="col-span-1">
                                         <span className={cn(
                                             'text-sm font-black',
-                                            (item.stock as number) > 10 ? 'text-[#008751]' : (item.stock as number) > 0 ? 'text-[#FCD116]' : 'text-[#E8112D]'
+                                            (item.stock || 0) > 10 ? 'text-[#008751]' : (item.stock || 0) > 0 ? 'text-[#FCD116]' : 'text-[#E8112D]'
                                         )}>
                                             {item.stock}
                                         </span>

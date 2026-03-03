@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe, Search, Filter, Download, Clock, X, Eye, Loader2 } from 'lucide-react'
+import { Globe, Search, Filter, Download, Clock, X, Eye, Loader2, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface FamilyDetail {
@@ -111,24 +111,25 @@ export default function AgentNationalitePage() {
                         <Globe className="text-emerald-400" />
                         Demandes de Nationalité
                     </h1>
-                    <p className="text-nexus-text-muted text-xs mt-1">Gérez et examinez les demandes de reconnaissance de nationalité.</p>
+                    <p className="text-gray-500 text-xs mt-1">Gérez et examinez les demandes de reconnaissance de nationalité.</p>
                 </div>
             </div>
 
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-nexus-text-muted" size={16} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                     <input
                         type="text"
                         placeholder="Rechercher par nom, réf..."
+                        title="Rechercher"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-nexus-text-muted" />
+                    <Filter size={16} className="text-gray-500" />
                     <select
                         value={filterStatus}
                         onChange={e => setFilterStatus(e.target.value)}
@@ -142,22 +143,22 @@ export default function AgentNationalitePage() {
                         <option value="rejeté">Rejeté</option>
                     </select>
                 </div>
-                <Button onClick={fetchApps} variant="outline" className="border-white/10 text-nexus-text-muted">
+                <Button onClick={fetchApps} variant="outline" className="border-white/10 text-gray-500">
                     <Clock size={16} className="mr-2" /> Actualiser
                 </Button>
             </div>
 
             {/* Table */}
-            <div className="glass-nexus-card overflow-hidden">
+            <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-white/5 bg-white/[0.02]">
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-nexus-text-muted">Réf / Date</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-nexus-text-muted">Demandeur</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-nexus-text-muted">Paiement</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-nexus-text-muted">Statut</th>
-                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-nexus-text-muted text-right">Actions</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Réf / Date</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Demandeur</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Paiement</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-500">Statut</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5 text-sm">
@@ -169,13 +170,13 @@ export default function AgentNationalitePage() {
                                 ))
                             ) : filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-nexus-text-muted italic">Aucune demande trouvée</td>
+                                    <td colSpan={5} className="p-12 text-center text-gray-500 italic">Aucune demande trouvée</td>
                                 </tr>
                             ) : filtered.map(app => (
                                 <tr key={app.id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="p-4">
                                         <p className="font-mono text-emerald-400 font-bold">{app.application_ref}</p>
-                                        <p className="text-[10px] text-nexus-text-muted">{new Date(app.submitted_at).toLocaleDateString('fr-FR')}</p>
+                                        <p className="text-[10px] text-gray-500">{new Date(app.submitted_at).toLocaleDateString('fr-FR')}</p>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
@@ -184,7 +185,7 @@ export default function AgentNationalitePage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-white">{app.prenom} {app.nom}</p>
-                                                <p className="text-[10px] text-nexus-text-muted">{app.email}</p>
+                                                <p className="text-[10px] text-gray-500">{app.email}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -253,7 +254,7 @@ export default function AgentNationalitePage() {
                                                 {showDetail.status}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-nexus-text-muted">Soumis le {new Date(showDetail.submitted_at).toLocaleString('fr-FR')}</p>
+                                        <p className="text-xs text-gray-500">Soumis le {new Date(showDetail.submitted_at).toLocaleString('fr-FR')}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -370,7 +371,7 @@ export default function AgentNationalitePage() {
                                                                 <span className="text-[10px] font-black text-white/90 group-hover:text-emerald-400 transition-colors uppercase tracking-widest">{label}</span>
                                                                 <span className="text-[8px] text-gray-600 font-mono mt-0.5">TYPE: {label.toUpperCase().split(' ')[0]}</span>
                                                             </div>
-                                                            <Eye size={14} className="text-gray-500 group-hover:text-emerald-400 transition-colors" />
+                                                            <FileDown size={14} className="text-gray-500 group-hover:text-emerald-400 transition-colors" />
                                                         </a>
                                                     );
                                                 })}

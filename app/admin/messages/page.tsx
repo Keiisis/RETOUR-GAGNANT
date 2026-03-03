@@ -3,19 +3,28 @@
 import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    MessageSquare, Trash2, Eye, Search, Filter,
-    ArrowRight, Mail, Phone, Calendar, Clock,
-    ChevronRight, CheckCircle2, User, Loader2,
-    Inbox, Star, Archive, AlertCircle
+    MessageSquare, Trash2, Search, Mail, Calendar, Clock,
+    ChevronRight, User, Loader2, Inbox, AlertCircle, LucideIcon
 } from "lucide-react";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+interface MessageItem {
+    id: string
+    nom?: string
+    prenom?: string
+    email?: string
+    sujet?: string
+    message?: string
+    type?: string
+    lu?: boolean
+    created_at: string
+}
 
 export default function MessagesList() {
     const { show } = useNavigation();
-    const queryResult = useList({
+    const queryResult = useList<MessageItem>({
         resource: "messages",
         pagination: { pageSize: 20 },
         sorters: [{ field: "created_at", order: "desc" }]
@@ -26,8 +35,10 @@ export default function MessagesList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data; const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading; const items = data?.data || [];
-    const filteredItems = items.filter((item: any) => {
+    const data = queryResult.query?.data;
+    const isLoading = queryResult.query?.isLoading;
+    const items: MessageItem[] = data?.data || [];
+    const filteredItems = items.filter((item) => {
         const matchesSearch = item.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.sujet?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -94,7 +105,7 @@ export default function MessagesList() {
                         </div>
                     ) : filteredItems.length > 0 ? (
                         <AnimatePresence mode="popLayout">
-                            {filteredItems.map((item: any, index: number) => (
+                            {filteredItems.map((item, index: number) => (
                                 <motion.div
                                     key={item.id}
                                     layout
@@ -212,14 +223,21 @@ export default function MessagesList() {
             {/* QUICK STATS FOOTER */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60 hover:opacity-100 transition-opacity">
                 <QuickStat value={items.length} label="Total Liaison" icon={MessageSquare} />
-                <QuickStat value={items.filter((i: any) => !i.lu).length} label="Urgences" icon={AlertCircle} color="#E8112D" />
-                <QuickStat value={items.filter((i: any) => i.type === 'rdv').length} label="Rendez-vous" icon={Calendar} color="#3b82f6" />
+                <QuickStat value={items.filter((i) => !i.lu).length} label="Urgences" icon={AlertCircle} color="#E8112D" />
+                <QuickStat value={items.filter((i) => i.type === 'rdv').length} label="Rendez-vous" icon={Calendar} color="#3b82f6" />
             </div>
         </div>
     );
 }
 
-function QuickStat({ value, label, icon: Icon, color = "gray" }: any) {
+interface QuickStatProps {
+    value: number
+    label: string
+    icon: LucideIcon
+    color?: string
+}
+
+function QuickStat({ value, label, icon: Icon, color = "gray" }: QuickStatProps) {
     return (
         <Card className="bg-[#0a0f18] border-white/5 p-6 rounded-3xl flex items-center justify-between">
             <div className="flex items-center gap-4">

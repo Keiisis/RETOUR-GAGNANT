@@ -4,8 +4,8 @@ import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Plus, Trash2, Edit2, User, Star, Quote,
-    CheckCircle, XCircle, Search, Filter, Loader2,
-    MessageSquareQuote, MapPin, ExternalLink
+    CheckCircle, Search, Loader2,
+    MessageSquareQuote, MapPin
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -13,9 +13,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { BaseRecord } from "@refinedev/core";
+
+export interface Testimonial extends BaseRecord {
+    id: string;
+    created_at?: string;
+    name: string;
+    text: string;
+    photo?: string | null;
+    location?: string | null;
+    rating?: number | null;
+    service?: string | null;
+    approved: boolean;
+}
+
 export default function TestimonialsList() {
     const { create, edit } = useNavigation();
-    const queryResult = useList({
+    const queryResult = useList<Testimonial>({
         resource: "testimonials",
         pagination: { pageSize: 12 },
         sorters: [{ field: "created_at", order: "desc" }]
@@ -26,10 +40,12 @@ export default function TestimonialsList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data;
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading;
-    const items = data?.data || [];
-    const filteredItems = items.filter((item: any) => {
+    const queryInternal = queryResult as unknown as Record<string, unknown>
+    const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
+    const isLoading = queryObj.isLoading ?? false
+    const resultData = queryResult.result ?? (queryInternal.data as { data?: Testimonial[] } | undefined)
+    const items: Testimonial[] = resultData?.data ?? [];
+    const filteredItems = items.filter((item) => {
         const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.text?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' ||
@@ -101,13 +117,13 @@ export default function TestimonialsList() {
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
                         <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">
-                            {items.filter((i: any) => i.approved).length} Approuvés
+                            {items.filter((i) => i.approved).length} Approuvés
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />
                         <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">
-                            {items.filter((i: any) => !i.approved).length} À Modérer
+                            {items.filter((i) => !i.approved).length} À Modérer
                         </span>
                     </div>
                 </div>
@@ -124,7 +140,7 @@ export default function TestimonialsList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                     <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item: any, index: number) => (
+                        {filteredItems.map((item, index: number) => (
                             <motion.div
                                 key={item.id}
                                 layout
@@ -189,6 +205,7 @@ export default function TestimonialsList() {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => edit("testimonials", item.id)}
+                                                title="Modifier"
                                                 className="p-3 bg-white/5 text-gray-400 rounded-xl hover:bg-white/10 hover:text-white transition-all"
                                             >
                                                 <Edit2 size={16} />
@@ -197,6 +214,7 @@ export default function TestimonialsList() {
                                                 onClick={() => {
                                                     if (confirm("Confirmer la suppression ?")) deleteItem({ resource: "testimonials", id: item.id });
                                                 }}
+                                                title="Supprimer"
                                                 className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
                                             >
                                                 <Trash2 size={16} />

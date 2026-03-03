@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     CalendarDays, Plus, Clock, MapPin, User, Video, Phone, Mail,
-    ChevronLeft, ChevronRight, X, Loader2, ExternalLink
+    ChevronLeft, ChevronRight, X, Loader2, ExternalLink, Trash2
 } from 'lucide-react'
 
 interface Event {
@@ -45,6 +45,7 @@ export default function AgentAgendaPage() {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [showModal, setShowModal] = useState(false)
     const [selectedRDV, setSelectedRDV] = useState<RDV | null>(null)
+    const [selectedDay, setSelectedDay] = useState<number | null>(null)
     const [saving, setSaving] = useState(false)
 
     const [newTitle, setNewTitle] = useState('')
@@ -93,20 +94,26 @@ export default function AgentAgendaPage() {
         setEvents(prev => prev.filter(e => e.id !== id))
     }
 
-    // Extract date from RDV sujet field: "RDV (Service) : 2026-02-28 - 10:00 [whatsapp]"
+    const openAddEventForDay = (day: number) => {
+        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        setNewDate(dateStr)
+        setShowModal(true)
+    }
+
+    // Extract date from RDV sujet: "RDV (Service) : 2026-02-28 - 10:00 [whatsapp]"
     const parseRDVDate = (rdv: RDV): string => {
         const match = rdv.sujet?.match(/(\d{4}-\d{2}-\d{2})/)
         return match ? match[1] : rdv.created_at.split('T')[0]
     }
 
-    const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
-    const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+    const prevMonth = () => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); setSelectedDay(null) }
+    const nextMonth = () => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); setSelectedDay(null) }
 
     const getItemsForDay = (day: number) => {
         const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         const ev = events.filter(e => e.date === dateStr)
         const rv = rdvList.filter(r => parseRDVDate(r) === dateStr)
-        return { events: ev, rdvs: rv }
+        return { events: ev, rdvs: rv, dateStr }
     }
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
@@ -129,6 +136,9 @@ export default function AgentAgendaPage() {
         return diff >= -1 && diff <= 14
     })
 
+    // Items for the selected day
+    const selectedDayItems = selectedDay ? getItemsForDay(selectedDay) : null
+
     if (loading) {
         return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
     }
@@ -140,7 +150,7 @@ export default function AgentAgendaPage() {
                     <h1 className="text-2xl font-black text-white">Agenda</h1>
                     <p className="text-gray-500 text-sm mt-1">{events.length} événement(s) • {rdvList.length} demande(s) de RDV</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-500/30 transition-all">
+                <button type="button" onClick={() => { setNewDate(''); setShowModal(true) }} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-500/30 transition-all">
                     <Plus size={16} /> Nouvel Événement
                 </button>
             </div>
@@ -149,9 +159,9 @@ export default function AgentAgendaPage() {
                 {/* Calendar */}
                 <div className="xl:col-span-2 bg-white/[0.03] border border-white/5 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <button onClick={prevMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois précédent"><ChevronLeft size={20} /></button>
+                        <button type="button" onClick={prevMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois précédent"><ChevronLeft size={20} /></button>
                         <h2 className="text-lg font-bold text-white capitalize">{currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h2>
-                        <button onClick={nextMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois suivant"><ChevronRight size={20} /></button>
+                        <button type="button" onClick={nextMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois suivant"><ChevronRight size={20} /></button>
                     </div>
                     <div className="grid grid-cols-7 gap-1">
                         {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(d => (
@@ -162,75 +172,160 @@ export default function AgentAgendaPage() {
                             const day = i + 1
                             const { events: dayEvents, rdvs: dayRdvs } = getItemsForDay(day)
                             const hasItems = dayEvents.length > 0 || dayRdvs.length > 0
+                            const isSelected = selectedDay === day
                             return (
-                                <div key={day} className={`relative p-2 rounded-xl text-center min-h-[60px] transition-all ${isToday(day) ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold' : 'hover:bg-white/[0.03] text-gray-400'}`}>
+                                <button
+                                    type="button"
+                                    key={day}
+                                    onClick={() => setSelectedDay(isSelected ? null : day)}
+                                    className={`relative p-2 rounded-xl text-center min-h-[60px] transition-all w-full ${
+                                        isSelected
+                                            ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-bold'
+                                            : isToday(day)
+                                            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold hover:bg-emerald-500/15'
+                                            : 'hover:bg-white/[0.05] text-gray-400 border border-transparent'
+                                    }`}
+                                >
                                     <span className="text-xs">{day}</span>
                                     {hasItems && (
                                         <div className="flex justify-center gap-0.5 mt-1">
                                             {dayEvents.slice(0, 2).map(e => (
-                                                <span key={e.id} className={`w-1.5 h-1.5 rounded-full ${typeConfig[e.type]?.color.split(' ')[0] || 'bg-gray-500'}`} title={e.title} />
+                                                <span key={e.id} className={`w-1.5 h-1.5 rounded-full ${typeConfig[e.type]?.color.split(' ')[0] || 'bg-gray-500'}`} />
                                             ))}
                                             {dayRdvs.slice(0, 2).map(r => (
-                                                <span key={r.id} className="w-1.5 h-1.5 rounded-full bg-amber-500" title={`RDV: ${r.nom}`} />
+                                                <span key={r.id} className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                                             ))}
+                                            {(dayEvents.length + dayRdvs.length) > 4 && (
+                                                <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                                            )}
                                         </div>
                                     )}
-                                </div>
+                                </button>
                             )
                         })}
                     </div>
                 </div>
 
-                {/* Sidebar */}
+                {/* Sidebar — Day detail or upcoming */}
                 <div className="space-y-4">
-                    {/* RDV from clients */}
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                            <CalendarDays size={14} className="text-amber-400" /> Demandes de RDV ({rdvList.length})
-                        </h3>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {upcomingRDVs.length === 0 ? (
-                                <p className="text-gray-500 text-xs text-center py-4">Aucune demande de RDV</p>
-                            ) : upcomingRDVs.map(rdv => (
-                                <div key={rdv.id} onClick={() => setSelectedRDV(rdv)} className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 hover:border-amber-500/30 cursor-pointer transition-all">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-bold text-white">{rdv.nom} {rdv.prenom}</p>
-                                        <ExternalLink size={10} className="text-gray-500" />
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 mt-0.5">{rdv.sujet}</p>
-                                    <p className="text-[10px] text-gray-600 mt-0.5">{new Date(rdv.created_at).toLocaleDateString('fr-FR')}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Agent events */}
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                            <Clock size={14} className="text-emerald-400" /> Mes événements
-                        </h3>
-                        <div className="space-y-2">
-                            {upcomingEvents.length === 0 ? (
-                                <p className="text-gray-500 text-xs text-center py-4">Aucun événement planifié</p>
-                            ) : upcomingEvents.map(event => {
-                                const config = typeConfig[event.type] || typeConfig.rdv_client
-                                const Icon = config.icon
-                                return (
-                                    <div key={event.id} className={`p-3 rounded-xl border ${config.color} group relative`}>
-                                        <button onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer"><X size={12} /></button>
-                                        <div className="flex items-start gap-2">
-                                            <Icon size={14} className="mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-xs font-bold">{event.title}</p>
-                                                <p className="text-[10px] opacity-70 mt-0.5">{new Date(event.date).toLocaleDateString('fr-FR')} à {event.time}</p>
-                                                {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
-                                            </div>
+                    <AnimatePresence mode="wait">
+                        {selectedDay && selectedDayItems ? (
+                            <motion.div key="day-detail" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-4">
+                                {/* Day header */}
+                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                                                {new Date(selectedDayItems.dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {selectedDayItems.events.length + selectedDayItems.rdvs.length} élément(s)
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => openAddEventForDay(selectedDay)}
+                                                className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
+                                                title="Ajouter un événement"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                            <button type="button" onClick={() => setSelectedDay(null)} className="text-gray-500 hover:text-white" title="Fermer">
+                                                <X size={14} />
+                                            </button>
                                         </div>
                                     </div>
-                                )
-                            })}
-                        </div>
-                    </div>
+
+                                    {/* Events for this day */}
+                                    <div className="space-y-2">
+                                        {selectedDayItems.events.length === 0 && selectedDayItems.rdvs.length === 0 ? (
+                                            <p className="text-xs text-gray-500 text-center py-3">Aucun événement ce jour</p>
+                                        ) : (
+                                            <>
+                                                {selectedDayItems.events.map(event => {
+                                                    const config = typeConfig[event.type] || typeConfig.rdv_client
+                                                    const Icon = config.icon
+                                                    return (
+                                                        <div key={event.id} className={`p-3 rounded-xl border ${config.color} group relative`}>
+                                                            <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer"><Trash2 size={11} /></button>
+                                                            <div className="flex items-start gap-2">
+                                                                <Icon size={13} className="mt-0.5 flex-shrink-0" />
+                                                                <div>
+                                                                    <p className="text-xs font-bold pr-4">{event.title}</p>
+                                                                    <p className="text-[10px] opacity-70">{event.time}{event.location && ` — ${event.location}`}</p>
+                                                                    {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                                {selectedDayItems.rdvs.map(rdv => (
+                                                    <div key={rdv.id} onClick={() => setSelectedRDV(rdv)} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 cursor-pointer transition-all">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-xs font-bold text-white">{rdv.nom} {rdv.prenom}</p>
+                                                            <ExternalLink size={10} className="text-gray-500" />
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-1">{rdv.sujet}</p>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div key="upcoming" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                                {/* RDV from clients */}
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                        <CalendarDays size={14} className="text-amber-400" /> Demandes de RDV ({rdvList.length})
+                                    </h3>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {upcomingRDVs.length === 0 ? (
+                                            <p className="text-gray-500 text-xs text-center py-4">Aucune demande de RDV</p>
+                                        ) : upcomingRDVs.map(rdv => (
+                                            <div key={rdv.id} onClick={() => setSelectedRDV(rdv)} className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 hover:border-amber-500/30 cursor-pointer transition-all">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-xs font-bold text-white">{rdv.nom} {rdv.prenom}</p>
+                                                    <ExternalLink size={10} className="text-gray-500" />
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 mt-0.5">{rdv.sujet}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Upcoming agent events */}
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                        <Clock size={14} className="text-emerald-400" /> Mes événements
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {upcomingEvents.length === 0 ? (
+                                            <p className="text-gray-500 text-xs text-center py-4">Aucun événement planifié</p>
+                                        ) : upcomingEvents.map(event => {
+                                            const config = typeConfig[event.type] || typeConfig.rdv_client
+                                            const Icon = config.icon
+                                            return (
+                                                <div key={event.id} className={`p-3 rounded-xl border ${config.color} group relative`}>
+                                                    <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer"><X size={12} /></button>
+                                                    <div className="flex items-start gap-2">
+                                                        <Icon size={14} className="mt-0.5 flex-shrink-0" />
+                                                        <div>
+                                                            <p className="text-xs font-bold">{event.title}</p>
+                                                            <p className="text-[10px] opacity-70 mt-0.5">{new Date(event.date).toLocaleDateString('fr-FR')} à {event.time}</p>
+                                                            {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -241,7 +336,7 @@ export default function AgentAgendaPage() {
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-[#0a0f14] border border-white/10 rounded-2xl p-6 w-full max-w-md">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-white">Demande de Rendez-vous</h3>
-                                <button onClick={() => setSelectedRDV(null)} className="text-gray-500 hover:text-white" title="Fermer"><X size={18} /></button>
+                                <button type="button" onClick={() => setSelectedRDV(null)} className="text-gray-500 hover:text-white" title="Fermer"><X size={18} /></button>
                             </div>
                             <div className="space-y-3">
                                 <div className="bg-white/5 rounded-xl p-4 space-y-2">
@@ -290,8 +385,8 @@ export default function AgentAgendaPage() {
                                 <input type="text" value={newClient} onChange={e => setNewClient(e.target.value)} placeholder="Client (optionnel)" title="Client" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50" />
                                 <input type="text" value={newLocation} onChange={e => setNewLocation(e.target.value)} placeholder="Lieu (optionnel)" title="Lieu" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50" />
                                 <div className="flex gap-3 pt-2">
-                                    <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm font-bold">Annuler</button>
-                                    <button onClick={handleAddEvent} disabled={saving || !newTitle.trim() || !newDate} className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm font-bold">Annuler</button>
+                                    <button type="button" onClick={handleAddEvent} disabled={saving || !newTitle.trim() || !newDate} className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
                                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Ajouter
                                     </button>
                                 </div>

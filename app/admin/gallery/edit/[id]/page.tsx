@@ -1,37 +1,35 @@
 'use client';
 
 import { useForm, useNavigation, useOne } from "@refinedev/core";
-import { motion } from "framer-motion";
-import {
-    ArrowLeft, Save, ImageIcon, CloudUpload,
-    Loader2, Tag, Type
-} from "lucide-react";
+import { ArrowLeft, Save, ImageIcon, CloudUpload, Loader2, Tag, Type } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
+import { GalleryItem } from "../../page";
 
 export default function GalleryEdit() {
     const params = useParams();
     const id = params.id as string;
     const { list } = useNavigation();
 
-    const queryResult = useOne({
+    const galleryQuery = useOne<GalleryItem>({
         resource: "gallery",
         id,
-    }) as any;
-    const itemData = queryResult.data || queryResult.query?.data;
-    const isFetching = queryResult.isLoading || queryResult.query?.isLoading;
+    });
+    const galleryInternal = galleryQuery as unknown as Record<string, unknown>
+    const isFetching = (galleryInternal.query as Record<string, boolean> | undefined)?.isLoading ?? false
+    const itemData = galleryQuery.result ?? (galleryInternal.data as { data?: GalleryItem } | undefined)?.data;
 
-    const { onFinish, formLoading } = useForm({
+    const { onFinish, formLoading } = useForm<GalleryItem>({
         resource: "gallery",
         action: "edit",
         id,
         redirect: "list",
     });
 
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<GalleryItem> & { alt?: string }>({
         url: "",
         title: "",
         category: "general",
@@ -39,19 +37,20 @@ export default function GalleryEdit() {
     });
 
     useEffect(() => {
-        if (itemData?.data) {
+        if (itemData) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             setFormData({
-                url: itemData.data.url || itemData.data.image || itemData.data.image_url || "",
-                title: itemData.data.title || "",
-                category: itemData.data.category || itemData.data.type || "general",
-                alt: itemData.data.alt || ""
+                url: itemData.url || itemData.image || itemData.image_url || "",
+                title: itemData.title || "",
+                category: itemData.category || itemData.type || "general",
+                alt: itemData.title || ""
             });
         }
     }, [itemData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev: Partial<GalleryItem> & { alt?: string }) => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -69,7 +68,7 @@ export default function GalleryEdit() {
         return (
             <div className="min-h-[50vh] flex flex-col items-center justify-center">
                 <Loader2 className="animate-spin text-[#FCD116] mb-4" size={40} />
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Chargement de l'image...</p>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Chargement de l&apos;image...</p>
             </div>
         );
     }
@@ -86,8 +85,8 @@ export default function GalleryEdit() {
                         <ArrowLeft size={24} />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-black font-heading text-white tracking-tight italic">ÉDITER L'<span className="text- benin-gradient">ACTE VISUEL</span></h1>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">Imagerie & Esthétique Diaspora</p>
+                        <h1 className="text-3xl font-black font-heading text-white tracking-tight italic">ÉDITER L&apos;<span className="text- benin-gradient">ACTE VISUEL</span></h1>
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">Imagerie &amp; Esthétique Diaspora</p>
                     </div>
                 </div>
 
@@ -108,11 +107,11 @@ export default function GalleryEdit() {
                         <form className="space-y-8">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <CloudUpload size={14} className="text-[#3b82f6]" /> URL de l'Image
+                                    <CloudUpload size={14} className="text-[#3b82f6]" /> URL de l&apos;Image
                                 </label>
                                 <input
                                     name="url"
-                                    value={formData.url}
+                                    value={formData.url || ''}
                                     onChange={handleChange}
                                     placeholder="https://..."
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -121,11 +120,11 @@ export default function GalleryEdit() {
 
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <Type size={14} /> Titre de l'image
+                                    <Type size={14} /> Titre de l&apos;image
                                 </label>
                                 <input
                                     name="title"
-                                    value={formData.title}
+                                    value={formData.title || ''}
                                     onChange={handleChange}
                                     placeholder="Ex: Villa Cotonou 2024"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none"
@@ -172,7 +171,7 @@ export default function GalleryEdit() {
                                     <ImageIcon size={40} className="text-gray-800" />
                                 </div>
                                 <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">En attente de liaison...</p>
-                                <p className="text-[8px] text-gray-800 uppercase">L'aperçu se générera automatiquement</p>
+                                <p className="text-[8px] text-gray-800 uppercase">L&apos;aperçu se générera automatiquement</p>
                             </div>
                         )}
                     </div>

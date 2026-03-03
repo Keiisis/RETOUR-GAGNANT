@@ -9,9 +9,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+export interface GalleryItem {
+    id: string;
+    url?: string;
+    image?: string;
+    image_url?: string;
+    title?: string;
+    category?: string;
+    type?: string;
+    location?: string;
+    is_featured?: boolean;
+    created_at?: string;
+}
+
 export default function GalleryList() {
     const { create, edit } = useNavigation();
-    const queryResult = useList({
+    const queryResult = useList<GalleryItem>({
         resource: "gallery",
         pagination: { pageSize: 24 },
         sorters: [{ field: "created_at", order: "desc" }]
@@ -22,8 +35,13 @@ export default function GalleryList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<'all' | 'hero' | 'gallery'>('all');
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data; const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading; const items = data?.data || [];
-    const filteredItems = items.filter((item: any) => {
+    const queryInternal = queryResult as unknown as Record<string, unknown>
+    const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
+    const isLoading = queryObj.isLoading ?? false
+    const resultData = queryResult.result ?? (queryInternal.data as { data?: GalleryItem[] } | undefined)
+    const items: GalleryItem[] = resultData?.data ?? [];
+
+    const filteredItems = items.filter((item) => {
         const matchesSearch = (item.title?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
             (item.category?.toLowerCase() || "").includes(searchTerm.toLowerCase());
         const matchesFilter = filter === 'all' || item.type === filter;
@@ -96,7 +114,7 @@ export default function GalleryList() {
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item: any, index: number) => (
+                        {filteredItems.map((item, index: number) => (
                             <motion.div
                                 key={item.id}
                                 layout

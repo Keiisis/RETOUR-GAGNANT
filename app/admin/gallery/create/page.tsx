@@ -2,36 +2,31 @@
 
 import { useForm, useNavigation } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowLeft, Save, ImageIcon, CloudUpload,
-    Sparkles, Loader2, Info, Plus, X,
-    FileImage, Hash, Tag, Type
-} from "lucide-react";
+import { ArrowLeft, Save, ImageIcon, CloudUpload, Tag, Type, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { GalleryItem } from "../page";
 
 export default function GalleryCreate() {
     const { list } = useNavigation();
 
-    const { onFinish, formLoading } = useForm({
+    const { onFinish, formLoading } = useForm<GalleryItem>({
         resource: "gallery",
         redirect: "list",
         action: "create"
     });
 
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<GalleryItem>>({
         url: "",
         title: "",
-        category: "general",
-        alt: ""
+        category: "general"
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -52,7 +47,7 @@ export default function GalleryCreate() {
                     </button>
                     <div>
                         <h1 className="text-3xl font-black font-heading text-white tracking-tight italic">NOUVEL <span className="text- benin-gradient">ACTE VISUEL</span></h1>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">Imagerie & Esthétique Diaspora</p>
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em] mt-1">Imagerie &amp; Esthétique Diaspora</p>
                     </div>
                 </div>
 
@@ -62,7 +57,7 @@ export default function GalleryCreate() {
                     className="w-full md:w-auto bg-benin-gradient text-white h-16 px-10 rounded-[1.5rem] font-black tracking-widest gap-3 shadow-2xl"
                 >
                     {formLoading ? <Loader2 size={24} className="animate-spin" /> : <Save size={20} />}
-                    ENREGISTRER L'IMAGE
+                    ENREGISTRER L&apos;IMAGE
                 </Button>
             </div>
 
@@ -73,11 +68,11 @@ export default function GalleryCreate() {
                         <form className="space-y-8">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <CloudUpload size={14} className="text-[#3b82f6]" /> URL de l'Image
+                                    <CloudUpload size={14} className="text-[#3b82f6]" /> URL de l&apos;Image
                                 </label>
                                 <input
                                     name="url"
-                                    value={formData.url}
+                                    value={formData.url || ''}
                                     onChange={handleChange}
                                     placeholder="https://..."
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -86,11 +81,11 @@ export default function GalleryCreate() {
 
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                                    <Type size={14} /> Titre de l'image
+                                    <Type size={14} /> Titre de l&apos;image
                                 </label>
                                 <input
                                     name="title"
-                                    value={formData.title}
+                                    value={formData.title || ''}
                                     onChange={handleChange}
                                     placeholder="Ex: Villa Cotonou 2024"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none"
@@ -135,7 +130,7 @@ export default function GalleryCreate() {
                                     <ImageIcon size={40} className="text-gray-800" />
                                 </div>
                                 <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">En attente de liaison...</p>
-                                <p className="text-[8px] text-gray-800 uppercase">L'aperçu se générera automatiquement</p>
+                                <p className="text-[8px] text-gray-800 uppercase">L&apos;aperçu se générera automatiquement</p>
                             </div>
                         )}
                     </div>

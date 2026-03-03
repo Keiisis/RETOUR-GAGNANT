@@ -4,10 +4,21 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
-    BarChart3, TrendingUp, Users, MessageSquare, ShoppingCart,
+    BarChart3, TrendingUp, Users, MessageSquare,
     Globe2, Calendar, ArrowUpRight, ArrowDownRight, FileText,
     Sparkles, Mail, Target
 } from 'lucide-react'
+
+interface Lead {
+    id: number
+    client_nom: string
+    client_prenom: string
+    eligibility_score: number
+    recommended_service: string
+    is_contacted?: boolean
+    contacted?: boolean
+    created_at: string
+}
 
 interface Stats {
     totalLeads: number
@@ -19,8 +30,16 @@ interface Stats {
     conversionRate: number
     contactedRate: number
     avgScore: number
-    recentLeads: any[]
+    recentLeads: Lead[]
     emailsSent: number
+}
+
+interface StatCardProps {
+    icon: React.ComponentType<{ size?: number; className?: string }>
+    label: string
+    value: string | number
+    trend?: number
+    color: string
 }
 
 export default function AdminAnalyticsPage() {
@@ -43,8 +62,6 @@ export default function AdminAnalyticsPage() {
             else if (period === '90d') fromDate = new Date(now.getTime() - 90 * 86400000).toISOString()
 
             // Parallel queries
-            const queries: any = {}
-
             let leadsQuery = supabase.from('eligibility_results').select('*')
             let messagesQuery = supabase.from('messages').select('id', { count: 'exact', head: true })
             const blogQuery = supabase.from('blog_posts').select('views')
@@ -62,17 +79,17 @@ export default function AdminAnalyticsPage() {
 
             const leads = leadsRes.data || []
             const totalMessages = messagesRes.count || 0
-            const totalBlogViews = (blogRes.data || []).reduce((sum: number, p: any) => sum + (p.views || 0), 0)
+            const totalBlogViews = (blogRes.data || []).reduce((sum: number, p: Record<string, unknown>) => sum + (Number(p.views) || 0), 0)
 
             // Compute stats
-            const contacted = leads.filter((l: any) => l.is_contacted || l.contacted).length
+            const contacted = leads.filter((l) => l.is_contacted || l.contacted).length
             const avgScore = leads.length > 0
-                ? Math.round(leads.reduce((s: number, l: any) => s + (l.eligibility_score || 0), 0) / leads.length)
+                ? Math.round(leads.reduce((s: number, l) => s + (l.eligibility_score || 0), 0) / leads.length)
                 : 0
 
             // Service distribution
             const serviceCounts: Record<string, number> = {}
-            leads.forEach((l: any) => {
+            leads.forEach((l) => {
                 const s = l.recommended_service || 'Autre'
                 serviceCounts[s] = (serviceCounts[s] || 0) + 1
             })
@@ -82,7 +99,7 @@ export default function AdminAnalyticsPage() {
 
             // Leads by month
             const monthCounts: Record<string, number> = {}
-            leads.forEach((l: any) => {
+            leads.forEach((l) => {
                 const d = new Date(l.created_at)
                 const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
                 monthCounts[key] = (monthCounts[key] || 0) + 1
@@ -117,27 +134,7 @@ export default function AdminAnalyticsPage() {
         fetchStats()
     }, [period])
 
-    const StatCard = ({ icon: Icon, label, value, trend, color }: any) => (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all"
-        >
-            <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-                    <Icon size={18} />
-                </div>
-                {trend !== undefined && (
-                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                        {Math.abs(trend)}%
-                    </span>
-                )}
-            </div>
-            <p className="text-2xl font-black text-white">{value}</p>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">{label}</p>
-        </motion.div>
-    )
+
 
     if (loading) {
         return (
@@ -196,8 +193,8 @@ export default function AdminAnalyticsPage() {
                                 <div key={i} className="flex-1 flex flex-col items-center gap-2">
                                     <span className="text-[10px] font-bold text-emerald-400">{m.count}</span>
                                     <div
-                                        className="w-full bg-gradient-to-t from-emerald-500/40 to-emerald-500/80 rounded-t-lg transition-all"
-                                        style={{ height: `${(m.count / maxLeads) * 100}%`, minHeight: '8px' }}
+                                        className="w-full bg-gradient-to-t from-emerald-500/40 to-emerald-500/80 rounded-t-lg transition-all h-[var(--bar-h)] min-h-[8px]"
+                                        style={{ '--bar-h': `${(m.count / maxLeads) * 100}%` } as React.CSSProperties}
                                     />
                                     <span className="text-[9px] text-gray-600">{m.month.split('-')[1]}/{m.month.split('-')[0].slice(2)}</span>
                                 </div>
@@ -223,7 +220,7 @@ export default function AdminAnalyticsPage() {
                                             <span className="text-gray-500">{s.count} ({pct}%)</span>
                                         </div>
                                         <div className="w-full h-2 bg-white/5 rounded-full">
-                                            <div className={`h-2 rounded-full ${colors[i % colors.length]} transition-all`} style={{ width: `${pct}%` }} />
+                                            <div className={`h-2 rounded-full ${colors[i % colors.length]} transition-all w-[var(--p-w)]`} style={{ '--p-w': `${pct}%` } as React.CSSProperties} />
                                         </div>
                                     </div>
                                 )
@@ -261,5 +258,29 @@ export default function AdminAnalyticsPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+function StatCard({ icon: Icon, label, value, trend, color }: StatCardProps) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all"
+        >
+            <div className="flex items-center justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+                    <Icon size={18} />
+                </div>
+                {trend !== undefined && (
+                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                        {Math.abs(trend)}%
+                    </span>
+                )}
+            </div>
+            <p className="text-2xl font-black text-white">{value}</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">{label}</p>
+        </motion.div>
     )
 }

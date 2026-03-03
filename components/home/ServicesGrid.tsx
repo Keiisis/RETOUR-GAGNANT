@@ -8,12 +8,25 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const FALLBACK_SERVICES = [
+import { LucideIcon } from "lucide-react";
+
+type GoldenIconType = "passport" | "tata" | "drum" | "cowrie" | "assin" | "tree" | "recade" | "standard";
+
+interface ServiceItem {
+    id: number;
+    title: string;
+    description: string;
+    icon?: LucideIcon;
+    iconType?: GoldenIconType;
+    slug: string;
+    imageUrl: string;
+}
+
+const FALLBACK_SERVICES: ServiceItem[] = [
     {
         id: 1,
         title: "Passeport & Documents",
         description: "Obtention rapide de vos documents officiels. Le Sceptre (Récade) ouvre toutes les portes.",
-        icon: undefined,
         iconType: "passport",
         slug: "passeport",
         imageUrl: "/assets/icones/icone_Passeport_Documents.png",
@@ -22,7 +35,6 @@ const FALLBACK_SERVICES = [
         id: 2,
         title: "Acheter ou Louer",
         description: "Sécurisez vos transactions foncières. Votre forteresse (Tata) au Bénin.",
-        icon: undefined,
         iconType: "tata",
         slug: "logement",
         imageUrl: "/assets/icones/icone_Acheter_ou_louer.png",
@@ -31,7 +43,6 @@ const FALLBACK_SERVICES = [
         id: 3,
         title: "Création d'Entreprise",
         description: "Lancez votre business. Etudes de marché, créations de sociétés et implantation, Recherche de Partenaires.",
-        icon: undefined,
         iconType: "drum",
         slug: "business",
         imageUrl: "/assets/icones/icone_Creation_d_Entreprise.png",
@@ -40,7 +51,6 @@ const FALLBACK_SERVICES = [
         id: 4,
         title: "Guide Culturel",
         description: "Reconnectez-vous avec vos racines. La richesse des Cauris. Cérémonie du Nom et validation à l'état civil.",
-        icon: undefined,
         iconType: "cowrie",
         slug: "culture",
         imageUrl: "/assets/icones/icone_Guide_culturel.png",
@@ -87,7 +97,7 @@ const IMG_BY_SLUG: Record<string, string> = {
 }
 
 export default function ServicesGrid() {
-    const [servicesList, setServicesList] = useState(FALLBACK_SERVICES);
+    const [servicesList, setServicesList] = useState<ServiceItem[]>(FALLBACK_SERVICES);
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -100,16 +110,15 @@ export default function ServicesGrid() {
                 if (error) throw error;
 
                 if (data && data.length > 0) {
-                    const mappedServices = data.map((item: any) => {
-                        const slug = item.slug || SLUG_BY_TITLE[item.title] || item.title.toLowerCase().replace(/\s+/g, '-');
+                    const mappedServices = data.map((item: Record<string, unknown>) => {
+                        const slug = String(item.slug || SLUG_BY_TITLE[String(item.title)] || String(item.title).toLowerCase().replace(/\s+/g, '-'));
                         return {
-                            id: item.id,
-                            title: item.title,
-                            description: item.description || "Découvrez ce service",
-                            icon: undefined,
-                            iconType: item.icon_type || "passport",
+                            id: Number(item.id),
+                            title: String(item.title),
+                            description: item.description ? String(item.description) : "Découvrez ce service",
+                            iconType: (item.icon_type ? String(item.icon_type) : "passport") as GoldenIconType,
                             slug,
-                            imageUrl: item.image_url || IMG_BY_SLUG[slug] || '',
+                            imageUrl: item.image_url ? String(item.image_url) : (IMG_BY_SLUG[slug] || ''),
                         };
                     });
                     setServicesList(mappedServices);
@@ -124,7 +133,7 @@ export default function ServicesGrid() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {servicesList.map((service: any) => (
+            {servicesList.map((service: ServiceItem) => (
                 <div
                     key={service.id}
                     className="group relative glass-card-premium hover:border-[#FCD116] rounded-2xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-flag bg-white"

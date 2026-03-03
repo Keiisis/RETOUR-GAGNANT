@@ -6,8 +6,7 @@ import QRCode from 'qrcode'
 // Generate a downloadable HTML invoice for an order
 export async function GET(
   request: NextRequest,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: any
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: orderId } = await context.params

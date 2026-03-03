@@ -11,9 +11,19 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { BaseRecord } from '@refinedev/core'
+
+export interface UserProfile extends BaseRecord {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    role?: 'superadmin' | 'agent' | string;
+    is_active?: boolean;
+    created_at?: string;
+}
 
 export default function AdminUsersPage() {
-    const queryResult = useList({
+    const queryResult = useList<UserProfile>({
         resource: 'user_profiles',
         pagination: { pageSize: 50 },
         sorters: [{ field: 'created_at', order: 'desc' }],
@@ -22,10 +32,13 @@ export default function AdminUsersPage() {
     const { mutate: updateUser } = useUpdate()
     const [searchTerm, setSearchTerm] = useState('')
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data;
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading;
-    const items = data?.data || []
-    const filtered = items.filter((item: any) =>
+    const returnedData = (queryResult as unknown as { data?: { data: UserProfile[] }, query?: { data?: { data: UserProfile[] }, isLoading: boolean } }).data ||
+        (queryResult as unknown as { query?: { data?: { data: UserProfile[] } } }).query?.data;
+    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading ||
+        (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
+    const items = returnedData?.data || []
+
+    const filtered = items.filter((item) =>
         (item.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (item.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
@@ -110,7 +123,7 @@ export default function AdminUsersPage() {
                         </div>
 
                         <AnimatePresence mode="popLayout">
-                            {filtered.map((user: any) => (
+                            {filtered.map((user) => (
                                 <motion.div
                                     key={user.id}
                                     layout

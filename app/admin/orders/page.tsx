@@ -3,13 +3,26 @@
 import { useList, useUpdate } from '@refinedev/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Receipt, Search, Loader2, Filter,
-    CheckCircle2, Clock, XCircle, RefreshCcw,
-    Download, Eye
+    Receipt, Search, Loader2,
+    CheckCircle2, Clock, XCircle, RefreshCcw
 } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+
+interface OrderItem {
+    id: string
+    customer_name?: string
+    customer_phone?: string
+    product_title?: string
+    quantity?: number
+    amount?: number
+    currency?: string
+    payment_status?: string
+    payment_method?: string
+    transaction_id?: string
+    created_at: string
+}
 
 const statusConfig: Record<string, { icon: typeof Clock, label: string, classes: string }> = {
     pending: { icon: Clock, label: 'En attente', classes: 'bg-[#FCD116]/15 text-[#FCD116] border-[#FCD116]/30' },
@@ -19,7 +32,7 @@ const statusConfig: Record<string, { icon: typeof Clock, label: string, classes:
 }
 
 export default function AdminOrdersPage() {
-    const queryResult = useList({
+    const queryResult = useList<OrderItem>({
         resource: 'orders',
         pagination: { pageSize: 100 },
         sorters: [{ field: 'created_at', order: 'desc' }],
@@ -28,10 +41,10 @@ export default function AdminOrdersPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data;
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading;
-    const items = data?.data || []
-    const filtered = items.filter((item: any) => {
+    const data = queryResult.query?.data;
+    const isLoading = queryResult.query?.isLoading;
+    const items: OrderItem[] = data?.data || []
+    const filtered = items.filter((item) => {
         const matchSearch =
             (item.customer_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (item.product_title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -51,10 +64,10 @@ export default function AdminOrdersPage() {
 
     // Stats
     const totalRevenue = items
-        .filter((i: any) => i.payment_status === 'completed')
-        .reduce((sum: number, i: any) => sum + (i.amount as number || 0), 0)
-    const pendingCount = items.filter((i: any) => i.payment_status === 'pending').length
-    const completedCount = items.filter((i: any) => i.payment_status === 'completed').length
+        .filter((i) => i.payment_status === 'completed')
+        .reduce((sum: number, i) => sum + (i.amount || 0), 0)
+    const pendingCount = items.filter((i) => i.payment_status === 'pending').length
+    const completedCount = items.filter((i) => i.payment_status === 'completed').length
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
@@ -131,7 +144,7 @@ export default function AdminOrdersPage() {
                         </div>
 
                         <AnimatePresence mode="popLayout">
-                            {filtered.map((order: any) => {
+                            {filtered.map((order) => {
                                 const status = statusConfig[order.payment_status as string] || statusConfig.pending
                                 const StatusIcon = status.icon
 
@@ -163,7 +176,7 @@ export default function AdminOrdersPage() {
                                         {/* Amount */}
                                         <div className="col-span-2">
                                             <p className="text-sm font-black text-white">
-                                                {formatPrice(order.amount as number)} <span className="text-gray-500 text-[10px]">{order.currency || 'XOF'}</span>
+                                                {formatPrice(order.amount || 0)} <span className="text-gray-500 text-[10px]">{order.currency || 'XOF'}</span>
                                             </p>
                                         </div>
 
@@ -186,10 +199,10 @@ export default function AdminOrdersPage() {
 
                                         {/* Date */}
                                         <div className="col-span-2">
-                                            <p className="text-xs text-gray-500">{formatDate(order.created_at as string)}</p>
+                                            <p className="text-xs text-gray-500">{formatDate(order.created_at)}</p>
                                             {order.transaction_id && (
                                                 <p className="text-[9px] text-gray-700 font-mono mt-0.5 truncate">
-                                                    TX: {(order.transaction_id as string).slice(0, 12)}...
+                                                    TX: {order.transaction_id.slice(0, 12)}...
                                                 </p>
                                             )}
                                         </div>

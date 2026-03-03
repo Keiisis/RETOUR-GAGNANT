@@ -23,9 +23,9 @@ function AdminLayoutContent({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
-    const router = useRouter()
+    useRouter()
     const { mutate: logout } = useLogout()
-    const { data: user } = useGetIdentity<any>()
+    const { data: user } = useGetIdentity<{ email?: string }>()
     const [scrolled, setScrolled] = useState(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState(true)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

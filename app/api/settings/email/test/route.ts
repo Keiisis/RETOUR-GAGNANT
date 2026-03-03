@@ -67,8 +67,9 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({ success: true, messageId: info.messageId });
-    } catch (e: any) {
+    } catch (e) {
         console.error("Test email error", e);
-        return NextResponse.json({ success: false, error: e.message || "Erreur de connexion SMTP" }, { status: 500 });
+        const message = e instanceof Error ? e.message : "Erreur de connexion SMTP"
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }

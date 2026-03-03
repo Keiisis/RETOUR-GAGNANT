@@ -10,8 +10,11 @@ const categories = ['Mode', 'Artisanat', 'Alimentaire', 'Culturel', 'Accessoires
 
 export default function CreateProductPage() {
     const { list } = useNavigation()
-    const { mutate: createProduct, isPending } = useCreate() as any
-    const isLoading = isPending;
+    const createResult = useCreate()
+    const createProduct = createResult.mutate
+    const isLoading = (createResult as unknown as { isLoading?: boolean }).isLoading
+        ?? (createResult as unknown as { isPending?: boolean }).isPending
+        ?? false
 
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')

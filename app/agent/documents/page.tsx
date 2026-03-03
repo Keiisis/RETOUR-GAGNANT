@@ -160,7 +160,7 @@ export default function AgentDocumentsPage() {
 
             {/* Category stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {categories.slice(0, 4).map(cat => (
+                {categories.map(cat => (
                     <button key={cat.id} onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)} className={`border rounded-xl p-3 text-left transition-all ${filterCategory === cat.id ? cat.color : 'bg-white/[0.03] border-white/5 hover:border-white/10'}`}>
                         <p className="text-xl font-black text-white">{docs.filter(d => d.category === cat.id).length}</p>
                         <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">{cat.label}</p>
@@ -211,7 +211,7 @@ export default function AgentDocumentsPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {doc.file_url && !doc.file_url.includes('placeholder') && (
+                                    {doc.file_url && (
                                         <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-blue-400" title="Télécharger"><Download size={14} /></a>
                                     )}
                                     <button onClick={() => handleDelete(doc)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-red-400" title="Supprimer"><Trash2 size={14} /></button>

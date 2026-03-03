@@ -3,33 +3,34 @@
 import { useForm, useNavigation, useList } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ArrowLeft, Save, MapPin, Image as ImageIcon,
-    Sparkles, Loader2, Info, Plus, Trash2,
+    ArrowLeft, MapPin, Image as ImageIcon,
+    Sparkles, Loader2, Plus, Trash2,
     Grid, Check, X, FilePlus
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Patrimoine } from "../page";
 
 export default function PatrimonioCreate() {
     const { list } = useNavigation();
 
-    const { onFinish, formLoading } = useForm<any>({
+    const { onFinish, formLoading } = useForm<Patrimoine>({
         resource: "patrimoine",
         redirect: "list",
         action: "create"
     });
 
-    const { query: galleryQuery } = useList<any>({
+    const { query: galleryQuery } = useList<{ id: string, url?: string, image_url?: string }>({
         resource: "gallery",
         pagination: { pageSize: 100 }
     });
 
     const galleryData = galleryQuery?.data;
 
-    const [formData, setFormData] = useState<any>({
+    const [formData, setFormData] = useState<Partial<Patrimoine>>({
         title: "",
         location: "",
         description: "",
@@ -41,7 +42,7 @@ export default function PatrimonioCreate() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const toggleGalleryImage = (url: string) => {
@@ -52,7 +53,7 @@ export default function PatrimonioCreate() {
         } else {
             currentGallery.push(url);
         }
-        setFormData((prev: any) => ({ ...prev, gallery: currentGallery }));
+        setFormData((prev) => ({ ...prev, gallery: currentGallery }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -76,7 +77,7 @@ export default function PatrimonioCreate() {
             });
             const data = await resp.json();
             if (data.text) {
-                setFormData((prev: any) => ({ ...prev, description: data.text }));
+                setFormData((prev) => ({ ...prev, description: data.text }));
             }
         } catch (error) {
             console.error(error);
@@ -92,6 +93,7 @@ export default function PatrimonioCreate() {
                 <div className="flex items-center gap-6">
                     <button
                         onClick={() => list("patrimoine")}
+                        title="Retour à la liste"
                         className="p-4 bg-white/5 border border-white/5 rounded-2xl text-gray-400 hover:text-[#FCD116] hover:bg-white/10 transition-all shadow-2xl group"
                     >
                         <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
@@ -112,7 +114,7 @@ export default function PatrimonioCreate() {
                         className="flex-1 lg:flex-none bg-benin-gradient text-white font-black tracking-[0.2em] gap-3 px-10 h-16 rounded-[1.5rem] shadow-[0_20px_40px_-10px_rgba(252,209,22,0.3)] hover:scale-[1.02] transition-all border-none"
                     >
                         {formLoading ? <Loader2 size={24} className="animate-spin" /> : <Plus size={20} />}
-                        CRÉER L'ARCHIVE
+                        CRÉER L&apos;ARCHIVE
                     </Button>
                 </div>
             </div>
@@ -129,7 +131,7 @@ export default function PatrimonioCreate() {
                                 </label>
                                 <input
                                     name="title"
-                                    value={formData.title}
+                                    value={formData.title || ''}
                                     onChange={handleChange}
                                     placeholder="Ex: Palais Royaux d'Abomey"
                                     className="w-full bg-white/5 border-2 border-white/5 rounded-[1.5rem] py-5 px-8 text-white focus:outline-none focus:border-[#FCD116]/30 transition-all text-2xl font-black font-heading placeholder:text-gray-700"
@@ -143,7 +145,7 @@ export default function PatrimonioCreate() {
                                     </label>
                                     <input
                                         name="location"
-                                        value={formData.location}
+                                        value={formData.location || ''}
                                         onChange={handleChange}
                                         placeholder="Ex: Abomey, Sud Bénin"
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:border-[#008751]/40 transition-all"
@@ -155,7 +157,7 @@ export default function PatrimonioCreate() {
                                     </label>
                                     <input
                                         name="imagename"
-                                        value={formData.imagename}
+                                        value={formData.imagename || ''}
                                         onChange={handleChange}
                                         placeholder="image.jpg ou https://..."
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-4 px-6 text-white text-xs font-mono focus:outline-none focus:border-[#3b82f6]/40 transition-all"
@@ -169,7 +171,7 @@ export default function PatrimonioCreate() {
                                 </label>
                                 <textarea
                                     name="description"
-                                    value={formData.description}
+                                    value={formData.description || ''}
                                     onChange={handleChange}
                                     rows={8}
                                     placeholder="Déployez l'histoire captivante de ce lieu..."
@@ -183,7 +185,7 @@ export default function PatrimonioCreate() {
                         <div className="flex justify-between items-center mb-8">
                             <div className="space-y-1">
                                 <h3 className="text-2xl font-black text-white font-heading">Galerie Média</h3>
-                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Gérez l'immersion visuelle</p>
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Gérez l&apos;immersion visuelle</p>
                             </div>
                             <Button
                                 onClick={() => setIsGalleryModalOpen(true)}
@@ -206,6 +208,7 @@ export default function PatrimonioCreate() {
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                             <button
                                                 onClick={() => toggleGalleryImage(url)}
+                                                title="Supprimer l'image"
                                                 className="p-2 bg-red-500 text-white rounded-lg hover:scale-110 transition-transform"
                                             >
                                                 <Trash2 size={16} />
@@ -310,6 +313,7 @@ export default function PatrimonioCreate() {
                                 </div>
                                 <button
                                     onClick={() => setIsGalleryModalOpen(false)}
+                                    title="Fermer"
                                     className="p-4 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-colors"
                                 >
                                     <X size={24} />
@@ -317,18 +321,18 @@ export default function PatrimonioCreate() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 scrollbar-hide">
-                                {galleryData?.data?.map((img: any) => {
-                                    const isSelected = formData.gallery?.includes(img.url || img.image_url);
+                                {galleryData?.data?.map((img) => {
+                                    const isSelected = formData.gallery?.includes(img.url || img.image_url || "");
                                     return (
                                         <div
                                             key={img.id}
-                                            onClick={() => toggleGalleryImage(img.url || img.image_url)}
+                                            onClick={() => toggleGalleryImage(img.url || img.image_url || "")}
                                             className={cn(
                                                 "aspect-square relative rounded-[2rem] overflow-hidden cursor-pointer transition-all duration-500 group border-2",
                                                 isSelected ? "border-[#FCD116] scale-95 shadow-[0_0_30px_rgba(252,209,22,0.3)]" : "border-transparent group-hover:border-white/20"
                                             )}
                                         >
-                                            <Image src={img.url || img.image_url} alt="Gallery" fill className="object-cover" />
+                                            <Image src={img.url || img.image_url || ''} alt="Gallery" fill className="object-cover" />
                                             <div className={cn(
                                                 "absolute inset-0 transition-all duration-500",
                                                 isSelected ? "bg-[#FCD116]/20" : "bg-black/40 group-hover:bg-black/0"

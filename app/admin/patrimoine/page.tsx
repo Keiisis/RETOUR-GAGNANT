@@ -13,10 +13,22 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BaseRecord } from "@refinedev/core";
+
+export interface Patrimoine extends BaseRecord {
+    id: string;
+    title?: string;
+    description?: string;
+    location?: string;
+    imagename?: string;
+    imageName?: string;
+    gallery?: string[];
+    created_at?: string;
+}
 
 export default function PatrimonioList() {
     const { create, edit } = useNavigation();
-    const queryResult = useList({
+    const queryResult = useList<Patrimoine>({
         resource: "patrimoine",
         pagination: { pageSize: 12 },
         sorters: [{ field: "created_at", order: "desc" }]
@@ -27,8 +39,14 @@ export default function PatrimonioList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState('all');
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data; const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading; const items = data?.data || [];
-    const filteredItems = items.filter((item: any) =>
+    const returnedData = (queryResult as unknown as { data?: { data: Patrimoine[] }, query?: { data?: { data: Patrimoine[] } } }).data ||
+        (queryResult as unknown as { query?: { data?: { data: Patrimoine[] } } }).query?.data;
+    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading ||
+        (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
+
+    const items = returnedData?.data || [];
+
+    const filteredItems = items.filter((item) =>
         item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.location?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -89,7 +107,7 @@ export default function PatrimonioList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-10">
                     <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item: any, index: number) => (
+                        {filteredItems.map((item, index: number) => (
                             <motion.div
                                 key={item.id}
                                 layout
@@ -104,12 +122,17 @@ export default function PatrimonioList() {
 
                                     {/* Image Base */}
                                     <div className="absolute inset-0">
-                                        <Image
-                                            src={(item.imagename || item.imageName) ? ((item.imagename || item.imageName).startsWith('http') ? (item.imagename || item.imageName) : `/assets/patrimoine/${item.imagename || item.imageName}`) : '/images/placeholder.jpg'}
-                                            alt={item.title}
-                                            fill
-                                            className="object-cover group-hover:scale-110 transition-transform duration-1000 grayscale-[0.2] group-hover:grayscale-0"
-                                        />
+                                        {(() => {
+                                            const imageSource = item.imagename || item.imageName;
+                                            return (
+                                                <Image
+                                                    src={imageSource ? (imageSource.startsWith('http') ? imageSource : `/assets/patrimoine/${imageSource}`) : '/images/placeholder.jpg'}
+                                                    alt={item.title || 'Patrimoine'}
+                                                    fill
+                                                    className="object-cover group-hover:scale-110 transition-transform duration-1000 grayscale-[0.2] group-hover:grayscale-0"
+                                                />
+                                            );
+                                        })()}
                                         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f18] via-[#0a0f18]/40 to-transparent" />
                                     </div>
 
@@ -187,7 +210,7 @@ export default function PatrimonioList() {
                             <Plus size={40} className="text-gray-600 group-hover:text-[#FCD116]" />
                         </div>
                         <h3 className="text-white font-black font-heading text-xl uppercase tracking-widest text-center">Ajouter un Joyau</h3>
-                        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.4em] mt-2">Expansion de l'Archive</p>
+                        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.4em] mt-2">Expansion de l&apos;Archive</p>
                     </motion.div>
                 </div>
             )}

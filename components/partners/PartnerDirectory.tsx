@@ -32,16 +32,16 @@ export default function PartnerDirectory() {
                     .order('sort_order', { ascending: true })
 
                 if (!error && data && data.length > 0) {
-                    setPartners(data.map((p: any) => ({
-                        id: p.id,
-                        name: p.name,
-                        description: p.description,
-                        logo: p.logo || '',
-                        coverImage: p.cover_image || '',
-                        category: p.category,
-                        location: p.location,
-                        isPremium: p.is_premium,
-                        products: p.products || [],
+                    setPartners(data.map((p: Record<string, unknown>) => ({
+                        id: Number(p.id) || 0,
+                        name: String(p.name || ''),
+                        description: String(p.description || ''),
+                        logo: p.logo ? String(p.logo) : '',
+                        coverImage: p.cover_image ? String(p.cover_image) : '',
+                        category: String(p.category || ''),
+                        location: String(p.location || ''),
+                        isPremium: Boolean(p.is_premium),
+                        products: Array.isArray(p.products) ? p.products : [],
                     })))
                 }
             } catch {

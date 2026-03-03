@@ -10,19 +10,32 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'
 import { cn } from '@/lib/utils'
+import { BaseRecord } from '@refinedev/core'
+
+export interface ProcessStep extends BaseRecord {
+    id: string;
+    title?: string;
+    description?: string;
+    icon_type?: string;
+    order?: number;
+    created_at?: string;
+}
 
 export default function ProcessStepsList() {
     const { create, edit } = useNavigation()
-    const queryResult = useList({
+    const queryResult = useList<ProcessStep>({
         resource: 'process_steps',
         sorters: [{ field: 'order', order: 'asc' }],
     })
 
-    const data = (queryResult as any).data || (queryResult as any).query?.data
-    const isLoading = (queryResult as any).isLoading || (queryResult as any).query?.isLoading
+    const returnedData = (queryResult as unknown as { data?: { data: ProcessStep[] }, query?: { data?: { data: ProcessStep[] } } }).data ||
+        (queryResult as unknown as { query?: { data?: { data: ProcessStep[] } } }).query?.data;
+    const isLoading = (queryResult as unknown as { isLoading?: boolean }).isLoading ||
+        (queryResult as unknown as { query?: { isLoading?: boolean } }).query?.isLoading;
+
     const { mutate: deleteItem } = useDelete()
 
-    const items = data?.data || []
+    const items = returnedData?.data || []
 
     if (isLoading) {
         return (
@@ -56,7 +69,7 @@ export default function ProcessStepsList() {
 
             {/* Steps List */}
             <div className="space-y-4">
-                {items.map((step: any, index: number) => (
+                {items.map((step, index: number) => (
                     <Card
                         key={step.id}
                         className="bg-[#0a0f18] border-white/5 rounded-2xl p-6 flex items-center justify-between hover:border-white/10 transition-all group"
