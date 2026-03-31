@@ -1,0 +1,55 @@
+{
+    "kind": "collectionType",
+    "collectionName": "services",
+    "info": {
+        "singularName": "service",
+        "pluralName": "services",
+        "displayName": "Service",
+        "description": "Services proposés par Retour Gagnant"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "title": {
+            "type": "string",
+            "required": true
+        },
+        "slug": {
+            "type": "uid",
+            "targetField": "title",
+            "required": true
+        },
+        "subtitle": {
+            "type": "string"
+        },
+        "description": {
+            "type": "text",
+            "maxLength": 3000
+        },
+        "price": {
+            "type": "string"
+        },
+        "color": {
+            "type": "string",
+            "maxLength": 7
+        },
+        "emoji": {
+            "type": "string",
+            "maxLength": 10
+        },
+        "icon_type": {
+            "type": "string",
+            "description": "Ex: passport, tata, drum, cowrie, assin, idea"
+        },
+        "features_text": {
+            "type": "text",
+            "description": "Entrez les avantages un par ligne"
+        },
+        "pricing_options": {
+            "type": "json",
+            "description": "Ex: [{'label': 'Standard', 'price': '50.000'}, {'label': 'Premium', 'price': '100.000'}]"
+        }
+    }
+}

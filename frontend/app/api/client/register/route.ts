@@ -1,0 +1,180 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import nodemailer from 'nodemailer'
+import fs from 'fs'
+import path from 'path'
+
+// Service role — bypass RLS pour créer le profil, lier les documents
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json()
+        const { email, password, nom, prenom, phone, pays, ville } = body
+
+        if (!email || !password) {
+            return NextResponse.json({ error: 'email et mot de passe requis' }, { status: 400 })
+        }
+
+        // Validation sécurité mot de passe (serveur — ne jamais faire confiance au client seul)
+        const pwdErrors: string[] = []
+        if (password.length < 12) pwdErrors.push('12 caractères minimum')
+        if (!/[A-Z]/.test(password)) pwdErrors.push('1 lettre majuscule')
+        if ((password.match(/\d/g) || []).length < 2) pwdErrors.push('2 chiffres minimum')
+        if (/^[A-Za-z0-9]*$/.test(password)) pwdErrors.push('1 caractère spécial')
+        if (pwdErrors.length > 0) {
+            return NextResponse.json({ error: `Mot de passe insuffisant : ${pwdErrors.join(', ')}` }, { status: 400 })
+        }
+
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
+
+        // 1. Créer le compte (non confirmé) + générer le lien de confirmation
+        //    generateLink crée l'utilisateur ET retourne un hashed_token qu'on utilise
+        //    dans notre propre endpoint /api/auth/verify-email — aucune dépendance
+        //    envers la configuration "Site URL" de Supabase Dashboard.
+        const { data: linkData, error: createError } = await supabase.auth.admin.generateLink({
+            type: 'signup',
+            email: email.toLowerCase().trim(),
+            password,
+            options: {
+                data: { nom: nom || '', prenom: prenom || '', phone: phone || '' },
+                redirectTo: siteUrl, // requis mais ignoré — on utilise notre propre URL
+            },
+        })
+
+        if (createError) {
+            // "User already registered" → compte déjà existant
+            if (createError.message.toLowerCase().includes('already registered')) {
+                return NextResponse.json({ error: 'Un compte existe déjà avec cet email.' }, { status: 409 })
+            }
+            throw new Error(`Erreur inscription: ${createError.message}`)
+        }
+
+        const user_id = linkData.user.id
+        // hashed_token utilisé par notre endpoint /api/auth/verify-email
+        const token_hash = linkData.properties.hashed_token
+        const confirmUrl = `${siteUrl}/api/auth/verify-email?token_hash=${encodeURIComponent(token_hash)}&type=signup`
+
+        let emailSent = false
+
+        // 2. Envoyer l'email de confirmation via SMTP personnalisé
+        try {
+            const { data: settingsData } = await supabase.from('settings').select('key, value').in('key', [
+                'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'
+            ])
+            const settings: Record<string, string> = {}
+            for (const s of settingsData || []) settings[s.key] = s.value
+
+            if (settings.smtp_host) {
+                const transporter = nodemailer.createTransport({
+                    host: settings.smtp_host,
+                    port: Number(settings.smtp_port) || 465,
+                    secure: Number(settings.smtp_port) === 465,
+                    auth: { user: settings.smtp_user, pass: settings.smtp_pass },
+                    tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' }
+                })
+
+                const fromString = `"${settings.smtp_from_name || 'Retour Gagnant Bénin'}" <${settings.smtp_from_email || settings.smtp_user}>`
+
+                // Template HTML existant avec le lien de confirmation
+                let htmlContent = `
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#060d1a;color:#fff;padding:40px;border-radius:16px;">
+                        <h2 style="color:#60a5fa;margin-bottom:8px;">Confirmez votre adresse email</h2>
+                        <p style="color:#9ca3af;margin-bottom:24px;">Bonjour ${prenom || nom || ''}, merci de vous être inscrit(e) sur Retour Gagnant Bénin.</p>
+                        <p style="color:#d1d5db;margin-bottom:32px;">Pour activer votre compte et accéder à votre espace personnel, cliquez sur le bouton ci-dessous :</p>
+                        <a href="${confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:15px;">
+                            ✅ Confirmer mon adresse email
+                        </a>
+                        <p style="color:#6b7280;font-size:12px;margin-top:32px;">Ce lien est valable 24 heures. Si vous n'avez pas créé de compte, ignorez cet email.</p>
+                        <p style="color:#6b7280;font-size:11px;margin-top:8px;">Ou copiez ce lien dans votre navigateur :<br><span style="color:#93c5fd;word-break:break-all;">${confirmUrl}</span></p>
+                    </div>`
+
+                try {
+                    const templatePath = path.join(process.cwd(), 'public', 'email_confirm_template.html')
+                    const rawTemplate = fs.readFileSync(templatePath, 'utf8')
+                    htmlContent = rawTemplate
+                        .replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, confirmUrl)
+                        .replace(/Confirmez votre (email|inscription|adresse)/gi, 'Confirmez votre adresse email')
+                        .replace(/href="[^"]*{{[^"]*}}[^"]*"/g, `href="${confirmUrl}"`)
+                } catch {
+                    // fallback inline si template absent
+                }
+
+                await transporter.sendMail({
+                    from: fromString,
+                    to: email,
+                    subject: "Confirmez votre adresse email — Retour Gagnant Bénin",
+                    html: htmlContent,
+                })
+                emailSent = true
+            }
+        } catch (mailErr) {
+            console.error('Erreur envoi email confirmation :', mailErr)
+            // On ne bloque pas l'inscription si l'email échoue — le compte est créé
+        }
+
+        // 3. Créer le profil client
+        const { error: profileError } = await supabase
+            .from('client_profiles')
+            .upsert({
+                id: user_id,
+                email: email.toLowerCase().trim(),
+                nom: nom || null,
+                prenom: prenom || null,
+                phone: phone || null,
+                pays: pays || 'France',
+                ville: ville || null,
+            }, { onConflict: 'id' })
+
+        if (profileError) {
+            throw new Error(`Erreur création profil: ${profileError.message}`)
+        }
+
+        // 4. Lier les documents_financiers ayant le même client_email
+        const { error: docError } = await supabase
+            .from('documents_financiers')
+            .update({ client_id: user_id })
+            .eq('client_email', email.toLowerCase().trim())
+            .is('client_id', null)
+
+        if (docError) console.warn('Liaison documents:', docError.message)
+
+        // 5. Lier les dossiers de suivi ayant le même client_email
+        const { error: dossierError } = await supabase
+            .from('dossier_tracking')
+            .update({ client_id: user_id })
+            .eq('client_email', email.toLowerCase().trim())
+            .is('client_id', null)
+
+        if (dossierError) console.warn('Liaison dossiers:', dossierError.message)
+
+        // 6. Compter ce qui a été lié
+        const { count: docsCount } = await supabase
+            .from('documents_financiers')
+            .select('id', { count: 'exact', head: true })
+            .eq('client_id', user_id)
+
+        const { count: dossiersCount } = await supabase
+            .from('dossier_tracking')
+            .select('id', { count: 'exact', head: true })
+            .eq('client_id', user_id)
+
+        return NextResponse.json({
+            success: true,
+            linked: {
+                documents: docsCount || 0,
+                dossiers: dossiersCount || 0,
+            },
+            needsEmailConfirm: true, // confirmation requise avant connexion
+            emailSent,
+        })
+
+    } catch (err) {
+        console.error('Erreur API client/register:', err)
+        const message = err instanceof Error ? err.message : 'Erreur interne'
+        return NextResponse.json({ error: message }, { status: 500 })
+    }
+}

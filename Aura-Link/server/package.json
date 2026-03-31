@@ -1,0 +1,14 @@
+{
+    "name": "aura-link-server",
+    "version": "6.0.0",
+    "description": "Aura Hive v6.0 Phantom - CyberSec Meta-Agent Server",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.19.2",
+        "groq-sdk": "^0.37.0"
+    }
+}

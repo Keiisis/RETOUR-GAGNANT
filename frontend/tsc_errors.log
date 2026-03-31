@@ -1,0 +1,46 @@
+app/(routes)/nationalite/formulaire/page.tsx(467,170): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(468,137): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(469,168): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(470,195): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(472,145): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(473,157): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(474,172): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(543,126): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(544,135): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/(routes)/nationalite/formulaire/page.tsx(545,166): error TS2322: Type '{}' is not assignable to type 'string | number | readonly string[] | undefined'.
+app/admin/layout.tsx(171,65): error TS2304: Cannot find name 't'.
+app/admin/layout.tsx(217,44): error TS2304: Cannot find name 't'.
+app/admin/layout.tsx(246,40): error TS2304: Cannot find name 't'.
+app/admin/users/page.tsx(224,42): error TS2304: Cannot find name 't'.
+app/admin/users/page.tsx(235,42): error TS2304: Cannot find name 't'.
+components/admin/ai-assistant.tsx(67,50): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(92,49): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(106,36): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(164,33): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(165,28): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(179,29): error TS2304: Cannot find name 't'.
+components/admin/ImageUpload.tsx(180,24): error TS2304: Cannot find name 't'.
+components/boutique/CartCheckoutModal.tsx(795,36): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(847,157): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(854,159): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(863,161): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(873,48): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(906,62): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(921,62): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartCheckoutModal.tsx(1052,102): error TS2552: Cannot find name 't'. Did you mean 'T'?
+components/boutique/CartDrawer.tsx(58,44): error TS2304: Cannot find name 't'.
+components/boutique/CartDrawer.tsx(103,68): error TS2304: Cannot find name 't'.
+components/boutique/CartDrawer.tsx(111,68): error TS2304: Cannot find name 't'.
+components/boutique/CartDrawer.tsx(123,64): error TS2304: Cannot find name 't'.
+components/boutique/CartFloatingButton.tsx(20,28): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(801,36): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(835,58): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(848,58): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(863,58): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(873,48): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(906,58): error TS2304: Cannot find name 't'.
+components/boutique/PaymentModal.tsx(1033,102): error TS2304: Cannot find name 't'.
+components/boutique/ProductReviews.tsx(234,62): error TS2304: Cannot find name 't'.
+components/boutique/ProductReviews.tsx(247,58): error TS2304: Cannot find name 't'.
+components/layout/LanguageSwitcher.tsx(41,29): error TS2304: Cannot find name 't'.
+components/ui/Price.tsx(59,33): error TS2552: Cannot find name 't'. Did you mean 'T'?

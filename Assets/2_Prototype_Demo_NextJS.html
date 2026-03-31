@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETOUR GAGNANT BENIN - Prototype Next.js 14</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Note: Ce prototype utilise du HTML/CSS/JS vanilla pour démo -->
+    <!-- Le projet final sera développé en Next.js 14 + TypeScript + Tailwind CSS -->
+    
+    <style>
+        /* NOTE: Dans Next.js, ces styles seront dans globals.css avec Tailwind */
+        
+        :root {
+            --green-primary: #28a745;
+            --yellow-secondary: #ffc107;
+            --red-accent: #dc3545;
+            --blue-dark: #1a2332;
+            --gray-light: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--blue-dark);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Audio Indicator - Sera un composant React */
+        .audio-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(26, 35, 50, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .audio-indicator:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .audio-wave {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 20px;
+        }
+
+        .audio-wave span {
+            width: 3px;
+            background: var(--green-primary);
+            border-radius: 3px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .audio-wave span:nth-child(1) { animation-delay: 0s; height: 40%; }
+        .audio-wave span:nth-child(2) { animation-delay: 0.2s; height: 70%; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.4s; height: 50%; }
+
+        @keyframes wave {
+            0%, 100% { height: 40%; }
+            50% { height: 100%; }
+        }
+
+        .audio-indicator.muted .audio-wave span {
+            animation: none;
+            height: 2px;
+        }
+
+        /* Header - Sera components/layout/Header.tsx */
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+
+        .header.scrolled {
+            box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+            border-bottom: 3px solid var(--green-primary);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--green-primary), var(--yellow-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.4s;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .logo-circle:hover {
+            transform: scale(1.1) rotate(5deg) !important;
+        }
+
+        .logo-circle::before {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: var(--blue-dark);
+            border-radius: 50%;
+        }
+
+        .logo-circle::after {
+            content: '🌳';
+            position: relative;
+            font-size: 30px;
+            z-index: 1;
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--blue-dark);
+        }
+
+        .logo-text small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 35px;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--blue-dark);
+            font-weight: 500;
+            font-size: 15px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .nav-menu a::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--green-primary);
+            transition: all 0.3s;
+            transform: translateX(-50%);
+        }
+
+        .nav-menu a:hover {
+            color: var(--green-primary);
+        }
+
+        .nav-menu a:hover::before {
+            width: 100%;
+        }
+
+        .cta-button {
+            background: var(--green-primary);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        /* Hero Section - Sera components/home/HeroSection.tsx */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, 
+                rgba(40, 167, 69, 0.95), 
+                rgba(26, 35, 50, 0.95)),
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><rect fill="%2328a745" width="1920" height="1080"/></svg>');
+            background-size: cover;
+            color: white;
+            overflow: hidden;
+        }
+
+        #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 30px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.3s;
+        }
+
+        .hero .highlight {
+            color: var(--yellow-secondary);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero p {
+            font-size: 24px;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.6s;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s forwards 0.9s;
+        }
+
+        .btn-primary {
+            background: var(--yellow-secondary);
+            color: var(--blue-dark);
+            padding: 18px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 10px 30px rgba(255, 193, 7, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 193, 7, 0.5);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            padding: 18px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--green-primary);
+            transform: translateY(-5px);
+        }
+
+        /* Stats Section - Sera components/home/StatsSection.tsx */
+        .stats {
+            padding: 80px 30px;
+            background: var(--green-primary);
+            color: white;
+        }
+
+        .stats-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 50px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--yellow-secondary);
+            margin-bottom: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        /* Services Section - Sera components/home/ServicesGrid.tsx */
+        .services {
+            padding: 120px 30px;
+            background: var(--gray-light);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-title h2 {
+            font-size: 52px;
+            color: var(--blue-dark);
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+
+        .section-title p {
+            font-size: 20px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .services-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
+        .service-card {
+            background: white;
+            padding: 50px 35px;
+            border-radius: 24px;
+            text-align: center;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--green-primary), var(--yellow-secondary));
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+
+        .service-card:hover::before {
+            opacity: 0.1;
+        }
+
+        .service-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+        }
+
+        .service-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-icon {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, var(--green-primary), var(--yellow-secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            transition: all 0.6s;
+        }
+
+        .service-card:hover .service-icon {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .service-card h3 {
+            font-size: 26px;
+            margin-bottom: 18px;
+            color: var(--blue-dark);
+            font-weight: 700;
+        }
+
+        .service-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .service-price {
+            font-size: 15px;
+            color: var(--green-primary);
+            font-weight: 700;
+            padding: 10px 20px;
+            background: rgba(40, 167, 69, 0.1);
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--blue-dark);
+            color: white;
+            padding: 80px 30px 30px;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 50px;
+        }
+
+        .footer-about h3 {
+            font-size: 28px;
+            margin-bottom: 25px;
+        }
+
+        .footer-about p {
+            opacity: 0.85;
+            line-height: 1.9;
+        }
+
+        .footer-links h4 {
+            font-size: 20px;
+            margin-bottom: 25px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: all 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            color: var(--yellow-secondary);
+            padding-left: 10px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 30px;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .tech-badge {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tech-badge::before {
+            content: '⚡';
+            font-size: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 52px; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .header-container { flex-wrap: wrap; }
+            .nav-menu { flex-direction: column; gap: 15px; margin-top: 20px; width: 100%; }
+            .hero h1 { font-size: 38px; }
+            .hero p { font-size: 18px; }
+            .hero-ctas { flex-direction: column; }
+            .services-grid { grid-template-columns: 1fr; }
+            .footer-container { grid-template-columns: 1fr; }
+            .tech-badge { font-size: 12px; padding: 12px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        ============================================
+        NOTES DE DÉVELOPPEMENT NEXT.JS
+        ============================================
+        
+        Ce fichier HTML est une DÉMO du design final.
+        
+        Le projet réel sera développé avec:
+        - Next.js 14 App Router
+        - TypeScript
+        - Tailwind CSS
+        - Framer Motion (animations)
+        - Strapi CMS (backend)
+        
+        Chaque section ci-dessous deviendra un composant React:
+        - Header → components/layout/Header.tsx
+        - Hero → components/home/HeroSection.tsx
+        - Stats → components/home/StatsSection.tsx
+        - Services → components/home/ServicesGrid.tsx
+        - Footer → components/layout/Footer.tsx
+        - AudioPlayer → components/layout/AudioPlayer.tsx
+    -->
+
+    <!-- Audio Background (Invisible) -->
+    <audio id="backgroundAudio" loop preload="auto" style="display: none;">
+        <!-- Dans Next.js, l'URL viendra de Strapi -->
+        <source src="/audio/benin-ambiance.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Audio Indicator -->
+    <div class="audio-indicator" id="audioIndicator" title="Cliquez pour activer/désactiver le son">
+        <div class="audio-wave">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header" id="mainHeader">
+        <div class="header-container">
+            <a href="/" class="logo-area">
+                <div class="logo-circle"></div>
+                <div class="logo-text">
+                    RETOUR GAGNANT
+                    <small>BENIN</small>
+                </div>
+            </a>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#accueil">Accueil</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#culture">Culture</a></li>
+                    <li><a href="#temoignages">Témoignages</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            
+            <a href="#rendez-vous" class="cta-button">Prendre Rendez-vous</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="accueil">
+        <canvas id="particles-canvas"></canvas>
+        
+        <div class="hero-content">
+            <h1>
+                Votre Retour au Bénin<br>
+                <span class="highlight">Commence Ici</span>
+            </h1>
+            <p>
+                Accompagnement complet pour votre installation, vos démarches 
+                administratives et vos investissements au pays.
+            </p>
+            <div class="hero-ctas">
+                <a href="#services" class="btn-primary">Découvrir nos Services</a>
+                <a href="#culture" class="btn-secondary">Explorer la Culture</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" data-target="500">0</div>
+                <div class="stat-label">Projets Réalisés</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="98">0</div>
+                <div class="stat-label">% Clients Satisfaits</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="15">0</div>
+                <div class="stat-label">Années d'Expérience</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="24">0</div>
+                <div class="stat-label">Support 24/7</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="section-title">
+            <h2>Nos Services Premium</h2>
+            <p>Un accompagnement personnalisé pour chaque étape</p>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">🛂</div>
+                <h3>Passeport Express</h3>
+                <p>Obtention rapide de votre passeport béninois avec suivi en temps réel.</p>
+                <div class="service-price">À partir de 50,000 FCFA</div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">📄</div>
+                <h3>Nationalité Béninoise</h3>
+                <p>Accompagnement complet pour votre demande de nationalité.</p>
+                <div class="service-price">À partir de 150,000 FCFA</div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🏠</div>
+                <h3>Logement Premium</h3>
+                <p>Trouvez votre propriété idéale avec notre assistance juridique.</p>
+                <div class="service-price">Commission sur transaction</div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🏗️</div>
+                <h3>Construction Clé en Main</h3>
+                <p>De la conception à la livraison, nous gérons tout votre projet.</p>
+                <div class="service-price">Devis personnalisé</div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">💼</div>
+                <h3>Investissement Guidé</h3>
+                <p>Analyses de marché et accompagnement stratégique complet.</p>
+                <div class="service-price">Sur mesure</div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🚢</div>
+                <h3>Import / Export Pro</h3>
+                <p>Solutions logistiques complètes avec dédouanement automatisé.</p>
+                <div class="service-price">Selon volume</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-about">
+                <h3>RETOUR GAGNANT BENIN</h3>
+                <p>Votre partenaire de confiance pour un retour réussi au Bénin. Innovation, culture et excellence au service de vos projets.</p>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Services</h4>
+                <ul>
+                    <li><a href="#services">Passeport</a></li>
+                    <li><a href="#services">Nationalité</a></li>
+                    <li><a href="#services">Logement</a></li>
+                    <li><a href="#services">Investissement</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Entreprise</h4>
+                <ul>
+                    <li><a href="#culture">Notre Mission</a></li>
+                    <li><a href="#temoignages">Témoignages</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Légal</h4>
+                <ul>
+                    <li><a href="#">Mentions Légales</a></li>
+                    <li><a href="#">Confidentialité</a></li>
+                    <li><a href="#">CGV/CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2026 RETOUR GAGNANT BENIN. Tous droits réservés. Développé avec Next.js 14 + Strapi</p>
+        </div>
+    </footer>
+
+    <!-- Tech Badge -->
+    <div class="tech-badge">
+        Prototype - Stack finale: Next.js 14 + Strapi + TypeScript
+    </div>
+
+    <script>
+        // ==========================================
+        // NOTE: Dans Next.js, toute cette logique
+        // sera dans des composants React avec hooks
+        // ==========================================
+
+        // Audio Management
+        const audio = document.getElementById('backgroundAudio');
+        const audioIndicator = document.getElementById('audioIndicator');
+        let isPlaying = false;
+
+        // Volume intelligent (30% pour ne pas agacer)
+        audio.volume = 0.3;
+
+        // Tenter autoplay au chargement
+        window.addEventListener('load', () => {
+            audio.play()
+                .then(() => {
+                    isPlaying = true;
+                    console.log('🎵 Audio démarré automatiquement');
+                })
+                .catch(() => {
+                    console.log('⚠️ Autoplay bloqué. Clic requis.');
+                    // Fallback au premier clic
+                    document.addEventListener('click', () => {
+                        if (!isPlaying) {
+                            audio.play();
+                            isPlaying = true;
+                        }
+                    }, { once: true });
+                });
+        });
+
+        // Toggle audio
+        audioIndicator.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play();
+                audioIndicator.classList.remove('muted');
+                isPlaying = true;
+            } else {
+                audio.pause();
+                audioIndicator.classList.add('muted');
+                isPlaying = false;
+            }
+        });
+
+        // Pause quand l'utilisateur quitte la page
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                audio.pause();
+            } else if (isPlaying) {
+                audio.play();
+            }
+        });
+
+        // Header scroll effect
+        const header = document.getElementById('mainHeader');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Particles Canvas
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                radius: Math.random() * 2 + 1
+            });
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw connections
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Stats Counter Animation
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = parseInt(entry.target.getAttribute('data-target'));
+                    let current = 0;
+                    const increment = target / 60;
+                    
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            entry.target.textContent = Math.ceil(current);
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            entry.target.textContent = target;
+                        }
+                    };
+                    updateCounter();
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.stat-number').forEach(stat => {
+            statsObserver.observe(stat);
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+
+    <!-- 
+        ============================================
+        PROCHAINES ÉTAPES DE DÉVELOPPEMENT
+        ============================================
+        
+        1. Setup Next.js 14 project
+           npx create-next-app@latest retour-gagnant-benin
+        
+        2. Install dependencies
+           npm install framer-motion gsap lucide-react zustand
+        
+        3. Setup Strapi backend
+           npx create-strapi-app@latest strapi-backend
+        
+        4. Créer les composants React
+           - components/layout/AudioPlayer.tsx
+           - components/layout/Header.tsx
+           - components/home/HeroSection.tsx
+           - components/home/StatsSection.tsx
+           - components/home/ServicesGrid.tsx
+        
+        5. Configurer Strapi
+           - Content Types (Service, Appointment, etc.)
+           - Audio Settings
+           - Media Library
+        
+        6. Déployer
+           - Frontend: Vercel
+           - Backend: Railway
+           - Database: Railway PostgreSQL
+    -->
+</body>
+</html>

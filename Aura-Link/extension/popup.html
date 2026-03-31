@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      width: 250px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #18191a;
+      color: #e4e6eb;
+      text-align: center;
+    }
+
+    h1 {
+      color: #fe7501;
+      font-size: 18px;
+      margin: 0 0 10px 0;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #4ade80;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    .footer {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 15px;
+      border-top: 1px solid #374151;
+      padding-top: 10px;
+    }
+
+    code {
+      background: #374151;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>⚡ Aura Link</h1>
+  <div class="status">Connecté (Port 3666)</div>
+  <p style="font-size:12px; margin:15px 0;">
+    Ouvrez <a href="https://arena.lmsys.org" target="_blank" style="color:#fe7501;">Arena.ai</a> ou <a
+      href="https://claude.ai" target="_blank" style="color:#fe7501;">Claude.ai</a><br>pour voir le bouton d'injection.
+  </p>
+  <div class="footer">
+    Serveur local requis:<br><code>node tools/aura-link/server/index.js</code>
+  </div>
+</body>
+
+</html>

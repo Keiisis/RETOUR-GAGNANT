@@ -1,0 +1,377 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+import {
+    FileText, FolderOpen, MessageSquare, CalendarDays,
+    ArrowRight, CheckCircle2, Clock, AlertCircle,
+    CreditCard, Receipt, TrendingUp, Sparkles
+} from 'lucide-react'
+
+interface Stats {
+    devisEnAttente: number
+    facturesToPay: number
+    dossierActif: boolean
+    messagesNonLus: number
+    totalDépenses: number
+}
+
+interface RecentDoc {
+    id: string
+    type: string
+    numero: string
+    total: number
+    status: string
+    currency: string
+    created_at: string
+}
+
+const statusLabel: Record<string, { label: string; color: string }> = {
+    brouillon: { label: 'Brouillon', color: 'text-gray-400 bg-gray-500/10' },
+    envoye: { label: 'En attente', color: 'text-blue-400 bg-blue-500/10' },
+    accepte: { label: 'Accepté', color: 'text-emerald-400 bg-emerald-500/10' },
+    refuse: { label: 'Refusé', color: 'text-red-400 bg-red-500/10' },
+    paye: { label: 'Payé', color: 'text-green-400 bg-green-500/10' },
+    en_retard: { label: 'En retard', color: 'text-orange-400 bg-orange-500/10' },
+    annule: { label: 'Annulé', color: 'text-gray-500 bg-gray-500/10' },
+}
+
+const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+export default function ClientDashboardPage() {
+    const [stats, setStats] = useState<Stats>({ devisEnAttente: 0, facturesToPay: 0, dossierActif: false, messagesNonLus: 0, totalDépenses: 0 })
+    const [recentDocs, setRecentDocs] = useState<RecentDoc[]>([])
+    const [clientEmail, setClientEmail] = useState('')
+    const [clientId, setClientId] = useState('')
+    const [clientNom, setClientNom] = useState('')
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const load = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session?.user) return
+
+            const email = session.user.email || ''
+            setClientEmail(email)
+
+            // Profil
+            const { data: profile } = await supabase
+                .from('client_profiles')
+                .select('nom, prenom')
+                .eq('id', session.user.id)
+                .single()
+            if (profile) setClientNom([profile.prenom, profile.nom].filter(Boolean).join(' '))
+
+            const uid = session.user.id
+            setClientId(uid)
+
+            // Documents récents (affichage uniquement)
+            const { data: docs } = await supabase
+                .from('documents_financiers')
+                .select('id, type, numero, total, status, currency, created_at')
+                .or(`client_id.eq.${uid},client_email.eq.${email}`)
+                .order('created_at', { ascending: false })
+                .limit(5)
+            setRecentDocs(docs || [])
+
+            // Stats via requêtes COUNT dédiées (sur la totalité des docs, pas juste les 5 derniers)
+            const [
+                { count: devisCount },
+                { count: facturesCount },
+                { data: dossier },
+                { data: msgIds },
+                { data: paidDocs },
+            ] = await Promise.all([
+                supabase
+                    .from('documents_financiers')
+                    .select('id', { count: 'exact', head: true })
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`)
+                    .eq('type', 'devis')
+                    .in('status', ['envoye', 'brouillon']),
+                supabase
+                    .from('documents_financiers')
+                    .select('id', { count: 'exact', head: true })
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`)
+                    .eq('type', 'facture')
+                    .eq('status', 'envoye'),
+                supabase
+                    .from('dossier_tracking')
+                    .select('id, statut')
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`)
+                    .neq('statut', 'termine')
+                    .neq('statut', 'annule')
+                    .limit(1),
+                // IDs des messages du client pour chercher les réponses agent
+                supabase
+                    .from('messages')
+                    .select('id')
+                    .or(`client_id.eq.${uid},email.eq.${email}`),
+                // Total dépensé : tous les docs payés
+                supabase
+                    .from('documents_financiers')
+                    .select('total')
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`)
+                    .eq('status', 'paye'),
+            ])
+
+            // Réponses agent non lues = messages dans chat_messages (role=agent) pour ce client
+            let agentRepliesCount = 0
+            const conversationIds = (msgIds || []).map(m => m.id)
+            if (conversationIds.length > 0) {
+                const { count } = await supabase
+                    .from('chat_messages')
+                    .select('id', { count: 'exact', head: true })
+                    .in('conversation_id', conversationIds)
+                    .eq('role', 'agent')
+                agentRepliesCount = count || 0
+            }
+
+            const totalPayé = (paidDocs || []).reduce((s: number, d: { total: number }) => s + (d.total || 0), 0)
+
+            setStats({
+                devisEnAttente: devisCount || 0,
+                facturesToPay: facturesCount || 0,
+                dossierActif: (dossier?.length || 0) > 0,
+                messagesNonLus: agentRepliesCount,
+                totalDépenses: totalPayé,
+            })
+            setLoading(false)
+        }
+        load()
+    }, [])
+
+    // Realtime : mise à jour auto des stats dès qu'un document financier change
+    useEffect(() => {
+        if (!clientId || !clientEmail) return
+        const uid = clientId
+        const email = clientEmail
+
+        const refresh = async () => {
+            const [
+                { count: devisCount },
+                { count: facturesCount },
+                { data: dossier },
+                { data: paidDocs },
+                { data: docs },
+            ] = await Promise.all([
+                supabase.from('documents_financiers').select('id', { count: 'exact', head: true })
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`).eq('type', 'devis').in('status', ['envoye', 'brouillon']),
+                supabase.from('documents_financiers').select('id', { count: 'exact', head: true })
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`).eq('type', 'facture').eq('status', 'envoye'),
+                supabase.from('dossier_tracking').select('id, statut')
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`).neq('statut', 'termine').neq('statut', 'annule').limit(1),
+                supabase.from('documents_financiers').select('total')
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`).eq('status', 'paye'),
+                supabase.from('documents_financiers').select('id, type, numero, total, status, currency, created_at')
+                    .or(`client_id.eq.${uid},client_email.eq.${email}`).order('created_at', { ascending: false }).limit(5),
+            ])
+            const totalPayé = (paidDocs || []).reduce((s: number, d: { total: number }) => s + (d.total || 0), 0)
+            setStats(prev => ({
+                ...prev,
+                devisEnAttente: devisCount || 0,
+                facturesToPay: facturesCount || 0,
+                dossierActif: (dossier?.length || 0) > 0,
+                totalDépenses: totalPayé,
+            }))
+            setRecentDocs(docs || [])
+        }
+
+        const channel = supabase
+            .channel(`client-dashboard-${clientId}`)
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'documents_financiers', filter: `client_id=eq.${uid}` },
+                () => refresh()
+            )
+            .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [clientId, clientEmail])
+
+    const cards = [
+        { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, color: 'from-blue-500 to-blue-600', href: '/client/documents', desc: 'À signer' },
+        { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, color: 'from-amber-500 to-orange-600', href: '/client/documents', desc: 'En attente de paiement' },
+        { title: 'Dossier actif', value: stats.dossierActif ? '✓' : '—', icon: FolderOpen, color: 'from-indigo-500 to-purple-600', href: '/client/dossier', desc: 'Suivi en cours' },
+        { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, color: 'from-emerald-500 to-teal-600', href: '/client/messages', desc: 'De votre agent' },
+    ]
+
+    const quickActions = [
+        { label: 'Mes documents', icon: FileText, href: '/client/documents', color: 'text-blue-400', bg: 'bg-blue-500/10 hover:bg-blue-500/20' },
+        { label: 'Mon dossier', icon: FolderOpen, href: '/client/dossier', color: 'text-indigo-400', bg: 'bg-indigo-500/10 hover:bg-indigo-500/20' },
+        { label: 'Envoyer message', icon: MessageSquare, href: '/client/messages', color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20' },
+        { label: 'Prendre RDV', icon: CalendarDays, href: '/client/rendez-vous', color: 'text-amber-400', bg: 'bg-amber-500/10 hover:bg-amber-500/20' },
+    ]
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Welcome */}
+            <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles size={14} className="text-blue-400" />
+                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Mon Espace Client</span>
+                    </div>
+                    <h1 className="text-2xl font-black text-white">
+                        Bonjour, <span className="text-blue-400">{clientNom || clientEmail.split('@')[0]}</span> 👋
+                    </h1>
+                    <p className="text-gray-500 text-sm mt-1">Voici un résumé de votre compte.</p>
+                </div>
+                {stats.totalDépenses > 0 && (
+                    <div className="hidden md:flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3">
+                        <TrendingUp size={16} className="text-green-400" />
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">Total réglé</p>
+                            <p className="text-white font-black text-sm font-mono">{fmtN(stats.totalDépenses)} XOF</p>
+                        </div>
+                    </div>
+                )}
+            </motion.div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {cards.map((card, i) => {
+                    const Icon = card.icon
+                    const numVal = typeof card.value === 'number' ? card.value : null
+                    const hasAlert = numVal !== null && numVal > 0
+                    return (
+                        <motion.div key={card.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
+                            <Link href={card.href} className={`block bg-[#0a1221] border rounded-xl p-5 hover:border-white/[0.12] transition-all group ${hasAlert ? 'border-blue-500/30' : 'border-white/[0.06]'}`}>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} p-[1px]`}>
+                                        <div className="w-full h-full bg-[#0a1221] rounded-[10px] flex items-center justify-center">
+                                            <Icon size={18} className="text-white/80" />
+                                        </div>
+                                    </div>
+                                    {hasAlert && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+                                </div>
+                                <p className="text-2xl font-black text-white">{card.value}</p>
+                                <p className="text-[11px] text-gray-500 font-semibold mt-1">{card.title}</p>
+                                <p className="text-[10px] text-gray-600 mt-0.5">{card.desc}</p>
+                            </Link>
+                        </motion.div>
+                    )
+                })}
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+                {/* Recent Documents */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2">
+                    <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+                            <h2 className="font-black text-white text-sm flex items-center gap-2">
+                                <FileText size={16} className="text-blue-400" /> Documents récents
+                            </h2>
+                            <Link href="/client/documents" className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                                Tout voir <ArrowRight size={12} />
+                            </Link>
+                        </div>
+                        {recentDocs.length === 0 ? (
+                            <div className="p-10 text-center">
+                                <FileText size={28} className="text-gray-700 mx-auto mb-2" />
+                                <p className="text-gray-500 text-sm">Aucun document pour le moment.</p>
+                                <p className="text-gray-600 text-xs mt-1">Vos devis et factures apparaîtront ici.</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-white/[0.04]">
+                                {recentDocs.map(doc => {
+                                    const s = statusLabel[doc.status] || { label: doc.status, color: 'text-gray-400 bg-gray-500/10' }
+                                    return (
+                                        <Link key={doc.id} href={`/client/documents/${doc.id}`}
+                                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors group">
+                                            <div className={`p-2 rounded-lg ${doc.type === 'devis' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                                {doc.type === 'devis' ? <FileText size={14} /> : <Receipt size={14} />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-white">{doc.numero}</p>
+                                                <p className="text-[11px] text-gray-500">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-mono font-bold text-white">{fmtN(doc.total)} {doc.currency || 'XOF'}</p>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.color}`}>{s.label}</span>
+                                            </div>
+                                            <ArrowRight size={14} className="text-gray-600 group-hover:text-blue-400 transition-colors" />
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Quick Actions + Alerts */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="space-y-4">
+                    {/* Alerts */}
+                    {(stats.devisEnAttente > 0 || stats.facturesToPay > 0) && (
+                        <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-4 space-y-2">
+                            <p className="text-xs font-black text-amber-400 flex items-center gap-1.5 mb-3">
+                                <AlertCircle size={13} /> Actions requises
+                            </p>
+                            {stats.devisEnAttente > 0 && (
+                                <Link href="/client/documents" className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={12} className="text-amber-400" />
+                                        <span className="text-[12px] text-white">{stats.devisEnAttente} devis à signer</span>
+                                    </div>
+                                    <ArrowRight size={12} className="text-amber-400" />
+                                </Link>
+                            )}
+                            {stats.facturesToPay > 0 && (
+                                <Link href="/client/documents" className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard size={12} className="text-amber-400" />
+                                        <span className="text-[12px] text-white">{stats.facturesToPay} facture(s) à payer</span>
+                                    </div>
+                                    <ArrowRight size={12} className="text-amber-400" />
+                                </Link>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Quick Actions */}
+                    <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl p-4">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Actions rapides</p>
+                        <div className="space-y-1.5">
+                            {quickActions.map(action => {
+                                const Icon = action.icon
+                                return (
+                                    <Link key={action.href} href={action.href}
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${action.bg}`}>
+                                        <Icon size={15} className={action.color} />
+                                        <span className="text-[13px] text-white font-medium">{action.label}</span>
+                                        <ArrowRight size={12} className="text-gray-600 ml-auto" />
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Dossier status */}
+                    <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl p-4">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Mon dossier</p>
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stats.dossierActif ? 'bg-indigo-500/15' : 'bg-gray-500/10'}`}>
+                                {stats.dossierActif ? <CheckCircle2 size={20} className="text-indigo-400" /> : <FolderOpen size={20} className="text-gray-500" />}
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-white">{stats.dossierActif ? 'Dossier en cours' : 'Aucun dossier actif'}</p>
+                                <Link href="/client/dossier" className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors mt-0.5">
+                                    Voir le suivi <ArrowRight size={10} />
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    )
+}

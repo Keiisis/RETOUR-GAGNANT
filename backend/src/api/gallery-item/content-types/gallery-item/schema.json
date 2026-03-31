@@ -1,0 +1,44 @@
+{
+    "kind": "collectionType",
+    "collectionName": "gallery_items",
+    "info": {
+        "singularName": "gallery-item",
+        "pluralName": "gallery-items",
+        "displayName": "Gallery Item",
+        "description": "Photos for the Immersive Gallery section"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "title": {
+            "type": "string",
+            "required": true
+        },
+        "image": {
+            "type": "media",
+            "multiple": false,
+            "required": true,
+            "allowedTypes": [
+                "images"
+            ]
+        },
+        "category": {
+            "type": "enumeration",
+            "enum": [
+                "Tradition",
+                "Paysage",
+                "Vie Quotidienne",
+                "Art",
+                "Architecture",
+                "Gastronomie",
+                "Monument"
+            ],
+            "default": "Tradition"
+        },
+        "description": {
+            "type": "text"
+        }
+    }
+}

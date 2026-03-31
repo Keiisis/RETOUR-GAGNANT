@@ -1,0 +1,35 @@
+{
+    "kind": "singleType",
+    "collectionName": "global_settings",
+    "info": {
+        "singularName": "global-setting",
+        "pluralName": "global-settings",
+        "displayName": "Global Setting",
+        "description": "General settings for the website (Hero Video, Site Name, etc.)"
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "siteName": {
+            "type": "string",
+            "default": "Retour Gagnant Bénin"
+        },
+        "heroVideo": {
+            "type": "media",
+            "multiple": false,
+            "required": false,
+            "allowedTypes": [
+                "videos"
+            ]
+        },
+        "heroTitle": {
+            "type": "string",
+            "default": "Votre Retour Gagnant"
+        },
+        "contactEmail": {
+            "type": "email"
+        }
+    }
+}

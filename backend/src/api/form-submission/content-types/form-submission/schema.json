@@ -1,0 +1,49 @@
+{
+    "kind": "collectionType",
+    "collectionName": "form_submissions",
+    "info": {
+        "singularName": "form-submission",
+        "pluralName": "form-submissions",
+        "displayName": "Soumission Formulaire",
+        "description": "Messages de contact et demandes de rendez-vous"
+    },
+    "options": {
+        "draftAndPublish": false
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "nom": {
+            "type": "string",
+            "required": true
+        },
+        "prenom": {
+            "type": "string"
+        },
+        "email": {
+            "type": "email",
+            "required": true
+        },
+        "telephone": {
+            "type": "string"
+        },
+        "sujet": {
+            "type": "string"
+        },
+        "message": {
+            "type": "text"
+        },
+        "type": {
+            "type": "enumeration",
+            "enum": [
+                "contact",
+                "rendez-vous",
+                "autre"
+            ],
+            "default": "contact"
+        },
+        "lu": {
+            "type": "boolean",
+            "default": false
+        }
+    }
+}

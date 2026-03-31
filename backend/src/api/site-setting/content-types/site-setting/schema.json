@@ -1,0 +1,89 @@
+{
+    "kind": "singleType",
+    "collectionName": "site_settings",
+    "info": {
+        "singularName": "site-setting",
+        "pluralName": "site-settings",
+        "displayName": "Paramètres du Site",
+        "description": "Paramètres globaux : audio, vidéo, statistiques, contact"
+    },
+    "options": {
+        "draftAndPublish": false
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "heroVideo": {
+            "type": "media",
+            "allowedTypes": [
+                "videos"
+            ],
+            "multiple": false
+        },
+        "backgroundAudio": {
+            "type": "media",
+            "allowedTypes": [
+                "audios"
+            ],
+            "multiple": false
+        },
+        "audioVolume": {
+            "type": "integer",
+            "min": 0,
+            "max": 100,
+            "default": 15,
+            "required": true
+        },
+        "audioEnabled": {
+            "type": "boolean",
+            "default": true
+        },
+        "statProjets": {
+            "type": "string",
+            "default": "500+"
+        },
+        "statProjetsLabel": {
+            "type": "string",
+            "default": "Projets Réalisés"
+        },
+        "statClients": {
+            "type": "string",
+            "default": "98%"
+        },
+        "statClientsLabel": {
+            "type": "string",
+            "default": "Clients Satisfaits"
+        },
+        "statExperience": {
+            "type": "string",
+            "default": "15+"
+        },
+        "statExperienceLabel": {
+            "type": "string",
+            "default": "Années d'Expérience"
+        },
+        "statSupport": {
+            "type": "string",
+            "default": "24/7"
+        },
+        "statSupportLabel": {
+            "type": "string",
+            "default": "Support"
+        },
+        "contactPhone": {
+            "type": "string",
+            "default": "+229 00 00 00 00"
+        },
+        "contactEmail": {
+            "type": "string",
+            "default": "contact@retour-gagnant.bj"
+        },
+        "contactAddress": {
+            "type": "text",
+            "default": "Immeuble de la Diaspora\nHaie Vive, Cotonou\nBénin"
+        },
+        "contactHours": {
+            "type": "string",
+            "default": "Lun - Ven : 8h - 18h"
+        }
+    }
+}

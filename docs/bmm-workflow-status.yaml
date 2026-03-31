@@ -1,0 +1,11 @@
+phases:
+  analysis:
+    product_brief: "optional"
+    research: "optional"
+  planning:
+    prd: "required"
+    tech_spec: "recommended"
+  solutioning:
+    architecture: "required"
+  implementation:
+    sprint_planning: "required"
