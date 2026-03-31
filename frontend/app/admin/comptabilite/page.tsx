@@ -121,8 +121,10 @@ const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
 }
 
 // ─── KPI Card ───────────────────────────────────────────────────────
+type LucideIcon = React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
+
 function KpiCard({ icon: Icon, label, value, trend, color, sub }: {
-    icon: React.ElementType; label: string; value: string
+    icon: LucideIcon; label: string; value: string
     trend?: string | null; color: string; sub?: string
 }) {
     const trendNum = trend ? parseFloat(trend) : null
