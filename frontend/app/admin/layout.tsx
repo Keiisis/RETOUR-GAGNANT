@@ -12,7 +12,7 @@ import {
     ShoppingBag, Receipt, UserCog, Tag, Calculator,
     Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
     BarChart3, FileSignature, FolderOpen, Palette, Calendar, Star,
-    Languages, Radar, Box, Coins, Megaphone, Activity, Layers
+    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -120,6 +120,7 @@ function AdminLayoutContent({
         { title: 'FAQ Nationalité', icon: HelpCircle, href: '/admin/nationalite/faq' },
 
         { title: 'Emails', icon: Mail, href: '/admin/email-templates' },
+        { title: 'Comptabilité', icon: Landmark, href: '/admin/comptabilite' },
         { title: 'Facturation (ERP)', icon: Calculator, href: '/admin/facturation' },
         { title: 'Inventaire', icon: Box, href: '/admin/inventory' },
         { title: 'Boutique', icon: ShoppingBag, href: '/admin/boutique' },
