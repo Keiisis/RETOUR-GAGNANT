@@ -8,7 +8,7 @@ import {
     Plus, Pencil, Trash2, Save, X, Loader2, Star, CheckCircle2,
     AlertCircle, Globe, Mail, Phone, MapPin, ExternalLink,
     Building2, Users, Eye, MessageSquare, RefreshCw,
-    ChevronDown, ChevronUp, Handshake, Clock, Ban
+    ChevronDown, ChevronUp, Handshake, Clock, Ban, GalleryHorizontal, ImagePlus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import FileUpload from '@/components/ui/FileUpload'
@@ -31,6 +31,7 @@ interface PartnerRow {
     email: string
     sort_order: number
     products: { id: string; name: string; price: number }[]
+    gallery: { name: string; image: string }[]
 }
 
 interface Application {
@@ -130,7 +131,7 @@ export default function AdminPartenaires() {
     // ── Partner CRUD ──
     const startNew = () => {
         setEditing('new')
-        setForm({ name: '', description: '', category: 'Immobilier', location: '', is_premium: false, is_active: true, logo: '', cover_image: '', website: '', phone: '', email: '', sort_order: 0, products: [] })
+        setForm({ name: '', description: '', category: 'Immobilier', location: '', is_premium: false, is_active: true, logo: '', cover_image: '', website: '', phone: '', email: '', sort_order: 0, products: [], gallery: [] })
     }
 
     const startEdit = (p: PartnerRow) => { setEditing(p.id); setForm({ ...p }) }
@@ -344,6 +345,65 @@ export default function AdminPartenaires() {
                                                     placeholder={t("Description du partenaire...")}
                                                     className="w-full rounded-xl bg-white/5 border border-white/10 text-white px-4 py-3 text-sm focus:outline-none" />
                                             </div>
+
+                                            {/* Galerie vitrine */}
+                                            <div className="md:col-span-2 space-y-3 pt-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <GalleryHorizontal size={14} className="text-[#FCD116]" />
+                                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                            Galerie Vitrine <span className="text-gray-600 normal-case font-normal">({(form.gallery || []).length}/6 articles)</span>
+                                                        </label>
+                                                    </div>
+                                                    {(form.gallery || []).length < 6 && (
+                                                        <button type="button"
+                                                            onClick={() => setForm(p => ({ ...p, gallery: [...(p.gallery || []), { name: '', image: '' }] }))}
+                                                            className="flex items-center gap-1.5 text-[10px] font-bold text-[#008751] hover:text-[#00c870] border border-[#008751]/30 hover:border-[#008751]/60 px-3 py-1.5 rounded-lg transition-all">
+                                                            <ImagePlus size={12} /> Ajouter un article
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {(form.gallery || []).length === 0 && (
+                                                    <div className="flex flex-col items-center justify-center py-6 rounded-xl border border-dashed border-white/10 text-gray-600 gap-2">
+                                                        <GalleryHorizontal size={24} strokeWidth={1} />
+                                                        <p className="text-[11px]">Aucun article — cliquez sur &quot;Ajouter un article&quot;</p>
+                                                    </div>
+                                                )}
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                    {(form.gallery || []).map((item, idx) => (
+                                                        <div key={idx} className="relative bg-white/[0.03] border border-white/10 rounded-xl overflow-hidden group">
+                                                            <button type="button" title="Supprimer cet article"
+                                                                onClick={() => setForm(p => ({ ...p, gallery: (p.gallery || []).filter((_, i) => i !== idx) }))}
+                                                                className="absolute top-1.5 right-1.5 z-10 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                                                                <X size={11} />
+                                                            </button>
+                                                            <FileUpload
+                                                                type="gallery"
+                                                                value={item.image}
+                                                                onChange={url => setForm(p => ({
+                                                                    ...p,
+                                                                    gallery: (p.gallery || []).map((g, i) => i === idx ? { ...g, image: url } : g)
+                                                                }))}
+                                                            />
+                                                            <div className="p-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.name}
+                                                                    onChange={e => setForm(p => ({
+                                                                        ...p,
+                                                                        gallery: (p.gallery || []).map((g, i) => i === idx ? { ...g, name: e.target.value } : g)
+                                                                    }))}
+                                                                    placeholder="Nom de l'article..."
+                                                                    title="Nom de l'article"
+                                                                    maxLength={40}
+                                                                    className="w-full bg-transparent text-white text-[11px] font-semibold placeholder-gray-600 focus:outline-none focus:border-b focus:border-[#008751]/40 pb-0.5 truncate"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
                                         </div>
                                         <div className="flex items-center gap-6 pt-2">
                                             <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -400,10 +460,34 @@ export default function AdminPartenaires() {
                                                 {p.is_premium && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FCD116]/15 text-[#FCD116] border border-[#FCD116]/25 font-black uppercase"><T>★ PREMIUM</T></span>}
                                                 {!p.is_active && <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 font-black uppercase"><T>INACTIF</T></span>}
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                                            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
                                                 <span>{p.category}</span>
                                                 {p.location && <><span>•</span><span className="flex items-center gap-1"><MapPin size={10} />{p.location}</span></>}
+                                                {(p.gallery?.length ?? 0) > 0 && (
+                                                    <span className="flex items-center gap-1 text-[#FCD116]/70">
+                                                        <GalleryHorizontal size={10} />
+                                                        {p.gallery.length} article{p.gallery.length > 1 ? 's' : ''}
+                                                    </span>
+                                                )}
                                             </p>
+                                            {/* Mini galerie */}
+                                            {(p.gallery?.length ?? 0) > 0 && (
+                                                <div className="flex gap-1 mt-1.5">
+                                                    {p.gallery.slice(0, 4).map((g, i) => (
+                                                        <div key={i} className="relative w-8 h-6 rounded overflow-hidden bg-white/5 flex-shrink-0" title={g.name}>
+                                                            {g.image
+                                                                ? <img src={g.image} alt={g.name} className="w-full h-full object-cover" />
+                                                                : <div className="w-full h-full bg-white/10" />
+                                                            }
+                                                        </div>
+                                                    ))}
+                                                    {p.gallery.length > 4 && (
+                                                        <div className="w-8 h-6 rounded bg-white/5 flex items-center justify-center text-[9px] text-gray-500 font-bold flex-shrink-0">
+                                                            +{p.gallery.length - 4}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">

@@ -10,8 +10,9 @@ const MAX_SIZE_MB = 5
 
 // Dimensions cibles selon le type
 const RESIZE_CONFIG = {
-    logo: { width: 400, height: 400, fit: 'contain' as const, background: { r: 255, g: 255, b: 255, alpha: 1 } },
-    cover: { width: 1200, height: 400, fit: 'cover' as const, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+    logo:    { width: 400,  height: 400, fit: 'contain' as const, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+    cover:   { width: 1200, height: 400, fit: 'cover'   as const, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+    gallery: { width: 600,  height: 400, fit: 'cover'   as const, background: { r: 255, g: 255, b: 255, alpha: 1 } },
 }
 
 async function resizeImage(buffer: Buffer, type: string): Promise<Buffer> {

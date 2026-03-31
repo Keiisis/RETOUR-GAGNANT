@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 interface FileUploadProps {
     value?: string
     onChange: (url: string) => void
-    type: 'logo' | 'cover'
+    type: 'logo' | 'cover' | 'gallery'
     label?: string
     required?: boolean
     hint?: string
@@ -68,6 +68,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
     }
 
     const isLogo = type === 'logo'
+    const isGallery = type === 'gallery'
 
     return (
         <div className={cn('space-y-1.5', className)}>
@@ -81,7 +82,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
             <div
                 className={cn(
                     'relative overflow-hidden rounded-xl border-2 border-dashed transition-all cursor-pointer select-none',
-                    isLogo ? 'aspect-square max-w-[120px]' : 'aspect-[3/1]',
+                    isLogo ? 'aspect-square max-w-[120px]' : isGallery ? 'aspect-[3/2]' : 'aspect-[3/1]',
                     drag ? 'border-[#008751] bg-[#008751]/5 scale-[1.01]' : 'border-gray-200 hover:border-gray-300 bg-gray-50',
                     value ? 'border-solid border-gray-200' : '',
                     uploading ? 'pointer-events-none opacity-70' : '',
@@ -148,7 +149,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
                         <ImageIcon size={isLogo ? 22 : 28} strokeWidth={1.5} />
                         <div className="text-center">
                             <p className="text-[11px] font-bold leading-tight">
-                                {drag ? 'Déposez ici' : isLogo ? 'Logo' : 'Couverture'}
+                                {drag ? 'Déposez ici' : isLogo ? 'Logo' : isGallery ? 'Photo' : 'Couverture'}
                             </p>
                             {!isLogo && (
                                 <p className="text-[9px] mt-0.5 leading-tight">
