@@ -280,31 +280,30 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         </div>
                                     )}
 
-                                    {/* ── VITRINE ── */}
-                                    {partner.products.length > 0 && (
+                                    {/* ── VITRINE GALERIE ── */}
+                                    {(partner.gallery?.length ?? 0) > 0 && (
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-2">
                                                 <Store size={13} className="text-gray-300" />
                                                 <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em]">
-                                                    <T>Vitrine</T> — {partner.products.length} {partner.products.length > 1 ? t('articles') : t('article')}
+                                                    <T>Vitrine</T> — {partner.gallery!.length} {partner.gallery!.length > 1 ? t('articles') : t('article')}
                                                 </span>
                                                 <div className="flex-1 h-px bg-gray-100" />
                                             </div>
-                                            <div className="grid grid-cols-4 gap-2">
-                                                {partner.products.map(product => (
-                                                    <div key={product.id} className="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-gray-100">
-                                                        {product.image ? (
-                                                            <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized />
-                                                        ) : (
-                                                            <div className="absolute inset-0 flex items-center justify-center p-1.5"
-                                                                style={{ background: `linear-gradient(135deg, ${colors.from}15, ${colors.to}15)` }}>
-                                                                <span className="text-[8px] text-gray-400 text-center font-medium leading-tight">{t(product.name)}</span>
-                                                            </div>
-                                                        )}
-                                                        {product.price && (
-                                                            <div className="absolute bottom-1 right-1 bg-white/90 backdrop-blur-sm px-1.5 py-0.5 rounded-md text-[8px] font-bold text-[#1a2332] shadow-sm">
-                                                                {product.price}
-                                                            </div>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {partner.gallery!.map((item, i) => (
+                                                    <div key={i} className="flex flex-col gap-1">
+                                                        <div className="relative aspect-[3/2] rounded-xl overflow-hidden bg-gray-50 border border-gray-100">
+                                                            {item.image ? (
+                                                                <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
+                                                            ) : (
+                                                                <div className="absolute inset-0 flex items-center justify-center p-2 bg-gray-50">
+                                                                    <span className="text-[9px] text-gray-400 text-center font-medium leading-tight">{t(item.name)}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {item.name && (
+                                                            <span className="text-[10px] text-gray-500 font-semibold text-center truncate leading-tight">{t(item.name)}</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -312,8 +311,8 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         </div>
                                     )}
 
-                                    {/* Empty state when no products and no contact */}
-                                    {partner.products.length === 0 && !partner.email && !waNum && (
+                                    {/* Empty state when no gallery and no contact */}
+                                    {(partner.gallery?.length ?? 0) === 0 && !partner.email && !waNum && (
                                         <div className="flex flex-col items-center gap-2 py-6 text-gray-300">
                                             <Building2 size={28} strokeWidth={1} />
                                             <p className="text-[12px] text-center"><T>Ce partenaire n&apos;a pas encore complété son profil.</T></p>

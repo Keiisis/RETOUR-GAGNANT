@@ -30,6 +30,7 @@ export interface Partner {
     instagram?: string
     linkedin?: string
     products: PartnerProduct[]
+    gallery?: { name: string; image: string }[]
     isPremium?: boolean
 }
 
@@ -175,28 +176,30 @@ export default function PartnerCard({ partner, onClick }: PartnerCardProps) {
                     {t(partner.description)}
                 </p>
 
-                {/* Product vitrine */}
-                {partner.products.length > 0 && (
+                {/* Vitrine galerie */}
+                {(partner.gallery?.length ?? 0) > 0 && (
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <Store size={9} className="text-gray-300" />
                             <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.22em]"><T>Vitrine</T></span>
                             <div className="flex-1 h-px bg-gray-100" />
-                            <span className="text-[9px] text-gray-300">{partner.products.length} {partner.products.length > 1 ? t('articles') : t('article')}</span>
+                            <span className="text-[9px] text-gray-300">{partner.gallery!.length} {partner.gallery!.length > 1 ? t('articles') : t('article')}</span>
                         </div>
                         <div className="grid grid-cols-3 gap-1.5">
-                            {partner.products.slice(0, 3).map(product => (
-                                <div key={product.id} className="relative aspect-square rounded-[10px] overflow-hidden bg-gray-50">
-                                    {product.image
-                                        ? <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized />
-                                        : <div className="absolute inset-0 flex items-center justify-center p-1"
-                                            style={{ background: `linear-gradient(135deg, ${colors.from}1a, ${colors.to}1a)` }}>
-                                            <span className="text-[8px] text-gray-400 text-center font-medium leading-tight">{t(product.name)}</span>
-                                        </div>
-                                    }
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100">
-                                        <span className="text-[8px] text-white font-bold px-1 text-center leading-tight">{t(product.name)}</span>
+                            {partner.gallery!.slice(0, 3).map((item, i) => (
+                                <div key={i} className="flex flex-col gap-0.5">
+                                    <div className="relative aspect-square rounded-[10px] overflow-hidden bg-gray-50">
+                                        {item.image
+                                            ? <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
+                                            : <div className="absolute inset-0 flex items-center justify-center p-1"
+                                                style={{ background: `linear-gradient(135deg, ${colors.from}1a, ${colors.to}1a)` }}>
+                                                <span className="text-[8px] text-gray-400 text-center font-medium leading-tight">{t(item.name)}</span>
+                                              </div>
+                                        }
                                     </div>
+                                    {item.name && (
+                                        <span className="text-[8px] text-gray-400 font-medium text-center truncate leading-tight">{t(item.name)}</span>
+                                    )}
                                 </div>
                             ))}
                         </div>

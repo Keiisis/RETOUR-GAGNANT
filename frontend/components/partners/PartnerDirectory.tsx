@@ -87,6 +87,7 @@ export default function PartnerDirectory() {
                         linkedin: p.linkedin_url ? String(p.linkedin_url) : undefined,
                         isPremium: Boolean(p.is_premium),
                         products: Array.isArray(p.products) ? p.products : [],
+                        gallery: Array.isArray(p.gallery) ? p.gallery : [],
                     })))
                 }
             } catch {
