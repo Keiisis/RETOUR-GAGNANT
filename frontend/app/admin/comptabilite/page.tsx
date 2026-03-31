@@ -524,7 +524,7 @@ export default function AdminComptabilitePage() {
                                 <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
                                 <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                                 <Tooltip contentStyle={{ background: '#0d1421', border: '1px solid #ffffff12', borderRadius: 12 }} labelStyle={{ color: '#fff', fontWeight: 700 }}
-                                    formatter={(v: number, name: string) => [fmt(v), name === 'factu' ? 'Facturation' : 'Boutique']} />
+                                    formatter={(v, name) => [fmt(Number(v)), name === 'factu' ? 'Facturation' : 'Boutique']} />
                                 <Area type="monotone" dataKey="factu"    stroke="#008751" strokeWidth={2} fill="url(#gF)" name="factu" />
                                 <Area type="monotone" dataKey="boutique" stroke="#3b82f6" strokeWidth={2} fill="url(#gB)" name="boutique" />
                             </AreaChart>
@@ -561,7 +561,7 @@ export default function AdminComptabilitePage() {
                                 <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 9 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} axisLine={false} tickLine={false} />
                                 <YAxis type="category" dataKey="name" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={64} />
                                 <Tooltip contentStyle={{ background: '#0d1421', border: '1px solid #ffffff12', borderRadius: 12 }}
-                                    formatter={(v: number, name: string) => [fmt(v), name === 'encaisse' ? 'Encaissé' : 'Commission']} />
+                                    formatter={(v, name) => [fmt(Number(v)), name === 'encaisse' ? 'Encaissé' : 'Commission']} />
                                 <Bar dataKey="encaisse"  fill="#008751" radius={[0, 4, 4, 0]} />
                                 <Bar dataKey="commission" fill="#FCD116" radius={[0, 4, 4, 0]} />
                             </BarChart>
