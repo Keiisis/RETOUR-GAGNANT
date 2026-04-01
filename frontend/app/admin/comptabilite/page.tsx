@@ -294,9 +294,11 @@ export default function AdminComptabilitePage() {
             map.set(a.id, { agent: a, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0 })
         }
         for (const d of pDocs) {
+            if (!d.agent_id) continue
             if (!map.has(d.agent_id)) {
                 // Agent inconnu dans user_profiles → crée une entrée fallback
-                map.set(d.agent_id, { agent: { id: d.agent_id, full_name: '', email: d.agent_id.slice(0, 8) + '…', role: 'agent', is_active: true }, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0 })
+                const shortId = (d.agent_id || '').slice(0, 8)
+                map.set(d.agent_id, { agent: { id: d.agent_id, full_name: '', email: shortId + '…', role: 'agent', is_active: true }, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0 })
             }
             const s = map.get(d.agent_id)!
             if (d.type === 'devis') { s.nbDevis++ } else {
@@ -333,7 +335,7 @@ export default function AdminComptabilitePage() {
 
     const agentBarData = useMemo(() =>
         [...agentStats].sort((a, b) => b.encaisse - a.encaisse).slice(0, 8).map(s => ({
-            name: (s.agent.full_name || s.agent.email.split('@')[0]).slice(0, 13),
+            name: (s.agent.full_name || (s.agent.email || '').split('@')[0] || s.agent.id.slice(0, 8)).slice(0, 13),
             encaisse: s.encaisse, commission: s.commission,
         })), [agentStats])
 
@@ -765,7 +767,7 @@ export default function AdminComptabilitePage() {
                             )}
                             {sortedAgents.map((s, i) => {
                                 const conv = s.nbFactures > 0 ? (s.nbPayees / s.nbFactures) * 100 : 0
-                                const initials = (s.agent.full_name || s.agent.email).slice(0, 2).toUpperCase()
+                                const initials = (s.agent.full_name || s.agent.email || s.agent.id || '??').slice(0, 2).toUpperCase()
                                 return (
                                     <tr key={s.agent.id} className="hover:bg-white/[0.02] transition-colors">
                                         <td className="p-4 pl-5">
