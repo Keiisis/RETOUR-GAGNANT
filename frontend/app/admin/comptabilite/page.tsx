@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import {
@@ -9,7 +9,9 @@ import {
     BarChart3, FileText, RefreshCw, Users, ShoppingBag,
     AlertTriangle, Award, Search, Target, Activity, Star,
     Calculator, Landmark, Receipt, ChevronLeft, ChevronRight,
-    Zap, PieChart, CheckCircle2, Clock, TrendingUp
+    Zap, PieChart, CheckCircle2, Clock, TrendingUp, X,
+    Shield, Mail, Phone, MapPin, Hash, Package,
+    EyeOff, Eye, ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -28,6 +30,13 @@ interface AgentRow {
     is_active: boolean
 }
 
+interface DevisItem {
+    description: string
+    quantity: number
+    unit_price: number
+    tva: number
+}
+
 interface DocRow {
     id: string
     type: 'devis' | 'facture'
@@ -36,11 +45,20 @@ interface DocRow {
     client_prenom?: string
     client_email?: string
     client_phone?: string
+    client_adresse?: string
+    items?: DevisItem[]
+    sous_total?: number
+    total_tva?: number
+    remise?: number
+    notes?: string
+    conditions?: string
     total: number
     status: string
     created_at: string
     agent_id: string
     currency?: string
+    signature_url?: string
+    signed_at?: string
 }
 
 interface OrderRow {
@@ -62,6 +80,7 @@ interface DepRow {
     montant: number
     date_depense: string
     agent_id: string
+    notes?: string
 }
 
 // ─── Helpers période ────────────────────────────────────────────────
@@ -93,20 +112,24 @@ function calcTrend(curr: number, prev: number) {
     return ((curr - prev) / prev * 100 >= 0 ? '+' : '') + ((curr - prev) / prev * 100).toFixed(1)
 }
 
-const fmt = (val: number, currency = 'XOF') =>
-    new Intl.NumberFormat('fr-BJ', { style: 'currency', currency, maximumFractionDigits: 0 }).format(val)
+const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'GBP']
+const fmt = (val: number, currency = 'XOF') => {
+    const cur = VALID_CURRENCIES.includes(currency) ? currency : 'XOF'
+    return new Intl.NumberFormat('fr-BJ', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(val)
+}
 
 const fmtDate = (str: string) =>
     new Date(str).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
 
 // ─── Status maps ────────────────────────────────────────────────────
 const DOC_STATUS: Record<string, { label: string; cls: string }> = {
-    brouillon: { label: 'Brouillon', cls: 'bg-gray-500/20 text-gray-400' },
-    envoye:    { label: 'Envoyé',    cls: 'bg-blue-500/20 text-blue-300' },
-    accepte:   { label: 'Accepté',   cls: 'bg-yellow-500/20 text-yellow-300' },
-    paye:      { label: 'Payé',      cls: 'bg-[#008751]/20 text-[#00c870]' },
-    refuse:    { label: 'Refusé',    cls: 'bg-red-500/20 text-red-400' },
-    annule:    { label: 'Annulé',    cls: 'bg-red-900/20 text-red-600' },
+    brouillon:  { label: 'Brouillon',  cls: 'bg-gray-500/20 text-gray-400' },
+    envoye:     { label: 'Envoyé',     cls: 'bg-blue-500/20 text-blue-300' },
+    accepte:    { label: 'Accepté',    cls: 'bg-yellow-500/20 text-yellow-300' },
+    paye:       { label: 'Payé',       cls: 'bg-[#008751]/20 text-[#00c870]' },
+    refuse:     { label: 'Refusé',     cls: 'bg-red-500/20 text-red-400' },
+    annule:     { label: 'Annulé',     cls: 'bg-red-900/20 text-red-600' },
+    en_retard:  { label: 'En retard',  cls: 'bg-orange-500/20 text-orange-400' },
 }
 
 const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
@@ -114,8 +137,9 @@ const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
     completed: { label: 'Payé',       cls: 'bg-[#008751]/20 text-[#00c870]' },
     failed:    { label: 'Échoué',     cls: 'bg-red-500/20 text-red-400' },
     cancelled: { label: 'Annulé',     cls: 'bg-gray-500/20 text-gray-400' },
+    refunded:  { label: 'Remboursé',  cls: 'bg-purple-500/20 text-purple-300' },
     shipped:   { label: 'Expédié',    cls: 'bg-blue-500/20 text-blue-300' },
-    delivered: { label: 'Livré',      cls: 'bg-purple-500/20 text-purple-300' },
+    delivered: { label: 'Livré',      cls: 'bg-teal-500/20 text-teal-300' },
 }
 
 const DEP_COLORS = ['#008751', '#FCD116', '#3b82f6', '#8b5cf6', '#f97316', '#E8112D', '#0891b2', '#d97706']
@@ -123,13 +147,14 @@ const DEP_COLORS = ['#008751', '#FCD116', '#3b82f6', '#8b5cf6', '#f97316', '#E81
 // ─── KPI Card ───────────────────────────────────────────────────────
 type LucideIcon = React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>
 
-function KpiCard({ icon: Icon, label, value, trend, color, sub }: {
-    icon: LucideIcon; label: string; value: string; trend?: string | null; color: string; sub?: string
+function KpiCard({ icon: Icon, label, value, trend, color, sub, highlight }: {
+    icon: LucideIcon; label: string; value: string; trend?: string | null; color: string; sub?: string; highlight?: boolean
 }) {
     const trendNum = trend ? parseFloat(trend) : null
     return (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0a0f18] border border-white/5 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/10 transition-colors">
+            className={cn('border rounded-2xl p-5 flex flex-col gap-3 transition-colors',
+                highlight ? 'bg-[#008751]/10 border-[#008751]/20 hover:border-[#008751]/40' : 'bg-[#0a0f18] border-white/5 hover:border-white/10')}>
             <div className="flex items-center justify-between">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}22` }}>
                     <Icon size={16} style={{ color }} />
@@ -151,6 +176,138 @@ function KpiCard({ icon: Icon, label, value, trend, color, sub }: {
     )
 }
 
+// ─── Modal Détail Facture ────────────────────────────────────────────
+function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow; onClose: () => void }) {
+    const items = Array.isArray(doc.items) ? doc.items : []
+    const remise = Number(doc.remise) || 0
+    const sous_total = Number(doc.sous_total) || (doc.total - (Number(doc.total_tva) || 0))
+    const total_tva = Number(doc.total_tva) || 0
+    const signed = !!doc.signed_at
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="bg-[#0d1421] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-start justify-between p-5 border-b border-white/5">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase', doc.type === 'facture' ? 'bg-[#008751]/20 text-[#00c870]' : 'bg-blue-500/20 text-blue-300')}>{doc.type}</span>
+                            {signed && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 flex items-center gap-1"><Shield size={9} /> Signé</span>}
+                        </div>
+                        <h3 className="text-lg font-black text-white font-mono">{doc.numero}</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">{fmtDate(doc.created_at)}{doc.signed_at && ` · Signé le ${fmtDate(doc.signed_at)}`}</p>
+                    </div>
+                    <button type="button" onClick={onClose} title="Fermer" className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                        <X size={14} />
+                    </button>
+                </div>
+
+                <div className="p-5 space-y-5">
+                    {/* Client + Agent */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/[0.03] rounded-xl p-4 space-y-2">
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2">Client</p>
+                            <p className="text-sm font-bold text-white">{doc.client_nom} {doc.client_prenom || ''}</p>
+                            {doc.client_email  && <p className="flex items-center gap-1.5 text-[10px] text-gray-400"><Mail size={10} />{doc.client_email}</p>}
+                            {doc.client_phone  && <p className="flex items-center gap-1.5 text-[10px] text-gray-400"><Phone size={10} />{doc.client_phone}</p>}
+                            {doc.client_adresse && <p className="flex items-center gap-1.5 text-[10px] text-gray-400"><MapPin size={10} />{doc.client_adresse}</p>}
+                        </div>
+                        <div className="bg-white/[0.03] rounded-xl p-4 space-y-2">
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2">Agent responsable</p>
+                            {agent ? (
+                                <>
+                                    <p className="text-sm font-bold text-white">{agent.full_name || '—'}</p>
+                                    <p className="text-[10px] text-gray-400">{agent.email}</p>
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#008751]/20 text-[#00c870]">{agent.role}</span>
+                                </>
+                            ) : <p className="text-[10px] text-gray-500">Agent non trouvé</p>}
+                        </div>
+                    </div>
+
+                    {/* Articles */}
+                    {items.length > 0 && (
+                        <div>
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Package size={10} /> Articles ({items.length})</p>
+                            <div className="bg-white/[0.03] rounded-xl overflow-hidden">
+                                <table className="w-full text-[10px]">
+                                    <thead><tr className="border-b border-white/5 text-gray-500 font-black uppercase">
+                                        <th className="p-3 text-left">Description</th>
+                                        <th className="p-3 text-right w-12">Qté</th>
+                                        <th className="p-3 text-right w-24">P.U.</th>
+                                        <th className="p-3 text-right w-12">TVA%</th>
+                                        <th className="p-3 text-right w-24">Total</th>
+                                    </tr></thead>
+                                    <tbody>{items.map((it, i) => (
+                                        <tr key={i} className="border-b border-white/[0.03]">
+                                            <td className="p-3 text-white">{it.description}</td>
+                                            <td className="p-3 text-right text-gray-400 font-mono">{it.quantity}</td>
+                                            <td className="p-3 text-right text-gray-400 font-mono">{fmt(it.unit_price)}</td>
+                                            <td className="p-3 text-right text-gray-500">{it.tva}%</td>
+                                            <td className="p-3 text-right text-white font-mono font-bold">{fmt(it.quantity * it.unit_price)}</td>
+                                        </tr>
+                                    ))}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Totaux HT / TVA / Remise / TTC */}
+                    <div className="bg-white/[0.03] rounded-xl p-4 space-y-2">
+                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5"><Hash size={10} /> Récapitulatif financier</p>
+                        <div className="space-y-1.5 text-[11px]">
+                            <div className="flex justify-between"><span className="text-gray-400">Sous-total HT</span><span className="font-mono text-white">{fmt(sous_total, doc.currency)}</span></div>
+                            {total_tva > 0 && <div className="flex justify-between"><span className="text-gray-400">TVA</span><span className="font-mono text-yellow-300">{fmt(total_tva, doc.currency)}</span></div>}
+                            {remise > 0 && <div className="flex justify-between"><span className="text-gray-400">Remise</span><span className="font-mono text-orange-400">− {fmt(remise, doc.currency)}</span></div>}
+                            <div className="border-t border-white/10 pt-2 flex justify-between">
+                                <span className="font-black text-white">Total TTC</span>
+                                <span className="font-black font-mono text-lg" style={{ color: doc.status === 'paye' ? '#00c870' : '#FCD116' }}>{fmt(doc.total, doc.currency)}</span>
+                            </div>
+                        </div>
+                        {total_tva > 0 && (
+                            <p className="text-[9px] text-gray-600 mt-2">
+                                TVA collectée : {fmt(total_tva, doc.currency)} — Taux effectif : {sous_total > 0 ? ((total_tva / sous_total) * 100).toFixed(1) : 0}%
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Statut + Signature */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <span className={cn('text-[10px] font-black px-3 py-1.5 rounded-lg', DOC_STATUS[doc.status]?.cls || 'bg-gray-500/20 text-gray-400')}>
+                                {DOC_STATUS[doc.status]?.label || doc.status}
+                            </span>
+                            {signed && (
+                                <span className="text-[10px] text-purple-300 flex items-center gap-1"><Shield size={11} /> Signé le {fmtDate(doc.signed_at!)}</span>
+                            )}
+                        </div>
+                        {doc.signature_url && (
+                            <a href={doc.signature_url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
+                                <ExternalLink size={11} /> Voir signature
+                            </a>
+                        )}
+                    </div>
+
+                    {doc.notes && (
+                        <div className="bg-white/[0.03] rounded-xl p-4">
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2">Notes</p>
+                            <p className="text-[11px] text-gray-400">{doc.notes}</p>
+                        </div>
+                    )}
+                    {doc.conditions && (
+                        <div className="bg-white/[0.03] rounded-xl p-4">
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2">Conditions de paiement</p>
+                            <p className="text-[11px] text-gray-400">{doc.conditions}</p>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        </div>
+    )
+}
+
 // ─── Main ────────────────────────────────────────────────────────────
 export default function AdminComptabilitePage() {
     const [period, setPeriod]       = useState<Period>('tous')
@@ -169,28 +326,28 @@ export default function AdminComptabilitePage() {
     const [sortAgent, setSortAgent]     = useState<'encaisse' | 'commission' | 'docs'>('encaisse')
     const [journalPage, setJournalPage] = useState(1)
     const [agentFilter, setAgentFilter] = useState('tous')
-    const ITEMS = 10
+    const [showAllAgents, setShowAllAgents] = useState(false)
+    const [detailDoc, setDetailDoc]     = useState<DocRow | null>(null)
+    const [alertFilter, setAlertFilter] = useState<string | null>(null)
+    const ITEMS = 15
 
     // ── Fetch ─────────────────────────────────────────────────────
-    // Toutes les requêtes passent par des API routes server-side (service role key)
-    // pour bypasser les RLS Supabase côté client
     const fetchAll = useCallback(async () => {
         setRefreshing(true)
         const [usersRes, erpRes] = await Promise.all([
             fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }),
-            fetch('/api/admin/comptabilite').then(r => r.ok ? r.json() : { docs: [], orders: [], depenses: [], settings: null }),
+            fetch('/api/admin/comptabilite').then(r => r.ok ? r.json() : { docs: [], orders: [], depenses: [], commissionRate: 0.10 }),
         ])
-
-        // Agents: filtre role agent/admin/superadmin
         const allUsers: AgentRow[] = (usersRes.users || []).filter((u: AgentRow) =>
-            ['agent', 'admin', 'superadmin', 'super_admin'].includes(u.role)
+            ['agent', 'admin', 'superadmin', 'super_admin'].includes((u.role || '').toLowerCase())
         )
         setAgents(allUsers)
-
         setDocs(erpRes.docs || [])
         setOrders(erpRes.orders || [])
         setDepenses(erpRes.depenses || [])
-        if (erpRes.commissionRate) setCommissionRate(erpRes.commissionRate)
+        if (typeof erpRes.commissionRate === 'number' && !isNaN(erpRes.commissionRate)) {
+            setCommissionRate(erpRes.commissionRate)
+        }
         setLoading(false)
         setRefreshing(false)
     }, [])
@@ -211,18 +368,23 @@ export default function AdminComptabilitePage() {
     // ── KPIs globaux ──────────────────────────────────────────────
     const kpis = useMemo(() => {
         const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[]) => {
-            const invoices      = dList.filter(d => d.type === 'facture')
-            const encaisseFactu = invoices.filter(d => d.status === 'paye').reduce((a, d) => a + d.total, 0)
+            const invoices = dList.filter(d => d.type === 'facture')
+            // Commission calculée sur le montant NET (total - remise)
+            const payees = invoices.filter(d => d.status === 'paye')
+            const encaisseFactu = payees.reduce((a, d) => a + (d.total - (Number(d.remise) || 0)), 0)
             const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + d.total, 0)
             const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + o.amount, 0)
             const totalEncaisse = encaisseFactu + boutique
             const commission    = Math.round(encaisseFactu * commissionRate)
             const totalDeps     = deps.reduce((a, d) => a + Number(d.montant), 0)
             const caEmis        = invoices.reduce((a, d) => a + d.total, 0)
+            const totalTVA      = invoices.reduce((a, d) => a + (Number(d.total_tva) || 0), 0)
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
-            const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
+            const nbFactPaye    = payees.length
             const nbFactTotal   = invoices.length
-            return { encaisseFactu, boutique, totalEncaisse, enAttente, commission, totalDeps, caEmis, benefice: totalEncaisse - commission - totalDeps, proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
+            return { encaisseFactu, boutique, totalEncaisse, enAttente, commission, totalDeps, caEmis, totalTVA,
+                     benefice: totalEncaisse - commission - totalDeps,
+                     proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
         const curr = calc(pDocs, pOrders, pDeps)
         const prev = calc(pvDocs, pvOrders, pvDeps)
@@ -233,6 +395,7 @@ export default function AdminComptabilitePage() {
                 boutique:  calcTrend(curr.boutique,      prev.boutique),
                 benefice:  calcTrend(curr.benefice,      prev.benefice),
                 enAttente: calcTrend(curr.enAttente,     prev.enAttente),
+                tva:       calcTrend(curr.totalTVA,      prev.totalTVA),
             }
         }
     }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end])
@@ -241,37 +404,45 @@ export default function AdminComptabilitePage() {
     const scoreSante = useMemo(() => {
         const tauxEncaissement = kpis.caEmis > 0 ? (kpis.encaisseFactu / kpis.caEmis) * 100 : 0
         const tauxRentabilite  = kpis.totalEncaisse > 0 ? Math.max(0, (kpis.benefice / kpis.totalEncaisse)) * 100 : 0
-        const tauxConvOrders   = orders.length > 0 ? (pOrders.filter(o => o.payment_status === 'completed').length / Math.max(1, pOrders.length)) * 100 : 50
+        const nbOrders = pOrders.length
+        const tauxConvOrders   = nbOrders > 0 ? (pOrders.filter(o => o.payment_status === 'completed').length / nbOrders) * 100 : 50
         const score = Math.round(tauxEncaissement * 0.40 + tauxRentabilite * 0.35 + tauxConvOrders * 0.25)
         const capped = Math.min(100, Math.max(0, score))
-        return {
-            score: capped,
-            label: capped >= 80 ? 'Excellente' : capped >= 60 ? 'Bonne' : capped >= 40 ? 'Correcte' : 'Critique',
-            color: capped >= 80 ? '#00c870' : capped >= 60 ? '#008751' : capped >= 40 ? '#FCD116' : '#E8112D',
-            tauxEncaissement: tauxEncaissement.toFixed(0),
-            tauxRentabilite:  tauxRentabilite.toFixed(0),
-        }
-    }, [kpis, orders, pOrders])
+        const label = capped >= 80 ? 'Excellente' : capped >= 60 ? 'Bonne' : capped >= 40 ? 'Correcte' : 'Critique'
+        const color = capped >= 80 ? '#00c870' : capped >= 60 ? '#008751' : capped >= 40 ? '#FCD116' : '#E8112D'
+        const recommandation = capped >= 80
+            ? 'Performance excellente — maintenir le rythme actuel'
+            : capped >= 60
+            ? 'Bonne santé — optimiser les relances factures impayées'
+            : capped >= 40
+            ? 'Attention — augmenter le taux d\'encaissement, réduire les dépenses'
+            : 'Critique — relancer en urgence, revoir les dépenses et commissions'
+        return { score: capped, label, color, recommandation,
+                 tauxEncaissement: tauxEncaissement.toFixed(0),
+                 tauxRentabilite:  tauxRentabilite.toFixed(0),
+                 tauxConvOrders:   tauxConvOrders.toFixed(0) }
+    }, [kpis, pOrders])
 
     // ── Alertes intelligentes ─────────────────────────────────────
     const alertes = useMemo(() => {
-        const list: { type: 'warning' | 'danger' | 'info'; msg: string }[] = []
+        const list: { type: 'warning' | 'danger' | 'info'; msg: string; action?: string }[] = []
         const now = new Date()
-        // Factures en retard > 7j sans paiement
         const retard = pDocs.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
-        if (retard.length > 0) list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente depuis plus de 7 jours — ${fmt(retard.reduce((a, d) => a + d.total, 0))} à relancer` })
-        // Bénéfice négatif
-        if (kpis.benefice < 0) list.push({ type: 'danger', msg: `Bénéfice net négatif (${fmt(kpis.benefice)}) — dépenses supérieures aux encaissements` })
-        // Agents avec 0 encaissement sur la période
-        const agentStats_raw = agents.filter(a => a.role === 'agent' && !pDocs.some(d => d.agent_id === a.id && d.type === 'facture' && d.status === 'paye'))
-        if (agentStats_raw.length > 0 && agents.filter(a => a.role === 'agent').length > 0) {
-            list.push({ type: 'info', msg: `${agentStats_raw.length} agent${agentStats_raw.length > 1 ? 's' : ''} sans encaissement sur cette période` })
-        }
-        // Commandes boutique en attente > 24h
+        if (retard.length > 0)
+            list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j — ${fmt(retard.reduce((a, d) => a + d.total, 0))} à relancer`, action: 'retard' })
+        if (kpis.benefice < 0)
+            list.push({ type: 'danger', msg: `Bénéfice net négatif (${fmt(kpis.benefice)}) — dépenses supérieures aux encaissements` })
+        const agentsInactifs = agents.filter(a => a.role === 'agent' && !pDocs.some(d => d.agent_id === a.id && d.type === 'facture' && d.status === 'paye'))
+        if (agentsInactifs.length > 0 && agents.filter(a => a.role === 'agent').length > 0)
+            list.push({ type: 'info', msg: `${agentsInactifs.length} agent${agentsInactifs.length > 1 ? 's' : ''} sans encaissement sur cette période`, action: 'agents' })
         const commandesRetard = pOrders.filter(o => o.payment_status === 'pending' && (now.getTime() - new Date(o.created_at).getTime()) > 864e5)
-        if (commandesRetard.length > 0) list.push({ type: 'warning', msg: `${commandesRetard.length} commande${commandesRetard.length > 1 ? 's' : ''} boutique en attente depuis + de 24h` })
-        // Taux encaissement faible
-        if (kpis.caEmis > 0 && (kpis.encaisseFactu / kpis.caEmis) < 0.3) list.push({ type: 'danger', msg: `Taux d'encaissement bas (${((kpis.encaisseFactu / kpis.caEmis) * 100).toFixed(0)}%) — plus de 70% du CA émis n'est pas encore encaissé` })
+        if (commandesRetard.length > 0)
+            list.push({ type: 'warning', msg: `${commandesRetard.length} commande${commandesRetard.length > 1 ? 's' : ''} boutique en attente +24h`, action: 'boutique' })
+        if (kpis.caEmis > 0 && (kpis.encaisseFactu / kpis.caEmis) < 0.3)
+            list.push({ type: 'danger', msg: `Taux d'encaissement bas (${((kpis.encaisseFactu / kpis.caEmis) * 100).toFixed(0)}%) — plus de 70% du CA émis non encaissé`, action: 'retard' })
+        const nonSignes = pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !d.signed_at)
+        if (nonSignes.length > 0)
+            list.push({ type: 'info', msg: `${nonSignes.length} facture${nonSignes.length > 1 ? 's' : ''} payée${nonSignes.length > 1 ? 's' : ''} sans signature numérique` })
         return list
     }, [pDocs, pOrders, kpis, agents])
 
@@ -287,55 +458,58 @@ export default function AdminComptabilitePage() {
 
     // ── Per-agent stats ───────────────────────────────────────────
     const agentStats = useMemo(() => {
-        // Construire la map avec agents connus + agents trouvés dans les docs (fallback)
-        const map = new Map<string, { agent: AgentRow; caEmis: number; encaisse: number; enAttente: number; commission: number; depenses: number; benefice: number; nbDevis: number; nbFactures: number; nbPayees: number }>()
-
+        const map = new Map<string, { agent: AgentRow; caEmis: number; encaisse: number; enAttente: number; commission: number; depenses: number; benefice: number; nbDevis: number; nbFactures: number; nbPayees: number; tvaCollectee: number }>()
         for (const a of agents) {
-            map.set(a.id, { agent: a, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0 })
+            map.set(a.id, { agent: a, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0, tvaCollectee: 0 })
         }
         for (const d of pDocs) {
             if (!d.agent_id) continue
             if (!map.has(d.agent_id)) {
-                // Agent inconnu dans user_profiles → crée une entrée fallback
                 const shortId = (d.agent_id || '').slice(0, 8)
-                map.set(d.agent_id, { agent: { id: d.agent_id, full_name: '', email: shortId + '…', role: 'agent', is_active: true }, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0 })
+                map.set(d.agent_id, { agent: { id: d.agent_id, full_name: '', email: shortId + '…', role: 'agent', is_active: true }, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0, tvaCollectee: 0 })
             }
             const s = map.get(d.agent_id)!
             if (d.type === 'devis') { s.nbDevis++ } else {
                 s.nbFactures++; s.caEmis += d.total
-                if (d.status === 'paye') { s.encaisse += d.total; s.nbPayees++ }
+                if (d.status === 'paye') { s.encaisse += (d.total - (Number(d.remise) || 0)); s.nbPayees++; s.tvaCollectee += Number(d.total_tva) || 0 }
                 if (['envoye', 'accepte'].includes(d.status)) s.enAttente += d.total
             }
         }
         for (const dep of pDeps) {
-            if (map.has(dep.agent_id)) map.get(dep.agent_id)!.depenses += Number(dep.montant)
+            if (dep.agent_id && map.has(dep.agent_id)) map.get(dep.agent_id)!.depenses += Number(dep.montant)
         }
         for (const [, s] of map) {
             s.commission = Math.round(s.encaisse * commissionRate)
             s.benefice = s.encaisse - s.commission - s.depenses
         }
-        return [...map.values()].filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0)
-    }, [agents, pDocs, pDeps, commissionRate])
+        const all = [...map.values()]
+        return showAllAgents ? all : all.filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0)
+    }, [agents, pDocs, pDeps, commissionRate, showAllAgents])
 
     // ── Charts ────────────────────────────────────────────────────
     const areaData = useMemo(() => {
-        const days: Record<string, { factu: number; boutique: number }> = {}
+        const days: Record<string, { factu: number; boutique: number; depenses: number }> = {}
         for (const d of pDocs.filter(d => d.status === 'paye' && d.type === 'facture')) {
             const k = new Date(d.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-            if (!days[k]) days[k] = { factu: 0, boutique: 0 }
+            if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k].factu += d.total
         }
         for (const o of pOrders.filter(o => o.payment_status === 'completed')) {
             const k = new Date(o.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-            if (!days[k]) days[k] = { factu: 0, boutique: 0 }
+            if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k].boutique += o.amount
         }
-        return Object.entries(days).slice(-30).map(([name, v]) => ({ name, ...v }))
-    }, [pDocs, pOrders])
+        for (const d of pDeps) {
+            const k = new Date(d.date_depense).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+            if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
+            days[k].depenses += Number(d.montant)
+        }
+        return Object.entries(days).slice(-60).map(([name, v]) => ({ name, ...v }))
+    }, [pDocs, pOrders, pDeps])
 
     const agentBarData = useMemo(() =>
         [...agentStats].sort((a, b) => b.encaisse - a.encaisse).slice(0, 8).map(s => ({
-            name: (s.agent.full_name || (s.agent.email || '').split('@')[0] || s.agent.id.slice(0, 8)).slice(0, 13),
+            name: (s.agent.full_name || (s.agent.email || '').split('@')[0] || s.agent.id.slice(0, 8)).slice(0, 14),
             encaisse: s.encaisse, commission: s.commission,
         })), [agentStats])
 
@@ -346,19 +520,24 @@ export default function AdminComptabilitePage() {
         return list.sort((a, b) => (b.nbDevis + b.nbFactures) - (a.nbDevis + a.nbFactures))
     }, [agentStats, sortAgent])
 
-    // ── Journal ───────────────────────────────────────────────────
+    // ── Journal avec filtre alerte ────────────────────────────────
+    const now = new Date()
     const jDocs = useMemo(() => {
         let list = pDocs.filter(d => d.type === 'facture')
+        if (alertFilter === 'retard') list = list.filter(d => ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (agentFilter !== 'tous') list = list.filter(d => d.agent_id === agentFilter)
         if (searchQ) { const q = searchQ.toLowerCase(); list = list.filter(d => (`${d.client_nom} ${d.client_prenom || ''} ${d.numero}`).toLowerCase().includes(q)) }
         return list
-    }, [pDocs, agentFilter, searchQ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pDocs, agentFilter, searchQ, alertFilter])
 
     const jOrders = useMemo(() => {
         let list = pOrders
+        if (alertFilter === 'boutique') list = list.filter(o => o.payment_status === 'pending' && (now.getTime() - new Date(o.created_at).getTime()) > 864e5)
         if (searchQ) { const q = searchQ.toLowerCase(); list = list.filter(o => (`${o.customer_name} ${o.product_title}`).toLowerCase().includes(q)) }
         return list
-    }, [pOrders, searchQ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pOrders, searchQ, alertFilter])
 
     const jDeps = useMemo(() => {
         let list = pDeps
@@ -373,6 +552,13 @@ export default function AdminComptabilitePage() {
     const pgOrders   = jOrders.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
     const pgDeps     = jDeps.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
 
+    const handleAlertAction = (action?: string) => {
+        if (!action) return
+        if (action === 'retard' || action === 'agents') { setJournalTab('docs'); setAlertFilter(action === 'retard' ? 'retard' : null); setJournalPage(1) }
+        if (action === 'boutique') { setJournalTab('boutique'); setAlertFilter('boutique'); setJournalPage(1) }
+        document.getElementById('journal-section')?.scrollIntoView({ behavior: 'smooth' })
+    }
+
     // ── Export Excel multi-feuilles ───────────────────────────────
     const handleMasterExport = async () => {
         setExporting(true)
@@ -385,6 +571,7 @@ export default function AdminComptabilitePage() {
             const YELLOW = 'FFFCD116'
             const DARK   = 'FF0a1628'
             const WHITE  = 'FFFFFFFF'
+            const RED    = 'FFE8112D'
 
             const HDR_STYLE = {
                 font: { bold: true, color: { argb: WHITE }, name: 'Arial', size: 10 },
@@ -392,7 +579,6 @@ export default function AdminComptabilitePage() {
                 alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
                 border: { bottom: { style: 'thin' as const, color: { argb: GREEN } } }
             }
-
             const addHeader = (ws: ExcelJS.Worksheet, title: string, cols: number) => {
                 ws.mergeCells(`A1:${String.fromCharCode(64 + cols)}1`)
                 const t = ws.getCell('A1')
@@ -403,103 +589,112 @@ export default function AdminComptabilitePage() {
                 ws.getRow(1).height = 32
                 ws.mergeCells(`A2:${String.fromCharCode(64 + cols)}2`)
                 const s = ws.getCell('A2')
-                s.value = `Periode : ${start.toLocaleDateString('fr-FR')} -> ${end.toLocaleDateString('fr-FR')} | Taux commission : ${(commissionRate * 100).toFixed(0)}% | Genere le ${new Date().toLocaleDateString('fr-FR')}`
+                s.value = `Periode: ${start.toLocaleDateString('fr-FR')} -> ${end.toLocaleDateString('fr-FR')} | Commission: ${(commissionRate * 100).toFixed(0)}% | Genere le ${new Date().toLocaleDateString('fr-FR')}`
                 s.font = { italic: true, size: 9, color: { argb: 'FF888888' } }
                 s.alignment = { horizontal: 'center' }
                 ws.getRow(2).height = 16
             }
-
             const setHeaderRow = (ws: ExcelJS.Worksheet, rowNum: number, values: string[]) => {
                 const row = ws.getRow(rowNum)
                 row.values = ['', ...values]
                 row.height = 22
                 row.eachCell((cell, col) => { if (col > 1) Object.assign(cell, HDR_STYLE) })
             }
-
             const stripe = (row: ExcelJS.Row, i: number) => {
                 if (i % 2 === 0) row.eachCell(cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAF8' } } })
             }
 
-            // ── Feuille 1 : Résumé KPI ──
+            // Feuille 1 — KPI global
             const ws1 = wb.addWorksheet('Resume Global')
-            ws1.columns = [{ width: 2 }, { width: 38 }, { width: 24 }, { width: 30 }]
+            ws1.columns = [{ width: 2 }, { width: 42 }, { width: 24 }, { width: 34 }]
             addHeader(ws1, 'RAPPORT COMPTABLE GLOBAL', 3)
             setHeaderRow(ws1, 3, ['INDICATEUR', 'MONTANT (FCFA)', 'DETAIL'])
-
             const kpiRows: [string, number, string][] = [
-                ["Chiffre d'Affaires Emis (Factures)", kpis.caEmis, `${pDocs.filter(d => d.type === 'facture').length} factures emises`],
-                ['Encaisse - Facturation', kpis.encaisseFactu, `${kpis.nbFactPaye} factures payees`],
-                ['Revenus Boutique (Commandes)', kpis.boutique, `${pOrders.filter(o => o.payment_status === 'completed').length} commandes completees`],
-                ['TOTAL ENCAISSE (Factu + Boutique)', kpis.totalEncaisse, 'Cumul toutes sources'],
-                ['Factures En Attente de Paiement', kpis.enAttente, `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours`],
-                [`Commission Agents (${(commissionRate * 100).toFixed(0)}%)`, kpis.commission, 'Sur encaissements facturation uniquement'],
-                ['Depenses Totales', kpis.totalDeps, `${pDeps.length} depenses enregistrees`],
+                ["CA Emis (Factures)", kpis.caEmis, `${pDocs.filter(d => d.type === 'facture').length} factures emises`],
+                ['Encaisse - Facturation (net remises)', kpis.encaisseFactu, `${kpis.nbFactPaye} factures payees`],
+                ['Revenus Boutique', kpis.boutique, `${pOrders.filter(o => o.payment_status === 'completed').length} commandes`],
+                ['TOTAL ENCAISSE', kpis.totalEncaisse, 'Facturation + Boutique'],
+                ['TVA Collectee', kpis.totalTVA, 'Sur factures payees'],
+                ['Factures En Attente', kpis.enAttente, `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours`],
+                [`Commission Agents (${(commissionRate * 100).toFixed(0)}%)`, kpis.commission, 'Sur encaissements nets'],
+                ['Depenses Totales', kpis.totalDeps, `${pDeps.length} depenses`],
                 ['BENEFICE NET', kpis.benefice, 'Encaisse - Commissions - Depenses'],
-                ['Projection 30 jours', Math.round(kpis.proj30), 'Basee sur le rythme actuel'],
-                ['Score Sante Financiere', scoreSante.score, `${scoreSante.label} (Encaissement ${scoreSante.tauxEncaissement}% / Rentabilite ${scoreSante.tauxRentabilite}%)`],
+                ['Projection 30 jours', Math.round(kpis.proj30), 'Basee sur rythme actuel'],
+                ['Score Sante Financiere', scoreSante.score, `${scoreSante.label} — ${scoreSante.recommandation}`],
             ]
             kpiRows.forEach(([label, montant, detail], i) => {
                 const r = ws1.addRow(['', label, montant, detail])
                 r.getCell(3).numFmt = '#,##0'
                 if (label.startsWith('TOTAL') || label.startsWith('BENEFICE')) {
                     r.getCell(2).font = { bold: true, size: 11 }
-                    r.getCell(3).font = { bold: true, size: 11, color: { argb: montant < 0 ? 'FFE8112D' : GREEN } }
+                    r.getCell(3).font = { bold: true, size: 11, color: { argb: montant < 0 ? RED : GREEN } }
                 }
                 stripe(r, i)
             })
 
-            // ── Feuille 2 : Performance Agents ──
+            // Feuille 2 — Performance Agents
             const ws2 = wb.addWorksheet('Performance Agents')
-            ws2.columns = [{ width: 2 }, { width: 26 }, { width: 30 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 10 }, { width: 12 }, { width: 12 }]
-            addHeader(ws2, 'PERFORMANCE PAR AGENT', 10)
-            setHeaderRow(ws2, 3, ['Agent', 'Email', 'CA Emis (FCFA)', 'Encaisse (FCFA)', `Commission (${(commissionRate * 100).toFixed(0)}%)`, 'Depenses (FCFA)', 'Benefice Net', 'Devis', 'Factures', 'Conv.%'])
+            ws2.columns = [{ width: 2 }, { width: 26 }, { width: 30 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 10 }, { width: 12 }, { width: 12 }, { width: 18 }]
+            addHeader(ws2, 'PERFORMANCE PAR AGENT', 11)
+            setHeaderRow(ws2, 3, ['Agent', 'Email', 'CA Emis', 'Encaisse Net', `Commission ${(commissionRate * 100).toFixed(0)}%`, 'TVA Collectee', 'Depenses', 'Benefice Net', 'Devis', 'Factures', 'Conv%'])
             sortedAgents.forEach((s, i) => {
                 const conv = s.nbFactures > 0 ? ((s.nbPayees / s.nbFactures) * 100).toFixed(1) + '%' : '0%'
-                const r = ws2.addRow(['', s.agent.full_name || '—', s.agent.email, s.caEmis, s.encaisse, s.commission, s.depenses, s.benefice, s.nbDevis, s.nbFactures, conv])
-                ;[4, 5, 6, 7, 8].forEach(col => { r.getCell(col).numFmt = '#,##0' })
-                if (s.benefice < 0) r.getCell(8).font = { color: { argb: 'FFE8112D' }, bold: true }
+                const r = ws2.addRow(['', s.agent.full_name || '—', s.agent.email || '—', s.caEmis, s.encaisse, s.commission, s.tvaCollectee, s.depenses, s.benefice, s.nbDevis, s.nbFactures, conv])
+                ;[4, 5, 6, 7, 8, 9].forEach(col => { r.getCell(col).numFmt = '#,##0' })
+                if (s.benefice < 0) r.getCell(9).font = { color: { argb: RED }, bold: true }
                 if (i === 0) r.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF9E6' } } })
                 else stripe(r, i)
             })
 
-            // ── Feuille 3 : Journal Documents ──
+            // Feuille 3 — Factures & Devis détaillés
             const ws3 = wb.addWorksheet('Factures et Devis')
-            ws3.columns = [{ width: 2 }, { width: 20 }, { width: 10 }, { width: 28 }, { width: 26 }, { width: 18 }, { width: 20 }, { width: 14 }, { width: 24 }, { width: 14 }]
-            addHeader(ws3, 'JOURNAL FACTURES & DEVIS - TOUS AGENTS', 9)
-            setHeaderRow(ws3, 3, ['N Document', 'Type', 'Client', 'Email Client', 'Telephone', 'Montant (FCFA)', 'Statut', 'Agent', 'Date'])
+            ws3.columns = [{ width: 2 }, { width: 20 }, { width: 10 }, { width: 28 }, { width: 26 }, { width: 18 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 14 }]
+            addHeader(ws3, 'JOURNAL FACTURES & DEVIS', 12)
+            setHeaderRow(ws3, 3, ['N Document', 'Type', 'Client', 'Email', 'Telephone', 'Sous-total HT', 'TVA', 'Remise', 'Total TTC', 'Statut', 'Agent', 'Signe', 'Date'])
             pDocs.forEach((d, i) => {
                 const ag = agents.find(a => a.id === d.agent_id)
-                const r = ws3.addRow(['', d.numero, d.type === 'facture' ? 'Facture' : 'Devis', `${d.client_nom} ${d.client_prenom || ''}`.trim(), d.client_email || '—', d.client_phone || '—', d.total, DOC_STATUS[d.status]?.label || d.status, ag?.full_name || ag?.email || '—', new Date(d.created_at)])
-                r.getCell(7).numFmt = '#,##0'; r.getCell(10).numFmt = 'dd/mm/yyyy'
-                if (d.status === 'paye') r.getCell(8).font = { color: { argb: GREEN }, bold: true }
+                const r = ws3.addRow([
+                    '', d.numero, d.type === 'facture' ? 'Facture' : 'Devis',
+                    `${d.client_nom} ${d.client_prenom || ''}`.trim(),
+                    d.client_email || '—', d.client_phone || '—',
+                    Number(d.sous_total) || 0, Number(d.total_tva) || 0, Number(d.remise) || 0, d.total,
+                    DOC_STATUS[d.status]?.label || d.status,
+                    ag?.full_name || ag?.email || '—',
+                    d.signed_at ? 'Oui' : 'Non',
+                    new Date(d.created_at)
+                ])
+                ;[7, 8, 9, 10].forEach(col => r.getCell(col).numFmt = '#,##0')
+                r.getCell(14).numFmt = 'dd/mm/yyyy'
+                if (d.status === 'paye') r.getCell(11).font = { color: { argb: GREEN }, bold: true }
+                if (d.signed_at) r.getCell(13).font = { color: { argb: 'FF9333ea' }, bold: true }
                 stripe(r, i)
             })
 
-            // ── Feuille 4 : Commandes Boutique ──
+            // Feuille 4 — Commandes Boutique
             const ws4 = wb.addWorksheet('Boutique Commandes')
-            ws4.columns = [{ width: 2 }, { width: 20 }, { width: 26 }, { width: 28 }, { width: 32 }, { width: 16 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
-            addHeader(ws4, 'COMMANDES BOUTIQUE EN LIGNE', 9)
-            setHeaderRow(ws4, 3, ['Commande ID', 'Client', 'Email', 'Produit', 'Montant', 'Devise', 'Methode', 'Statut', 'Date'])
+            ws4.columns = [{ width: 2 }, { width: 26 }, { width: 28 }, { width: 34 }, { width: 16 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
+            addHeader(ws4, 'COMMANDES BOUTIQUE', 8)
+            setHeaderRow(ws4, 3, ['Client', 'Email', 'Produit', 'Montant', 'Devise', 'Methode', 'Statut', 'Date'])
             pOrders.forEach((o, i) => {
-                const r = ws4.addRow(['', o.id.slice(0, 16) + '…', o.customer_name || '—', o.customer_email || '—', o.product_title || '—', o.amount, o.currency, o.payment_method || '—', ORDER_STATUS[o.payment_status]?.label || o.payment_status, new Date(o.created_at)])
-                r.getCell(6).numFmt = '#,##0'; r.getCell(10).numFmt = 'dd/mm/yyyy'
-                if (o.payment_status === 'completed') r.getCell(9).font = { color: { argb: GREEN }, bold: true }
+                const r = ws4.addRow(['', o.customer_name || '—', o.customer_email || '—', o.product_title || '—', o.amount, o.currency || 'XOF', o.payment_method || '—', ORDER_STATUS[o.payment_status]?.label || o.payment_status, new Date(o.created_at)])
+                r.getCell(5).numFmt = '#,##0'; r.getCell(9).numFmt = 'dd/mm/yyyy'
+                if (o.payment_status === 'completed') r.getCell(8).font = { color: { argb: GREEN }, bold: true }
                 stripe(r, i)
             })
 
-            // ── Feuille 5 : Dépenses ──
+            // Feuille 5 — Dépenses
             const ws5 = wb.addWorksheet('Depenses')
-            ws5.columns = [{ width: 2 }, { width: 34 }, { width: 22 }, { width: 20 }, { width: 14 }, { width: 26 }]
-            addHeader(ws5, 'JOURNAL DES DEPENSES - TOUS AGENTS', 5)
-            setHeaderRow(ws5, 3, ['Titre', 'Categorie', 'Montant (FCFA)', 'Date', 'Agent'])
+            ws5.columns = [{ width: 2 }, { width: 36 }, { width: 22 }, { width: 20 }, { width: 14 }, { width: 28 }, { width: 34 }]
+            addHeader(ws5, 'JOURNAL DES DEPENSES', 6)
+            setHeaderRow(ws5, 3, ['Titre', 'Categorie', 'Montant', 'Date', 'Agent', 'Notes'])
             pDeps.forEach((d, i) => {
                 const ag = agents.find(a => a.id === d.agent_id)
-                const r = ws5.addRow(['', d.titre, d.categorie, Number(d.montant), new Date(d.date_depense), ag?.full_name || ag?.email || '—'])
+                const r = ws5.addRow(['', d.titre, d.categorie, Number(d.montant), new Date(d.date_depense), ag?.full_name || ag?.email || '—', d.notes || '—'])
                 r.getCell(4).numFmt = '#,##0'; r.getCell(5).numFmt = 'dd/mm/yyyy'
+                r.getCell(4).font = { color: { argb: RED } }
                 stripe(r, i)
             })
 
-            // Exporter
             const buf = await wb.xlsx.writeBuffer()
             saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
                 `RG_Comptabilite_${new Date().toISOString().slice(0, 10)}.xlsx`)
@@ -510,7 +705,6 @@ export default function AdminComptabilitePage() {
         }
     }
 
-    // ────────────────────────────────────────────────────────────────
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="flex flex-col items-center gap-3">
@@ -520,8 +714,23 @@ export default function AdminComptabilitePage() {
         </div>
     )
 
+    const nAgents  = agents.filter(a => a.role === 'agent').length
+    const nSigned  = pDocs.filter(d => d.signed_at).length
+    const nPending = pOrders.filter(o => o.payment_status === 'pending').length
+
     return (
         <div className="space-y-8 max-w-7xl mx-auto pb-12">
+
+            {/* ── MODAL DÉTAIL DOCUMENT ── */}
+            <AnimatePresence>
+                {detailDoc && (
+                    <DocDetailModal
+                        doc={detailDoc}
+                        agent={agents.find(a => a.id === detailDoc.agent_id)}
+                        onClose={() => setDetailDoc(null)}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* ── HEADER ── */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
@@ -533,14 +742,17 @@ export default function AdminComptabilitePage() {
                     <h1 className="text-3xl font-black text-white font-heading tracking-tighter">
                         COMPTABILITÉ <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#008751]">GLOBALE</span>
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">
-                        {agents.filter(a => a.role === 'agent').length} agents · {docs.length} documents · {orders.length} commandes · commission {(commissionRate * 100).toFixed(0)}%
-                    </p>
+                    <div className="flex items-center gap-4 mt-1.5 flex-wrap">
+                        <span className="text-gray-500 text-sm">{nAgents} agents actifs · {docs.length} documents · {orders.length} commandes</span>
+                        {nSigned > 0 && <span className="text-[10px] text-purple-400 flex items-center gap-1"><Shield size={10} />{nSigned} signés</span>}
+                        {nPending > 0 && <span className="text-[10px] text-yellow-400 flex items-center gap-1"><Clock size={10} />{nPending} en attente</span>}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#008751]/15 text-[#00c870]">Commission {(commissionRate * 100).toFixed(0)}%</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex gap-1 bg-white/5 rounded-xl p-1">
                         {(['ce_mois', '3_mois', '6_mois', 'annee', 'tous'] as Period[]).map(p => (
-                            <button key={p} type="button" onClick={() => { setPeriod(p); setJournalPage(1) }}
+                            <button key={p} type="button" onClick={() => { setPeriod(p); setJournalPage(1); setAlertFilter(null) }}
                                 className={cn('text-[10px] font-bold px-3 py-2 rounded-lg transition-all',
                                     period === p ? 'bg-[#FCD116] text-[#0a0f18]' : 'text-gray-400 hover:text-white')}>
                                 {p === 'ce_mois' ? 'Ce mois' : p === '3_mois' ? '3 mois' : p === '6_mois' ? '6 mois' : p === 'annee' ? 'Année' : 'Tout'}
@@ -553,9 +765,7 @@ export default function AdminComptabilitePage() {
                     </button>
                     <button type="button" onClick={handleMasterExport} disabled={exporting}
                         className="flex items-center gap-2 bg-[#FCD116] text-[#0a0f18] hover:bg-[#e6bc00] font-black text-xs px-5 py-3 rounded-xl transition-all disabled:opacity-60 shadow-[0_0_24px_rgba(252,209,22,0.2)]">
-                        {exporting
-                            ? <div className="w-4 h-4 border-2 border-[#0a0f18] border-t-transparent rounded-full animate-spin" />
-                            : <Download size={14} />}
+                        {exporting ? <div className="w-4 h-4 border-2 border-[#0a0f18] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
                         Export Excel (5 feuilles)
                     </button>
                 </div>
@@ -577,13 +787,15 @@ export default function AdminComptabilitePage() {
                     <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${scoreSante.score}%`, background: scoreSante.color }} />
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-500">
-                        <div>Taux encaissement <span className="font-bold text-white">{scoreSante.tauxEncaissement}%</span></div>
-                        <div>Taux rentabilité <span className="font-bold text-white">{scoreSante.tauxRentabilite}%</span></div>
+                    <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-500">
+                        <div className="text-center"><p>Encaissement</p><p className="font-bold text-white text-[11px]">{scoreSante.tauxEncaissement}%</p></div>
+                        <div className="text-center border-x border-white/5"><p>Rentabilité</p><p className="font-bold text-white text-[11px]">{scoreSante.tauxRentabilite}%</p></div>
+                        <div className="text-center"><p>Conv. Boutique</p><p className="font-bold text-white text-[11px]">{scoreSante.tauxConvOrders}%</p></div>
                     </div>
+                    <p className="text-[10px] text-gray-600 border-t border-white/5 pt-3 leading-relaxed">{scoreSante.recommandation}</p>
                 </div>
 
-                {/* Alertes */}
+                {/* Alertes cliquables */}
                 <div className="lg:col-span-2 bg-[#0a0f18] border border-white/5 rounded-2xl p-5 flex flex-col gap-3">
                     <div className="flex items-center gap-2 mb-1">
                         <AlertTriangle size={14} className="text-[#FCD116]" />
@@ -598,15 +810,19 @@ export default function AdminComptabilitePage() {
                     ) : (
                         <div className="space-y-2">
                             {alertes.map((a, i) => (
-                                <div key={i} className={cn('flex items-start gap-2.5 px-4 py-2.5 rounded-xl text-xs',
-                                    a.type === 'danger' ? 'bg-red-500/10 text-red-300 border border-red-500/10' :
-                                    a.type === 'warning' ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/10' :
-                                    'bg-blue-500/10 text-blue-300 border border-blue-500/10')}>
+                                <button key={i} type="button"
+                                    onClick={() => a.action && handleAlertAction(a.action)}
+                                    className={cn('w-full flex items-start gap-2.5 px-4 py-2.5 rounded-xl text-xs text-left transition-all',
+                                        a.action ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
+                                        a.type === 'danger' ? 'bg-red-500/10 text-red-300 border border-red-500/10 hover:border-red-500/30' :
+                                        a.type === 'warning' ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/10 hover:border-yellow-500/30' :
+                                        'bg-blue-500/10 text-blue-300 border border-blue-500/10 hover:border-blue-500/30')}>
                                     {a.type === 'danger' ? <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" /> :
                                      a.type === 'warning' ? <Clock size={13} className="flex-shrink-0 mt-0.5" /> :
                                      <Activity size={13} className="flex-shrink-0 mt-0.5" />}
-                                    {a.msg}
-                                </div>
+                                    <span className="flex-1">{a.msg}</span>
+                                    {a.action && <ExternalLink size={11} className="flex-shrink-0 mt-0.5 opacity-50" />}
+                                </button>
                             ))}
                         </div>
                     )}
@@ -616,55 +832,59 @@ export default function AdminComptabilitePage() {
             {/* ── KPI GRID ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <KpiCard icon={BarChart3}     label="CA Émis (Factures)"    value={fmt(kpis.caEmis)}        color="#FCD116" sub={`${pDocs.filter(d => d.type === 'facture').length} factures`} />
-                <KpiCard icon={Wallet}        label="Total Encaissé"         value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation + Boutique" />
-                <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes`} />
+                <KpiCard icon={Wallet}        label="Total Encaissé"         value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation net + Boutique" highlight />
+                <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées`} />
                 <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures`} />
-                <KpiCard icon={Users}         label={`Commissions (${(commissionRate * 100).toFixed(0)}%)`} value={fmt(kpis.commission)} color="#8b5cf6" sub="Sur encaissements facturation" />
+                <KpiCard icon={Users}         label={`Commissions (${(commissionRate * 100).toFixed(0)}%)`} value={fmt(kpis.commission)} color="#8b5cf6" sub="Sur encaissements nets" />
                 <KpiCard icon={TrendingDown}  label="Dépenses Totales"       value={fmt(kpis.totalDeps)}     color="#E8112D" sub={`${pDeps.length} dépenses`} />
                 <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après comm. et dépenses" />
                 <KpiCard icon={Target}        label="Projection 30 jours"    value={fmt(Math.round(kpis.proj30))} color="#FCD116" sub="Basée sur rythme actuel" />
             </div>
+            {/* TVA + Signatures row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard icon={Calculator}    label="TVA Collectée"          value={fmt(kpis.totalTVA)}      trend={kpis.trends?.tva}       color="#0891b2" sub="Sur factures payées" />
+                <KpiCard icon={Shield}        label="Factures Signées"        value={`${nSigned}`}            color="#9333ea" sub={`sur ${pDocs.filter(d => d.type === 'facture').length} factures`} />
+                <KpiCard icon={Clock}         label="Commandes En Attente"    value={`${nPending}`}           color="#f97316" sub="Boutique — non payées" />
+                <KpiCard icon={Star}          label="Taux Encaissement"       value={`${scoreSante.tauxEncaissement}%`} color={parseInt(scoreSante.tauxEncaissement) >= 70 ? '#00c870' : parseInt(scoreSante.tauxEncaissement) >= 40 ? '#FCD116' : '#E8112D'} sub={`${kpis.nbFactPaye}/${kpis.nbFactTotal} factures payées`} />
+            </div>
 
             {/* ── CHARTS ROW ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 {/* Area flux trésorerie */}
                 <div className="lg:col-span-2 bg-[#0a0f18] border border-white/5 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-5">
                         <div>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Flux de Trésorerie</p>
-                            <p className="text-sm font-bold text-white mt-0.5">Encaissements quotidiens</p>
+                            <p className="text-sm font-bold text-white mt-0.5">Encaissements vs Dépenses</p>
                         </div>
                         <Activity size={16} className="text-[#008751]" />
                     </div>
                     {areaData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={200}>
+                        <ResponsiveContainer width="100%" height={220}>
                             <AreaChart data={areaData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                                 <defs>
-                                    <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#008751" stopOpacity={0.35} /><stop offset="95%" stopColor="#008751" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                    </linearGradient>
+                                    <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#008751" stopOpacity={0.35} /><stop offset="95%" stopColor="#008751" stopOpacity={0} /></linearGradient>
+                                    <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0} /></linearGradient>
+                                    <linearGradient id="gD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#E8112D" stopOpacity={0.25} /><stop offset="95%" stopColor="#E8112D" stopOpacity={0} /></linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                                <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                                <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
                                 <Tooltip contentStyle={{ background: '#0d1421', border: '1px solid #ffffff12', borderRadius: 12 }} labelStyle={{ color: '#fff', fontWeight: 700 }}
-                                    formatter={(v, name) => [fmt(Number(v)), name === 'factu' ? 'Facturation' : 'Boutique']} />
-                                <Area type="monotone" dataKey="factu"    stroke="#008751" strokeWidth={2} fill="url(#gF)" name="factu" />
-                                <Area type="monotone" dataKey="boutique" stroke="#3b82f6" strokeWidth={2} fill="url(#gB)" name="boutique" />
+                                    formatter={(v, name) => [fmt(Number(v)), name === 'factu' ? 'Facturation' : name === 'boutique' ? 'Boutique' : 'Dépenses']} />
+                                <Area type="monotone" dataKey="factu"    stroke="#008751" strokeWidth={2} fill="url(#gF)" />
+                                <Area type="monotone" dataKey="boutique" stroke="#3b82f6" strokeWidth={2} fill="url(#gB)" />
+                                <Area type="monotone" dataKey="depenses" stroke="#E8112D" strokeWidth={1.5} fill="url(#gD)" strokeDasharray="4 2" />
                             </AreaChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="h-[200px] flex flex-col items-center justify-center text-gray-600 gap-2">
+                        <div className="h-[220px] flex flex-col items-center justify-center text-gray-600 gap-2">
                             <TrendingUp size={28} strokeWidth={1} />
                             <p className="text-sm">Aucun encaissement sur cette période</p>
                         </div>
                     )}
-                    <div className="flex gap-4 mt-3">
-                        {[{ color: '#008751', label: 'Facturation' }, { color: '#3b82f6', label: 'Boutique' }].map(l => (
+                    <div className="flex gap-5 mt-3">
+                        {[{ color: '#008751', label: 'Facturation' }, { color: '#3b82f6', label: 'Boutique' }, { color: '#E8112D', label: 'Dépenses', dashed: true }].map(l => (
                             <div key={l.label} className="flex items-center gap-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
                                 <span className="text-[10px] text-gray-500">{l.label}</span>
@@ -683,18 +903,19 @@ export default function AdminComptabilitePage() {
                         <PieChart size={16} className="text-[#E8112D]" />
                     </div>
                     {depParCat.length > 0 ? (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                             {depParCat.slice(0, 6).map((cat, i) => {
                                 const pct = kpis.totalDeps > 0 ? (cat.value / kpis.totalDeps) * 100 : 0
                                 return (
                                     <div key={cat.name}>
                                         <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[10px] text-gray-400 capitalize truncate max-w-[100px]">{cat.name}</span>
+                                            <span className="text-[10px] text-gray-400 capitalize truncate max-w-[110px]">{cat.name}</span>
                                             <span className="text-[10px] font-bold font-mono text-white">{fmt(cat.value)}</span>
                                         </div>
                                         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: DEP_COLORS[i % DEP_COLORS.length] }} />
                                         </div>
+                                        <p className="text-[9px] text-gray-600 mt-0.5 text-right">{pct.toFixed(0)}%</p>
                                     </div>
                                 )
                             })}
@@ -708,7 +929,7 @@ export default function AdminComptabilitePage() {
                 </div>
             </div>
 
-            {/* ── TOP AGENTS BAR ── */}
+            {/* ── TOP AGENTS BAR CHART ── */}
             {agentBarData.length > 0 && (
                 <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-5">
@@ -718,15 +939,15 @@ export default function AdminComptabilitePage() {
                         </div>
                         <Star size={16} className="text-[#FCD116]" />
                     </div>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ResponsiveContainer width="100%" height={Math.max(160, agentBarData.length * 36)}>
                         <BarChart data={agentBarData} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
                             <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 9 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} axisLine={false} tickLine={false} />
-                            <YAxis type="category" dataKey="name" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={72} />
+                            <YAxis type="category" dataKey="name" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
                             <Tooltip contentStyle={{ background: '#0d1421', border: '1px solid #ffffff12', borderRadius: 12 }}
                                 formatter={(v, name) => [fmt(Number(v)), name === 'encaisse' ? 'Encaissé' : 'Commission']} />
                             <Bar dataKey="encaisse"   fill="#008751" radius={[0, 4, 4, 0]} name="encaisse">
-                                {agentBarData.map((_, i) => <Cell key={i} fill={i === 0 ? '#00c870' : '#008751'} />)}
+                                {agentBarData.map((_, i) => <Cell key={i} fill={i === 0 ? '#00c870' : i === 1 ? '#008751' : '#00674040'} />)}
                             </Bar>
                             <Bar dataKey="commission" fill="#FCD116" radius={[0, 4, 4, 0]} name="commission" />
                         </BarChart>
@@ -742,42 +963,52 @@ export default function AdminComptabilitePage() {
                         <h2 className="text-sm font-black text-white">Classement Agents</h2>
                         <span className="text-[9px] font-mono text-gray-600 ml-1 bg-white/5 px-1.5 py-0.5 rounded">{sortedAgents.length}</span>
                     </div>
-                    <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-                        {([['encaisse', 'Encaissé'], ['commission', 'Commission'], ['docs', 'Documents']] as const).map(([k, l]) => (
-                            <button key={k} type="button" onClick={() => setSortAgent(k)}
-                                className={cn('text-[9px] font-bold px-2.5 py-1.5 rounded-md transition-all',
-                                    sortAgent === k ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white')}>
-                                {l}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => setShowAllAgents(v => !v)}
+                            className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500 hover:text-white transition-colors">
+                            {showAllAgents ? <EyeOff size={11} /> : <Eye size={11} />}
+                            {showAllAgents ? 'Masquer inactifs' : 'Voir tous'}
+                        </button>
+                        <div className="flex gap-1 bg-white/5 rounded-lg p-1">
+                            {([['encaisse', 'Encaissé'], ['commission', 'Commission'], ['docs', 'Documents']] as const).map(([k, l]) => (
+                                <button key={k} type="button" onClick={() => setSortAgent(k)}
+                                    className={cn('text-[9px] font-bold px-2.5 py-1.5 rounded-md transition-all',
+                                        sortAgent === k ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white')}>
+                                    {l}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px]">
+                    <table className="w-full min-w-[780px]">
                         <thead>
                             <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                                {['#', 'Agent', 'CA Émis', 'Encaissé', 'Commission', 'Dépenses', 'Bénéfice', 'Docs', 'Conv.'].map((h, i) => (
-                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left w-10' : i === 1 ? 'text-left' : i === 8 ? 'text-right pr-5' : 'text-right')}>{h}</th>
+                                {['#', 'Agent', 'CA Émis', 'Encaissé Net', 'Commission', 'TVA', 'Dépenses', 'Bénéfice', 'Docs', 'Conv.'].map((h, i) => (
+                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left w-10' : i === 1 ? 'text-left' : i === 9 ? 'text-right pr-5' : 'text-right')}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.03]">
                             {sortedAgents.length === 0 && (
-                                <tr><td colSpan={9} className="text-center py-12 text-gray-600 text-sm">Aucune donnée agent sur cette période</td></tr>
+                                <tr><td colSpan={10} className="text-center py-12 text-gray-600 text-sm">Aucune donnée agent sur cette période</td></tr>
                             )}
                             {sortedAgents.map((s, i) => {
                                 const conv = s.nbFactures > 0 ? (s.nbPayees / s.nbFactures) * 100 : 0
                                 const initials = (s.agent.full_name || s.agent.email || s.agent.id || '??').slice(0, 2).toUpperCase()
+                                const isTop3 = i < 3
                                 return (
-                                    <tr key={s.agent.id} className="hover:bg-white/[0.02] transition-colors">
+                                    <tr key={s.agent.id} className={cn('hover:bg-white/[0.02] transition-colors', !s.agent.is_active && 'opacity-50')}>
                                         <td className="p-4 pl-5">
-                                            <span className={cn('text-[11px] font-black font-mono', i === 0 ? 'text-[#FCD116]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-600')}>
-                                                #{i + 1}
+                                            <span className={cn('text-[11px] font-black font-mono',
+                                                i === 0 ? 'text-[#FCD116]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-600')}>
+                                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                                             </span>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-7 h-7 rounded-lg bg-[#008751]/20 border border-[#008751]/20 flex items-center justify-center text-[10px] font-black text-[#008751] flex-shrink-0">
+                                                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0',
+                                                    isTop3 ? 'bg-[#FCD116]/20 border border-[#FCD116]/20 text-[#FCD116]' : 'bg-[#008751]/20 border border-[#008751]/20 text-[#008751]')}>
                                                     {initials}
                                                 </div>
                                                 <div>
@@ -789,11 +1020,13 @@ export default function AdminComptabilitePage() {
                                         <td className="p-4 text-right font-mono text-[11px] text-gray-400">{fmt(s.caEmis)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-[#00c870] font-bold">{fmt(s.encaisse)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-purple-300">{fmt(s.commission)}</td>
+                                        <td className="p-4 text-right font-mono text-[11px] text-cyan-400">{fmt(s.tvaCollectee)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-red-400">{fmt(s.depenses)}</td>
                                         <td className={cn('p-4 text-right font-mono text-[11px] font-bold', s.benefice >= 0 ? 'text-[#00c870]' : 'text-red-400')}>{fmt(s.benefice)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-gray-500">{s.nbDevis}d&nbsp;/&nbsp;{s.nbFactures}f</td>
                                         <td className="p-4 pr-5 text-right">
-                                            <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', conv >= 70 ? 'bg-[#008751]/15 text-[#00c870]' : conv >= 40 ? 'bg-yellow-500/15 text-yellow-300' : 'bg-red-500/15 text-red-400')}>
+                                            <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                                conv >= 70 ? 'bg-[#008751]/15 text-[#00c870]' : conv >= 40 ? 'bg-yellow-500/15 text-yellow-300' : 'bg-red-500/15 text-red-400')}>
                                                 {conv.toFixed(0)}%
                                             </span>
                                         </td>
@@ -806,14 +1039,22 @@ export default function AdminComptabilitePage() {
             </div>
 
             {/* ── JOURNAL COMPLET ── */}
-            <div className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
+            <div id="journal-section" className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
                 <div className="p-5 border-b border-white/5 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <FileText size={16} className="text-[#008751]" />
                             <h2 className="text-sm font-black text-white">Journal des Transactions</h2>
+                            {alertFilter && (
+                                <button type="button" onClick={() => { setAlertFilter(null); setJournalPage(1) }}
+                                    className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors">
+                                    Filtre alerte actif <X size={9} />
+                                </button>
+                            )}
                         </div>
-                        <span className="text-[10px] text-gray-600 font-mono bg-white/5 px-2 py-0.5 rounded">{jCount} entrées</span>
+                        <span className="text-[10px] text-gray-600 font-mono bg-white/5 px-2 py-0.5 rounded">
+                            {Math.min((journalPage - 1) * ITEMS + 1, jCount)}–{Math.min(journalPage * ITEMS, jCount)} / {jCount}
+                        </span>
                     </div>
                     <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-fit">
                         {([
@@ -821,7 +1062,7 @@ export default function AdminComptabilitePage() {
                             ['boutique', 'Boutique',  pOrders.length, ShoppingBag],
                             ['depenses', 'Dépenses',  pDeps.length,   Receipt],
                         ] as const).map(([k, l, c, Icon]) => (
-                            <button key={k} type="button" onClick={() => { setJournalTab(k); setJournalPage(1) }}
+                            <button key={k} type="button" onClick={() => { setJournalTab(k); setJournalPage(1); setAlertFilter(null) }}
                                 className={cn('text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5',
                                     journalTab === k ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white')}>
                                 <Icon size={11} /> {l} <span className="text-[9px] font-mono opacity-60">{c}</span>
@@ -839,7 +1080,7 @@ export default function AdminComptabilitePage() {
                             <select value={agentFilter} onChange={e => { setAgentFilter(e.target.value); setJournalPage(1) }} title="Filtrer par agent"
                                 className="bg-white/5 border border-white/10 rounded-xl text-sm text-white px-3 py-2.5 focus:outline-none min-w-[180px]">
                                 <option value="tous" className="bg-[#0a0f18]">Tous les agents</option>
-                                {agents.filter(a => a.role === 'agent').map(a => (
+                                {agents.map(a => (
                                     <option key={a.id} value={a.id} className="bg-[#0a0f18]">{a.full_name || a.email}</option>
                                 ))}
                             </select>
@@ -849,24 +1090,45 @@ export default function AdminComptabilitePage() {
 
                 <div className="overflow-x-auto">
                     {journalTab === 'docs' && (
-                        <table className="w-full min-w-[640px]">
+                        <table className="w-full min-w-[700px]">
                             <thead><tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                                {['N° Document', 'Client', 'Agent', 'Montant', 'Statut', 'Date'].map((h, i) => (
-                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 5 ? 'text-right pr-5' : i === 3 ? 'text-right' : i === 4 ? 'text-center' : 'text-left')}>{h}</th>
+                                {['N° Document', 'Client', 'Agent', 'HT / TVA / Remise', 'Total TTC', 'Statut', 'Sig.', 'Date'].map((h, i) => (
+                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 7 ? 'text-right pr-5' : i === 4 || i === 3 ? 'text-right' : i === 5 || i === 6 ? 'text-center' : 'text-left')}>{h}</th>
                                 ))}
                             </tr></thead>
                             <tbody className="divide-y divide-white/[0.03]">
-                                {pgDocs.length === 0 && <tr><td colSpan={6} className="text-center py-12 text-gray-600 text-sm">Aucune facture</td></tr>}
+                                {pgDocs.length === 0 && <tr><td colSpan={8} className="text-center py-12 text-gray-600 text-sm">Aucune facture</td></tr>}
                                 {pgDocs.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     const st = DOC_STATUS[d.status] || { label: d.status, cls: 'bg-gray-500/20 text-gray-400' }
+                                    const ht = Number(d.sous_total) || 0
+                                    const tva = Number(d.total_tva) || 0
+                                    const remise = Number(d.remise) || 0
                                     return (
-                                        <tr key={d.id} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="p-4 pl-5"><p className="text-xs font-bold text-white font-mono">{d.numero}</p><p className="text-[9px] text-gray-600 capitalize">{d.type}</p></td>
-                                            <td className="p-4"><p className="text-xs text-white">{d.client_nom} {d.client_prenom || ''}</p><p className="text-[9px] text-gray-600 truncate max-w-[150px]">{d.client_email || d.client_phone || '—'}</p></td>
-                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[120px]">{ag?.full_name || ag?.email || '—'}</td>
-                                            <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(d.total)}</td>
+                                        <tr key={d.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setDetailDoc(d)}>
+                                            <td className="p-4 pl-5">
+                                                <p className="text-xs font-bold text-white font-mono">{d.numero}</p>
+                                                <p className="text-[9px] text-gray-600 capitalize">{d.type}</p>
+                                            </td>
+                                            <td className="p-4">
+                                                <p className="text-xs text-white">{d.client_nom} {d.client_prenom || ''}</p>
+                                                <p className="text-[9px] text-gray-600 truncate max-w-[140px]">{d.client_email || d.client_phone || '—'}</p>
+                                            </td>
+                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-right">
+                                                {ht > 0 ? (
+                                                    <div className="text-[9px] text-gray-500 space-y-0.5">
+                                                        <div>HT {fmt(ht)}</div>
+                                                        {tva > 0 && <div className="text-yellow-600">TVA {fmt(tva)}</div>}
+                                                        {remise > 0 && <div className="text-orange-600">-{fmt(remise)}</div>}
+                                                    </div>
+                                                ) : <span className="text-[9px] text-gray-600">—</span>}
+                                            </td>
+                                            <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(d.total, d.currency)}</td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>
+                                            <td className="p-4 text-center">
+                                                {d.signed_at ? <Shield size={11} className="text-purple-400 mx-auto" /> : <span className="text-gray-700">—</span>}
+                                            </td>
                                             <td className="p-4 pr-5 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.created_at)}</td>
                                         </tr>
                                     )
@@ -887,7 +1149,7 @@ export default function AdminComptabilitePage() {
                                     const st = ORDER_STATUS[o.payment_status] || { label: o.payment_status, cls: 'bg-gray-500/20 text-gray-400' }
                                     return (
                                         <tr key={o.id} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="p-4 pl-5"><p className="text-xs text-white">{o.customer_name || '—'}</p><p className="text-[9px] text-gray-600 truncate max-w-[150px]">{o.customer_email || '—'}</p></td>
+                                            <td className="p-4 pl-5"><p className="text-xs text-white">{o.customer_name || '—'}</p><p className="text-[9px] text-gray-600 truncate max-w-[140px]">{o.customer_email || '—'}</p></td>
                                             <td className="p-4 text-[10px] text-gray-400 truncate max-w-[180px]">{o.product_title || '—'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(o.amount, o.currency)}</td>
                                             <td className="p-4 text-[10px] text-gray-500 uppercase">{o.payment_method || '—'}</td>
@@ -900,23 +1162,24 @@ export default function AdminComptabilitePage() {
                         </table>
                     )}
                     {journalTab === 'depenses' && (
-                        <table className="w-full min-w-[540px]">
+                        <table className="w-full min-w-[560px]">
                             <thead><tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                                {['Titre', 'Catégorie', 'Agent', 'Montant', 'Date'].map((h, i) => (
-                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 4 ? 'text-right pr-5' : i === 3 ? 'text-right' : 'text-left')}>{h}</th>
+                                {['Titre', 'Catégorie', 'Agent', 'Montant', 'Date', 'Notes'].map((h, i) => (
+                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 4 ? 'text-right' : i === 3 ? 'text-right' : i === 5 ? 'text-left pr-5' : 'text-left')}>{h}</th>
                                 ))}
                             </tr></thead>
                             <tbody className="divide-y divide-white/[0.03]">
-                                {pgDeps.length === 0 && <tr><td colSpan={5} className="text-center py-12 text-gray-600 text-sm">Aucune dépense</td></tr>}
+                                {pgDeps.length === 0 && <tr><td colSpan={6} className="text-center py-12 text-gray-600 text-sm">Aucune dépense</td></tr>}
                                 {pgDeps.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     return (
                                         <tr key={d.id} className="hover:bg-white/[0.02] transition-colors">
                                             <td className="p-4 pl-5 text-xs text-white font-medium">{d.titre}</td>
                                             <td className="p-4"><span className="text-[9px] font-bold bg-white/5 text-gray-400 px-2 py-0.5 rounded-full capitalize">{d.categorie}</span></td>
-                                            <td className="p-4 text-[10px] text-gray-500 truncate max-w-[130px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-[10px] text-gray-500 truncate max-w-[120px]">{ag?.full_name || ag?.email || '—'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-red-400 font-bold">−{fmt(Number(d.montant))}</td>
-                                            <td className="p-4 pr-5 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.date_depense)}</td>
+                                            <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.date_depense)}</td>
+                                            <td className="p-4 pr-5 text-[10px] text-gray-600 truncate max-w-[160px]">{d.notes || '—'}</td>
                                         </tr>
                                     )
                                 })}
@@ -926,10 +1189,16 @@ export default function AdminComptabilitePage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {jCount > ITEMS && (
                     <div className="flex items-center justify-between p-4 border-t border-white/5">
-                        <span className="text-[10px] text-gray-600">Page {journalPage} / {totalPages} · {jCount} entrées</span>
+                        <span className="text-[10px] text-gray-600">
+                            Affichage {Math.min((journalPage - 1) * ITEMS + 1, jCount)}–{Math.min(journalPage * ITEMS, jCount)} sur {jCount} entrées · Page {journalPage}/{totalPages}
+                        </span>
                         <div className="flex gap-1 items-center">
+                            <button type="button" title="Première page" onClick={() => setJournalPage(1)} disabled={journalPage === 1}
+                                className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white disabled:opacity-30 flex items-center justify-center transition-colors text-[9px] font-black">
+                                «
+                            </button>
                             <button type="button" title="Page précédente" onClick={() => setJournalPage(p => Math.max(1, p - 1))} disabled={journalPage === 1}
                                 className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white disabled:opacity-30 flex items-center justify-center transition-colors">
                                 <ChevronLeft size={14} />
@@ -938,7 +1207,8 @@ export default function AdminComptabilitePage() {
                                 const p = Math.max(1, Math.min(totalPages - 4, journalPage - 2)) + i
                                 return p <= totalPages ? (
                                     <button key={p} type="button" onClick={() => setJournalPage(p)}
-                                        className={cn('w-8 h-8 rounded-lg text-[10px] font-bold transition-all', p === journalPage ? 'bg-[#008751] text-white' : 'bg-white/5 text-gray-400 hover:text-white')}>
+                                        className={cn('w-8 h-8 rounded-lg text-[10px] font-bold transition-all',
+                                            p === journalPage ? 'bg-[#008751] text-white' : 'bg-white/5 text-gray-400 hover:text-white')}>
                                         {p}
                                     </button>
                                 ) : null
@@ -946,6 +1216,10 @@ export default function AdminComptabilitePage() {
                             <button type="button" title="Page suivante" onClick={() => setJournalPage(p => Math.min(totalPages, p + 1))} disabled={journalPage === totalPages}
                                 className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white disabled:opacity-30 flex items-center justify-center transition-colors">
                                 <ChevronRight size={14} />
+                            </button>
+                            <button type="button" title="Dernière page" onClick={() => setJournalPage(totalPages)} disabled={journalPage === totalPages}
+                                className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-white disabled:opacity-30 flex items-center justify-center transition-colors text-[9px] font-black">
+                                »
                             </button>
                         </div>
                     </div>

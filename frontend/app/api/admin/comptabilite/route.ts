@@ -20,7 +20,13 @@ export async function GET(request: NextRequest) {
     const [docsRes, ordersRes, depsRes, settingsRes] = await Promise.all([
         supabase
             .from('documents_financiers')
-            .select('id,type,numero,client_nom,client_prenom,client_email,client_phone,total,status,created_at,agent_id,currency')
+            .select(`
+                id, type, numero,
+                client_nom, client_prenom, client_email, client_phone, client_adresse,
+                items, sous_total, total_tva, remise, notes, conditions,
+                total, status, created_at, agent_id, currency,
+                signature_url, signed_at
+            `)
             .order('created_at', { ascending: false })
             .limit(5000),
         supabase
@@ -30,7 +36,7 @@ export async function GET(request: NextRequest) {
             .limit(5000),
         supabase
             .from('depenses')
-            .select('id,titre,categorie,montant,date_depense,agent_id')
+            .select('id,titre,categorie,montant,date_depense,agent_id,notes')
             .order('date_depense', { ascending: false })
             .limit(5000),
         supabase
@@ -40,11 +46,22 @@ export async function GET(request: NextRequest) {
             .maybeSingle(),
     ])
 
+    // Validation commissionRate : doit être entre 0 et 1 (pas un % comme 10)
+    let commissionRate = 0.10
+    if (settingsRes.data?.value) {
+        const raw = parseFloat(settingsRes.data.value)
+        if (!isNaN(raw)) {
+            // Si valeur > 1, c'est un pourcentage → diviser par 100
+            commissionRate = raw > 1 ? raw / 100 : raw
+            commissionRate = Math.max(0, Math.min(1, commissionRate))
+        }
+    }
+
     return NextResponse.json({
-        docs:        docsRes.data     || [],
-        orders:      ordersRes.data   || [],
-        depenses:    depsRes.data     || [],
-        commissionRate: settingsRes.data?.value ? parseFloat(settingsRes.data.value) : 0.10,
+        docs:           docsRes.data     || [],
+        orders:         ordersRes.data   || [],
+        depenses:       depsRes.data     || [],
+        commissionRate,
         errors: {
             docs:     docsRes.error?.message     || null,
             orders:   ordersRes.error?.message   || null,

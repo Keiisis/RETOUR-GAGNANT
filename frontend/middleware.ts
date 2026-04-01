@@ -2,29 +2,62 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import {
+    extractIp,
+    checkRateLimit,
+    getRateLimitCategory,
+    analyzeRequest,
+    getCachedIpBlock,
+    setCachedIpBlock,
+    logWafEvent,
+    trackViolation,
+} from '@/lib/waf'
 
 // ═══════════════════════════════════════════════════════
-// 🛡️ MIDDLEWARE — Route Protection (Server-Side)
+// 🛡️ MIDDLEWARE — Route Protection + WAF (Server-Side)
 // Protège les routes /agent/* et /admin/* côté serveur
+// WAF : détection SQLi, XSS, path traversal, blocage IP
 // ═══════════════════════════════════════════════════════
 
-// In-memory rate limiting store
-const loginAttempts = new Map<string, { count: number; lastReset: number }>()
+const SUPA_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  || ''
+const SUPA_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
-const MAX_LOGIN_ATTEMPTS = 10
+// ── Vérifier si une IP est bloquée (cache + Supabase) ─────────
+async function isIpBlocked(ip: string): Promise<boolean> {
+    // 1. Cache mémoire (TTL 5 min)
+    const cached = getCachedIpBlock(ip)
+    if (cached !== null) return cached
 
-const isRateLimited = (ip: string): boolean => {
-    const now = Date.now()
-    const entry = loginAttempts.get(ip)
-
-    if (!entry || now - entry.lastReset > RATE_LIMIT_WINDOW) {
-        loginAttempts.set(ip, { count: 1, lastReset: now })
-        return false
+    // 2. Supabase (service role)
+    if (!SUPA_URL || !SUPA_KEY) return false
+    try {
+        const res = await fetch(
+            `${SUPA_URL}/rest/v1/ip_blocks?ip=eq.${encodeURIComponent(ip)}&unblocked_at=is.null&select=ip&limit=1`,
+            {
+                headers: {
+                    apikey: SUPA_KEY,
+                    Authorization: `Bearer ${SUPA_KEY}`,
+                },
+            }
+        )
+        const rows = await res.json() as Array<unknown>
+        const blocked = Array.isArray(rows) && rows.length > 0
+        setCachedIpBlock(ip, blocked)
+        return blocked
+    } catch {
+        return false // En cas d'erreur réseau → ne pas bloquer
     }
+}
 
-    entry.count++
-    return entry.count > MAX_LOGIN_ATTEMPTS
+// ── Réponse bloquée ───────────────────────────────────────────
+function blockedResponse(reason: string, status = 403): NextResponse {
+    return new NextResponse(
+        JSON.stringify({ error: reason }),
+        {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+        }
+    )
 }
 
 export async function middleware(request: NextRequest) {
@@ -37,28 +70,55 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-    response.headers.set(
-        'Permissions-Policy',
-        'camera=(), microphone=(self), geolocation=()'
-    )
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()')
 
-    const pathname = request.nextUrl.pathname
+    const pathname  = request.nextUrl.pathname
+    const ip        = extractIp(request.headers)
+    const userAgent = request.headers.get('user-agent') || ''
 
-    // ─── Rate Limiting on Login POST requests ───
-    if (
-        (pathname === '/agent/login' || pathname === '/admin/login' || pathname === '/client/login' || pathname === '/client/register') &&
-        request.method === 'POST'
-    ) {
-        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-            request.headers.get('x-real-ip') ||
-            'unknown'
-
-        if (isRateLimited(ip)) {
-            return NextResponse.json(
-                { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
-                { status: 429 }
-            )
+    // ─── 1. Vérification IP bloquée ───
+    if (ip !== 'unknown' && await isIpBlocked(ip)) {
+        if (SUPA_URL && SUPA_KEY) {
+            logWafEvent({
+                ip, method: request.method, path: pathname,
+                userAgent, threatType: 'blocked_ip',
+                detail: 'IP dans la liste de blocage',
+                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+            })
         }
+        return blockedResponse('Accès refusé.', 403)
+    }
+
+    // ─── 2. Rate Limiting ───
+    const rlCategory = getRateLimitCategory(pathname)
+    if (checkRateLimit(ip, rlCategory)) {
+        if (SUPA_URL && SUPA_KEY) {
+            logWafEvent({
+                ip, method: request.method, path: pathname,
+                userAgent, threatType: 'rate_limit',
+                detail: `Catégorie: ${rlCategory}`,
+                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+            })
+            trackViolation(ip, SUPA_URL, SUPA_KEY)
+        }
+        return blockedResponse('Trop de requêtes. Réessayez dans quelques instants.', 429)
+    }
+
+    // ─── 3. Analyse WAF (SQLi, XSS, Path Traversal, UA suspect) ───
+    const searchParams = request.nextUrl.searchParams.toString()
+    const threat = analyzeRequest(request.method, pathname, searchParams, userAgent)
+
+    if (threat.blocked && threat.threatType) {
+        if (SUPA_URL && SUPA_KEY) {
+            logWafEvent({
+                ip, method: request.method, path: pathname,
+                userAgent, threatType: threat.threatType,
+                detail: threat.detail,
+                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+            })
+            trackViolation(ip, SUPA_URL, SUPA_KEY)
+        }
+        return blockedResponse('Requête bloquée par le pare-feu applicatif.', 403)
     }
 
     // ─── Skip login and public auth pages (no auth needed) ───
@@ -74,8 +134,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // ─── Only protect /agent/*, /admin/*, /client/* routes ───
-    const isAgentRoute = pathname.startsWith('/agent')
-    const isAdminRoute = pathname.startsWith('/admin')
+    const isAgentRoute  = pathname.startsWith('/agent')
+    const isAdminRoute  = pathname.startsWith('/admin')
     const isClientRoute = pathname.startsWith('/client')
 
     if (!isAgentRoute && !isAdminRoute && !isClientRoute) {
@@ -93,20 +153,14 @@ export async function middleware(request: NextRequest) {
                 cookies: {
                     getAll: () => request.cookies.getAll(),
                     setAll: (cookiesToSet) => {
-                        // Mettre à jour la req courante
-                        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-
-                        // Mettre à jour la réponse
-                        supabaseResponse = NextResponse.next({
-                            request,
-                        })
-                        // Restaurer les security headers !
+                        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                        supabaseResponse = NextResponse.next({ request })
+                        // Restaurer les security headers
                         supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
                         supabaseResponse.headers.set('X-Frame-Options', 'DENY')
                         supabaseResponse.headers.set('X-XSS-Protection', '1; mode=block')
                         supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
                         supabaseResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()')
-
                         cookiesToSet.forEach(({ name, value, options }) => {
                             supabaseResponse.cookies.set(name, value, options)
                         })
@@ -115,24 +169,15 @@ export async function middleware(request: NextRequest) {
             }
         )
 
-        // Supabase SSR recommande d'utiliser getUser() plutôt que getSession()
         const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-        // Helper function to redirect keeping possible refreshed cookies
         const redirectTo = (url: URL) => {
             const redirectRes = NextResponse.redirect(url)
-
-            // 🧹 SECURITY/BUGFIX: If we redirect to login, clear all supabase cookies 
-            // to ensure no stuck 'HttpOnly' cookies from previous bug remain on browser.
             if (url.pathname.includes('/login')) {
                 request.cookies.getAll()
                     .filter(c => c.name.startsWith('sb-'))
-                    .forEach(cookie => {
-                        redirectRes.cookies.delete(cookie.name)
-                    })
+                    .forEach(cookie => { redirectRes.cookies.delete(cookie.name) })
             }
-
-            // Transférer les cookies nouvellement définis par Supabase
             supabaseResponse.cookies.getAll().forEach(cookie => {
                 redirectRes.cookies.set(cookie.name, cookie.value, cookie)
             })
@@ -140,19 +185,11 @@ export async function middleware(request: NextRequest) {
         }
 
         if (userError || !user) {
-            // Pas d'utilisateur authentifié → rediriger vers login
             const loginUrl = isAdminRoute ? '/admin/login' : isClientRoute ? '/client/login' : '/agent/login'
             return redirectTo(new URL(loginUrl, request.url))
         }
 
-        // ════════════════════════════════════════════════════════════
-        // 🔑 CRITICAL FIX for Vercel production:
-        // Force ALL sb-* auth cookies to be browser-readable (httpOnly: false).
-        // Old deployments set these as httpOnly: true, making them invisible
-        // to the client-side JS (createBrowserClient / getSession()).
-        // By re-setting them in the response with httpOnly: false,
-        // we overwrite the stuck httpOnly cookies in the browser.
-        // ════════════════════════════════════════════════════════════
+        // Fix Vercel httpOnly cookie compatibility
         request.cookies.getAll()
             .filter(c => c.name.startsWith('sb-'))
             .forEach(cookie => {
@@ -161,81 +198,77 @@ export async function middleware(request: NextRequest) {
                     httpOnly: false,
                     secure: true,
                     sameSite: 'lax' as const,
-                    maxAge: 60 * 60 * 24 * 365, // 1 year
+                    maxAge: 60 * 60 * 24 * 365,
                 })
             })
 
-        const userId = user.id
-
-        // Vérifier le rôle avec la Service Key (contourne les RLS)
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
         if (!serviceKey) {
-            // Pas de service key → on laisse passer (le layout côté client vérifiera)
             console.warn('Middleware: SUPABASE_SERVICE_ROLE_KEY manquante, vérification de rôle ignorée')
             return supabaseResponse
         }
 
-        const adminSupabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            serviceKey
-        )
+        const adminSupabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey)
 
-        // ─── Récupérer les deux profils en parallèle ─────────────────
         const [clientRes, agentRes] = await Promise.all([
-            adminSupabase.from('client_profiles').select('id').eq('id', userId).maybeSingle(),
-            adminSupabase.from('user_profiles').select('role').eq('id', userId).maybeSingle(),
+            adminSupabase.from('client_profiles').select('id').eq('id', user.id).maybeSingle(),
+            adminSupabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle(),
         ])
         const clientProfile = clientRes.data
         const agentProfile  = agentRes.data
 
-        // ─── Espace Client ────────────────────────────────────────────
+        // ─── Espace Client ────────────────────────────────────────
         if (isClientRoute) {
-            // Admin/Agent ne peut PAS accéder à l'espace client
-            if (agentProfile) {
-                return redirectTo(new URL('/client/login?error=unauthorized', request.url))
-            }
-            // Doit avoir un profil client
-            if (!clientProfile) {
-                return redirectTo(new URL('/client/login?error=no-profile', request.url))
-            }
+            if (agentProfile) return redirectTo(new URL('/client/login?error=unauthorized', request.url))
+            if (!clientProfile) return redirectTo(new URL('/client/login?error=no-profile', request.url))
             return supabaseResponse
         }
 
-        // ─── Espace Agent / Admin : doit avoir un profil dans user_profiles ──
-        // FAILLE CORRIGÉE : auparavant on laissait passer si le profil était absent.
-        // Un client (sans user_profiles) était donc autorisé à entrer.
         if (!agentProfile) {
-            const loginUrl = isAdminRoute
-                ? '/admin/login?error=unauthorized'
-                : '/agent/login?error=unauthorized'
+            const loginUrl = isAdminRoute ? '/admin/login?error=unauthorized' : '/agent/login?error=unauthorized'
             return redirectTo(new URL(loginUrl, request.url))
         }
 
-        // ─── STRICT ROLE ISOLATION ────────────────────────────────────
-        // Super Admin / Admin  → SEULEMENT /admin/*
-        // Agent                → SEULEMENT /agent/*
-        // Client               → SEULEMENT /client/*  (géré ci-dessus)
+        // ─── Strict Role Isolation ────────────────────────────────
         const role = agentProfile.role
         const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
 
         if (isAdminRoute && !ADMIN_ROLES.includes(role)) {
-            // Agent qui tente d'accéder à l'admin → refusé
             return redirectTo(new URL('/admin/login?error=unauthorized', request.url))
         }
-
         if (isAgentRoute && role !== 'agent') {
-            // Admin/SuperAdmin qui tente d'accéder à l'espace agent → refusé
             return redirectTo(new URL('/agent/login?error=unauthorized', request.url))
+        }
+
+        // ─── 2FA Check pour les admins ────────────────────────────
+        // Si le cookie totp_verified est absent → rediriger vers la vérification 2FA
+        if (isAdminRoute && ADMIN_ROLES.includes(role)) {
+            const totpVerified = request.cookies.get('totp_verified')?.value
+
+            // Pages exclues du check 2FA
+            const is2FAPage = pathname === '/admin/2fa' || pathname.startsWith('/admin/2fa/')
+
+            if (!is2FAPage && totpVerified !== 'true') {
+                // Vérifier si cet admin a la 2FA activée
+                const { data: totpRow } = await adminSupabase
+                    .from('totp_secrets')
+                    .select('enabled')
+                    .eq('user_id', user.id)
+                    .maybeSingle()
+
+                if (totpRow?.enabled) {
+                    // Rediriger vers la page de vérification 2FA
+                    const redirect2FA = new URL('/admin/2fa', request.url)
+                    redirect2FA.searchParams.set('next', pathname)
+                    return redirectTo(redirect2FA)
+                }
+            }
         }
 
         return supabaseResponse
     } catch (err: unknown) {
-        // En caso d'erreur réseau/timeout, NE PAS bloquer l'accès
-        // Le layout côté client fera sa propre vérification
         const message = err instanceof Error ? err.message : 'Unknown error'
         console.error('Middleware catch:', message)
-
-        // Si le middleware crash, on laisse passer plutôt que de boucler
         return response
     }
 }
