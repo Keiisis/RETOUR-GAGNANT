@@ -12,7 +12,8 @@ import {
     ShoppingBag, Receipt, UserCog, Tag, Calculator,
     Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
     BarChart3, FileSignature, FolderOpen, Palette, Calendar, Star,
-    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark
+    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark,
+    ShieldAlert, KeyRound
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -134,6 +135,8 @@ function AdminLayoutContent({
         { title: 'Réglages', icon: Settings, href: '/admin/settings' },
         { title: 'Devises (ERP)', icon: Coins, href: '/admin/settings/currency' },
         { title: 'Réglages ERP', icon: ShieldCheck, href: '/admin/settings/erp' },
+        { title: 'Sécurité WAF', icon: ShieldAlert, href: '/admin/securite' },
+        { title: '2FA — Auth Admin', icon: KeyRound, href: '/admin/settings/2fa' },
     ]
 
     if (isLoginPage) {
