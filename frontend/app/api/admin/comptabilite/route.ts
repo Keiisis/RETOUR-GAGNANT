@@ -34,17 +34,17 @@ export async function GET(request: NextRequest) {
             .order('date_depense', { ascending: false })
             .limit(5000),
         supabase
-            .from('system_settings')
-            .select('*')
-            .eq('id', 'comptabilite_erp')
-            .single(),
+            .from('settings')
+            .select('key,value')
+            .eq('key', 'commission_rate')
+            .maybeSingle(),
     ])
 
     return NextResponse.json({
         docs:        docsRes.data     || [],
         orders:      ordersRes.data   || [],
         depenses:    depsRes.data     || [],
-        settings:    settingsRes.data || null,
+        commissionRate: settingsRes.data?.value ? parseFloat(settingsRes.data.value) : 0.10,
         errors: {
             docs:     docsRes.error?.message     || null,
             orders:   ordersRes.error?.message   || null,

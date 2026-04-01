@@ -110,15 +110,15 @@ export default function AgentComptabilitePage() {
             .eq('agent_id', user.id)
             .order('date_depense', { ascending: false })
 
-        // Fetch Settings
+        // Fetch Settings — commission_rate dans la table settings
         const { data: settings } = await supabase
-            .from('system_settings')
-            .select('*')
-            .eq('id', 'comptabilite_erp')
-            .single()
+            .from('settings')
+            .select('key,value')
+            .eq('key', 'commission_rate')
+            .maybeSingle()
 
-        if (settings?.value?.commission_rate) {
-            setCommissionRate(settings.value.commission_rate)
+        if (settings?.value) {
+            setCommissionRate(parseFloat(settings.value))
         }
 
         if (docs) setAllDocs(docs)

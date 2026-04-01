@@ -153,7 +153,7 @@ function KpiCard({ icon: Icon, label, value, trend, color, sub }: {
 
 // ─── Main ────────────────────────────────────────────────────────────
 export default function AdminComptabilitePage() {
-    const [period, setPeriod]       = useState<Period>('ce_mois')
+    const [period, setPeriod]       = useState<Period>('tous')
     const [loading, setLoading]     = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [exporting, setExporting] = useState(false)
@@ -190,7 +190,7 @@ export default function AdminComptabilitePage() {
         setDocs(erpRes.docs || [])
         setOrders(erpRes.orders || [])
         setDepenses(erpRes.depenses || [])
-        if (erpRes.settings?.value?.commission_rate) setCommissionRate(erpRes.settings.value.commission_rate)
+        if (erpRes.commissionRate) setCommissionRate(erpRes.commissionRate)
         setLoading(false)
         setRefreshing(false)
     }, [])
