@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import {
@@ -173,39 +172,25 @@ export default function AdminComptabilitePage() {
     const ITEMS = 10
 
     // ── Fetch ─────────────────────────────────────────────────────
+    // Toutes les requêtes passent par des API routes server-side (service role key)
+    // pour bypasser les RLS Supabase côté client
     const fetchAll = useCallback(async () => {
         setRefreshing(true)
-        const [
-            usersRes,
-            { data: docData },
-            { data: orderData },
-            { data: depData },
-            { data: settingsData },
-        ] = await Promise.all([
-            // Agents via API (auth.admin.listUsers + user_metadata fallback)
+        const [usersRes, erpRes] = await Promise.all([
             fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }),
-            supabase.from('documents_financiers')
-                .select('id,type,numero,client_nom,client_prenom,client_email,client_phone,total,status,created_at,agent_id,currency')
-                .order('created_at', { ascending: false }),
-            supabase.from('orders')
-                .select('id,customer_name,customer_email,product_title,amount,currency,payment_status,payment_method,created_at')
-                .order('created_at', { ascending: false }),
-            supabase.from('depenses')
-                .select('id,titre,categorie,montant,date_depense,agent_id')
-                .order('date_depense', { ascending: false }),
-            supabase.from('system_settings').select('*').eq('id', 'comptabilite_erp').single(),
+            fetch('/api/admin/comptabilite').then(r => r.ok ? r.json() : { docs: [], orders: [], depenses: [], settings: null }),
         ])
 
-        // Agents: récupère depuis l'API, filtre role agent/admin/superadmin
+        // Agents: filtre role agent/admin/superadmin
         const allUsers: AgentRow[] = (usersRes.users || []).filter((u: AgentRow) =>
             ['agent', 'admin', 'superadmin', 'super_admin'].includes(u.role)
         )
         setAgents(allUsers)
 
-        if (docData)  setDocs(docData)
-        if (orderData) setOrders(orderData)
-        if (depData)  setDepenses(depData)
-        if (settingsData?.value?.commission_rate) setCommissionRate(settingsData.value.commission_rate)
+        setDocs(erpRes.docs || [])
+        setOrders(erpRes.orders || [])
+        setDepenses(erpRes.depenses || [])
+        if (erpRes.settings?.value?.commission_rate) setCommissionRate(erpRes.settings.value.commission_rate)
         setLoading(false)
         setRefreshing(false)
     }, [])

@@ -81,14 +81,25 @@ export const verifyApiAuth = async (
         if (requiredRole) {
             const adminSupabase = createClient(supabaseUrl, supabaseServiceKey)
 
+            // Chercher d'abord dans user_profiles, fallback sur user_metadata
             const { data: profile } = await adminSupabase
                 .from('user_profiles')
                 .select('role')
                 .eq('id', user.id)
                 .single()
 
-            if (!profile || (requiredRole === 'admin' && profile.role !== 'admin') ||
-                (requiredRole === 'agent' && profile.role !== 'agent' && profile.role !== 'admin')) {
+            const role = profile?.role || user.user_metadata?.role || null
+
+            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+            const isAdmin = role && ADMIN_ROLES.includes(role)
+            const isAgent = role === 'agent'
+
+            const authorized =
+                requiredRole === 'admin' ? isAdmin :
+                requiredRole === 'agent' ? (isAgent || isAdmin) :
+                false
+
+            if (!authorized) {
                 return {
                     authenticated: false,
                     error: NextResponse.json(
@@ -98,7 +109,7 @@ export const verifyApiAuth = async (
                 }
             }
 
-            return { authenticated: true, userId: user.id, role: profile.role }
+            return { authenticated: true, userId: user.id, role: role || 'agent' }
         }
 
         return { authenticated: true, userId: user.id }
