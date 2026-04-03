@@ -129,7 +129,7 @@ export default function AdminDashboard() {
             variants={container}
             initial="hidden"
             animate="show"
-            className="space-y-12"
+            className="space-y-6 md:space-y-12"
         >
             {/* ═══════════════════════════════════════════ */}
             {/* HERO SECTION - CONTROL CENTER STATUS */}
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
                         <Activity size={18} className="animate-pulse" />
                         <span className="text-[10px] font-bold uppercase tracking-[0.4em]"><T>Opérations en Cours</T></span>
                     </div>
-                    <h2 className="text-5xl font-black text-white font-heading tracking-tight leading-none">
+                    <h2 className="text-3xl md:text-5xl font-black text-white font-heading tracking-tight leading-none">
                         VIBE <span className="text- benin-gradient"><T>CONTROL</T></span>
                     </h2>
                     <p className="text-gray-500 max-w-xl font-medium">
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
             {/* ═══════════════════════════════════════════ */}
             {/* PRIMARY METRICS - NEON CARDS */}
             {/* ═══════════════════════════════════════════ */}
-            <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 <MetricCard
                     title={t("Patrimoine")}
                     value={stats.patrimoine}
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
                     <ShoppingBag size={16} />
                     <span className="text-[10px] font-black uppercase tracking-[0.4em]"><T>Performance Boutique</T></span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                     <MetricCard title={t("Revenu Total")} value={loading ? '...' : `${new Intl.NumberFormat('fr-FR').format(commerceStats.totalRevenue)} XOF`} icon={TrendingUp} color="#008751" glow="rgba(0,135,81,0.15)" loading={false} />
                     <MetricCard title={t("Commandes")} value={commerceStats.ordersCount} icon={Receipt} color="#FCD116" glow="rgba(252,209,22,0.15)" loading={loading} />
                     <MetricCard title={t("En Attente")} value={commerceStats.pendingOrders} icon={Clock} color="#E8112D" glow="rgba(232,17,45,0.15)" loading={loading} />
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
             {topProducts.length > 0 && (
                 <motion.div variants={item}>
                     <Card className="bg-[#0a0f18] border-white/5 rounded-[2rem] overflow-hidden">
-                        <CardHeader className="p-8 border-b border-white/5">
+                        <CardHeader className="p-4 md:p-8 border-b border-white/5">
                             <CardTitle className="text-white font-heading text-lg flex items-center gap-2">
                                 <TrendingUp size={18} className="text-[#008751]" /> Dernieres Ventes
                             </CardTitle>
@@ -239,7 +239,7 @@ export default function AdminDashboard() {
                         <CardContent className="p-0">
                             <div className="divide-y divide-white/5">
                                 {topProducts.map((p: TopProduct, i: number) => (
-                                    <div key={i} className="flex items-center justify-between px-8 py-5 hover:bg-white/[0.02] transition-colors">
+                                    <div key={i} className="flex items-center justify-between px-4 py-3 md:px-8 md:py-5 hover:bg-white/[0.02] transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="w-8 h-8 rounded-lg bg-[#008751]/10 border border-[#008751]/20 flex items-center justify-center text-xs font-black text-[#008751]">{i + 1}</div>
                                             <p className="text-sm font-bold text-white">{p.product_title || 'Produit'}</p>
@@ -259,16 +259,16 @@ export default function AdminDashboard() {
             {/* ═══════════════════════════════════════════ */}
             {/* ACTIVITY & INTELLIGENCE */}
             {/* ═══════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-8 xl:gap-10">
                 {/* Real-time Activity Feed */}
                 <motion.div variants={item} className="xl:col-span-2">
                     <Card className="bg-[#0a0f18] border-white/5 rounded-[2.5rem] shadow-3xl overflow-hidden group">
-                        <CardHeader className="p-8 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.02]">
+                        <CardHeader className="p-4 md:p-8 border-b border-white/5 flex flex-row items-center justify-between bg-white/[0.02] gap-2">
                             <div>
-                                <CardTitle className="text-white font-heading text-xl"><T>Flux d&apos;Activité</T></CardTitle>
-                                <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest"><T>Temps Réel • Messages Entrants</T></p>
+                                <CardTitle className="text-white font-heading text-base md:text-xl"><T>Flux d&apos;Activité</T></CardTitle>
+                                <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest hidden sm:block"><T>Temps Réel • Messages Entrants</T></p>
                             </div>
-                            <Button variant="ghost" className="text-[#FCD116] hover:bg-[#FCD116]/10 font-bold text-xs uppercase tracking-tighter"><T>Tout Surveiller</T></Button>
+                            <Button variant="ghost" className="text-[#FCD116] hover:bg-[#FCD116]/10 font-bold text-xs uppercase tracking-tighter flex-shrink-0"><T>Tout Surveiller</T></Button>
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto scrollbar-hide">
@@ -283,14 +283,14 @@ export default function AdminDashboard() {
                                             initial={{ x: -20, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
                                             transition={{ delay: idx * 0.1 }}
-                                            className="group/item flex items-center gap-6 p-8 hover:bg-white/[0.03] transition-all cursor-pointer relative"
+                                            className="group/item flex items-center gap-3 md:gap-6 p-4 md:p-8 hover:bg-white/[0.03] transition-all cursor-pointer relative"
                                         >
                                             <div className={cn(
                                                 "w-1 h-12 absolute left-0 transition-all opacity-0 group-hover/item:opacity-100",
                                                 msg.type === 'contact' ? "bg-[#008751]" : "bg-[#FCD116]"
                                             )} />
 
-                                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 flex-shrink-0 group-hover/item:border-[#FCD116]/30 group-hover/item:bg-white/10 transition-all">
+                                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 flex-shrink-0 group-hover/item:border-[#FCD116]/30 group-hover/item:bg-white/10 transition-all">
                                                 {msg.type === 'contact' ? <MessageSquare size={24} className="text-gray-400" /> : <Clock size={24} className="text-[#FCD116]" />}
                                             </div>
 
@@ -319,9 +319,9 @@ export default function AdminDashboard() {
 
                 {/* System Diagnostics / Stats */}
                 <motion.div variants={item} className="space-y-8">
-                    <Card className="bg-benin-gradient p-[1px] rounded-[2.5rem] shadow-3xl group">
-                        <div className="bg-[#0a0f18] rounded-[2.45rem] p-8 h-full">
-                            <h3 className="text-white font-heading text-lg mb-6 flex items-center gap-3">
+                    <Card className="bg-benin-gradient p-[1px] rounded-[2rem] shadow-3xl group">
+                        <div className="bg-[#0a0f18] rounded-[1.95rem] p-4 md:p-8 h-full">
+                            <h3 className="text-white font-heading text-base md:text-lg mb-4 md:mb-6 flex items-center gap-3">
                                 <Zap size={20} className="text-[#FCD116]" /> Node Health
                             </h3>
 
@@ -361,21 +361,22 @@ export default function AdminDashboard() {
 
 function MetricCard({ title, value, icon: Icon, color, glow, loading }: { title: string, value: string | number, icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>, color: string, glow: string, loading: boolean }) {
     return (
-        <Card className="relative bg-[#0a0f18] border-white/5 rounded-[2.5rem] p-8 overflow-hidden group hover:border-white/10 transition-all cursor-pointer">
+        <Card className="relative bg-[#0a0f18] border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 overflow-hidden group hover:border-white/10 transition-all cursor-pointer">
             <div className="absolute top-0 right-0 w-32 h-32 blur-[80px] pointer-events-none transition-all group-hover:scale-150" style={{ backgroundColor: glow }} />
 
             <div className="relative z-10 flex flex-col justify-between h-full">
-                <div className="flex justify-between items-start mb-10">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 group-hover:border-white/20 transition-all shadow-xl">
-                        <Icon size={28} style={{ color }} />
+                <div className="flex justify-between items-start mb-4 md:mb-10">
+                    <div className="p-2.5 md:p-4 rounded-xl md:rounded-2xl bg-white/5 border border-white/5 group-hover:border-white/20 transition-all shadow-xl">
+                        <Icon size={20} className="md:hidden" style={{ color }} />
+                        <Icon size={28} className="hidden md:block" style={{ color }} />
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="text-5xl font-black text-white font-heading tracking-tight">
+                    <h3 className="text-2xl md:text-5xl font-black text-white font-heading tracking-tight">
                         {loading ? "..." : value}
                     </h3>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mt-2 group-hover:text-white transition-colors">{title}</p>
+                    <p className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mt-1 md:mt-2 group-hover:text-white transition-colors">{title}</p>
                 </div>
             </div>
         </Card>

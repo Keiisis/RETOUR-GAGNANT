@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import {
     LayoutDashboard, FileText, FolderOpen, MessageSquare,
     CalendarDays, UserCircle, LogOut, Menu, X, Bell,
-    ChevronRight, CircleDot, Shield, Briefcase
+    ChevronRight, CircleDot, Shield, Briefcase, FileSignature
 } from 'lucide-react'
 
 interface ClientProfile {
@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Mes Services', icon: Briefcase, href: '/client/services' },
     { title: 'Messages', icon: MessageSquare, href: '/client/messages' },
     { title: 'Rendez-vous', icon: CalendarDays, href: '/client/rendez-vous' },
+    { title: 'Ma Signature', icon: FileSignature, href: '/client/signature' },
     { title: 'Mon Profil', icon: UserCircle, href: '/client/profil' },
 ]
 

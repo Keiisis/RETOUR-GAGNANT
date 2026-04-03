@@ -260,7 +260,7 @@ export default function AgentDossiersPage() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Rechercher..."
                             title="Rechercher un dossier"
-                            className="bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm w-64"
+                            className="bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm w-full md:w-64"
                         />
                     </div>
                 </div>
