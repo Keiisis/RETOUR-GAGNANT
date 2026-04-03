@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Testimonial {
+export interface Testimonial {
     id: string
     created_at: string
     name: string
