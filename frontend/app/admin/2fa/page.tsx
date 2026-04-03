@@ -7,7 +7,9 @@ import { Shield, Loader2, KeyRound } from 'lucide-react'
 export default function Admin2FAPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const next = searchParams.get('next') || '/admin/dashboard'
+    // Validation stricte du paramètre next — prévient l'open redirect post-2FA
+    const rawNext = searchParams.get('next') || ''
+    const next = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(rawNext) ? rawNext : '/admin/dashboard'
 
     const [code, setCode] = useState('')
     const [loading, setLoading] = useState(false)

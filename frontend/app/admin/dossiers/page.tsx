@@ -2,11 +2,12 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from '@refinedev/core'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FileText, Clock, CheckCircle2, Zap, AlertTriangle, ChevronDown, ChevronUp, Save, Plus, X, Download, RefreshCw } from 'lucide-react'
+import { Search, FileText, Clock, CheckCircle2, Zap, AlertTriangle, ChevronDown, ChevronUp, Save, Plus, X, Download, RefreshCw, MessageSquare, Send, User, Mail, Loader2 } from 'lucide-react'
 import { exportToExcel } from '@/lib/exportExcel'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 const statutColors: Record<string, string> = {
     reception: '#6b7280',
@@ -52,6 +53,67 @@ export default function AdminDossiersPage() {
     const [syncing, setSyncing] = useState(false)
     const [syncResult, setSyncResult] = useState<string | null>(null)
 
+    // Chat par dossier
+    const [chatMessages, setChatMessages] = useState<Record<string, Array<{ id: string; role: string; content: string; created_at: string }>>>({})
+    const [chatInput, setChatInput] = useState<Record<string, string>>({})
+    const [chatSending, setChatSending] = useState<Record<string, boolean>>({})
+    const [emailSending, setEmailSending] = useState<Record<string, boolean>>({})
+    const chatBottomRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+    const loadChat = async (threadId: string) => {
+        if (!threadId || chatMessages[threadId]) return
+        const { data } = await supabase
+            .from('chat_messages')
+            .select('id, role, content, created_at')
+            .eq('conversation_id', threadId)
+            .order('created_at', { ascending: true })
+        setChatMessages(prev => ({ ...prev, [threadId]: (data || []) as Array<{ id: string; role: string; content: string; created_at: string }> }))
+    }
+
+    const sendChatReply = async (dossier: Record<string, unknown>) => {
+        const threadId = dossier.message_thread_id as string
+        if (!threadId) return
+        const content = (chatInput[threadId] || '').trim()
+        if (!content) return
+        setChatSending(prev => ({ ...prev, [threadId]: true }))
+        setChatInput(prev => ({ ...prev, [threadId]: '' }))
+        const { data } = await supabase
+            .from('chat_messages')
+            .insert({ conversation_id: threadId, role: 'agent', content })
+            .select('id, role, content, created_at')
+            .single()
+        if (data) {
+            setChatMessages(prev => ({ ...prev, [threadId]: [...(prev[threadId] || []), data as { id: string; role: string; content: string; created_at: string }] }))
+            setTimeout(() => chatBottomRefs.current[threadId]?.scrollIntoView({ behavior: 'smooth' }), 60)
+        }
+        setChatSending(prev => ({ ...prev, [threadId]: false }))
+    }
+
+    const sendEmailReply = async (dossier: Record<string, unknown>, message: string) => {
+        const threadId = dossier.message_thread_id as string
+        if (!message.trim() || !(dossier.client_email as string)) return
+        setEmailSending(prev => ({ ...prev, [threadId || dossier.id as string]: true }))
+        try {
+            await fetch('/api/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: dossier.client_email,
+                    subject: `Réponse à votre dossier ${dossier.num_dossier}`,
+                    clientName: `${dossier.client_prenom || ''} ${dossier.client_nom || ''}`.trim() || 'Client',
+                    context: 'dossierUpdate',
+                    relatedId: dossier.num_dossier,
+                    dossierNumero: dossier.num_dossier,
+                    progression: dossier.progression || 0,
+                    message,
+                    documentsManquants: (dossier.documents_manquants as string[]) || [],
+                    trackerUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/suivi-dossier`,
+                }),
+            })
+        } catch (e) { console.error(e) }
+        setEmailSending(prev => ({ ...prev, [threadId || dossier.id as string]: false }))
+    }
+
     const handleSyncDossiers = async () => {
         setSyncing(true)
         setSyncResult(null)
@@ -77,6 +139,12 @@ export default function AdminDossiersPage() {
         client_whatsapp: '',
         service_type: 'general',
     })
+
+    const handleExpandDossier = useCallback((dossierId: string, threadId: string | undefined) => {
+        setExpandedId(prev => prev === dossierId ? null : dossierId)
+        if (threadId && dossierId !== expandedId) loadChat(threadId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expandedId])
 
     // Synchroniser automatiquement au chargement de la page
     useEffect(() => {
@@ -264,7 +332,7 @@ export default function AdminDossiersPage() {
                             >
                                 {/* Row */}
                                 <button
-                                    onClick={() => setExpandedId(isExpanded ? null : dossier.id as string)}
+                                    onClick={() => handleExpandDossier(dossier.id as string, dossier.message_thread_id as string | undefined)}
                                     className="w-full flex items-center justify-between p-5 text-left"
                                     title={`Voir les détails du dossier ${dossier.num_dossier}`}
                                 >
@@ -331,6 +399,141 @@ export default function AdminDossiersPage() {
                                                         </select>
                                                     </div>
                                                 </div>
+
+                                                {/* Message client */}
+                                                {Boolean(dossier.client_message || dossier.notes_internes) && (
+                                                    <div className="p-4 rounded-xl border border-[#FCD116]/20 bg-[#FCD116]/5">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <MessageSquare size={14} className="text-[#FCD116]" />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-[#FCD116]">Message du client</p>
+                                                        </div>
+                                                        <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
+                                                            {(dossier.client_message as string) ||
+                                                                // Fallback : extraire depuis notes_internes pour les anciens dossiers
+                                                                ((dossier.notes_internes as string) || '')
+                                                                    .split('\n')
+                                                                    .find(line => line.startsWith('Message client:') || line.startsWith('Description:'))
+                                                                    ?.replace(/^(Message client:|Description:)\s*/, '')
+                                                                || (dossier.notes_internes as string)
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* ── Chat / Répondre au client ──────────────── */}
+                                                {(() => {
+                                                    const threadId = dossier.message_thread_id as string | undefined
+                                                    const msgs = threadId ? (chatMessages[threadId] || []) : []
+                                                    const input = threadId ? (chatInput[threadId] || '') : ''
+                                                    const sending = threadId ? (chatSending[threadId] || false) : false
+                                                    const emailing = emailSending[(threadId || dossier.id as string) || ''] || false
+                                                    return (
+                                                        <div className="rounded-2xl border border-blue-500/15 overflow-hidden">
+                                                            {/* Header */}
+                                                            <div className="flex items-center justify-between px-4 py-3 bg-blue-500/5 border-b border-blue-500/10">
+                                                                <div className="flex items-center gap-2">
+                                                                    <MessageSquare size={14} className="text-blue-400" />
+                                                                    <span className="text-xs font-black uppercase tracking-widest text-blue-400">Messagerie client</span>
+                                                                    {!threadId && <span className="text-[10px] text-gray-600 ml-2">(dossier sans fil — créé avant la mise à jour)</span>}
+                                                                </div>
+                                                                {/* Bouton envoyer par email séparé */}
+                                                                {threadId && input.trim() && (
+                                                                    <button type="button"
+                                                                        onClick={() => sendEmailReply(dossier, input)}
+                                                                        disabled={emailing}
+                                                                        className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        {emailing ? <Loader2 size={10} className="animate-spin" /> : <Mail size={10} />}
+                                                                        Envoyer aussi par email
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Zone messages */}
+                                                            {threadId ? (
+                                                                <>
+                                                                    <div className="max-h-52 overflow-y-auto p-3 space-y-2 bg-[#060d14]">
+                                                                        {/* Message initial */}
+                                                                        {Boolean(dossier.client_message) && msgs.length === 0 && (
+                                                                            <div className="flex justify-start gap-2">
+                                                                                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                                                    <User size={11} className="text-blue-400" />
+                                                                                </div>
+                                                                                <div className="bg-blue-500/10 border border-blue-500/15 rounded-xl rounded-bl-sm px-3 py-2 max-w-[80%]">
+                                                                                    <p className="text-xs text-gray-200 whitespace-pre-wrap">{dossier.client_message as string}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {msgs.map(m => (
+                                                                            <div key={m.id} className={`flex gap-2 ${m.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                                                                                {m.role === 'client' && (
+                                                                                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                                                        <User size={11} className="text-blue-400" />
+                                                                                    </div>
+                                                                                )}
+                                                                                <div className={`rounded-xl px-3 py-2 max-w-[80%] text-xs ${m.role === 'agent'
+                                                                                    ? 'bg-emerald-500/15 border border-emerald-500/20 text-gray-200 rounded-tr-sm'
+                                                                                    : 'bg-blue-500/10 border border-blue-500/15 text-gray-200 rounded-bl-sm'
+                                                                                }`}>
+                                                                                    <p className="whitespace-pre-wrap">{m.content}</p>
+                                                                                    <p className="text-[9px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                                                </div>
+                                                                                {m.role === 'agent' && (
+                                                                                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                                                        <User size={11} className="text-emerald-400" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                        {msgs.length === 0 && !dossier.client_message && (
+                                                                            <p className="text-center text-[11px] text-gray-600 py-4">Aucun message échangé</p>
+                                                                        )}
+                                                                        <div ref={el => { chatBottomRefs.current[threadId] = el }} />
+                                                                    </div>
+                                                                    {/* Zone de saisie */}
+                                                                    <div className="p-3 border-t border-blue-500/10 bg-[#060d14] flex gap-2">
+                                                                        <textarea
+                                                                            value={input}
+                                                                            onChange={e => setChatInput(prev => ({ ...prev, [threadId]: e.target.value }))}
+                                                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatReply(dossier) } }}
+                                                                            placeholder="Répondre au client (instantané) · Entrée pour envoyer"
+                                                                            rows={2}
+                                                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder:text-gray-600 text-xs focus:outline-none focus:border-blue-500/40 resize-none"
+                                                                        />
+                                                                        <button type="button"
+                                                                            onClick={() => sendChatReply(dossier)}
+                                                                            disabled={sending || !input.trim()}
+                                                                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-colors disabled:opacity-40 shrink-0 self-end"
+                                                                        >
+                                                                            {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                /* Pas de thread — proposer email direct */
+                                                                <div className="p-4 space-y-3">
+                                                                    <p className="text-xs text-gray-500">Ce dossier n&apos;a pas de fil de messagerie. Envoyez un email directement :</p>
+                                                                    <div className="flex gap-2">
+                                                                        <textarea
+                                                                            value={chatInput[dossier.id as string] || ''}
+                                                                            onChange={e => setChatInput(prev => ({ ...prev, [dossier.id as string]: e.target.value }))}
+                                                                            placeholder="Message à envoyer par email..."
+                                                                            rows={2}
+                                                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder:text-gray-600 text-xs focus:outline-none focus:border-amber-500/40 resize-none"
+                                                                        />
+                                                                        <button type="button"
+                                                                            onClick={() => sendEmailReply(dossier, chatInput[dossier.id as string] || '')}
+                                                                            disabled={emailing || !(chatInput[dossier.id as string] || '').trim()}
+                                                                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-40 shrink-0 self-end"
+                                                                        >
+                                                                            {emailing ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })()}
 
                                                 {/* Steps Management */}
                                                 <div>

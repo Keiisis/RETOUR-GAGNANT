@@ -15,20 +15,62 @@ import {
     setWafConfig,
     setCustomRulesCache,
     getCustomRulesCache,
+    checkIpTrustScore,
+    checkSubnetBanned,
+    isHoneypotPath,
+    triggerHoneypot,
+    updateIpMemory,
+    createAlert,
     type ThreatType,
 } from '@/lib/waf'
 
 // ═══════════════════════════════════════════════════════════════
 // 🛡️ MIDDLEWARE — WAF OWASP CRS + Auth Protection
-// WAF : scoring anomalies, 500+ règles, décodage multi-couches,
-//       géo-blocage, body inspection, custom rules DB
+// ═══════════════════════════════════════════════════════════════
+//
+// ARCHITECTURE DE SÉCURITÉ (ordre strict) :
+//
+//  0. WAF_EMERGENCY_BYPASS → passe auth uniquement, WAF désactivé
+//  1. Chemins login/reset/2fa → accès immédiat, zéro check
+//  2. IP bloquée → 403 (sauf chemins login)
+//  3. Géo-blocage → 403
+//  4. Rate Limiting → 429
+//  5. WAF CRS → UNIQUEMENT sur chemins non-panel (API, public)
+//     Les panels /admin, /agent, /client sont protégés par auth
+//     WAF sur ces chemins = 100% faux positifs sur routes légitimes
+//  6. Auth Supabase + rôles
+//
+// PANELS INTERNES : /admin/*, /agent/*, /client/*
+//   → Jamais bloqués par WAF CRS (URL générée par l'app)
+//   → Protégés par l'auth Supabase (étape 6)
+//
+// ACTIVATION D'URGENCE : WAF_EMERGENCY_BYPASS=true dans .env
+//   → Désactive tous les checks WAF, garde l'auth
 // ═══════════════════════════════════════════════════════════════
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL  || ''
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// ── Charger la config WAF + règles custom depuis Supabase ──────
-// Rafraîchi toutes les 60 secondes (TTL cache dans engine.ts)
+// ── Chemins qui bypass ABSOLUMENT tout (même IP bloquée) ──────
+const ABSOLUTE_BYPASS = [
+    '/admin/login',
+    '/admin/reset-password',
+    '/admin/2fa',
+    '/agent/login',
+    '/agent/reset-password',
+    '/client/login',
+    '/client/register',
+    '/client/reset-password',
+    '/client/forgot-password',
+    '/ceo/login',
+    '/ceo/reset-password',
+]
+
+function isAbsoluteBypass(pathname: string): boolean {
+    return ABSOLUTE_BYPASS.some(p => pathname === p || pathname.startsWith(p + '?'))
+}
+
+// ── Charger config WAF + règles custom depuis Supabase ────────
 async function refreshWafConfig(): Promise<void> {
     const { stale } = getCustomRulesCache()
     if (!stale || !SUPA_URL || !SUPA_KEY) return
@@ -61,10 +103,10 @@ async function refreshWafConfig(): Promise<void> {
             const rules = await rulesRes.json()
             if (Array.isArray(rules)) setCustomRulesCache(rules)
         }
-    } catch { /* silencieux — ne pas bloquer la requête */ }
+    } catch { /* silencieux */ }
 }
 
-// ── Vérifier blocage IP ────────────────────────────────────────
+// ── Vérifier blocage IP ───────────────────────────────────────
 async function isIpBlocked(ip: string): Promise<boolean> {
     const cached = getCachedIpBlock(ip)
     if (cached !== null) return cached
@@ -92,10 +134,10 @@ function wafBlock(reason: string, status = 403): NextResponse {
 export async function middleware(request: NextRequest) {
     const response = NextResponse.next({ request: { headers: request.headers } })
 
-    // ─── Security Headers ───
+    // ─── Security Headers (toujours appliqués) ───────────────
     const secHeaders: Record<string, string> = {
         'X-Content-Type-Options':    'nosniff',
-        'X-Frame-Options':           'DENY',
+        'X-Frame-Options':           'SAMEORIGIN',
         'X-XSS-Protection':          '1; mode=block',
         'Referrer-Policy':           'strict-origin-when-cross-origin',
         'Permissions-Policy':        'camera=(), microphone=(self), geolocation=()',
@@ -107,79 +149,184 @@ export async function middleware(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || ''
     const method    = request.method
 
-    // Rafraîchir config WAF (async, non bloquant si stale)
-    refreshWafConfig().catch(() => {})
+    // ─── 0. WAF EMERGENCY BYPASS ─────────────────────────────
+    // Définir WAF_EMERGENCY_BYPASS=true dans Vercel → désactive tout le WAF
+    // L'auth Supabase reste active pour protéger les données
+    const emergencyBypass = process.env.WAF_EMERGENCY_BYPASS === 'true'
 
-    // ─── 1. Vérification IP bloquée ──────────────────────────
-    if (ip !== 'unknown' && await isIpBlocked(ip)) {
-        if (SUPA_URL && SUPA_KEY) logWafEvent({
-            ip, method, path: pathname, userAgent,
-            threatType: 'blocked_ip', detail: 'IP dans la liste de blocage',
-            supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
-        })
-        return wafBlock('Accès refusé.', 403)
-    }
-
-    // ─── 2. Géo-blocage ──────────────────────────────────────
-    const geo = checkGeoBlock(request.headers)
-    if (geo.blocked) {
-        if (SUPA_URL && SUPA_KEY) logWafEvent({
-            ip, method, path: pathname, userAgent,
-            threatType: 'geo_block', detail: `Pays bloqué: ${geo.country}`,
-            supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
-        })
-        return wafBlock('Accès non autorisé depuis votre région.', 403)
-    }
-
-    // ─── 3. Rate Limiting ─────────────────────────────────────
-    const rlCategory = getRateLimitCategory(pathname)
-    if (checkRateLimit(ip, rlCategory)) {
-        if (SUPA_URL && SUPA_KEY) {
-            logWafEvent({
-                ip, method, path: pathname, userAgent,
-                threatType: 'rate_limit', detail: `Catégorie: ${rlCategory}`,
-                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
-            })
-            trackViolation(ip, SUPA_URL, SUPA_KEY)
-        }
-        return wafBlock('Trop de requêtes. Réessayez dans quelques instants.', 429)
-    }
-
-    // ─── 4. Analyse WAF OWASP CRS (URL + query + UA) ─────────
-    const searchParams = request.nextUrl.searchParams.toString()
-    const verdict = analyzeRequestFast(method, pathname, searchParams, userAgent)
-
-    if (verdict.blocked) {
-        if (SUPA_URL && SUPA_KEY) {
-            logWafEvent({
-                ip, method, path: pathname, userAgent,
-                threatType: verdict.topThreat as ThreatType || 'sql_injection',
-                detail: verdict.matches.slice(0, 3).map(m => `[${m.ruleId}] ${m.description}`).join(' | '),
-                score: verdict.score,
-                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
-            })
-            trackViolation(ip, SUPA_URL, SUPA_KEY)
-        }
-        return wafBlock('Requête bloquée par le pare-feu applicatif.', 403)
-    }
-
-    // ─── Skip login + public pages ────────────────────────────
-    if (
-        pathname === '/agent/login'  || pathname === '/admin/login'  ||
-        pathname === '/admin/reset-password' || pathname === '/admin/2fa' ||
-        pathname === '/client/login' || pathname === '/client/register' ||
-        pathname === '/client/reset-password'
-    ) {
+    // ─── 1. ABSOLUTE BYPASS (login, reset, 2fa) ──────────────
+    // Ces chemins ne doivent JAMAIS être bloqués — même IP bloquée
+    // → L'admin doit toujours pouvoir se reconnecter
+    if (isAbsoluteBypass(pathname)) {
         return response
     }
 
-    // ─── Only protect /agent/*, /admin/*, /client/* ───────────
+    // ─── Refresh config WAF (async, non bloquant) ────────────
+    if (!emergencyBypass) {
+        refreshWafConfig().catch(() => {})
+    }
+
+    // ─── 2. HONEYPOT — Ban immédiat si chemin piège ──────────
+    // Ces chemins ne sont jamais accédés légitimement — uniquement par des bots/scanners
+    if (!emergencyBypass && isHoneypotPath(pathname)) {
+        if (SUPA_URL && SUPA_KEY) triggerHoneypot(ip, pathname, SUPA_URL, SUPA_KEY)
+        return wafBlock('Not Found.', 404)   // Retourner 404 pour ne pas alerter le hacker
+    }
+
+    // ─── 3. IP BLOQUÉE + TRUST SCORE + SOUS-RÉSEAU ───────────
+    //
+    // IMPORTANT : Les panels internes (/admin/*, /agent/*, /client/*, /ceo/*)
+    // sont EXEMPTÉS du check IP bloquée.
+    // Raison : Ces panels sont protégés par l'auth Supabase (étape 6).
+    //
+    const isInternalPanelPath = (
+        pathname.startsWith('/admin') ||
+        pathname.startsWith('/agent') ||
+        pathname.startsWith('/client') ||
+        pathname.startsWith('/ceo')
+    )
+
+    if (!emergencyBypass && !isInternalPanelPath) {
+        // 3a. Check sous-réseau banni (en mémoire, ultra-rapide)
+        if (checkSubnetBanned(ip)) {
+            return wafBlock('Accès refusé.', 403)
+        }
+
+        // 3b. Check IP bloquée (cache + Supabase)
+        if (ip !== 'unknown' && await isIpBlocked(ip)) {
+            if (SUPA_URL && SUPA_KEY) logWafEvent({
+                ip, method, path: pathname, userAgent,
+                threatType: 'blocked_ip', detail: 'IP dans la liste de blocage',
+                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+            })
+            return wafBlock('Accès refusé.', 403)
+        }
+
+        // 3c. Check trust score (mémoire comportementale)
+        // Si trust_score < seuil → blocage autonome sans attendre N violations
+        if (ip !== 'unknown' && SUPA_URL && SUPA_KEY) {
+            const { trusted } = await checkIpTrustScore(ip, SUPA_URL, SUPA_KEY)
+            if (!trusted) {
+                logWafEvent({
+                    ip, method, path: pathname, userAgent,
+                    threatType: 'blocked_ip', detail: 'Trust score insuffisant (mémoire comportementale)',
+                    supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                })
+                return wafBlock('Accès refusé.', 403)
+            }
+        }
+    } else if (!emergencyBypass && isInternalPanelPath) {
+        // Pour les panels : vérifier uniquement le sous-réseau banni
+        if (checkSubnetBanned(ip)) {
+            return wafBlock('Accès refusé.', 403)
+        }
+    }
+
+    // ─── 4b. GÉO-BLOCAGE ─────────────────────────────────────
+    if (!emergencyBypass) {
+        const geo = checkGeoBlock(request.headers)
+        if (geo.blocked) {
+            if (SUPA_URL && SUPA_KEY) logWafEvent({
+                ip, method, path: pathname, userAgent,
+                threatType: 'geo_block', detail: `Pays bloqué: ${geo.country}`,
+                supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+            })
+            return wafBlock('Accès non autorisé depuis votre région.', 403)
+        }
+    }
+
+    // ─── 4. RATE LIMITING ────────────────────────────────────
+    if (!emergencyBypass) {
+        const rlCategory = getRateLimitCategory(pathname)
+        if (checkRateLimit(ip, rlCategory)) {
+            if (SUPA_URL && SUPA_KEY) {
+                logWafEvent({
+                    ip, method, path: pathname, userAgent,
+                    threatType: 'rate_limit', detail: `Catégorie: ${rlCategory}`,
+                    supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                })
+                trackViolation(ip, SUPA_URL, SUPA_KEY, { threatType: 'rate_limit' })
+            }
+            return wafBlock('Trop de requêtes. Réessayez dans quelques instants.', 429)
+        }
+    }
+
+    // ─── 5. WAF CRS ANALYSIS ─────────────────────────────────
+    //
+    // RÈGLE D'OR : Les panels internes /admin/*, /agent/*, /client/*
+    // sont EXEMPTÉS du scan WAF CRS car :
+    //   1. Leurs URLs sont générées par l'application (routing Next.js)
+    //   2. Ils sont protégés par l'auth Supabase (étape 6)
+    //   3. Le WAF CRS sur ces URLs = 100% faux positifs
+    //      (UUIDs, mots "create/update/delete" dans les routes REST)
+    //
+    // Le WAF CRS RESTE actif sur :
+    //   - User-Agent (détection scanners)
+    //   - Query strings avec contenu suspect
+    //
+    if (!emergencyBypass) {
+        if (isInternalPanelPath) {
+            // Pour les panels internes : scanner le User-Agent uniquement
+            // (détection bots/scanners qui ciblent les panels admin)
+            const verdict = analyzeRequestFast(method, '', '', userAgent)
+            if (verdict.blocked) {
+                if (SUPA_URL && SUPA_KEY) {
+                    logWafEvent({
+                        ip, method, path: pathname, userAgent,
+                        threatType: verdict.topThreat as ThreatType || 'scanner_detection',
+                        detail: verdict.matches.slice(0, 3).map(m =>
+                            `[R${m.ruleId}:${m.target}] ${m.description} — "${m.snippet}"`
+                        ).join(' | '),
+                        score: verdict.score,
+                        supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                    })
+                    // Pas de trackViolation pour les panels — évite auto-blocage des admins
+                }
+                return wafBlock('Accès refusé — outil de scanning détecté.', 403)
+            }
+        } else {
+            // Pour les autres chemins (public, autres APIs) : scan complet
+            const searchParams = request.nextUrl.searchParams.toString()
+            const verdict = analyzeRequestFast(method, pathname, searchParams, userAgent)
+            if (verdict.blocked) {
+                const topMatch  = verdict.matches[0]
+                const detailStr = verdict.matches.slice(0, 3).map(m =>
+                    `[R${m.ruleId}:${m.target}] ${m.description} — "${m.snippet}"`
+                ).join(' | ')
+
+                if (SUPA_URL && SUPA_KEY) {
+                    logWafEvent({
+                        ip, method, path: pathname, userAgent,
+                        threatType: verdict.topThreat as ThreatType || 'sql_injection',
+                        detail: detailStr,
+                        score: verdict.score,
+                        supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                    })
+                    trackViolation(ip, SUPA_URL, SUPA_KEY, {
+                        threatType:  verdict.topThreat || 'waf_block',
+                        payloadHash: topMatch?.snippet
+                            ? Buffer.from(topMatch.snippet.slice(0, 64)).toString('base64').slice(0, 32)
+                            : undefined,
+                        snippet:     topMatch?.snippet?.slice(0, 120),
+                    })
+                }
+                return wafBlock('Requête bloquée par le pare-feu applicatif.', 403)
+            }
+
+            // Récompenser les IPs légitimes (trust score +1 en arrière-plan)
+            if (SUPA_URL && SUPA_KEY && ip !== 'unknown') {
+                updateIpMemory({ ip, isAttack: false, supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY })
+            }
+        }
+    }
+
+    // ─── 6. AUTH SUPABASE ─────────────────────────────────────
     const isAgentRoute  = pathname.startsWith('/agent')
     const isAdminRoute  = pathname.startsWith('/admin')
     const isClientRoute = pathname.startsWith('/client')
-    if (!isAgentRoute && !isAdminRoute && !isClientRoute) return response
+    const isCeoRoute    = pathname.startsWith('/ceo')
+    if (!isAgentRoute && !isAdminRoute && !isClientRoute && !isCeoRoute) return response
 
-    // ─── Auth Check ───────────────────────────────────────────
     let supabaseResponse = response
 
     try {
@@ -193,7 +340,8 @@ export async function middleware(request: NextRequest) {
                         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                         supabaseResponse = NextResponse.next({ request })
                         Object.entries(secHeaders).forEach(([k, v]) => supabaseResponse.headers.set(k, v))
-                        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            supabaseResponse.cookies.set(name, value, options))
                     },
                 },
             }
@@ -215,7 +363,10 @@ export async function middleware(request: NextRequest) {
         }
 
         if (userError || !user) {
-            const loginUrl = isAdminRoute ? '/admin/login' : isClientRoute ? '/client/login' : '/agent/login'
+            const loginUrl = isAdminRoute ? '/admin/login'
+                : isClientRoute ? '/client/login'
+                : isCeoRoute ? '/ceo/login'
+                : '/agent/login'
             return redirectTo(new URL(loginUrl, request.url))
         }
 
@@ -225,7 +376,7 @@ export async function middleware(request: NextRequest) {
             .forEach(cookie => {
                 supabaseResponse.cookies.set(cookie.name, cookie.value, {
                     path: '/', httpOnly: false, secure: true,
-                    sameSite: 'lax' as const, maxAge: 60 * 60 * 24 * 365,
+                    sameSite: 'lax' as const, maxAge: 60 * 60 * 24 * 7,
                 })
             })
 
@@ -249,12 +400,15 @@ export async function middleware(request: NextRequest) {
         }
 
         if (!agentProfile) {
-            return redirectTo(new URL(isAdminRoute ? '/admin/login?error=unauthorized' : '/agent/login?error=unauthorized', request.url))
+            const loginUrl = isAdminRoute ? '/admin/login?error=unauthorized'
+                : isCeoRoute ? '/ceo/login?error=unauthorized'
+                : '/agent/login?error=unauthorized'
+            return redirectTo(new URL(loginUrl, request.url))
         }
 
-        // Strict Role Isolation
+        // Isolation stricte des rôles
         const role = agentProfile.role
-        const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+        const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
 
         if (isAdminRoute && !ADMIN_ROLES.includes(role)) {
             return redirectTo(new URL('/admin/login?error=unauthorized', request.url))
@@ -262,8 +416,12 @@ export async function middleware(request: NextRequest) {
         if (isAgentRoute && role !== 'agent') {
             return redirectTo(new URL('/agent/login?error=unauthorized', request.url))
         }
+        // CEO panel : uniquement le rôle 'ceo'
+        if (isCeoRoute && role !== 'ceo') {
+            return redirectTo(new URL('/ceo/login?error=unauthorized', request.url))
+        }
 
-        // ─── 2FA Check admins ─────────────────────────────────
+        // ─── 2FA Check admins ────────────────────────────────
         if (isAdminRoute && ADMIN_ROLES.includes(role)) {
             const totpVerified = request.cookies.get('totp_verified')?.value
             const is2FAPage    = pathname.startsWith('/admin/2fa')
@@ -277,7 +435,9 @@ export async function middleware(request: NextRequest) {
 
                 if (totpRow?.enabled) {
                     const redirect2FA = new URL('/admin/2fa', request.url)
-                    redirect2FA.searchParams.set('next', pathname)
+                    // next validé côté client dans /admin/2fa/page.tsx
+                    const safeNext = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(pathname) ? pathname : '/admin/dashboard'
+                    redirect2FA.searchParams.set('next', safeNext)
                     return redirectTo(redirect2FA)
                 }
             }
@@ -295,5 +455,6 @@ export const config = {
         '/agent/:path*',
         '/admin/:path*',
         '/client/:path*',
+        '/ceo/:path*',
     ],
 }

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FileText, Search, Plus, Clock,
     CheckCircle2, Loader2, Eye,
     X, Calendar, Mail, Phone, StickyNote,
-    ArrowRight, AlertCircle, FileWarning, Send
+    ArrowRight, AlertCircle, FileWarning, Send, MessageSquare, User
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -29,6 +29,15 @@ interface Dossier {
     notes?: string
     progression?: number
     documents_manquants?: string[]
+    client_message?: string
+    message_thread_id?: string
+}
+
+interface ChatMsg {
+    id: string
+    role: string
+    content: string
+    created_at: string
 }
 
 const columns: { id: DossierStatus; label: string; color: string; icon: LucideIcon }[] = [
@@ -47,6 +56,62 @@ export default function AgentDossiersPage() {
     const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
     const [noteText, setNoteText] = useState('')
     const [docRequest, setDocRequest] = useState('')
+    const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([])
+    const [chatInput, setChatInput] = useState('')
+    const [chatSending, setChatSending] = useState(false)
+    const [emailSending, setEmailSending] = useState(false)
+    const chatBottomRef = useRef<HTMLDivElement>(null)
+
+    const loadChat = async (threadId: string) => {
+        const { data } = await supabase
+            .from('chat_messages')
+            .select('id, role, content, created_at')
+            .eq('conversation_id', threadId)
+            .order('created_at', { ascending: true })
+        setChatMsgs((data || []) as ChatMsg[])
+        setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+    }
+
+    const sendChatReply = async () => {
+        if (!selectedDossier?.message_thread_id || !chatInput.trim() || chatSending) return
+        setChatSending(true)
+        const content = chatInput.trim()
+        setChatInput('')
+        const { data } = await supabase
+            .from('chat_messages')
+            .insert({ conversation_id: selectedDossier.message_thread_id, role: 'agent', content })
+            .select('id, role, content, created_at')
+            .single()
+        if (data) {
+            setChatMsgs(prev => [...prev, data as ChatMsg])
+            setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        }
+        setChatSending(false)
+    }
+
+    const sendEmailReply = async (message: string) => {
+        if (!selectedDossier?.client_email || !message.trim()) return
+        setEmailSending(true)
+        try {
+            await fetch('/api/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: selectedDossier.client_email,
+                    subject: `Réponse à votre dossier ${selectedDossier.num_dossier}`,
+                    clientName: `${selectedDossier.client_prenom} ${selectedDossier.client_nom}`.trim() || 'Client',
+                    context: 'dossierUpdate',
+                    relatedId: selectedDossier.num_dossier,
+                    dossierNumero: selectedDossier.num_dossier,
+                    progression: selectedDossier.progression || 0,
+                    message,
+                    documentsManquants: selectedDossier.documents_manquants || [],
+                    trackerUrl: `${window.location.origin}/suivi-dossier`,
+                }),
+            })
+        } catch (e) { console.error(e) }
+        setEmailSending(false)
+    }
 
     const addMissingDocument = async () => {
         if (!docRequest.trim() || !selectedDossier) return
@@ -241,7 +306,13 @@ export default function AgentDossiersPage() {
                                                             {...provided.dragHandleProps}
                                                             className={`bg-[#0a1210] border rounded-xl p-4 cursor-grab hover:border-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all group ${snapshot.isDragging ? 'border-emerald-500 shadow-2xl scale-105 z-50' : 'border-white/5'
                                                                 }`}
-                                                            onClick={() => { setSelectedDossier(d); setNoteText(d.notes || '') }}
+                                                            onClick={() => {
+                                                                setSelectedDossier(d)
+                                                                setNoteText(d.notes || '')
+                                                                setChatMsgs([])
+                                                                setChatInput('')
+                                                                if (d.message_thread_id) loadChat(d.message_thread_id)
+                                                            }}
                                                         >
                                                             <div className="flex items-start justify-between mb-2">
                                                                 <span className="text-xs font-mono text-emerald-400 font-bold">{d.num_dossier}</span>
@@ -427,6 +498,97 @@ export default function AgentDossiersPage() {
                                         <Send size={14} /> Relancer
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* ── Messagerie client ── */}
+                            <div className="rounded-2xl border border-blue-500/15 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-3 bg-blue-500/5 border-b border-blue-500/10">
+                                    <MessageSquare size={13} className="text-blue-400" />
+                                    <span className="text-xs font-black uppercase tracking-widest text-blue-400">Messagerie client</span>
+                                </div>
+
+                                {selectedDossier?.message_thread_id ? (
+                                    <>
+                                        {/* Messages */}
+                                        <div className="max-h-48 overflow-y-auto p-3 space-y-2 bg-[#060c12]">
+                                            {selectedDossier.client_message && chatMsgs.length === 0 && (
+                                                <div className="flex gap-2 justify-start">
+                                                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <User size={10} className="text-blue-400" />
+                                                    </div>
+                                                    <div className="bg-blue-500/10 border border-blue-500/15 rounded-xl rounded-bl-sm px-3 py-2 max-w-[80%]">
+                                                        <p className="text-xs text-gray-200 whitespace-pre-wrap">{selectedDossier.client_message}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {chatMsgs.map(m => (
+                                                <div key={m.id} className={`flex gap-2 ${m.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                                                    {m.role === 'client' && (
+                                                        <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                            <User size={10} className="text-blue-400" />
+                                                        </div>
+                                                    )}
+                                                    <div className={`rounded-xl px-3 py-2 max-w-[80%] text-xs ${m.role === 'agent'
+                                                        ? 'bg-emerald-500/15 border border-emerald-500/20 rounded-tr-sm'
+                                                        : 'bg-blue-500/10 border border-blue-500/15 rounded-bl-sm'
+                                                    } text-gray-200`}>
+                                                        <p className="whitespace-pre-wrap">{m.content}</p>
+                                                        <p className="text-[9px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                    </div>
+                                                    {m.role === 'agent' && (
+                                                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                            <User size={10} className="text-emerald-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {chatMsgs.length === 0 && !selectedDossier.client_message && (
+                                                <p className="text-center text-[11px] text-gray-600 py-3">Aucun message échangé</p>
+                                            )}
+                                            <div ref={chatBottomRef} />
+                                        </div>
+                                        {/* Zone saisie */}
+                                        <div className="p-3 border-t border-blue-500/10 flex gap-2 bg-[#060c12]">
+                                            <textarea
+                                                value={chatInput}
+                                                onChange={e => setChatInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatReply() } }}
+                                                placeholder="Répondre au client · Entrée pour envoyer"
+                                                rows={2}
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder:text-gray-600 text-xs focus:outline-none focus:border-blue-500/40 resize-none"
+                                            />
+                                            <div className="flex flex-col gap-1.5 shrink-0 self-end">
+                                                <button type="button" onClick={sendChatReply} disabled={chatSending || !chatInput.trim()}
+                                                    title="Envoyer le message instantané"
+                                                    className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 flex items-center justify-center disabled:opacity-40 transition-colors">
+                                                    {chatSending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                                                </button>
+                                                <button type="button" onClick={() => sendEmailReply(chatInput)} disabled={emailSending || !chatInput.trim()}
+                                                    title="Envoyer aussi par email"
+                                                    className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 flex items-center justify-center disabled:opacity-40 transition-colors">
+                                                    {emailSending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="p-4 space-y-2">
+                                        <p className="text-xs text-gray-500">Pas de fil de messagerie — envoyez un email :</p>
+                                        <div className="flex gap-2">
+                                            <textarea
+                                                value={chatInput}
+                                                onChange={e => setChatInput(e.target.value)}
+                                                placeholder="Message à envoyer par email..."
+                                                rows={2}
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder:text-gray-600 text-xs focus:outline-none focus:border-amber-500/40 resize-none"
+                                            />
+                                            <button type="button" onClick={() => sendEmailReply(chatInput)} disabled={emailSending || !chatInput.trim()}
+                                                className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 flex items-center justify-center disabled:opacity-40 transition-colors self-end">
+                                                {emailSending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Notes Internes */}

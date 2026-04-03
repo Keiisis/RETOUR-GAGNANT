@@ -4,31 +4,20 @@
 // URL, double-URL, HTML entities, Unicode, null bytes, commentaires
 // ══════════════════════════════════════════════════════════════
 
-// ── 1. Suppression des null bytes ─────────────────────────────
 function removeNullBytes(input: string): string {
     return input.replace(/\x00/g, '').replace(/%00/gi, '')
 }
 
-// ── 2. Décodage URL (simple) ──────────────────────────────────
 function decodeUrl(input: string): string {
     try {
         return decodeURIComponent(input.replace(/\+/g, ' '))
     } catch {
-        // Décodage partiel si malformé
         return input.replace(/%([0-9a-fA-F]{2})/g, (_, hex) => {
             try { return String.fromCharCode(parseInt(hex, 16)) } catch { return _ }
         })
     }
 }
 
-// ── 3. Décodage double-URL ────────────────────────────────────
-function decodeDoubleUrl(input: string): string {
-    // %2527 → %27 → '  (double encoded)
-    // %2500 → %00 (double encoded null)
-    return decodeUrl(decodeUrl(input))
-}
-
-// ── 4. Décodage HTML entities ─────────────────────────────────
 const HTML_ENTITIES: Record<string, string> = {
     '&lt;': '<', '&gt;': '>', '&amp;': '&', '&quot;': '"',
     '&apos;': "'", '&#x3C;': '<', '&#x3E;': '>', '&#x22;': '"',
@@ -38,147 +27,154 @@ const HTML_ENTITIES: Record<string, string> = {
 }
 
 function decodeHtmlEntities(input: string): string {
-    // Named entities
     let result = input
     for (const [entity, char] of Object.entries(HTML_ENTITIES)) {
         result = result.replace(new RegExp(entity.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), char)
     }
-    // Numeric decimal: &#60; &#x3C;
     result = result.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n)))
     result = result.replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
     return result
 }
 
-// ── 5. Suppression commentaires SQL/HTML ──────────────────────
 function removeComments(input: string): string {
     return input
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')  // /* ... */
-        .replace(/--[^\r\n]*/g, ' ')        // -- commentaire
-        .replace(/<!--[\s\S]*?-->/g, ' ')   // <!-- ... -->
-        .replace(/#[^\r\n]*/g, ' ')         // # commentaire (MySQL)
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/--[^\r\n]*/g, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/#[^\r\n]*/g, ' ')
 }
 
-// ── 6. Normalisation Unicode ──────────────────────────────────
 function normalizeUnicode(input: string): string {
-    // Convertir les variantes Unicode de caractères ASCII sensibles
     return input
-        .replace(/\uFF1C/g, '<')  // ＜ fullwidth less-than
-        .replace(/\uFF1E/g, '>')  // ＞ fullwidth greater-than
-        .replace(/\uFF07/g, "'")  // ＇ fullwidth apostrophe
-        .replace(/\uFF02/g, '"')  // ＂ fullwidth quotation
-        .replace(/\uFF03/g, '#')  // ＃ fullwidth number sign
-        .replace(/\u2018/g, "'")  // ' left single quotation
-        .replace(/\u2019/g, "'")  // ' right single quotation
-        .replace(/\u201C/g, '"')  // " left double quotation
-        .replace(/\u201D/g, '"')  // " right double quotation
-        .replace(/\u00AB/g, '"')  // « left-pointing double angle
-        .replace(/\u00BB/g, '"')  // » right-pointing double angle
-        // Espace unicode alternatives
+        .replace(/\uFF1C/g, '<').replace(/\uFF1E/g, '>').replace(/\uFF07/g, "'")
+        .replace(/\uFF02/g, '"').replace(/\uFF03/g, '#')
+        .replace(/\u2018/g, "'").replace(/\u2019/g, "'")
+        .replace(/\u201C/g, '"').replace(/\u201D/g, '"')
+        .replace(/\u00AB/g, '"').replace(/\u00BB/g, '"')
         .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
-        // Tab/newline variations
         .replace(/\u0009|\u000A|\u000D/g, ' ')
 }
 
-// ── 7. Suppression des espaces inutiles ───────────────────────
 function collapseWhitespace(input: string): string {
     return input.replace(/\s+/g, ' ').trim()
 }
 
-// ── 8. Décodage Base64 partiel ────────────────────────────────
-// Détecte et décode les séquences base64 dans l'URL
 function decodeBase64Fragments(input: string): string {
-    return input.replace(/[A-Za-z0-9+/]{20,}={0,2}/g, (match) => {
+    // ⚠️  Ne PAS utiliser le `/` comme char Base64 ici :
+    //    Les chemins URL type /admin/messages/show/uuid seraient faussement
+    //    décodés car ils contiennent des séquences de 20+ chars alphanumériques+/
+    //    → Utiliser uniquement [A-Za-z0-9+] sans / pour éviter les faux positifs
+    return input.replace(/[A-Za-z0-9+]{20,}={0,2}/g, (match) => {
+        // Ignorer les séquences qui ressemblent à des UUIDs ou identifiants hex
+        if (/^[0-9a-f-]{30,}$/.test(match)) return match
         try {
             const decoded = Buffer.from(match, 'base64').toString('utf8')
-            // Seulement si le résultat est lisible ASCII
-            if (/^[\x20-\x7E]+$/.test(decoded)) return decoded
+            // Vérifier que le décodage produit du texte ASCII lisible
+            // ET qu'il contient des mots-clés suspects (sinon pas la peine de remplacer)
+            if (
+                /^[\x20-\x7E]+$/.test(decoded) &&
+                /(?:select|union|script|eval|exec|passwd|cmd|shell)/i.test(decoded)
+            ) return decoded
         } catch { /* ignore */ }
         return match
     })
 }
 
-// ── 9. Suppression des séquences de path traversal ────────────
 function normalizePaths(input: string): string {
     return input
-        .replace(/\.\.\//g, '')
-        .replace(/\.\.%2F/gi, '')
-        .replace(/\.\.%5C/gi, '')
-        .replace(/%2e%2e%2f/gi, '')
+        .replace(/\.\.\//g, '').replace(/\.\.%2F/gi, '')
+        .replace(/\.\.%5C/gi, '').replace(/%2e%2e%2f/gi, '')
         .replace(/%2e%2e\//gi, '')
 }
 
-// ── 10. Suppression anti-evasion SQL ─────────────────────────
 function removeSqlEvasions(input: string): string {
-    // Supprimer les techniques d'évasion SQL communes
     return input
-        .replace(/\/\*!\s*\d*\s*/g, '')   // MySQL version comments: /*!50000 */
-        .replace(/\|\|/g, ' OR ')          // || → OR
-        .replace(/&&/g, ' AND ')           // && → AND
+        // MySQL versioned comments /*!50000 SELECT*/
+        .replace(/\/\*!\s*\d*\s*/g, '')
+        // Opérateurs logiques symboliques
+        .replace(/\|\|/g, ' OR ').replace(/&&/g, ' AND ')
+        // Normaliser UNION ALL SELECT → UNION SELECT
         .replace(/\bUNION\s+ALL\s+SELECT/gi, 'UNION SELECT')
-        .replace(/0x[0-9a-f]+/gi, (hex) => {  // 0x41 → A
+        // Décoder hex MySQL 0x414243
+        .replace(/0x[0-9a-f]+/gi, (hex) => {
             try { return Buffer.from(hex.slice(2), 'hex').toString('ascii') } catch { return hex }
         })
+        // Supprimer les commentaires multi-niveaux imbriqués /**/
+        .replace(/\/\*[^*]*(?:\*(?!\/)[^*]*)*\*\//g, ' ')
+        // Supprimer les espaces insérés dans les mots-clés SQL (U/**/NION → UNION)
+        .replace(/\b(u)\s*\/\*+\*\/\s*(nion)\b/gi, 'union')
+        .replace(/\b(s)\s*\/\*+\*\/\s*(elect)\b/gi, 'select')
+        // Normaliser encodage %uXXXX (IIS unicode)
+        .replace(/%u([0-9a-fA-F]{4})/g, (_, code) => {
+            try { return String.fromCharCode(parseInt(code, 16)) } catch { return _ }
+        })
+        // Tirets multiples (-- commentaire SQL) → espace
+        .replace(/--[^\r\n]*/g, ' ')
 }
 
-// ── PIPELINE DE DÉCODAGE COMPLET ──────────────────────────────
+// ── Normalisation anti-bypass avancée ────────────────────────
+// Résistance aux caractères Unicode lookalike (ſ→s, ＵＮＩＯＮfullwidth, etc.)
+function normalizeAsciiLookalikes(input: string): string {
+    return input
+        // Fullwidth ASCII (ｓｅｌｅｃｔ → select)
+        .replace(/[\uFF01-\uFF5E]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        // Latin lookalikes pour les lettres SQL critiques
+        .replace(/\u017F/g, 's')   // ſ → s
+        .replace(/\u0131/g, 'i')   // ı → i
+        .replace(/\u0261/g, 'g')   // ɡ → g
+        .replace(/\u1D0F/g, 'o')   // ᴏ → o
+        .replace(/\u1D07/g, 'e')   // ᴇ → e
+        // Supprimer les zero-width spaces et joiners
+        .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+        // Supprimer les soft hyphens
+        .replace(/\u00AD/g, '')
+}
+
+// ── Pipeline de décodage complet ──────────────────────────────
 export interface DecodedInput {
     original:   string
     normalized: string
-    layers:     string[]  // chaque étape pour debug
+    layers:     string[]
 }
 
 export function decode(input: string): DecodedInput {
     const layers: string[] = [input]
-
-    let s = removeNullBytes(input)
-    layers.push(s)
-
-    s = normalizeUnicode(s)
-    layers.push(s)
-
-    s = decodeHtmlEntities(s)
-    layers.push(s)
-
-    // Décodage URL jusqu'à 3 couches (anti-double/triple encoding)
+    let s = removeNullBytes(input); layers.push(s)
+    s = normalizeUnicode(s); layers.push(s)
+    s = normalizeAsciiLookalikes(s); layers.push(s)   // ← anti-lookalike bypass
+    s = decodeHtmlEntities(s); layers.push(s)
     let prev = ''
     let count = 0
-    while (s !== prev && count < 3) {
-        prev = s
-        s = decodeUrl(s)
-        count++
-    }
+    while (s !== prev && count < 3) { prev = s; s = decodeUrl(s); count++ }
     layers.push(s)
-
-    s = decodeBase64Fragments(s)
-    layers.push(s)
-
-    s = removeComments(s)
-    layers.push(s)
-
-    s = removeSqlEvasions(s)
-    layers.push(s)
-
-    s = normalizePaths(s)
-    layers.push(s)
-
-    s = collapseWhitespace(s)
-    layers.push(s)
-
-    s = s.toLowerCase()
-    layers.push(s)
-
+    s = decodeBase64Fragments(s); layers.push(s)
+    s = removeComments(s); layers.push(s)
+    s = removeSqlEvasions(s); layers.push(s)           // ← commentaires imbriqués + IIS %u
+    s = normalizePaths(s); layers.push(s)
+    s = collapseWhitespace(s); layers.push(s)
+    s = s.toLowerCase(); layers.push(s)
     return { original: input, normalized: s, layers }
 }
 
-// ── Décoder toutes les parties d'une requête ──────────────────
+// ══════════════════════════════════════════════════════════════
+// RequestParts — SÉPARATION STRICTE path / query / body
+// CRITIQUE : ne jamais mélanger le path URL avec les query params
+// pour éviter les faux positifs sur les routes REST (/create, /update)
+// ══════════════════════════════════════════════════════════════
 export interface RequestParts {
-    url:       string
-    query:     string
-    userAgent: string
-    referer:   string
-    cookie:    string
-    body:      string
-    allDecoded: string  // concaténation de tout pour scan rapide
+    // Parties individuelles (décodées)
+    urlPath:    string   // chemin seul ex: /admin/evenements/create
+    query:      string   // query string décodée ex: name=foo&type=bar
+    userAgent:  string
+    referer:    string
+    cookie:     string
+    body:       string
+
+    // Agrégats pour les règles multi-cibles
+    // NE CONTIENT PAS urlPath — évite les faux positifs sur mots-clés REST
+    dataDecoded: string  // query + cookie + referer + body
+    // Contient tout SAUF le path URL
+    allDecoded:  string  // urlPath + query + ua + referer + cookie + body (usage interne seulement)
 }
 
 export function decodeRequest(
@@ -187,15 +183,17 @@ export function decodeRequest(
     headers: Headers,
     rawBody?: string
 ): RequestParts {
-    const url       = decode(pathname).normalized
+    const urlPath   = decode(pathname).normalized
     const query     = decode(searchParams).normalized
     const userAgent = decode(headers.get('user-agent') || '').normalized
     const referer   = decode(headers.get('referer') || '').normalized
     const cookie    = decode(headers.get('cookie') || '').normalized
     const body      = rawBody ? decode(rawBody).normalized : ''
 
-    return {
-        url, query, userAgent, referer, cookie, body,
-        allDecoded: [url, query, userAgent, referer, cookie, body].join(' '),
-    }
+    // dataDecoded : PAS de urlPath → empêche /admin/evenements/create de matcher SQLi
+    const dataDecoded = [query, cookie, referer, body].filter(Boolean).join(' ')
+    // allDecoded : tout (pour règles qui nécessitent vraiment tout)
+    const allDecoded  = [urlPath, query, userAgent, referer, cookie, body].filter(Boolean).join(' ')
+
+    return { urlPath, query, userAgent, referer, cookie, body, dataDecoded, allDecoded }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -30,6 +31,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 // PUT update event
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const auth = await verifyApiAuth(req, 'admin')
+    if (!auth.authenticated) return auth.error!
     try {
         const { id } = await params
         const supabase = getSupabase()
@@ -50,7 +53,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // DELETE event
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const auth = await verifyApiAuth(req, 'admin')
+    if (!auth.authenticated) return auth.error!
     try {
         const { id } = await params
         const supabase = getSupabase()

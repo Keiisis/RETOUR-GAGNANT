@@ -52,7 +52,7 @@ function AdminLayoutContent({
                 .eq('id', authUser.id)
                 .maybeSingle()
 
-            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
             if (!profile || !ADMIN_ROLES.includes(profile.role)) {
                 await supabase.auth.signOut()
                 router.push('/admin/login?error=unauthorized')

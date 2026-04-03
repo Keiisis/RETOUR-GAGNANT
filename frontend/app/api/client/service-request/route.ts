@@ -52,23 +52,46 @@ export async function POST(request: NextRequest) {
         // fallback sur l'email transmis par le client
     }
 
+    // Créer un fil de conversation dans la table messages
+    // → Le client pourra voir les réponses dans /client/messages
+    // → L'agent/admin peut répondre depuis le panel dossier
+    const { data: msgThread } = await supabase
+        .from('messages')
+        .insert({
+            client_id:  auth.userId,
+            nom:        '',
+            prenom:     '',
+            email:      userEmail.toLowerCase(),
+            telephone:  phone || '',
+            sujet:      `[${ref}] ${service_title}`,
+            message:    description.trim(),
+            type:       'service_request',
+            lu:         false,
+        })
+        .select('id')
+        .single()
+
+    const messageThreadId = msgThread?.id || null
+
     const { data, error } = await supabase
         .from('dossier_tracking')
         .insert({
-            num_dossier: ref,
-            client_id: auth.userId,
-            client_email: userEmail.toLowerCase(),
-            client_nom: '',
-            client_prenom: '',
-            client_whatsapp: phone || '',
-            client_phone: phone || '',
+            num_dossier:       ref,
+            client_id:         auth.userId,
+            client_email:      userEmail.toLowerCase(),
+            client_nom:        '',
+            client_prenom:     '',
+            client_whatsapp:   phone || '',
+            client_phone:      phone || '',
             service_type,
-            service: service_id,
-            statut: 'reception',
+            service:           service_id,
+            statut:            'reception',
             etapes,
-            progression: 20,
+            progression:       20,
             documents_manquants: [],
-            notes_internes: `Demande depuis l'espace client.\nService: ${service_title}\nDescription: ${description.trim()}\nTél: ${phone || 'Non fourni'}`,
+            client_message:    description.trim(),
+            message_thread_id: messageThreadId,
+            notes_internes:    `Demande depuis l'espace client.\nService: ${service_title}\nMessage client: ${description.trim()}\nTél: ${phone || 'Non fourni'}`,
         })
         .select()
         .single()

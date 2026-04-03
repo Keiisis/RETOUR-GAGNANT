@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
 
 // POST — créer un sponsor (admin)
 export async function POST(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
     try {
         const body = await request.json()
         const { name, logo_url, website_url, sort_order, is_active } = body

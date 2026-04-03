@@ -90,7 +90,7 @@ export const verifyApiAuth = async (
 
             const role = profile?.role || user.user_metadata?.role || null
 
-            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
             const isAdmin = role && ADMIN_ROLES.includes(role)
             const isAgent = role === 'agent'
 

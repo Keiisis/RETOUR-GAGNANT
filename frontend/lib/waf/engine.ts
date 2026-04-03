@@ -163,14 +163,16 @@ export function analyzeRequest(
     const parts: RequestParts = decodeRequest(pathname, searchParams, headers, rawBody)
 
     // Mapping targets → valeurs décodées
+    // urlPath séparé de dataDecoded pour éviter faux positifs SQL sur /admin/create
     const targetValues: Record<string, string> = {
-        url:       parts.url,
-        query:     parts.query,
-        userAgent: parts.userAgent,
-        referer:   parts.referer,
-        cookie:    parts.cookie,
-        body:      parts.body,
-        all:       parts.allDecoded,
+        urlPath:     parts.urlPath,
+        query:       parts.query,
+        userAgent:   parts.userAgent,
+        referer:     parts.referer,
+        cookie:      parts.cookie,
+        body:        parts.body,
+        dataDecoded: parts.dataDecoded,  // query+cookie+referer+body (sans urlPath)
+        allDecoded:  parts.allDecoded,   // tout y compris urlPath
     }
 
     const matches: RuleMatch[] = []

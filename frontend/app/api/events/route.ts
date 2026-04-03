@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyApiAuth } from '@/lib/api-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -45,6 +46,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/events — create event
 export async function POST(req: NextRequest) {
+    const auth = await verifyApiAuth(req, 'admin')
+    if (!auth.authenticated) return auth.error!
     try {
         const supabase = getSupabase()
         const body = await req.json()

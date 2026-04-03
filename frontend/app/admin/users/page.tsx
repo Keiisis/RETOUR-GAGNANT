@@ -28,6 +28,7 @@ interface Toast { id: number; type: 'success' | 'error' | 'info'; message: strin
 const ROLES = [
     { value: 'agent', label: 'Agent', color: '#008751', Icon: User, desc: 'Leads, dossiers, messages, agenda' },
     { value: 'admin', label: 'Admin', color: '#FCD116', Icon: Shield, desc: 'Paramètres, boutique, services, contenu' },
+    { value: 'ceo', label: 'CEO', color: '#F97316', Icon: Shield, desc: 'Mêmes droits qu\'Admin — profil direction' },
     { value: 'superadmin', label: 'Super Admin', color: '#E8112D', Icon: Crown, desc: 'Tous droits, gestion des admins incluse' },
 ]
 
@@ -319,7 +320,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<AdminUser[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [roleFilter, setRoleFilter] = useState<'all' | 'agent' | 'admin' | 'superadmin'>('all')
+    const [roleFilter, setRoleFilter] = useState<'all' | 'agent' | 'admin' | 'ceo' | 'superadmin'>('all')
     const [toasts, setToasts] = useState<Toast[]>([])
     const toastId = useRef(0)
 
@@ -414,7 +415,7 @@ export default function AdminUsersPage() {
         total: users.length,
         online: users.filter(u => isOnline(u.last_seen_at)).length,
         agents: users.filter(u => u.role === 'agent').length,
-        admins: users.filter(u => u.role === 'admin' || u.role === 'superadmin').length,
+        admins: users.filter(u => u.role === 'admin' || u.role === 'ceo' || u.role === 'superadmin').length,
     }
 
     return (
@@ -480,6 +481,7 @@ export default function AdminUsersPage() {
                         { value: 'all', label: `Tous (${users.length})` },
                         { value: 'agent', label: `Agents (${stats.agents})` },
                         { value: 'admin', label: `Admins (${users.filter(u => u.role === 'admin').length})` },
+                        { value: 'ceo', label: `CEO (${users.filter(u => u.role === 'ceo').length})` },
                         { value: 'superadmin', label: `Super Admins (${users.filter(u => u.role === 'superadmin').length})` },
                     ] as const).map(tab => (
                         <button key={tab.value} type="button" onClick={() => setRoleFilter(tab.value)}
