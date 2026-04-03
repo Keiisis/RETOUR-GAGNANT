@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-function getSupabase() {
+function getServiceSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 async function getClientId(request: NextRequest): Promise<string | null> {
     try {
-        // Lire le JWT depuis le cookie Supabase
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-        const browserClient = createClient(supabaseUrl, anonKey, {
-            global: { headers: { cookie: request.headers.get('cookie') || '' } },
+        const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+            cookies: {
+                getAll: () => request.cookies.getAll(),
+                setAll: () => {},
+            },
         })
-        const { data: { user } } = await browserClient.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
         return user?.id || null
     } catch {
         return null
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
         const clientId = await getClientId(request)
         if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-        const supabase = getSupabase()
+        const supabase = getServiceSupabase()
         const { data, error } = await supabase
             .from('client_signatures')
             .select('*')
@@ -56,12 +59,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Données de signature manquantes' }, { status: 400 })
         }
 
-        // Valider que c'est bien une image base64
         if (!signature_data.startsWith('data:image/')) {
             return NextResponse.json({ error: 'Format de signature invalide' }, { status: 400 })
         }
 
-        // Limite raisonnable : ~500KB pour une signature
         if (signature_data.length > 700_000) {
             return NextResponse.json({ error: 'Signature trop lourde. Simplifiez votre dessin.' }, { status: 400 })
         }
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
         const validAutoSign = ['ask', 'auto', 'never']
         const cleanAutoSign = validAutoSign.includes(auto_sign) ? auto_sign : 'ask'
 
-        const supabase = getSupabase()
+        const supabase = getServiceSupabase()
         const now = new Date().toISOString()
 
         const { data, error } = await supabase
@@ -102,7 +103,7 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Valeur auto_sign invalide' }, { status: 400 })
         }
 
-        const supabase = getSupabase()
+        const supabase = getServiceSupabase()
         const { data, error } = await supabase
             .from('client_signatures')
             .update({ auto_sign: body.auto_sign, updated_at: new Date().toISOString() })
@@ -123,7 +124,7 @@ export async function DELETE(request: NextRequest) {
         const clientId = await getClientId(request)
         if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-        const supabase = getSupabase()
+        const supabase = getServiceSupabase()
         const { error } = await supabase
             .from('client_signatures')
             .delete()
