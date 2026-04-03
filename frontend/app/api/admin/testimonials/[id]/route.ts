@@ -12,12 +12,12 @@ function getSupabase() {
 // PATCH /api/admin/testimonials/[id] — modifier ou changer le statut
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const supabase = getSupabase()
         const body = await request.json()
-        const { id } = params
+        const { id } = await params
 
         const allowed = ['name', 'text', 'photo', 'location', 'rating', 'service', 'approved']
         const updates: Record<string, unknown> = {}
@@ -48,14 +48,15 @@ export async function PATCH(
 // DELETE /api/admin/testimonials/[id] — supprimer un témoignage
 export async function DELETE(
     _request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const supabase = getSupabase()
+        const { id } = await params
         const { error } = await supabase
             .from('testimonials')
             .delete()
-            .eq('id', params.id)
+            .eq('id', id)
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
