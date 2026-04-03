@@ -29,7 +29,7 @@ interface Toast { id: number; type: 'success' | 'error' | 'info'; msg: string }
 
 // ─── Auto-sign options ────────────────────────────────────────────────────────
 
-const AUTO_SIGN_OPTIONS: { value: AutoSign; label: string; desc: string; icon: React.ElementType; color: string }[] = [
+const AUTO_SIGN_OPTIONS: { value: AutoSign; label: string; desc: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }[] = [
     {
         value: 'ask',
         label: 'Me demander à chaque fois',
