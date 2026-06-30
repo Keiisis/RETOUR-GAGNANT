@@ -31,6 +31,13 @@ const STATUS = {
 
 const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
+// Safe date formatter to avoid RangeError: Invalid time value
+const formatDateSafe = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+}
+
 const PAGE_SIZE = 20
 
 export default function ClientDocumentsPage() {
@@ -165,7 +172,7 @@ export default function ClientDocumentsPage() {
                                             <p className="font-bold text-white text-sm truncate">{doc.numero}</p>
                                             {needsAction && <span className="text-[9px] font-black bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full uppercase tracking-wide whitespace-nowrap">Action requise</span>}
                                         </div>
-                                        <p className="text-[11px] text-gray-500 truncate">{new Date(doc.created_at).toLocaleDateString('fr-FR')} · {doc.items?.length || 0} ligne{(doc.items?.length || 0) > 1 ? 's' : ''}</p>
+                                        <p className="text-[11px] text-gray-500 truncate">{formatDateSafe(doc.created_at)} · {doc.items?.length || 0} ligne{(doc.items?.length || 0) > 1 ? 's' : ''}</p>
                                     </div>
                                     <div className="text-right flex-shrink-0">
                                         <p className="font-mono font-black text-white text-xs sm:text-sm whitespace-nowrap">{fmtN(doc.total)} <span className="text-gray-400">{doc.currency || 'XOF'}</span></p>

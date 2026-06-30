@@ -1,156 +1,135 @@
-'use client'
+import { createClient } from '@supabase/supabase-js'
+import type { Metadata } from 'next'
+import BlogPostClient from './BlogPostClient'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowLeft, Clock, Eye, Share2, BookOpen } from 'lucide-react'
-import { useTranslation, T } from '@/lib/translation'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-interface BlogPost {
-    id: string
-    title: string
-    slug: string
-    excerpt: string
-    content: string
-    cover_image: string
-    category: string
-    author: string
-    views: number
-    created_at: string
-    tags: string[]
+async function getPost(slug: string) {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const { data } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_published', true)
+        .single()
+    return data
 }
 
-export default function BlogPostPage() {
-    const { t } = useTranslation()
-    const params = useParams()
-    const slug = params?.slug as string
-    const [post, setPost] = useState<BlogPost | null>(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        if (!slug) return
-        const fetchPost = async () => {
-            const { data } = await supabase
-                .from('blog_posts')
-                .select('*')
-                .eq('slug', slug)
-                .eq('is_published', true)
-                .single()
-
-            if (data) {
-                setPost(data as BlogPost)
-                // Increment views
-                await supabase.from('blog_posts').update({ views: (data.views || 0) + 1 }).eq('id', data.id)
-            }
-            setLoading(false)
-        }
-        fetchPost()
-    }, [slug])
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-            </div>
-        )
-    }
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+    const { slug } = await params
+    const post = await getPost(slug)
 
     if (!post) {
-        return (
-            <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center text-white text-center p-8">
-                <div>
-                    <BookOpen className="mx-auto mb-4 text-gray-600" size={48} />
-                    <h1 className="text-2xl font-bold mb-2"><T>Article introuvable</T></h1>
-                    <Link href="/blog" className="text-emerald-400 text-sm hover:underline">← <T>Retour au blog</T></Link>
-                </div>
-            </div>
-        )
+        return {
+            title: 'Article introuvable | Retour Gagnant Bénin',
+            description: 'Cet article n\'existe pas ou a été supprimé.',
+        }
     }
 
+    const title = post.title || 'Article | Retour Gagnant Bénin'
+    const description = post.excerpt || (post.content || '').substring(0, 160).replace(/[#*_\n]/g, '')
+    const image = post.cover_image || 'https://www.retourgagnantbenin.bj/og-image.jpg'
+    const url = `https://www.retourgagnantbenin.bj/blog/${post.slug}`
+    const tags = Array.isArray(post.tags) ? post.tags : []
+
+    return {
+        title: `${title} | Retour Gagnant Bénin`,
+        description,
+        keywords: tags.join(', '),
+        authors: [{ name: post.author || 'Retour Gagnant Bénin' }],
+        openGraph: {
+            title,
+            description,
+            url,
+            siteName: 'Retour Gagnant Bénin',
+            images: [
+                {
+                    url: image,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
+            locale: 'fr_FR',
+            type: 'article',
+            publishedTime: post.created_at,
+            modifiedTime: post.updated_at,
+            authors: [post.author || 'Retour Gagnant Bénin'],
+            tags,
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [image],
+        },
+        alternates: {
+            canonical: url,
+        },
+        robots: {
+            index: true,
+            follow: true,
+            'max-snippet': -1,
+            'max-image-preview': 'large' as const,
+            'max-video-preview': -1,
+        },
+    }
+}
+
+export default async function BlogPostPage({
+    params,
+}: {
+    params: Promise<{ slug: string }>
+}) {
+    const { slug } = await params
+
+    // Generate JSON-LD structured data for SEO
+    const post = await getPost(slug)
+    const jsonLd = post ? {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: post.title,
+        description: post.excerpt || (post.content || '').substring(0, 160).replace(/[#*_\n]/g, ''),
+        image: post.cover_image || 'https://www.retourgagnantbenin.bj/og-image.jpg',
+        datePublished: post.created_at,
+        dateModified: post.updated_at || post.created_at,
+        author: {
+            '@type': 'Organization',
+            name: post.author || 'Retour Gagnant Bénin',
+            url: 'https://www.retourgagnantbenin.bj',
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: 'Retour Gagnant Bénin',
+            url: 'https://www.retourgagnantbenin.bj',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://www.retourgagnantbenin.bj/logo.png',
+            },
+        },
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://www.retourgagnantbenin.bj/blog/${post.slug}`,
+        },
+        keywords: Array.isArray(post.tags) ? post.tags.join(', ') : '',
+        articleSection: post.category || 'Général',
+        inLanguage: 'fr-FR',
+    } : null
+
     return (
-        <div className="min-h-screen bg-[#0a0f14]">
-            {/* Hero Cover */}
-            <div className="relative h-64 md:h-96 overflow-hidden">
-                {post.cover_image ? (
-                    <Image src={post.cover_image} alt={post.title} fill className="object-cover" />
-                ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-emerald-900/40 to-yellow-900/40" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f14] via-[#0a0f14]/60 to-transparent" />
-                <div className="absolute top-4 left-4">
-                    <Link href="/blog" className="flex items-center gap-2 text-xs font-bold text-white/70 hover:text-white bg-black/40 backdrop-blur-md px-3 py-2 rounded-full border border-white/10 transition-all">
-                        <ArrowLeft size={14} /> <T>Blog</T>
-                    </Link>
-                </div>
-            </div>
-
-            {/* Article Content */}
-            <article className="max-w-3xl mx-auto px-4 -mt-20 md:-mt-32 relative z-10 pb-20">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <span className="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                        {t(post.category)}
-                    </span>
-
-                    <h1 className="text-3xl md:text-4xl font-black text-white mt-4 mb-4 leading-tight">{t(post.title)}</h1>
-
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-8 pb-6 border-b border-white/5">
-                        <span className="flex items-center gap-1"><Clock size={12} /> {new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                        <span className="flex items-center gap-1"><Eye size={12} /> {post.views} {t("vues")}</span>
-                        <span>{t("Par")} {post.author}</span>
-                        <button
-                            onClick={() => navigator.clipboard.writeText(window.location.href)}
-                            className="ml-auto flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors"
-                        >
-                            <Share2 size={12} /> <T>Partager</T>
-                        </button>
-                    </div>
-
-                    {/* Markdown-like content rendered as HTML */}
-                    <div
-                        className="prose prose-invert prose-emerald max-w-none
-                            prose-headings:font-black prose-headings:text-white
-                            prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-l-2 prose-h2:border-emerald-500 prose-h2:pl-4
-                            prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-                            prose-p:text-gray-300 prose-p:leading-relaxed prose-p:text-sm
-                            prose-li:text-gray-300 prose-li:text-sm
-                            prose-strong:text-white
-                            prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                            prose-hr:border-white/10
-                            prose-em:text-gray-400"
-                        dangerouslySetInnerHTML={{
-                            __html: post.content
-                                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-                                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                .replace(/^- (.*$)/gm, '<li>$1</li>')
-                                .replace(/(<li>[\s\S]*<\/li>)/g, '<ul>$1</ul>')
-                                .replace(/^---$/gm, '<hr />')
-                                .replace(/\n\n/g, '</p><p>')
-                                .replace(/^(?!<[hul]|<li|<hr)(.*)/gm, '<p>$1</p>')
-                                .replace(/<p><\/p>/g, '')
-                        }}
-                    />
-
-                    {/* CTA */}
-                    <div className="mt-12 p-6 bg-gradient-to-br from-emerald-900/20 to-yellow-900/20 border border-emerald-500/10 rounded-2xl text-center">
-                        <h3 className="text-lg font-bold text-white mb-2"><T>Prêt à passer à l&apos;action ?</T></h3>
-                        <p className="text-sm text-gray-400 mb-4"><T>Notre équipe vous accompagne dans chaque étape de votre projet.</T></p>
-                        <div className="flex flex-wrap gap-3 justify-center">
-                            <Link href="/rendez-vous" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all">
-                                <T>Prendre rendez-vous</T>
-                            </Link>
-                            <Link href="/contact" className="bg-white/5 hover:bg-white/10 text-white font-bold text-sm px-6 py-3 rounded-xl border border-white/10 transition-all">
-                                <T>Nous contacter</T>
-                            </Link>
-                        </div>
-                    </div>
-                </motion.div>
-            </article>
-        </div>
+        <>
+            {jsonLd && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+            )}
+            <BlogPostClient slug={slug} />
+        </>
     )
 }

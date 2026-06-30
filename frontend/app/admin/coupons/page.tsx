@@ -52,7 +52,17 @@ export default function CouponsPage() {
         setLoading(false)
     }, [])
 
-    useEffect(() => { loadCoupons() }, [loadCoupons])
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+        loadCoupons()
+    }, [loadCoupons])
+
+    const formatDateSafe = (val: string | null) => {
+        if (!mounted || !val) return '—'
+        const d = new Date(val)
+        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    }
 
     const generateCode = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -224,7 +234,9 @@ export default function CouponsPage() {
                     </div>
                 ) : (
                     filtered.map((coupon, i) => {
-                        const expired = coupon.expires_at && new Date(coupon.expires_at) < new Date()
+                        const expired = mounted && coupon.expires_at && !isNaN(new Date(coupon.expires_at).getTime())
+                            ? (new Date(coupon.expires_at) < new Date())
+                            : false
                         const exhausted = coupon.current_uses >= coupon.max_uses
                         const isValid = coupon.is_active && !expired && !exhausted
 
@@ -269,7 +281,7 @@ export default function CouponsPage() {
                                             <p className="text-xs text-gray-500 mt-1">
                                                 -{coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `${formatPrice(coupon.discount_value)} XOF`}
                                                 {coupon.min_order_amount > 0 && ` • Min. ${formatPrice(coupon.min_order_amount)} XOF`}
-                                                {coupon.expires_at && ` • Expire: ${new Date(coupon.expires_at).toLocaleDateString('fr-FR')}`}
+                                                {coupon.expires_at && ` • Expire: ${formatDateSafe(coupon.expires_at)}`}
                                             </p>
                                         </div>
                                     </div>

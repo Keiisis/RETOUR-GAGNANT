@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
+import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -47,6 +48,7 @@ function ComplementAncestralContent() {
     const [paymentTxId, setPaymentTxId] = useState('')
     const [paymentProcessing, setPaymentProcessing] = useState(false)
     const [paymentError, setPaymentError] = useState('')
+    const kkiapayBound = useRef(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
@@ -78,9 +80,28 @@ function ComplementAncestralContent() {
 
     const amountXOF = Math.round(RESEARCH_PRICE * EUR_TO_XOF)
 
+    const bindKkiapayListeners = () => {
+        if (kkiapayBound.current) return
+        if (typeof window.addKkiapayListener !== 'function') return
+        kkiapayBound.current = true
+        window.addKkiapayListener('success', (response) => {
+            setPaymentTxId(String(response.transactionId || ''))
+            setPaymentDone(true); setPaymentProcessing(false)
+        })
+        window.addKkiapayListener('failed', () => {
+            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
+            setPaymentProcessing(false)
+        })
+    }
+
     const handleKkiapay = () => {
+        if (typeof window.openKkiapayWidget !== 'function') {
+            setPaymentError(t('Le module de paiement n\'est pas encore chargé. Patientez quelques secondes puis réessayez.'))
+            return
+        }
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
         try {
+            bindKkiapayListeners()
             window.openKkiapayWidget({
                 amount: amountXOF, position: 'center',
                 key: paymentSettings.kkiapay_sandbox === 'true'
@@ -88,13 +109,6 @@ function ComplementAncestralContent() {
                     : paymentSettings.kkiapay_public_key,
                 sandbox: paymentSettings.kkiapay_sandbox === 'true',
                 data: JSON.stringify({ context: 'recherche-ancestrale', ref }),
-            })
-            window.addKkiapayListener('success', (response) => {
-                setPaymentTxId(String(response.transactionId || ''))
-                setPaymentDone(true); setPaymentProcessing(false)
-            })
-            window.addKkiapayListener('failed', () => {
-                setPaymentError(t('Le paiement a échoué.')); setPaymentProcessing(false)
             })
         } catch { setPaymentError(t('Impossible d\'ouvrir Kkiapay')); setPaymentProcessing(false) }
     }
@@ -152,22 +166,22 @@ function ComplementAncestralContent() {
     }
 
     if (loading) return (
-        <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
             <Loader2 className="animate-spin text-[#008751]" size={36} />
         </div>
     )
 
     if (submitted) return (
-        <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4">
+        <div className="min-h-screen bg-white flex items-center justify-center px-4">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/20 border-2 border-[#008751]/40 flex items-center justify-center">
                     <CheckCircle2 size={36} className="text-[#008751]" />
                 </div>
-                <h1 className="text-3xl font-black text-white mb-3">Demande confirmée</h1>
-                <p className="text-gray-400 text-sm mb-6">
+                <h1 className="text-3xl font-black text-gray-900 mb-3">Demande confirmée</h1>
+                <p className="text-gray-500 text-sm mb-6">
                     Votre paiement a été reçu. Notre équipe va débuter la recherche de vos documents ancestraux dans les plus brefs délais. Vous recevrez une confirmation par email.
                 </p>
-                <p className="text-xs text-gray-600 mb-6 font-mono">Dossier : {ref}</p>
+                <p className="text-xs text-gray-400 mb-6 font-mono">Dossier : {ref}</p>
                 <Link href="/suivi-dossier" className="bg-[#008751] hover:bg-[#00a36b] text-white font-black text-sm px-6 py-3 rounded-xl transition-all">
                     Suivre mon dossier
                 </Link>
@@ -188,9 +202,9 @@ function ComplementAncestralContent() {
                 </div>
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="flex items-center gap-2 text-sm text-white/50 mb-8 flex-wrap">
-                        <Link href="/" className="hover:text-white/80 transition-colors"><T>Accueil</T></Link>
+                        <Link href="/" className="hover:text-gray-900/80 transition-colors"><T>Accueil</T></Link>
                         <ChevronRight size={14} />
-                        <Link href="/nationalite" className="hover:text-white/80 transition-colors"><T>Nationalité</T></Link>
+                        <Link href="/nationalite" className="hover:text-gray-900/80 transition-colors"><T>Nationalité</T></Link>
                         <ChevronRight size={14} />
                         <span className="text-[#FCD116]"><T>Recherche Ancestrale</T></span>
                     </div>
@@ -243,7 +257,7 @@ function ComplementAncestralContent() {
                         className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between"
                     >
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Dossier rattaché</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Dossier rattaché</p>
                             <p className="text-lg font-black text-[#1a2332] font-mono">{ref}</p>
                             {applicantName && <p className="text-sm text-gray-500">{applicantName}</p>}
                         </div>
@@ -312,26 +326,34 @@ function ComplementAncestralContent() {
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-black text-[#1a2332]">{RESEARCH_PRICE} €</span>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">Recherche complète — archives, bases de données & associations spécialisées</p>
+                            <p className="text-xs text-gray-500 mt-1">Recherche complète — archives, bases de données & associations spécialisées</p>
                         </div>
 
                         {paymentDone ? (
                             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                                 <CheckCircle2 size={28} className="text-emerald-500 mx-auto mb-2" />
                                 <p className="text-sm font-bold text-emerald-700">Paiement effectué via {paymentProvider}</p>
-                                {paymentTxId && <p className="text-[10px] text-gray-400 mt-1 font-mono">TX: {paymentTxId}</p>}
+                                {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
                             </div>
                         ) : paymentProcessing ? (
                             <div className="flex flex-col items-center py-6">
                                 <Loader2 size={28} className="animate-spin text-[#FCD116]" />
-                                <p className="text-sm text-gray-400 mt-3">Traitement en cours...</p>
+                                <p className="text-sm text-gray-500 mt-3">Traitement en cours...</p>
+                                <p className="text-xs text-gray-400 mt-2 text-center max-w-xs">{t('Finalisez le paiement dans la fenêtre sécurisée. Avec une carte bancaire hors zone UEMOA (Canada, Europe…), privilégiez le Mobile Money.')}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => { setPaymentProcessing(false); setPaymentError(t('Paiement annulé. Vous pouvez réessayer ou choisir un autre moyen de paiement.')) }}
+                                    className="mt-4 text-xs font-bold text-gray-500 underline hover:text-[#008751]"
+                                >
+                                    {t('La fenêtre s\'est fermée ou reste bloquée ? Cliquez ici pour réessayer')}
+                                </button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 <p className="text-xs text-gray-500 font-bold">Sélectionnez votre moyen de paiement :</p>
                                 {providers.length === 0 ? (
                                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                                        <CreditCard size={20} className="text-gray-400 mx-auto mb-2" />
+                                        <CreditCard size={20} className="text-gray-500 mx-auto mb-2" />
                                         <p className="text-xs text-amber-600">Aucune passerelle active. Contactez-nous directement.</p>
                                     </div>
                                 ) : providers.map(p => (
@@ -344,7 +366,7 @@ function ComplementAncestralContent() {
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${p.color}`}><CreditCard size={18} /></div>
                                         <div className="flex-1">
                                             <p className="text-sm font-bold text-[#1a2332]">{p.name}</p>
-                                            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{p.subtitle}</p>
+                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p>
                                         </div>
                                         <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
                                     </button>
@@ -354,6 +376,7 @@ function ComplementAncestralContent() {
                                         <AlertCircle size={12} /> {paymentError}
                                     </p>
                                 )}
+                                <PaymentPrivacyNotice />
                             </div>
                         )}
 
@@ -372,7 +395,7 @@ function ComplementAncestralContent() {
                             {submitting ? <><Loader2 size={16} className="animate-spin" /> Confirmation...</> : !paymentDone ? 'Payez d\'abord' : 'Confirmer ma Recherche Ancestrale'}
                         </button>
 
-                        <div className="flex items-center justify-center gap-2 text-gray-400">
+                        <div className="flex items-center justify-center gap-2 text-gray-500">
                             <Shield size={12} />
                             <span className="text-[10px] font-bold uppercase tracking-widest">Transaction 100% sécurisée</span>
                         </div>
@@ -381,7 +404,7 @@ function ComplementAncestralContent() {
 
                 {/* Retour */}
                 <div className="text-center">
-                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-700 transition-colors">
+                    <Link href="/nationalite" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-400 transition-colors">
                         <ArrowLeft size={14} /> Retour à la page Nationalité
                     </Link>
                 </div>
@@ -393,7 +416,7 @@ function ComplementAncestralContent() {
 export default function ComplementAncestralPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center">
+            <div className="min-h-screen bg-white flex items-center justify-center">
                 <Loader2 className="animate-spin text-[#008751]" size={36} />
             </div>
         }>

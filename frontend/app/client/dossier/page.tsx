@@ -80,7 +80,11 @@ const fmtSize = (bytes: number) => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-FR')
+const fmtDate = (d: string) => {
+    if (!d) return '—'
+    const dateObj = new Date(d)
+    return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR')
+}
 const fmtN = (n: number) => Math.round(n).toLocaleString('fr-FR')
 
 const ACCEPTED_TYPES = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif'
@@ -303,6 +307,18 @@ export default function ClientDossierPage() {
 
     const handleDeleteDossier = async (id: string) => {
         if (!confirm('Supprimer ce dossier ?')) return
+        try {
+            const { data: docs } = await supabase.from('client_documents').select('storage_path, id').eq('dossier_id', id)
+            if (docs && docs.length > 0) {
+                const paths = docs.map(d => d.storage_path).filter(Boolean)
+                if (paths.length > 0) {
+                    await supabase.storage.from('client-documents').remove(paths)
+                }
+                await supabase.from('client_documents').delete().eq('dossier_id', id)
+            }
+        } catch (e) {
+            console.error('Failed to cleanup physical files:', e)
+        }
         await supabase.from('dossier_tracking').delete().eq('id', id)
         setDossiers(prev => prev.filter(d => d.id !== id))
     }
@@ -334,6 +350,21 @@ export default function ClientDossierPage() {
         if (totalCount === 0) return
         if (!confirm(`Supprimer ${totalCount} élément(s) sélectionné(s) ?`)) return
         setDeleting(true)
+        try {
+            const dossierIds = Array.from(selectedDossiers)
+            if (dossierIds.length > 0) {
+                const { data: docs } = await supabase.from('client_documents').select('storage_path, id').in('dossier_id', dossierIds)
+                if (docs && docs.length > 0) {
+                    const paths = docs.map(d => d.storage_path).filter(Boolean)
+                    if (paths.length > 0) {
+                        await supabase.storage.from('client-documents').remove(paths)
+                    }
+                    await supabase.from('client_documents').delete().in('dossier_id', dossierIds)
+                }
+            }
+        } catch (e) {
+            console.error('Failed to cleanup physical files for bulk delete:', e)
+        }
         const ops: Promise<unknown>[] = []
         selectedDossiers.forEach(id => ops.push(supabase.from('dossier_tracking').delete().eq('id', id) as unknown as Promise<unknown>))
         selectedOrders.forEach(id => ops.push(supabase.from('orders').delete().eq('id', id) as unknown as Promise<unknown>))
@@ -461,6 +492,7 @@ export default function ClientDossierPage() {
                                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                                     {selectionMode && (
                                                         <button type="button" onClick={() => toggleDossierSelect(dossier.id)}
+                                                            aria-label={isSelected ? "Désélectionner le dossier" : "Sélectionner le dossier"}
                                                             className="mt-0.5 text-gray-400 hover:text-red-400 transition-colors flex-shrink-0">
                                                             {isSelected ? <CheckSquare size={16} className="text-red-400" /> : <Square size={16} />}
                                                         </button>
@@ -476,7 +508,7 @@ export default function ClientDossierPage() {
                                                     {!selectionMode && (
                                                         <button type="button" onClick={() => handleDeleteDossier(dossier.id)}
                                                             className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400 transition-colors"
-                                                            title="Supprimer">
+                                                            title="Supprimer" aria-label="Supprimer le dossier">
                                                             <Trash2 size={13} />
                                                         </button>
                                                     )}
@@ -504,6 +536,7 @@ export default function ClientDossierPage() {
                                         <div className="p-5">
                                             <button type="button"
                                                 onClick={() => setExpandedDossier(expandedDossier === dossier.id ? null : dossier.id)}
+                                                aria-expanded={expandedDossier === dossier.id ? "true" : "false"}
                                                 className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 hover:text-gray-300 transition-colors w-full text-left">
                                                 Étapes du traitement
                                                 <ChevronDown size={12} className={`ml-auto transition-transform ${expandedDossier === dossier.id ? 'rotate-180' : ''}`} />
@@ -541,7 +574,7 @@ export default function ClientDossierPage() {
                                             <div className="mx-5 mb-4 p-4 bg-amber-500/8 border border-amber-500/20 rounded-xl">
                                                 <p className="text-xs font-black text-amber-400 flex items-center gap-2 mb-3">
                                                     <AlertCircle size={13} /> Documents requis
-                                                </p>
+                                                 </p>
                                                 <ul className="space-y-1.5">
                                                     {dossier.documents_manquants.map((doc, i) => (
                                                         <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
@@ -566,6 +599,7 @@ export default function ClientDossierPage() {
                                             <div className="flex items-center justify-between mb-3">
                                                 <button type="button"
                                                     onClick={() => setExpandedDossier(expandedDossier === `docs-${dossier.id}` ? null : `docs-${dossier.id}`)}
+                                                    aria-expanded={expandedDossier === `docs-${dossier.id}` ? "true" : "false"}
                                                     className="flex items-center gap-2 text-[11px] font-bold text-gray-400 hover:text-white transition-colors">
                                                     <Paperclip size={12} />
                                                     Mes fichiers ({docsByDossier[dossier.id]?.length || 0})
@@ -601,11 +635,11 @@ export default function ClientDossierPage() {
                                                                         </div>
                                                                         <div className="flex items-center gap-1">
                                                                             <button type="button" onClick={async () => { const url = await refreshSignedUrl(clientDoc.storage_path); window.open(url, '_blank') }}
-                                                                                className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-indigo-400 transition-colors" title="Télécharger">
+                                                                                className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-indigo-400 transition-colors" title="Télécharger" aria-label="Télécharger le fichier">
                                                                                 <FileUp size={13} />
                                                                             </button>
                                                                             <button type="button" onClick={() => handleDeleteDoc(clientDoc.id, clientDoc.storage_path, dossier.id)}
-                                                                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-colors" title="Supprimer">
+                                                                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-colors" title="Supprimer" aria-label="Supprimer le fichier">
                                                                                 <Trash2 size={13} />
                                                                             </button>
                                                                         </div>
@@ -644,6 +678,7 @@ export default function ClientDossierPage() {
                                             <div key={order.id} className={`flex items-center gap-4 px-5 py-4 transition-colors ${isSelected ? 'bg-red-500/5' : ''}`}>
                                                 {selectionMode && (
                                                     <button type="button" onClick={() => toggleOrderSelect(order.id)}
+                                                        aria-label={isSelected ? "Désélectionner la commande" : "Sélectionner la commande"}
                                                         className="text-gray-400 hover:text-red-400 transition-colors flex-shrink-0">
                                                         {isSelected ? <CheckSquare size={15} className="text-red-400" /> : <Square size={15} />}
                                                     </button>
@@ -662,7 +697,7 @@ export default function ClientDossierPage() {
                                                     <p className="text-sm font-mono font-bold text-white">{fmtN(order.amount)} {order.currency || 'XOF'}</p>
                                                     {!selectionMode && (
                                                         <button type="button" onClick={() => handleDeleteOrder(order.id)}
-                                                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400 transition-colors" title="Supprimer">
+                                                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-400 transition-colors" title="Supprimer" aria-label="Supprimer la commande de la liste">
                                                             <Trash2 size={13} />
                                                         </button>
                                                     )}

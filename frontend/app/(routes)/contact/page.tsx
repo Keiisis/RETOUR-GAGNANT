@@ -7,6 +7,7 @@ import { Mail, MapPin, Phone, Send, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from '@/lib/translation';
+import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
 
 export default function ContactPage() {
     const { t } = useTranslation();
@@ -200,6 +201,8 @@ export default function ContactPage() {
                                                 <p className="text-[#E8112D] text-sm"><T>Une erreur est survenue. Réessayez.</T></p>
                                             )}
 
+                                            <ConsentCheckbox id="contact-consent" purpose="afin de répondre à votre demande de contact" />
+
                                             <Button
                                                 type="submit"
                                                 disabled={status === 'loading'}
@@ -223,6 +226,31 @@ export default function ContactPage() {
                         </Card>
                     </motion.div>
                 </div>
+
+                {/* Google Maps */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-12 max-w-5xl mx-auto"
+                >
+                    <Card className="border-0 shadow-lg overflow-hidden">
+                        <div className="h-1 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
+                        <CardContent className="p-0">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3965.0!2d2.4183!3d6.3703!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sCotonou%2C+B%C3%A9nin!5e0!3m2!1sfr!2sbj!4v1"
+                                width="100%"
+                                height="350"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title={t("Localisation Retour Gagnant Bénin")}
+                                className="w-full"
+                            />
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </div>
         </div>
     );

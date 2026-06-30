@@ -7,7 +7,6 @@ import {
     Activity, AlertTriangle, CheckCircle2, Crown, ArrowUpRight,
     Clock, Globe, Receipt, Zap, ArrowDownRight, type LucideProps,
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 // ══════════════════════════════════════════════════════════════
@@ -34,52 +33,15 @@ interface KpiData {
     waf_blocked_24h: number
     ip_blocked:      number
     security_score:  number
+    partner_apps_pending?: number
+    nationalite_pending?:  number
+    dossiers_total?:       number
 }
 
 async function fetchKpis(): Promise<KpiData> {
-    const now   = new Date()
-    const day   = new Date(now); day.setHours(0, 0, 0, 0)
-    const month = new Date(now); month.setDate(1); month.setHours(0, 0, 0, 0)
-    const h24   = new Date(Date.now() - 86_400_000).toISOString()
-
-    const [rAll, rMonth, rToday, oPending, clients, agents, msgs, wafAll, wafBlk, ips] =
-        await Promise.allSettled([
-            supabase.from('orders').select('total_amount').in('status', ['completed', 'paid']),
-            supabase.from('orders').select('total_amount').in('status', ['completed', 'paid']).gte('created_at', month.toISOString()),
-            supabase.from('orders').select('total_amount').in('status', ['completed', 'paid']).gte('created_at', day.toISOString()),
-            supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-            supabase.from('client_profiles').select('id', { count: 'exact', head: true }),
-            supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('role', 'agent'),
-            supabase.from('contact_messages').select('id', { count: 'exact', head: true }).eq('is_read', false),
-            supabase.from('waf_logs').select('id', { count: 'exact', head: true }).gte('created_at', h24),
-            supabase.from('waf_logs').select('id', { count: 'exact', head: true }).eq('is_blocked', true).gte('created_at', h24),
-            supabase.from('ip_blocks').select('id', { count: 'exact', head: true }).is('unblocked_at', null),
-        ])
-
-    type SumRes = PromiseSettledResult<{ data: Array<{ total_amount: number }> | null }>
-    type CntRes = PromiseSettledResult<{ count: number | null }>
-
-    const sum = (r: SumRes) => r.status === 'fulfilled' ? (r.value.data || []).reduce((a, x) => a + (x.total_amount || 0), 0) : 0
-    const cnt = (r: CntRes) => r.status === 'fulfilled' ? (r.value.count || 0) : 0
-
-    const wafBlkCount = cnt(wafBlk as CntRes)
-    const ipCount     = cnt(ips as CntRes)
-    const score       = Math.round(Math.max(0, 100 - Math.min(50, ipCount * 5) - Math.min(30, wafBlkCount / 10)))
-
-    return {
-        revenue_total:   sum(rAll as SumRes),
-        revenue_month:   sum(rMonth as SumRes),
-        revenue_today:   sum(rToday as SumRes),
-        orders_total:    (rAll.status === 'fulfilled' ? rAll.value.data?.length : 0) || 0,
-        orders_pending:  cnt(oPending as CntRes),
-        clients_total:   cnt(clients as CntRes),
-        agents_count:    cnt(agents as CntRes),
-        messages_unread: cnt(msgs as CntRes),
-        waf_events_24h:  cnt(wafAll as CntRes),
-        waf_blocked_24h: wafBlkCount,
-        ip_blocked:      ipCount,
-        security_score:  score,
-    }
+    const res = await fetch('/api/ceo/kpis', { cache: 'no-store' })
+    if (!res.ok) throw new Error('Erreur API KPIs')
+    return res.json()
 }
 
 function formatXOF(n: number): string {
@@ -173,9 +135,11 @@ function SecurityRing({ score }: { score: number }) {
 export default function CeoDashboardPage() {
     const [kpis, setKpis]           = useState<KpiData | null>(null)
     const [loading, setLoading]     = useState(true)
-    const [lastUpdate, setLastUpdate] = useState(new Date())
+    const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+    const [mounted, setMounted]     = useState(false)
 
     useEffect(() => {
+        setMounted(true)
         const load = async () => {
             setLoading(true)
             try { const d = await fetchKpis(); setKpis(d); setLastUpdate(new Date()) }
@@ -210,7 +174,7 @@ export default function CeoDashboardPage() {
                     <div className="flex-1" style={{ background: RED }} />
                 </div>
                 <p className="text-xs ml-12 flex items-center gap-2" style={{ color: `${TEXT}45` }}>
-                    Actualisé à {lastUpdate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    Actualisé à {lastUpdate ? lastUpdate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'}
                     <span className="inline-flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GREEN_L }} />
                         Temps réel
@@ -223,10 +187,10 @@ export default function CeoDashboardPage() {
                 <KpiCard title="Revenu Total"      value={kpis ? formatXOF(kpis.revenue_total) : '—'}
                     sub="Depuis la création" icon={TrendingUp} color={GOLD} href="/ceo/revenus" trend="up" delay={0.05} />
                 <KpiCard title="Revenu du Mois"    value={kpis ? formatXOF(kpis.revenue_month) : '—'}
-                    sub={new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                    sub={mounted ? new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '—'}
                     icon={Receipt} color={GREEN_L} href="/ceo/revenus" trend="up" delay={0.1} />
                 <KpiCard title="Revenu Aujourd'hui" value={kpis ? formatXOF(kpis.revenue_today) : '—'}
-                    sub={new Date().toLocaleDateString('fr-FR')}
+                    sub={mounted ? new Date().toLocaleDateString('fr-FR') : '—'}
                     icon={Zap} color={YELLOW} href="/ceo/revenus" delay={0.15} />
             </div>
 
@@ -361,10 +325,10 @@ export default function CeoDashboardPage() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                        { label: 'Panel Admin',  href: '/admin/dashboard', icon: Globe,        color: GOLD },
-                        { label: 'WAF Sécurité', href: '/admin/securite',  icon: ShieldCheck,  color: GREEN_L },
-                        { label: 'Commandes',    href: '/admin/orders',    icon: ShoppingBag,  color: YELLOW },
-                        { label: 'Utilisateurs', href: '/admin/users',     icon: Users,        color: RED },
+                        { label: 'Revenus',      href: '/ceo/revenus',    icon: Receipt,      color: GOLD },
+                        { label: 'WAF Sécurité', href: '/ceo/securite',   icon: ShieldCheck,  color: GREEN_L },
+                        { label: 'Commandes',    href: '/ceo/commandes',  icon: ShoppingBag,  color: YELLOW },
+                        { label: 'Clients',      href: '/ceo/clients',    icon: Users,        color: RED },
                     ].map(action => (
                         <Link key={action.href} href={action.href}
                             className="flex items-center gap-2.5 p-3 rounded-xl transition-all group border"

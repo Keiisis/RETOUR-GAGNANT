@@ -56,6 +56,14 @@ const STATUS = {
 
 const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
+// Safe date formatter to avoid RangeError: Invalid time value
+const formatDateSafe = (dateStr: string | null | undefined, options?: Intl.DateTimeFormatOptions) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', options)
+}
+
+
 // ─── Signature Authorization Modal ────────────────────────────────────────────
 function SignatureAuthModal({
     docId,
@@ -369,7 +377,7 @@ export default function ClientDocumentDetailPage() {
                                     {doc.type === 'devis' ? 'Devis' : 'Facture'}
                                 </p>
                                 <h1 className="text-xl font-black text-white">{doc.numero}</h1>
-                                <p className="text-gray-500 text-sm">{new Date(doc.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="text-gray-500 text-sm">{formatDateSafe(doc.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             </div>
                         </div>
                         <span className={`text-[11px] font-bold px-3 py-1.5 rounded-full border ${s.bg} ${s.cls}`}>{s.label}</span>
@@ -418,7 +426,7 @@ export default function ClientDocumentDetailPage() {
                                 <CheckCircle2 size={20} className="text-emerald-400 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-bold text-white">Signé électroniquement</p>
-                                    <p className="text-xs text-gray-500">Le {doc.signed_at ? new Date(doc.signed_at).toLocaleDateString('fr-FR') : '—'}</p>
+                                    <p className="text-xs text-gray-500">Le {formatDateSafe(doc.signed_at)}</p>
                                 </div>
                             </>
                         ) : canSign ? (

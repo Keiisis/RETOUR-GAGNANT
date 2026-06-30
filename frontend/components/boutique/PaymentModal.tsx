@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Product } from './ProductCard'
 import { Price } from '@/components/ui/Price'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
+import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
 
@@ -1106,6 +1107,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                         </motion.button>
                                     ))
                                 )}
+                                <PaymentPrivacyNotice className="mt-3" />
                                 <div className="flex items-center gap-2 text-gray-600 justify-center mt-3">
                                     <Shield size={13} />
                                     <span className="text-[10px] font-bold uppercase tracking-widest"><T>Transaction 100% sécurisée</T></span>

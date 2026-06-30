@@ -87,6 +87,11 @@ export default function AdminFacturationPage() {
     }
 
     const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    const formatDate = (val: string | null | undefined) => {
+        if (!val) return '—'
+        const d = new Date(val)
+        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    }
 
     const generatePDF = async (doc: DocumentFinancier) => {
         setGenerating(true)
@@ -201,7 +206,7 @@ export default function AdminFacturationPage() {
             pdf.setFontSize(8)
             pdf.setTextColor(80, 80, 80)
             pdf.text('N. ' + doc.numero, pw - mr, headerTop + 22, { align: 'right' })
-            pdf.text('Date : ' + new Date(doc.created_at).toLocaleDateString('fr-FR'), pw - mr, headerTop + 27, { align: 'right' })
+            pdf.text('Date : ' + formatDate(doc.created_at), pw - mr, headerTop + 27, { align: 'right' })
             if (doc.validite) {
                 const validLabel = doc.type === 'facture' ? 'Delai : ' : 'Validite : '
                 pdf.text(safe(validLabel + doc.validite), pw - mr, headerTop + 32, { align: 'right' })
@@ -413,8 +418,8 @@ export default function AdminFacturationPage() {
                 if (doc.signature_url) {
                     try { pdf.addImage(doc.signature_url, 'PNG', ml + 4, y + 17, sigW - 20, 13) } catch {}
                     const signedDate = doc.signed_at
-                        ? new Date(doc.signed_at).toLocaleDateString('fr-FR')
-                        : new Date(doc.created_at).toLocaleDateString('fr-FR')
+                        ? formatDate(doc.signed_at)
+                        : formatDate(doc.created_at)
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(6)
                     pdf.setTextColor(0, 135, 81)
@@ -450,7 +455,7 @@ export default function AdminFacturationPage() {
                 pdf.setFontSize(6.5)
                 pdf.setTextColor(90, 95, 130)
                 pdf.text('Signature et Cachet officiel', sig2X + 4, y + 23)
-                pdf.text('Etabli le ' + new Date(doc.created_at).toLocaleDateString('fr-FR'), sig2X + 4, y + 28)
+                pdf.text('Etabli le ' + formatDate(doc.created_at), sig2X + 4, y + 28)
             }
 
             // ── WATERMARK ──────────────────────────────────────────
@@ -476,7 +481,7 @@ export default function AdminFacturationPage() {
             const footerLines = devisFooter.split('\n')
             if (footerLines.length > 0) pdf.text(safe(footerLines[0]), pw / 2, ph - 9, { align: 'center' })
             if (footerLines.length > 1) pdf.text(safe(footerLines[1]), pw / 2, ph - 6.5, { align: 'center' })
-            pdf.text('Document N. ' + doc.numero + ' - Genere le ' + new Date().toLocaleDateString('fr-FR'), pw / 2, ph - 3, { align: 'center' })
+            pdf.text('Document N. ' + doc.numero + ' - Genere le ' + formatDate(new Date().toISOString()), pw / 2, ph - 3, { align: 'center' })
 
             pdf.save(`${doc.type}_${doc.numero}.pdf`)
         } catch (err) {
@@ -570,7 +575,7 @@ export default function AdminFacturationPage() {
                                             </div>
                                             <div>
                                                 <p className="text-white font-bold text-sm">{doc.numero}</p>
-                                                <p className="text-gray-500 text-[10px]">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
+                                                <p className="text-gray-500 text-[10px]">{formatDate(doc.created_at)}</p>
                                             </div>
                                         </div>
                                     </td>

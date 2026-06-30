@@ -5,13 +5,25 @@ import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
+import { Document, Packer, Paragraph, ImageRun, AlignmentType } from 'docx'
+import { saveAs } from 'file-saver'
 import {
-    CreditCard, Download, FileImage, User, Plus, Trash2,
+    CreditCard, Download, FileImage, FileType, User, Plus, Trash2,
     CheckCircle, AlertCircle, Loader2, Eye, UserCheck, RefreshCw,
-    Search, ExternalLink, BookOpen, ChevronRight
+    Search, ExternalLink, BookOpen, ChevronRight, Building2, Compass
 } from 'lucide-react'
 import Link from 'next/link'
-import { CardRecto, CardVerso, type CardData } from '@/components/business-card/BusinessCard'
+import { CardRecto as RGBRecto, CardVerso as RGBVerso, type CardData } from '@/components/business-card/BusinessCard'
+import { CardRecto as OuidahRecto, CardVerso as OuidahVerso } from '@/components/business-card/OuidahCard'
+import { downloadSVGCard } from '@/lib/svg-card-generator'
+import { downloadOuidahSVGCard } from '@/lib/svg-ouidah-generator'
+
+type TabKey = 'rgb' | 'ouidah'
+
+const TABS: { key: TabKey; label: string; icon: typeof Building2; accent: string; accentBg: string }[] = [
+    { key: 'rgb', label: 'Retour Gagnant', icon: Building2, accent: '#C9A84C', accentBg: '#C9A84C' },
+    { key: 'ouidah', label: 'Ouidah Heritage Tour', icon: Compass, accent: '#C88B2A', accentBg: '#1B2A4A' },
+]
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -58,16 +70,107 @@ async function downloadPDF(
     versoRef: React.RefObject<HTMLDivElement | null>,
     name: string
 ) {
+    if (!rectoRef.current || !versoRef.current) throw new Error('Ref manquante')
+
+    // ── Forcer les deux captures à EXACTEMENT la même taille pixel ──
+    const W = rectoRef.current.offsetWidth
+    const H = rectoRef.current.offsetHeight
+    await new Promise(r => setTimeout(r, 400))
+
+    const captureOpts = { pixelRatio: 4, cacheBust: true, skipFonts: false, width: W, height: H }
+    const [rectoUrl, versoUrl] = await Promise.all([
+        toPng(rectoRef.current, captureOpts),
+        toPng(versoRef.current, captureOpts),
+    ])
+
+    // ═══ PDF — 2 pages A4 Portrait, carte 85×55mm centrée ═══
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+    const cardW = 85, cardH = 55
+    const x = 62.5            // (210 - 85) / 2 = 62.5
+    const y = 121              // (297 - 55) / 2 = 121
+    const cropLen = 8, cropOff = 3
+
+    // ── Traits de coupe identiques recto & verso ──
+    const drawCropMarks = (label: string) => {
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.15)
+        // Haut-gauche
+        pdf.line(x - cropOff - cropLen, y, x - cropOff, y)
+        pdf.line(x, y - cropOff - cropLen, x, y - cropOff)
+        // Haut-droit
+        pdf.line(x + cardW + cropOff, y, x + cardW + cropOff + cropLen, y)
+        pdf.line(x + cardW, y - cropOff - cropLen, x + cardW, y - cropOff)
+        // Bas-gauche
+        pdf.line(x - cropOff - cropLen, y + cardH, x - cropOff, y + cardH)
+        pdf.line(x, y + cardH + cropOff, x, y + cardH + cropOff + cropLen)
+        // Bas-droit
+        pdf.line(x + cardW + cropOff, y + cardH, x + cardW + cropOff + cropLen, y + cardH)
+        pdf.line(x + cardW, y + cardH + cropOff, x + cardW, y + cardH + cropOff + cropLen)
+        // Label
+        pdf.setFontSize(7)
+        pdf.setTextColor(100, 100, 100)
+        pdf.text(label, x + cardW / 2, y - cropOff - cropLen - 2, { align: 'center' })
+        pdf.setFontSize(5.5)
+        pdf.setTextColor(130, 130, 130)
+        pdf.text(`${cardW} × ${cardH} mm — Imprimer à TAILLE RÉELLE (100%)`, x + cardW / 2, y + cardH + cropOff + cropLen + 4, { align: 'center' })
+    }
+
+    // Page 1 — RECTO
+    pdf.addImage(rectoUrl, 'PNG', x, y, cardW, cardH)
+    drawCropMarks('RECTO')
+
+    // Page 2 — VERSO (position strictement identique)
+    pdf.addPage('a4', 'portrait')
+    pdf.addImage(versoUrl, 'PNG', x, y, cardW, cardH)
+    drawCropMarks('VERSO')
+
+    pdf.save(`Carte-VIP-${name.toLowerCase().replace(/\s+/g, '-')}.pdf`)
+}
+
+
+async function downloadDOCX(
+    rectoRef: React.RefObject<HTMLDivElement | null>,
+    versoRef: React.RefObject<HTMLDivElement | null>,
+    name: string
+) {
     const [rectoUrl, versoUrl] = await Promise.all([
         captureCard(rectoRef, 4),
         captureCard(versoRef, 4),
     ])
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85, 55] })
-    pdf.addImage(rectoUrl, 'PNG', 0, 0, 85, 55)
-    pdf.addPage([85, 55], 'landscape')
-    pdf.addImage(versoUrl, 'PNG', 0, 0, 85, 55)
-    pdf.save(`carte-visite-${name.toLowerCase().replace(/\s+/g, '-')}.pdf`)
+    const toBuffer = async (dataUrl: string) => {
+        const res = await fetch(dataUrl)
+        return await res.arrayBuffer()
+    }
+    const [rectoBuf, versoBuf] = await Promise.all([toBuffer(rectoUrl), toBuffer(versoUrl)])
+
+    const cardW = 340
+    const cardH = 204
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new ImageRun({ data: rectoBuf, transformation: { width: cardW, height: cardH }, type: 'png' })],
+                }),
+                new Paragraph({ children: [] }),
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [new ImageRun({ data: versoBuf, transformation: { width: cardW, height: cardH }, type: 'png' })],
+                }),
+            ],
+        }],
+    })
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `Carte-VIP-${name.toLowerCase().replace(/\s+/g, '-')}.docx`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
 }
+
 
 /** Extrait le message d'une erreur (Error, Supabase PostgrestError, ou objet quelconque) */
 function getErrorMessage(e: unknown): string {
@@ -84,6 +187,7 @@ function getErrorMessage(e: unknown): string {
 export default function AdminDesignPage() {
     const [form, setForm] = useState<CardData>({ prenom: '', nom: '', position: '', phone: '', email: '' })
     const [activeView, setActiveView] = useState<'recto' | 'verso'>('recto')
+    const [activeTab, setActiveTab] = useState<TabKey>('rgb')
 
     const [agents, setAgents] = useState<Agent[]>([])
     const [selectedAgent, setSelectedAgent] = useState<string>('')
@@ -98,8 +202,12 @@ export default function AdminDesignPage() {
     const [downloading, setDownloading] = useState<string | null>(null)
     const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
-    const rectoRef = useRef<HTMLDivElement>(null)
-    const versoRef = useRef<HTMLDivElement>(null)
+    const rgbRectoRef = useRef<HTMLDivElement>(null)
+    const rgbVersoRef = useRef<HTMLDivElement>(null)
+    const ouidahRectoRef = useRef<HTMLDivElement>(null)
+    const ouidahVersoRef = useRef<HTMLDivElement>(null)
+
+    const getActiveRefs = () => activeTab === 'rgb' ? { recto: rgbRectoRef, verso: rgbVersoRef } : { recto: ouidahRectoRef, verso: ouidahVersoRef }
 
     const isValid = !!(form.prenom.trim() && form.nom.trim() && form.position.trim())
 
@@ -188,6 +296,71 @@ export default function AdminDesignPage() {
         }
     }
 
+    const handleDownloadPdf = async () => {
+        setDownloading('pdf')
+        try {
+            const name = isValid ? `${form.prenom}-${form.nom}` : 'vide'
+            const refs = getActiveRefs()
+            await downloadPDF(refs.recto, refs.verso, name)
+            setStatus({ type: 'success', msg: 'PDF exporté avec les normes d\'impression !' })
+        } catch (e) {
+            console.error('Erreur export :', e)
+            setStatus({ type: 'error', msg: `Erreur export PDF : ${getErrorMessage(e)}` })
+        } finally {
+            setDownloading(null)
+        }
+    }
+
+    const handleDownloadPng = async () => {
+        setDownloading('png')
+        try {
+            const name = isValid ? `${form.prenom}-${form.nom}` : 'vide'
+            const refs = getActiveRefs()
+            
+            const rectoUrl = await captureCard(refs.recto, 4)
+            const versoUrl = await captureCard(refs.verso, 4)
+
+            const downloadImage = (dataUrl: string, filename: string) => {
+                const link = document.createElement("a")
+                link.href = dataUrl
+                link.download = filename
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            }
+
+            downloadImage(rectoUrl, `Carte-VIP-${name}-RECTO.png`)
+            setTimeout(() => {
+                downloadImage(versoUrl, `Carte-VIP-${name}-VERSO.png`)
+            }, 500)
+
+            setStatus({ type: 'success', msg: 'Images PNG importables (Canva/Word) téléchargées avec succès !' })
+        } catch (e) {
+            console.error('Erreur export :', e)
+            setStatus({ type: 'error', msg: `Erreur export PNG : ${getErrorMessage(e)}` })
+        } finally {
+            setDownloading(null)
+        }
+    }
+
+    const handleDownloadSvg = async () => {
+        setDownloading('svg')
+        try {
+            const name = isValid ? `${form.prenom}-${form.nom}` : 'vide'
+            if (activeTab === 'ouidah') {
+                await downloadOuidahSVGCard(form, `Carte-VIP-Ouidah-${name}`)
+            } else {
+                await downloadSVGCard(form, `Carte-VIP-${name}`)
+            }
+            setStatus({ type: 'success', msg: 'SVG vectoriel natif Recto+Verso téléchargé ! Tracés nets, prêt pour Illustrator, Inkscape, impression et gravure laser.' })
+        } catch (e) {
+            console.error('Erreur export SVG :', e)
+            setStatus({ type: 'error', msg: `Erreur export SVG : ${getErrorMessage(e)}` })
+        } finally {
+            setDownloading(null)
+        }
+    }
+
     /* ─── Suppression ─── */
     const deleteCard = async (id: string) => {
         if (!confirm('Supprimer cette carte ?')) return
@@ -204,7 +377,7 @@ export default function AdminDesignPage() {
     }
 
     /* ─── Téléchargement depuis une carte sauvegardée ─── */
-    const downloadSaved = async (card: SavedCard, type: 'recto-png' | 'verso-png' | 'pdf') => {
+    const downloadSaved = async (card: SavedCard, type: 'recto-png' | 'verso-png' | 'svg' | 'pdf' | 'docx') => {
         setDownloading(card.id + type)
         const cardData: CardData = {
             prenom:   card.employee_prenom,
@@ -217,9 +390,18 @@ export default function AdminDesignPage() {
         await new Promise(r => setTimeout(r, 250))
         try {
             const fullName = `${card.employee_prenom}-${card.employee_nom}`
-            if (type === 'recto-png')      await downloadPNG(rectoRef, `recto-${fullName}.png`)
-            else if (type === 'verso-png') await downloadPNG(versoRef, `verso-${fullName}.png`)
-            else                           await downloadPDF(rectoRef, versoRef, fullName)
+            const refs = getActiveRefs()
+            if (type === 'recto-png')      await downloadPNG(refs.recto, `recto-${fullName}.png`)
+            else if (type === 'verso-png') await downloadPNG(refs.verso, `verso-${fullName}.png`)
+            else if (type === 'svg') {
+                if (activeTab === 'ouidah') {
+                    await downloadOuidahSVGCard(cardData, `Carte-VIP-Ouidah-${fullName}`)
+                } else {
+                    await downloadSVGCard(cardData, `Carte-VIP-${fullName}`)
+                }
+            }
+            else if (type === 'pdf')       await downloadPDF(refs.recto, refs.verso, fullName)
+            else if (type === 'docx')      await downloadDOCX(refs.recto, refs.verso, fullName)
         } catch (e) {
             alert('Erreur export : ' + getErrorMessage(e))
         } finally {
@@ -240,7 +422,7 @@ export default function AdminDesignPage() {
         <div className="space-y-8">
 
             {/* ── Navigation sous-sections ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="relative overflow-hidden rounded-2xl bg-[#C9A84C]/8 border-2 border-[#C9A84C]/30 p-5 flex items-center gap-4">
                     <div className="w-11 h-11 rounded-xl bg-[#C9A84C]/20 border border-[#C9A84C]/30 flex items-center justify-center flex-shrink-0">
                         <CreditCard size={20} className="text-[#C9A84C]" />
@@ -261,6 +443,39 @@ export default function AdminDesignPage() {
                         <p className="text-gray-600 text-xs">2 volets · Français / English</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C9A84C] transition-colors" />
+                </Link>
+                <Link href="/admin/design/rollup"
+                    className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-[#C9A84C]/30 hover:bg-[#C9A84C]/5 p-5 flex items-center gap-4 transition-all">
+                    <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] group-hover:bg-[#C9A84C]/15 group-hover:border-[#C9A84C]/25 flex items-center justify-center flex-shrink-0 transition-all">
+                        <FileImage size={20} className="text-gray-500 group-hover:text-[#C9A84C] transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Roll-Ups</p>
+                        <p className="text-gray-600 text-xs">85×200cm — Haute Définition</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C9A84C] transition-colors" />
+                </Link>
+                <Link href="/admin/design/plexiglas"
+                    className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-emerald-500/5 p-5 flex items-center gap-4 transition-all text-left">
+                    <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] group-hover:bg-emerald-500/15 group-hover:border-emerald-500/25 flex items-center justify-center flex-shrink-0 transition-all">
+                        <Download size={20} className="text-gray-500 group-hover:text-emerald-400 transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Plexiglas SVG</p>
+                        <p className="text-gray-600 text-xs">80×120cm — Forme arche</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
+                </Link>
+                <Link href="/admin/design/plexiglas-horaires"
+                    className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-[#C88B2A]/30 hover:bg-[#C88B2A]/5 p-5 flex items-center gap-4 transition-all text-left">
+                    <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] group-hover:bg-[#C88B2A]/15 group-hover:border-[#C88B2A]/25 flex items-center justify-center flex-shrink-0 transition-all">
+                        <Download size={20} className="text-gray-500 group-hover:text-[#C88B2A] transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Plexiglas Horaires</p>
+                        <p className="text-gray-600 text-xs">80×120cm — R.G.B / O.H.T / A.C.S.T</p>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C88B2A] transition-colors" />
                 </Link>
             </div>
 
@@ -433,26 +648,32 @@ CREATE POLICY "Admins full access" ON public.business_cards
                             {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                             Sauvegarder la carte
                         </button>
-                        <button type="button"
-                            onClick={async () => { setDownloading('recto-png'); try { await downloadPNG(rectoRef, `recto-${form.prenom}-${form.nom}.png`) } finally { setDownloading(null) } }}
+                        <button
+                            onClick={handleDownloadPdf}
                             disabled={!isValid || downloading !== null}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border border-white/10 text-gray-400 rounded-xl text-sm font-medium hover:text-white hover:border-white/20 transition-all disabled:opacity-40">
-                            {downloading === 'recto-png' ? <Loader2 size={14} className="animate-spin" /> : <FileImage size={14} />}
-                            PNG Recto
+                            className="flex w-full sm:w-auto items-center justify-center gap-2 group px-6 py-3.5 bg-gradient-to-r from-red-600 to-red-500 rounded-xl font-semibold text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transition-all hover:-translate-y-1 overflow-hidden relative"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                            {downloading === 'pdf' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                            <span>Imprimer (PDF - 90x54)</span>
                         </button>
-                        <button type="button"
-                            onClick={async () => { setDownloading('verso-png'); try { await downloadPNG(versoRef, `verso-${form.prenom}-${form.nom}.png`) } finally { setDownloading(null) } }}
+                        
+                        <button
+                            onClick={handleDownloadSvg}
                             disabled={!isValid || downloading !== null}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] border border-white/10 text-gray-400 rounded-xl text-sm font-medium hover:text-white hover:border-white/20 transition-all disabled:opacity-40">
-                            {downloading === 'verso-png' ? <Loader2 size={14} className="animate-spin" /> : <FileImage size={14} />}
-                            PNG Verso
+                            className="flex w-full sm:w-auto items-center justify-center gap-2 group px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl font-semibold text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:-translate-y-1 overflow-hidden relative"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-shimmer" />
+                            {downloading === 'svg' ? <Loader2 size={18} className="animate-spin" /> : <FileType size={18} />}
+                            <span>Vectoriel (SVG)</span>
                         </button>
-                        <button type="button"
-                            onClick={async () => { setDownloading('pdf'); try { await downloadPDF(rectoRef, versoRef, `${form.prenom}-${form.nom}`) } finally { setDownloading(null) } }}
+                        <button
+                            onClick={handleDownloadPng}
                             disabled={!isValid || downloading !== null}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-[#008751]/10 border border-[#008751]/30 text-[#008751] rounded-xl text-sm font-bold hover:bg-[#008751]/20 transition-all disabled:opacity-40">
-                            {downloading === 'pdf' ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                            PDF Recto+Verso
+                            className="flex w-full sm:w-auto items-center justify-center gap-2 group px-6 py-3.5 bg-gradient-to-r from-[#C9A84C] to-[#A88836] rounded-xl font-semibold text-[#1A1F2C] shadow-lg shadow-[#C9A84C]/20 hover:shadow-[#C9A84C]/40 transition-all hover:-translate-y-1 overflow-hidden relative"
+                        >
+                            {downloading === 'png' ? <Loader2 size={18} className="animate-spin text-[#1A1F2C]" /> : <FileImage size={18} className="text-[#1A1F2C]" />}
+                            <span>Télécharger en Images (HQ)</span>
                         </button>
                     </div>
 
@@ -481,6 +702,28 @@ CREATE POLICY "Admins full access" ON public.business_cards
                             <h2 className="text-sm font-bold text-white flex items-center gap-2">
                                 <Eye size={16} className="text-[#C9A84C]" /> Aperçu en temps réel
                             </h2>
+                        </div>
+
+                        <div className="flex rounded-lg overflow-hidden border border-white/10 mb-4 bg-white/[0.02]">
+                            {TABS.map(tab => {
+                                const isActive = activeTab === tab.key
+                                return (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => { setActiveTab(tab.key); setActiveView('recto') }}
+                                        className="flex-1 py-2 text-xs font-bold transition-colors"
+                                        style={{
+                                            background: isActive ? `${tab.accent}20` : 'transparent',
+                                            color: isActive ? tab.accent : '#6B7280',
+                                        }}>
+                                        {tab.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        
+                        <div className="flex justify-center mb-4">
                             <div className="flex rounded-lg overflow-hidden border border-white/10">
                                 <button type="button" onClick={() => setActiveView('recto')}
                                     className={`px-3 py-1.5 text-xs font-bold transition-colors ${activeView === 'recto' ? 'bg-[#C9A84C]/20 text-[#C9A84C]' : 'text-gray-500 hover:text-gray-300'}`}>
@@ -502,7 +745,10 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                             animate={{ opacity: 1, rotateY: 0 }}
                                             exit={{ opacity: 0, rotateY: 15 }}
                                             transition={{ duration: 0.3 }}>
-                                            <CardRecto data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '', email: '' }} />
+                                            {activeTab === 'rgb' 
+                                                ? <RGBRecto data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '', email: '' }} />
+                                                : <OuidahRecto data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '', email: '' }} />
+                                            }
                                         </motion.div>
                                     ) : (
                                         <motion.div key="verso"
@@ -510,7 +756,10 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                             animate={{ opacity: 1, rotateY: 0 }}
                                             exit={{ opacity: 0, rotateY: -15 }}
                                             transition={{ duration: 0.3 }}>
-                                            <CardVerso data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '+229 01 XX XX XX', email: 'email@exemple.bj' }} />
+                                            {activeTab === 'rgb'
+                                                ? <RGBVerso data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '+229 01 XX XX XX', email: 'email@exemple.bj' }} />
+                                                : <OuidahVerso data={isValid ? form : { prenom: 'PRÉNOM', nom: 'NOM', position: 'Fonction', phone: '+229 01 XX XX XX', email: 'email@exemple.bj' }} />
+                                            }
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -524,8 +773,10 @@ CREATE POLICY "Admins full access" ON public.business_cards
 
                     {/* Refs pour export — off-screen pour permettre le chargement des images */}
                     <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} aria-hidden>
-                        <CardRecto ref={rectoRef} data={form} scale={1} />
-                        <CardVerso ref={versoRef} data={form} scale={1} />
+                        <RGBRecto ref={rgbRectoRef} data={form} scale={1} />
+                        <RGBVerso ref={rgbVersoRef} data={form} scale={1} />
+                        <OuidahRecto ref={ouidahRectoRef} data={form} scale={1} />
+                        <OuidahVerso ref={ouidahVersoRef} data={form} scale={1} />
                     </div>
                 </div>
             </div>
@@ -556,13 +807,23 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                 <div key={card.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors">
                                     {/* Miniature */}
                                     <div style={{ transform: 'scale(0.28)', transformOrigin: 'top left', width: 340 * 0.28, height: 220 * 0.28, flexShrink: 0, pointerEvents: 'none' }}>
-                                        <CardRecto data={{
-                                            prenom: card.employee_prenom,
-                                            nom: card.employee_nom,
-                                            position: card.position,
-                                            phone: card.phone,
-                                            email: card.email,
-                                        }} />
+                                        {activeTab === 'rgb' ? (
+                                            <RGBRecto data={{
+                                                prenom: card.employee_prenom,
+                                                nom: card.employee_nom,
+                                                position: card.position,
+                                                phone: card.phone,
+                                                email: card.email,
+                                            }} />
+                                        ) : (
+                                            <OuidahRecto data={{
+                                                prenom: card.employee_prenom,
+                                                nom: card.employee_nom,
+                                                position: card.position,
+                                                phone: card.phone,
+                                                email: card.email,
+                                            }} />
+                                        )}
                                     </div>
 
                                     {/* Infos */}
@@ -577,7 +838,7 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                             <p className="text-gray-600 text-xs mt-0.5">Non attribuée</p>
                                         )}
                                         <p className="text-gray-600 text-xs mt-0.5">
-                                            {new Date(card.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            {!card.created_at || isNaN(new Date(card.created_at).getTime()) ? '—' : new Date(card.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                                         </p>
                                     </div>
 
@@ -614,11 +875,25 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                             <FileImage size={12} /> V
                                         </button>
                                         <button type="button"
+                                            onClick={() => downloadSaved(card, 'svg')}
+                                            disabled={downloading !== null}
+                                            className="flex items-center gap-1 px-2 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-40"
+                                            title="SVG Vectoriel Recto+Verso">
+                                            <FileType size={12} /> SVG
+                                        </button>
+                                        <button type="button"
                                             onClick={() => downloadSaved(card, 'pdf')}
                                             disabled={downloading !== null}
-                                            className="flex items-center gap-1 px-2 py-1.5 bg-[#008751]/10 border border-[#008751]/20 rounded-lg text-xs text-[#008751] hover:bg-[#008751]/20 transition-colors disabled:opacity-40"
+                                            className="flex items-center gap-1 px-2 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-500 hover:bg-red-500/20 transition-colors disabled:opacity-40"
                                             title="PDF Recto+Verso">
                                             <Download size={12} /> PDF
+                                        </button>
+                                        <button type="button"
+                                            onClick={() => downloadSaved(card, 'docx')}
+                                            disabled={downloading !== null}
+                                            className="flex items-center gap-1 px-2 py-1.5 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-lg text-xs text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-colors disabled:opacity-40"
+                                            title="DOCX Modifiable">
+                                            <FileImage size={12} /> DOCX
                                         </button>
                                         <button type="button"
                                             onClick={() => deleteCard(card.id)}

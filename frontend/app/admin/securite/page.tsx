@@ -23,6 +23,7 @@ interface WafSummary {
     recentLogs: WafLog[]; blockedIps: IpBlock[]
     threatStats: Record<string, number>; topIps: { ip: string; count: number }[]
     totalLogs24h: number; totalBlocked: number
+    error?: string;
 }
 interface CustomRule {
     id: string; name: string; pattern: string; category: string
@@ -69,6 +70,19 @@ const SEV_LABELS: Record<number, { label: string; color: string }> = {
 }
 const PAGE_SIZE = 20
 
+// ── Helpers pour le formatage sécurisé des dates (évite les crashs si timestamps invalides) ──
+const formatTimeSafe = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'N/A'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? 'N/A' : d.toLocaleTimeString('fr-FR')
+}
+
+const formatDateTimeSafe = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'N/A'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? 'N/A' : d.toLocaleString('fr-FR')
+}
+
 // ══════════════════════════════════════════════════════════════
 export default function SecuritePage() {
     const [tab, setTab]           = useState<'overview' | 'logs' | 'blocks' | 'rules' | 'config'>('overview')
@@ -112,14 +126,34 @@ export default function SecuritePage() {
                 fetch('/api/admin/waf/rules'),
                 fetch('/api/admin/waf/config'),
             ])
-            const [s, l, r, c] = await Promise.all([sRes.json(), lRes.json(), rRes.json(), cRes.json()])
-            setSummary(s)
-            setLogs(l.logs || [])
-            setTotalLogs(l.total || 0)
-            setRules(r.rules || [])
-            setConfig(c.config || null)
-            setEditConfig(c.config || {})
-        } catch { /* silencieux */ } finally {
+            const [s, l, r, c] = await Promise.all([
+                sRes.ok ? sRes.json().catch(() => null) : null,
+                lRes.ok ? lRes.json().catch(() => null) : null,
+                rRes.ok ? rRes.json().catch(() => null) : null,
+                cRes.ok ? cRes.json().catch(() => null) : null,
+            ])
+
+            if (s && !s.error) {
+                setSummary(s)
+            } else {
+                setSummary({
+                    recentLogs: [],
+                    blockedIps: [],
+                    threatStats: {},
+                    topIps: [],
+                    totalLogs24h: 0,
+                    totalBlocked: 0,
+                    error: s?.error || 'Erreur lors du chargement des statistiques WAF'
+                })
+            }
+            setLogs(l?.logs || [])
+            setTotalLogs(l?.total || 0)
+            setRules(r?.rules || [])
+            setConfig(c?.config || null)
+            setEditConfig(c?.config || {})
+        } catch (err) {
+            console.error('Error loading security data:', err)
+        } finally {
             setLoading(false); setRefreshing(false)
         }
     }, [logsPage])
@@ -209,6 +243,16 @@ export default function SecuritePage() {
 
     return (
         <div className="space-y-6 p-6">
+            {summary?.error && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                        <h3 className="text-red-400 font-semibold text-sm">Erreur système WAF</h3>
+                        <p className="text-gray-300 text-sm mt-1">{summary.error}</p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
@@ -351,11 +395,13 @@ export default function SecuritePage() {
                             </span>
                             <div className="flex gap-1">
                                 <button onClick={() => setLogsPage(p => Math.max(0, p - 1))} disabled={logsPage === 0}
-                                    className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 disabled:opacity-40 hover:bg-gray-700 transition-colors">
+                                    className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 disabled:opacity-40 hover:bg-gray-700 transition-colors"
+                                    aria-label="Page précédente">
                                     <ChevronLeft className="w-4 h-4" />
                                 </button>
                                 <button onClick={() => setLogsPage(p => p + 1)} disabled={(logsPage + 1) * PAGE_SIZE >= totalLogs}
-                                    className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 disabled:opacity-40 hover:bg-gray-700 transition-colors">
+                                    className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 disabled:opacity-40 hover:bg-gray-700 transition-colors"
+                                    aria-label="Page suivante">
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
@@ -399,7 +445,7 @@ export default function SecuritePage() {
                                             <span className="text-xs text-gray-500">{block.violation_count} violation(s)</span>
                                         </div>
                                         <p className="text-gray-400 text-xs">{block.reason}</p>
-                                        <p className="text-gray-500 text-xs"><Clock className="w-3 h-3 inline mr-1" />{new Date(block.blocked_at).toLocaleString('fr-FR')}</p>
+                                        <p className="text-gray-500 text-xs"><Clock className="w-3 h-3 inline mr-1" />{formatDateTimeSafe(block.blocked_at)}</p>
                                     </div>
                                     <button onClick={() => unblockIp(block.ip)}
                                         className="flex items-center gap-1 text-green-400 hover:text-green-300 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-colors">
@@ -438,7 +484,8 @@ export default function SecuritePage() {
                                 <div>
                                     <label className="text-gray-400 text-xs mb-1 block">Catégorie</label>
                                     <select value={ruleForm.category} onChange={e => setRuleForm(f => ({ ...f, category: e.target.value }))}
-                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                                        aria-label="Catégorie de la règle">
                                         {['custom', 'sql_injection', 'xss', 'rce', 'scanner_detection', 'ssrf', 'lfi', 'rfi'].map(c => (
                                             <option key={c} value={c}>{THREAT_LABELS[c] || c}</option>
                                         ))}
@@ -470,7 +517,8 @@ export default function SecuritePage() {
                                 <div>
                                     <label className="text-gray-400 text-xs mb-1 block">Sévérité</label>
                                     <select value={ruleForm.severity} onChange={e => setRuleForm(f => ({ ...f, severity: parseInt(e.target.value) }))}
-                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                                        aria-label="Sévérité de la règle">
                                         {Object.entries(SEV_LABELS).map(([v, { label }]) => (
                                             <option key={v} value={v}>{label} (+{6 - parseInt(v)} pts)</option>
                                         ))}
@@ -479,7 +527,8 @@ export default function SecuritePage() {
                                 <div>
                                     <label className="text-gray-400 text-xs mb-1 block">Cibles</label>
                                     <select value={ruleForm.targets[0]} onChange={e => setRuleForm(f => ({ ...f, targets: [e.target.value] }))}
-                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                                        aria-label="Cibles de la règle">
                                         {['all', 'url', 'query', 'body', 'userAgent', 'referer', 'cookie'].map(t => (
                                             <option key={t} value={t}>{t}</option>
                                         ))}
@@ -712,7 +761,7 @@ function LogRow({ log, detailed = false }: { log: WafLog; detailed?: boolean }) 
                 <span className="text-gray-500 truncate max-w-xs hidden lg:block">{log.threat_detail}</span>
             )}
             <span className="text-gray-600 whitespace-nowrap shrink-0">
-                {new Date(log.created_at).toLocaleTimeString('fr-FR')}
+                {formatTimeSafe(log.created_at)}
             </span>
         </div>
     )

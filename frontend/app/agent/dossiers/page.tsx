@@ -7,7 +7,8 @@ import {
     FileText, Search, Plus, Clock,
     CheckCircle2, Loader2, Eye,
     X, Calendar, Mail, Phone, StickyNote,
-    ArrowRight, AlertCircle, FileWarning, Send, MessageSquare, User
+    ArrowRight, AlertCircle, FileWarning, Send, MessageSquare, User,
+    Download, Trash2
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -31,6 +32,18 @@ interface Dossier {
     documents_manquants?: string[]
     client_message?: string
     message_thread_id?: string
+    dossier_ref_id?: string
+}
+
+interface DossierDoc {
+    id: string
+    dossier_id: string
+    file_name?: string
+    filename?: string
+    file_url?: string
+    url?: string
+    storage_path?: string
+    sourceTable: string
 }
 
 interface ChatMsg {
@@ -57,10 +70,136 @@ export default function AgentDossiersPage() {
     const [noteText, setNoteText] = useState('')
     const [docRequest, setDocRequest] = useState('')
     const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([])
+    const [dossierDocs, setDossierDocs] = useState<DossierDoc[]>([])
+    const [loadingDocs, setLoadingDocs] = useState(false)
     const [chatInput, setChatInput] = useState('')
     const [chatSending, setChatSending] = useState(false)
     const [emailSending, setEmailSending] = useState(false)
     const chatBottomRef = useRef<HTMLDivElement>(null)
+
+    const deletePhysicalFile = async (url: string, sourceTable: string) => {
+        if (!url) return;
+        try {
+            let bucket = 'client-documents';
+            if (sourceTable === 'dossier_documents') {
+                bucket = 'dossier-documents';
+            } else if (sourceTable === 'documents') {
+                bucket = 'dossier-documents';
+            }
+            
+            let path = '';
+            if (url.includes(`/storage/v1/object/public/${bucket}/`)) {
+                path = decodeURIComponent(url.split(`/storage/v1/object/public/${bucket}/`)[1].split('?')[0]);
+            } else if (url.includes(`/storage/v1/object/sign/${bucket}/`)) {
+                path = decodeURIComponent(url.split(`/storage/v1/object/sign/${bucket}/`)[1].split('?')[0]);
+            } else {
+                for (const b of ['client-documents', 'dossier-documents']) {
+                    if (url.includes(`/${b}/`)) {
+                        bucket = b;
+                        path = decodeURIComponent(url.split(`/${b}/`)[1].split('?')[0]);
+                        break;
+                    }
+                }
+            }
+            
+            if (path) {
+                await supabase.storage.from(bucket).remove([path]);
+            }
+        } catch (e) {
+            console.error('Failed to delete physical file from storage:', e);
+        }
+    };
+
+    const loadDossierDocs = async (trackingId: string, refId?: string) => {
+        setLoadingDocs(true)
+        const ids = [trackingId, refId].filter(Boolean) as string[]
+
+        // Query all three document tables the system uses:
+        // - dossier_documents: mobile app uploads (DossierScreen)
+        // - client_documents: web dashboard uploads (/api/documents/upload)
+        // - documents: legacy fallback table
+        const [r1, r2, r3] = await Promise.all([
+            supabase.from('dossier_documents').select('*').in('dossier_id', ids),
+            supabase.from('client_documents').select('*').in('dossier_id', ids),
+            supabase.from('documents').select('*').in('dossier_id', ids),
+        ])
+        
+        // Tag their source table
+        const docs1 = (r1.data || []).map(d => ({ ...d, sourceTable: 'dossier_documents' }))
+        const docs2 = (r2.data || []).map(d => ({ ...d, sourceTable: 'client_documents' }))
+        const docs3 = (r3.data || []).map(d => ({ ...d, sourceTable: 'documents' }))
+
+        // Merge and deduplicate by id
+        const all = [...docs1, ...docs2, ...docs3]
+        const seen = new Set<string>()
+        const unique = all.filter(d => {
+            if (seen.has(d.id)) return false
+            seen.add(d.id)
+            return true
+        })
+        
+        setDossierDocs(unique)
+        setLoadingDocs(false)
+    }
+
+    const handleDeleteDossierDoc = async (doc: DossierDoc) => {
+        if (!confirm('Supprimer définitivement ce document et son fichier physique ?')) return;
+
+        if (doc.file_url) {
+            await deletePhysicalFile(doc.file_url, doc.sourceTable);
+        }
+
+        const table = doc.sourceTable || 'dossier_documents';
+        const { error } = await supabase.from(table).delete().eq('id', doc.id);
+        
+        if (error) {
+            alert('Erreur lors de la suppression du document : ' + error.message);
+        } else {
+            setDossierDocs(prev => prev.filter(d => d.id !== doc.id));
+        }
+    };
+
+    const handleDeleteDossier = async (dossier: Dossier) => {
+        if (!confirm(`Supprimer définitivement le dossier ${dossier.num_dossier} ainsi que TOUS ses documents physiques associés ? Cette action est irréversible.`)) return;
+
+        try {
+            const ids = [dossier.id, dossier.dossier_ref_id].filter(Boolean) as string[];
+            
+            const [r1, r2, r3] = await Promise.all([
+                supabase.from('dossier_documents').select('file_url').in('dossier_id', ids),
+                supabase.from('client_documents').select('file_url').in('dossier_id', ids),
+                supabase.from('documents').select('file_url').in('dossier_id', ids),
+            ]);
+
+            const allUrls = [
+                ...(r1.data || []).map(d => ({ url: d.file_url, table: 'dossier_documents' })),
+                ...(r2.data || []).map(d => ({ url: d.file_url, table: 'client_documents' })),
+                ...(r3.data || []).map(d => ({ url: d.file_url, table: 'documents' })),
+            ];
+
+            for (const item of allUrls) {
+                if (item.url) {
+                    await deletePhysicalFile(item.url, item.table);
+                }
+            }
+
+            await Promise.all([
+                supabase.from('dossier_documents').delete().in('dossier_id', ids),
+                supabase.from('client_documents').delete().in('dossier_id', ids),
+                supabase.from('documents').delete().in('dossier_id', ids),
+                supabase.from('dossier_tracking').delete().eq('id', dossier.id),
+            ]);
+
+            if (dossier.dossier_ref_id) {
+                await supabase.from('dossiers').delete().eq('id', dossier.dossier_ref_id);
+            }
+
+            setDossiers(prev => prev.filter(d => d.id !== dossier.id));
+            setSelectedDossier(null);
+        } catch (e) {
+            alert(e instanceof Error ? e.message : 'Erreur lors de la suppression complète');
+        }
+    };
 
     const loadChat = async (threadId: string) => {
         const { data } = await supabase
@@ -164,6 +303,18 @@ export default function AgentDossiersPage() {
             setLoading(false)
         }
         fetchDossiers()
+
+        // Realtime: auto-refresh when dossier_tracking changes
+        const channel = supabase
+            .channel('agent-dossiers-realtime')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'dossier_tracking',
+            }, () => { fetchDossiers() })
+            .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
     }, [])
 
     const updateStatus = async (dossierId: string, newStatus: DossierStatus) => {
@@ -180,10 +331,33 @@ export default function AgentDossiersPage() {
 
         setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, statut: newStatus, progression, updated_at } : d))
         
+        // Update dossier_tracking (agent table)
         await supabase
             .from('dossier_tracking')
             .update({ statut: newStatus, progression, updated_at })
             .eq('id', dossierId)
+
+        // ── Sync to dossiers table (mobile table) via dossier_ref_id ──
+        const dossierEntry = dossiers.find(x => x.id === dossierId);
+        const dossierRefId = dossierEntry?.dossier_ref_id;
+        if (dossierRefId) {
+            const mobileStatusMap: Record<DossierStatus, string> = {
+                reception: 'soumis',
+                verification: 'verifie',
+                traitement: 'traitement',
+                validation: 'validation',
+                finalisation: 'validation',
+                termine: 'termine',
+            }
+            await supabase
+                .from('dossiers')
+                .update({
+                    status: mobileStatusMap[newStatus],
+                    progress: progression,
+                    updated_at,
+                })
+                .eq('id', dossierRefId)
+        }
 
         const d = dossiers.find(x => x.id === dossierId);
         if (d && d.client_email) {
@@ -312,6 +486,8 @@ export default function AgentDossiersPage() {
                                                                 setChatMsgs([])
                                                                 setChatInput('')
                                                                 if (d.message_thread_id) loadChat(d.message_thread_id)
+                                                                // Toujours charger les documents en cherchant par les 2 IDs possibles
+                                                                loadDossierDocs(d.id, d.dossier_ref_id)
                                                             }}
                                                         >
                                                             <div className="flex items-start justify-between mb-2">
@@ -322,11 +498,16 @@ export default function AgentDossiersPage() {
                                                                             <FileWarning size={14} className="text-red-400 animate-pulse" />
                                                                         </span>
                                                                     )}
-                                                                    {new Date().getTime() - new Date(d.updated_at || d.created_at).getTime() > 3 * 24 * 60 * 60 * 1000 && d.statut !== 'termine' && (
-                                                                        <span title="Dossier stagnant : Aucune avancée depuis 3 jours">
-                                                                            <AlertCircle size={14} className="text-amber-500" />
-                                                                        </span>
-                                                                    )}
+                                                                    {(() => {
+                                                                        const lastUpdate = d.updated_at || d.created_at;
+                                                                        const lastUpdateTime = lastUpdate && !isNaN(new Date(lastUpdate).getTime()) ? new Date(lastUpdate).getTime() : null;
+                                                                        const isStagnant = lastUpdateTime !== null && (new Date().getTime() - lastUpdateTime > 3 * 24 * 60 * 60 * 1000);
+                                                                        return isStagnant && d.statut !== 'termine' ? (
+                                                                            <span title="Dossier stagnant : Aucune avancée depuis 3 jours">
+                                                                                <AlertCircle size={14} className="text-amber-500" />
+                                                                            </span>
+                                                                        ) : null;
+                                                                    })()}
                                                                     <Eye size={14} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
                                                                 </div>
                                                             </div>
@@ -336,7 +517,9 @@ export default function AgentDossiersPage() {
                                                             <div className="flex items-center justify-between mt-3">
                                                                 <div className="flex items-center gap-1 text-[10px] text-gray-600">
                                                                     <Calendar size={10} />
-                                                                    {new Date(d.created_at).toLocaleDateString('fr-FR')}
+                                                                    {d.created_at && !isNaN(new Date(d.created_at).getTime())
+                                                                        ? new Date(d.created_at).toLocaleDateString('fr-FR')
+                                                                        : '—'}
                                                                 </div>
                                                                 <span className="text-[10px] font-mono text-emerald-500/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
                                                                     {d.progression || 0}%
@@ -405,13 +588,22 @@ export default function AgentDossiersPage() {
                                         {selectedDossier.client_nom} {selectedDossier.client_prenom}
                                     </h2>
                                 </div>
-                                <button
-                                    onClick={() => setSelectedDossier(null)}
-                                    title="Fermer"
-                                    className="p-2 rounded-lg hover:bg-white/5 text-gray-400"
-                                >
-                                    <X size={18} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleDeleteDossier(selectedDossier)}
+                                        title="Supprimer le dossier"
+                                        className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedDossier(null)}
+                                        title="Fermer"
+                                        className="p-2 rounded-lg hover:bg-white/5 text-gray-400"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Info Grid */}
@@ -430,7 +622,11 @@ export default function AgentDossiersPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-400">
                                     <Calendar size={14} className="text-emerald-400" />
-                                    <span>{new Date(selectedDossier.created_at).toLocaleDateString('fr-FR')}</span>
+                                    <span>
+                                        {selectedDossier.created_at && !isNaN(new Date(selectedDossier.created_at).getTime())
+                                            ? new Date(selectedDossier.created_at).toLocaleDateString('fr-FR')
+                                            : '—'}
+                                    </span>
                                 </div>
                             </div>
 
@@ -453,6 +649,53 @@ export default function AgentDossiersPage() {
                                             {col.label}
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            {/* Documents Fournis */}
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <FileText size={12} /> Documents fournis par le client
+                                </p>
+                                <div className="space-y-2">
+                                    {loadingDocs ? (
+                                        <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                                            <Loader2 size={14} className="animate-spin" /> Chargement des documents...
+                                        </div>
+                                    ) : dossierDocs.length > 0 ? (
+                                        dossierDocs.map(doc => (
+                                            <div key={doc.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <FileText size={14} className="text-emerald-400 shrink-0" />
+                                                    <span className="text-gray-300 truncate">{doc.file_name || doc.filename}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {doc.file_url && (
+                                                        <a 
+                                                            href={doc.file_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 rounded transition-colors"
+                                                            title="Télécharger/Voir"
+                                                        >
+                                                            <Download size={14} />
+                                                        </a>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteDossierDoc(doc)}
+                                                        className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                                                        title="Supprimer"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-gray-500 bg-white/5 px-3 py-2 rounded-lg border border-white/5">
+                                            Aucun document fourni pour le moment.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -533,7 +776,11 @@ export default function AgentDossiersPage() {
                                                         : 'bg-blue-500/10 border border-blue-500/15 rounded-bl-sm'
                                                     } text-gray-200`}>
                                                         <p className="whitespace-pre-wrap">{m.content}</p>
-                                                        <p className="text-[9px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                        <p className="text-[9px] text-gray-600 mt-1">
+                                                            {m.created_at && !isNaN(new Date(m.created_at).getTime())
+                                                                ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                                                                : '—'}
+                                                        </p>
                                                     </div>
                                                     {m.role === 'agent' && (
                                                         <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">

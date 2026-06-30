@@ -18,7 +18,7 @@ export async function GET() {
         const { data } = await supabase
             .from('settings')
             .select('key, value')
-            .in('key', ['passeport_show_calculator', 'autres_services_json'])
+            .in('key', ['passeport_show_calculator', 'services_show_calculator', 'autres_services_json'])
 
         const settings: Record<string, string> = {}
         if (data) {

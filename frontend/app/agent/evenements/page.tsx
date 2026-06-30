@@ -57,7 +57,11 @@ const CATEGORIES = [
     { value: 'other', label: 'Autre' },
 ]
 
-const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+const formatDate = (d: string) => {
+    if (!d) return '—'
+    const dateObj = new Date(d)
+    return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 const formatPrice = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
 const inputClass = 'w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-[#008751]/50 transition-all'
@@ -443,7 +447,7 @@ export default function AgentEventsPage() {
 
     const filtered = events.filter(e => !search || e.title.toLowerCase().includes(search.toLowerCase()))
     const published = events.filter(e => e.status === 'published').length
-    const upcoming = events.filter(e => new Date(e.start_date) > new Date()).length
+    const upcoming = events.filter(e => e.start_date && !isNaN(new Date(e.start_date).getTime()) && new Date(e.start_date) > new Date()).length
 
     return (
         <div className="space-y-6">

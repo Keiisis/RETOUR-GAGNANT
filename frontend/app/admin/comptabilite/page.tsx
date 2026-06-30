@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import * as ExcelJS from 'exceljs'
-import { saveAs } from 'file-saver'
 import {
     Wallet, TrendingDown, ArrowUpRight, ArrowDownRight, Download,
     BarChart3, FileText, RefreshCw, Users, ShoppingBag,
@@ -11,16 +9,57 @@ import {
     Calculator, Landmark, Receipt, ChevronLeft, ChevronRight,
     Zap, PieChart, CheckCircle2, Clock, TrendingUp, X,
     Shield, Mail, Phone, MapPin, Hash, Package,
-    EyeOff, Eye, ExternalLink
+    EyeOff, Eye, ExternalLink, Banknote, CreditCard, Bell
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { exportToExcelMultiSheet } from '@/lib/exportExcel'
+import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
+import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     AreaChart, Area, BarChart, Bar, Cell,
 } from 'recharts'
 
 // ─── Types ──────────────────────────────────────────────────────────
-type Period = 'ce_mois' | '3_mois' | '6_mois' | 'annee' | 'tous'
+type Period = string
+const MONTH_REGEX = /^\d{4}-\d{2}$/
+const isMonth = (p: Period) => MONTH_REGEX.test(p)
+function currentMonthKey(): string {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+function shiftMonth(key: string, delta: number): string {
+    const [y, m] = key.split('-').map(Number)
+    const d = new Date(y, m - 1 + delta, 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+function monthLabel(key: string): string {
+    const [y, m] = key.split('-').map(Number)
+    const s = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    return s.charAt(0).toUpperCase() + s.slice(1)
+}
+function periodLabel(period: Period): string {
+    if (period === 'tous') return 'Global (toutes périodes)'
+    if (period === '3_mois') return '3 derniers mois'
+    if (period === '6_mois') return '6 derniers mois'
+    if (period === 'annee')  return 'Année en cours'
+    if (isMonth(period)) return monthLabel(period)
+    return period
+}
+function periodSlug(period: Period): string {
+    if (period === 'tous') return 'Global'
+    if (isMonth(period)) return period
+    return period
+}
+function last12Months(): string[] {
+    const out: string[] = []
+    const d = new Date()
+    for (let i = 0; i < 12; i++) {
+        const ref = new Date(d.getFullYear(), d.getMonth() - i, 1)
+        out.push(`${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}`)
+    }
+    return out
+}
 
 interface AgentRow {
     id: string
@@ -87,8 +126,11 @@ interface DepRow {
 function getPeriodRange(p: Period): { start: Date; end: Date } {
     const now = new Date()
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    if (isMonth(p)) {
+        const [y, m] = p.split('-').map(Number)
+        return { start: new Date(y, m - 1, 1), end: new Date(y, m, 0, 23, 59, 59, 999) }
+    }
     switch (p) {
-        case 'ce_mois': return { start: new Date(now.getFullYear(), now.getMonth(), 1), end }
         case '3_mois':  return { start: new Date(now.getTime() - 90  * 864e5), end }
         case '6_mois':  return { start: new Date(now.getTime() - 180 * 864e5), end }
         case 'annee':   return { start: new Date(now.getFullYear(), 0, 1), end }
@@ -98,7 +140,10 @@ function getPeriodRange(p: Period): { start: Date; end: Date } {
 
 function getPrevPeriodRange(p: Period): { start: Date; end: Date } {
     const now = new Date()
-    if (p === 'ce_mois') return { start: new Date(now.getFullYear(), now.getMonth() - 1, 1), end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59) }
+    if (isMonth(p)) {
+        const [y, m] = p.split('-').map(Number)
+        return { start: new Date(y, m - 2, 1), end: new Date(y, m - 1, 0, 23, 59, 59, 999) }
+    }
     if (p === '3_mois')  return { start: new Date(now.getTime() - 180 * 864e5), end: new Date(now.getTime() - 90  * 864e5) }
     if (p === '6_mois')  return { start: new Date(now.getTime() - 360 * 864e5), end: new Date(now.getTime() - 180 * 864e5) }
     if (p === 'annee')   return { start: new Date(now.getFullYear() - 1, 0, 1), end: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59) }
@@ -112,14 +157,23 @@ function calcTrend(curr: number, prev: number) {
     return ((curr - prev) / prev * 100 >= 0 ? '+' : '') + ((curr - prev) / prev * 100).toFixed(1)
 }
 
-const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'GBP']
+const VALID_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'GBP', 'HTG']
 const fmt = (val: number, currency = 'XOF') => {
     const cur = VALID_CURRENCIES.includes(currency) ? currency : 'XOF'
     return new Intl.NumberFormat('fr-BJ', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(val)
 }
 
-const fmtDate = (str: string) =>
-    new Date(str).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
+const fmtDate = (str: string | null | undefined) => {
+    if (!str) return '—'
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
+}
+
+const formatShortDate = (str: string | null | undefined) => {
+    if (!str) return '—'
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
 
 // ─── Status maps ────────────────────────────────────────────────────
 const DOC_STATUS: Record<string, { label: string; cls: string }> = {
@@ -310,16 +364,18 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
 
 // ─── Main ────────────────────────────────────────────────────────────
 export default function AdminComptabilitePage() {
-    const [period, setPeriod]       = useState<Period>('tous')
+    const [period, setPeriod]       = useState<Period>(() => currentMonthKey())
     const [loading, setLoading]     = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [exporting, setExporting] = useState(false)
+    const [fecExporting, setFecExporting] = useState(false)
 
     const [agents, setAgents]       = useState<AgentRow[]>([])
     const [docs, setDocs]           = useState<DocRow[]>([])
     const [orders, setOrders]       = useState<OrderRow[]>([])
     const [depenses, setDepenses]   = useState<DepRow[]>([])
     const [commissionRate, setCommissionRate] = useState(0.10)
+    const [clotures, setClotures]   = useState<ClotureRow[]>([])
 
     const [journalTab, setJournalTab]   = useState<'docs' | 'boutique' | 'depenses'>('docs')
     const [searchQ, setSearchQ]         = useState('')
@@ -329,12 +385,21 @@ export default function AdminComptabilitePage() {
     const [showAllAgents, setShowAllAgents] = useState(false)
     const [detailDoc, setDetailDoc]     = useState<DocRow | null>(null)
     const [alertFilter, setAlertFilter] = useState<string | null>(null)
+    // Paiements manuels (virement/espèces) — map pour UI + tableau complet pour exports
+    const [paiements, setPaiements] = useState<Record<string, number>>({})
+    const [paiementsList, setPaiementsList] = useState<Array<{ id: string; document_id: string; type: string; montant: number; date_paiement: string; reference?: string | null; notes?: string | null; agent_id?: string }>>([])
+    const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [paymentDoc, setPaymentDoc] = useState<DocRow | null>(null)
+    const [newPayment, setNewPayment] = useState({ type: 'virement', montant: '', reference: '', notes: '', date: new Date().toISOString().split('T')[0] })
+    const [savingPayment, setSavingPayment] = useState(false)
     const ITEMS = 15
 
     // ── Fetch ─────────────────────────────────────────────────────
     const fetchAll = useCallback(async () => {
         setRefreshing(true)
-        const [usersRes, erpRes] = await Promise.all([
+        // Taux de change réels (table currencies) AVANT calcul des KPI normalisés XOF
+        const [, usersRes, erpRes] = await Promise.all([
+            loadExchangeRates(),
             fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }),
             fetch('/api/admin/comptabilite').then(r => r.ok ? r.json() : { docs: [], orders: [], depenses: [], commissionRate: 0.10 }),
         ])
@@ -348,6 +413,16 @@ export default function AdminComptabilitePage() {
         if (typeof erpRes.commissionRate === 'number' && !isNaN(erpRes.commissionRate)) {
             setCommissionRate(erpRes.commissionRate)
         }
+        if (erpRes.paiements) {
+            const list = erpRes.paiements as Array<{ id: string; document_id: string; type: string; montant: number; date_paiement: string; reference?: string | null; notes?: string | null; agent_id?: string }>
+            setPaiementsList(list)
+            const map: Record<string, number> = {}
+            list.forEach(p => {
+                map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
+            })
+            setPaiements(map)
+        }
+        setClotures(erpRes.clotures || [])
         setLoading(false)
         setRefreshing(false)
     }, [])
@@ -361,6 +436,7 @@ export default function AdminComptabilitePage() {
     const pDocs    = useMemo(() => docs.filter(d => inRange(d.created_at, start, end)), [docs, start, end])
     const pOrders  = useMemo(() => orders.filter(o => inRange(o.created_at, start, end)), [orders, start, end])
     const pDeps    = useMemo(() => depenses.filter(d => inRange(d.date_depense, start, end)), [depenses, start, end])
+    const pPaiements = useMemo(() => paiementsList.filter(p => inRange(p.date_paiement, start, end)), [paiementsList, start, end])
     const pvDocs   = useMemo(() => docs.filter(d => inRange(d.created_at, pS, pE)), [docs, pS, pE])
     const pvOrders = useMemo(() => orders.filter(o => inRange(o.created_at, pS, pE)), [orders, pS, pE])
     const pvDeps   = useMemo(() => depenses.filter(d => inRange(d.date_depense, pS, pE)), [depenses, pS, pE])
@@ -369,16 +445,19 @@ export default function AdminComptabilitePage() {
     const kpis = useMemo(() => {
         const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[]) => {
             const invoices = dList.filter(d => d.type === 'facture')
+            // Tous les agrégats sont normalisés en XOF (devise de référence).
+            // Sans ça, une facture en EUR (ex. recherche-ancestrale 250 €) était
+            // additionnée brute au XOF → KPI faux. cf. lib/currency-convert.ts
             // Commission calculée sur le montant NET (total - remise)
             const payees = invoices.filter(d => d.status === 'paye')
-            const encaisseFactu = payees.reduce((a, d) => a + (d.total - (Number(d.remise) || 0)), 0)
-            const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + d.total, 0)
-            const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + o.amount, 0)
+            const encaisseFactu = payees.reduce((a, d) => a + toXOF(d.total - (Number(d.remise) || 0), d.currency), 0)
+            const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + toXOF(o.amount, o.currency), 0)
             const totalEncaisse = encaisseFactu + boutique
             const commission    = Math.round(encaisseFactu * commissionRate)
-            const totalDeps     = deps.reduce((a, d) => a + Number(d.montant), 0)
-            const caEmis        = invoices.reduce((a, d) => a + d.total, 0)
-            const totalTVA      = invoices.reduce((a, d) => a + (Number(d.total_tva) || 0), 0)
+            const totalDeps     = deps.reduce((a, d) => a + Number(d.montant), 0)  // dépenses déjà en XOF
+            const caEmis        = invoices.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            const totalTVA      = invoices.reduce((a, d) => a + toXOF(Number(d.total_tva) || 0, d.currency), 0)
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
             const nbFactPaye    = payees.length
             const nbFactTotal   = invoices.length
@@ -399,6 +478,30 @@ export default function AdminComptabilitePage() {
             }
         }
     }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end])
+
+    // ── Balance âgée des créances (aged receivables) — toutes périodes ─
+    // Feature ERP type-Odoo : qui doit combien, et depuis combien de temps.
+    // Montants normalisés XOF. Buckets : 0-30 / 31-60 / 61-90 / 90+ jours.
+    const agedBalance = useMemo(() => {
+        const CLOSED = ['paye', 'paid', 'completed', 'annule', 'refuse', 'brouillon']
+        const now = Date.now()
+        type Bk = 'b0' | 'b30' | 'b60' | 'b90'
+        const buckets = { b0: 0, b30: 0, b60: 0, b90: 0, total: 0 }
+        const byClient = new Map<string, { client: string; b0: number; b30: number; b60: number; b90: number; total: number; oldest: number }>()
+        docs.filter(d => d.type === 'facture' && !CLOSED.includes((d.status || '').toLowerCase())).forEach(d => {
+            const gross = toXOF(d.total - (Number(d.remise) || 0), d.currency)
+            const due = Math.max(0, gross - (paiements[d.id] || 0))
+            if (due <= 0) return
+            const ageDays = Math.floor((now - new Date(d.created_at).getTime()) / 864e5)
+            const bk: Bk = ageDays <= 30 ? 'b0' : ageDays <= 60 ? 'b30' : ageDays <= 90 ? 'b60' : 'b90'
+            buckets[bk] += due; buckets.total += due
+            const key = `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() || '—'
+            const row = byClient.get(key) || { client: key, b0: 0, b30: 0, b60: 0, b90: 0, total: 0, oldest: 0 }
+            row[bk] += due; row.total += due; row.oldest = Math.max(row.oldest, ageDays)
+            byClient.set(key, row)
+        })
+        return { buckets, rows: Array.from(byClient.values()).sort((a, b) => b.total - a.total) }
+    }, [docs, paiements])
 
     // ── Score santé financière ────────────────────────────────────
     const scoreSante = useMemo(() => {
@@ -490,17 +593,17 @@ export default function AdminComptabilitePage() {
     const areaData = useMemo(() => {
         const days: Record<string, { factu: number; boutique: number; depenses: number }> = {}
         for (const d of pDocs.filter(d => d.status === 'paye' && d.type === 'facture')) {
-            const k = new Date(d.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+            const k = formatShortDate(d.created_at)
             if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k].factu += d.total
         }
         for (const o of pOrders.filter(o => o.payment_status === 'completed')) {
-            const k = new Date(o.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+            const k = formatShortDate(o.created_at)
             if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k].boutique += o.amount
         }
         for (const d of pDeps) {
-            const k = new Date(d.date_depense).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+            const k = formatShortDate(d.date_depense)
             if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k].depenses += Number(d.montant)
         }
@@ -552,6 +655,35 @@ export default function AdminComptabilitePage() {
     const pgOrders   = jOrders.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
     const pgDeps     = jDeps.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
 
+    const handleAddPayment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!paymentDoc) return
+        setSavingPayment(true)
+        try {
+            const res = await fetch('/api/admin/paiements-manuels', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    document_id: paymentDoc.id,
+                    agent_id: paymentDoc.agent_id,
+                    type: newPayment.type,
+                    montant: Number(newPayment.montant),
+                    date_paiement: newPayment.date,
+                    reference: newPayment.reference || null,
+                    notes: newPayment.notes || null,
+                })
+            })
+            if (res.ok) {
+                setShowPaymentModal(false)
+                setPaymentDoc(null)
+                setNewPayment({ type: 'virement', montant: '', reference: '', notes: '', date: new Date().toISOString().split('T')[0] })
+                await fetchAll()
+            }
+        } finally {
+            setSavingPayment(false)
+        }
+    }
+
     const handleAlertAction = (action?: string) => {
         if (!action) return
         if (action === 'retard' || action === 'agents') { setJournalTab('docs'); setAlertFilter(action === 'retard' ? 'retard' : null); setJournalPage(1) }
@@ -559,145 +691,429 @@ export default function AdminComptabilitePage() {
         document.getElementById('journal-section')?.scrollIntoView({ behavior: 'smooth' })
     }
 
-    // ── Export Excel multi-feuilles ───────────────────────────────
+    // ── Export FEC / SYSCOHADA (écritures partie double pour expert-comptable) ──
+    const handleFecExport = async () => {
+        setFecExporting(true)
+        try {
+            const qs = isMonth(period) ? `periode=${period}` : `annee=${new Date().getFullYear()}`
+            const res = await fetch(`/api/admin/comptabilite/fec?${qs}`, { credentials: 'same-origin' })
+            if (!res.ok) {
+                const j = await res.json().catch(() => ({}))
+                throw new Error(j.error || `Erreur ${res.status}`)
+            }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `RGB_FEC_${isMonth(period) ? period : new Date().getFullYear()}.txt`
+            document.body.appendChild(a); a.click(); a.remove()
+            setTimeout(() => URL.revokeObjectURL(url), 1000)
+        } catch (e) {
+            alert('Échec export FEC : ' + (e instanceof Error ? e.message : 'erreur'))
+        } finally {
+            setFecExporting(false)
+        }
+    }
+
+    // ── Export Excel multi-feuilles (LOT 1 : HT/TVA/TTC, Journal, entête légal, totaux formule) ──
     const handleMasterExport = async () => {
         setExporting(true)
         try {
-            const wb = new ExcelJS.Workbook()
-            wb.creator = 'Retour Gagnant ERP Admin'
-            wb.created = new Date()
+            const pLabel = periodLabel(period)
+            const subtitle = `Vue Admin (tous agents consolidés)   —   Période : ${pLabel}   —   Commission agents : ${(commissionRate * 100).toFixed(0)}%   —   Document officiel confidentiel`
+            const agentMap = new Map<string, string>()
+            agents.forEach(a => agentMap.set(a.id, a.full_name || a.email || a.id.slice(0, 8)))
 
-            const GREEN  = 'FF008751'
-            const YELLOW = 'FFFCD116'
-            const DARK   = 'FF0a1628'
-            const WHITE  = 'FFFFFFFF'
-            const RED    = 'FFE8112D'
-
-            const HDR_STYLE = {
-                font: { bold: true, color: { argb: WHITE }, name: 'Arial', size: 10 },
-                fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: GREEN } },
-                alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-                border: { bottom: { style: 'thin' as const, color: { argb: GREEN } } }
-            }
-            const addHeader = (ws: ExcelJS.Worksheet, title: string, cols: number) => {
-                ws.mergeCells(`A1:${String.fromCharCode(64 + cols)}1`)
-                const t = ws.getCell('A1')
-                t.value = `RETOUR GAGNANT BENIN — ${title}`
-                t.font = { bold: true, size: 14, color: { argb: WHITE }, name: 'Arial' }
-                t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK } }
-                t.alignment = { horizontal: 'center', vertical: 'middle' }
-                ws.getRow(1).height = 32
-                ws.mergeCells(`A2:${String.fromCharCode(64 + cols)}2`)
-                const s = ws.getCell('A2')
-                s.value = `Periode: ${start.toLocaleDateString('fr-FR')} -> ${end.toLocaleDateString('fr-FR')} | Commission: ${(commissionRate * 100).toFixed(0)}% | Genere le ${new Date().toLocaleDateString('fr-FR')}`
-                s.font = { italic: true, size: 9, color: { argb: 'FF888888' } }
-                s.alignment = { horizontal: 'center' }
-                ws.getRow(2).height = 16
-            }
-            const setHeaderRow = (ws: ExcelJS.Worksheet, rowNum: number, values: string[]) => {
-                const row = ws.getRow(rowNum)
-                row.values = ['', ...values]
-                row.height = 22
-                row.eachCell((cell, col) => { if (col > 1) Object.assign(cell, HDR_STYLE) })
-            }
-            const stripe = (row: ExcelJS.Row, i: number) => {
-                if (i % 2 === 0) row.eachCell(cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAF8' } } })
+            const PAYMENT_LABELS: Record<string, string> = {
+                virement: 'Virement bancaire', especes: 'Espèces', cheque: 'Chèque',
+                mobile_money: 'Mobile Money', carte: 'Carte bancaire', autre: 'Autre'
             }
 
-            // Feuille 1 — KPI global
-            const ws1 = wb.addWorksheet('Resume Global')
-            ws1.columns = [{ width: 2 }, { width: 42 }, { width: 24 }, { width: 34 }]
-            addHeader(ws1, 'RAPPORT COMPTABLE GLOBAL', 3)
-            setHeaderRow(ws1, 3, ['INDICATEUR', 'MONTANT (FCFA)', 'DETAIL'])
-            const kpiRows: [string, number, string][] = [
-                ["CA Emis (Factures)", kpis.caEmis, `${pDocs.filter(d => d.type === 'facture').length} factures emises`],
-                ['Encaisse - Facturation (net remises)', kpis.encaisseFactu, `${kpis.nbFactPaye} factures payees`],
-                ['Revenus Boutique', kpis.boutique, `${pOrders.filter(o => o.payment_status === 'completed').length} commandes`],
-                ['TOTAL ENCAISSE', kpis.totalEncaisse, 'Facturation + Boutique'],
-                ['TVA Collectee', kpis.totalTVA, 'Sur factures payees'],
-                ['Factures En Attente', kpis.enAttente, `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours`],
-                [`Commission Agents (${(commissionRate * 100).toFixed(0)}%)`, kpis.commission, 'Sur encaissements nets'],
-                ['Depenses Totales', kpis.totalDeps, `${pDeps.length} depenses`],
-                ['BENEFICE NET', kpis.benefice, 'Encaisse - Commissions - Depenses'],
-                ['Projection 30 jours', Math.round(kpis.proj30), 'Basee sur rythme actuel'],
-                ['Score Sante Financiere', scoreSante.score, `${scoreSante.label} — ${scoreSante.recommandation}`],
-            ]
-            kpiRows.forEach(([label, montant, detail], i) => {
-                const r = ws1.addRow(['', label, montant, detail])
-                r.getCell(3).numFmt = '#,##0'
-                if (label.startsWith('TOTAL') || label.startsWith('BENEFICE')) {
-                    r.getCell(2).font = { bold: true, size: 11 }
-                    r.getCell(3).font = { bold: true, size: 11, color: { argb: montant < 0 ? RED : GREEN } }
+            // Enrichissement des docs (HT/TVA reconstitués depuis items si colonnes vides)
+            const enrichDoc = (d: DocRow) => {
+                let st = Number(d.sous_total) || 0
+                let tv = Number(d.total_tva) || 0
+                if ((!st || !tv) && Array.isArray(d.items)) {
+                    st = d.items.reduce((a, it) => a + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+                    tv = d.items.reduce((a, it) => a + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0) * ((Number(it.tva) || 0) / 100), 0)
                 }
-                stripe(r, i)
-            })
+                return { ...d, _ht: st, _tva: tv, _remise: Number(d.remise) || 0, _ttc: Number(d.total) || 0 }
+            }
+            const docsEnriched = pDocs.map(enrichDoc)
 
-            // Feuille 2 — Performance Agents
-            const ws2 = wb.addWorksheet('Performance Agents')
-            ws2.columns = [{ width: 2 }, { width: 26 }, { width: 30 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 10 }, { width: 12 }, { width: 12 }, { width: 18 }]
-            addHeader(ws2, 'PERFORMANCE PAR AGENT', 11)
-            setHeaderRow(ws2, 3, ['Agent', 'Email', 'CA Emis', 'Encaisse Net', `Commission ${(commissionRate * 100).toFixed(0)}%`, 'TVA Collectee', 'Depenses', 'Benefice Net', 'Devis', 'Factures', 'Conv%'])
-            sortedAgents.forEach((s, i) => {
-                const conv = s.nbFactures > 0 ? ((s.nbPayees / s.nbFactures) * 100).toFixed(1) + '%' : '0%'
-                const r = ws2.addRow(['', s.agent.full_name || '—', s.agent.email || '—', s.caEmis, s.encaisse, s.commission, s.tvaCollectee, s.depenses, s.benefice, s.nbDevis, s.nbFactures, conv])
-                ;[4, 5, 6, 7, 8, 9].forEach(col => { r.getCell(col).numFmt = '#,##0' })
-                if (s.benefice < 0) r.getCell(9).font = { color: { argb: RED }, bold: true }
-                if (i === 0) r.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF9E6' } } })
-                else stripe(r, i)
-            })
+            // ── 1. Synthèse ───────────────────────────────────────
+            const resumeSheet = {
+                sheetName: 'Synthèse',
+                title: 'SYNTHÈSE COMPTABLE MENSUELLE',
+                subtitle,
+                legalHeader: true,
+                columns: [
+                    { header: 'Indicateur', key: 'label', width: 44 },
+                    { header: 'Montant (FCFA)', key: 'value', width: 22, type: 'currency' as const },
+                    { header: 'Détail', key: 'detail', width: 42 },
+                ],
+                data: [
+                    { label: "CA émis (factures)", value: kpis.caEmis, detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
+                    { label: "Encaissé - Facturation (net remises)", value: kpis.encaisseFactu, detail: `${kpis.nbFactPaye} factures payées` },
+                    { label: "Paiements manuels (virement/espèces)", value: pPaiements.reduce((a, p) => a + Number(p.montant || 0), 0), detail: `${pPaiements.length} paiements` },
+                    { label: "Revenus boutique", value: kpis.boutique, detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes` },
+                    { label: "TOTAL ENCAISSÉ", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
+                    { label: "TVA collectée", value: kpis.totalTVA, detail: 'Sur factures émises' },
+                    { label: "Factures en attente", value: kpis.enAttente, detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours` },
+                    { label: `Commission agents (${(commissionRate * 100).toFixed(0)}%)`, value: kpis.commission, detail: 'Sur encaissements nets' },
+                    { label: "Dépenses totales", value: kpis.totalDeps, detail: `${pDeps.length} dépenses` },
+                    { label: "BÉNÉFICE NET", value: kpis.benefice, detail: 'Encaissé - Commissions - Dépenses' },
+                    { label: "Projection 30 jours", value: Math.round(kpis.proj30), detail: 'Basée sur rythme actuel' },
+                    { label: "Score santé financière", value: scoreSante.score, detail: `${scoreSante.label} — ${scoreSante.recommandation}` },
+                ],
+            }
 
-            // Feuille 3 — Factures & Devis détaillés
-            const ws3 = wb.addWorksheet('Factures et Devis')
-            ws3.columns = [{ width: 2 }, { width: 20 }, { width: 10 }, { width: 28 }, { width: 26 }, { width: 18 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 14 }]
-            addHeader(ws3, 'JOURNAL FACTURES & DEVIS', 12)
-            setHeaderRow(ws3, 3, ['N Document', 'Type', 'Client', 'Email', 'Telephone', 'Sous-total HT', 'TVA', 'Remise', 'Total TTC', 'Statut', 'Agent', 'Signe', 'Date'])
-            pDocs.forEach((d, i) => {
-                const ag = agents.find(a => a.id === d.agent_id)
-                const r = ws3.addRow([
-                    '', d.numero, d.type === 'facture' ? 'Facture' : 'Devis',
-                    `${d.client_nom} ${d.client_prenom || ''}`.trim(),
-                    d.client_email || '—', d.client_phone || '—',
-                    Number(d.sous_total) || 0, Number(d.total_tva) || 0, Number(d.remise) || 0, d.total,
-                    DOC_STATUS[d.status]?.label || d.status,
-                    ag?.full_name || ag?.email || '—',
-                    d.signed_at ? 'Oui' : 'Non',
-                    new Date(d.created_at)
-                ])
-                ;[7, 8, 9, 10].forEach(col => r.getCell(col).numFmt = '#,##0')
-                r.getCell(14).numFmt = 'dd/mm/yyyy'
-                if (d.status === 'paye') r.getCell(11).font = { color: { argb: GREEN }, bold: true }
-                if (d.signed_at) r.getCell(13).font = { color: { argb: 'FF9333ea' }, bold: true }
-                stripe(r, i)
-            })
+            // ── 2. Journal comptable consolidé ────────────────────
+            type JRow = { date: Date; piece: string; agent: string; libelle: string; mode: string; debit: number; credit: number }
+            const journalRows: JRow[] = []
 
-            // Feuille 4 — Commandes Boutique
-            const ws4 = wb.addWorksheet('Boutique Commandes')
-            ws4.columns = [{ width: 2 }, { width: 26 }, { width: 28 }, { width: 34 }, { width: 16 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
-            addHeader(ws4, 'COMMANDES BOUTIQUE', 8)
-            setHeaderRow(ws4, 3, ['Client', 'Email', 'Produit', 'Montant', 'Devise', 'Methode', 'Statut', 'Date'])
-            pOrders.forEach((o, i) => {
-                const r = ws4.addRow(['', o.customer_name || '—', o.customer_email || '—', o.product_title || '—', o.amount, o.currency || 'XOF', o.payment_method || '—', ORDER_STATUS[o.payment_status]?.label || o.payment_status, new Date(o.created_at)])
-                r.getCell(5).numFmt = '#,##0'; r.getCell(9).numFmt = 'dd/mm/yyyy'
-                if (o.payment_status === 'completed') r.getCell(8).font = { color: { argb: GREEN }, bold: true }
-                stripe(r, i)
+            pDocs.filter(d => d.type === 'facture').forEach(d => {
+                journalRows.push({
+                    date: new Date(d.created_at),
+                    piece: d.numero || '—',
+                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
+                    libelle: `Facturation — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                    mode: DOC_STATUS[d.status]?.label || d.status,
+                    debit: 0,
+                    credit: Number(d.total || 0),
+                })
             })
-
-            // Feuille 5 — Dépenses
-            const ws5 = wb.addWorksheet('Depenses')
-            ws5.columns = [{ width: 2 }, { width: 36 }, { width: 22 }, { width: 20 }, { width: 14 }, { width: 28 }, { width: 34 }]
-            addHeader(ws5, 'JOURNAL DES DEPENSES', 6)
-            setHeaderRow(ws5, 3, ['Titre', 'Categorie', 'Montant', 'Date', 'Agent', 'Notes'])
-            pDeps.forEach((d, i) => {
-                const ag = agents.find(a => a.id === d.agent_id)
-                const r = ws5.addRow(['', d.titre, d.categorie, Number(d.montant), new Date(d.date_depense), ag?.full_name || ag?.email || '—', d.notes || '—'])
-                r.getCell(4).numFmt = '#,##0'; r.getCell(5).numFmt = 'dd/mm/yyyy'
-                r.getCell(4).font = { color: { argb: RED } }
-                stripe(r, i)
+            pPaiements.forEach(p => {
+                const d = docs.find(x => x.id === p.document_id)
+                const isExterne = !d && /^\[EXTERNE\]/i.test(p.notes || '')
+                const libelleExterne = isExterne ? (p.notes || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() : ''
+                journalRows.push({
+                    date: new Date(p.date_paiement),
+                    piece: d?.numero || (isExterne ? 'EXT' : '—'),
+                    agent: p.agent_id ? (agentMap.get(p.agent_id) || '—') : '—',
+                    libelle: d
+                        ? `Encaissement — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim()
+                        : isExterne ? `Encaissement externe — ${libelleExterne}` : 'Encaissement',
+                    mode: PAYMENT_LABELS[p.type] || p.type,
+                    debit: Number(p.montant || 0),
+                    credit: 0,
+                })
             })
+            pOrders.filter(o => o.payment_status === 'completed').forEach(o => {
+                journalRows.push({
+                    date: new Date(o.created_at),
+                    piece: o.id.slice(0, 8).toUpperCase(),
+                    agent: '—',
+                    libelle: `Commande boutique — ${o.product_title || ''}`.trim(),
+                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    debit: Number(o.amount || 0),
+                    credit: 0,
+                })
+            })
+            pDeps.forEach(e => {
+                journalRows.push({
+                    date: new Date(e.date_depense),
+                    piece: '—',
+                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
+                    libelle: `Dépense — ${e.titre || ''} (${e.categorie || ''})`,
+                    mode: '—',
+                    debit: Number(e.montant || 0),
+                    credit: 0,
+                })
+            })
+            journalRows.sort((a, b) => a.date.getTime() - b.date.getTime())
 
-            const buf = await wb.xlsx.writeBuffer()
-            saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-                `RG_Comptabilite_${new Date().toISOString().slice(0, 10)}.xlsx`)
+            const journalSheet = {
+                sheetName: 'Journal',
+                title: 'JOURNAL COMPTABLE CONSOLIDÉ',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'N° Pièce', key: 'piece', width: 18 },
+                    { header: 'Agent', key: 'agent', width: 22 },
+                    { header: 'Libellé', key: 'libelle', width: 44 },
+                    { header: 'Mode / Statut', key: 'mode', width: 20, type: 'status' as const },
+                    { header: 'Débit (FCFA)', key: 'debit', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Crédit (FCFA)', key: 'credit', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                ],
+                data: journalRows,
+            }
+
+            // ── 3. Performance par agent ──────────────────────────
+            const perAgentSheet = {
+                sheetName: 'Par Agent',
+                title: 'PERFORMANCE PAR AGENT',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Agent', key: 'name', width: 26 },
+                    { header: 'Email', key: 'email', width: 30 },
+                    { header: 'CA émis', key: 'caEmis', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Encaissé net', key: 'encaisse', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: `Commission ${(commissionRate * 100).toFixed(0)}%`, key: 'commission', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'TVA collectée', key: 'tva', width: 16, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Dépenses', key: 'depenses', width: 16, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Bénéfice net', key: 'benefice', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Devis', key: 'nbDevis', width: 10, type: 'number' as const, totalFormula: 'sum' as const },
+                    { header: 'Factures', key: 'nbFactures', width: 10, type: 'number' as const, totalFormula: 'sum' as const },
+                    { header: 'Conv. %', key: 'conv', width: 12 },
+                ],
+                data: sortedAgents.map(s => ({
+                    name: s.agent.full_name || '—',
+                    email: s.agent.email || '—',
+                    caEmis: s.caEmis,
+                    encaisse: s.encaisse,
+                    commission: s.commission,
+                    tva: s.tvaCollectee,
+                    depenses: s.depenses,
+                    benefice: s.benefice,
+                    nbDevis: s.nbDevis,
+                    nbFactures: s.nbFactures,
+                    conv: s.nbFactures > 0 ? ((s.nbPayees / s.nbFactures) * 100).toFixed(1) + '%' : '0%',
+                })),
+            }
+
+            // ── 4. Documents HT/TVA/TTC (super-headers) ───────────
+            const docsSheet = {
+                sheetName: 'Documents',
+                title: 'JOURNAL DES FACTURES & DEVIS (HT / TVA / TTC)',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'N° Document', key: 'numero', width: 18, group: 'Document' },
+                    { header: 'Type', key: 'type', width: 10, group: 'Document' },
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const, group: 'Document' },
+                    { header: 'Agent', key: 'agent', width: 22, group: 'Document' },
+                    { header: 'Client', key: 'client', width: 28, group: 'Client' },
+                    { header: 'Email', key: 'email', width: 26, group: 'Client' },
+                    { header: 'Téléphone', key: 'phone', width: 16, group: 'Client' },
+                    { header: 'Sous-total HT', key: 'ht', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
+                    { header: 'TVA', key: 'tva', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
+                    { header: 'Remise', key: 'remise', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
+                    { header: 'Total TTC', key: 'ttc', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
+                    { header: 'Statut', key: 'status', width: 14, type: 'status' as const, group: 'État' },
+                    { header: 'Signé', key: 'signe', width: 10, group: 'État' },
+                ],
+                data: docsEnriched.map(d => ({
+                    numero: d.numero,
+                    type: d.type === 'facture' ? 'Facture' : 'Devis',
+                    date: new Date(d.created_at),
+                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
+                    client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                    email: d.client_email || '—',
+                    phone: d.client_phone || '—',
+                    ht: d._ht,
+                    tva: d._tva,
+                    remise: d._remise,
+                    ttc: d._ttc,
+                    status: DOC_STATUS[d.status]?.label || d.status,
+                    signe: d.signed_at ? 'Oui' : 'Non',
+                })),
+            }
+
+            // ── 5. Lignes d'articles ──────────────────────────────
+            type LineRow = { numero: string; client: string; date: Date; description: string; qty: number; pu: number; tva: number; total_ht: number }
+            const lignesRows: LineRow[] = []
+            docsEnriched.forEach(d => {
+                if (!Array.isArray(d.items)) return
+                d.items.forEach(it => {
+                    const q = Number(it.quantity) || 0
+                    const pu = Number(it.unit_price) || 0
+                    lignesRows.push({
+                        numero: d.numero || '—',
+                        client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                        date: new Date(d.created_at),
+                        description: it.description || '—',
+                        qty: q,
+                        pu,
+                        tva: Number(it.tva) || 0,
+                        total_ht: q * pu,
+                    })
+                })
+            })
+            const lignesSheet = {
+                sheetName: "Lignes d'articles",
+                title: "LIGNES D'ARTICLES (DÉTAIL DES FACTURES)",
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'N° Facture', key: 'numero', width: 18 },
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'Client', key: 'client', width: 28 },
+                    { header: 'Description', key: 'description', width: 48 },
+                    { header: 'Qté', key: 'qty', width: 10, type: 'number' as const, totalFormula: 'sum' as const },
+                    { header: 'P.U. (FCFA)', key: 'pu', width: 16, type: 'currency' as const },
+                    { header: 'TVA %', key: 'tva', width: 10, type: 'number' as const },
+                    { header: 'Total HT', key: 'total_ht', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                ],
+                data: lignesRows,
+            }
+
+            // ── 6. Paiements reçus ────────────────────────────────
+            const paiementsSheet = {
+                sheetName: 'Paiements',
+                title: 'PAIEMENTS MANUELS RECUS',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'N° Facture', key: 'numero', width: 18 },
+                    { header: 'Client / Libellé', key: 'client', width: 36 },
+                    { header: 'Agent', key: 'agent', width: 22 },
+                    { header: 'Mode', key: 'mode', width: 18, type: 'status' as const },
+                    { header: 'Référence', key: 'reference', width: 20 },
+                    { header: 'Montant (FCFA)', key: 'montant', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                ],
+                data: pPaiements.map(p => {
+                    const d = docs.find(x => x.id === p.document_id)
+                    const isExterne = !d && /^\[EXTERNE\]/i.test(p.notes || '')
+                    const libelleExterne = isExterne ? (p.notes || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() : ''
+                    return {
+                        date: new Date(p.date_paiement),
+                        numero: d?.numero || (isExterne ? 'EXT' : '—'),
+                        client: d ? `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() : (libelleExterne || '—'),
+                        agent: p.agent_id ? (agentMap.get(p.agent_id) || '—') : '—',
+                        mode: PAYMENT_LABELS[p.type] || p.type,
+                        reference: p.reference || '—',
+                        montant: Number(p.montant || 0),
+                    }
+                }),
+            }
+
+            // ── 7. Dépenses ──────────────────────────────────────
+            const depensesSheet = {
+                sheetName: 'Dépenses',
+                title: 'JOURNAL DES DÉPENSES',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'Titre', key: 'titre', width: 36 },
+                    { header: 'Catégorie', key: 'categorie', width: 22 },
+                    { header: 'Agent', key: 'agent', width: 22 },
+                    { header: 'Montant (FCFA)', key: 'montant', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Notes', key: 'notes', width: 38 },
+                ],
+                data: pDeps.map(e => ({
+                    date: new Date(e.date_depense),
+                    titre: e.titre || '—',
+                    categorie: e.categorie || '—',
+                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
+                    montant: Number(e.montant || 0),
+                    notes: e.notes || '—',
+                })),
+            }
+
+            // ── 8. Boutique ──────────────────────────────────────
+            const boutiqueSheet = {
+                sheetName: 'Boutique',
+                title: 'COMMANDES BOUTIQUE',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'Client', key: 'client', width: 26 },
+                    { header: 'Email', key: 'email', width: 26 },
+                    { header: 'Produit', key: 'produit', width: 34 },
+                    { header: 'Devise', key: 'devise', width: 10 },
+                    { header: 'Méthode', key: 'methode', width: 16, type: 'status' as const },
+                    { header: 'Statut', key: 'statut', width: 14, type: 'status' as const },
+                    { header: 'Montant (FCFA)', key: 'montant', width: 16, type: 'currency' as const, totalFormula: 'sum' as const },
+                ],
+                data: pOrders.map(o => ({
+                    date: new Date(o.created_at),
+                    client: o.customer_name || '—',
+                    email: o.customer_email || '—',
+                    produit: o.product_title || '—',
+                    devise: o.currency || 'XOF',
+                    methode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    statut: ORDER_STATUS[o.payment_status]?.label || o.payment_status,
+                    montant: Number(o.amount || 0),
+                })),
+            }
+
+            // ── 9. Rapprochement bancaire ────────────────────────
+            type RecRow = { date: Date; source: string; reference: string; mode: string; montant: number }
+            const rapprochementRows: RecRow[] = []
+            pPaiements.forEach(p => {
+                const d = docs.find(x => x.id === p.document_id)
+                rapprochementRows.push({
+                    date: new Date(p.date_paiement),
+                    source: d ? `Facture ${d.numero}` : 'Encaissement externe',
+                    reference: p.reference || '—',
+                    mode: PAYMENT_LABELS[p.type] || p.type,
+                    montant: Number(p.montant || 0),
+                })
+            })
+            pOrders.filter(o => o.payment_status === 'completed').forEach(o => {
+                rapprochementRows.push({
+                    date: new Date(o.created_at),
+                    source: `Boutique — ${o.product_title || ''}`,
+                    reference: o.id.slice(0, 8).toUpperCase(),
+                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    montant: Number(o.amount || 0),
+                })
+            })
+            rapprochementRows.sort((a, b) => a.date.getTime() - b.date.getTime())
+            const rapprochementSheet = {
+                sheetName: 'Rapprochement',
+                title: 'RAPPROCHEMENT BANCAIRE',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Date', key: 'date', width: 13, type: 'date' as const },
+                    { header: 'Source', key: 'source', width: 32 },
+                    { header: 'Référence', key: 'reference', width: 20 },
+                    { header: 'Mode', key: 'mode', width: 18, type: 'status' as const },
+                    { header: 'Montant (FCFA)', key: 'montant', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                ],
+                data: rapprochementRows,
+            }
+
+            const paiementsManuelsTotal = pPaiements.reduce((a, p) => a + Number(p.montant || 0), 0)
+
+            await exportToExcelMultiSheet({
+                filename: `RGB_Admin_Compta_${periodSlug(period)}_${new Date().toISOString().split('T')[0]}`,
+                coverTitle: 'Rapport comptable Admin',
+                coverSubtitle: 'À l\'attention du comptable — Synthèse officielle de la période',
+                coverPeriod: pLabel,
+                dashboard: {
+                    title: 'DASHBOARD COMPTABLE MENSUEL',
+                    subtitle,
+                    kpis: [
+                        { label: 'CA émis (factures)', value: kpis.caEmis, type: 'currency', tone: 'accent', detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
+                        { label: 'Total encaissé', value: kpis.totalEncaisse, type: 'currency', tone: 'good', detail: 'Facturation + Boutique + Paiements manuels' },
+                        { label: 'Paiements manuels', value: paiementsManuelsTotal, type: 'currency', tone: 'good', detail: `${pPaiements.length} paiements (virement / espèces / chèque)` },
+                        { label: 'Revenus boutique', value: kpis.boutique, type: 'currency', tone: 'accent', detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées` },
+                        { label: 'TVA collectée', value: kpis.totalTVA, type: 'currency', tone: 'neutral', detail: 'À déclarer à la DGI' },
+                        { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours` },
+                        { label: `Commission agents ${(commissionRate * 100).toFixed(0)}%`, value: kpis.commission, type: 'currency', tone: 'warn', detail: 'Sur encaissements nets' },
+                        { label: 'Dépenses totales', value: kpis.totalDeps, type: 'currency', tone: 'bad', detail: `${pDeps.length} dépenses enregistrées` },
+                        { label: 'Bénéfice net', value: kpis.benefice, type: 'currency', tone: kpis.benefice >= 0 ? 'good' : 'bad', detail: 'Encaissé − Commissions − Dépenses' },
+                        { label: 'Score santé financière', value: scoreSante.score, type: 'number', tone: scoreSante.score >= 60 ? 'good' : scoreSante.score >= 40 ? 'warn' : 'bad', detail: `${scoreSante.label} / 100 — ${scoreSante.recommandation}` },
+                    ],
+                },
+                sheets: [
+                    resumeSheet,
+                    journalSheet,
+                    perAgentSheet,
+                    docsSheet,
+                    lignesSheet,
+                    paiementsSheet,
+                    depensesSheet,
+                    boutiqueSheet,
+                    rapprochementSheet,
+                ],
+            })
         } catch (err) {
             console.error('[Export Excel]', err)
         } finally {
@@ -717,6 +1133,7 @@ export default function AdminComptabilitePage() {
     const nAgents  = agents.filter(a => a.role === 'agent').length
     const nSigned  = pDocs.filter(d => d.signed_at).length
     const nPending = pOrders.filter(o => o.payment_status === 'pending').length
+    const periodLocked = clotures.some(c => c.periode === period)
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto pb-12">
@@ -750,14 +1167,52 @@ export default function AdminComptabilitePage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-                        {(['ce_mois', '3_mois', '6_mois', 'annee', 'tous'] as Period[]).map(p => (
-                            <button key={p} type="button" onClick={() => { setPeriod(p); setJournalPage(1); setAlertFilter(null) }}
-                                className={cn('text-[10px] font-bold px-3 py-2 rounded-lg transition-all',
-                                    period === p ? 'bg-[#FCD116] text-[#0a0f18]' : 'text-gray-400 hover:text-white')}>
-                                {p === 'ce_mois' ? 'Ce mois' : p === '3_mois' ? '3 mois' : p === '6_mois' ? '6 mois' : p === 'annee' ? 'Année' : 'Tout'}
-                            </button>
-                        ))}
+                    <div className="flex items-center bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                        <button
+                            type="button"
+                            title="Mois précédent"
+                            onClick={() => {
+                                const base = isMonth(period) ? period : currentMonthKey()
+                                setPeriod(shiftMonth(base, -1))
+                                setJournalPage(1); setAlertFilter(null)
+                            }}
+                            className="p-2.5 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        <select
+                            title="Sélectionner la période"
+                            value={period}
+                            onChange={e => { setPeriod(e.target.value); setJournalPage(1); setAlertFilter(null) }}
+                            className="bg-transparent text-white text-[11px] font-bold px-3 py-2 outline-none min-w-[170px] cursor-pointer appearance-none"
+                        >
+                            <optgroup label="Mois précis (comptable)">
+                                {last12Months().map(m => (
+                                    <option key={m} value={m} className="bg-[#0a0f18]">{monthLabel(m)}</option>
+                                ))}
+                            </optgroup>
+                            <optgroup label="Périodes étendues">
+                                <option value="3_mois" className="bg-[#0a0f18]">3 derniers mois</option>
+                                <option value="6_mois" className="bg-[#0a0f18]">6 derniers mois</option>
+                                <option value="annee"  className="bg-[#0a0f18]">Année en cours</option>
+                                <option value="tous"   className="bg-[#0a0f18]">Global</option>
+                            </optgroup>
+                        </select>
+                        <button
+                            type="button"
+                            title="Mois suivant"
+                            disabled={isMonth(period) && period >= currentMonthKey()}
+                            onClick={() => {
+                                const base = isMonth(period) ? period : currentMonthKey()
+                                const next = shiftMonth(base, 1)
+                                if (next <= currentMonthKey()) {
+                                    setPeriod(next); setJournalPage(1); setAlertFilter(null)
+                                }
+                            }}
+                            className="p-2.5 text-gray-400 hover:text-white transition-colors disabled:opacity-30"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
                     </div>
                     <button type="button" onClick={fetchAll} disabled={refreshing} title="Rafraîchir"
                         className="p-3 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors disabled:opacity-40">
@@ -766,10 +1221,34 @@ export default function AdminComptabilitePage() {
                     <button type="button" onClick={handleMasterExport} disabled={exporting}
                         className="flex items-center gap-2 bg-[#FCD116] text-[#0a0f18] hover:bg-[#e6bc00] font-black text-xs px-5 py-3 rounded-xl transition-all disabled:opacity-60 shadow-[0_0_24px_rgba(252,209,22,0.2)]">
                         {exporting ? <div className="w-4 h-4 border-2 border-[#0a0f18] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
-                        Export Excel (5 feuilles)
+                        Export comptable mensuel
+                    </button>
+                    <button type="button" onClick={handleFecExport} disabled={fecExporting}
+                        title="Export FEC / SYSCOHADA — écritures en partie double, pour votre expert-comptable"
+                        className="flex items-center gap-2 bg-white/5 border border-[#008751]/40 text-[#00c870] hover:bg-[#008751]/15 font-black text-xs px-5 py-3 rounded-xl transition-all disabled:opacity-60">
+                        {fecExporting ? <div className="w-4 h-4 border-2 border-[#00c870] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
+                        Export FEC (comptable)
                     </button>
                 </div>
             </div>
+
+            {/* ── LOT 3 : VERROU PÉRIODE ── */}
+            <ComptaLockPanel
+                currentPeriod={period}
+                isMonthPeriod={isMonth(period)}
+                periodLabel={periodLabel(period)}
+                clotures={clotures}
+                snapshot={{
+                    totalEncaisse: kpis.totalEncaisse,
+                    totalDepenses: kpis.totalDeps,
+                    beneficeNet: kpis.benefice,
+                    nbDocuments: pDocs.length,
+                    nbPaiements: pPaiements.length,
+                    nbDepenses: pDeps.length,
+                }}
+                onChange={fetchAll}
+                fmt={fmt}
+            />
 
             {/* ── SCORE SANTÉ + ALERTES ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1039,6 +1518,94 @@ export default function AdminComptabilitePage() {
             </div>
 
             {/* ── JOURNAL COMPLET ── */}
+            {(() => {
+                const nonSoldees = docs.filter(d => d.type === 'facture' && d.status !== 'annule' && (paiements[d.id] || 0) < d.total)
+                const totalRestant = nonSoldees.reduce((a, d) => a + Math.max(0, d.total - (paiements[d.id] || 0)), 0)
+                if (nonSoldees.length === 0) return null
+                return (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                                <Bell size={14} className="text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-amber-300">
+                                    {nonSoldees.length} facture{nonSoldees.length > 1 ? 's' : ''} non soldée{nonSoldees.length > 1 ? 's' : ''}
+                                </p>
+                                <p className="text-xs text-amber-500/70">{fmt(totalRestant)} restants à encaisser (tous agents)</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => { setJournalTab('docs'); setAlertFilter('retard'); setJournalPage(1); document.getElementById('journal-section')?.scrollIntoView({ behavior: 'smooth' }) }}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-400 border border-amber-500/30 hover:bg-amber-500/15 transition-all flex-shrink-0"
+                        >
+                            Voir tout
+                        </button>
+                    </motion.div>
+                )
+            })()}
+
+            {/* ── Balance âgée des créances (aged receivables) ── */}
+            {agedBalance.buckets.total > 0 && (
+                <div className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
+                    <div className="p-5 border-b border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle size={16} className="text-[#FCD116]" />
+                            <h2 className="text-sm font-black text-white">Balance âgée des créances</h2>
+                        </div>
+                        <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-2 py-0.5 rounded">
+                            {agedBalance.rows.length} client(s) · {fmt(agedBalance.buckets.total)} dû
+                        </span>
+                    </div>
+                    {/* Récap par tranche d'ancienneté */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5">
+                        {([
+                            ['0–30 j', agedBalance.buckets.b0, '#00c870'],
+                            ['31–60 j', agedBalance.buckets.b30, '#FCD116'],
+                            ['61–90 j', agedBalance.buckets.b60, '#E07B54'],
+                            ['+90 j', agedBalance.buckets.b90, '#EF4444'],
+                        ] as const).map(([label, val, color]) => (
+                            <div key={label} className="bg-[#0a0f18] p-4">
+                                <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">{label}</p>
+                                <p className="text-base font-black font-mono mt-1" style={{ color }}>{fmt(val)}</p>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Détail par client (top 8) */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                            <thead>
+                                <tr className="text-gray-500 border-b border-white/5">
+                                    <th className="text-left font-bold px-5 py-2.5">Client</th>
+                                    <th className="text-right font-bold px-3 py-2.5">0–30</th>
+                                    <th className="text-right font-bold px-3 py-2.5">31–60</th>
+                                    <th className="text-right font-bold px-3 py-2.5">61–90</th>
+                                    <th className="text-right font-bold px-3 py-2.5 text-[#EF4444]">+90</th>
+                                    <th className="text-right font-bold px-5 py-2.5">Total dû</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {agedBalance.rows.slice(0, 8).map(r => (
+                                    <tr key={r.client} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
+                                        <td className="px-5 py-2.5 text-white font-semibold truncate max-w-[200px]">{r.client}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b0 ? fmt(r.b0) : '—'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b30 ? fmt(r.b30) : '—'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b60 ? fmt(r.b60) : '—'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono" style={{ color: r.b90 ? '#EF4444' : '#6b7280' }}>{r.b90 ? fmt(r.b90) : '—'}</td>
+                                        <td className="px-5 py-2.5 text-right font-mono font-black text-[#FCD116]">{fmt(r.total)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p className="text-[9px] text-gray-600 px-5 py-2.5 border-t border-white/5">
+                        Créances clients non soldées, par ancienneté de la facture. Au-delà de 90 jours = risque d&apos;impayé — prioriser la relance.
+                    </p>
+                </div>
+            )}
+
             <div id="journal-section" className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
                 <div className="p-5 border-b border-white/5 space-y-4">
                     <div className="flex items-center justify-between">
@@ -1092,20 +1659,19 @@ export default function AdminComptabilitePage() {
                     {journalTab === 'docs' && (
                         <table className="w-full min-w-[700px]">
                             <thead><tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                                {['N° Document', 'Client', 'Agent', 'HT / TVA / Remise', 'Total TTC', 'Statut', 'Sig.', 'Date'].map((h, i) => (
-                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 7 ? 'text-right pr-5' : i === 4 || i === 3 ? 'text-right' : i === 5 || i === 6 ? 'text-center' : 'text-left')}>{h}</th>
+                                {['N° Document', 'Client', 'Agent', 'Total TTC', 'Solde', 'Statut', 'Sig.', 'Date', ''].map((h, i) => (
+                                    <th key={i} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 3 || i === 4 ? 'text-right' : i === 5 || i === 6 ? 'text-center' : i === 7 ? 'text-right' : i === 8 ? 'text-center pr-5' : 'text-left')}>{h}</th>
                                 ))}
                             </tr></thead>
                             <tbody className="divide-y divide-white/[0.03]">
-                                {pgDocs.length === 0 && <tr><td colSpan={8} className="text-center py-12 text-gray-600 text-sm">Aucune facture</td></tr>}
+                                {pgDocs.length === 0 && <tr><td colSpan={9} className="text-center py-12 text-gray-600 text-sm">Aucune facture</td></tr>}
                                 {pgDocs.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     const st = DOC_STATUS[d.status] || { label: d.status, cls: 'bg-gray-500/20 text-gray-400' }
-                                    const ht = Number(d.sous_total) || 0
-                                    const tva = Number(d.total_tva) || 0
-                                    const remise = Number(d.remise) || 0
+                                    const montantPaye = paiements[d.id] || 0
+                                    const solde = d.type === 'facture' ? Math.max(0, d.total - montantPaye) : null
                                     return (
-                                        <tr key={d.id} className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setDetailDoc(d)}>
+                                        <tr key={d.id} className={cn('hover:bg-white/[0.02] transition-colors cursor-pointer', solde !== null && solde > 0 ? 'border-l-2 border-amber-500/30' : '')} onClick={() => setDetailDoc(d)}>
                                             <td className="p-4 pl-5">
                                                 <p className="text-xs font-bold text-white font-mono">{d.numero}</p>
                                                 <p className="text-[9px] text-gray-600 capitalize">{d.type}</p>
@@ -1115,21 +1681,31 @@ export default function AdminComptabilitePage() {
                                                 <p className="text-[9px] text-gray-600 truncate max-w-[140px]">{d.client_email || d.client_phone || '—'}</p>
                                             </td>
                                             <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '—'}</td>
-                                            <td className="p-4 text-right">
-                                                {ht > 0 ? (
-                                                    <div className="text-[9px] text-gray-500 space-y-0.5">
-                                                        <div>HT {fmt(ht)}</div>
-                                                        {tva > 0 && <div className="text-yellow-600">TVA {fmt(tva)}</div>}
-                                                        {remise > 0 && <div className="text-orange-600">-{fmt(remise)}</div>}
-                                                    </div>
-                                                ) : <span className="text-[9px] text-gray-600">—</span>}
-                                            </td>
                                             <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(d.total, d.currency)}</td>
+                                            <td className="p-4 text-right font-mono text-xs">
+                                                {solde !== null ? (
+                                                    solde > 0
+                                                        ? <span className="text-amber-400 font-bold">{fmt(solde)}</span>
+                                                        : <span className="text-[#00c870]">✓ Soldé</span>
+                                                ) : <span className="text-gray-600">—</span>}
+                                            </td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>
                                             <td className="p-4 text-center">
                                                 {d.signed_at ? <Shield size={11} className="text-purple-400 mx-auto" /> : <span className="text-gray-700">—</span>}
                                             </td>
-                                            <td className="p-4 pr-5 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.created_at)}</td>
+                                            <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.created_at)}</td>
+                                            <td className="p-4 pr-5 text-center" onClick={e => e.stopPropagation()}>
+                                                {d.type === 'facture' && solde !== null && solde > 0 && !periodLocked && (
+                                                    <button
+                                                        type="button"
+                                                        title="Enregistrer un paiement"
+                                                        onClick={() => { setPaymentDoc(d); setNewPayment(p => ({ ...p, montant: String(solde) })); setShowPaymentModal(true) }}
+                                                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all text-[9px] font-bold border border-emerald-500/20 whitespace-nowrap"
+                                                    >
+                                                        <Banknote size={11} /> Encaisser
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
                                     )
                                 })}
@@ -1225,6 +1801,74 @@ export default function AdminComptabilitePage() {
                     </div>
                 )}
             </div>
+
+            {/* PAYMENT MODAL — Admin */}
+        <AnimatePresence>
+            {showPaymentModal && paymentDoc && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowPaymentModal(false)}>
+                    <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+                        onClick={e => e.stopPropagation()}
+                        className="bg-[#0d1421] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-white">Enregistrer un Paiement</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">{paymentDoc.numero} — {paymentDoc.client_nom} {paymentDoc.client_prenom || ''}</p>
+                            </div>
+                            <button type="button" title="Fermer" onClick={() => setShowPaymentModal(false)} className="text-gray-500 hover:text-white"><X size={20} /></button>
+                        </div>
+                        <div className="px-6 pt-4 pb-0">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/10">
+                                <span className="text-xs text-gray-500">Solde restant</span>
+                                <span className="text-base font-black text-amber-400">{fmt(Math.max(0, paymentDoc.total - (paiements[paymentDoc.id] || 0)), paymentDoc.currency)}</span>
+                            </div>
+                        </div>
+                        <form onSubmit={handleAddPayment} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Mode de paiement</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[
+                                        { val: 'virement', icon: CreditCard, label: 'Virement' },
+                                        { val: 'especes', icon: Banknote, label: 'Espèces' },
+                                        { val: 'cheque', icon: FileText, label: 'Chèque' },
+                                        { val: 'autre', icon: Wallet, label: 'Autre' },
+                                    ].map(opt => (
+                                        <button key={opt.val} type="button" onClick={() => setNewPayment(p => ({ ...p, type: opt.val }))}
+                                            className={cn('flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[10px] font-bold transition-all',
+                                                newPayment.type === opt.val ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20 hover:text-white')}>
+                                            <opt.icon size={16} />
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Montant</label>
+                                    <input required type="number" min="1" value={newPayment.montant} onChange={e => setNewPayment(p => ({ ...p, montant: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" placeholder="0" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date</label>
+                                    <input type="date" title="Date du paiement" value={newPayment.date} onChange={e => setNewPayment(p => ({ ...p, date: e.target.value }))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Référence <span className="normal-case text-gray-600">(optionnel)</span></label>
+                                <input type="text" value={newPayment.reference} onChange={e => setNewPayment(p => ({ ...p, reference: e.target.value }))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" placeholder="N° de virement, chèque..." />
+                            </div>
+                            <button disabled={savingPayment || !newPayment.montant} type="submit"
+                                className="w-full py-4 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
+                                {savingPayment ? <RefreshCw size={18} className="animate-spin" /> : <Banknote size={18} />} Confirmer l&apos;encaissement
+                            </button>
+                        </form>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
         </div>
     )
 }

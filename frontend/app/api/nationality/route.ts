@@ -3,11 +3,45 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
+import { scanRequestBody } from '@/lib/waf'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseKey)
+
+// ─── Vérification serveur d'une transaction Kkiapay (anti-fraude) ──────────
+async function verifyKkiapayTransaction(transactionId: string): Promise<{ ok: boolean; status: string; amount?: number }> {
+    const { data: settings } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['kkiapay_private_key', 'kkiapay_secret_key', 'kkiapay_sandbox'])
+    const privateKey = settings?.find(s => s.key === 'kkiapay_private_key')?.value
+    const secretKey = settings?.find(s => s.key === 'kkiapay_secret_key')?.value
+    const sandbox = settings?.find(s => s.key === 'kkiapay_sandbox')?.value === 'true'
+    const apiUrl = sandbox
+        ? 'https://api-sandbox.kkiapay.me/api/v1/transactions/status'
+        : 'https://api.kkiapay.me/api/v1/transactions/status'
+
+    if (!privateKey || !secretKey) return { ok: false, status: 'config_missing' }
+
+    try {
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-private-key': String(privateKey),
+                'x-secret-key': String(secretKey),
+            },
+            body: JSON.stringify({ transactionId }),
+        })
+        if (!res.ok) return { ok: false, status: `kkiapay_http_${res.status}` }
+        const data = await res.json()
+        return { ok: data?.status === 'SUCCESS', status: data?.status || 'unknown', amount: data?.amount }
+    } catch (e) {
+        return { ok: false, status: e instanceof Error ? e.message : 'verify_failed' }
+    }
+}
 
 const apiKey = getGroqApiKey()
 const groq = apiKey ? new Groq({ apiKey }) : null
@@ -181,7 +215,11 @@ RÈGLES ABSOLUES :
 export async function POST(request: NextRequest) {
     try {
         const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
-        const body = await request.json()
+        // ── WAF #2 : analyse structurelle du body (proto pollution / RCE / SSRF / DoS) ──
+        const { body: scanned, rejection } = await scanRequestBody(request)
+        if (rejection) return rejection
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const body = (scanned ?? {}) as any
         const { nom, prenom, email } = body
 
         if (!nom || !prenom || !email) {
@@ -189,6 +227,36 @@ export async function POST(request: NextRequest) {
                 { error: 'Nom, prénom et email sont requis' },
                 { status: 400 }
             )
+        }
+
+        // ── Anti-fraude : vérification Kkiapay côté serveur si payment_ref fourni ──
+        // Évite qu'un client envoie un faux transaction_id et obtienne un dossier
+        // nationalité (150 000 FCFA) sans avoir vraiment payé.
+        // Si payment_method = 'kkiapay' et payment_ref renseigné, on vérifie.
+        if (body.payment_method === 'kkiapay' && body.payment_ref) {
+            // Idempotence : si une demande existe déjà avec ce payment_ref, on la retourne
+            const { data: existing } = await supabase
+                .from('nationality_applications')
+                .select('application_ref')
+                .eq('payment_ref', body.payment_ref)
+                .maybeSingle()
+            if (existing?.application_ref) {
+                return NextResponse.json({
+                    success: true,
+                    reference: existing.application_ref,
+                    message: 'Demande déjà enregistrée pour ce paiement.',
+                })
+            }
+
+            // Vérification Kkiapay
+            const verify = await verifyKkiapayTransaction(body.payment_ref)
+            if (!verify.ok) {
+                console.warn(`[nationality] Paiement Kkiapay non confirmé : ${verify.status}`)
+                return NextResponse.json(
+                    { error: `Paiement non confirmé (${verify.status})` },
+                    { status: 402 }
+                )
+            }
         }
 
         const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`

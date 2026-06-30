@@ -202,7 +202,11 @@ export default function AgentNationalitePage() {
                                 <tr key={app.id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="p-4">
                                         <p className="font-mono text-emerald-400 font-bold">{app.application_ref}</p>
-                                        <p className="text-[10px] text-gray-500">{new Date(app.submitted_at).toLocaleDateString('fr-FR')}</p>
+                                        <p className="text-[10px] text-gray-500">
+                                            {app.submitted_at && !isNaN(new Date(app.submitted_at).getTime())
+                                                ? new Date(app.submitted_at).toLocaleDateString('fr-FR')
+                                                : '—'}
+                                        </p>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
@@ -280,7 +284,11 @@ export default function AgentNationalitePage() {
                                                 {showDetail.status}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-500">Soumis le {new Date(showDetail.submitted_at).toLocaleString('fr-FR')}</p>
+                                        <p className="text-xs text-gray-500">
+                                            Soumis le {showDetail.submitted_at && !isNaN(new Date(showDetail.submitted_at).getTime())
+                                                ? new Date(showDetail.submitted_at).toLocaleString('fr-FR')
+                                                : '—'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

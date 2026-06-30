@@ -7,11 +7,12 @@ import type { LangCode } from '@/lib/translation/constants'
 // Devise affichée = f(langue active) — mapping ci-dessous
 // ═══════════════════════════════════════════════════════════
 
-export type CurrencyCode = 'XOF' | 'EUR' | 'USD' | 'GBP'
+export type CurrencyCode = 'XOF' | 'EUR' | 'USD' | 'GBP' | 'HTG'
 
 // ── Mapping Langue → Devises ──────────────────────────────
 // fr, es, cr → XOF (FCFA) par défaut, EUR disponible
-// en, pt, ht → USD ($) uniquement
+// en, pt → USD ($) uniquement
+// ht → HTG (Gourde) uniquement
 export const LANG_CURRENCY_CONFIG: Record<LangCode, {
     default: CurrencyCode
     allowed: CurrencyCode[]
@@ -21,7 +22,7 @@ export const LANG_CURRENCY_CONFIG: Record<LangCode, {
     cr: { default: 'EUR', allowed: ['EUR', 'XOF'] },
     en: { default: 'USD', allowed: ['USD'] },
     pt: { default: 'USD', allowed: ['USD'] },
-    ht: { default: 'USD', allowed: ['USD'] },
+    ht: { default: 'HTG', allowed: ['HTG', 'USD'] },
 }
 
 /** Retourne la devise par défaut pour une langue donnée */
@@ -47,6 +48,7 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyInfo> = {
     EUR: { code: 'EUR', symbol: '€', name: 'Euro', locale: 'fr-FR', decimals: 2 },
     USD: { code: 'USD', symbol: '$', name: 'Dollar US', locale: 'en-US', decimals: 2 },
     GBP: { code: 'GBP', symbol: '£', name: 'Livre Sterling', locale: 'en-GB', decimals: 2 },
+    HTG: { code: 'HTG', symbol: 'HTG', name: 'Gourde Haïtienne', locale: 'fr-HT', decimals: 2 },
 }
 
 // Taux de conversion de base (1 XOF = ... XOF, 1 EUR = 655.957 XOF) 
@@ -57,6 +59,7 @@ const BASE_RATES_TO_XOF: Record<CurrencyCode, number> = {
     EUR: 655.957,
     USD: 600.00, // Sera remplacé par la DB
     GBP: 760.00, // Sera remplacé par la DB
+    HTG: 4.2591, // 80 000 XOF ≈ HTG 18 783 (vérifié Mai 2026 — sera remplacé par la DB)
 }
 
 const cachedRates: Record<CurrencyCode, number> = { ...BASE_RATES_TO_XOF }
@@ -110,7 +113,8 @@ export const convertCurrency = (amount: number, from: CurrencyCode, to: Currency
     // Convertir de "XOF" vers "to"
     const result = amountInXOF / cachedRates[to]
 
-    return CURRENCIES[to].decimals === 0 ? Math.round(result) : Number(Math.round(Number(result + 'e2')) + 'e-2')
+    // Arrondi au-dessus (ceil) pour que la reconversion couvre toujours le montant XOF original
+    return CURRENCIES[to].decimals === 0 ? Math.ceil(result) : Number(Math.ceil(Number(result + 'e2')) + 'e-2')
 }
 
 /**
@@ -127,6 +131,7 @@ export const formatPrice = (amount: number, currency: CurrencyCode = 'XOF'): str
     if (currency === 'EUR') return `${formatted} €`
     if (currency === 'USD') return `$${formatted}`
     if (currency === 'GBP') return `£${formatted}`
+    if (currency === 'HTG') return `HTG ${formatted}`
     return `${formatted} ${currency}`
 }
 
@@ -162,6 +167,9 @@ export const detectUserCurrency = (): CurrencyCode => {
         if (tz.startsWith('Europe/') || lang.startsWith('fr-FR') || lang.startsWith('de') ||
             lang.startsWith('it') || lang.startsWith('es-ES') || lang.startsWith('nl') ||
             lang.startsWith('pt-PT')) return 'EUR'
+
+        // Haïti → HTG (Gourde)
+        if (tz.includes('Port-au-Prince') || tz.includes('Port_au_Prince')) return 'HTG'
 
         // Zones USD
         if (tz.startsWith('America/') || lang.startsWith('en-US')) return 'USD'

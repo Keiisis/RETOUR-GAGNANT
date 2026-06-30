@@ -493,9 +493,12 @@ export default function ClientPayerPage() {
                             </div>
                         )}
 
-                        <div className="px-5 pb-5 flex items-center gap-2">
-                            <Lock size={11} className="text-gray-600" />
-                            <p className="text-[10px] text-gray-600">Paiement sécurisé — vos données ne sont jamais stockées sur nos serveurs</p>
+                        <div className="px-5 pb-5 flex items-start gap-2">
+                            <Lock size={11} className="text-gray-600 mt-0.5 shrink-0" />
+                            <p className="text-[10px] text-gray-600">
+                                Vos nom, e-mail et téléphone servent uniquement à traiter ce paiement, établir le reçu et suivre votre dossier. Vos données bancaires sont gérées par le prestataire de paiement sécurisé et ne sont jamais stockées sur nos serveurs.{' '}
+                                <a href="/confidentialite" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-400">Politique de confidentialité</a>.
+                            </p>
                         </div>
                     </motion.div>
                 )}

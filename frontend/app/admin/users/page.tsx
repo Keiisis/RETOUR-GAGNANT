@@ -575,7 +575,7 @@ export default function AdminUsersPage() {
                                             {online ? <Wifi size={10} className="text-emerald-400" /> : <WifiOff size={10} className="text-gray-700" />}
                                             <span className="text-[10px] text-gray-500">
                                                 {online ? 'En ligne maintenant' :
-                                                    user.last_seen_at
+                                                    (user.last_seen_at && !isNaN(new Date(user.last_seen_at).getTime()))
                                                         ? `Vu le ${new Date(user.last_seen_at).toLocaleDateString('fr-FR')} à ${new Date(user.last_seen_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
                                                         : 'Jamais connecté'
                                                 }

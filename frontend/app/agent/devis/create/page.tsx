@@ -99,6 +99,8 @@ export default function AgentCreateDocumentPage() {
             return
         }
         setSaving(true)
+
+        // Récupérer l'ID de l'agent via le client browser (auth uniquement, pas de table users)
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             alert('Session expirée. Veuillez vous reconnecter.')
@@ -108,31 +110,44 @@ export default function AgentCreateDocumentPage() {
 
         const currentRate = rates[currency] || 1
 
-        const { error } = await supabase.from('documents_financiers').insert({
-            agent_id: user.id, 
-            type: formType, 
-            numero: generateNumero(formType),
-            client_nom: clientNom, 
-            client_prenom: clientPrenom, 
-            client_email: clientEmail,
-            client_phone: clientPhone, 
-            client_adresse: clientAdresse,
-            currency: currency,
-            exchange_rate_applied: currentRate,
-            items: items.map(it => ({ description: it.description, quantity: it.quantity, unit_price: it.unit_price, tva: it.tva, unit_cost: it.unit_cost })), 
-            sous_total: sousTotal, 
-            total_tva: totalTVA, 
-            remise, 
-            total: totalFinal,
-            status, 
-            notes, 
-            conditions, 
-            validite,
+        // Passer par l'API server-side (service_role) pour éviter l'erreur RLS "permission denied for table users"
+        const res = await fetch('/api/agent/devis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                agent_id: user.id,
+                type: formType,
+                numero: generateNumero(formType),
+                client_nom: clientNom,
+                client_prenom: clientPrenom,
+                client_email: clientEmail,
+                client_phone: clientPhone,
+                client_adresse: clientAdresse,
+                currency,
+                exchange_rate_applied: currentRate,
+                items: items.map(it => ({
+                    description: it.description,
+                    quantity: it.quantity,
+                    unit_price: it.unit_price,
+                    tva: it.tva,
+                    unit_cost: it.unit_cost,
+                })),
+                sous_total: sousTotal,
+                total_tva: totalTVA,
+                remise,
+                total: totalFinal,
+                status,
+                notes,
+                conditions,
+                validite,
+            }),
         })
 
-        if (error) {
-            console.error('Erreur SQL:', error)
-            alert(`Erreur SQL (${error.code}) : ${error.message} \n\nDetails: ${error.details}`)
+        const result = await res.json()
+
+        if (!res.ok) {
+            console.error('Erreur création devis:', result)
+            alert(`Erreur (${result.code || res.status}) : ${result.error}\n\nDetails: ${result.details ?? null}`)
             setSaving(false)
         } else {
             router.push('/agent/devis')

@@ -107,6 +107,7 @@ const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
 
 export default function AgentDashboard() {
     const { t, lang } = useTranslation()
+    const [mounted, setMounted] = useState(false)
     const [stats, setStats] = useState<DashboardStats>({
         totalDossiers: 0,
         dossiersEnCours: 0,
@@ -124,6 +125,7 @@ export default function AgentDashboard() {
     const [agentName, setAgentName] = useState('Agent')
 
     useEffect(() => {
+        setMounted(true)
         const fetchAll = async () => {
             try {
                 // Get agent name
@@ -282,6 +284,7 @@ export default function AgentDashboard() {
 
     // Greeting based on time of day
     const getGreeting = () => {
+        if (!mounted) return t('Bonjour')
         const hour = new Date().getHours()
         if (hour < 12) return t('Bonjour')
         if (hour < 18) return t('Bon après-midi')
@@ -322,12 +325,12 @@ export default function AgentDashboard() {
                         </h1>
                         <p className="text-nexus-text-muted text-[12px] mt-1 flex items-center gap-1.5">
                             <Clock size={12} />
-                            {new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
+                            {mounted ? new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', {
                                 weekday: 'long',
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric'
-                            })}
+                            }) : '—'}
                         </p>
                     </div>
 
@@ -473,7 +476,7 @@ export default function AgentDashboard() {
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
                                         <span className="text-[9px] text-nexus-text-muted">
-                                            {new Date(m.created_at as string).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR')}
+                                            {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR') : '—'}
                                         </span>
                                         {!(m.lu as boolean) && (
                                             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />

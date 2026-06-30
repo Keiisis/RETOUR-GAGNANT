@@ -36,6 +36,13 @@ const answerLabels: Record<string, { label: string; icon: typeof MapPin }> = {
     message_libre: { label: 'Message libre', icon: MessageSquare },
 }
 
+// Safe date formatter to avoid RangeError: Invalid time value
+const formatDateSafe = (dateStr: string | null | undefined, options?: Intl.DateTimeFormatOptions) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', options)
+}
+
 export default function AdminLeadsOraclePage() {
     const { t } = useTranslation();
     const [leads, setLeads] = useState<Lead[]>([])
@@ -333,7 +340,7 @@ export default function AdminLeadsOraclePage() {
 
                                                 {/* Date */}
                                                 <span className="text-[10px] text-gray-600">
-                                                    {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                                                    {formatDateSafe(lead.created_at)}
                                                 </span>
 
                                                 {/* Oracle button */}
@@ -433,7 +440,7 @@ export default function AdminLeadsOraclePage() {
                                                                 {lead.recommended_service}
                                                             </span>
                                                             <span className="text-[10px] text-gray-600">
-                                                                Soumis le {new Date(lead.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                                Soumis le {formatDateSafe(lead.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}
                                                             </span>
                                                         </div>
                                                     </div>

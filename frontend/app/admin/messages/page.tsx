@@ -190,10 +190,10 @@ export default function MessagesList() {
                                         <div className="text-right hidden sm:block">
                                             <div className="flex items-center justify-end gap-2 text-gray-600 mb-0.5">
                                                 <Clock size={10} />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span className="text-[9px] font-bold uppercase tracking-widest">{!item.created_at || isNaN(new Date(item.created_at).getTime()) ? '—' : new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
                                             <div className="text-[9px] text-gray-700 font-mono tracking-tighter">
-                                                {new Date(item.created_at).toLocaleDateString()}
+                                                {!item.created_at || isNaN(new Date(item.created_at).getTime()) ? '—' : new Date(item.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
 

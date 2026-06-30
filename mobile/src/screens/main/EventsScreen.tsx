@@ -1,0 +1,1471 @@
+'use strict'
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    RefreshControl, Platform, ActivityIndicator, Dimensions,
+    Pressable,
+} from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withDelay,
+    withSpring,
+    withTiming,
+    withRepeat,
+    withSequence,
+    Easing,
+    interpolate,
+    interpolateColor,
+} from 'react-native-reanimated'
+import { useAuth } from '../../contexts/AuthContext'
+import { useLang } from '../../contexts/LangContext'
+import { fetchWithTimeout } from '../../lib/fetch'
+
+/* ═══════════════════════════════════════════════════════════
+   EventsScreen — THEME "CORPORATE PREMIUM 2026"
+   (Aligné avec tous les autres écrans premium)
+═══════════════════════════════════════════════════════════ */
+
+const { width } = Dimensions.get('window')
+
+// Palette de l'agence (identique aux autres écrans)
+const C = {
+    bg: '#FFFFFF',
+    surface: 'rgba(255, 255, 255, 0.92)',
+    surfaceSolid: '#FFFFFF',
+    border: 'rgba(16, 185, 129, 0.12)',
+
+    primary: '#047857',
+    primaryDark: '#022C22',
+    accent: '#C9A84C',
+    accentDark: '#A68B3C',
+    accentLight: '#E2C97E',
+    auraGreen: '#10B981',
+    error: '#EF4444',
+    success: '#10B981',
+    info: '#3B82F6',
+
+    textSec: '#4A5568',
+    textMuted: '#718096',
+    placeholder: '#718096',
+    primaryText: '#FFFFFF',
+}
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface AppEvent {
+    id: string
+    title: string
+    short_description?: string
+    description?: string
+    start_date: string
+    end_date?: string
+    location: string
+    address?: string
+    price_standard: number
+    price_vip?: number
+    currency: string
+    max_capacity?: number
+    is_featured: boolean
+    cover_image?: string
+    status: string
+    category?: string
+    my_registration?: { id: string; status: string; ticket_type: string } | null
+}
+
+const CATEGORIES = ['Tous', 'Gala', 'Forum', 'Tourisme', 'Séminaire', 'Conférence']
+
+const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    'Tous': 'apps-outline',
+    'Gala': 'sparkles-outline',
+    'Forum': 'people-outline',
+    'Tourisme': 'map-outline',
+    'Séminaire': 'school-outline',
+    'Conférence': 'mic-outline',
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string) {
+    const d = new Date(iso)
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatTime(iso: string) {
+    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatPrice(price: number, currency: string, t: any) {
+    if (price === 0) return t('Gratuit')
+    return `${price.toLocaleString('fr-FR')} ${currency}`
+}
+
+function getDaysUntil(iso: string): number {
+    const event = new Date(iso)
+    const now = new Date()
+    const diffMs = event.getTime() - now.getTime()
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT : ANIMATED SECTION
+═══════════════════════════════════════════════════════════ */
+
+function AnimatedSection({
+    children, delay = 0, style,
+}: {
+    children: React.ReactNode
+    delay?: number
+    style?: any
+}) {
+    const anim = useSharedValue(0)
+
+    useEffect(() => {
+        anim.value = withDelay(delay, withTiming(1, {
+            duration: 800,
+            easing: Easing.out(Easing.quad),
+        }))
+    }, [delay])
+
+    const animStyle = useAnimatedStyle(() => ({
+        opacity: anim.value,
+        transform: [{ translateY: 30 * (1 - anim.value) }],
+    }))
+
+    return <Animated.View style={[animStyle, style]}>{children}</Animated.View>
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT : FEATURED EVENT CARD (Hero premium)
+═══════════════════════════════════════════════════════════ */
+
+function FeaturedEventCard({
+    event, onPress, t,
+}: {
+    event: AppEvent
+    onPress: () => void
+    t: any
+}) {
+    const pressAnim = useSharedValue(0)
+    const glowAnim = useSharedValue(0)
+
+    useEffect(() => {
+        // Halo doré qui respire en arrière-plan
+        glowAnim.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+                withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+            ), -1, false
+        )
+    }, [])
+
+    const cardStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: interpolate(pressAnim.value, [0, 1], [1, 0.98]) }],
+    }))
+
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(glowAnim.value, [0, 1], [0.15, 0.35]),
+        transform: [{ scale: interpolate(glowAnim.value, [0, 1], [1, 1.1]) }],
+    }))
+
+    const daysUntil = getDaysUntil(event.start_date)
+    const isRegistered = !!event.my_registration
+
+    return (
+        <Pressable
+            onPress={onPress}
+            onPressIn={() => { pressAnim.value = withSpring(1) }}
+            onPressOut={() => { pressAnim.value = withSpring(0) }}
+        >
+            <Animated.View style={[featuredStyles.card, cardStyle]}>
+                {/* Halo doré pulsant en arrière-plan */}
+                <Animated.View style={[featuredStyles.glow, glowStyle]} />
+
+                {/* Pattern décoratif */}
+                <View style={featuredStyles.patternDot1} />
+                <View style={featuredStyles.patternDot2} />
+                <View style={featuredStyles.patternLine} />
+
+                {/* Top row : badges */}
+                <View style={featuredStyles.topRow}>
+                    <View style={featuredStyles.starBadge}>
+                        <Ionicons name="star" size={11} color={C.primary} />
+                        <Text style={featuredStyles.starText}>{t('ÉVÉNEMENT PHARE')}</Text>
+                    </View>
+
+                    {isRegistered && (
+                        <View style={featuredStyles.registeredBadge}>
+                            <Ionicons name="checkmark-circle" size={12} color={C.success} />
+                            <Text style={featuredStyles.registeredText}>{t('Inscrit')}</Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Date card massive */}
+                <View style={featuredStyles.dateRow}>
+                    <View style={featuredStyles.dateBlock}>
+                        <Text style={featuredStyles.dateDay}>
+                            {new Date(event.start_date).getDate()}
+                        </Text>
+                        <View style={featuredStyles.dateDivider} />
+                        <Text style={featuredStyles.dateMonth}>
+                            {new Date(event.start_date).toLocaleDateString('fr-FR', { month: 'short' })
+                                .toUpperCase().replace('.', '')}
+                        </Text>
+                    </View>
+
+                    {daysUntil > 0 && daysUntil <= 30 && (
+                        <View style={featuredStyles.countdownBadge}>
+                            <Ionicons name="time-outline" size={11} color={C.accent} />
+                            <Text style={featuredStyles.countdownText}>
+                                {daysUntil === 1
+                                    ? t('Demain')
+                                    : `${t('Dans')} ${daysUntil} ${t('jours')}`}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Titre + infos */}
+                <Text style={featuredStyles.title} numberOfLines={2}>
+                    {event.title}
+                </Text>
+
+                {event.short_description && (
+                    <Text style={featuredStyles.desc} numberOfLines={2}>
+                        {event.short_description}
+                    </Text>
+                )}
+
+                <View style={featuredStyles.metaRow}>
+                    <Ionicons name="location-outline" size={13} color={C.accent} />
+                    <Text style={featuredStyles.metaText} numberOfLines={1}>
+                        {event.address || event.location}
+                    </Text>
+                </View>
+
+                {/* Footer */}
+                <View style={featuredStyles.footer}>
+                    <View>
+                        <Text style={featuredStyles.priceLabel}>
+                            {event.price_standard === 0 ? t('Inscription') : t('À partir de')}
+                        </Text>
+                        <Text style={featuredStyles.priceValue}>
+                            {event.price_standard === 0
+                                ? t('Gratuite')
+                                : `${event.price_standard.toLocaleString('fr-FR')} ${event.currency}`}
+                        </Text>
+                    </View>
+
+                    <View style={featuredStyles.cta}>
+                        <Text style={featuredStyles.ctaText}>{t("S'inscrire")}</Text>
+                        <Ionicons name="arrow-forward" size={14} color={C.accent} />
+                    </View>
+                </View>
+            </Animated.View>
+        </Pressable>
+    )
+}
+
+const featuredStyles = StyleSheet.create({
+    card: {
+        backgroundColor: C.primary,
+        borderRadius: 22,
+        padding: 22,
+        marginBottom: 24,
+        overflow: 'hidden',
+        borderWidth: 1.5,
+        borderColor: 'rgba(212, 160, 23, 0.4)',
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    glow: {
+        position: 'absolute',
+        top: -80,
+        right: -80,
+        width: 240,
+        height: 240,
+        borderRadius: 120,
+        backgroundColor: C.accent,
+    },
+    patternDot1: {
+        position: 'absolute',
+        top: 80,
+        right: 30,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: C.accent,
+        opacity: 0.3,
+    },
+    patternDot2: {
+        position: 'absolute',
+        bottom: 90,
+        right: 60,
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: C.accent,
+        opacity: 0.5,
+    },
+    patternLine: {
+        position: 'absolute',
+        bottom: 70,
+        right: -10,
+        width: 60,
+        height: 1,
+        backgroundColor: C.accent,
+        opacity: 0.2,
+        transform: [{ rotate: '-15deg' }],
+    },
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 18,
+    },
+    starBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: C.accent,
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+    },
+    starText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: C.primary,
+        letterSpacing: 1,
+    },
+    registeredBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: 'rgba(10, 107, 59, 0.18)',
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(10, 107, 59, 0.4)',
+    },
+    registeredText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#34D399',
+        letterSpacing: 0.3,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 18,
+    },
+    dateBlock: {
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 14,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.3)',
+    },
+    dateDay: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: C.primaryText,
+        letterSpacing: -1,
+        lineHeight: 34,
+    },
+    dateDivider: {
+        width: 30,
+        height: 1,
+        backgroundColor: C.accent,
+        marginVertical: 4,
+        opacity: 0.5,
+    },
+    dateMonth: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: C.accent,
+        letterSpacing: 2,
+    },
+    countdownBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.35)',
+    },
+    countdownText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: C.accent,
+        letterSpacing: 0.3,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: C.primaryText,
+        letterSpacing: -0.4,
+        lineHeight: 28,
+        marginBottom: 8,
+    },
+    desc: {
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.7)',
+        fontWeight: '400',
+        lineHeight: 18,
+        marginBottom: 12,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 7,
+        marginBottom: 18,
+    },
+    metaText: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.8)',
+        fontWeight: '500',
+        flex: 1,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+    },
+    priceLabel: {
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.5)',
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
+    priceValue: {
+        fontSize: 17,
+        fontWeight: '800',
+        color: C.accent,
+        marginTop: 2,
+        letterSpacing: -0.2,
+    },
+    cta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.4)',
+    },
+    ctaText: {
+        color: C.accent,
+        fontSize: 13,
+        fontWeight: '800',
+        letterSpacing: 0.2,
+    },
+})
+
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT : EVENT CARD (Liste)
+═══════════════════════════════════════════════════════════ */
+
+function EventCard({
+    event, onPress, t, index,
+}: {
+    event: AppEvent
+    onPress: () => void
+    t: any
+    index: number
+}) {
+    const enterAnim = useSharedValue(0)
+    const pressAnim = useSharedValue(0)
+
+    useEffect(() => {
+        enterAnim.value = withDelay(
+            index * 80,
+            withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })
+        )
+    }, [index])
+
+    const cardStyle = useAnimatedStyle(() => ({
+        opacity: enterAnim.value,
+        transform: [
+            { translateY: 30 * (1 - enterAnim.value) },
+            { scale: interpolate(pressAnim.value, [0, 1], [1, 0.98]) },
+        ],
+    }))
+
+    const isFree = event.price_standard === 0
+    const isRegistered = !!event.my_registration
+    const daysUntil = getDaysUntil(event.start_date)
+
+    return (
+        <Animated.View style={cardStyle}>
+            <Pressable
+                onPress={onPress}
+                onPressIn={() => { pressAnim.value = withSpring(1) }}
+                onPressOut={() => { pressAnim.value = withSpring(0) }}
+            >
+                <View style={cardStyles.card}>
+                    {/* Colonne date à gauche */}
+                    <View style={cardStyles.dateCol}>
+                        <Text style={cardStyles.dateDay}>
+                            {new Date(event.start_date).getDate()}
+                        </Text>
+                        <Text style={cardStyles.dateMonth}>
+                            {new Date(event.start_date)
+                                .toLocaleDateString('fr-FR', { month: 'short' })
+                                .toUpperCase().replace('.', '')}
+                        </Text>
+                        <View style={cardStyles.dateLine} />
+                        <Text style={cardStyles.dateTime}>{formatTime(event.start_date)}</Text>
+                    </View>
+
+                    {/* Contenu */}
+                    <View style={cardStyles.content}>
+                        {/* Badges top */}
+                        <View style={cardStyles.badgesRow}>
+                            {event.category && (
+                                <View style={cardStyles.catBadge}>
+                                    <View style={cardStyles.catDot} />
+                                    <Text style={cardStyles.catText}>
+                                        {t(event.category).toUpperCase()}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {event.is_featured && (
+                                <View style={cardStyles.featuredBadge}>
+                                    <Ionicons name="star" size={9} color={C.accent} />
+                                </View>
+                            )}
+
+                            {isRegistered && (
+                                <View style={cardStyles.miniRegistered}>
+                                    <Ionicons name="checkmark-circle" size={11} color={C.success} />
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Titre */}
+                        <Text style={cardStyles.title} numberOfLines={2}>
+                            {event.title}
+                        </Text>
+
+                        {/* Description */}
+                        {(event.short_description || event.description) && (
+                            <Text style={cardStyles.desc} numberOfLines={1}>
+                                {event.short_description || event.description}
+                            </Text>
+                        )}
+
+                        {/* Lieu */}
+                        <View style={cardStyles.metaRow}>
+                            <Ionicons name="location-outline" size={11} color={C.textMuted} />
+                            <Text style={cardStyles.metaText} numberOfLines={1}>
+                                {event.location}
+                            </Text>
+
+                            {daysUntil > 0 && daysUntil <= 7 && (
+                                <View style={cardStyles.soonBadge}>
+                                    <View style={cardStyles.soonDot} />
+                                    <Text style={cardStyles.soonText}>
+                                        {daysUntil === 1 ? t('Demain') : `J-${daysUntil}`}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Footer prix */}
+                        <View style={cardStyles.footer}>
+                            <View style={[
+                                cardStyles.priceBadge,
+                                isFree && cardStyles.priceBadgeFree,
+                            ]}>
+                                <Text style={[
+                                    cardStyles.priceText,
+                                    isFree && cardStyles.priceTextFree,
+                                ]}>
+                                    {formatPrice(event.price_standard, event.currency, t)}
+                                </Text>
+                            </View>
+
+                            <View style={cardStyles.viewBtn}>
+                                <Text style={cardStyles.viewBtnText}>{t('Détails')}</Text>
+                                <Ionicons name="arrow-forward" size={11} color={C.accent} />
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </Pressable>
+        </Animated.View>
+    )
+}
+
+const cardStyles = StyleSheet.create({
+    card: {
+        flexDirection: 'row',
+        backgroundColor: C.surface,
+        borderRadius: 16,
+        padding: 14,
+        borderWidth: 1.2,
+        borderColor: C.border,
+        marginBottom: 12,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 2,
+        overflow: 'hidden',
+    },
+    dateCol: {
+        width: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        backgroundColor: 'rgba(13, 43, 78, 0.05)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(13, 43, 78, 0.08)',
+        marginRight: 14,
+    },
+    dateDay: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: C.primary,
+        letterSpacing: -0.5,
+        lineHeight: 24,
+    },
+    dateMonth: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: C.accentDark,
+        letterSpacing: 1.2,
+        marginTop: 2,
+    },
+    dateLine: {
+        width: 24,
+        height: 1,
+        backgroundColor: C.border,
+        marginVertical: 6,
+    },
+    dateTime: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: C.textSec,
+        letterSpacing: 0.3,
+    },
+    content: {
+        flex: 1,
+        gap: 4,
+    },
+    badgesRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginBottom: 2,
+    },
+    catBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        borderRadius: 6,
+        paddingHorizontal: 7,
+        paddingVertical: 3,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.2)',
+    },
+    catDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: C.accent,
+    },
+    catText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: C.accentDark,
+        letterSpacing: 0.5,
+    },
+    featuredBadge: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.3)',
+    },
+    miniRegistered: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(10, 107, 59, 0.12)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(10, 107, 59, 0.25)',
+    },
+    title: {
+        fontSize: 14.5,
+        fontWeight: '800',
+        color: C.primary,
+        letterSpacing: -0.2,
+        lineHeight: 18,
+        marginTop: 4,
+    },
+    desc: {
+        fontSize: 11.5,
+        color: C.textSec,
+        fontWeight: '400',
+        lineHeight: 15,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 4,
+    },
+    metaText: {
+        flex: 1,
+        fontSize: 11,
+        color: C.textMuted,
+        fontWeight: '500',
+    },
+    soonBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(212, 160, 23, 0.12)',
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.25)',
+    },
+    soonDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: C.accent,
+    },
+    soonText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: C.accentDark,
+        letterSpacing: 0.3,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+    },
+    priceBadge: {
+        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(13, 43, 78, 0.08)',
+    },
+    priceBadgeFree: {
+        backgroundColor: 'rgba(10, 107, 59, 0.10)',
+        borderColor: 'rgba(10, 107, 59, 0.25)',
+    },
+    priceText: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: C.primary,
+        letterSpacing: -0.2,
+    },
+    priceTextFree: {
+        color: C.success,
+    },
+    viewBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: C.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
+    },
+    viewBtnText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: C.primaryText,
+        letterSpacing: 0.2,
+    },
+})
+
+/* ═══════════════════════════════════════════════════════════
+   ÉCRAN PRINCIPAL : EVENTS
+═══════════════════════════════════════════════════════════ */
+
+export default function EventsScreen({ navigation }: any) {
+    const { profile } = useAuth()
+    const [events, setEvents] = useState<AppEvent[]>([])
+    const { t } = useLang()
+    const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [category, setCategory] = useState('Tous')
+
+    /* ── Animations Corporate ── */
+    const headerAnim = useSharedValue(0)
+    const aura1Y = useSharedValue(0)
+    const aura2X = useSharedValue(0)
+
+    useEffect(() => {
+        headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
+
+        aura1Y.value = withRepeat(
+            withSequence(
+                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
+                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
+            ), -1, true
+        )
+        aura2X.value = withRepeat(
+            withSequence(
+                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
+                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
+            ), -1, true
+        )
+    }, [])
+
+    const styleHeader = useAnimatedStyle(() => ({
+        opacity: headerAnim.value,
+        transform: [{ translateY: 30 * (1 - headerAnim.value) }],
+    }))
+    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
+    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
+
+    const fetchEvents = useCallback(async () => {
+        try {
+            const clientParam = profile?.id ? `&client_id=${profile.id}` : ''
+            const text = await fetchWithTimeout(`${API_BASE}/api/mobile/events?${clientParam}`, { timeoutMs: 10000 }).then(r => r.text())
+            let json: { events?: AppEvent[] } = {}
+            try { json = JSON.parse(text) } catch { /* ignore */ }
+            setEvents(json.events || [])
+        } catch (err) {
+            console.warn('[Events] fetch error:', err)
+        } finally {
+            setLoading(false)
+        }
+    }, [profile?.id])
+
+    useEffect(() => { fetchEvents() }, [fetchEvents])
+    const onRefresh = async () => { setRefreshing(true); await fetchEvents(); setRefreshing(false) }
+
+    const filtered = category === 'Tous'
+        ? events
+        : events.filter(e => e.category === category)
+
+    const featured = events.filter(e => e.is_featured)[0]
+    const otherEvents = featured
+        ? filtered.filter(e => e.id !== featured.id)
+        : filtered
+
+    // Comptage par catégorie
+    const getCount = (cat: string) =>
+        cat === 'Tous' ? events.length : events.filter(e => e.category === cat).length
+
+    return (
+        <View style={styles.container}>
+            {/* 🎨 BACKGROUND PREMIUM : Auras */}
+            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
+            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
+
+            {/* NAV BAR */}
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+                    <View style={styles.iconContainer}>
+                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                    </View>
+                </Pressable>
+
+                {/* Compteur d'événements */}
+                {!loading && events.length > 0 && (
+                    <View style={styles.navCounter}>
+                        <View style={styles.navCounterDot} />
+                        <Text style={styles.navCounterText}>
+                            {events.length} {events.length > 1 ? t('événements') : t('événement')}
+                        </Text>
+                    </View>
+                )}
+            </View>
+
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={C.primary}
+                    />
+                }
+                contentContainerStyle={styles.scroll}
+            >
+                {/* HEADER TITRE */}
+                <Animated.View style={[styles.headerContainer, styleHeader]}>
+                    <Text style={styles.title}>{t('Nos')}</Text>
+                    <Text style={styles.titleHighlight}>{t('événements.')}</Text>
+                    <Text style={styles.subtitle}>
+                        {t('Galas, forums, circuits culturels et séminaires de la diaspora.')}
+                    </Text>
+                </Animated.View>
+
+                {/* LOADING SKELETON */}
+                {loading ? (
+                    <View style={styles.skeletonWrap}>
+                        {[0, 1, 2].map(i => (
+                            <View key={i} style={styles.skeletonCard}>
+                                <View style={styles.skeletonDate} />
+                                <View style={styles.skeletonContent}>
+                                    <View style={[styles.skeletonLine, { width: '70%', height: 14 }]} />
+                                    <View style={[styles.skeletonLine, { width: '50%', height: 10, marginTop: 8 }]} />
+                                    <View style={[styles.skeletonLine, { width: '30%', height: 10, marginTop: 4 }]} />
+                                </View>
+                            </View>
+                        ))}
+                    </View>
+                ) : events.length === 0 ? (
+                    /* ── État vide global ── */
+                    <AnimatedSection delay={150}>
+                        <View style={styles.emptyGlobalCard}>
+                            <View style={styles.emptyGlobalIcon}>
+                                <Ionicons name="calendar-outline" size={42} color={C.accent} />
+                            </View>
+                            <Text style={styles.emptyGlobalTitle}>
+                                {t('Aucun événement pour le moment')}
+                            </Text>
+                            <Text style={styles.emptyGlobalDesc}>
+                                {t('Les prochains galas, forums et circuits culturels seront affichés ici dès leur publication.')}
+                            </Text>
+
+                            <View style={styles.emptyDecorator}>
+                                <View style={styles.emptyDot} />
+                                <View style={styles.emptyLine} />
+                                <View style={[styles.emptyDot, { backgroundColor: C.accent }]} />
+                                <View style={styles.emptyLine} />
+                                <View style={styles.emptyDot} />
+                            </View>
+
+                            <Text style={styles.emptyHint}>
+                                {t('Restez connecté · Tirez pour rafraîchir')}
+                            </Text>
+                        </View>
+                    </AnimatedSection>
+                ) : (
+                    <>
+                        {/* ═══ ÉVÉNEMENT À LA UNE ═══ */}
+                        {featured && (
+                            <AnimatedSection delay={150}>
+                                <FeaturedEventCard
+                                    event={featured}
+                                    onPress={() => navigation.navigate('EventDetail', { event: featured })}
+                                    t={t}
+                                />
+                            </AnimatedSection>
+                        )}
+
+                        {/* ═══ FILTRES CATÉGORIE ═══ */}
+                        <AnimatedSection delay={250}>
+                            <View style={styles.filterTitleWrap}>
+                                <Text style={styles.filterTitle}>{t('FILTRER PAR')}</Text>
+                                <View style={styles.filterUnderline} />
+                            </View>
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.filtersContent}
+                            >
+                                {CATEGORIES.map(cat => {
+                                    const active = category === cat
+                                    const count = getCount(cat)
+                                    return (
+                                        <CategoryPill
+                                            key={cat}
+                                            label={t(cat)}
+                                            icon={CATEGORY_ICONS[cat] || 'apps-outline'}
+                                            count={count}
+                                            active={active}
+                                            onPress={() => setCategory(cat)}
+                                        />
+                                    )
+                                })}
+                            </ScrollView>
+                        </AnimatedSection>
+
+                        {/* ═══ LISTE ═══ */}
+                        <AnimatedSection delay={350}>
+                            {category !== 'Tous' && (
+                                <View style={styles.listHeader}>
+                                    <Text style={styles.listHeaderText}>
+                                        {t(category)} · {otherEvents.length} {otherEvents.length > 1 ? t('événements') : t('événement')}
+                                    </Text>
+                                </View>
+                            )}
+
+                            <View style={styles.listWrap}>
+                                {otherEvents.length === 0 ? (
+                                    <View style={styles.emptyCatWrap}>
+                                        <View style={styles.emptyCatIcon}>
+                                            <Ionicons name="search-outline" size={28} color={C.textMuted} />
+                                        </View>
+                                        <Text style={styles.emptyCatTitle}>
+                                            {t('Aucun événement')}
+                                        </Text>
+                                        <Text style={styles.emptyCatText}>
+                                            {t('Pas d\'événement dans cette catégorie pour le moment.')}
+                                        </Text>
+                                        <Pressable
+                                            onPress={() => setCategory('Tous')}
+                                            style={styles.emptyCatBtn}
+                                        >
+                                            <Text style={styles.emptyCatBtnText}>
+                                                {t('Voir tous les événements')}
+                                            </Text>
+                                            <Ionicons name="arrow-forward" size={13} color={C.accent} />
+                                        </Pressable>
+                                    </View>
+                                ) : (
+                                    otherEvents.map((event, idx) => (
+                                        <EventCard
+                                            key={event.id}
+                                            event={event}
+                                            index={idx}
+                                            onPress={() => navigation.navigate('EventDetail', { event })}
+                                            t={t}
+                                        />
+                                    ))
+                                )}
+                            </View>
+                        </AnimatedSection>
+                    </>
+                )}
+
+                <View style={{ height: 60 }} />
+            </ScrollView>
+        </View>
+    )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT : CATEGORY PILL (Animée)
+═══════════════════════════════════════════════════════════ */
+
+function CategoryPill({
+    label, icon, count, active, onPress,
+}: {
+    label: string
+    icon: keyof typeof Ionicons.glyphMap
+    count: number
+    active: boolean
+    onPress: () => void
+}) {
+    const anim = useSharedValue(active ? 1 : 0)
+
+    useEffect(() => {
+        anim.value = withSpring(active ? 1 : 0, { damping: 18, stiffness: 180 })
+    }, [active])
+
+    const pillStyle = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            anim.value,
+            [0, 1],
+            [C.surface, C.primary]
+        ),
+        borderColor: interpolateColor(
+            anim.value,
+            [0, 1],
+            [C.border, C.primary]
+        ),
+    }))
+
+    const iconColor = active ? C.accent : C.textSec
+    const textColor = active ? C.primaryText : C.textSec
+
+    return (
+        <Pressable onPress={onPress}>
+            <Animated.View style={[styles.filterPill, pillStyle]}>
+                <Ionicons name={icon} size={14} color={iconColor} />
+                <Text style={[styles.filterText, { color: textColor }]}>
+                    {label}
+                </Text>
+                {count > 0 && (
+                    <View style={[
+                        styles.filterCount,
+                        active && styles.filterCountActive,
+                    ]}>
+                        <Text style={[
+                            styles.filterCountText,
+                            active && styles.filterCountTextActive,
+                        ]}>
+                            {count}
+                        </Text>
+                    </View>
+                )}
+            </Animated.View>
+        </Pressable>
+    )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STYLES
+═══════════════════════════════════════════════════════════ */
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: C.bg,
+    },
+
+    /* ── Auras Corporate ── */
+    aura: {
+        position: 'absolute',
+        width: width * 0.9,
+        height: width * 0.9,
+        borderRadius: width,
+        opacity: 0.05,
+    },
+    aura1: {
+        top: -100,
+        right: -100,
+        backgroundColor: C.primary,
+    },
+    aura2: {
+        bottom: 50,
+        left: -100,
+        backgroundColor: C.auraGreen,
+    },
+
+    /* ── Nav Bar ── */
+    navBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+        zIndex: 10,
+    },
+    navBack: {
+        width: 44,
+        height: 44,
+        justifyContent: 'center',
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: C.surface,
+        borderWidth: 1,
+        borderColor: C.border,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    navCounter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.25)',
+    },
+    navCounterDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: C.success,
+    },
+    navCounterText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: C.accentDark,
+        letterSpacing: 0.3,
+    },
+
+    scroll: {
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+    },
+
+    /* ── Header ── */
+    headerContainer: {
+        marginTop: 8,
+        marginBottom: 24,
+        paddingHorizontal: 8,
+    },
+    title: {
+        fontSize: 38,
+        fontWeight: '700',
+        color: C.primary,
+        letterSpacing: -0.5,
+    },
+    titleHighlight: {
+        fontSize: 38,
+        fontWeight: '800',
+        color: C.accent,
+        letterSpacing: -0.5,
+        marginTop: -4,
+    },
+    subtitle: {
+        fontSize: 15,
+        color: C.textSec,
+        marginTop: 14,
+        lineHeight: 22,
+        fontWeight: '400',
+    },
+
+    /* ── Skeleton ── */
+    skeletonWrap: {
+        gap: 12,
+    },
+    skeletonCard: {
+        flexDirection: 'row',
+        backgroundColor: C.surface,
+        borderRadius: 16,
+        padding: 14,
+        borderWidth: 1.2,
+        borderColor: C.border,
+    },
+    skeletonDate: {
+        width: 64,
+        height: 88,
+        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        borderRadius: 12,
+        marginRight: 14,
+    },
+    skeletonContent: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    skeletonLine: {
+        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        borderRadius: 4,
+    },
+
+    /* ── Filter title ── */
+    filterTitleWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 12,
+        marginTop: 4,
+        paddingHorizontal: 4,
+    },
+    filterTitle: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: C.accentDark,
+        letterSpacing: 1.5,
+    },
+    filterUnderline: {
+        flex: 1,
+        height: 1,
+        backgroundColor: C.border,
+    },
+
+    /* ── Filtres ── */
+    filtersContent: {
+        gap: 8,
+        paddingRight: 20,
+        paddingVertical: 4,
+        marginBottom: 24,
+    },
+    filterPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 7,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1.2,
+    },
+    filterText: {
+        fontSize: 12.5,
+        fontWeight: '700',
+        letterSpacing: 0.2,
+    },
+    filterCount: {
+        minWidth: 20,
+        height: 18,
+        paddingHorizontal: 5,
+        borderRadius: 9,
+        backgroundColor: 'rgba(13, 43, 78, 0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    filterCountActive: {
+        backgroundColor: C.accent,
+    },
+    filterCountText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: C.textSec,
+    },
+    filterCountTextActive: {
+        color: C.primary,
+    },
+
+    /* ── List header ── */
+    listHeader: {
+        marginBottom: 12,
+        marginTop: 8,
+        paddingHorizontal: 4,
+    },
+    listHeaderText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: C.textSec,
+        letterSpacing: 0.3,
+    },
+
+    listWrap: {
+        gap: 0,
+    },
+
+    /* ── Empty Global (aucun événement) ── */
+    emptyGlobalCard: {
+        backgroundColor: C.surface,
+        borderRadius: 20,
+        padding: 32,
+        alignItems: 'center',
+        borderWidth: 1.2,
+        borderColor: C.border,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 2,
+        marginTop: 20,
+    },
+    emptyGlobalIcon: {
+        width: 88,
+        height: 88,
+        borderRadius: 24,
+        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        borderWidth: 1.2,
+        borderColor: 'rgba(212, 160, 23, 0.2)',
+    },
+    emptyGlobalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: C.primary,
+        textAlign: 'center',
+        marginBottom: 10,
+        letterSpacing: -0.3,
+    },
+    emptyGlobalDesc: {
+        fontSize: 13,
+        color: C.textSec,
+        textAlign: 'center',
+        lineHeight: 19,
+        marginBottom: 22,
+        fontWeight: '400',
+        paddingHorizontal: 4,
+    },
+    emptyDecorator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 14,
+    },
+    emptyDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: C.border,
+    },
+    emptyLine: {
+        width: 30,
+        height: 1,
+        backgroundColor: C.border,
+    },
+    emptyHint: {
+        fontSize: 11,
+        color: C.textMuted,
+        fontStyle: 'italic',
+        letterSpacing: 0.3,
+    },
+
+    /* ── Empty Catégorie ── */
+    emptyCatWrap: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+        backgroundColor: C.surface,
+        borderRadius: 16,
+        borderWidth: 1.2,
+        borderColor: C.border,
+        borderStyle: 'dashed',
+        gap: 10,
+    },
+    emptyCatIcon: {
+        width: 56,
+        height: 56,
+        borderRadius: 18,
+        backgroundColor: 'rgba(100, 116, 139, 0.10)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 6,
+    },
+    emptyCatTitle: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: C.primary,
+        letterSpacing: -0.2,
+    },
+    emptyCatText: {
+        fontSize: 12,
+        color: C.textSec,
+        textAlign: 'center',
+        lineHeight: 17,
+        marginBottom: 10,
+        fontWeight: '400',
+    },
+    emptyCatBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(212, 160, 23, 0.3)',
+    },
+    emptyCatBtnText: {
+        color: C.accentDark,
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 0.2,
+    },
+})

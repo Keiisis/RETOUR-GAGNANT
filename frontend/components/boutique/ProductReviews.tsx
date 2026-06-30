@@ -4,6 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Send, User, MessageSquare, Loader2, CheckCircle2 } from 'lucide-react'
+import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 
 interface Review {
     id: string
@@ -254,6 +255,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                     {formError && (
                                         <p className="text-xs text-[#E8112D] font-bold">{formError}</p>
                                     )}
+
+                                    <ConsentCheckbox id="review-consent" purpose="afin de publier mon avis sur ce produit" className="!text-gray-400" />
 
                                     <button
                                         type="submit"

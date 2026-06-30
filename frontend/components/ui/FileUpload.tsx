@@ -143,7 +143,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
                 {/* Placeholder vide */}
                 {!value && !uploading && (
                     <div className={cn(
-                        'absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-gray-300 group-hover:text-gray-400 transition-colors p-3',
+                        'absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-gray-400 group-hover:text-gray-500 transition-colors p-3',
                         drag && 'text-[#008751]'
                     )}>
                         <ImageIcon size={isLogo ? 22 : 28} strokeWidth={1.5} />

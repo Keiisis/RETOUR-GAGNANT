@@ -45,7 +45,7 @@ export default function TestimonialsEdit() {
                 text: record.text || "",
                 rating: record.rating || 5,
                 service: record.service || "",
-                photo: record.photo || "",
+                photo: record.photo || record.photo_url || "",
                 approved: record.approved || false
             });
         }

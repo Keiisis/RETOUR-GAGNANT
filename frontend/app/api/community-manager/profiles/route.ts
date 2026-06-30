@@ -42,10 +42,7 @@ export async function POST(request: NextRequest) {
 
         const { data, error } = await supabaseAdmin
             .from('social_profiles')
-            .upsert(
-                { platform, profile_url: profile_url.trim(), username: username.trim(), notes: notes?.trim() || null },
-                { onConflict: 'profile_url', ignoreDuplicates: false }
-            )
+            .insert({ platform, profile_url: profile_url.trim(), username: username.trim(), notes: notes?.trim() || null })
             .select()
             .single()
 

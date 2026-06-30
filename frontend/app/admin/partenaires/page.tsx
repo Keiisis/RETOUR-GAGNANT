@@ -563,7 +563,7 @@ export default function AdminPartenaires() {
                                                         </span>
                                                     </div>
                                                     <p className="text-xs text-gray-500 mt-0.5">{app.contact_name} • {app.category} • {app.location}</p>
-                                                    <p className="text-[10px] text-gray-600">{new Date(app.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                                    <p className="text-[10px] text-gray-600">{!app.created_at || isNaN(new Date(app.created_at).getTime()) ? '—' : new Date(app.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                                 </div>
                                                 {isExpanded ? <ChevronUp size={16} className="text-gray-500 flex-shrink-0" /> : <ChevronDown size={16} className="text-gray-500 flex-shrink-0" />}
                                             </button>

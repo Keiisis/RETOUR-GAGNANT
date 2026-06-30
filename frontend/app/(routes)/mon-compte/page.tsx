@@ -118,7 +118,7 @@ export default function MonComptePage() {
 
     if (!authenticated) {
         return (
-            <div className="min-h-screen bg-[#0a0f14] flex items-center justify-center px-4">
+            <div className="min-h-screen bg-white flex items-center justify-center px-4">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -128,12 +128,12 @@ export default function MonComptePage() {
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-yellow-500/20 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                             <Shield size={28} className="text-emerald-400" />
                         </div>
-                        <h1 className="text-3xl font-black text-white mb-2"><T>Mon Espace</T></h1>
+                        <h1 className="text-3xl font-black text-gray-900 mb-2"><T>Mon Espace</T></h1>
                         <p className="text-sm text-gray-500"><T>Accédez à vos dossiers, documents et contrats</T></p>
                     </div>
 
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block"><T>Votre adresse email</T></label>
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block"><T>Votre adresse email</T></label>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -143,7 +143,7 @@ export default function MonComptePage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                                     placeholder={t("votre@email.com")}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500/50 text-sm"
                                 />
                             </div>
                             <button
@@ -167,7 +167,7 @@ export default function MonComptePage() {
                             { icon: CalendarCheck, label: t('Contrats') },
                             { icon: Receipt, label: t('Factures') },
                         ].map((f, i) => (
-                            <div key={i} className="bg-white/[0.02] border border-white/5 rounded-xl p-3 flex items-center gap-2 text-xs text-gray-500">
+                            <div key={i} className="bg-white/[0.02] border border-gray-200 rounded-xl p-3 flex items-center gap-2 text-xs text-gray-500">
                                 <f.icon size={14} className="text-emerald-500/50" /> {f.label}
                             </div>
                         ))}
@@ -198,13 +198,13 @@ export default function MonComptePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0f14] py-8 px-4">
+        <div className="min-h-screen bg-white py-8 px-4">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 flex justify-between items-start">
                     <div>
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]"><T>Bienvenue</T></span>
-                        <h1 className="text-2xl font-black text-white">
+                        <h1 className="text-2xl font-black text-gray-900">
                             {clientName ? `${t('Bonjour')} ${clientName}` : t('Mon Espace Client')}
                         </h1>
                         <p className="text-sm text-gray-500 mt-1">{email}</p>
@@ -216,7 +216,7 @@ export default function MonComptePage() {
                             setDossiers([])
                             setEmail('')
                         }}
-                        className="text-xs text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"
+                        className="text-xs text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
                         <LogOut size={14} /> <T>Déconnexion</T>
                     </button>
@@ -230,11 +230,11 @@ export default function MonComptePage() {
                             onClick={() => setActiveTab(tab.key as typeof activeTab)}
                             className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl whitespace-nowrap transition-all ${activeTab === tab.key
                                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-white/5 text-gray-500 border border-white/5 hover:text-white'
+                                : 'bg-gray-50 text-gray-500 border border-gray-200 hover:text-gray-900'
                                 }`}
                         >
                             <tab.icon size={14} /> {t(tab.label)}
-                            {tab.count > 0 && <span className="bg-white/10 px-1.5 py-0.5 rounded-full text-[10px]">{tab.count}</span>}
+                            {tab.count > 0 && <span className="bg-gray-100 px-1.5 py-0.5 rounded-full text-[10px]">{tab.count}</span>}
                         </button>
                     ))}
                 </div>
@@ -244,20 +244,20 @@ export default function MonComptePage() {
                     {activeTab === 'dossiers' && (
                         <motion.div key="dossiers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                             {dossiers.length === 0 ? (
-                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun dossier en cours</T></div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun dossier en cours</T></div>
                             ) : dossiers.map(d => (
-                                <div key={d.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                <div key={d.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
                                             <p className="text-xs text-gray-500 font-mono">#{d.num_dossier}</p>
-                                            <p className="text-base font-bold text-white">{d.service_type}</p>
+                                            <p className="text-base font-bold text-gray-900">{d.service_type}</p>
                                         </div>
-                                        <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${statusColors[d.statut] || 'text-gray-400 bg-white/10'}`}>
+                                        <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${statusColors[d.statut] || 'text-gray-500 bg-gray-100'}`}>
                                             {t(d.statut)}
                                         </span>
                                     </div>
                                     {/* Progress bar */}
-                                    <div className="w-full bg-white/5 rounded-full h-2 mb-2">
+                                    <div className="w-full bg-gray-50 rounded-full h-2 mb-2">
                                         <div className="bg-emerald-500 h-2 rounded-full transition-all duration-1000" style={{ width: `${d.progression}%` }} />
                                     </div>
                                     <p className="text-[10px] text-gray-500">{d.progression}% {t('complété')}</p>
@@ -282,15 +282,15 @@ export default function MonComptePage() {
                     {activeTab === 'oracle' && (
                         <motion.div key="oracle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                             {oracleResults.length === 0 ? (
-                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun résultat Oracle</T></div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun résultat Oracle</T></div>
                             ) : oracleResults.map(r => (
-                                <div key={r.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                <div key={r.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                                     <div className="flex items-center gap-4 mb-3">
                                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-lg ${r.eligibility_score >= 70 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
                                             {r.eligibility_score}%
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-white">{t(r.recommended_service)}</p>
+                                            <p className="text-sm font-bold text-gray-900">{t(r.recommended_service)}</p>
                                             <p className="text-[10px] text-gray-500">{new Date(r.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                         </div>
                                     </div>
@@ -302,9 +302,9 @@ export default function MonComptePage() {
                     {activeTab === 'documents' && (
                         <motion.div key="documents" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             {/* Upload */}
-                            <div className="bg-white/[0.03] border-2 border-dashed border-white/10 rounded-2xl p-8 text-center mb-4 hover:border-emerald-500/30 transition-all">
+                            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center mb-4 hover:border-emerald-500/30 transition-all">
                                 <FileText className="mx-auto mb-3 text-gray-600" size={32} />
-                                <p className="text-sm text-gray-400 mb-2"><T>Glissez vos documents ici ou cliquez pour sélectionner</T></p>
+                                <p className="text-sm text-gray-500 mb-2"><T>Glissez vos documents ici ou cliquez pour sélectionner</T></p>
                                 <label className="cursor-pointer bg-emerald-500/20 text-emerald-400 font-bold text-xs px-4 py-2 rounded-lg hover:bg-emerald-500/30 transition-all">
                                     <T>Choisir un fichier</T>
                                     <input type="file" className="hidden" onChange={handleUpload} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
@@ -313,7 +313,7 @@ export default function MonComptePage() {
                             {/* List */}
                             <div className="space-y-2">
                                 {documents.map(doc => (
-                                    <div key={doc.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 flex items-center justify-between">
+                                    <div key={doc.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <FileText size={16} className="text-blue-400" />
                                             <div>
@@ -333,15 +333,15 @@ export default function MonComptePage() {
                     {activeTab === 'contrats' && (
                         <motion.div key="contrats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                             {contracts.length === 0 ? (
-                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun contrat</T></div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucun contrat</T></div>
                             ) : contracts.map(c => (
-                                <div key={c.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                <div key={c.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
-                                            <p className="text-base font-bold text-white">{t(c.title)}</p>
+                                            <p className="text-base font-bold text-gray-900">{t(c.title)}</p>
                                             <p className="text-xs text-gray-500">{c.amount?.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')} {c.currency}</p>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${c.status === 'signe' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'envoye' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${c.status === 'signe' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'envoye' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-500'}`}>
                                             {c.status === 'signe' ? t('✓ Signé') : c.status === 'envoye' ? t('À signer') : t(c.status)}
                                         </span>
                                     </div>
@@ -364,20 +364,20 @@ export default function MonComptePage() {
                     {activeTab === 'factures' && (
                         <motion.div key="factures" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                             {orders.length === 0 ? (
-                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucune commande ni facture</T></div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-500 text-sm"><T>Aucune commande ni facture</T></div>
                             ) : orders.map(o => (
-                                <div key={o.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                <div key={o.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
-                                            <p className="text-base font-bold text-white">{o.product_title || t('Commande')}</p>
+                                            <p className="text-base font-bold text-gray-900">{o.product_title || t('Commande')}</p>
                                             <p className="text-[10px] text-gray-500">{new Date(o.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} • {o.amount?.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')} {o.currency}</p>
                                         </div>
                                         <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${o.payment_status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : o.payment_status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
                                             {o.payment_status === 'completed' ? t('Payé') : o.payment_status === 'pending' ? t('En attente') : t('Échoué')}
                                         </span>
                                     </div>
-                                    <div className="mt-4 border-t border-white/5 pt-4">
-                                        <a href={`/api/invoices/${o.id}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold bg-white/5 hover:bg-white/10 text-white py-2 rounded-lg transition-colors w-full">
+                                    <div className="mt-4 border-t border-gray-200 pt-4">
+                                        <a href={`/api/invoices/${o.id}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-xs font-bold bg-gray-50 hover:bg-gray-100 text-gray-900 py-2 rounded-lg transition-colors w-full">
                                             <Receipt size={14} /> <T>Télécharger la facture PDF (HTML)</T>
                                         </a>
                                     </div>

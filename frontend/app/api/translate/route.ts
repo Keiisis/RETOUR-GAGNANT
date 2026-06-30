@@ -78,25 +78,32 @@ export async function POST(req: Request) {
             })
         }
 
-        // 4. Translate missing texts with Groq
+        // 4. Translate missing texts with Groq (graceful degradation)
         if (missingTexts.length > 0 && GROQ_KEYS.length > 0) {
+            try {
             const textsToTranslate = missingTexts.map(m => m.text)
+
+            // Build language-specific hint for Creole languages
+            const langHint = langConfig.promptHint ? `\n6. LANGUAGE CONTEXT: ${langConfig.promptHint}` : ''
+            
+            // Extra enforcement for Creole to prevent English fallback
+            const creoleEnforcement = (lang === 'cr' || lang === 'ht') ? `\n7. CRITICAL: You MUST translate to ${langConfig.groqName}, NOT to English and NOT to French. Every single value in your JSON output must be in ${langConfig.groqName}. If you are unsure of a word in ${langConfig.groqName}, use the closest Creole approximation. NEVER fall back to English.` : ''
 
             const prompt = `Translate the following JSON array of strings from French to ${langConfig.groqName}. 
 CRITICAL RULES:
-1. Return ONLY a valid JSON array of strings in the exact same order.
+1. Return ONLY a valid JSON object where the keys are the exact original French strings provided, and the values are the translations in ${langConfig.groqName}.
 2. DO NOT add any markdown formatting, explanations, or notes.
 3. Preserve shortcodes like {name}, {RG}, {RGB1}, {RGB2} exactly as they are.
-4. IMPORTANT: Translate everything to a natural, high-quality translation for a premium service. For the exact phrase "VOTRE RETOUR GAGNANT", translate it as "YOUR WINNING RETURN" or similar. But DO NOT translate the tags {RG}, {RGB1}, {RGB2} if they appear.
-5. EXTREMELY IMPORTANT: Preserve ANY and ALL HTML tags exactly identical. Do not modify or remove attributes like 'class', 'className', 'style'. Do not translate the class names or style values.
+4. IMPORTANT: Translate everything to a natural, high-quality ${langConfig.groqName} translation for a premium service. For the exact phrase "VOTRE RETOUR GAGNANT", translate it appropriately. But DO NOT translate the tags {RG}, {RGB1}, {RGB2} if they appear.
+5. EXTREMELY IMPORTANT: Preserve ANY and ALL HTML tags exactly identical. Do not modify or remove attributes like 'class', 'className', 'style'. Do not translate the class names or style values.${langHint}${creoleEnforcement}
 
-French array:
+French strings to translate:
 ${JSON.stringify(textsToTranslate)}`
 
             const aiRes = await fetchWithGroqRotation({
                 model: 'llama-3.3-70b-versatile',
                 messages: [
-                    { role: 'system', content: 'You are a translation API. You only output strict JSON arrays.' },
+                    { role: 'system', content: `You are a professional translation API that translates French text to ${langConfig.groqName}. You only output valid JSON objects (key-value pairs). Never output arrays, markdown, or explanations. ${(lang === 'cr' || lang === 'ht') ? `IMPORTANT: You must output ${langConfig.groqName} text, NOT English. Every value must be in ${langConfig.groqName}.` : ''}` },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.1, // low temperature for consistency
@@ -111,36 +118,83 @@ ${JSON.stringify(textsToTranslate)}`
                 const cleanContent = aiContent.replace(/^```json/g, '').replace(/^```/g, '').replace(/```$/g, '').trim()
 
                 try {
-                    const translatedArray = JSON.parse(cleanContent)
+                    const parsed = JSON.parse(cleanContent)
+                    const recordsToInsert: { source_text: string; source_hash: string; lang: string; translated_text: string; context: string }[] = []
 
-                    if (Array.isArray(translatedArray) && translatedArray.length === missingTexts.length) {
-                        const recordsToInsert = []
+                    // Helper: check if a translation looks like PURE English (for Creole validation)
+                    // Be conservative — only reject if clearly English, not just containing borrowed words
+                    const looksEnglish = (text: string): boolean => {
+                        if (lang !== 'cr' && lang !== 'ht') return false
+                        if (text.length < 10) return false // Too short to judge
+                        // Only strong English markers (not words borrowed by Creole like 'service', 'for')
+                        const englishWords = ['the', 'and', 'our', 'your', 'with', 'this', 'that', 'are', 'was', 'been', 'have', 'will', 'welcome', 'about', 'their', 'these', 'those', 'would', 'should', 'could']
+                        const lower = text.toLowerCase()
+                        const words = lower.split(/\s+/)
+                        if (words.length < 4) return false // Too few words
+                        const englishCount = words.filter(w => englishWords.includes(w)).length
+                        return englishCount >= 3 && englishCount / words.length > 0.3
+                    }
 
+                    if (Array.isArray(parsed)) {
+                        // FALLBACK: Groq returned an array — map by index
+                        console.log('[translate] Groq returned array format, mapping by index')
+                        for (let i = 0; i < missingTexts.length && i < parsed.length; i++) {
+                            const translated = parsed[i]
+                            if (translated && typeof translated === 'string') {
+                                const original = missingTexts[i].text
+                                if (looksEnglish(translated)) {
+                                    console.warn(`[translate] Rejected English translation for ${lang}: "${translated.substring(0, 50)}..."`)
+                                    continue
+                                }
+                                translations[original] = translated
+                                recordsToInsert.push({
+                                    source_text: original,
+                                    source_hash: missingTexts[i].hash,
+                                    lang: lang,
+                                    translated_text: translated,
+                                    context: 'auto'
+                                })
+                            }
+                        }
+                    } else if (typeof parsed === 'object' && parsed !== null) {
+                        // EXPECTED: Groq returned an object — map by key
+                        console.log('[translate] Groq returned object format, mapping by key')
                         for (let i = 0; i < missingTexts.length; i++) {
                             const original = missingTexts[i].text
-                            const translated = translatedArray[i]
+                            const translated = parsed[original]
 
-                            translations[original] = translated
-
-                            recordsToInsert.push({
-                                source_text: original,
-                                source_hash: missingTexts[i].hash,
-                                lang: lang,
-                                translated_text: translated,
-                                context: 'auto'
-                            })
-                        }
-
-                        // 5. Save to Supabase (awaited for reliability)
-                        if (recordsToInsert.length > 0) {
-                            const { error: upsertErr } = await supabase.from('translations')
-                                .upsert(recordsToInsert, { onConflict: 'source_hash,lang' })
-                            if (upsertErr) console.error('Error saving translations:', upsertErr)
+                            if (translated && typeof translated === 'string') {
+                                if (looksEnglish(translated)) {
+                                    console.warn(`[translate] Rejected English translation for ${lang}: "${translated.substring(0, 50)}..."`)
+                                    continue
+                                }
+                                translations[original] = translated
+                                recordsToInsert.push({
+                                    source_text: original,
+                                    source_hash: missingTexts[i].hash,
+                                    lang: lang,
+                                    translated_text: translated,
+                                    context: 'auto'
+                                })
+                            }
                         }
                     }
+
+                    console.log(`[translate] Mapped ${recordsToInsert.length}/${missingTexts.length} translations`)
+
+                    // 5. Save to Supabase (awaited for reliability)
+                    if (recordsToInsert.length > 0) {
+                        const { error: upsertErr } = await supabase.from('translations')
+                            .upsert(recordsToInsert, { onConflict: 'source_hash,lang' })
+                        if (upsertErr) console.error('Error saving translations:', upsertErr)
+                    }
                 } catch (parseErr) {
-                    console.error('Failed to parse Groq response:', cleanContent, parseErr)
+                    console.error('Failed to parse Groq response:', cleanContent?.substring(0, 200), parseErr)
                 }
+            }
+            } catch (groqErr: unknown) {
+                // Rate limit or network error — return whatever we have from cache
+                console.warn(`[translate] Groq API unavailable: ${groqErr instanceof Error ? groqErr.message : 'unknown error'}. Returning ${Object.keys(translations).length} cached translations.`)
             }
         }
 

@@ -3,25 +3,46 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { toPng } from 'html-to-image'
+import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import {
     ArrowLeft, Download, FileImage, Loader2, Info,
-    BookOpen, CheckCircle, AlertCircle
+    BookOpen, CheckCircle, AlertCircle, Globe, Languages
 } from 'lucide-react'
 import {
     Panel1Recto, Panel1Verso, Panel2Verso, Panel2Recto,
-    BASE_W, BASE_H
+    FullPageVersoFR, FullPageVersoEN,
+    BASE_W, BASE_H, A3_W, A3_H
 } from '@/components/brochure/BrochurePanel'
 
-/* ══════════════════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════════════════ */
+/* ═══════ HELPERS ═══════ */
 
-async function capturePng(ref: React.RefObject<HTMLDivElement | null>): Promise<string> {
-    if (!ref.current) throw new Error('Élément non trouvé')
-    await new Promise(r => setTimeout(r, 300))
-    return toPng(ref.current, { pixelRatio: 4, cacheBust: true, skipFonts: false })
+async function captureCanvas(ref: React.RefObject<HTMLDivElement | null>): Promise<HTMLCanvasElement> {
+    const el = ref.current
+    if (!el) throw new Error('Élément non trouvé')
+
+    const canvas = await html2canvas(el, {
+        scale: 1.5, // 1.5x scale for HD quality without memory overflow
+        useCORS: true,
+        backgroundColor: '#0b1a3a', // fallback
+        logging: false
+    })
+
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error('Capture échouée — dimensions nulles')
+    }
+    return canvas
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function getErrorMessage(e: unknown): string {
@@ -31,38 +52,41 @@ function getErrorMessage(e: unknown): string {
     return String(e)
 }
 
-/* ══════════════════════════════════════════════════════════════
-   PAGE
-══════════════════════════════════════════════════════════════ */
+/* ═══════ PAGE ═══════ */
 
-type DownloadKey = 'p1r' | 'p1v' | 'p2v' | 'p2r' | 'pdf-outside' | 'pdf-inside' | 'pdf-a4'
+type DlKey = 'p1r' | 'p1v' | 'p2v' | 'p2r' | 'fp-fr' | 'fp-en' | 'pdf-outside' | 'pdf-inside' | 'pdf-a4' | 'pdf-fr-ext' | 'pdf-fr-int' | 'pdf-en-ext' | 'pdf-en-int'
+type TabKey = 'bilingue' | 'francais' | 'english'
 
 export default function DepliantPage() {
-    const [downloading, setDownloading] = useState<DownloadKey | null>(null)
+    const [downloading, setDownloading] = useState<DlKey | null>(null)
     const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+    const [activeTab, setActiveTab] = useState<TabKey>('bilingue')
 
-    /* Refs pour capture haute résolution (hidden, scale=1) */
+    /* Refs — bilingue */
     const r1rRef = useRef<HTMLDivElement>(null)
     const r1vRef = useRef<HTMLDivElement>(null)
     const r2vRef = useRef<HTMLDivElement>(null)
     const r2rRef = useRef<HTMLDivElement>(null)
+    /* Refs — A3 pleine page */
+    const fpFrRef = useRef<HTMLDivElement>(null)
+    const fpEnRef = useRef<HTMLDivElement>(null)
 
     const showStatus = (type: 'success' | 'error', msg: string) => {
         setStatus({ type, msg })
         setTimeout(() => setStatus(null), 4000)
     }
 
-    /* ─── Téléchargements ─── */
+    /* ─── Downloads ─── */
 
-    const downloadPanelPng = async (key: DownloadKey, ref: React.RefObject<HTMLDivElement | null>, filename: string) => {
+    const downloadPanelPng = async (key: DlKey, ref: React.RefObject<HTMLDivElement | null>, filename: string) => {
         setDownloading(key)
         try {
-            const url = await capturePng(ref)
-            const a = document.createElement('a')
-            a.download = filename
-            a.href = url
-            a.click()
-            showStatus('success', `${filename} téléchargé`)
+            const canvas = await captureCanvas(ref)
+            canvas.toBlob((blob) => {
+                if (!blob) throw new Error("Échec de la conversion PNG")
+                downloadBlob(blob, filename)
+                showStatus('success', `${filename} téléchargé`)
+            }, 'image/png')
         } catch (e) {
             showStatus('error', getErrorMessage(e))
         } finally {
@@ -70,17 +94,13 @@ export default function DepliantPage() {
         }
     }
 
-    /**
-     * PDF A3 paysage = 420×297mm
-     * Chaque panneau A4 = 210×297mm
-     */
-    const downloadA3Pdf = async (key: DownloadKey, leftRef: React.RefObject<HTMLDivElement | null>, rightRef: React.RefObject<HTMLDivElement | null>, filename: string) => {
+    const downloadA3Pdf = async (key: DlKey, leftRef: React.RefObject<HTMLDivElement | null>, rightRef: React.RefObject<HTMLDivElement | null>, filename: string) => {
         setDownloading(key)
         try {
-            const [leftUrl, rightUrl] = await Promise.all([capturePng(leftRef), capturePng(rightRef)])
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
-            pdf.addImage(leftUrl,  'PNG', 0,   0, 210, 297)
-            pdf.addImage(rightUrl, 'PNG', 210, 0, 210, 297)
+            const [leftCanvas, rightCanvas] = await Promise.all([captureCanvas(leftRef), captureCanvas(rightRef)])
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3', compress: true })
+            pdf.addImage(leftCanvas,  'JPEG', 0,   0, 210, 297, undefined, 'FAST')
+            pdf.addImage(rightCanvas, 'JPEG', 210, 0, 210, 297, undefined, 'FAST')
             pdf.save(filename)
             showStatus('success', `${filename} généré`)
         } catch (e) {
@@ -90,18 +110,15 @@ export default function DepliantPage() {
         }
     }
 
-    /**
-     * PDF A4 portrait — 4 pages, un panneau par page
-     */
     const downloadA4Pdf = async () => {
         setDownloading('pdf-a4')
         try {
             const refs = [r1rRef, r1vRef, r2vRef, r2rRef]
-            const urls = await Promise.all(refs.map(r => capturePng(r)))
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-            urls.forEach((url, i) => {
+            const canvases = await Promise.all(refs.map(r => captureCanvas(r)))
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true })
+            canvases.forEach((canvas, i) => {
                 if (i > 0) pdf.addPage('a4', 'portrait')
-                pdf.addImage(url, 'PNG', 0, 0, 210, 297)
+                pdf.addImage(canvas, 'JPEG', 0, 0, 210, 297, undefined, 'FAST')
             })
             pdf.save('depliant-rgb-a4-4pages.pdf')
             showStatus('success', 'PDF A4 généré (4 pages)')
@@ -112,14 +129,37 @@ export default function DepliantPage() {
         }
     }
 
-    /* ─── Preview scale ─── */
-    const PREVIEW_SCALE = 0.44  // 595 * 0.44 ≈ 262px de large
+    /* PDF A3 pour version monolingue — le verso est déjà A3 en un seul ref */
+    const downloadA3SinglePdf = async (key: DlKey, versoRef: React.RefObject<HTMLDivElement | null>, filename: string) => {
+        setDownloading(key)
+        try {
+            const canvas = await captureCanvas(versoRef)
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3', compress: true })
+            pdf.addImage(canvas, 'JPEG', 0, 0, 420, 297, undefined, 'FAST')
+            pdf.save(filename)
+            showStatus('success', `${filename} généré`)
+        } catch (e) {
+            showStatus('error', getErrorMessage(e))
+        } finally {
+            setDownloading(null)
+        }
+    }
 
-    const panels = [
-        { key: 'p1r' as DownloadKey, label: 'Face 1 Recto', sub: 'Couverture', ref: r1rRef, Component: Panel1Recto },
-        { key: 'p1v' as DownloadKey, label: 'Face 1 Verso', sub: 'Français', ref: r1vRef, Component: Panel1Verso },
-        { key: 'p2v' as DownloadKey, label: 'Face 2 Verso', sub: 'English', ref: r2vRef, Component: Panel2Verso },
-        { key: 'p2r' as DownloadKey, label: 'Face 2 Recto', sub: '4e de couverture', ref: r2rRef, Component: Panel2Recto },
+    /* Preview scales */
+    const PREVIEW_SCALE = 0.44
+    const A3_PREVIEW_SCALE = 0.22  // A3 is double width
+
+    const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+        { key: 'bilingue', label: 'Bilingue (FR/EN)', icon: <Languages size={14} /> },
+        { key: 'francais', label: 'Français', icon: <span className="text-xs font-black">FR</span> },
+        { key: 'english', label: 'English', icon: <Globe size={14} /> },
+    ]
+
+    const bilingualPanels = [
+        { key: 'p1r' as DlKey, label: 'Face 1 Recto', sub: 'Couverture', ref: r1rRef, Component: Panel1Recto },
+        { key: 'p1v' as DlKey, label: 'Face 1 Verso', sub: 'Français', ref: r1vRef, Component: Panel1Verso },
+        { key: 'p2v' as DlKey, label: 'Face 2 Verso', sub: 'English', ref: r2vRef, Component: Panel2Verso },
+        { key: 'p2r' as DlKey, label: 'Face 2 Recto', sub: '4e de couverture', ref: r2rRef, Component: Panel2Recto },
     ]
 
     return (
@@ -140,137 +180,190 @@ export default function DepliantPage() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-white">Dépliant A3 — Retour Gagnant Bénin</h1>
-                            <p className="text-gray-400 text-sm">2 volets · 4 panneaux · Format A3 paysage (420×297mm)</p>
+                            <p className="text-gray-400 text-sm">2 volets · Format A3 paysage (420×297mm)</p>
                         </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Toast status */}
+            {/* Sub-tabs */}
+            <div className="flex gap-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-1.5">
+                {tabs.map(tab => (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            activeTab === tab.key
+                                ? 'bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/30'
+                                : 'text-gray-500 hover:text-white border border-transparent'
+                        }`}>{tab.icon}{tab.label}</button>
+                ))}
+            </div>
+
+            {/* Toast */}
             {status && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
                     className={`flex items-center gap-2 p-3 rounded-xl text-sm ${status.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
                     {status.type === 'success' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
                     {status.msg}
                 </motion.div>
             )}
 
-            {/* Grille aperçu 2×2 */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                {panels.map(({ key, label, sub, ref, Component }) => (
-                    <div key={key} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-4">
-                        {/* Aperçu */}
-                        <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
-                            <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(BASE_H * (1 - PREVIEW_SCALE)) }}>
-                                <Component scale={1} />
+            {/* ═══ TAB: BILINGUE ═══ */}
+            {activeTab === 'bilingue' && (
+                <>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                        {bilingualPanels.map(({ key, label, sub, ref, Component }) => (
+                            <div key={key} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-4">
+                                <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
+                                    <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(BASE_H * (1 - PREVIEW_SCALE)) }}>
+                                        <Component scale={1} />
+                                    </div>
+                                </div>
+                                <div><p className="text-white font-bold text-sm">{label}</p><p className="text-gray-500 text-xs">{sub}</p></div>
+                                <button type="button" onClick={() => downloadPanelPng(key, ref, `rgb-depliant-${key}.png`)} disabled={downloading !== null}
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-medium">
+                                    {downloading === key ? <Loader2 size={14} className="animate-spin" /> : <FileImage size={14} />}Télécharger PNG
+                                </button>
+                            </div>
+                        ))}
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                        className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6">
+                        <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Download size={15} className="text-[#C9A84C]" /> Export PDF — Bilingue</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                            <button type="button" onClick={() => downloadA3Pdf('pdf-outside', r2rRef, r1rRef, 'rgb-depliant-exterieur-a3.pdf')} disabled={downloading !== null}
+                                className="flex flex-col items-center gap-2 py-4 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40">
+                                {downloading === 'pdf-outside' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                <span className="font-bold text-sm">PDF A3 — Extérieur</span><span className="text-xs opacity-70">Face 2 Recto + Face 1 Recto</span>
+                            </button>
+                            <button type="button" onClick={() => downloadA3Pdf('pdf-inside', r1vRef, r2vRef, 'rgb-depliant-interieur-a3.pdf')} disabled={downloading !== null}
+                                className="flex flex-col items-center gap-2 py-4 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40">
+                                {downloading === 'pdf-inside' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                <span className="font-bold text-sm">PDF A3 — Intérieur</span><span className="text-xs opacity-70">Face 1 Verso + Face 2 Verso</span>
+                            </button>
+                            <button type="button" onClick={downloadA4Pdf} disabled={downloading !== null}
+                                className="flex flex-col items-center gap-2 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-gray-300 hover:text-white hover:border-white/20 transition-all disabled:opacity-40">
+                                {downloading === 'pdf-a4' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                <span className="font-bold text-sm">PDF A4 — 4 pages</span><span className="text-xs text-gray-500">Un panneau par page</span>
+                            </button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+
+            {/* ═══ TAB: FRANÇAIS ═══ */}
+            {activeTab === 'francais' && (
+                <>
+                    {/* Recto = Extérieur A3 (Face 2 Recto + Face 1 Recto) */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📄 Recto — Extérieur (A3 paysage)</h2>
+                        <p className="text-gray-500 text-xs">Face 2 Recto (QR Code) à gauche + Face 1 Recto (Couverture) à droite — identique au bilingue</p>
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
+                                <div style={{ display: 'flex', transform: `scale(${A3_PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(BASE_H * (1 - A3_PREVIEW_SCALE)) }}>
+                                    <Panel2Recto scale={1} />
+                                    <Panel1Recto scale={1} />
+                                </div>
                             </div>
                         </div>
-                        {/* Label */}
-                        <div>
-                            <p className="text-white font-bold text-sm">{label}</p>
-                            <p className="text-gray-500 text-xs">{sub}</p>
-                        </div>
-                        {/* Bouton PNG */}
-                        <button type="button"
-                            onClick={() => downloadPanelPng(key, ref, `rgb-depliant-${key}.png`)}
-                            disabled={downloading !== null}
-                            className="flex items-center justify-center gap-2 py-2.5 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-medium">
-                            {downloading === key ? <Loader2 size={14} className="animate-spin" /> : <FileImage size={14} />}
-                            Télécharger PNG
+                        <button type="button" onClick={() => downloadA3Pdf('pdf-fr-ext', r2rRef, r1rRef, 'rgb-depliant-FR-exterieur-a3.pdf')} disabled={downloading !== null}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40 font-bold text-sm">
+                            {downloading === 'pdf-fr-ext' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                            Télécharger PDF A3 Recto (Extérieur)
                         </button>
-                    </div>
-                ))}
-            </motion.div>
+                    </motion.div>
 
-            {/* Boutons PDF */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6">
-                <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                    <Download size={15} className="text-[#C9A84C]" /> Export PDF
-                </h2>
-                <p className="text-gray-500 text-xs mb-5">
-                    Générez les PDF prêts à l&apos;impression pour impression professionnelle.
-                </p>
+                    {/* Verso = Intérieur A3 Français pleine page */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-3">
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📖 Verso — Intérieur Français (A3 paysage pleine page)</h2>
+                        <p className="text-gray-500 text-xs">Contenu français étendu sur toute la surface A3 · Police agrandie · Mise en page optimale</p>
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
+                                <div style={{ transform: `scale(${A3_PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(A3_H * (1 - A3_PREVIEW_SCALE)) }}>
+                                    <FullPageVersoFR scale={1} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button type="button" onClick={() => downloadPanelPng('fp-fr', fpFrRef, 'rgb-depliant-FR-interieur-a3.png')} disabled={downloading !== null}
+                                className="flex items-center justify-center gap-2 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-bold">
+                                {downloading === 'fp-fr' ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />}
+                                Télécharger PNG Verso
+                            </button>
+                            <button type="button" onClick={() => downloadA3SinglePdf('pdf-fr-int', fpFrRef, 'rgb-depliant-FR-interieur-a3.pdf')} disabled={downloading !== null}
+                                className="flex items-center justify-center gap-2 py-3 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40 font-bold text-sm">
+                                {downloading === 'pdf-fr-int' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                Télécharger PDF A3 Verso (Intérieur FR)
+                            </button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* A3 — face extérieure */}
-                    <button type="button"
-                        onClick={() => downloadA3Pdf('pdf-outside', r2rRef, r1rRef, 'rgb-depliant-exterieur-a3.pdf')}
-                        disabled={downloading !== null}
-                        className="flex flex-col items-center gap-2 py-4 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40">
-                        {downloading === 'pdf-outside' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                        <span className="font-bold text-sm">PDF A3 — Extérieur</span>
-                        <span className="text-xs opacity-70">Face 2 Recto + Face 1 Recto</span>
-                    </button>
+            {/* ═══ TAB: ENGLISH ═══ */}
+            {activeTab === 'english' && (
+                <>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📄 Recto — Outside (A3 Landscape)</h2>
+                        <p className="text-gray-500 text-xs">Panel 2 Recto (QR Code) left + Panel 1 Recto (Cover) right — same as bilingual</p>
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
+                                <div style={{ display: 'flex', transform: `scale(${A3_PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(BASE_H * (1 - A3_PREVIEW_SCALE)) }}>
+                                    <Panel2Recto scale={1} />
+                                    <Panel1Recto scale={1} />
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onClick={() => downloadA3Pdf('pdf-en-ext', r2rRef, r1rRef, 'rgb-brochure-EN-outside-a3.pdf')} disabled={downloading !== null}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40 font-bold text-sm">
+                            {downloading === 'pdf-en-ext' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                            Download PDF A3 Recto (Outside)
+                        </button>
+                    </motion.div>
 
-                    {/* A3 — face intérieure */}
-                    <button type="button"
-                        onClick={() => downloadA3Pdf('pdf-inside', r1vRef, r2vRef, 'rgb-depliant-interieur-a3.pdf')}
-                        disabled={downloading !== null}
-                        className="flex flex-col items-center gap-2 py-4 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40">
-                        {downloading === 'pdf-inside' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                        <span className="font-bold text-sm">PDF A3 — Intérieur</span>
-                        <span className="text-xs opacity-70">Face 1 Verso + Face 2 Verso</span>
-                    </button>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-3">
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📖 Verso — Inside English (A3 Landscape Full Page)</h2>
+                        <p className="text-gray-500 text-xs">English content spread across the full A3 surface · Enlarged fonts · Professional layout</p>
+                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
+                                <div style={{ transform: `scale(${A3_PREVIEW_SCALE})`, transformOrigin: 'top center', marginBottom: -(A3_H * (1 - A3_PREVIEW_SCALE)) }}>
+                                    <FullPageVersoEN scale={1} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button type="button" onClick={() => downloadPanelPng('fp-en', fpEnRef, 'rgb-brochure-EN-inside-a3.png')} disabled={downloading !== null}
+                                className="flex items-center justify-center gap-2 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-bold">
+                                {downloading === 'fp-en' ? <Loader2 size={16} className="animate-spin" /> : <FileImage size={16} />}
+                                Download PNG Verso
+                            </button>
+                            <button type="button" onClick={() => downloadA3SinglePdf('pdf-en-int', fpEnRef, 'rgb-brochure-EN-inside-a3.pdf')} disabled={downloading !== null}
+                                className="flex items-center justify-center gap-2 py-3 bg-[#C9A84C]/10 border border-[#C9A84C]/25 rounded-xl text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all disabled:opacity-40 font-bold text-sm">
+                                {downloading === 'pdf-en-int' ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                Download PDF A3 Verso (Inside EN)
+                            </button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
 
-                    {/* A4 — 4 pages */}
-                    <button type="button"
-                        onClick={downloadA4Pdf}
-                        disabled={downloading !== null}
-                        className="flex flex-col items-center gap-2 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-gray-300 hover:text-white hover:border-white/20 transition-all disabled:opacity-40">
-                        {downloading === 'pdf-a4' ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                        <span className="font-bold text-sm">PDF A4 — 4 pages</span>
-                        <span className="text-xs text-gray-500">Un panneau par page</span>
-                    </button>
+            {/* Info */}
+            <div className="flex items-start gap-2 text-xs text-gray-600 px-2">
+                <Info size={12} className="mt-0.5 flex-shrink-0 text-[#C9A84C]/50" />
+                <div>
+                    <span className="text-[#C9A84C]/70 font-semibold">Impression professionnelle :</span>
+                    {' '}Les versions monolingues (FR/EN) produisent un dépliant avec le contenu étendu sur toute la surface A3 intérieure. Exportez le Recto (extérieur) + le Verso (intérieur) et donnez les 2 PDF à votre imprimeur.
                 </div>
+            </div>
 
-                <div className="mt-5 flex items-start gap-2 text-xs text-gray-600">
-                    <Info size={12} className="mt-0.5 flex-shrink-0 text-[#C9A84C]/50" />
-                    <div>
-                        <span className="text-[#C9A84C]/70 font-semibold">Impression professionnelle :</span>
-                        {' '}Les PNG sont exportés à 300 DPI (pixelRatio 4×). Pour le PDF A3, donnez les 2 fichiers à votre imprimeur : extérieur et intérieur. Le pli se fait au centre de chaque A3 (en A4 portrait).
-                    </div>
-                </div>
-            </motion.div>
-
-            {/* Disposition du dépliant */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6">
-                <h2 className="text-sm font-bold text-white mb-4">Schéma de disposition</h2>
-                <div className="grid grid-cols-2 gap-0.5 max-w-sm mx-auto text-[10px] text-center text-gray-500">
-                    <div className="border border-[#C9A84C]/30 bg-[#C9A84C]/5 rounded-tl-lg p-3">
-                        <div className="text-[#C9A84C] font-bold">Face 2 Recto</div>
-                        <div>4e de couverture</div>
-                        <div className="text-gray-600 mt-1">Dos / infos contact</div>
-                    </div>
-                    <div className="border border-[#C9A84C]/30 bg-[#C9A84C]/5 rounded-tr-lg p-3">
-                        <div className="text-[#C9A84C] font-bold">Face 1 Recto</div>
-                        <div>Couverture</div>
-                        <div className="text-gray-600 mt-1">Front cover</div>
-                    </div>
-                    <div className="border border-white/10 bg-white/[0.02] rounded-bl-lg p-3">
-                        <div className="text-white/70 font-bold">Face 1 Verso</div>
-                        <div>Intérieur gauche</div>
-                        <div className="text-gray-600 mt-1">Texte français</div>
-                    </div>
-                    <div className="border border-white/10 bg-white/[0.02] rounded-br-lg p-3">
-                        <div className="text-white/70 font-bold">Face 2 Verso</div>
-                        <div>Intérieur droit</div>
-                        <div className="text-gray-600 mt-1">Texte anglais</div>
-                    </div>
-                    <div className="col-span-2 text-gray-600 text-[9px] mt-2">
-                        ↑ Extérieur (fermé) &nbsp;·&nbsp; ↓ Intérieur (ouvert)
-                    </div>
-                </div>
-            </motion.div>
-
-            {/* Refs pour capture haute résolution — off-screen pour permettre le chargement des images */}
-            <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} aria-hidden>
+            {/* Capture elements — pushed off-screen to ensure they are rendered by the browser without overlapping the UI */}
+            <div style={{ position: 'absolute', top: -10000, left: -10000 }} aria-hidden>
                 <Panel1Recto ref={r1rRef} scale={1} />
                 <Panel1Verso ref={r1vRef} scale={1} />
                 <Panel2Verso ref={r2vRef} scale={1} />
                 <Panel2Recto ref={r2rRef} scale={1} />
+                <FullPageVersoFR ref={fpFrRef} scale={1} />
+                <FullPageVersoEN ref={fpEnRef} scale={1} />
             </div>
         </div>
     )

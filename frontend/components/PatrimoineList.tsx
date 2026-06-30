@@ -54,7 +54,7 @@ export default function PatrimoineList() {
         fetchData()
     }, [])
 
-    if (loading) return <div className="text-center py-10 text-white"><T>Chargement du patrimoine...</T></div>
+    if (loading) return <div className="text-center py-10 text-slate-600"><T>Chargement du patrimoine...</T></div>
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -65,7 +65,7 @@ export default function PatrimoineList() {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                     viewport={{ once: true }}
-                    className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 transition-colors group"
+                    className="bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-500/20 rounded-2xl overflow-hidden transition-all duration-300 group"
                 >
                     <div className="relative h-64 w-full overflow-hidden">
                         <Image
@@ -83,7 +83,7 @@ export default function PatrimoineList() {
                         </h3>
                     </div>
                     <div className="p-6">
-                        <p className="text-gray-300 text-sm leading-relaxed line-clamp-4">
+                        <p className="text-slate-600 text-sm leading-relaxed line-clamp-4">
                             {t(item.description)}
                         </p>
                     </div>

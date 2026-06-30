@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useCart } from '@/lib/store/cartStore'
 import { Price } from '@/components/ui/Price'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
+import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
 
@@ -1131,6 +1132,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                         <ChevronRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                                     </motion.button>
                                 ))}
+                                <PaymentPrivacyNotice className="mt-3" />
                                 <div className="flex items-center gap-2 text-gray-600 justify-center mt-3">
                                     <Shield size={13} />
                                     <span className="text-[10px] font-bold uppercase tracking-widest"><T>Transaction 100% sécurisée</T></span>

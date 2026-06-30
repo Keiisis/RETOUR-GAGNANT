@@ -489,3 +489,586 @@
 .marquee-paused {
   animation-play-state: paused !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   🎨 THEME TOGGLE — Variables par panel x theme
+   Utilisation : wrapper avec [data-panel="X"][data-theme="Y"]
+   Composants lisent via var(--panel-bg), var(--panel-text), etc.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── ADMIN : noir bleuté (dark défaut) ⇄ ivoire institutionnel ── */
+[data-panel="admin"][data-theme="dark"] {
+  --panel-bg: #05080a;
+  --panel-surface: #0a0f18;
+  --panel-surface-alt: #111827;
+  --panel-surface-hover: rgba(255,255,255,0.05);
+  --panel-surface-active: rgba(255,255,255,0.08);
+  --panel-text: #E5E7EB;
+  --panel-text-heading: #FFFFFF;
+  --panel-text-muted: #9CA3AF;
+  --panel-text-faint: #6B7280;
+  --panel-border: rgba(255,255,255,0.08);
+  --panel-border-strong: rgba(255,255,255,0.15);
+  --panel-accent: #FCD116;
+  --panel-icon-muted: #9CA3AF;
+  --panel-badge-bg: rgba(255,255,255,0.05);
+  --panel-divider: rgba(255,255,255,0.05);
+  --panel-glow-opacity: 1;
+  --panel-overlay: rgba(0,0,0,0.7);
+}
+[data-panel="admin"][data-theme="light"] {
+  --panel-bg: #FAF8F4;
+  --panel-surface: #FFFFFF;
+  --panel-surface-alt: #F5F0E8;
+  --panel-surface-hover: rgba(0,0,0,0.03);
+  --panel-surface-active: rgba(0,0,0,0.06);
+  --panel-text: #1B2A4A;
+  --panel-text-heading: #0F172A;
+  --panel-text-muted: #6B7280;
+  --panel-text-faint: #9CA3AF;
+  --panel-border: rgba(27,42,74,0.10);
+  --panel-border-strong: rgba(27,42,74,0.20);
+  --panel-accent: #C9A84C;
+  --panel-icon-muted: #6B7280;
+  --panel-badge-bg: rgba(0,0,0,0.04);
+  --panel-divider: rgba(0,0,0,0.06);
+  --panel-glow-opacity: 0.5;
+  --panel-overlay: rgba(255,255,255,0.8);
+}
+
+/* ── AGENT : ivoire chaud (light défaut) ⇄ bleu nuit institutionnel ── */
+[data-panel="agent"][data-theme="light"] {
+  --panel-bg: #F7F4EE;
+  --panel-surface: #FFFFFF;
+  --panel-surface-alt: #FEFCF9;
+  --panel-surface-hover: rgba(0,0,0,0.03);
+  --panel-surface-active: rgba(0,0,0,0.06);
+  --panel-text: #1B2A4A;
+  --panel-text-heading: #0F172A;
+  --panel-text-muted: #6B7280;
+  --panel-text-faint: #9CA3AF;
+  --panel-border: rgba(27,42,74,0.08);
+  --panel-border-strong: rgba(27,42,74,0.18);
+  --panel-accent: #008751;
+  --panel-icon-muted: #6B7280;
+  --panel-badge-bg: rgba(0,0,0,0.04);
+  --panel-divider: rgba(0,0,0,0.06);
+  --panel-glow-opacity: 0.4;
+  --panel-overlay: rgba(255,255,255,0.8);
+}
+[data-panel="agent"][data-theme="dark"] {
+  --panel-bg: #0F1A30;
+  --panel-surface: #1A2542;
+  --panel-surface-alt: #253058;
+  --panel-surface-hover: rgba(255,255,255,0.05);
+  --panel-surface-active: rgba(255,255,255,0.08);
+  --panel-text: #E8E4D8;
+  --panel-text-heading: #FFFFFF;
+  --panel-text-muted: #9CA3AF;
+  --panel-text-faint: #6B7280;
+  --panel-border: rgba(255,255,255,0.10);
+  --panel-border-strong: rgba(255,255,255,0.20);
+  --panel-accent: #10B981;
+  --panel-icon-muted: #9CA3AF;
+  --panel-badge-bg: rgba(255,255,255,0.05);
+  --panel-divider: rgba(255,255,255,0.05);
+  --panel-glow-opacity: 1;
+  --panel-overlay: rgba(0,0,0,0.7);
+}
+
+/* ── CLIENT : noir profond (dark défaut) ⇄ ivoire doux ── */
+[data-panel="client"][data-theme="dark"] {
+  --panel-bg: #060d16;
+  --panel-surface: #0f1827;
+  --panel-surface-alt: #1a2540;
+  --panel-surface-hover: rgba(255,255,255,0.05);
+  --panel-surface-active: rgba(255,255,255,0.08);
+  --panel-text: #E5E7EB;
+  --panel-text-heading: #FFFFFF;
+  --panel-text-muted: #9CA3AF;
+  --panel-text-faint: #6B7280;
+  --panel-border: rgba(255,255,255,0.10);
+  --panel-border-strong: rgba(255,255,255,0.20);
+  --panel-accent: #C9A84C;
+  --panel-icon-muted: #9CA3AF;
+  --panel-badge-bg: rgba(255,255,255,0.05);
+  --panel-divider: rgba(255,255,255,0.05);
+  --panel-glow-opacity: 1;
+  --panel-overlay: rgba(0,0,0,0.7);
+}
+[data-panel="client"][data-theme="light"] {
+  --panel-bg: #FAF8F4;
+  --panel-surface: #FFFFFF;
+  --panel-surface-alt: #F5F0E8;
+  --panel-surface-hover: rgba(0,0,0,0.03);
+  --panel-surface-active: rgba(0,0,0,0.06);
+  --panel-text: #1B2A4A;
+  --panel-text-heading: #0F172A;
+  --panel-text-muted: #6B7280;
+  --panel-text-faint: #9CA3AF;
+  --panel-border: rgba(27,42,74,0.10);
+  --panel-border-strong: rgba(27,42,74,0.20);
+  --panel-accent: #C9A84C;
+  --panel-icon-muted: #6B7280;
+  --panel-badge-bg: rgba(0,0,0,0.04);
+  --panel-divider: rgba(0,0,0,0.06);
+  --panel-glow-opacity: 0.5;
+  --panel-overlay: rgba(255,255,255,0.8);
+}
+
+/* ── CEO : blanc premium (light défaut) ⇄ charbon executive ── */
+[data-panel="ceo"][data-theme="light"] {
+  --panel-bg: #FFFFFF;
+  --panel-surface: #F4FAF5;
+  --panel-surface-alt: #FAFAF7;
+  --panel-surface-hover: rgba(0,0,0,0.03);
+  --panel-surface-active: rgba(0,0,0,0.06);
+  --panel-text: #1B2A4A;
+  --panel-text-heading: #0F172A;
+  --panel-text-muted: #6B7280;
+  --panel-text-faint: #9CA3AF;
+  --panel-border: rgba(27,42,74,0.08);
+  --panel-border-strong: rgba(27,42,74,0.18);
+  --panel-accent: #008751;
+  --panel-icon-muted: #6B7280;
+  --panel-badge-bg: rgba(0,0,0,0.04);
+  --panel-divider: rgba(0,0,0,0.06);
+  --panel-glow-opacity: 0.4;
+  --panel-overlay: rgba(255,255,255,0.8);
+}
+[data-panel="ceo"][data-theme="dark"] {
+  --panel-bg: #0a0f18;
+  --panel-surface: #111827;
+  --panel-surface-alt: #1a2540;
+  --panel-surface-hover: rgba(255,255,255,0.05);
+  --panel-surface-active: rgba(255,255,255,0.08);
+  --panel-text: #F4F0E6;
+  --panel-text-heading: #FFFFFF;
+  --panel-text-muted: #9CA3AF;
+  --panel-text-faint: #6B7280;
+  --panel-border: rgba(212,175,55,0.18);
+  --panel-border-strong: rgba(212,175,55,0.30);
+  --panel-accent: #D4AF37;
+  --panel-icon-muted: #9CA3AF;
+  --panel-badge-bg: rgba(255,255,255,0.05);
+  --panel-divider: rgba(255,255,255,0.05);
+  --panel-glow-opacity: 1;
+  --panel-overlay: rgba(0,0,0,0.7);
+}
+
+/* ═══════════════════════════════════════════════════════
+   🔄 LIGHT-MODE AUTOMATIC OVERRIDES
+   Intercepts hardcoded dark-only Tailwind classes and
+   remaps them to theme variables when light mode is active.
+   This avoids editing hundreds of TSX dashboard files.
+   ═══════════════════════════════════════════════════════ */
+
+/* --- TEXT COLOR OVERRIDES --- */
+[data-theme="light"] .text-white {
+  color: var(--panel-text-heading) !important;
+}
+[data-theme="light"] .text-gray-200 {
+  color: var(--panel-text) !important;
+}
+[data-theme="light"] .text-gray-300 {
+  color: var(--panel-text) !important;
+}
+[data-theme="light"] .text-gray-400 {
+  color: var(--panel-text-muted) !important;
+}
+[data-theme="light"] .text-gray-500 {
+  color: var(--panel-text-muted) !important;
+}
+[data-theme="light"] .text-gray-600 {
+  color: var(--panel-text-faint) !important;
+}
+[data-theme="light"] .text-green-400 {
+  color: #059669 !important;
+}
+
+/* --- BACKGROUND COLOR OVERRIDES --- */
+
+/* Main dark backgrounds → panel surface */
+[data-theme="light"] .bg-\[\#0a0f18\],
+[data-theme="light"] .bg-\[\#0a0f14\],
+[data-theme="light"] .bg-\[\#05080a\],
+[data-theme="light"] .bg-\[\#060d16\],
+[data-theme="light"] .bg-\[\#0f1827\],
+[data-theme="light"] .bg-\[\#0d1319\],
+[data-theme="light"] .bg-\[\#111827\],
+[data-theme="light"] .bg-\[\#0F1A30\],
+[data-theme="light"] .bg-\[\#1A2542\] {
+  background-color: var(--panel-surface) !important;
+}
+
+/* Semi-transparent white overlays → theme-aware */
+[data-theme="light"] .bg-white\/5,
+[data-theme="light"] .bg-white\/\[0\.02\],
+[data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.04\] {
+  background-color: var(--panel-badge-bg) !important;
+}
+[data-theme="light"] .bg-white\/10,
+[data-theme="light"] .bg-white\/\[0\.08\] {
+  background-color: var(--panel-surface-active) !important;
+}
+
+/* Hover overrides */
+[data-theme="light"] .hover\:bg-white\/5:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.02\]:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.03\]:hover {
+  background-color: var(--panel-surface-hover) !important;
+}
+[data-theme="light"] .hover\:bg-white\/10:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.08\]:hover {
+  background-color: var(--panel-surface-active) !important;
+}
+
+/* Group-hover overrides */
+[data-theme="light"] .group-hover\/item\:bg-white\/10:is(:where(.group\/item):hover *) {
+  background-color: var(--panel-surface-active) !important;
+}
+
+/* --- BORDER OVERRIDES --- */
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/\[0\.05\] {
+  border-color: var(--panel-border) !important;
+}
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/\[0\.08\],
+[data-theme="light"] .border-white\/\[0\.10\] {
+  border-color: var(--panel-border-strong) !important;
+}
+[data-theme="light"] .hover\:border-white\/10:hover,
+[data-theme="light"] .hover\:border-white\/20:hover {
+  border-color: var(--panel-border-strong) !important;
+}
+
+/* --- DIVIDE OVERRIDES --- */
+[data-theme="light"] .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--panel-divider) !important;
+}
+[data-theme="light"] .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--panel-border) !important;
+}
+
+/* --- SEPARATOR / DIVIDER LINES --- */
+[data-theme="light"] .bg-white\/10,
+[data-theme="light"] .bg-white\/5 {
+  background-color: var(--panel-divider) !important;
+}
+
+/* --- RING OVERRIDES --- */
+[data-theme="light"] .ring-white\/5,
+[data-theme="light"] .ring-white\/10 {
+  --tw-ring-color: var(--panel-border) !important;
+}
+
+/* --- SHADOW OVERRIDES (reduce glow intensity in light) --- */
+[data-theme="light"] [class*="shadow-"] {
+  --tw-shadow-color: rgba(0,0,0,0.08);
+}
+
+/* --- PLACEHOLDER OVERRIDES --- */
+[data-theme="light"] .placeholder\:text-gray-600::placeholder {
+  color: var(--panel-text-faint) !important;
+}
+[data-theme="light"] .placeholder\:text-gray-500::placeholder {
+  color: var(--panel-text-muted) !important;
+}
+
+/* --- GROUP-HOVER TEXT --- */
+[data-theme="light"] .group-hover\:text-white:is(:where(.group):hover *) {
+  color: var(--panel-text-heading) !important;
+}
+[data-theme="light"] .group-hover\/item\:text-white:is(:where(.group\/item):hover *) {
+  color: var(--panel-text-heading) !important;
+}
+
+/* --- HOVER TEXT OVERRIDES --- */
+[data-theme="light"] .hover\:text-white:hover {
+  color: var(--panel-text-heading) !important;
+}
+[data-theme="light"] .hover\:text-gray-300:hover {
+  color: var(--panel-text) !important;
+}
+
+/* --- HOVER BORDER COLOR OVERRIDES --- */
+[data-theme="light"] .hover\:border-white\/30:hover {
+  border-color: var(--panel-border-strong) !important;
+}
+[data-theme="light"] .group-hover\:border-white\/20:is(:where(.group):hover *) {
+  border-color: var(--panel-border-strong) !important;
+}
+
+/* --- FOCUS OVERRIDES --- */
+[data-theme="light"] .focus\:border-white\/20:focus {
+  border-color: var(--panel-border-strong) !important;
+}
+[data-theme="light"] .focus\:ring-white\/10:focus {
+  --tw-ring-color: var(--panel-border) !important;
+}
+
+/* --- PRESERVE text-white ON COLORED BACKGROUNDS --- */
+[data-theme="light"] .bg-benin-gradient .text-white,
+[data-theme="light"] .bg-benin-gradient.text-white,
+[data-theme="light"] .bg-\[\#008751\] .text-white,
+[data-theme="light"] .bg-\[\#E8112D\] .text-white,
+[data-theme="light"] .bg-\[\#FCD116\] .text-white,
+[data-theme="light"] .bg-gradient-to-r .text-white,
+[data-theme="light"] .bg-gradient-to-br .text-white,
+[data-theme="light"] [class*="bg-green-"] .text-white,
+[data-theme="light"] [class*="bg-red-"] .text-white,
+[data-theme="light"] [class*="bg-blue-"] .text-white,
+[data-theme="light"] [class*="bg-yellow-"] .text-white,
+[data-theme="light"] [class*="bg-emerald-"] .text-white {
+  color: #FFFFFF !important;
+}
+
+/* --- TABLE OVERRIDES --- */
+[data-theme="light"] thead th {
+  color: var(--panel-text-muted) !important;
+}
+[data-theme="light"] tbody td {
+  color: var(--panel-text) !important;
+  border-color: var(--panel-divider) !important;
+}
+[data-theme="light"] tbody tr:hover {
+  background-color: var(--panel-surface-hover) !important;
+}
+
+/* --- SELECT & FORM ELEMENT OVERRIDES --- */
+[data-theme="light"] select {
+  background-color: var(--panel-surface) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--panel-border-strong) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-theme="light"] select:hover {
+  border-color: var(--panel-accent) !important;
+  background-color: var(--panel-surface-alt) !important;
+}
+[data-theme="light"] select option {
+  background-color: var(--panel-surface) !important;
+  color: var(--panel-text) !important;
+}
+
+/* --- ANT DESIGN OVERRIDES FOR LIGHT --- */
+[data-theme="light"] .ant-select-dropdown {
+  background-color: var(--panel-surface) !important;
+  border-color: var(--panel-border-strong) !important;
+}
+[data-theme="light"] .ant-select-item {
+  color: var(--panel-text) !important;
+}
+[data-theme="light"] .ant-select-selector {
+  background-color: var(--panel-surface) !important;
+  border-color: var(--panel-border-strong) !important;
+  color: var(--panel-text) !important;
+}
+
+/* --- GLASS NEXUS LIGHT OVERRIDES --- */
+[data-theme="light"] .glass-nexus {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--panel-border) !important;
+}
+[data-theme="light"] .glass-nexus-card {
+  background: var(--panel-surface) !important;
+  border-color: var(--panel-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .glass-nexus-card:hover {
+  background: var(--panel-surface-alt) !important;
+  border-color: var(--panel-border-strong) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .glass-nexus-sidebar {
+  background: rgba(255,255,255,0.97) !important;
+  border-right-color: var(--panel-border) !important;
+}
+[data-theme="light"] .glass-nexus-input {
+  background: var(--panel-surface) !important;
+  border-color: var(--panel-border-strong) !important;
+  color: var(--panel-text) !important;
+}
+[data-theme="light"] .glass-nexus-input:focus {
+  background: var(--panel-surface) !important;
+  border-color: var(--panel-accent) !important;
+  box-shadow: 0 0 0 3px rgba(0, 135, 81, 0.1);
+}
+
+/* --- SCROLLBAR LIGHT --- */
+[data-theme="light"] .nexus-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .nexus-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* --- SKELETON LIGHT --- */
+[data-theme="light"] .nexus-skeleton {
+  background: linear-gradient(90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 75%) !important;
+  background-size: 200% 100%;
+}
+
+/* --- INPUT FIELDS LIGHT --- */
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] input[type="password"],
+[data-theme="light"] input[type="search"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="tel"],
+[data-theme="light"] input[type="url"],
+[data-theme="light"] textarea {
+  color: var(--panel-text);
+}
+
+/* --- CARD COMPONENT LIGHT (shadcn) --- */
+[data-theme="light"] [class*="bg-\[#0a0f"] .text-white,
+[data-theme="light"] [class*="bg-\[#05080"] .text-white,
+[data-theme="light"] [class*="bg-\[#060d"] .text-white,
+[data-theme="light"] [class*="bg-\[#0f18"] .text-white,
+[data-theme="light"] [class*="bg-\[#1118"] .text-white {
+  color: var(--panel-text-heading) !important;
+}
+
+/* --- ACCENT COLOR OVERRIDES (yellow too bright on light) --- */
+[data-panel="admin"][data-theme="light"] .text-\[\#FCD116\] {
+  color: #B8960A !important;
+}
+[data-panel="admin"][data-theme="light"] .bg-\[\#FCD116\]\/10,
+[data-panel="admin"][data-theme="light"] .bg-\[\#FCD116\]\/15 {
+  background-color: rgba(184,150,10,0.12) !important;
+}
+[data-panel="admin"][data-theme="light"] .border-\[\#FCD116\]\/20,
+[data-panel="admin"][data-theme="light"] .border-\[\#FCD116\]\/30 {
+  border-color: rgba(184,150,10,0.25) !important;
+}
+[data-panel="admin"][data-theme="light"] .hover\:bg-\[\#FCD116\]\/10:hover,
+[data-panel="admin"][data-theme="light"] .hover\:bg-\[\#FCD116\]\/20:hover {
+  background-color: rgba(184,150,10,0.15) !important;
+}
+[data-panel="admin"][data-theme="light"] .group-hover\:text-\[\#FCD116\]:is(:where(.group):hover *) {
+  color: #B8960A !important;
+}
+[data-panel="admin"][data-theme="light"] .group-hover\:text-\[\#FCD116\]\/70:is(:where(.group):hover *) {
+  color: rgba(184,150,10,0.8) !important;
+}
+[data-panel="admin"][data-theme="light"] .hover\:text-\[\#FCD116\]:hover {
+  color: #B8960A !important;
+}
+[data-panel="admin"][data-theme="light"] .group-hover\/item\:text-\[\#FCD116\]:is(:where(.group\/item):hover *) {
+  color: #B8960A !important;
+}
+[data-panel="admin"][data-theme="light"] .group-hover\/item\:border-\[\#FCD116\]\/30:is(:where(.group\/item):hover *) {
+  border-color: rgba(184,150,10,0.3) !important;
+}
+
+/* --- ACTIVE SIDEBAR GRADIENT LIGHT --- */
+[data-theme="light"] .from-\[\#FCD116\]\/15 {
+  --tw-gradient-from: rgba(184,150,10,0.10) !important;
+}
+
+/* --- SHADOW GLOW REDUCTION (light mode doesn't need colored glow) --- */
+[data-theme="light"] [style*="box-shadow"] {
+  filter: opacity(var(--panel-glow-opacity, 1));
+}
+
+/* --- BACKGROUND BENIN GRADIENT — keep as is (always dark bg) --- */
+/* No override needed — gradient backgrounds keep white text */
+
+/* --- ANIMATED PULSE DOT --- */
+[data-theme="light"] .bg-green-500 {
+  background-color: #059669 !important;
+}
+
+/* --- CUSTOM SCROLLBAR LIGHT MODE --- */
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+[data-theme="light"] .scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* --- DARK BACKDROP OVERRIDES --- */
+[data-theme="light"] [class*="bg-\[#0a0f14\]\/"] {
+  background-color: color-mix(in srgb, var(--panel-surface) 80%, transparent) !important;
+}
+[data-theme="light"] [class*="bg-\[#0a0f18\]\/"] {
+  background-color: color-mix(in srgb, var(--panel-surface) 80%, transparent) !important;
+}
+
+/* --- TEXT-WHITE ON BLUE/PURPLE BUTTONS (preserve) --- */
+[data-theme="light"] .bg-blue-600 .text-white,
+[data-theme="light"] .bg-blue-600.text-white,
+[data-theme="light"] .bg-purple-500 .text-white,
+[data-theme="light"] .bg-purple-500.text-white,
+[data-theme="light"] .hover\:bg-blue-500:hover,
+[data-theme="light"] .hover\:bg-purple-500:hover {
+  color: #FFFFFF !important;
+}
+
+/* --- GRAY-700 OVERRIDE --- */
+[data-theme="light"] .text-gray-700 {
+  color: var(--panel-text) !important;
+}
+
+/* --- DARK MODE SWITCH: ensure dark mode classes still work --- */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ADMIN — utilitaires themables pour inputs et cards
+   Réagissent automatiquement aux variables --panel-*.
+   Évitent les couleurs hardcodées qui restent invisibles
+   en mode clair.
+   ═══════════════════════════════════════════════════════ */
+.admin-input {
+  background-color: var(--panel-surface-alt);
+  color: var(--panel-text);
+  border-color: var(--panel-border);
+}
+.admin-input::placeholder {
+  color: var(--panel-text-faint);
+  opacity: 1;
+}
+.admin-input:focus {
+  outline: none;
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.admin-card {
+  background-color: var(--panel-surface);
+  border-color: var(--panel-border);
+  color: var(--panel-text);
+}
+.admin-card-alt {
+  background-color: var(--panel-surface-alt);
+  border-color: var(--panel-border);
+  color: var(--panel-text);
+}
+
+/* Bouton "ghost" themable pour les actions secondaires (Annuler, etc.) */
+.admin-btn-ghost {
+  background-color: var(--panel-surface-hover);
+  color: var(--panel-text);
+  border: 1px solid var(--panel-border);
+}
+.admin-btn-ghost:hover {
+  background-color: var(--panel-surface-active);
+}
+

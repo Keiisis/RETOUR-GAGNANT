@@ -193,7 +193,7 @@ export default function AgentVocauxPage() {
 
                                         <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mt-2">
                                             <span className="flex items-center gap-1 font-medium bg-white/5 px-2 py-1 rounded-md">
-                                                <Clock size={10} /> {new Date(v.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} ({new Date(v.created_at).toLocaleDateString('fr-FR')})
+                                                <Clock size={10} /> {v.created_at && !isNaN(new Date(v.created_at).getTime()) ? `${new Date(v.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (${new Date(v.created_at).toLocaleDateString('fr-FR')})` : '—'}
                                             </span>
                                             {v.client_email && (
                                                 <span className="flex items-center gap-1 font-medium bg-white/5 px-2 py-1 rounded-md">

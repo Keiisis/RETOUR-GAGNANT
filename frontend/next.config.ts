@@ -27,12 +27,21 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      // scripts des SDK de paiement + analytics
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'" +
+      // scripts des SDK de paiement. 'unsafe-eval' RETIRÉ (vecteur XSS eval).
+      // 'wasm-unsafe-eval' autorise WebAssembly sans rouvrir eval() JS.
+      // NB : 'unsafe-inline' reste tant que les nonces ne sont pas en place —
+      // leur passage nécessite de retravailler le cache PWA (next-pwa) et un
+      // test en préproduction, sous peine de pages blanches (nonce périmé en cache).
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'" +
         " https://cdn.kkiapay.me https://sandbox.kkiapay.me" +
         " https://cdn.fedapay.com https://checkout.fedapay.com" +
         " https://js.stripe.com" +
         " https://www.paypal.com https://www.paypalobjects.com",
+      // Durcissement (gains sans risque de casse) :
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com",
@@ -51,7 +60,7 @@ const securityHeaders = [
         " https://*.kkiapay.me" +
         " https://checkout.fedapay.com",
       "worker-src 'self' blob:",
-      "media-src 'self' data: blob:",
+      "media-src 'self' data: blob: https://*.supabase.co",
     ].join('; '),
   },
 ]

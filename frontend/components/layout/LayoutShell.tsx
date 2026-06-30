@@ -5,24 +5,28 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import AudioPlayer from '@/components/layout/AudioPlayer'
 import ChatAssistant from '@/components/chat/ChatAssistant'
+import CookieConsent from '@/components/layout/CookieConsent'
+import WhatsAppButton from '@/components/layout/WhatsAppButton'
+import Breadcrumbs from '@/components/layout/Breadcrumbs'
 import { CartDrawer } from '@/components/boutique/CartDrawer'
 import { VisitorTracker } from '@/components/analytics/VisitorTracker'
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
-    // Les routes /admin, /agent et /client ont leurs propres layouts dédiés
+    // Les routes /admin, /agent, /client et /ceo ont leurs propres layouts dédiés
     const isAdminRoute = pathname.startsWith('/admin')
     const isAgentRoute = pathname.startsWith('/agent')
     const isClientRoute = pathname.startsWith('/client')
     const isPortfolioRoute = pathname.startsWith('/portfolio')
-    const isStandaloneRoute = isAdminRoute || isAgentRoute || isClientRoute || isPortfolioRoute
+    const isCeoRoute = pathname.startsWith('/ceo')
+    const isStandaloneRoute = isAdminRoute || isAgentRoute || isClientRoute || isPortfolioRoute || isCeoRoute
 
     if (isStandaloneRoute) {
         return <>{children}</>
     }
 
-    // Routes publiques : Header + Footer + AudioPlayer + Chat
+    // Routes publiques : Header + Footer + AudioPlayer + Chat + WhatsApp + Cookies
     return (
         <>
             <VisitorTracker />
@@ -30,10 +34,14 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             <AudioPlayer />
             <CartDrawer />
             <main className="min-h-screen pt-20">
+                <Breadcrumbs />
                 {children}
             </main>
             <ChatAssistant />
+            <WhatsAppButton />
+            <CookieConsent />
             <Footer />
         </>
     )
 }
+

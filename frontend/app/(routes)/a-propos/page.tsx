@@ -3,12 +3,12 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Target, Heart, Globe, Users, Award, ArrowRight } from 'lucide-react';
+import { Target, Heart, Globe, Users, Award, ArrowRight, type LucideIcon } from 'lucide-react';
 import { usePageSections } from '@/lib/hooks/usePageSections';
 import { useTranslation, T } from '@/lib/translation';
 
 interface ValueItem {
-    icon?: React.ElementType
+    icon?: LucideIcon
     title: string
     desc?: string
     description?: string

@@ -127,7 +127,7 @@ export default function AdminNationalitePage() {
                                             <div className="flex items-center gap-4 mt-1 text-[10px] text-gray-500 flex-wrap">
                                                 <span className="flex items-center gap-1"><Mail size={10} /> {a.email}</span>
                                                 <span className="flex items-center gap-1"><MapPin size={10} /> {a.pays_residence}</span>
-                                                <span>{new Date(a.created_at).toLocaleDateString('fr-FR')}</span>
+                                                <span>{!a.created_at || isNaN(new Date(a.created_at).getTime()) ? '—' : new Date(a.created_at).toLocaleDateString('fr-FR')}</span>
                                             </div>
                                         </div>
                                         {isOpen ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}

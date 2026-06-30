@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import {
     FileText, Plus, Trash2, X, Loader2, Search,
     Download, Eye, Calculator, Receipt, Send,
-    Phone, Mail, CheckCircle2, AlertCircle, Link as LinkIcon
+    Phone, Mail, CheckCircle2, AlertCircle, Link as LinkIcon,
+    AlertTriangle, Bell, Clock
 } from 'lucide-react'
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
@@ -44,9 +45,11 @@ interface DocumentFinancier {
 
 export default function AgentDevisPage() {
     const [documents, setDocuments] = useState<DocumentFinancier[]>([])
+    const [paidByDoc, setPaidByDoc] = useState<Record<string, number>>({})
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture'>('all')
+    const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture' | 'impayees'>('all')
+    const [sendingRelance, setSendingRelance] = useState<string | null>(null)
     const [showPreview, setShowPreview] = useState<DocumentFinancier | null>(null)
     const [generating, setGenerating] = useState(false)
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
@@ -78,9 +81,36 @@ export default function AgentDevisPage() {
         }
 
         const allDocs = [...owned, ...linkedFactures]
-        allDocs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        allDocs.sort((a, b) => {
+            const timeA = a.created_at && !isNaN(new Date(a.created_at).getTime()) ? new Date(a.created_at).getTime() : 0
+            const timeB = b.created_at && !isNaN(new Date(b.created_at).getTime()) ? new Date(b.created_at).getTime() : 0
+            return timeB - timeA
+        })
 
         setDocuments(allDocs)
+
+        // Fetch paiements manuels pour ces documents
+        const docIds = allDocs.map(d => d.id)
+        if (docIds.length > 0) {
+            const { data: paiements } = await supabase
+                .from('paiements_manuels')
+                .select('document_id, montant')
+                .in('document_id', docIds)
+            const map: Record<string, number> = {}
+            ;(paiements || []).forEach(p => {
+                map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant || 0)
+            })
+            // Ajouter aussi les factures statut "paye" → considérer le total comme payé
+            allDocs.forEach(d => {
+                if (d.type === 'facture' && d.status === 'paye' && !map[d.id]) {
+                    map[d.id] = d.total
+                }
+            })
+            setPaidByDoc(map)
+        } else {
+            setPaidByDoc({})
+        }
+
         setLoading(false)
     }, [])
 
@@ -205,7 +235,7 @@ export default function AgentDevisPage() {
             pdf.setFontSize(8.5)
             pdf.setTextColor(80, 80, 80)
             pdf.text(`N° ${doc.numero}`, pw - mr, headerTop + 22, { align: 'right' })
-            pdf.text(`Date : ${new Date(doc.created_at).toLocaleDateString('fr-FR')}`, pw - mr, headerTop + 27, { align: 'right' })
+            pdf.text(`Date : ${doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}`, pw - mr, headerTop + 27, { align: 'right' })
             pdf.text(doc.type === 'facture' ? `Délai : ${doc.validite}` : `Validité : ${doc.validite}`, pw - mr, headerTop + 32, { align: 'right' })
 
             // Status Badge
@@ -445,10 +475,58 @@ export default function AgentDevisPage() {
         }
     }
 
+    // ─── Helpers Alarmes Factures Impayées ────────────────────────────────
+    const parseValiditeDays = (validite: string): number => {
+        if (!validite) return 30
+        const match = String(validite).match(/\d+/)
+        return match ? parseInt(match[0], 10) : 30
+    }
+
+    const computeOverdue = (doc: DocumentFinancier, paid: number) => {
+        if (doc.type !== 'facture' || doc.status === 'annule') return { isUnpaid: false, isOverdue: false, daysLate: 0, remaining: 0 }
+        const remaining = Math.max(0, doc.total - paid)
+        if (remaining === 0) return { isUnpaid: false, isOverdue: false, daysLate: 0, remaining: 0 }
+        const dueDays = parseValiditeDays(doc.validite)
+        const createdAt = doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).getTime() : Date.now()
+        const dueAt = createdAt + dueDays * 24 * 60 * 60 * 1000
+        const daysLate = Math.floor((Date.now() - dueAt) / (24 * 60 * 60 * 1000))
+        return { isUnpaid: true, isOverdue: daysLate > 0, daysLate: Math.max(0, daysLate), remaining }
+    }
+
+    const sendRelance = async (doc: DocumentFinancier) => {
+        if (!doc.client_email) { alert('Email client manquant — impossible de relancer.'); return }
+        const info = computeOverdue(doc, paidByDoc[doc.id] || 0)
+        if (!info.isUnpaid) return
+        setSendingRelance(doc.id)
+        try {
+            const subject = `Rappel — Facture ${doc.numero} en attente de règlement`
+            const html = `
+                <p>Bonjour ${doc.client_nom || ''} ${doc.client_prenom || ''},</p>
+                <p>Nous nous permettons de revenir vers vous concernant la facture <strong>${doc.numero}</strong>${info.isOverdue ? ` échue depuis <strong>${info.daysLate} jour${info.daysLate > 1 ? 's' : ''}</strong>` : ''}.</p>
+                <p><strong>Montant restant dû :</strong> ${info.remaining.toLocaleString('fr-FR')} ${doc.currency || 'XOF'}</p>
+                <p>Vous pouvez régler directement depuis votre espace client : <a href="${window.location.origin}/portail/${doc.id}">${window.location.origin}/portail/${doc.id}</a></p>
+                <p>Merci pour votre confiance,<br/>L'équipe Retour Gagnant Bénin</p>
+            `
+            const res = await fetch('/api/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: doc.client_email, subject, html }),
+            })
+            if (!res.ok) throw new Error('Erreur envoi')
+            alert(`✉️ Relance envoyée à ${doc.client_email}`)
+        } catch (e) {
+            alert(`Erreur lors de l'envoi : ${e instanceof Error ? e.message : 'inconnue'}`)
+        } finally {
+            setSendingRelance(null)
+        }
+    }
+
     const filtered = documents.filter(d => {
         const matchSearch = d.numero?.toLowerCase().includes(search.toLowerCase()) ||
             d.client_nom?.toLowerCase().includes(search.toLowerCase())
-        const matchType = filterType === 'all' || d.type === filterType
+        let matchType = true
+        if (filterType === 'devis' || filterType === 'facture') matchType = d.type === filterType
+        else if (filterType === 'impayees') matchType = computeOverdue(d, paidByDoc[d.id] || 0).isUnpaid
         return matchSearch && matchType
     })
 
@@ -469,6 +547,12 @@ export default function AgentDevisPage() {
     const myCA = documents.filter(d => d.status === 'paye').reduce((s, d) => s + d.total, 0)
     const activeDevis = documents.filter(d => d.type === 'devis' && d.status !== 'refuse').length
 
+    // Alarmes factures impayées
+    const unpaidDocs = documents.filter(d => computeOverdue(d, paidByDoc[d.id] || 0).isUnpaid)
+    const overdueDocs = unpaidDocs.filter(d => computeOverdue(d, paidByDoc[d.id] || 0).isOverdue)
+    const unpaidAmount = unpaidDocs.reduce((s, d) => s + computeOverdue(d, paidByDoc[d.id] || 0).remaining, 0)
+    const overdueAmount = overdueDocs.reduce((s, d) => s + computeOverdue(d, paidByDoc[d.id] || 0).remaining, 0)
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -486,8 +570,42 @@ export default function AgentDevisPage() {
                 </Link>
             </div>
 
+            {/* Alarme Factures en Retard */}
+            {overdueDocs.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative bg-gradient-to-r from-red-500/15 via-orange-500/10 to-red-500/5 border border-red-500/30 rounded-xl p-4 flex items-start gap-4"
+                >
+                    <div className="relative">
+                        <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle size={20} className="text-red-400" />
+                        </div>
+                        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-[#080e15]">
+                            {overdueDocs.length}
+                        </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-red-300 font-black text-sm flex items-center gap-2">
+                            <Bell size={13} />
+                            {overdueDocs.length} facture{overdueDocs.length > 1 ? 's' : ''} en retard de paiement
+                        </p>
+                        <p className="text-gray-400 text-xs mt-1">
+                            <span className="font-mono text-orange-300 font-bold">{overdueAmount.toLocaleString('fr-FR')} XOF</span> à récupérer — relancez vos clients depuis la liste ci-dessous.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setFilterType('impayees')}
+                        className="flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0"
+                    >
+                        Voir la liste <Clock size={12} />
+                    </button>
+                </motion.div>
+            )}
+
             {/* Stats Ultra Puissantes (Dashboard Agent) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                 <div className="bg-[#0c1420] border border-white/5 rounded-xl p-5 shadow-lg flex items-center gap-5">
                     <div className={`w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0`}>
                         <CheckCircle2 size={24} className="text-emerald-400" />
@@ -506,6 +624,19 @@ export default function AgentDevisPage() {
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Devis Actifs (En négociation)</p>
                     </div>
                 </div>
+                <div className={`bg-[#0c1420] border rounded-xl p-5 shadow-lg flex items-center gap-5 ${unpaidDocs.length > 0 ? 'border-orange-500/30' : 'border-white/5'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${unpaidDocs.length > 0 ? 'bg-orange-500/10' : 'bg-gray-500/10'}`}>
+                        <AlertCircle size={24} className={unpaidDocs.length > 0 ? 'text-orange-400' : 'text-gray-500'} />
+                    </div>
+                    <div>
+                        <p className={`text-3xl font-black font-mono ${unpaidDocs.length > 0 ? 'text-orange-300' : 'text-gray-400'}`}>
+                            {unpaidAmount.toLocaleString('fr-FR')} XOF
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">
+                            {unpaidDocs.length} Impayée{unpaidDocs.length > 1 ? 's' : ''} · {overdueDocs.length} en retard
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Search + Filter */}
@@ -515,8 +646,28 @@ export default function AgentDevisPage() {
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par Numéro ou Client..." className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm" />
                 </div>
                 <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-full sm:w-auto">
-                    {[{ k: 'all', l: 'Tous' }, { k: 'devis', l: 'Devis' }, { k: 'facture', l: 'Factures' }].map(f => (
-                        <button key={f.k} type="button" onClick={() => setFilterType(f.k as typeof filterType)} className={`flex-1 sm:flex-none text-xs font-bold px-4 py-2 rounded-lg transition-all ${filterType === f.k ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-white'}`}>{f.l}</button>
+                    {[
+                        { k: 'all', l: 'Tous' },
+                        { k: 'devis', l: 'Devis' },
+                        { k: 'facture', l: 'Factures' },
+                        { k: 'impayees', l: `Impayées${unpaidDocs.length > 0 ? ` (${unpaidDocs.length})` : ''}` },
+                    ].map(f => (
+                        <button
+                            key={f.k}
+                            type="button"
+                            onClick={() => setFilterType(f.k as typeof filterType)}
+                            className={`flex-1 sm:flex-none text-xs font-bold px-4 py-2 rounded-lg transition-all ${
+                                filterType === f.k
+                                    ? f.k === 'impayees'
+                                        ? 'bg-orange-500/20 text-orange-400'
+                                        : 'bg-emerald-500/20 text-emerald-400'
+                                    : f.k === 'impayees' && unpaidDocs.length > 0
+                                        ? 'text-orange-400/80 hover:text-orange-300'
+                                        : 'text-gray-500 hover:text-white'
+                            }`}
+                        >
+                            {f.l}
+                        </button>
                     ))}
                 </div>
             </div>
@@ -529,7 +680,9 @@ export default function AgentDevisPage() {
                             <tr className="bg-white/[0.02] border-b border-white/5">
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Document</th>
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th>
-                                <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Montant</th>
+                                <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Total</th>
+                                <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Payé</th>
+                                <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Reste</th>
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Statut</th>
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
@@ -537,21 +690,30 @@ export default function AgentDevisPage() {
                         <tbody>
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center text-gray-500">
+                                    <td colSpan={7} className="py-12 text-center text-gray-500">
                                         <Receipt size={32} className="mx-auto mb-3 opacity-50" />
                                         <p className="text-sm font-semibold">Aucun document créé</p>
                                     </td>
                                 </tr>
-                            ) : filtered.map(doc => (
-                                <tr key={doc.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                            ) : filtered.map(doc => {
+                                const alarm = computeOverdue(doc, paidByDoc[doc.id] || 0)
+                                return (
+                                <tr key={doc.id} className={`border-b border-white/5 transition-colors group ${alarm.isOverdue ? 'bg-red-500/[0.04] hover:bg-red-500/[0.08] border-l-2 border-l-red-500/60' : 'hover:bg-white/[0.02]'}`}>
                                     <td className="py-3 px-5">
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-lg ${doc.type==='devis'?'bg-blue-500/10 text-blue-400':'bg-emerald-500/10 text-emerald-400'}`}>
                                                 {doc.type === 'devis' ? <FileText size={16} /> : <Receipt size={16} />}
                                             </div>
                                             <div>
-                                                <p className="text-white font-bold text-sm">{doc.numero}</p>
-                                                <p className="text-gray-500 text-[10px]">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
+                                                <p className="text-white font-bold text-sm flex items-center gap-1.5">
+                                                    {doc.numero}
+                                                    {alarm.isOverdue && (
+                                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-red-300 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-full">
+                                                            <AlertTriangle size={8} /> J+{alarm.daysLate}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <p className="text-gray-500 text-[10px]">{doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -562,6 +724,25 @@ export default function AgentDevisPage() {
                                     <td className="py-3 px-5 text-right">
                                         <p className="text-white font-mono text-sm font-bold">{doc.total.toLocaleString('fr-FR')} XOF</p>
                                     </td>
+                                    {(() => {
+                                        const paid = paidByDoc[doc.id] || 0
+                                        const remaining = Math.max(0, doc.total - paid)
+                                        const fullyPaid = remaining === 0 && paid > 0
+                                        return (
+                                            <>
+                                                <td className="py-3 px-5 text-right">
+                                                    <p className={`font-mono text-sm font-bold ${paid > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>
+                                                        {paid.toLocaleString('fr-FR')} XOF
+                                                    </p>
+                                                </td>
+                                                <td className="py-3 px-5 text-right">
+                                                    <p className={`font-mono text-sm font-bold ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
+                                                        {fullyPaid ? '—' : `${remaining.toLocaleString('fr-FR')} XOF`}
+                                                    </p>
+                                                </td>
+                                            </>
+                                        )
+                                    })()}
                                     <td className="py-3 px-5 text-center">
                                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label}</span>
                                     </td>
@@ -585,11 +766,22 @@ export default function AgentDevisPage() {
                                             <button onClick={() => sendPDFByEmail(doc)} disabled={sendingEmail === doc.id || !doc.client_email} className="p-2 text-gray-400 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-all disabled:opacity-30" title={doc.client_email ? `Envoyer par email à ${doc.client_email}` : 'Email client manquant'}>
                                                 {sendingEmail === doc.id ? <Loader2 size={16} className="animate-spin text-amber-400" /> : <Send size={16} />}
                                             </button>
+                                            {alarm.isUnpaid && (
+                                                <button
+                                                    onClick={() => sendRelance(doc)}
+                                                    disabled={sendingRelance === doc.id || !doc.client_email}
+                                                    className={`p-2 rounded-lg transition-all disabled:opacity-30 ${alarm.isOverdue ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'}`}
+                                                    title={alarm.isOverdue ? `Relancer — en retard de ${alarm.daysLate} jour(s)` : 'Envoyer une relance de paiement'}
+                                                >
+                                                    {sendingRelance === doc.id ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+                                                </button>
+                                            )}
                                             <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -633,8 +825,30 @@ export default function AgentDevisPage() {
                                         <p className="text-gray-400 text-xs">{showPreview.client_phone}</p>
                                     </div>
                                     <div className="bg-white/5 p-4 rounded-xl">
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Récapitulatif Total</p>
-                                        <p className="text-2xl text-emerald-400 font-black font-mono mt-1">{showPreview.total.toLocaleString('fr-Fr')} XOF</p>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Récapitulatif</p>
+                                        {(() => {
+                                            const paid = paidByDoc[showPreview.id] || 0
+                                            const remaining = Math.max(0, showPreview.total - paid)
+                                            const fullyPaid = remaining === 0 && paid > 0
+                                            return (
+                                                <div className="space-y-1 mt-1">
+                                                    <div className="flex items-baseline justify-between">
+                                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Total</span>
+                                                        <span className="text-xl text-white font-black font-mono">{showPreview.total.toLocaleString('fr-FR')} XOF</span>
+                                                    </div>
+                                                    <div className="flex items-baseline justify-between">
+                                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Payé</span>
+                                                        <span className={`text-sm font-black font-mono ${paid > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{paid.toLocaleString('fr-FR')} XOF</span>
+                                                    </div>
+                                                    <div className="flex items-baseline justify-between pt-1 border-t border-white/5">
+                                                        <span className="text-[10px] text-gray-500 font-bold uppercase">Reste</span>
+                                                        <span className={`text-lg font-black font-mono ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
+                                                            {fullyPaid ? 'SOLDÉ ✓' : `${remaining.toLocaleString('fr-FR')} XOF`}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
                                     </div>
                                 </div>
 

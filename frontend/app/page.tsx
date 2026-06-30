@@ -2,13 +2,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ServicesGrid from "@/components/home/ServicesGrid";
 import TestimonialsCarousel from "@/components/home/TestimonialsCarousel";
-
 import HeroSection from "@/components/home/HeroSection";
 import ProcessSteps from "@/components/home/ProcessSteps";
 import HeritageCarousel from "@/components/home/HeritageCarousel";
 import ImmersiveGallery from "@/components/home/ImmersiveGallery";
 import AboutUsSection from "@/components/home/AboutUsSection";
 import PartnersSection from "@/components/home/PartnersSection";
+import NewsletterSection from "@/components/home/NewsletterSection";
 import { T } from "@/lib/translation";
 
 export default function Home() {
@@ -16,9 +16,6 @@ export default function Home() {
     <div className="bg-white">
       {/* Hero Section (Immersive Video/Particles) */}
       <HeroSection />
-
-      {/* Stats Section (Disabled for now) */}
-      {/* <StatsSection /> */}
 
       {/* Services Preview */}
       <section className="py-12 md:py-20 bg-background">
@@ -56,8 +53,11 @@ export default function Home() {
       {/* Testimonials */}
       <TestimonialsCarousel />
 
-      {/* Partners Section (New) */}
+      {/* Partners Section */}
       <PartnersSection />
+
+      {/* Newsletter */}
+      <NewsletterSection />
 
       {/* Call to Action */}
       <section className="py-16 md:py-24 bg-[#1a2332] text-white relative overflow-hidden">
@@ -77,3 +77,4 @@ export default function Home() {
     </div>
   );
 }
+

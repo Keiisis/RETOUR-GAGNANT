@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { to, subject, message, clientName, context, relatedId, language } = body
+        const { to, subject, message, clientName, context, relatedId, language, attachments } = body
 
         if (!to || !message) {
             return NextResponse.json({ error: 'Email et message requis.' }, { status: 400 })
@@ -26,6 +26,33 @@ export async function POST(req: NextRequest) {
         }
         if (/[\r\n]/.test(to) || (subject && /[\r\n]/.test(subject))) {
             return NextResponse.json({ error: 'Caractères non autorisés dans les champs email.' }, { status: 400 })
+        }
+
+        // Validation pieces jointes : taille totale max 20MB (base64 = ~27MB en JSON, raisonnable)
+        const MAX_TOTAL_BYTES = 20 * 1024 * 1024
+        let validAttachments: Array<{ filename: string; content: string; contentType?: string }> | undefined
+        if (Array.isArray(attachments) && attachments.length > 0) {
+            let total = 0
+            validAttachments = []
+            for (const a of attachments) {
+                if (!a?.filename || !a?.content || typeof a.filename !== 'string' || typeof a.content !== 'string') {
+                    return NextResponse.json({ error: 'Format de pièce jointe invalide.' }, { status: 400 })
+                }
+                // Protection path traversal / injection
+                if (/[\r\n\\/]/.test(a.filename) || a.filename.length > 255) {
+                    return NextResponse.json({ error: `Nom de fichier invalide : ${a.filename}` }, { status: 400 })
+                }
+                const raw = a.content.includes(',') ? a.content.split(',')[1] : a.content
+                total += Math.ceil((raw.length * 3) / 4)
+                if (total > MAX_TOTAL_BYTES) {
+                    return NextResponse.json({ error: 'Taille totale des pièces jointes > 20MB.' }, { status: 413 })
+                }
+                validAttachments.push({
+                    filename: a.filename,
+                    content: a.content,
+                    contentType: typeof a.contentType === 'string' ? a.contentType : undefined,
+                })
+            }
         }
 
         // Résoudre la langue : priorité au paramètre 'language', sinon 'fr'
@@ -49,6 +76,7 @@ export async function POST(req: NextRequest) {
             html,
             context: context || 'agent_reply',
             relatedId: relatedId || '',
+            attachments: validAttachments,
         })
 
         if (!result.success) {

@@ -8,8 +8,10 @@ import { supabase } from '@/lib/supabase'
 import {
     LayoutDashboard, FileText, FolderOpen, MessageSquare,
     CalendarDays, UserCircle, LogOut, Menu, X, Bell,
-    ChevronRight, CircleDot, Shield, Briefcase, FileSignature
+    ChevronRight, CircleDot, Shield, Briefcase, FileSignature, GitFork
 } from 'lucide-react'
+import { ThemeProvider } from '@/lib/theme/ThemeContext'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface ClientProfile {
     id: string
@@ -29,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Tableau de Bord', icon: LayoutDashboard, href: '/client/dashboard' },
     { title: 'Mes Documents', icon: FileText, href: '/client/documents' },
     { title: 'Mon Dossier', icon: FolderOpen, href: '/client/dossier' },
+    { title: 'Mon Plan de composition de Famille', icon: GitFork, href: '/client/genealogie' },
     { title: 'Mes Services', icon: Briefcase, href: '/client/services' },
     { title: 'Messages', icon: MessageSquare, href: '/client/messages' },
     { title: 'Rendez-vous', icon: CalendarDays, href: '/client/rendez-vous' },
@@ -200,9 +203,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     )
 
     return (
-        <div className="flex h-screen bg-nexus-deep text-white overflow-hidden">
+        <ThemeProvider panel="client" defaultTheme="dark">
+        <div className="flex h-screen text-white overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
             {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex w-[240px] h-full flex-col bg-[#060d16] border-r border-white/[0.06] relative z-40">
+            <aside className="hidden lg:flex w-[240px] h-full flex-col border-r relative z-40" style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}>
                 <div className="absolute top-0 left-0 w-full h-[200px] bg-gradient-to-b from-blue-500/[0.05] to-transparent pointer-events-none" />
                 <SidebarContent />
             </aside>
@@ -217,7 +221,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                         <motion.aside
                             initial={{ x: -280, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -280, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            className="fixed left-0 top-0 h-full w-[260px] bg-[#060d16] border-r border-white/[0.06] flex flex-col z-[101] lg:hidden">
+                            className="fixed left-0 top-0 h-full w-[260px] border-r flex flex-col z-[101] lg:hidden"
+                            style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}>
                             <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/5 text-gray-500">
                                 <X size={17} />
                             </button>
@@ -230,7 +235,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             {/* Main */}
             <main className="flex-1 flex flex-col overflow-hidden">
                 {/* Topbar */}
-                <header className="h-14 flex items-center px-4 lg:px-6 justify-between bg-nexus-deep/80 backdrop-blur-xl border-b border-white/[0.06] relative z-30">
+                <header
+                    className="h-14 flex items-center px-4 lg:px-6 justify-between backdrop-blur-xl border-b relative z-30"
+                    style={{
+                        background: 'color-mix(in srgb, var(--panel-bg) 80%, transparent)',
+                        borderColor: 'var(--panel-border)',
+                    }}
+                >
                     <div className="flex items-center gap-3">
                         <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-white/5 text-gray-500 lg:hidden">
                             <Menu size={19} />
@@ -245,6 +256,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <ThemeToggle />
                         <button className="relative p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all">
                             <Bell size={16} />
                             {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />}
@@ -265,5 +277,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 </div>
             </main>
         </div>
+        </ThemeProvider>
     )
 }

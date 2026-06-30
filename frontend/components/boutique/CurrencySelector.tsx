@@ -10,6 +10,7 @@ const CURRENCY_OPTIONS: { code: CurrencyCode; flag: string; label: string }[] = 
     { code: 'EUR', flag: '🇪🇺', label: 'EUR €' },
     { code: 'USD', flag: '🇺🇸', label: 'USD $' },
     { code: 'GBP', flag: '🇬🇧', label: 'GBP £' },
+    { code: 'HTG', flag: '🇭🇹', label: 'HTG G' },
 ]
 
 interface CurrencySelectorProps {

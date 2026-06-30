@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import FileUpload from '@/components/ui/FileUpload'
 import { useTranslation, T } from '@/lib/translation'
+import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 
 // ─── Category definitions with real icons ────────────────────────────────────
 
@@ -108,24 +109,24 @@ function Icon3D({ icon: Icon, from, to, size = 20, containerSize = 48 }: { icon:
         >
             {/* Volumetric glow underneath */}
             <div
-                className="absolute inset-x-[15%] bottom-[-20%] h-[40%] rounded-full blur-lg opacity-60 bg-[radial-gradient(ellipse,var(--from)_90,transparent_70%)]"
+                className="absolute inset-x-[15%] bottom-[-20%] h-[40%] rounded-full blur-lg opacity-70"
+                style={{ background: `radial-gradient(ellipse, ${from}, transparent 70%)` }}
             />
             {/* Main 3D body */}
             <div
                 className={cn(
                     "relative w-full h-full flex items-center justify-center overflow-hidden [transform:rotateX(4deg)_rotateY(-3deg)]",
                     radiusClass,
-                    "bg-[linear-gradient(160deg,var(--from),var(--to)_60%,var(--from)cc_100%)]"
                 )}
                 style={{
+                    background: `linear-gradient(160deg, ${from}, ${to} 60%, ${from}cc 100%)`,
                     boxShadow: [
-                        `0 1px 0 rgba(255,255,255,0.35) inset`,
-                        `0 -1px 0 rgba(0,0,0,0.45) inset`,
-                        `1px 0 0 rgba(255,255,255,0.08) inset`,
-                        `-1px 0 0 rgba(0,0,0,0.15) inset`,
-                        `0 ${containerSize * 0.35}px ${containerSize * 0.7}px color-mix(in srgb, var(--from) 50%, transparent)`,
-                        `0 ${containerSize * 0.1}px ${containerSize * 0.15}px rgba(0,0,0,0.5)`,
-                        `0 0 ${containerSize * 0.5}px color-mix(in srgb, var(--from) 20%, transparent)`,
+                        `0 1px 0 rgba(255,255,255,0.4) inset`,
+                        `0 -1px 0 rgba(0,0,0,0.25) inset`,
+                        `1px 0 0 rgba(255,255,255,0.1) inset`,
+                        `-1px 0 0 rgba(0,0,0,0.1) inset`,
+                        `0 ${containerSize * 0.2}px ${containerSize * 0.4}px ${from}40`,
+                        `0 ${containerSize * 0.06}px ${containerSize * 0.1}px rgba(0,0,0,0.08)`,
                     ].join(', '),
                 }}
             >
@@ -149,12 +150,12 @@ function Icon3D({ icon: Icon, from, to, size = 20, containerSize = 48 }: { icon:
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
     return (
         <div className="space-y-2">
-            <label className="flex items-baseline gap-1.5 text-[11px] font-black text-gray-400 uppercase tracking-[0.18em]">
+            <label className="flex items-baseline gap-1.5 text-[11px] font-black text-gray-500 uppercase tracking-[0.18em]">
                 {label}
                 {required && <span className="text-[#E8112D] font-black">*</span>}
             </label>
             {children}
-            {hint && <p className="text-[10px] text-gray-600 leading-relaxed">{hint}</p>}
+            {hint && <p className="text-[10px] text-gray-400 leading-relaxed">{hint}</p>}
         </div>
     )
 }
@@ -168,15 +169,15 @@ function TextInput({ value, onChange, placeholder, type = 'text', icon: InputIco
     return (
         <div className="relative">
             {InputIcon && (
-                <InputIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                <InputIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             )}
             <input
                 type={type} value={value} onChange={e => onChange(e.target.value)}
                 placeholder={placeholder} title={placeholder}
                 className={cn(
-                    'w-full rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white text-sm',
-                    'focus:outline-none focus:border-[#008751]/60 focus:bg-white/[0.06] transition-all',
-                    'placeholder-gray-700 py-3',
+                    'w-full rounded-2xl bg-gray-50 border border-gray-200 text-gray-900 text-sm',
+                    'focus:outline-none focus:border-[#008751] focus:bg-white focus:ring-2 focus:ring-[#008751]/20 transition-all',
+                    'placeholder-gray-400 py-3',
                     InputIcon ? 'pl-10 pr-4' : 'px-4'
                 )}
             />
@@ -189,7 +190,7 @@ function TextArea({ value, onChange, placeholder, rows = 4 }: { value: string; o
         <textarea
             value={value} onChange={e => onChange(e.target.value)}
             placeholder={placeholder} title={placeholder} rows={rows}
-            className="w-full rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white text-sm px-4 py-3 focus:outline-none focus:border-[#008751]/60 focus:bg-white/[0.06] transition-all placeholder-gray-700 resize-none leading-relaxed"
+            className="w-full rounded-2xl bg-gray-50 border border-gray-200 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-[#008751] focus:bg-white focus:ring-2 focus:ring-[#008751]/20 transition-all placeholder-gray-400 resize-none leading-relaxed"
         />
     )
 }
@@ -203,8 +204,8 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
             className={cn(
                 'text-xs font-bold px-4 py-2 rounded-xl border transition-all',
                 selected
-                    ? 'bg-[#008751]/20 text-emerald-300 border-[#008751]/50 shadow-[0_0_12px_rgba(0,135,81,0.2)]'
-                    : 'bg-white/[0.04] text-gray-500 border-white/[0.08] hover:border-white/20 hover:text-gray-300'
+                    ? 'bg-[#008751]/10 text-[#008751] border-[#008751]/40 shadow-[0_0_12px_rgba(0,135,81,0.1)]'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-800'
             )}
         >
             {label}
@@ -223,6 +224,7 @@ export default function DevenirPartenairePage() {
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
+    const [consent, setConsent] = useState(false)
 
     const set = (key: keyof FormData, value: string | string[]) =>
         setForm(prev => ({ ...prev, [key]: value }))
@@ -237,7 +239,7 @@ export default function DevenirPartenairePage() {
         if (step === 0) return !!(form.company_name && form.contact_name && form.category && form.location)
         if (step === 1) return !!(form.activity_description && form.partnership_types.length > 0)
         if (step === 2) return !!form.email
-        if (step === 3) return !!form.why_partner
+        if (step === 3) return !!form.why_partner && consent
         return true
     }
 
@@ -263,7 +265,7 @@ export default function DevenirPartenairePage() {
 
     if (submitted) {
         return (
-            <div className="min-h-screen bg-[#030a15] flex items-center justify-center px-4 py-16">
+            <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
                 {/* Background blobs */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.06] bg-[radial-gradient(circle,#008751,transparent_70%)]" />
@@ -276,7 +278,7 @@ export default function DevenirPartenairePage() {
                     transition={{ type: 'spring', stiffness: 260, damping: 24 }}
                     className="relative max-w-lg w-full"
                 >
-                    <div className="rounded-[32px] border border-white/[0.08] overflow-hidden bg-gradient-to-br from-white/[0.05] to-white/[0.02]">
+                    <div className="rounded-[32px] border border-gray-200 overflow-hidden bg-white shadow-xl">
 
                         {/* Top gradient bar */}
                         <div className="h-1 w-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#008751]" />
@@ -301,22 +303,22 @@ export default function DevenirPartenairePage() {
                                     <motion.div
                                         animate={{ rotate: 360 }}
                                         transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 border-[#030a15] flex items-center justify-center bg-gradient-to-br from-[#FCD116] to-amber-500 shadow-[0_0_12px_rgba(252,209,22,0.5)]">
+                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center bg-gradient-to-br from-[#FCD116] to-amber-500 shadow-[0_0_12px_rgba(252,209,22,0.5)]">
                                         <Star size={10} fill="white" className="text-white" />
                                     </motion.div>
                                 </div>
                             </motion.div>
 
                             <div className="space-y-3">
-                                <h1 className="text-3xl font-black text-white font-heading tracking-tighter">
+                                <h1 className="text-3xl font-black text-gray-900 font-heading tracking-tighter">
                                     <T>Candidature envoyée !</T>
                                 </h1>
-                                <p className="text-gray-400 leading-relaxed text-[15px]">
-                                    {t("Merci")} <strong className="text-white">{form.contact_name}</strong> ! {t("Notre équipe examine votre dossier sous 48–72h. Vous recevrez une réponse à")} <strong className="text-[#FCD116]">{form.email}</strong>.
+                                <p className="text-gray-600 leading-relaxed text-[15px]">
+                                    {t("Merci")} <strong className="text-gray-900">{form.contact_name}</strong> ! {t("Notre équipe examine votre dossier sous 48–72h. Vous recevrez une réponse à")} <strong className="text-[#FCD116]">{form.email}</strong>.
                                 </p>
                             </div>
 
-                            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 text-left space-y-3">
+                            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-left space-y-3">
                                 <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em]"><T>Récapitulatif</T></p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {[
@@ -326,8 +328,8 @@ export default function DevenirPartenairePage() {
                                         ['Statut', 'En examen'],
                                     ].map(([label, val]) => (
                                         <div key={label}>
-                                            <p className="text-[9px] text-gray-600 uppercase tracking-wider">{t(label)}</p>
-                                            <p className={cn('text-sm font-bold mt-0.5', label === 'Statut' ? 'text-[#FCD116]' : 'text-white')}>{['Statut', 'Catégorie'].includes(label) ? t(val) : val}</p>
+                                            <p className="text-[9px] text-gray-400 uppercase tracking-wider">{t(label)}</p>
+                                            <p className={cn('text-sm font-bold mt-0.5', label === 'Statut' ? 'text-[#008751]' : 'text-gray-900')}>{['Statut', 'Catégorie'].includes(label) ? t(val) : val}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -335,7 +337,7 @@ export default function DevenirPartenairePage() {
 
                             <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <Link href="/partenaires"
-                                    className="flex items-center justify-center gap-2 text-sm font-bold text-gray-400 hover:text-white border border-white/10 hover:border-white/20 px-6 py-3 rounded-2xl transition-all">
+                                    className="flex items-center justify-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-2xl transition-all">
                                     <ArrowLeft size={14} /> <T>Voir nos partenaires</T>
                                 </Link>
                                 <Link href="/"
@@ -353,18 +355,18 @@ export default function DevenirPartenairePage() {
     // ── MAIN FORM ────────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-[#030a15] text-white">
+        <div className="min-h-screen bg-white text-gray-900">
 
             {/* ── Ambient background ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full opacity-[0.06] bg-[radial-gradient(circle_at_70%_20%,#008751,transparent_60%)]" />
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-[0.04] bg-[radial-gradient(circle_at_30%_80%,#FCD116,transparent_60%)]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full opacity-[0.025] bg-[radial-gradient(circle,#4f46e5,transparent_60%)]" />
+                <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full opacity-[0.08] bg-[radial-gradient(circle_at_70%_20%,#008751,transparent_60%)]" />
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-[0.06] bg-[radial-gradient(circle_at_30%_80%,#FCD116,transparent_60%)]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] rounded-full opacity-[0.04] bg-[radial-gradient(circle,#4f46e5,transparent_60%)]" />
                 {/* Grid overlay */}
                 <svg className="absolute inset-0 w-full h-full opacity-[0.025]">
                     <defs>
                         <pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse">
-                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.5" />
+                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#94a3b8" strokeWidth="0.5" />
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#g)" />
@@ -375,7 +377,7 @@ export default function DevenirPartenairePage() {
             <div className="relative z-10 pt-10 pb-14 px-4">
                 <div className="max-w-3xl mx-auto text-center space-y-6">
                     <Link href="/partenaires"
-                        className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-300 transition-colors mb-2">
+                        className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors mb-2">
                         <ArrowLeft size={13} /> <T>Retour aux partenaires</T>
                     </Link>
 
@@ -394,7 +396,7 @@ export default function DevenirPartenairePage() {
                         </span>
                     </h1>
 
-                    <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
+                    <p className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed">
                         <T>Rejoignez notre réseau d&apos;élite et touchez la diaspora béninoise du monde entier. Ensemble, construisons des ponts entre l&apos;Afrique et la diaspora.</T>
                     </p>
 
@@ -407,9 +409,9 @@ export default function DevenirPartenairePage() {
                             { icon: Zap, label: 'Croissance partagée', from: '#7c3aed', to: '#9333ea' },
                         ].map(b => (
                             <div key={b.label}
-                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm">
+                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50">
                                 <Icon3D icon={b.icon} from={b.from} to={b.to} size={14} containerSize={28} />
-                                <span className="text-xs font-bold text-gray-300">{t(b.label)}</span>
+                                <span className="text-xs font-bold text-gray-600">{t(b.label)}</span>
                             </div>
                         ))}
                     </div>
@@ -439,23 +441,23 @@ export default function DevenirPartenairePage() {
                                                     ? 'bg-gradient-to-br from-[#008751] to-emerald-600 shadow-[inset_0_2px_0_rgba(255,255,255,0.18),0_6px_20px_rgba(0,135,81,0.45)]'
                                                     : isActive
                                                         ? 'bg-gradient-to-br from-[#FCD116] to-amber-500 shadow-[inset_0_2px_0_rgba(255,255,255,0.25),0_6px_24px_rgba(252,209,22,0.5)]'
-                                                        : 'bg-white/5 border border-white/10'
+                                                        : 'bg-gray-200 border border-gray-300'
                                             )}
                                         >
                                             {isDone
                                                 ? <CheckCircle2 size={20} className="text-white drop-shadow-sm" />
-                                                : <StepIcon size={18} className={isActive ? 'text-[#030a15] drop-shadow-sm' : 'text-gray-600'} />
+                                                : <StepIcon size={18} className={isActive ? 'text-[#030a15] drop-shadow-sm' : 'text-gray-500'} />
                                             }
                                         </div>
                                     </motion.div>
                                     <p className={cn(
                                         'text-[9px] font-black uppercase tracking-widest hidden sm:block text-center whitespace-nowrap',
-                                        isDone ? 'text-emerald-500' : isActive ? 'text-[#FCD116]' : 'text-gray-700'
+                                        isDone ? 'text-emerald-600' : isActive ? 'text-amber-600' : 'text-gray-400'
                                     )}>{t(s.title)}</p>
                                 </div>
                                 {i < STEPS.length - 1 && (
                                     <div className="relative flex-1 mx-2.5 h-px">
-                                        <div className="absolute inset-0 bg-white/[0.07] rounded-full" />
+                                        <div className="absolute inset-0 bg-gray-200 rounded-full" />
                                         <motion.div
                                             className="absolute inset-0 rounded-full bg-gradient-to-r from-[#008751] to-emerald-600"
                                             initial={{ scaleX: 0, originX: 0 }}
@@ -478,10 +480,10 @@ export default function DevenirPartenairePage() {
                         exit={{ opacity: 0, x: -32 }}
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="rounded-[28px] border border-white/[0.08] overflow-hidden bg-gradient-to-br from-white/[0.045] to-white/[0.02]">
+                        <div className="rounded-[28px] border border-gray-200 overflow-hidden bg-white shadow-lg">
 
                             {/* Step header */}
-                            <div className="px-8 pt-7 pb-5 border-b border-white/[0.06] flex items-center gap-4">
+                            <div className="px-8 pt-7 pb-5 border-b border-gray-100 flex items-center gap-4">
                                 {(() => {
                                     const S = STEPS[step]
                                     return (
@@ -494,10 +496,10 @@ export default function DevenirPartenairePage() {
                                     )
                                 })()}
                                 <div className="flex-1">
-                                    <h2 className="text-lg font-black text-white">{t(STEPS[step].title)}</h2>
+                                    <h2 className="text-lg font-black text-gray-900">{t(STEPS[step].title)}</h2>
                                     <p className="text-[11px] text-gray-500 mt-0.5">{t(STEPS[step].subtitle)}</p>
                                 </div>
-                                <span className="text-[11px] font-mono text-gray-700 font-bold">{step + 1}/{STEPS.length}</span>
+                                <span className="text-[11px] font-mono text-gray-400 font-bold">{step + 1}/{STEPS.length}</span>
                             </div>
 
                             <div className="px-8 py-7 space-y-6">
@@ -530,8 +532,8 @@ export default function DevenirPartenairePage() {
                                                             className={cn(
                                                                 'flex items-center gap-2.5 px-3 py-3 rounded-2xl border text-left transition-all duration-200',
                                                                 isSelected
-                                                                    ? 'border-white/20 bg-white/[0.08]'
-                                                                    : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1]'
+                                                                    ? 'border-[#008751]/30 bg-[#008751]/5'
+                                                                    : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'
                                                             )}
                                                             style={{
                                                                 boxShadow: isSelected ? `0 0 0 1px ${cat.from}60, 0 4px 20px ${cat.from}30` : undefined
@@ -540,7 +542,7 @@ export default function DevenirPartenairePage() {
                                                             <Icon3D icon={CatIcon} from={cat.from} to={cat.to} size={14} containerSize={32} />
                                                             <span className={cn(
                                                                 'text-[11px] font-bold leading-tight truncate',
-                                                                isSelected ? 'text-white' : 'text-gray-400'
+                                                                isSelected ? 'text-gray-900' : 'text-gray-500'
                                                             )}>
                                                                 {t(cat.label)}
                                                             </span>
@@ -616,19 +618,19 @@ export default function DevenirPartenairePage() {
                                                             className={cn(
                                                                 'flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all duration-200',
                                                                 isSelected
-                                                                    ? 'border-white/15 bg-white/[0.07] shadow-[0_0_0_1px_var(--pt-from-50),_0_4px_20px_var(--pt-from-25)]'
-                                                                    : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1]'
+                                                                    ? 'border-gray-300 bg-gray-50 shadow-[0_0_0_1px_var(--pt-from-50),_0_4px_20px_var(--pt-from-25)]'
+                                                                    : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'
                                                             )}
                                                             style={isSelected ? { '--pt-from-50': `${pt.from}50`, '--pt-from-25': `${pt.from}25` } as React.CSSProperties : undefined}
                                                         >
                                                             <Icon3D icon={PtIcon} from={pt.from} to={pt.to} size={16} containerSize={36} />
                                                             <div className="flex-1 min-w-0">
-                                                                <p className={cn('text-[12px] font-bold leading-tight', isSelected ? 'text-white' : 'text-gray-300')}>{t(pt.label)}</p>
+                                                                <p className={cn('text-[12px] font-bold leading-tight', isSelected ? 'text-gray-900' : 'text-gray-700')}>{t(pt.label)}</p>
                                                                 <p className="text-[10px] text-gray-600 mt-0.5 leading-tight">{t(pt.sub)}</p>
                                                             </div>
                                                             <div className={cn(
                                                                 'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all',
-                                                                isSelected ? 'border-transparent' : 'border-white/15'
+                                                                isSelected ? 'border-transparent' : 'border-gray-300'
                                                             )} style={isSelected ? { background: `linear-gradient(135deg, ${pt.from}, ${pt.to})` } : {}}>
                                                                 {isSelected && <CheckCircle2 size={11} className="text-white" />}
                                                             </div>
@@ -662,7 +664,7 @@ export default function DevenirPartenairePage() {
                                         </div>
 
                                         {/* Social links */}
-                                        <div className="pt-2 border-t border-white/[0.06]">
+                                        <div className="pt-2 border-t border-gray-100">
                                             <div className="flex items-center gap-3 mb-4">
                                                 <Icon3D icon={Network} from="#2563eb" to="#4f46e5" size={13} containerSize={28} />
                                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"><T>Réseaux sociaux (optionnel)</T></span>
@@ -679,7 +681,7 @@ export default function DevenirPartenairePage() {
                                                             <input
                                                                 type="url" value={form[key]} onChange={e => set(key, e.target.value)}
                                                                 placeholder={placeholder} title={t(label)}
-                                                                className="w-full rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white text-sm px-4 py-3 focus:outline-none focus:border-[#008751]/60 transition-all placeholder-gray-700"
+                                                                className="w-full rounded-2xl bg-gray-50 border border-gray-200 text-gray-900 text-sm px-4 py-3 focus:outline-none focus:border-[#008751] transition-all placeholder-gray-400"
                                                             />
                                                         </div>
                                                     </div>
@@ -698,7 +700,7 @@ export default function DevenirPartenairePage() {
                                         </Field>
 
                                         {/* Visuals upload */}
-                                        <div className="pt-2 border-t border-white/[0.06]">
+                                        <div className="pt-2 border-t border-gray-100">
                                             <div className="flex items-center gap-3 mb-5">
                                                 <Icon3D icon={Camera} from="#7c3aed" to="#9333ea" size={13} containerSize={28} />
                                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"><T>Visuels de votre marque (optionnel)</T></span>
@@ -739,11 +741,14 @@ export default function DevenirPartenairePage() {
                                                 ].filter(([, v]) => v).map(([label, val]) => (
                                                     <div key={label}>
                                                         <span className="text-gray-500">{t(label)} : </span>
-                                                        <span className="text-white font-bold">{label === 'Catégorie' ? t(val) : val}</span>
+                                                        <span className="text-gray-900 font-bold">{label === 'Catégorie' ? t(val) : val}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
+
+                                        <ConsentCheckbox id="partner-consent" checked={consent} onChange={setConsent}
+                                            purpose="afin d'étudier ma candidature de partenariat et de me recontacter" />
                                     </div>
                                 )}
 
@@ -752,15 +757,15 @@ export default function DevenirPartenairePage() {
                                     <motion.div
                                         initial={{ opacity: 0, y: -4 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                                        className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
                                         <Shield size={14} /> {error}
                                     </motion.div>
                                 )}
 
                                 {/* Navigation */}
-                                <div className="flex items-center justify-between pt-5 border-t border-white/[0.06]">
+                                <div className="flex items-center justify-between pt-5 border-t border-gray-100">
                                     <button type="button" onClick={() => setStep(s => s - 1)} disabled={step === 0}
-                                        className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-white transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
+                                        className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors disabled:opacity-25 disabled:cursor-not-allowed">
                                         <ArrowLeft size={15} /> <T>Précédent</T>
                                     </button>
 
@@ -775,7 +780,7 @@ export default function DevenirPartenairePage() {
                                             style={{
                                                 background: validateStep()
                                                     ? 'linear-gradient(135deg, #008751, #0d9488)'
-                                                    : 'rgba(255,255,255,0.05)',
+                                                    : 'rgba(0,0,0,0.08)',
                                                 color: 'white',
                                                 boxShadow: validateStep() ? '0 2px 0 rgba(255,255,255,0.15) inset, 0 8px 24px rgba(0,135,81,0.4)' : 'none',
                                             }}
@@ -812,14 +817,14 @@ export default function DevenirPartenairePage() {
                         <motion.div
                             key={i}
                             animate={{ width: i === step ? 28 : 8 }}
-                            className={cn('h-2 rounded-full transition-colors', i < step ? 'bg-[#008751]' : i === step ? 'bg-[#FCD116]' : 'bg-white/10')}
+                            className={cn('h-2 rounded-full transition-colors', i < step ? 'bg-[#008751]' : i === step ? 'bg-[#FCD116]' : 'bg-gray-200')}
                         />
                     ))}
                 </div>
             </div>
 
             {/* ── BOTTOM STATS ── */}
-            <div className="relative z-10 border-t border-white/[0.05] bg-white/[0.015] py-12">
+            <div className="relative z-10 border-t border-gray-100 bg-gray-50/50 py-12">
                 <div className="max-w-2xl mx-auto px-4">
                     <div className="grid grid-cols-3 gap-6 text-center">
                         {[
@@ -830,7 +835,7 @@ export default function DevenirPartenairePage() {
                             <div key={s.label} className="flex flex-col items-center gap-3">
                                 <Icon3D icon={s.icon} from={s.from} to={s.to} size={18} containerSize={44} />
                                 <div>
-                                    <p className="text-2xl font-black text-[#FCD116]">{s.value}</p>
+                                    <p className="text-2xl font-black text-[#008751]">{s.value}</p>
                                     <p className="text-[11px] text-gray-600 mt-0.5 font-bold"><T>{s.label}</T></p>
                                 </div>
                             </div>

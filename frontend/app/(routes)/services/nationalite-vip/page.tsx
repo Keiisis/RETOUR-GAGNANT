@@ -69,6 +69,8 @@ const DEFAULT_CONTENT: PageContent = {
 export default function NationaliteVipPage() {
     const { t } = useTranslation();
     const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT);
+    // Toggle global des calculateurs (Admin > Réglages Frontend) — a priorité.
+    const [globalCalcEnabled, setGlobalCalcEnabled] = useState(true);
 
     useEffect(() => {
         const fetchContent = async () => {
@@ -88,6 +90,11 @@ export default function NationaliteVipPage() {
             }
         };
         fetchContent();
+
+        fetch('/api/settings/frontend')
+            .then(r => r.json())
+            .then(json => { if (json.settings?.services_show_calculator === 'false') setGlobalCalcEnabled(false); })
+            .catch(() => { /* défaut : activé */ });
     }, []);
 
     return (
@@ -193,7 +200,7 @@ export default function NationaliteVipPage() {
                             className="lg:col-span-1"
                         >
                             <div className="sticky top-24 space-y-6">
-                                {content.pricing_show_calculator && (
+                                {content.pricing_show_calculator && globalCalcEnabled && (
                                     <PricingCalculator3D
                                         options={content.pricing_options}
                                         baseColor="#FCD116"
@@ -228,7 +235,7 @@ export default function NationaliteVipPage() {
                                         <p className="text-sm text-gray-500 mb-4">
                                             {t(content.cta2_description)}
                                         </p>
-                                        <Link href="/rendez-vous" className="block">
+                                        <Link href="/rendez-vous?service=nationalite-vip" className="block">
                                             <Button variant="outline" className="w-full border-[#008751]/30 text-[#008751] hover:bg-[#008751] hover:text-white font-bold h-12 rounded-xl transition-all">
                                                 {t(content.cta2_button_text)}
                                             </Button>

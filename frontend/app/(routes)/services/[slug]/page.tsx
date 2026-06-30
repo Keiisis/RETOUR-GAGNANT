@@ -167,13 +167,13 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     'recherche-ancestrale': {
         title: 'Recherche Ancestrale',
         subtitle: "Retrouvez la trace de ceux que l'histoire a effacés",
-        description: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été effacée par la traite transatlantique. Nous mobilisons archives, bases de données spécialisées et associations expertes pour reconstituer votre lignée africaine.",
+        description: "Pour des millions de descendants de la diaspora africaine, une partie du plan de composition de famille a été effacée par la traite transatlantique. Nous mobilisons archives, bases de données spécialisées et associations expertes pour reconstituer votre lignée africaine.",
         features: [
             "Extrait de naissance de vos deux parents (père et mère)",
             "Extrait de naissance ou de décès de vos grands-parents (côté paternel et maternel)",
             "Actes de mariage, notariés, militaires ou de décès des arrière-grands-parents",
             "Consultation d'archives officielles et bases de données diasporiques",
-            "Partenariats avec associations spécialisées en généalogie afro-descendante",
+            "Partenariats avec associations spécialisées dans le Plan de composition de Famille afro-descendant",
         ],
         price: '250 €',
         color: '#FCD116',
@@ -294,15 +294,21 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         fetchService()
     }, [slug])
 
-    // Chargement du paramètre calculateur (pages passeport et nationalite-vip uniquement)
+    // Chargement du paramètre calculateur (global pour tous les services, + clé
+    // historique propre au passeport / nationalité-vip pour rétro-compatibilité)
     useEffect(() => {
-        if (slug !== 'passeport' && slug !== 'nationalite-vip') return
-
         fetch('/api/settings/frontend')
             .then(r => r.json())
             .then(json => {
-                const val = json.settings?.passeport_show_calculator
-                if (val === 'false') setShowCalculator(false)
+                const global = json.settings?.services_show_calculator
+                const legacy = json.settings?.passeport_show_calculator
+                // Le toggle global a priorité ; s'il est désactivé, calculateur masqué partout.
+                if (global === 'false') {
+                    setShowCalculator(false)
+                } else if (global === undefined && (slug === 'passeport' || slug === 'nationalite-vip') && legacy === 'false') {
+                    // Aucun réglage global défini : on respecte l'ancien réglage passeport.
+                    setShowCalculator(false)
+                }
             })
             .catch(() => { /* défaut : calculateur visible */ })
     }, [slug])
@@ -494,7 +500,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                             <p className="text-sm text-gray-500 mb-4">
                                                 <T>Réservez un créneau avec nos experts pour concrétiser votre projet.</T>
                                             </p>
-                                            <Link href="/rendez-vous" className="block">
+                                            <Link href={`/rendez-vous?service=${slug}`} className="block">
                                                 <Button className="w-full bg-[#1a2332] hover:bg-[#2c3b55] text-white font-bold h-12 rounded-xl transition-all shadow-md hover:shadow-lg">
                                                     <T>Prendre Rendez-vous</T>
                                                 </Button>

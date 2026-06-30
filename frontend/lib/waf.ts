@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🛡️ lib/waf.ts — WAF Autonome · Mémoire · Apprentissage · Contre-attaque
+// 🛡️ lib/waf.ts — WAF Ultime · Défense Active · Cyber-Déception
 // ══════════════════════════════════════════════════════════════
 
 export type { ThreatType, WafVerdict, RuleMatch, CustomRule } from './waf/engine'
@@ -7,6 +7,132 @@ export { analyzeRequest, analyzeRequestFast, checkGeoBlock, verdictSummary, setC
 export { ALL_RULES, RULES_BY_CATEGORY, SEVERITY_SCORES, BLOCK_THRESHOLDS } from './waf/rules'
 export type { WafRule, RuleCategory, Severity } from './waf/rules'
 export { decode, decodeRequest } from './waf/decoder'
+
+// ── Nouveaux modules Défense Active ──────────────────────────
+export { extractFingerprint, registerFingerprint, detectHeadlessBrowser } from './waf/fingerprint'
+export type { FingerprintComponents } from './waf/fingerprint'
+export { getDeceptionPayload, buildDeceptionResponse, refreshDeceptionPayloads, logDeceptionInteraction } from './waf/deception'
+export type { DeceptionPayload, AttackType } from './waf/deception'
+export { calculateTarpitDelay, applyTarpit, parseTarpitFromRPC, getTarpitMetrics } from './waf/tarpit'
+export type { TarpitDecision } from './waf/tarpit'
+
+// ── Modules Système Immunitaire (Phase 6-8) ──────────────────
+export { scanForSSRF } from './waf/ssrf'
+export type { SSRFResult, SSRFCategory } from './waf/ssrf'
+export { scanForRCE } from './waf/rce'
+export type { RCEResult, RCECategory } from './waf/rce'
+export { trackIDORAttempt, checkParameterTampering, persistIDORAttempt } from './waf/idor'
+export type { IDORResult, IDORPattern } from './waf/idor'
+export { scanForSmuggling } from './waf/smuggling'
+export type { SmugglingResult, SmugglingPattern } from './waf/smuggling'
+export { checkCanaryInRequest, refreshCanaryCache, reportCanaryTriggered, registerHoneyAccess, generateCanaryToken } from './waf/canary'
+export type { CanaryCheckResult, CanaryToken, CanaryTokenType } from './waf/canary'
+
+// ── CORE PORTABLE (extractible — zéro dépendance framework) ──
+// Ces modules forment le cœur du WAF-SDK vendable. Ils ne dépendent
+// NI de Next.js NI de Supabase. Voir lib/waf/core/README.md.
+export {
+    scanBody,
+    isInternalHost,
+    DEFAULT_SCAN_OPTIONS,
+} from './waf/core/body-scanner'
+export type {
+    BodyScanVerdict,
+    BodyScanOptions,
+    BodyThreatType,
+} from './waf/core/body-scanner'
+export {
+    verifyOwnership,
+} from './waf/core/ownership'
+export type {
+    OwnershipResolver,
+    OwnershipQuery,
+    OwnershipResolution,
+    OwnershipVerdict,
+    OwnershipDecision,
+    MissingResourcePolicy,
+    VerifyOwnershipOptions,
+} from './waf/core/ownership'
+
+// ── ADAPTERS (couche jetable par plateforme) ─────────────────
+export {
+    createSupabaseOwnershipResolver,
+    RGB_RESOURCE_MAP,
+} from './waf/adapters/supabase-ownership'
+export type { ResourceMap, ResourceMapEntry } from './waf/adapters/supabase-ownership'
+export {
+    scanRequestBody,
+    assertOwnership,
+    withWafGuard,
+} from './waf/adapters/nextjs'
+export type {
+    ScanRequestBodyResult,
+    ScanRequestBodyOptions,
+    AssertOwnershipParams,
+    AssertOwnershipResult,
+    WafGuardOptions,
+} from './waf/adapters/nextjs'
+
+// ── CSRF (origin + double-submit) ──
+export { checkOrigin, checkDoubleSubmit, generateCsrfToken, constantTimeEqual } from './waf/core/csrf'
+export type { CsrfOriginResult } from './waf/core/csrf'
+
+// ── Upload scanner (polyglotes, double-ext, SVG script, MIME mismatch) ──
+export { scanUpload } from './waf/core/upload-scanner'
+export type { UploadInput, UploadScanVerdict, UploadThreat } from './waf/core/upload-scanner'
+
+// ── Évaluation RPC centralisée (cerveau décisionnel SQL) ─────
+// Appelle waf_evaluate_request dans Supabase pour obtenir
+// l'action à prendre : allow | tarpit | deceive | block | honeypot
+export interface WafEvalResult {
+    action:       'allow' | 'tarpit' | 'deceive' | 'block' | 'honeypot'
+    delay_ms:     number
+    trust_score:  number
+    ip_trust:     number
+    fp_trust:     number
+    reason:       string
+    payload?:     { status_code: number; content_type: string; response_body: string; response_headers: Record<string, string> } | null
+    ip_hopper:    boolean
+    risk_score?:  number
+    velocity_rpm?: number
+    attack_class?: string
+}
+
+export async function evaluateRequestRPC(opts: {
+    ip: string
+    path: string
+    fingerprintHash: string
+    userAgent: string
+    method?: string
+    supabaseUrl: string
+    serviceKey: string
+}): Promise<WafEvalResult | null> {
+    const { ip, path, fingerprintHash, userAgent, method, supabaseUrl, serviceKey } = opts
+    if (!supabaseUrl || !serviceKey || ip === 'unknown') return null
+
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/rpc/waf_evaluate_request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: serviceKey,
+                Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+                p_ip: ip,
+                p_path: path,
+                p_fingerprint_hash: fingerprintHash || '',
+                p_user_agent: userAgent || '',
+                p_method: method || 'GET',
+            }),
+        })
+        if (!res.ok) return null
+        const result = await res.json()
+        return result as WafEvalResult
+    } catch {
+        return null // fail-open : si RPC échoue, on laisse passer
+    }
+}
 
 // ══════════════════════════════════════════════════════════════
 // RATE LIMITING EN MÉMOIRE
@@ -17,7 +143,7 @@ const rateLimitMap = new Map<string, RateEntry>()
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
     default: { max: 120, windowMs: 60_000 },
     api:     { max: 60,  windowMs: 60_000 },
-    login:   { max: 10,  windowMs: 15 * 60_000 },
+    login:   { max: 30,  windowMs: 15 * 60_000 },
     upload:  { max: 20,  windowMs: 60_000 },
     admin:   { max: 200, windowMs: 60_000 },
 }
@@ -69,15 +195,33 @@ export function invalidateIpCache(ip: string): void {
 // ══════════════════════════════════════════════════════════════
 const VALID_IP_RE = /^(?:(?:25[0-5]|2[0-4]\d|\d{1,3})\.){3}(?:25[0-5]|2[0-4]\d|\d{1,3})$|^[0-9a-f:]+$/i
 
+// ── Anti-spoofing IP ──────────────────────────────────────────
+// Un attaquant peut envoyer de FAUX en-têtes (x-forwarded-for, x-real-ip…)
+// pour usurper une IP (évasion de ban) ou empoisonner l'IP d'un tiers.
+// Mitigation : l'opérateur épingle le header AUTORITAIRE — celui que la
+// plateforme/CDN contrôle et que le client ne peut pas falsifier — via
+// la variable d'env WAF_TRUE_IP_HEADER (ex: 'x-vercel-forwarded-for' sur
+// Vercel, 'cf-connecting-ip' derrière Cloudflare). Si défini, on ne fait
+// confiance QU'À ce header. Sinon, ordre de repli prudent.
 export function extractIp(headers: Headers): string {
-    const realIp = headers.get('x-real-ip')?.trim()
-    if (realIp && VALID_IP_RE.test(realIp)) return realIp
+    const pinned = process.env.WAF_TRUE_IP_HEADER?.trim().toLowerCase()
+    if (pinned) {
+        const v = headers.get(pinned)?.split(',')[0]?.trim()
+        if (v && VALID_IP_RE.test(v)) return v
+        // Header autoritaire absent/invalide → on NE retombe PAS sur des
+        // headers spoofables : 'unknown' (le WAF traitera prudemment).
+        return 'unknown'
+    }
+
+    // Pas de header épinglé : ordre de repli (plateforme d'abord).
+    const vercelIp = headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()
+    if (vercelIp && VALID_IP_RE.test(vercelIp)) return vercelIp
 
     const cfIp = headers.get('cf-connecting-ip')?.trim()
     if (cfIp && VALID_IP_RE.test(cfIp)) return cfIp
 
-    const vercelIp = headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()
-    if (vercelIp && VALID_IP_RE.test(vercelIp)) return vercelIp
+    const realIp = headers.get('x-real-ip')?.trim()
+    if (realIp && VALID_IP_RE.test(realIp)) return realIp
 
     const xff = headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     if (xff && VALID_IP_RE.test(xff)) return xff
@@ -114,6 +258,70 @@ export function getIpProfileFromCache(ip: string): IpProfile | null {
 
 export function setCachedIpProfile(ip: string, profile: Omit<IpProfile, 'ts'>): void {
     ipMemoryCache.set(ip, { ...profile, ts: Date.now() })
+}
+
+// ══════════════════════════════════════════════════════════════
+// 🧱 MÉMOIRE COMPORTEMENTALE LOCALE (fail-safe Supabase down)
+// ══════════════════════════════════════════════════════════════
+// Si Supabase est injoignable, le scoring comportemental DB disparaît
+// et le WAF retombait en "fail-open". Cette couche RAM (par instance)
+// garantit qu'un RÉCIDIVISTE est bloqué localement même sans DB :
+// chaque violation incrémente un compteur à fenêtre glissante ; au-delà
+// d'un seuil, l'IP est bloquée en mémoire pour une durée (TTL).
+//
+// Léger, borné (cap d'entrées + éviction LRU), zéro dépendance.
+interface LocalThreat { count: number; firstSeen: number; blockedUntil: number }
+
+const localThreatMem = new Map<string, LocalThreat>()
+const LOCAL_WINDOW_MS      = 10 * 60_000   // fenêtre de comptage : 10 min
+const LOCAL_BLOCK_THRESHOLD = 5            // 5 violations → blocage local
+const LOCAL_BLOCK_TTL_MS   = 30 * 60_000   // blocage local : 30 min
+const LOCAL_MEM_MAX        = 10_000        // cap anti-fuite mémoire
+
+function evictIfNeeded(): void {
+    if (localThreatMem.size <= LOCAL_MEM_MAX) return
+    // Évince les ~10% plus anciens (par firstSeen)
+    const entries = [...localThreatMem.entries()].sort((a, b) => a[1].firstSeen - b[1].firstSeen)
+    const toDrop = Math.ceil(LOCAL_MEM_MAX * 0.1)
+    for (let i = 0; i < toDrop && i < entries.length; i++) localThreatMem.delete(entries[i][0])
+}
+
+/** Enregistre une violation locale pour une IP ; renvoie true si seuil atteint. */
+export function recordLocalViolation(ip: string): boolean {
+    if (!ip || ip === 'unknown') return false
+    const now = Date.now()
+    let t = localThreatMem.get(ip)
+    if (!t || now - t.firstSeen > LOCAL_WINDOW_MS) {
+        t = { count: 0, firstSeen: now, blockedUntil: 0 }
+    }
+    t.count++
+    if (t.count >= LOCAL_BLOCK_THRESHOLD) {
+        t.blockedUntil = now + LOCAL_BLOCK_TTL_MS
+    }
+    localThreatMem.set(ip, t)
+    evictIfNeeded()
+    return t.blockedUntil > now
+}
+
+/** L'IP est-elle bloquée localement (récidiviste, mémoire RAM) ? */
+export function isLocallyBlocked(ip: string): boolean {
+    if (!ip || ip === 'unknown') return false
+    const t = localThreatMem.get(ip)
+    if (!t) return false
+    if (t.blockedUntil > Date.now()) return true
+    // expiré : purge si la fenêtre est aussi dépassée
+    if (Date.now() - t.firstSeen > LOCAL_WINDOW_MS && t.blockedUntil <= Date.now()) {
+        localThreatMem.delete(ip)
+    }
+    return false
+}
+
+/** Métriques (observabilité). */
+export function getLocalThreatMetrics(): { tracked: number; blocked: number } {
+    const now = Date.now()
+    let blocked = 0
+    for (const t of localThreatMem.values()) if (t.blockedUntil > now) blocked++
+    return { tracked: localThreatMem.size, blocked }
 }
 
 // Vérification trust score via Supabase (async)
@@ -268,7 +476,7 @@ export function trackCampaign(
 
     if (ips.size === CAMPAIGN_THRESHOLD) {
         // Enregistrer la campagne dans Supabase
-        fetch(`${supabaseUrl}/rest/v1/waf_campaigns`, {
+        fetch(`${supabaseUrl}/rest/v1/waf_attack_campaigns`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -277,10 +485,11 @@ export function trackCampaign(
                 Prefer: 'resolution=merge-duplicates,return=minimal',
             },
             body: JSON.stringify({
-                payload_hash:  payloadHash,
-                source_ips:    [...ips],
-                blocked_count: ips.size,
-                status:        'active',
+                signature_hash: payloadHash,
+                label:          'Auto-detected Campaign',
+                distinct_ips:   ips.size,
+                total_events:   ips.size,
+                is_active:      true,
             }),
         }).catch(() => {})
 
@@ -292,7 +501,7 @@ export function trackCampaign(
         })
     } else if (ips.size > CAMPAIGN_THRESHOLD) {
         // Mise à jour campagne existante
-        fetch(`${supabaseUrl}/rest/v1/waf_campaigns?payload_hash=eq.${encodeURIComponent(payloadHash)}`, {
+        fetch(`${supabaseUrl}/rest/v1/waf_attack_campaigns?signature_hash=eq.${encodeURIComponent(payloadHash)}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -301,8 +510,8 @@ export function trackCampaign(
                 Prefer: 'return=minimal',
             },
             body: JSON.stringify({
-                source_ips:    [...ips],
-                blocked_count: ips.size,
+                distinct_ips:   ips.size,
+                total_events:   ips.size,
                 last_seen:     new Date().toISOString(),
             }),
         }).catch(() => {})
@@ -402,6 +611,10 @@ export function logWafEvent(opts: {
     ip: string; method: string; path: string
     userAgent: string; threatType: string
     detail?: string; score?: number
+    // ── Nouveaux champs Défense Active ──
+    fingerprintHash?: string
+    action?: 'allow' | 'block' | 'tarpit' | 'deceive' | 'honeypot'
+    responseDelayMs?: number
     supabaseUrl: string; serviceKey: string
 }): void {
     const { supabaseUrl, serviceKey, ...payload } = opts
@@ -414,14 +627,18 @@ export function logWafEvent(opts: {
             Prefer: 'return=minimal',
         },
         body: JSON.stringify({
-            ip:            payload.ip,
-            method:        payload.method,
-            path:          payload.path.slice(0, 500),
-            user_agent:    payload.userAgent.slice(0, 500),
-            threat_type:   payload.threatType,
-            threat_detail: (payload.detail || `score=${payload.score ?? '?'}`).slice(0, 500),
-            is_blocked:    true,
-            score:         payload.score ?? 0,
+            ip:               payload.ip,
+            method:           payload.method,
+            path:             payload.path.slice(0, 500),
+            user_agent:       payload.userAgent.slice(0, 500),
+            threat_type:      payload.threatType,
+            threat_detail:    (payload.detail || `score=${payload.score ?? '?'}`).slice(0, 500),
+            is_blocked:       payload.action === 'block' || (!payload.action),
+            score:            payload.score ?? 0,
+            // ── Colonnes Défense Active ──
+            fingerprint_hash: payload.fingerprintHash || '',
+            action:           payload.action || 'block',
+            response_delay_ms: payload.responseDelayMs || 0,
         }),
     }).catch(() => {})
 }

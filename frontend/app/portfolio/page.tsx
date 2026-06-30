@@ -127,16 +127,46 @@ export default function PortfolioImmersivePage() {
     const blob3Y = useTransform(scrollYProgress, [0, 1], ["0%", "80%"])
 
     const [showIntro, setShowIntro] = useState(true)
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    // Stratégie autoplay robuste :
+    // 1. Tentative immédiate de play() dès que la vidéo est montée
+    // 2. Retry automatique au premier événement utilisateur (autorisé par tous les navigateurs)
+    // 3. Filet de secours : ferme l'intro si rien n'a démarré sous 12s (fichier totalement inaccessible)
+    useEffect(() => {
+        if (!showIntro) return
+        const v = videoRef.current
+        if (!v) return
+
+        const tryPlay = () => { v.play().catch(() => { /* silencieux — on retentera */ }) }
+
+        // Tentative immédiate (dès que <video> est dans le DOM)
+        tryPlay()
+        // Re-tentative sur n'importe quelle interaction utilisateur
+        const events: (keyof WindowEventMap)[] = ['pointerdown', 'touchstart', 'keydown', 'scroll']
+        events.forEach(e => window.addEventListener(e, tryPlay, { once: true, passive: true }))
+
+        // Filet de secours absolu : si readyState < 2 après 12s, le fichier est inaccessible → on ferme
+        const failsafe = setTimeout(() => {
+            if (v.readyState < 2) setShowIntro(false)
+        }, 12000)
+
+        return () => {
+            clearTimeout(failsafe)
+            events.forEach(e => window.removeEventListener(e, tryPlay))
+        }
+    }, [showIntro])
 
     const services = [
-        { id: '01', title: t("Nationalité Béninoise"), desc: t("Dossiers Afro-descendants"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
-        { id: '02', title: t("Citoyenneté & Démarches"), desc: t("Identité, Passeport, Visas"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
-        { id: '03', title: t("Investissement Immobilier"), desc: t("Terrains, Maisons, Projets"), bg: "bg-[#FCD116]", text: "text-gray-900", iconBg: "bg-white/40" },
-        { id: '04', title: t("Création d'Entreprise"), desc: t("Accompagnement Affaires"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
-        { id: '05', title: t("Conseil Juridique"), desc: t("Succession, Notariat"), bg: "bg-[#E8112D]", text: "text-white", iconBg: "bg-white/20" },
-        { id: '06', title: t("Logistique du Retour"), desc: t("Déménagement Inter."), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
-        { id: '07', title: t("Production Médias"), desc: t("Reportages, Docs"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
-        { id: '08', title: t("Cérémonies & Événements"), desc: t("Accueil, Culture, Fêtes"), bg: "bg-[#FCD116]", text: "text-gray-900", iconBg: "bg-white/40" },
+        { id: '01', slug: 'passeport', title: t("Passeport & Documents"), desc: t("Passeport, acte de naissance, apostille"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
+        { id: '02', slug: 'logement', title: t("Acheter ou Louer"), desc: t("Immobilier, foncier, sécurisation"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
+        { id: '03', slug: 'business', title: t("Création d'Entreprise"), desc: t("RCCM, compte pro, fiscalité"), bg: "bg-[#FCD116]", text: "text-gray-900", iconBg: "bg-white/40" },
+        { id: '04', slug: 'culture', title: t("Tourisme & Culture"), desc: t("Circuits, patrimoine, séjours"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
+        { id: '05', slug: 'construction', title: t("Suivi de Chantier"), desc: t("Maîtrise d'ouvrage, coordination"), bg: "bg-[#E8112D]", text: "text-white", iconBg: "bg-white/20" },
+        { id: '06', slug: 'investissement', title: t("Investissement"), desc: t("Opportunités, partenariats locaux"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
+        { id: '07', slug: 'nationalite-vip', title: t("Nationalité VIP"), desc: t("Reconnaissance prioritaire"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
+        { id: '08', slug: 'recherche-ancestrale', title: t("Recherche Ancestrale"), desc: t("Plan de composition de Famille, archives d'esclavage"), bg: "bg-[#FCD116]", text: "text-gray-900", iconBg: "bg-white/40" },
+        { id: '09', slug: 'autres', title: t("Autres Services"), desc: t("Transport, santé, scolarité"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
     ]
 
     return (
@@ -152,11 +182,15 @@ export default function PortfolioImmersivePage() {
                         className="fixed inset-0 z-[200] bg-[#050505] flex flex-col items-center justify-center overflow-hidden"
                     >
                         <video
+                            ref={videoRef}
                             src="https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/videos/portfolio/video-cut.mp4"
+                            poster="https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/gallery/portfolio/image_RGB.jpg"
                             autoPlay
                             muted
                             playsInline
+                            preload="auto"
                             onEnded={() => setShowIntro(false)}
+                            onError={() => setShowIntro(false)}
                             className="absolute inset-0 w-full h-full object-cover opacity-90 scale-105"
                         />
                         {/* Voile assombrissant pour faire ressortir le bouton */}
@@ -166,7 +200,7 @@ export default function PortfolioImmersivePage() {
                             <motion.button
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 2, duration: 0.8 }}
+                                transition={{ delay: 0.4, duration: 0.6 }}
                                 onClick={() => setShowIntro(false)}
                                 className="px-6 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white tracking-widest text-xs font-bold border border-white/20 transition-all uppercase"
                             >
@@ -339,22 +373,23 @@ export default function PortfolioImmersivePage() {
                     <div className="flex items-center justify-center gap-4 mb-8">
                         <div className="h-[2px] w-8 bg-gradient-to-r from-transparent to-[#008751]/50 rounded-full" />
                         <h3 className="text-xs font-black text-[#008751] uppercase tracking-[0.3em] px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-white">
-                            {t("Nos 8 Expertises")}
+                            {t("Nos 9 Expertises")}
                         </h3>
                         <div className="h-[2px] w-8 bg-gradient-to-l from-transparent to-[#008751]/50 rounded-full" />
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
                         {services.map((service, index) => (
-                            <motion.div
+                            <motion.a
                                 key={index}
+                                href={`/services/${service.slug}`}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.5, delay: 0.8 + (index * 0.1) }}
                                 whileHover={{ scale: 1.03, y: -2 }}
                                 whileTap={{ scale: 0.97 }}
                                 className={`
-                                    relative flex items-center gap-4 p-5 rounded-[2rem] border transition-all cursor-default overflow-hidden
+                                    group relative flex items-center gap-4 p-5 rounded-[2rem] border transition-all cursor-pointer overflow-hidden no-underline
                                     ${service.bg} ${service.text}
                                     ${service.bg === 'bg-white' ? 'border-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)]' : 'border-white/20 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.15)]'}
                                 `}
@@ -375,11 +410,11 @@ export default function PortfolioImmersivePage() {
                                     </p>
                                 </div>
                                 <div className="shrink-0 relative z-10">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${service.bg === 'bg-white' ? 'bg-gray-50 text-gray-300' : 'bg-white/10 text-white/50'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all group-hover:translate-x-0.5 ${service.bg === 'bg-white' ? 'bg-gray-50 text-gray-400 group-hover:bg-[#008751] group-hover:text-white' : 'bg-white/10 text-white/70 group-hover:bg-white/30'}`}>
                                         <ChevronRight className="w-5 h-5" />
                                     </div>
                                 </div>
-                            </motion.div>
+                            </motion.a>
                         ))}
                     </div>
                 </motion.div>
@@ -391,7 +426,7 @@ export default function PortfolioImmersivePage() {
                     className="mt-20 text-center pb-8"
                 >
                     <motion.a
-                        href="https://maps.google.com/?q=Haie+Vive,+Cotonou"
+                        href="https://maps.google.com/maps?q=6.3572222,2.3953333(Retour+Gagnant+Bénin)"
                         target="_blank"
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.05 }}

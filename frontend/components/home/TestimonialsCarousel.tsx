@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useTranslation, T } from "@/lib/translation";
 
 interface Testimonial {
-    id: number;
+    id: string | number;
     name: string;
     role: string;
     text: string;
@@ -136,28 +136,36 @@ function SubmissionForm() {
                     .from('testimonials')
                     .upload(fileName, photo);
 
-                if (uploadError) throw uploadError;
-                const { data: { publicUrl } } = supabase.storage.from('testimonials').getPublicUrl(fileName);
-                photoUrl = publicUrl;
+                if (!uploadError) {
+                    const { data: { publicUrl } } = supabase.storage.from('testimonials').getPublicUrl(fileName);
+                    photoUrl = publicUrl;
+                }
+                // Photo upload failure is non-blocking — testimonial still submits
             }
 
-            const { error: insertError } = await supabase
-                .from('testimonials')
-                .insert([{
+            const res = await fetch('/api/testimonials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     ...formData,
                     photo_url: photoUrl,
-                    approved: false
-                }]);
+                }),
+            });
 
-            if (insertError) throw insertError;
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Erreur serveur');
+            }
+
             setIsSubmitted(true);
         } catch (error) {
             console.error("Submission failed", error);
-            setIsSubmitted(true);
+            alert("Erreur lors de l'envoi. Veuillez réessayer.");
         } finally {
             setIsLoading(false);
         }
     };
+
 
     if (isSubmitted) {
         return (
@@ -346,26 +354,12 @@ export default function TestimonialsCarousel() {
     useEffect(() => {
         const fetchTestimonials = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('testimonials')
-                    .select('*')
-                    .eq('approved', true)
-                    .order('created_at', { ascending: false });
+                const res = await fetch('/api/testimonials');
+                if (!res.ok) throw new Error('Erreur API');
+                const json = await res.json();
 
-                if (error) throw error;
-
-                if (data && data.length > 0) {
-                    const mapped = data.map((item: Record<string, unknown>) => ({
-                        id: Number(item.id),
-                        name: String(item.name || ''),
-                        role: item.role ? String(item.role) : 'Client',
-                        text: String(item.text || ''),
-                        location: item.location ? String(item.location) : 'Bénin',
-                        rating: Number(item.rating) || 5,
-                        service: item.service ? String(item.service) : 'Général',
-                        photoUrl: item.photo_url ? String(item.photo_url) : undefined
-                    }));
-                    setTestimonials(mapped);
+                if (json.testimonials && json.testimonials.length > 0) {
+                    setTestimonials(json.testimonials);
                 }
             } catch {
                 console.warn('Testimonials using fallback data');
@@ -374,6 +368,7 @@ export default function TestimonialsCarousel() {
 
         fetchTestimonials();
     }, []);
+
 
     const displayItems = testimonials.length < 5 ? [...testimonials, ...testimonials, ...testimonials] : [...testimonials, ...testimonials];
 

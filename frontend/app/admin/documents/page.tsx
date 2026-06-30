@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FolderOpen, CheckCircle2, XCircle, Clock, FileText,
-    User, Mail, Calendar, Search, LucideIcon
+    User, Mail, Calendar, Search, LucideIcon, Trash2
 } from 'lucide-react'
 
 interface ClientDocument {
@@ -20,6 +20,12 @@ interface ClientDocument {
     status: string
     agent_note: string
     created_at: string
+}
+
+const formatDate = (val: string | null | undefined) => {
+    if (!val) return '—'
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
 }
 
 export default function AdminDocumentsPage() {
@@ -43,6 +49,36 @@ export default function AdminDocumentsPage() {
             agent_note: note || ''
         }).eq('id', id)
         fetchDocs()
+    }
+
+    const handleDeleteDoc = async (doc: ClientDocument) => {
+        if (!confirm('Supprimer définitivement ce document et son fichier physique ?')) return
+
+        try {
+            let storagePath = (doc as any).storage_path
+            if (!storagePath && doc.file_url) {
+                const bucketToken = 'client-documents/'
+                if (doc.file_url.includes(bucketToken)) {
+                    storagePath = decodeURIComponent(doc.file_url.split(bucketToken)[1].split('?')[0])
+                } else if (doc.file_url.startsWith('/uploads/')) {
+                    storagePath = doc.file_url.replace('/uploads/', '')
+                } else {
+                    storagePath = doc.file_name
+                }
+            }
+            if (storagePath) {
+                await supabase.storage.from('client-documents').remove([storagePath])
+            }
+        } catch (e) {
+            console.error('Storage deletion failed:', e)
+        }
+
+        const { error } = await supabase.from('client_documents').delete().eq('id', doc.id)
+        if (error) {
+            alert('Erreur lors de la suppression : ' + error.message)
+        } else {
+            setDocuments(prev => prev.filter(d => d.id !== doc.id))
+        }
     }
 
     const statusConfig: Record<string, { label: string, color: string, Icon: LucideIcon }> = {
@@ -99,11 +135,17 @@ export default function AdminDocumentsPage() {
                                         <div className="flex items-center gap-4 min-w-0">
                                             <FileText size={20} className="text-blue-400 shrink-0" />
                                             <div className="min-w-0">
-                                                <p className="text-sm font-bold text-white truncate">{doc.file_name}</p>
+                                                {doc.file_url ? (
+                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-white hover:text-emerald-400 transition-colors hover:underline truncate block">
+                                                        {doc.file_name}
+                                                    </a>
+                                                ) : (
+                                                    <p className="text-sm font-bold text-white truncate">{doc.file_name}</p>
+                                                )}
                                                 <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-500 flex-wrap">
                                                     <span className="flex items-center gap-1"><User size={10} /> {doc.client_nom || 'N/A'}</span>
                                                     <span className="flex items-center gap-1"><Mail size={10} /> {doc.client_email}</span>
-                                                    <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(doc.created_at).toLocaleDateString('fr-FR')}</span>
+                                                    <span className="flex items-center gap-1"><Calendar size={10} /> {formatDate(doc.created_at)}</span>
                                                     {doc.file_size > 0 && <span>{(doc.file_size / 1024).toFixed(0)} KB</span>}
                                                 </div>
                                             </div>
@@ -131,6 +173,13 @@ export default function AdminDocumentsPage() {
                                                     </button>
                                                 </>
                                             )}
+                                            <button
+                                                onClick={() => handleDeleteDoc(doc)}
+                                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-xl transition-all"
+                                                title="Supprimer"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
                                     </div>
                                     {doc.agent_note && (

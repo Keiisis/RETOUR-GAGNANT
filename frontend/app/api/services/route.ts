@@ -21,7 +21,7 @@ export async function GET() {
 
         const result1 = await supabase
             .from('services')
-            .select('id, title, slug, description, icon_type, image_url, color, is_active, order_index')
+            .select('id, title, subtitle, slug, description, icon_type, image_url, color, is_active, order_index, price_display, pricing_options, features, duration, documents, processus')
 
         if (!result1.error) {
             data = result1.data as Array<Record<string, unknown>>
@@ -29,7 +29,7 @@ export async function GET() {
             // Essai 2 : ancien schéma (sans is_active ni order_index)
             const result2 = await supabase
                 .from('services')
-                .select('id, title, slug, description, icon_type, image_url, color, "order"')
+                .select('id, title, subtitle, slug, description, icon_type, image_url, color, "order", price_display, pricing_options, features, duration, documents, processus')
             data = result2.data as Array<Record<string, unknown>>
             error = result2.error
         }

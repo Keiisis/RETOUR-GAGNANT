@@ -56,8 +56,14 @@ export async function createTransporter() {
             user: config.user,
             pass: config.pass,
         },
-        tls: { rejectUnauthorized: false }
+        tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' }
     })
+}
+
+export interface EmailAttachment {
+    filename: string
+    content: string // base64 (avec ou sans prefixe data:...;base64,)
+    contentType?: string
 }
 
 export async function sendEmail(options: {
@@ -67,6 +73,7 @@ export async function sendEmail(options: {
     replyTo?: string
     context?: string
     relatedId?: string
+    attachments?: EmailAttachment[]
 }): Promise<{ success: boolean; error?: string }> {
     try {
         const config = await getEmailConfig()
@@ -76,12 +83,23 @@ export async function sendEmail(options: {
             return { success: false, error: 'SMTP non configuré. Allez dans Admin > Paramètres > Email.' }
         }
 
+        // Transforme les attachments base64 en buffers pour nodemailer
+        const mailAttachments = (options.attachments || []).map(a => {
+            const raw = a.content.includes(',') ? a.content.split(',')[1] : a.content
+            return {
+                filename: a.filename,
+                content: Buffer.from(raw, 'base64'),
+                contentType: a.contentType,
+            }
+        })
+
         const info = await transporter.sendMail({
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: options.to,
             subject: options.subject,
             html: options.html,
             replyTo: options.replyTo || config.fromEmail,
+            ...(mailAttachments.length ? { attachments: mailAttachments } : {}),
         })
 
         const supabase = createClient(supabaseUrl, supabaseKey)
@@ -251,7 +269,7 @@ function getI18n(lang: string): EmailTranslations {
 // Now dynamic: reads from document_templates (official_email)
 // ═══════════════════════════════════════════════════════
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
-const LOGO_URL = `${SITE_URL}/logo.jpg`
+const LOGO_URL = `${SITE_URL}/assets/logo.png`
 const CONTACT_EMAIL = 'contact@retourgagnantbenin.bj'
 
 // Cache to avoid fetching on every email call
@@ -295,15 +313,10 @@ const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
     // Fetch dynamic email template from ERP settings
     const emailTpl = await getEmailTemplate()
 
-    // Build dynamic header subtitle from ERP template (replaces hardcoded "BÉNIN")
-    const headerSubtitle = emailTpl.header
-        ? `<p style="margin:2px 0 0;font-size:9px;color:rgba(252,209,22,0.8);letter-spacing:2px;text-transform:uppercase;font-weight:700;">${emailTpl.header.split('\n')[0]}</p>`
-        : `<p style="margin:2px 0 0;font-size:9px;color:rgba(252,209,22,0.8);letter-spacing:4px;text-transform:uppercase;font-weight:700;">BÉNIN</p>`
-
-    // Build dynamic footer from ERP template
+    // Footer institutionnel
     const footerContent = emailTpl.footer
-        ? `<p style="margin:0 0 6px;font-size:11px;color:rgba(255,255,255,0.25);font-weight:600;letter-spacing:0.5px;">${emailTpl.footer.replace(/\n/g, '<br/>')}</p>`
-        : `<p style="margin:0 0 6px;font-size:11px;color:rgba(255,255,255,0.25);font-weight:600;letter-spacing:0.5px;">${t.sentBy}</p>`
+        ? `<p style="margin:0 0 6px;font-size:11px;color:#5A6680;font-weight:600;letter-spacing:0.3px;">${emailTpl.footer.replace(/\n/g, '<br/>')}</p>`
+        : `<p style="margin:0 0 6px;font-size:11px;color:#5A6680;font-weight:600;letter-spacing:0.3px;">${t.sentBy}</p>`
 
     return `<!DOCTYPE html>
 <html lang="${resolveLocale(lang)}" ${isRtl ? 'dir="rtl"' : ''}>
@@ -312,59 +325,90 @@ const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Retour Gagnant Bénin</title>
 </head>
-<body style="margin:0;padding:0;background:#0a0e17;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-font-smoothing:antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e17;padding:20px 0;">
+<body style="margin:0;padding:0;background:#FFFFFF;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-font-smoothing:antialiased;color:#1B2A4A;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;padding:32px 16px;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111827;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+      <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(27,42,74,0.10),0 4px 16px rgba(27,42,74,0.05);border:1px solid rgba(27,42,74,0.06);">
 
-        <!-- ══════ FLAG STRIPE ══════ -->
-        <tr><td style="height:5px;background:linear-gradient(90deg,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%);"></td></tr>
+        <!-- ══════ FLAG STRIPE TOP ══════ -->
+        <tr><td style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
 
-        <!-- ══════ LOGO HEADER ══════ -->
-        <tr><td style="padding:32px 40px 20px;text-align:center;background:linear-gradient(180deg,#111827 0%,#0f1729 100%);">
+        <!-- ══════ HEADER BLANC — Logo à gauche + Nom à droite ══════ -->
+        <tr><td style="padding:44px 44px 36px;background:#FFFFFF;">
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
             <tr>
-              <td style="vertical-align:middle;padding-right:14px;">
-                <img src="${LOGO_URL}" alt="RGB" width="52" height="52" style="border-radius:14px;display:block;border:2px solid rgba(0,135,81,0.3);box-shadow:0 4px 20px rgba(0,135,81,0.2);" />
+              <!-- Logo à gauche -->
+              <td style="vertical-align:middle;padding-right:26px;">
+                <img src="${LOGO_URL}" alt="Retour Gagnant Bénin" width="120" height="120" style="display:block;border:0;outline:0;max-width:120px;height:auto;" />
               </td>
-              <td style="vertical-align:middle;text-align:left;">
-                <h1 style="margin:0;font-size:20px;font-weight:900;letter-spacing:1px;">
-                  <span style="color:#008751;">RETOUR</span> <span style="color:#E8112D;">GAGNANT</span>
+              <!-- Nom à droite : RETOUR GAGNANT + BÉNIN en dessous -->
+              <td style="vertical-align:middle;text-align:left;border-left:1px solid rgba(201,168,76,0.25);padding-left:26px;">
+                <!-- RETOUR GAGNANT — ligne 1 -->
+                <h1 style="margin:0;font-size:30px;font-weight:900;letter-spacing:2px;line-height:1;font-family:'Playfair Display','Segoe UI',Georgia,serif;white-space:nowrap;">
+                  <span style="color:#008751;text-shadow:0 2px 18px rgba(0,135,81,0.22);">RETOUR</span>
+                  <span style="color:#E6B800;text-shadow:0 2px 18px rgba(252,209,22,0.32);margin-left:8px;">GAGNANT</span>
                 </h1>
-                ${headerSubtitle}
+                <!-- BÉNIN — ligne 2 sous RETOUR -->
+                <div style="margin-top:9px;">
+                  <span style="display:inline-block;font-size:22px;font-weight:900;letter-spacing:12px;color:#E8112D;text-shadow:0 2px 16px rgba(232,17,45,0.28);font-family:'Playfair Display','Segoe UI',Georgia,serif;padding-left:12px;">BÉNIN</span>
+                </div>
+                <!-- Tagline institutionnelle sous le nom -->
+                <p style="margin:10px 0 0;font-size:9px;color:#C9A84C;letter-spacing:3.5px;text-transform:uppercase;font-weight:700;">Tradition · Modernité · Excellence</p>
               </td>
             </tr>
           </table>
-        </td></tr>
-
-        <!-- ══════ DECORATIVE LINE ══════ -->
-        <tr><td style="padding:0 40px;">
-          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,135,81,0.3),rgba(252,209,22,0.2),transparent);"></div>
+          <!-- Accent or en bas du header -->
+          <div style="margin:28px auto 0;height:2px;width:140px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);"></div>
         </td></tr>
 
         <!-- ══════ CONTENT ══════ -->
-        <tr><td style="padding:28px 40px 36px;">
+        <tr><td style="padding:24px 44px 40px;background:#FFFFFF;color:#1B2A4A;">
           ${content}
         </td></tr>
 
-        <!-- ══════ FOOTER ══════ -->
-        <tr><td style="padding:0 40px;">
-          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);"></div>
-        </td></tr>
-        <tr><td style="padding:24px 40px;text-align:center;">
-          ${footerContent}
-          <p style="margin:0 0 12px;font-size:11px;color:rgba(255,255,255,0.2);">
-            ${t.replyTo} <a href="mailto:${CONTACT_EMAIL}" style="color:#008751;text-decoration:none;font-weight:600;">${CONTACT_EMAIL}</a>
-          </p>
-          <div style="height:1px;background:rgba(255,255,255,0.04);margin:12px 0;"></div>
-          <p style="margin:0 0 4px;font-size:10px;color:rgba(255,255,255,0.15);letter-spacing:0.3px;">${t.footer}</p>
-          <p style="margin:0;font-size:9px;color:rgba(255,255,255,0.1);">${t.autoSent}</p>
+        <!-- ══════ SÉPARATEUR ORNEMENT ══════ -->
+        <tr><td style="padding:0 44px;background:#FFFFFF;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);"></td>
+            <td width="40" style="text-align:center;padding:0 12px;">
+              <span style="display:inline-block;width:6px;height:6px;background:#C9A84C;border-radius:50%;box-shadow:0 0 10px rgba(201,168,76,0.5);"></span>
+            </td>
+            <td style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);"></td>
+          </tr></table>
         </td></tr>
 
-        <!-- ══════ BOTTOM STRIPE ══════ -->
-        <tr><td style="height:4px;background:linear-gradient(90deg,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%);"></td></tr>
+        <!-- ══════ FOOTER ══════ -->
+        <tr><td style="padding:26px 44px 28px;text-align:center;background:#FFFFFF;">
+          ${footerContent}
+          <p style="margin:0 0 14px;font-size:11.5px;color:#5A6680;">
+            ${t.replyTo} <a href="mailto:${CONTACT_EMAIL}" style="color:#008751;text-decoration:none;font-weight:700;border-bottom:1px solid rgba(0,135,81,0.3);">${CONTACT_EMAIL}</a>
+          </p>
+          <!-- Mini drapeau décoratif -->
+          <table cellpadding="0" cellspacing="0" style="margin:16px auto 14px;">
+            <tr>
+              <td style="width:26px;height:3px;background:#008751;border-radius:2px 0 0 2px;"></td>
+              <td style="width:26px;height:3px;background:#FCD116;"></td>
+              <td style="width:26px;height:3px;background:#E8112D;border-radius:0 2px 2px 0;"></td>
+            </tr>
+          </table>
+          <p style="margin:0 0 4px;font-size:10.5px;color:#6B7589;letter-spacing:0.4px;font-weight:600;">${t.footer}</p>
+          <p style="margin:0;font-size:9.5px;color:#A9B0BE;letter-spacing:0.2px;">${t.autoSent}</p>
+        </td></tr>
+
+        <!-- ══════ FLAG STRIPE BOTTOM ══════ -->
+        <tr><td style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
 
       </table>
+
+      <!-- Signature sous la carte -->
+      <table cellpadding="0" cellspacing="0" style="margin-top:18px;">
+        <tr><td style="text-align:center;">
+          <p style="margin:0;font-size:10px;color:rgba(27,42,74,0.35);letter-spacing:2px;text-transform:uppercase;font-weight:600;">
+            🇧🇯&nbsp;&nbsp;Retour Gagnant Bénin&nbsp;·&nbsp;${new Date().getFullYear()}
+          </p>
+        </td></tr>
+      </table>
+
     </td></tr>
   </table>
 </body>
@@ -384,19 +428,19 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
     return {
         /** Auto-reply to client after form submission */
         autoReply: (clientName: string, aiMessage: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:#FCD116;font-weight:800;">${t.thankYou} ${clientName} 🤝</h2>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;">
+        <h2 style="margin:0 0 16px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${t.thankYou} ${clientName} 🤝</h2>
+        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 22px;">
             ${t.received}
         </p>
-        <div style="background:rgba(0,135,81,0.08);border-left:3px solid #008751;padding:16px 20px;border-radius:0 12px 12px 0;margin:0 0 24px;">
-            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.6);font-style:italic;line-height:1.7;">${aiMessage}</p>
+        <div style="background:#F4FAF6;border-left:3px solid #008751;padding:18px 22px;border-radius:0 12px 12px 0;margin:0 0 26px;">
+            <p style="margin:0;font-size:13.5px;color:#3E4A65;font-style:italic;line-height:1.75;">${aiMessage}</p>
         </div>
-        <p style="color:rgba(255,255,255,0.5);font-size:13px;line-height:1.7;margin:0 0 24px;">
+        <p style="color:#5A6680;font-size:13.5px;line-height:1.75;margin:0 0 28px;">
             ${t.expertContact}
         </p>
         <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
           <tr><td>
-            <a href="${SITE_URL}/rendez-vous" style="display:inline-block;background:linear-gradient(135deg,#008751,#00a664);color:white;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(0,135,81,0.3);">
+            <a href="${SITE_URL}/rendez-vous" style="display:inline-block;background:linear-gradient(135deg,#008751,#00a664);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,135,81,0.28);">
               ${t.bookBtn}
             </a>
           </td></tr>
@@ -404,38 +448,42 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
     `, locale),
 
         /** Confirmation de demande de RDV — sans CTA "réserver" (redondant et illogique) */
-        rdvConfirmation: (clientName: string, service: string, date: string | null, timeSlot: string, contactMethod: string, aiMessage: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:#FCD116;font-weight:800;">✅ Demande reçue, ${clientName} !</h2>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;">
+        rdvConfirmation: (clientName: string, service: string, date: string | null, timeSlot: string, contactMethod: string, aiMessage: string, clientMessage: string = '') => EMAIL_WRAPPER(`
+        <h2 style="margin:0 0 16px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">✅ Demande reçue, ${clientName} !</h2>
+        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 22px;">
             Votre demande de rendez-vous a bien été enregistrée. Votre agent va l'examiner et vous confirmera le créneau très prochainement.
         </p>
-        <div style="background:rgba(0,135,81,0.06);border:1px solid rgba(0,135,81,0.2);border-radius:12px;padding:20px;margin:0 0 20px;">
-            <p style="margin:0 0 12px;font-size:11px;font-weight:800;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.15em;">Récapitulatif de votre demande</p>
+        <div style="background:#FAF6EC;border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:20px 22px;margin:0 0 22px;">
+            <p style="margin:0 0 14px;font-size:11px;font-weight:800;color:#8B94A6;text-transform:uppercase;letter-spacing:0.18em;">Récapitulatif de votre demande</p>
             <table style="width:100%;border-collapse:collapse;">
                 <tr>
-                    <td style="padding:6px 0;color:rgba(255,255,255,0.4);font-size:12px;width:120px;">Service</td>
-                    <td style="padding:6px 0;color:#FCD116;font-size:13px;font-weight:700;">${service}</td>
+                    <td style="padding:7px 0;color:#8B94A6;font-size:12px;width:130px;">Service</td>
+                    <td style="padding:7px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;">${service}</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px 0;color:rgba(255,255,255,0.4);font-size:12px;">Date souhaitée</td>
-                    <td style="padding:6px 0;color:#fff;font-size:13px;">${date ? new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'À confirmer par votre agent'}</td>
+                    <td style="padding:7px 0;color:#8B94A6;font-size:12px;">Date souhaitée</td>
+                    <td style="padding:7px 0;color:#1B2A4A;font-size:13px;">${date ? new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'À confirmer par votre agent'}</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px 0;color:rgba(255,255,255,0.4);font-size:12px;">Créneau</td>
-                    <td style="padding:6px 0;color:#fff;font-size:13px;">${timeSlot || 'Selon disponibilité'}</td>
+                    <td style="padding:7px 0;color:#8B94A6;font-size:12px;">Créneau</td>
+                    <td style="padding:7px 0;color:#1B2A4A;font-size:13px;">${timeSlot || 'Selon disponibilité'}</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px 0;color:rgba(255,255,255,0.4);font-size:12px;">Mode de contact</td>
-                    <td style="padding:6px 0;color:#fff;font-size:13px;">${contactMethod || 'À définir'}</td>
+                    <td style="padding:7px 0;color:#8B94A6;font-size:12px;">Mode de contact</td>
+                    <td style="padding:7px 0;color:#1B2A4A;font-size:13px;">${contactMethod || 'À définir'}</td>
                 </tr>
+                ${clientMessage && clientMessage.trim() ? `<tr>
+                    <td style="padding:7px 0;color:#8B94A6;font-size:12px;vertical-align:top;">Votre message</td>
+                    <td style="padding:7px 0;color:#1B2A4A;font-size:13px;font-style:italic;">${clientMessage.trim().replace(/</g, '&lt;')}</td>
+                </tr>` : ''}
             </table>
         </div>
-        <div style="background:rgba(0,135,81,0.08);border-left:3px solid #008751;padding:16px 20px;border-radius:0 12px 12px 0;margin:0 0 20px;">
-            <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.6);font-style:italic;line-height:1.7;">${aiMessage}</p>
+        <div style="background:#F4FAF6;border-left:3px solid #008751;padding:18px 22px;border-radius:0 12px 12px 0;margin:0 0 22px;">
+            <p style="margin:0;font-size:13.5px;color:#3E4A65;line-height:1.75;white-space:pre-wrap;">${aiMessage}</p>
         </div>
-        <div style="background:rgba(252,209,22,0.05);border:1px solid rgba(252,209,22,0.15);border-radius:10px;padding:14px 18px;text-align:center;">
-            <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.6;">
-                ⏱&nbsp; Votre agent vous confirmera ce rendez-vous sous <strong style="color:rgba(255,255,255,0.8);">24h</strong>.<br/>
+        <div style="background:#FFFBEB;border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:14px 18px;text-align:center;">
+            <p style="margin:0;font-size:12.5px;color:#5A6680;line-height:1.65;">
+                ⏱&nbsp; Votre agent vous confirmera ce rendez-vous sous <strong style="color:#1B2A4A;">24h</strong>.<br/>
                 Vous recevrez un email de confirmation avec tous les détails.
             </p>
         </div>
@@ -443,28 +491,28 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         /** Notification to agents/admin for new lead */
         newLeadNotification: (leadName: string, leadEmail: string, score: number, service: string, source: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:#FCD116;font-weight:800;">🔔 ${t.newLead} — ${source}</h2>
-        <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">🔔 ${t.newLead} — ${source}</h2>
+        <table style="width:100%;border-collapse:collapse;margin:0 0 26px;">
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);width:100px;">${t.name}</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.06);">${leadName}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);width:110px;">${t.name}</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;border-bottom:1px solid rgba(27,42,74,0.08);">${leadName}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${t.email}</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${leadEmail}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">${t.email}</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">${leadEmail}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${t.score}</td>
-              <td style="padding:10px 0;color:${score >= 70 ? '#4ade80' : '#fbbf24'};font-size:20px;font-weight:900;border-bottom:1px solid rgba(255,255,255,0.06);">${score}%</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">${t.score}</td>
+              <td style="padding:11px 0;color:${score >= 70 ? '#008751' : '#C9A84C'};font-size:22px;font-weight:900;border-bottom:1px solid rgba(27,42,74,0.08);">${score}%</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;">${t.service}</td>
-              <td style="padding:10px 0;color:#FCD116;font-size:13px;font-weight:700;">${service}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;">${t.service}</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;">${service}</td>
             </tr>
         </table>
         <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
           <tr><td>
-            <a href="${SITE_URL}/agent/leads" style="display:inline-block;background:linear-gradient(135deg,#FCD116,#f5c518);color:#111827;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 4px 15px rgba(252,209,22,0.3);">
+            <a href="${SITE_URL}/agent/leads" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B89538);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 6px 18px rgba(201,168,76,0.32);">
               ${t.viewDashboard}
             </a>
           </td></tr>
@@ -472,37 +520,49 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
     `, 'fr'),
 
         /** Notification admin — nouvelle demande de RDV (sans score Oracle) */
-        rdvAdminNotification: (clientName: string, clientEmail: string, service: string, date: string | null, timeSlot: string, contactMethod: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:#FCD116;font-weight:800;">📅 Nouvelle demande de RDV</h2>
-        <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+        rdvAdminNotification: (clientName: string, clientEmail: string, service: string, date: string | null, timeSlot: string, contactMethod: string, telephone: string = '', clientMessage: string = '', aiReply: string = '') => EMAIL_WRAPPER(`
+        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">📅 Nouvelle demande de RDV</h2>
+        <table style="width:100%;border-collapse:collapse;margin:0 0 22px;">
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);width:130px;">Client</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.06);">${clientName}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);width:140px;">Client</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;border-bottom:1px solid rgba(27,42,74,0.08);">${clientName}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">Email</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${clientEmail}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">Email</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);"><a href="mailto:${clientEmail}" style="color:#008751;text-decoration:none;">${clientEmail}</a></td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">Service demandé</td>
-              <td style="padding:10px 0;color:#FCD116;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.06);">${service}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">Téléphone / WhatsApp</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;font-weight:700;border-bottom:1px solid rgba(27,42,74,0.08);">${telephone ? telephone.replace(/</g, '&lt;') : 'Non communiqué'}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">Date souhaitée</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${date || 'À définir'}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">Service demandé</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;border-bottom:1px solid rgba(27,42,74,0.08);">${service}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">Créneau</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);">${timeSlot || 'Non précisé'}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">Date souhaitée</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">${date || 'À définir'}</td>
             </tr>
             <tr>
-              <td style="padding:10px 0;color:rgba(255,255,255,0.4);font-size:13px;">Mode de contact</td>
-              <td style="padding:10px 0;color:#fff;font-size:13px;">${contactMethod || 'Non précisé'}</td>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">Créneau</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);">${timeSlot || 'Non précisé'}</td>
+            </tr>
+            <tr>
+              <td style="padding:11px 0;color:#8B94A6;font-size:13px;">Mode de contact</td>
+              <td style="padding:11px 0;color:#1B2A4A;font-size:13px;">${contactMethod || 'Non précisé'}</td>
             </tr>
         </table>
+        ${clientMessage && clientMessage.trim() ? `<div style="background:#FAF6EC;border:1px solid rgba(201,168,76,0.25);border-radius:12px;padding:16px 18px;margin:0 0 18px;">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:800;color:#8B94A6;text-transform:uppercase;letter-spacing:0.15em;">📝 Message du client</p>
+            <p style="margin:0;font-size:13.5px;color:#1B2A4A;line-height:1.7;white-space:pre-wrap;">${clientMessage.trim().replace(/</g, '&lt;')}</p>
+        </div>` : ''}
+        ${aiReply && aiReply.trim() ? `<div style="background:#F4FAF6;border-left:3px solid #008751;padding:14px 18px;border-radius:0 10px 10px 0;margin:0 0 24px;">
+            <p style="margin:0 0 6px;font-size:11px;font-weight:800;color:#008751;text-transform:uppercase;letter-spacing:0.15em;">🤖 Réponse automatique déjà envoyée au client</p>
+            <p style="margin:0;font-size:12.5px;color:#3E4A65;line-height:1.7;white-space:pre-wrap;">${aiReply.trim().replace(/</g, '&lt;')}</p>
+        </div>` : ''}
         <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
           <tr><td>
-            <a href="${SITE_URL}/agent/agenda" style="display:inline-block;background:linear-gradient(135deg,#FCD116,#f5c518);color:#111827;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 4px 15px rgba(252,209,22,0.3);">
+            <a href="${SITE_URL}/agent/agenda" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B89538);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 6px 18px rgba(201,168,76,0.32);">
               Voir dans l'Agenda
             </a>
           </td></tr>
@@ -511,9 +571,39 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         /** Agent reply email — sent from chat console */
         agentReply: (clientName: string, agentMessage: string, language: string = 'fr') => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 20px;font-size:20px;color:#FCD116;font-weight:800;">${getI18n(language).hello} ${clientName},</h2>
-        <div style="color:rgba(255,255,255,0.75);font-size:14px;line-height:1.9;margin:0 0 24px;white-space:pre-wrap;">${agentMessage}</div>
+        <h2 style="margin:0 0 22px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${getI18n(language).hello} ${clientName},</h2>
+        <div style="color:#2D3A55;font-size:14.5px;line-height:1.9;margin:0 0 20px;white-space:pre-wrap;">${agentMessage}</div>
+        <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);margin:28px 0 20px;"></div>
+        <p style="margin:0;font-size:12.5px;color:#5A6680;line-height:1.7;">
+            Cordialement,<br/>
+            <strong style="color:#1B2A4A;">L'équipe Retour Gagnant Bénin</strong>
+        </p>
     `, language),
+
+        /** Invitation à créer un compte — après capture d'un prospect nationalité */
+        accountInvite: (clientName: string, registerUrl: string) => EMAIL_WRAPPER(`
+        <h2 style="margin:0 0 16px;font-size:24px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">🇧🇯 Bienvenue ${clientName}</h2>
+        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 20px;">
+            Nous avons bien reçu votre intérêt pour la reconnaissance de la nationalité béninoise. Votre dossier est en cours de préparation — vous pouvez <strong style="color:#1B2A4A;">continuer votre démarche</strong> dès maintenant sur notre site.
+        </p>
+        <div style="background:#F4FAF6;border-left:3px solid #008751;padding:18px 22px;border-radius:0 12px 12px 0;margin:0 0 26px;">
+            <p style="margin:0 0 8px;font-size:13.5px;color:#008751;font-weight:700;">Votre espace personnel vous attend</p>
+            <p style="margin:0;font-size:13.5px;color:#3E4A65;line-height:1.75;">
+                Créer votre compte vous permet de suivre l'avancement de votre dossier, d'échanger avec votre conseiller et de téléverser vos pièces en toute sécurité.
+            </p>
+        </div>
+        <table cellpadding="0" cellspacing="0" style="margin:0 auto 22px;">
+          <tr><td>
+            <a href="${registerUrl}" style="display:inline-block;background:linear-gradient(135deg,#008751,#00a664);color:#FFFFFF;text-decoration:none;padding:15px 40px;border-radius:12px;font-weight:800;font-size:13.5px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,135,81,0.28);">
+              Créer mon compte sécurisé →
+            </a>
+          </td></tr>
+        </table>
+        <p style="color:#8B94A6;font-size:12.5px;line-height:1.7;margin:0;text-align:center;">
+            Pas de pression — cette invitation ne bloque en rien votre démarche.<br/>
+            Vous pouvez créer votre compte avant, pendant, ou après la soumission de votre dossier.
+        </p>
+    `, 'fr'),
 
         /** Invoice payment reminder — tone escalates with delay */
         invoiceReminder: (
@@ -527,7 +617,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             // Déterminer le niveau de rappel et adapter le ton
             let level: 'friendly' | 'firm' | 'formal' = 'friendly'
             let emoji = '📋'
-            let accentColor = '#FCD116'
+            let accentColor = '#C9A84C'
             let title = 'Rappel de paiement'
             let intro = ''
             let closing = ''
@@ -535,66 +625,66 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             if (daysOverdue <= 10) {
                 level = 'friendly'
                 emoji = '📋'
-                accentColor = '#FCD116'
+                accentColor = '#C9A84C'
                 title = 'Petit rappel concernant votre facture'
                 intro = `Nous espérons que tout va bien de votre côté ! Nous souhaitons simplement vous rappeler que la facture <strong>${invoiceNumero}</strong> d'un montant de <strong>${montant} ${currency}</strong> est en attente de règlement.`
                 closing = 'N\'hésitez pas à nous contacter si vous avez la moindre question. Nous restons entièrement à votre disposition !'
             } else if (daysOverdue <= 25) {
                 level = 'firm'
                 emoji = '⏳'
-                accentColor = '#f59e0b'
+                accentColor = '#d97706'
                 title = 'Rappel — Facture en attente de règlement'
                 intro = `Nous nous permettons de revenir vers vous concernant la facture <strong>${invoiceNumero}</strong> d'un montant de <strong>${montant} ${currency}</strong>, émise il y a ${daysOverdue} jours et toujours en attente de règlement.`
                 closing = 'Nous vous serions reconnaissants de procéder au règlement dans les meilleurs délais, ou de nous contacter si un arrangement est nécessaire.'
             } else {
                 level = 'formal'
                 emoji = '🔴'
-                accentColor = '#ef4444'
+                accentColor = '#dc2626'
                 title = 'Dernier rappel — Facture impayée'
                 intro = `Malgré nos précédents rappels, la facture <strong>${invoiceNumero}</strong> d'un montant de <strong>${montant} ${currency}</strong> reste impayée depuis ${daysOverdue} jours. Nous vous prions de bien vouloir procéder au règlement dans les plus brefs délais.`
                 closing = 'Sans règlement de votre part sous 7 jours, nous serons contraints d\'envisager des mesures complémentaires. Nous restons disponibles pour toute discussion amiable.'
             }
 
             const urgencyBadge = level === 'formal'
-                ? `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:12px 16px;margin:0 0 20px;text-align:center;">
-                     <span style="color:#ef4444;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">⚠️ DERNIER RAPPEL — ACTION REQUISE</span>
+                ? `<div style="background:#FEF2F2;border:1px solid rgba(220,38,38,0.25);border-radius:8px;padding:12px 16px;margin:0 0 22px;text-align:center;">
+                     <span style="color:#dc2626;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">⚠️ DERNIER RAPPEL — ACTION REQUISE</span>
                    </div>`
                 : ''
 
             return EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:${accentColor};font-weight:800;">${emoji} ${title}</h2>
+        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${emoji} ${title}</h2>
         ${urgencyBadge}
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 8px;">
-            Bonjour <strong style="color:#fff;">${clientName}</strong>,
+        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 10px;">
+            Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,
         </p>
-        <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.8;margin:0 0 24px;">
+        <p style="color:#3E4A65;font-size:14px;line-height:1.8;margin:0 0 26px;">
             ${intro}
         </p>
 
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin:0 0 24px;">
+        <div style="background:#FAF6EC;border:1px solid rgba(201,168,76,0.22);border-radius:14px;padding:22px;margin:0 0 26px;">
             <table style="width:100%;border-collapse:collapse;">
                 <tr>
-                    <td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;text-transform:uppercase;letter-spacing:1px;">N° Facture</td>
-                    <td style="padding:8px 0;text-align:right;color:#fff;font-size:14px;font-weight:700;font-family:monospace;">${invoiceNumero}</td>
+                    <td style="padding:9px 0;color:#8B94A6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">N° Facture</td>
+                    <td style="padding:9px 0;text-align:right;color:#1B2A4A;font-size:14px;font-weight:700;font-family:monospace;">${invoiceNumero}</td>
                 </tr>
                 <tr>
-                    <td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(255,255,255,0.05);">Montant dû</td>
-                    <td style="padding:8px 0;text-align:right;color:${accentColor};font-size:20px;font-weight:900;border-top:1px solid rgba(255,255,255,0.05);">${montant} ${currency}</td>
+                    <td style="padding:9px 0;color:#8B94A6;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(27,42,74,0.08);">Montant dû</td>
+                    <td style="padding:9px 0;text-align:right;color:${accentColor};font-size:22px;font-weight:900;border-top:1px solid rgba(27,42,74,0.08);">${montant} ${currency}</td>
                 </tr>
                 <tr>
-                    <td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(255,255,255,0.05);">Retard</td>
-                    <td style="padding:8px 0;text-align:right;color:${level === 'formal' ? '#ef4444' : 'rgba(255,255,255,0.6)'};font-size:13px;font-weight:600;border-top:1px solid rgba(255,255,255,0.05);">${daysOverdue} jours</td>
+                    <td style="padding:9px 0;color:#8B94A6;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(27,42,74,0.08);">Retard</td>
+                    <td style="padding:9px 0;text-align:right;color:${level === 'formal' ? '#dc2626' : '#5A6680'};font-size:13px;font-weight:600;border-top:1px solid rgba(27,42,74,0.08);">${daysOverdue} jours</td>
                 </tr>
             </table>
         </div>
 
-        <p style="color:rgba(255,255,255,0.5);font-size:13px;line-height:1.7;margin:0 0 24px;">
+        <p style="color:#5A6680;font-size:13px;line-height:1.75;margin:0 0 26px;">
             ${closing}
         </p>
 
         ${portalUrl ? `<table cellpadding="0" cellspacing="0" style="margin:0 auto;">
           <tr><td>
-            <a href="${portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${level === 'formal' ? '#dc2626' : (level === 'firm' ? '#d97706' : '#f5c518')});color:${level === 'friendly' ? '#111827' : '#fff'};text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+            <a href="${portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${level === 'formal' ? '#b91c1c' : (level === 'firm' ? '#b45309' : '#B89538')});color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(27,42,74,0.15);">
               Consulter ma facture →
             </a>
           </td></tr>
@@ -613,38 +703,38 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         ) => {
             const hasMissingDocs = documentsManquants.length > 0;
             const title = hasMissingDocs ? 'Action Requise : Documents manquants' : 'Mise à jour de votre dossier';
-            const accentColor = hasMissingDocs ? '#ef4444' : '#008751';
+            const accentColor = hasMissingDocs ? '#dc2626' : '#008751';
             const icon = hasMissingDocs ? '⚠️' : '🔄';
 
             let docsHtml = '';
             if (hasMissingDocs) {
                 docsHtml = `
-                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin:24px 0;">
-                    <h3 style="margin:0 0 12px;color:#ef4444;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Documents Requis d'Urgence</h3>
-                    <ul style="margin:0;padding-left:20px;color:rgba(255,255,255,0.8);font-size:14px;line-height:1.6;">
-                        ${documentsManquants.map(doc => `<li style="margin-bottom:6px;"><strong>${doc}</strong></li>`).join('')}
+                <div style="background:#FEF2F2;border:1px solid rgba(220,38,38,0.25);border-radius:12px;padding:20px;margin:24px 0;">
+                    <h3 style="margin:0 0 12px;color:#dc2626;font-size:13.5px;text-transform:uppercase;letter-spacing:1px;font-weight:800;">Documents Requis d'Urgence</h3>
+                    <ul style="margin:0;padding-left:20px;color:#3E4A65;font-size:14px;line-height:1.7;">
+                        ${documentsManquants.map(doc => `<li style="margin-bottom:6px;"><strong style="color:#1B2A4A;">${doc}</strong></li>`).join('')}
                     </ul>
                 </div>`;
             }
 
             return EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:20px;color:${accentColor};font-weight:800;">${icon} ${title}</h2>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;">
-            Bonjour <strong style="color:#fff;">${clientName}</strong>,
+        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${icon} ${title}</h2>
+        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 18px;">
+            Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,
         </p>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.8;margin:0 0 20px;">
+        <p style="color:#3E4A65;font-size:14px;line-height:1.8;margin:0 0 22px;">
             ${message}
         </p>
 
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin:0 0 16px;">
+        <div style="background:#FAF6EC;border:1px solid rgba(201,168,76,0.22);border-radius:14px;padding:22px;margin:0 0 20px;">
             <table style="width:100%;border-collapse:collapse;">
                 <tr>
-                    <td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;text-transform:uppercase;letter-spacing:1px;">N° Dossier</td>
-                    <td style="padding:8px 0;text-align:right;color:#fff;font-size:14px;font-weight:700;font-family:monospace;">${dossierNumero}</td>
+                    <td style="padding:9px 0;color:#8B94A6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">N° Dossier</td>
+                    <td style="padding:9px 0;text-align:right;color:#1B2A4A;font-size:14px;font-weight:700;font-family:monospace;">${dossierNumero}</td>
                 </tr>
                 <tr>
-                    <td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(255,255,255,0.05);">Progression</td>
-                    <td style="padding:8px 0;text-align:right;color:#FCD116;font-size:16px;font-weight:900;border-top:1px solid rgba(255,255,255,0.05);">${progression}%</td>
+                    <td style="padding:9px 0;color:#8B94A6;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(27,42,74,0.08);">Progression</td>
+                    <td style="padding:9px 0;text-align:right;color:#C9A84C;font-size:18px;font-weight:900;border-top:1px solid rgba(27,42,74,0.08);">${progression}%</td>
                 </tr>
             </table>
         </div>
@@ -653,7 +743,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         <table cellpadding="0" cellspacing="0" style="margin:30px auto 0;">
           <tr><td>
-            <a href="${trackerUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${hasMissingDocs ? '#dc2626' : '#00a664'});color:white;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(${hasMissingDocs ? '239,68,68' : '0,135,81'},0.3);">
+            <a href="${trackerUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${hasMissingDocs ? '#b91c1c' : '#00a664'});color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(${hasMissingDocs ? '220,38,38' : '0,135,81'},0.28);">
               ${hasMissingDocs ? 'Fournir les documents →' : 'Suivre mon dossier →'}
             </a>
           </td></tr>

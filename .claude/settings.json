@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add frontend/app/\\\\\\(routes\\\\\\)/services/autres/page.tsx frontend/app/\\\\\\(routes\\\\\\)/services/nationalite-vip/page.tsx)",
+      "Bash(git add frontend/app/admin/services/page.tsx)",
+      "Bash(git add frontend/app/\\\\\\(routes\\\\\\)/services/recherche-ancestrale/page.tsx frontend/app/admin/recherche-ancestrale/page.tsx frontend/components/home/ServicesGrid.tsx frontend/app/\\\\\\(routes\\\\\\)/services/[slug]/page.tsx frontend/app/admin/services/page.tsx)",
+      "Bash(curl -s \"https://www.retourgagnantbenin.bj/api/admin/services\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f\"\"{s[''order_index'']:3} | {s[''slug'']}\"\"\\) for s in data.get\\(''services'',[]\\)]\")",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\),indent=2\\)\\)\")",
+      "Bash(curl -s --max-time 10 \"https://www.retourgagnantbenin.bj/api/admin/services\")",
+      "Bash(curl -v --max-time 10 \"https://www.retourgagnantbenin.bj/api/admin/services\")",
+      "Bash(curl -sk --max-time 10 \"https://www.retourgagnantbenin.bj/api/admin/services\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f\"\"{s.get\\(''order_index'',''?''\\):>3} | {s[''slug'']}\"\"\\) for s in data.get\\(''services'',[]\\)]\")",
+      "Bash(node -e \"let d=''''; process.stdin.on\\(''data'',c=>d+=c\\); process.stdin.on\\(''end'',\\(\\)=>{ const j=JSON.parse\\(d\\); j.services.forEach\\(s=>console.log\\(s.order_index+''|''+s.slug\\)\\) }\\)\")",
+      "Bash(node -e \"let d=''''; process.stdin.on\\(''data'',c=>d+=c\\); process.stdin.on\\(''end'',\\(\\)=>{ const j=JSON.parse\\(d\\); j.services.forEach\\(s=>console.log\\(s.order_index+''|''+s.slug+''|''+s.id\\)\\) }\\)\")",
+      "Bash(curl -sk --max-time 10 -X PATCH \"https://www.retourgagnantbenin.bj/api/admin/services/af2dd3d0-8e3f-4cea-9c77-7f2d77ac5642\" -H \"Content-Type: application/json\" -d \"{\"\"order_index\"\": 9}\")",
+      "Bash(node -e \"let d=''''; process.stdin.on\\(''data'',c=>d+=c\\); process.stdin.on\\(''end'',\\(\\)=>console.log\\(d\\)\\)\")",
+      "Bash(curl -sk --max-time 10 -X POST \"https://www.retourgagnantbenin.bj/api/admin/services\" -H \"Content-Type: application/json\" -d \"{:*)",
+      "Bash(node -e \"let d=''''; process.stdin.on\\(''data'',c=>d+=c\\); process.stdin.on\\(''end'',\\(\\)=>{ const j=JSON.parse\\(d\\); console.log\\(j.service ? ''OK - ID: ''+j.service.id : ''ERREUR: ''+JSON.stringify\\(j\\)\\) }\\)\")",
+      "Bash(git add \"frontend/public/assets/icones/Recherche Ancestrale.png\")",
+      "Bash(node -e \":*)",
+      "Bash(node \"c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/fix-service.mjs\")",
+      "Bash(cat -n \"c:\\\\Users\\\\HP\\\\Desktop\\\\RETOUR GAGNANT TEMPLATE\\\\frontend\\\\app\\\\\\(routes\\)\\\\nationalite\\\\formulaire\\\\page.tsx\")",
+      "Bash(wc -l \"c:\\\\Users\\\\HP\\\\Desktop\\\\RETOUR GAGNANT TEMPLATE\\\\frontend\\\\app\\\\\\(routes\\)\\\\nationalite\\\\formulaire\\\\page.tsx\")",
+      "Read(//c/Users/HP/.claude/projects/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/58a29df3-da00-49bb-bf9c-3864fa8fbc59/tool-results/**)",
+      "Bash(git add frontend/app/\\\\\\(routes\\\\\\)/nationalite/formulaire/page.tsx frontend/app/api/nationality/analyze/route.ts frontend/app/api/nationality/recherche-ancestrale/route.ts frontend/app/api/cron/nationality-followup/route.ts frontend/app/\\\\\\(routes\\\\\\)/nationalite/complement-ancestral/page.tsx frontend/supabase-migration-nationality-docs.sql)",
+      "Bash(git add frontend/app/\\\\\\(routes\\\\\\)/nationalite/formulaire/page.tsx)",
+      "Bash(git add frontend/app/admin/community-manager/page.tsx)",
+      "Bash(xargs grep -l \"emailRedirectTo\\\\|auth.signUp\\\\|verifyOtp\")",
+      "Read(//c/Users/HP/Desktop/**)",
+      "Bash(xargs grep -l \"services\\\\|nationalite\\\\|boutique\")",
+      "Bash(sed \"s/.*from\\(''\\\\\\\\\\([^'']*\\\\\\\\\\)''\\).*/\\\\1/\")",
+      "Bash(ls -la \"/c/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/frontend/app/\\(routes\\)/nationalite/\")",
+      "Bash(npx tsc --noEmit --strict false)",
+      "Bash(git add app/api/client/register/route.ts app/client/layout.tsx app/client/login/page.tsx app/api/client/resend-confirmation/ app/auth/ app/client/auth-confirm/ app/client/services/)",
+      "Bash(git add app/api/admin/email-templates/route.ts \"app/api/admin/email-templates/[id]/route.ts\" app/api/admin/leads/route.ts \"app/api/admin/leads/[id]/route.ts\" \"app/api/admin/partner-applications/[id]/route.ts\" app/api/admin/services/route.ts \"app/api/admin/services/[id]/route.ts\" app/api/admin/settings/route.ts app/api/admin/users/route.ts \"app/api/admin/users/[id]/route.ts\" app/api/admin/users/create/route.ts app/api/client/register/route.ts app/api/client/resend-confirmation/route.ts app/api/documents/upload/route.ts app/api/email/send/route.ts app/client/login/page.tsx lib/api-auth.ts next.config.ts)",
+      "Bash(git add app/api/email/send/route.ts app/api/documents/upload/route.ts lib/api-auth.ts)",
+      "Bash(node -e \"const s = ''/^\\\\\\\\/client\\\\\\\\//''; console.log\\(s\\);\")",
+      "Bash(python3:*)",
+      "Bash(git add app/client/login/page.tsx)",
+      "Bash(git add app/api/documents/upload/route.ts)",
+      "Bash(git add frontend/app/client/login/page.tsx frontend/app/portail/[id]/page.tsx)",
+      "Bash(xargs grep -l \"login\\\\|register\")",
+      "Bash(xargs grep -l \"/client/login\\\\|/client/register\")",
+      "Bash(git add frontend/app/client/register/page.tsx)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",
+      "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend\\app\\api\\email\\send",
+      "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend\\lib"
+    ]
+  }
+}

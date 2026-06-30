@@ -39,3 +39,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ── Projets séparés (ne pas tracker dans ce repo) ──
+Aura-Link/
+KeysOsi-Link/
+
+# ── Assets bruts de design (lourds, hors scope code) ──
+mobile/assets/Ajouts/
+mobile/stitch/
+
+# ── Notes / plans de travail locaux ──
+plan.md
+supabase_sync_dossiers_tracking.sql
+
+# ── Système ──
+Thumbs.db
+*.log
+
+# ── Editor/IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { scanUpload } from '@/lib/waf'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -32,6 +33,12 @@ export async function POST(request: NextRequest) {
 
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
+
+        // ── WAF : analyse du fichier (polyglote, double-ext, MIME mismatch) ──
+        const up = scanUpload({ filename: file.name, mime: file.type, bytes: new Uint8Array(buffer) })
+        if (!up.safe) {
+            return NextResponse.json({ error: 'Fichier rejeté par le pare-feu.', threat: up.threat }, { status: 400 })
+        }
 
         // Tenter d'abord partner-assets, sinon public bucket
         const bucketName = 'partner-assets'

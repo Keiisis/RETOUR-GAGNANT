@@ -286,9 +286,8 @@ export default function AgentLeadsPage() {
                                                 <Briefcase size={11} /> {lead.recommended_service}
                                             </span>
 
-                                            {/* Date */}
                                             <span className="text-[10px] text-gray-600">
-                                                {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                                                {lead.created_at && !isNaN(new Date(lead.created_at).getTime()) ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '—'}
                                             </span>
 
                                             {/* Bouton Oracle answers */}

@@ -12,9 +12,11 @@ import {
     Menu, Bell, Search, Headphones, X,
     TrendingUp, BookOpen, CircleDot, ChevronRight,
     Shield, PanelLeftClose, PanelLeft,
-    Command, UserCog, Globe, Handshake, Radar, MonitorPlay, Landmark, CreditCard
+    Command, UserCog, Globe, Handshake, Radar, MonitorPlay, Landmark, CreditCard, Mail
 } from 'lucide-react'
 import { useTranslation, T } from '@/lib/translation'
+import { ThemeProvider } from '@/lib/theme/ThemeContext'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 // ═══════════════════════════════════════════
 // Types
@@ -112,6 +114,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     const [unreadNotifications, setUnreadNotifications] = useState(0)
     const [unreadVoices, setUnreadVoices] = useState(0)
     const [unreadPartenaires, setUnreadPartenaires] = useState(0)
+    const [relancesDue, setRelancesDue] = useState(0)
 
     // Sound notification refs
     const prevUnreadRef = useRef<number | null>(null)
@@ -277,7 +280,19 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             setUnreadPartenaires(partRes.count || 0)
         }
 
+        const fetchRelances = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                const res = await fetch('/api/agent/classement/count', {
+                    headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+                    cache: 'no-store',
+                })
+                if (res.ok) { const j = await res.json(); setRelancesDue(j.due || 0) }
+            } catch { /* silencieux */ }
+        }
+
         fetchUnread()
+        fetchRelances()
 
         // Realtime Subscription
         const channel = supabase.channel('agent_layout_badges')
@@ -382,6 +397,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Messages'), icon: MessageSquare, href: '/agent/messages', badge: unreadMessages },
                 { title: t('Vocaux'), icon: Headphones, href: '/agent/vocaux', badge: unreadVoices },
                 { title: t('Notifications'), icon: Bell, href: '/agent/notifications', badge: unreadNotifications },
+                { title: t('Rédiger un Mail'), icon: Mail, href: '/agent/rediger-mails' },
             ],
         },
         {
@@ -391,6 +407,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Événements'), icon: CalendarDays, href: '/agent/evenements' },
                 { title: t('Documents'), icon: FolderOpen, href: '/agent/documents' },
                 { title: t('Clients'), icon: UsersIcon, href: '/agent/clients' },
+                { title: t('Classement Client'), icon: TrendingUp, href: '/agent/classement-client', badge: relancesDue },
                 { title: t('Partenaires'), icon: Handshake, href: '/agent/partenaires', badge: unreadPartenaires },
             ],
         },
@@ -399,6 +416,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             items: [
                 { title: t('Radar IA'), icon: Radar, href: '/agent/radar' },
                 { title: t('Smart Slides'), icon: MonitorPlay, href: '/agent/presentations' },
+                { title: t('Grille Tarifaire'), icon: Landmark, href: '/agent/grille-tarifaire' },
                 { title: t('Devis & Paiements'), icon: Send, href: '/agent/devis' },
                 { title: t('Comptabilité'), icon: Landmark, href: '/agent/comptabilite' },
                 { title: t('Performances'), icon: TrendingUp, href: '/agent/performances' },
@@ -409,6 +427,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             label: t('COMPTE'),
             items: [
                 { title: t('Ma Carte de Visite'), icon: CreditCard, href: '/agent/ma-carte-de-visite' },
+                { title: t('Espace RGPD'), icon: Shield, href: '/agent/rgpd' },
                 { title: t('Mon Profil'), icon: UserCog, href: '/agent/profil' },
             ],
         },
@@ -573,7 +592,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     )
 
     return (
-        <div className="flex h-screen bg-nexus-deep text-white font-sans overflow-hidden">
+        <ThemeProvider panel="agent" defaultTheme="dark">
+        <div className="flex h-screen text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
             {/* ═══════════ DESKTOP SIDEBAR ═══════════ */}
             <motion.aside
                 initial={false}
@@ -664,6 +684,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <ThemeToggle />
+
                         {/* Search trigger */}
                         <button
                             onClick={() => setSearchOpen(true)}
@@ -792,5 +814,6 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 </div>
             </main>
         </div>
+        </ThemeProvider>
     )
 }

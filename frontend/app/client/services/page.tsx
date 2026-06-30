@@ -634,7 +634,7 @@ export default function ClientServicesPage() {
                                                                 color: svc.color,
                                                                 badge: svc.badge,
                                                                 features: svc.id === 'recherche-ancestrale'
-                                                                    ? ['Recherche archives', 'Bases de données spécialisées', 'IA & Généalogie']
+                                                                    ? ['Recherche archives', 'Bases de données spécialisées', 'IA & Plan de composition de Famille']
                                                                     : ['Accompagnement personnalisé', 'Suivi en temps réel', 'Equipe dédiée'],
                                                             })}
                                                             className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-gradient-to-r ${svc.color} text-white transition-all hover:opacity-90 ${svc.glow}`}>

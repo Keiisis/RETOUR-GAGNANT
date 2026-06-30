@@ -239,7 +239,7 @@ export default function AgentPresentationsPage() {
                                 <div className="space-y-1.5 text-xs text-slate-400 mb-5">
                                     <div className="flex justify-between">
                                         <span>Créé le</span>
-                                        <span className="text-slate-300">{new Date(prop.created_at).toLocaleDateString('fr-FR')}</span>
+                                        <span className="text-slate-300">{prop.created_at && !isNaN(new Date(prop.created_at).getTime()) ? new Date(prop.created_at).toLocaleDateString('fr-FR') : '—'}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Montant</span>

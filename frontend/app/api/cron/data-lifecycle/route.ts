@@ -14,9 +14,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // Seuils de rétention des données
-const SENSITIVE_DOC_RETENTION_DAYS = 90   // Documents sensibles traités → supprimés après 90j
-const WAF_LOG_RETENTION_DAYS       = 90   // Logs WAF → supprimés après 90j
-const BLOCKED_IP_EXPIRED_DAYS      = 30   // IPs bloquées expirées → purgées après 30j
+const SENSITIVE_DOC_RETENTION_DAYS = 90    // Documents sensibles traités → supprimés après 90j
+const WAF_LOG_RETENTION_DAYS       = 90    // Logs WAF → supprimés après 90j
+const BLOCKED_IP_EXPIRED_DAYS      = 30    // IPs bloquées expirées → purgées après 30j
+const PROSPECT_RETENTION_DAYS      = 1095  // Prospects/leads non convertis → 3 ans (reco CNIL)
 
 function verifyAuth(request: NextRequest): boolean {
     const authHeader = request.headers.get('authorization')
@@ -60,6 +61,22 @@ async function runLifecycle() {
 
     if (deletedEncFiles?.length) {
         report.push(`✅ Fichiers chiffrés orphelins supprimés : <strong>${deletedEncFiles.length}</strong>`)
+    }
+
+    // ── 2bis. Purger les prospects/leads non convertis (> 3 ans, reco CNIL) ──
+    const prospectThreshold = new Date(now.getTime() - PROSPECT_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    for (const table of ['leads', 'nationality_leads']) {
+        try {
+            const { data: del } = await supabase
+                .from(table)
+                .delete()
+                .lt('created_at', prospectThreshold.toISOString())
+                .select('id')
+            if (del?.length) {
+                totalDeleted += del.length
+                report.push(`✅ Prospects « ${table} » supprimés : <strong>${del.length}</strong> (> 3 ans)`)
+            }
+        } catch { /* table absente : ignorer silencieusement */ }
     }
 
     // ── 3. Purger les anciens logs WAF ────────────────────────

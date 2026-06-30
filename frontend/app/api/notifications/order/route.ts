@@ -80,6 +80,37 @@ export async function POST(request: Request) {
       }
     }
     // ══════════════════════════════════════
+    
+    // Auto-create Nexus Tracker entry for order tracking on payment success
+    if (type === 'payment_success') {
+        const orderRef = `RG-CMD-${(order.id as string).substring(0, 8).toUpperCase()}`
+        const orderSteps = [
+            { id: 1, label: 'Commande reçue', status: 'completed', date: new Date().toISOString().split('T')[0], note: 'Commande en ligne' },
+            { id: 2, label: 'Confirmation de paiement', status: 'completed', date: new Date().toISOString().split('T')[0], note: '' },
+            { id: 3, label: 'Préparation de la commande', status: 'pending', date: null, note: '' },
+            { id: 4, label: 'Expédition / Livraison', status: 'pending', date: null, note: '' },
+            { id: 5, label: 'Livré / Terminé', status: 'pending', date: null, note: '' },
+        ]
+
+        // Ne pas créer en double si ça existe déjà (idempotence)
+        const { data: existingDossier } = await supabase.from('dossier_tracking').select('id').eq('num_dossier', orderRef).maybeSingle()
+        if (!existingDossier) {
+            await supabase.from('dossier_tracking').insert({
+                num_dossier: orderRef,
+                client_nom: order.customer_name,
+                client_prenom: '',
+                client_email: (order.customer_email || '').toLowerCase(),
+                client_whatsapp: order.customer_phone || '',
+                client_phone: order.customer_phone || '',
+                service_type: 'Commande Boutique',
+                service: 'boutique',
+                statut: 'reception',
+                etapes: orderSteps,
+                progression: Math.round((2 / orderSteps.length) * 100),
+                notes_internes: `Commande automatique.\nProduit: ${order.product_title || 'Panier'}\nMontant: ${order.amount} ${order.currency || 'XOF'}\nMéthode: ${order.payment_method}`,
+            })
+        }
+    }
 
     // Fetch admin & SMTP settings
     const { data: settingsData } = await supabase
@@ -104,12 +135,16 @@ export async function POST(request: Request) {
 
     // Store notification in the database for admin panel
     await supabase.from('notifications').insert({
-      type: type || 'order_update',
+      type: type === 'abandoned' ? 'cart_abandoned' : (type || 'order_update'),
       title: type === 'payment_success'
         ? `Nouvelle commande payée - ${order.product_title}`
+        : type === 'abandoned'
+        ? `⚠️ Panier abandonné - ${order.product_title}`
         : `Commande mise à jour - ${order.product_title}`,
       message: type === 'payment_success'
         ? `${order.customer_name} a payé ${formatPrice(order.amount)} ${order.currency || 'XOF'} pour "${order.product_title}" (x${order.quantity || 1}). Tel: ${order.customer_phone}`
+        : type === 'abandoned'
+        ? `${order.customer_name} a abandonné son panier (${order.product_title} — ${formatPrice(order.amount)} ${order.currency || 'XOF'}). Tel: ${order.customer_phone}${order.customer_email ? `, Email: ${order.customer_email}` : ''}. Relancez ce client !`
         : `La commande #${order_id.slice(0, 8)} a été mise à jour. Statut: ${order.payment_status}`,
       order_id,
       is_read: false,
@@ -143,6 +178,8 @@ export async function POST(request: Request) {
             replyTo: settings.smtp_user,
             subject: type === 'payment_success'
               ? `[${siteName}] Nouvelle commande - ${order.product_title}`
+              : type === 'abandoned'
+              ? `[${siteName}] ⚠️ Panier abandonné - ${order.product_title}`
               : `[${siteName}] Commande #${order_id.slice(0, 8)} mise a jour`,
             html: generateOrderEmailHTML(order, siteName, type, baseUrl),
           })
@@ -196,7 +233,7 @@ function generateOrderEmailHTML(order: Record<string, unknown>, siteName: string
       <img src="${logoUrl}" alt="${siteName}" width="52" height="52" style="border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,.3);" />
       <div>
         <div style="font-size:20px;font-weight:900;color:#fff;">${siteName}</div>
-        <div style="font-size:10px;color:#FCD116;text-transform:uppercase;letter-spacing:3px;margin-top:3px;">${type === 'payment_success' ? '🛒 Nouvelle commande reçue' : 'Mise à jour commande'}</div>
+        <div style="font-size:10px;color:#FCD116;text-transform:uppercase;letter-spacing:3px;margin-top:3px;">${type === 'payment_success' ? '🛒 Nouvelle commande reçue' : type === 'abandoned' ? '⚠️ Panier abandonné par le client' : 'Mise à jour commande'}</div>
       </div>
     </div>
     <div style="padding:32px 40px;">
@@ -208,7 +245,7 @@ function generateOrderEmailHTML(order: Record<string, unknown>, siteName: string
         <tr><td style="padding:6px 0;color:#6b7280;font-size:12px;">Méthode</td><td style="padding:6px 0;text-align:right;color:#d1d5db;font-size:13px;">${payLabel}</td></tr>
         <tr><td style="padding:6px 0;color:#6b7280;font-size:12px;">Référence</td><td style="padding:6px 0;text-align:right;font-family:monospace;color:#FCD116;font-size:12px;">${ref}</td></tr>
         <tr style="border-top:1px solid #1e2a3a;">
-          <td style="padding:18px 0 8px;color:#FCD116;font-weight:900;font-size:13px;text-transform:uppercase;">TOTAL REÇU</td>
+          <td style="padding:18px 0 8px;color:#FCD116;font-weight:900;font-size:13px;text-transform:uppercase;">${type === 'payment_success' ? 'TOTAL REÇU' : 'TOTAL (NON ENCAISSÉ)'}</td>
           <td style="padding:18px 0 8px;text-align:right;font-size:22px;font-weight:900;color:#FCD116;">${f(order.amount as number)} ${order.currency || 'FCFA'}</td>
         </tr>
       </table>

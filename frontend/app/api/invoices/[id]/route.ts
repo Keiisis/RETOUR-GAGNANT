@@ -80,6 +80,20 @@ export async function GET(
       return NextResponse.json({ error: 'Commande introuvable' }, { status: 404 })
     }
 
+    // ── Signature client (si elle existe et auto_sign != 'never') ──
+    // Injectée dans la zone "Bon pour accord — Client" de la facture.
+    let clientSignatureDataUrl: string | null = null
+    if (order.client_id) {
+      const { data: sigRow } = await supabase
+        .from('client_signatures')
+        .select('signature_data, auto_sign')
+        .eq('client_id', order.client_id)
+        .maybeSingle()
+      if (sigRow?.signature_data && sigRow.auto_sign !== 'never') {
+        clientSignatureDataUrl = sigRow.signature_data
+      }
+    }
+
     // Settings site + template ERP (en parallèle)
     const [settingsRes, templateRes] = await Promise.all([
       supabase.from('settings').select('key, value')
@@ -317,6 +331,7 @@ export async function GET(
     .sig-box-left .sig-title{color:#006b40}
     .sig-box-right .sig-title{color:#3b4da0}
     .sig-line{border-bottom:1px solid #c5d5c8;margin:10px 0 4px;height:28px}
+    .sig-client-img{max-width:100%;max-height:80px;object-fit:contain;display:block;margin:6px auto;filter:contrast(1.1) brightness(0.9)}
     .sig-date{font-size:9px;color:#888}
     .sig-cachet{position:absolute;right:-10px;bottom:-10px;width:80px;height:80px;opacity:.9;object-fit:contain}
     .sig-name{font-size:12px;font-weight:800;color:#2d3778;margin-top:6px}
@@ -488,9 +503,13 @@ export async function GET(
       <div class="sig-zone">
         <div class="sig-box-left">
           <div class="sig-title">Bon pour accord — Client</div>
-          <div class="sig-line"></div>
-          <div class="sig-date">Signature et cachet du client</div>
-          <div class="sig-date" style="margin-top:6px">Date : ____/____/________</div>
+          ${clientSignatureDataUrl
+            ? `<img src="${clientSignatureDataUrl}" alt="Signature client" class="sig-client-img" />
+               <div class="sig-date" style="text-align:center">${escapeHtml(order.customer_name || '')}</div>
+               <div class="sig-date" style="margin-top:4px;text-align:center">Apposée le ${date}</div>`
+            : `<div class="sig-line"></div>
+               <div class="sig-date">Signature et cachet du client</div>
+               <div class="sig-date" style="margin-top:6px">Date : ____/____/________</div>`}
         </div>
         <div class="sig-box-right">
           <div class="sig-title">${escapeHtml(presidentTitle)}</div>

@@ -10,6 +10,7 @@ const XOF_TO: Record<string, number> = {
     GBP: 760,     // Taux approximatif
     CAD: 440,     // Taux approximatif
     CHF: 720,     // Taux approximatif
+    HTG: 4.2591,  // 80 000 XOF ≈ HTG 18 783 (vérifié Mai 2026)
 }
 
 function convertFromXOF(amountXof: number, targetCurrency: string): number {
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         }
 
         // Paramètres d'affichage optionnels transmis par le modal (devise choisie + montant converti avec marge)
-        const VALID_CURRENCIES = new Set(['XOF', 'EUR', 'USD', 'GBP', 'CAD', 'CHF'])
+        const VALID_CURRENCIES = new Set(['XOF', 'EUR', 'USD', 'GBP', 'CAD', 'CHF', 'HTG'])
         const useDisplayParams = (
             display_currency &&
             VALID_CURRENCIES.has(String(display_currency).toUpperCase()) &&

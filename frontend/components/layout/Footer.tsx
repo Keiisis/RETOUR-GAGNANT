@@ -126,10 +126,12 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                    <p><T>© 2025 Retour Gagnant Bénin. Tous droits réservés.</T></p>
+                    <p>© {new Date().getFullYear()} Retour Gagnant Bénin. <T>Tous droits réservés.</T></p>
                     <div className="flex gap-6 mt-4 md:mt-0">
                         <Link href="/mentions-legales" className="hover:text-white transition-colors"><T>Mentions Légales</T></Link>
                         <Link href="/confidentialite" className="hover:text-white transition-colors"><T>Confidentialité</T></Link>
+                        <Link href="/conditions-generales" className="hover:text-white transition-colors"><T>CGV</T></Link>
+                        <Link href="/faq" className="hover:text-white transition-colors"><T>FAQ</T></Link>
                     </div>
                 </div>
             </div>

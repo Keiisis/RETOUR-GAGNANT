@@ -149,8 +149,9 @@ export default function ClientSignaturePage() {
     }
 
     const fmtDate = (iso: string) => {
+        if (!iso) return '—'
         const d = new Date(iso)
-        return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     }
 
     return (

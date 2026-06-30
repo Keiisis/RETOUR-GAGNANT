@@ -177,6 +177,18 @@ interface GeneratedVariant {
 }
 
 // ── Helpers ───────────────────────────────────────────────
+const formatDateSafe = (val: any, mounted: boolean = true) => {
+    if (!mounted || !val) return '—'
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+}
+
+const formatDateTimeSafe = (val: any, mounted: boolean = true) => {
+    if (!mounted || !val) return '—'
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleString('fr-FR')
+}
+
 const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string; placeholder?: string }> = {
     facebook:    { label: 'Facebook',     color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20',   icon: '📘', placeholder: 'https://www.facebook.com/nomDeLaPage' },
     instagram:   { label: 'Instagram',    color: 'text-pink-400',   bg: 'bg-pink-500/10 border-pink-500/20',   icon: '📸', placeholder: 'https://www.instagram.com/username' },
@@ -305,7 +317,11 @@ function VeilleTab({
     const [form, setForm] = useState({ platform: 'facebook', profile_url: '', username: '', notes: '' })
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => { fetchProfiles() }, [])
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+        fetchProfiles()
+    }, [])
 
     const fetchProfiles = async () => {
         setLoading(true)
@@ -520,7 +536,7 @@ function VeilleTab({
                                     {profile.notes && <p className="text-gray-500 text-xs">{profile.notes}</p>}
                                     {profile.last_analyzed_at && (
                                         <p className="text-gray-600 text-[10px] mt-1">
-                                            Dernière analyse : {new Date(profile.last_analyzed_at).toLocaleString('fr-FR')}
+                                            Dernière analyse : {formatDateTimeSafe(profile.last_analyzed_at, mounted)}
                                         </p>
                                     )}
                                 </div>
@@ -590,7 +606,7 @@ function VeilleTab({
                                     {post.likes > 0 && <span className="flex items-center gap-1"><ThumbsUp size={10} /> {post.likes.toLocaleString()}</span>}
                                     {post.comments > 0 && <span className="flex items-center gap-1"><MessageCircle size={10} /> {post.comments.toLocaleString()}</span>}
                                     {post.shares > 0 && <span className="flex items-center gap-1"><Share2 size={10} /> {post.shares.toLocaleString()}</span>}
-                                    {post.date && <span>{new Date(post.date).toLocaleDateString('fr-FR')}</span>}
+                                    {post.date && <span>{formatDateSafe(post.date, mounted)}</span>}
                                     {post.url && (
                                         <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 flex items-center gap-0.5">
                                             <ExternalLink size={10} /> Voir
@@ -616,7 +632,7 @@ function VeilleTab({
                                 </div>
                                 <h3 className="text-white font-black text-lg">@{activeDossier.profile.username}</h3>
                                 <p className="text-gray-400 text-xs mt-0.5">
-                                    {activeDossier.meta.posts_analyzed} posts analysés · {activeDossier.meta.scrape_method} · {new Date(activeDossier.meta.generated_at).toLocaleString('fr-FR')}
+                                    {activeDossier.meta.posts_analyzed} posts analysés · {activeDossier.meta.scrape_method} · {formatDateTimeSafe(activeDossier.meta.generated_at, mounted)}
                                 </p>
                             </div>
                             <div className="flex gap-2 flex-wrap">
@@ -1821,8 +1837,11 @@ function GenerationTab({
     const [dossierContext, setDossierContext] = useState<string>('')
     const [useDossier, setUseDossier] = useState(false)
 
+    const [mounted, setMounted] = useState(false)
+
     // Charger style depuis session storage (si venu de l'onglet Style)
     useEffect(() => {
+        setMounted(true)
         const savedStyle = sessionStorage.getItem('cm_style_inspiration')
         const savedTopic = sessionStorage.getItem('cm_reproduce_topic')
         const savedPlatform = sessionStorage.getItem('cm_reproduce_platform')
@@ -2123,7 +2142,7 @@ function GenerationTab({
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                                         <PlatformBadge platform={item.platform} />
-                                        <span className="text-[10px] text-gray-600">{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+                                        <span className="text-[10px] text-gray-600">{formatDateSafe(item.created_at, mounted)}</span>
                                     </div>
                                     <p className="text-gray-300 text-sm line-clamp-2">{item.text}</p>
                                     {item.hashtags?.length > 0 && (

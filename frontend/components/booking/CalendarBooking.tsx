@@ -2,6 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
+import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
@@ -34,6 +35,7 @@ export default function CalendarBooking() {
     const [selectedTime, setSelectedTime] = useState('')
     const [selectedService, setSelectedService] = useState('')
     const [form, setForm] = useState({ nom: '', email: '', phone: '', notes: '' })
+    const [consent, setConsent] = useState(false)
     const [loading, setLoading] = useState(false)
     const [booked, setBooked] = useState(false)
     const [bookedSlots, setBookedSlots] = useState<string[]>([])
@@ -56,7 +58,7 @@ export default function CalendarBooking() {
     }, [selectedDate])
 
     const handleSubmit = async () => {
-        if (!selectedDate || !selectedTime || !form.nom || !form.email) return
+        if (!selectedDate || !selectedTime || !form.nom || !form.email || !consent) return
         setLoading(true)
 
         try {
@@ -280,9 +282,12 @@ export default function CalendarBooking() {
                             </div>
                         </div>
 
+                        <ConsentCheckbox id="booking-consent" checked={consent} onChange={setConsent}
+                            purpose="afin de planifier mon rendez-vous et de me recontacter" className="mt-5 !text-gray-400" />
+
                         <button
                             onClick={handleSubmit}
-                            disabled={loading || !form.nom || !form.email}
+                            disabled={loading || !form.nom || !form.email || !consent}
                             className="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <CalendarDays size={16} />}

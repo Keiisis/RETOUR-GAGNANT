@@ -16,6 +16,13 @@ import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, type Curren
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
+// Safe date formatter to avoid RangeError: Invalid time value
+const formatDateSafe = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+}
+
 interface DocumentFinancier {
     id: string
     type: 'devis' | 'facture'
@@ -741,7 +748,7 @@ export default function ClientPortalPage() {
                     pdf.setFontSize(6)
                     pdf.setTextColor(0, 140, 70)
                     const signedDate = doc.signed_at
-                        ? new Date(doc.signed_at).toLocaleDateString('fr-FR')
+                        ? formatDateSafe(doc.signed_at)
                         : new Date().toLocaleDateString('fr-FR')
                     pdf.text('[OK] Validé numériquement le ' + signedDate, ml + 4, y + 43)
                 } else {
@@ -749,7 +756,7 @@ export default function ClientPortalPage() {
                     pdf.setFontSize(6.5)
                     pdf.setTextColor(90, 100, 95)
                     pdf.text('Signature en attente ...', ml + 10, y + 20)
-                    pdf.text('Date de la facture : ' + new Date(doc.created_at).toLocaleDateString('fr-FR'), ml + 4, y + 43)
+                    pdf.text('Date de la facture : ' + formatDateSafe(doc.created_at), ml + 4, y + 43)
                 }
 
                 pdf.setFont('helvetica', 'bold')
@@ -1038,8 +1045,8 @@ export default function ClientPortalPage() {
                                     </div>
                                     {signatureUrl && (
                                         <div className="mt-3 space-y-1 text-center">
-                                            <p className="text-[10px] text-emerald-500/80 font-bold">ÉMISSION : {new Date(doc?.created_at || '').toLocaleDateString('fr-FR')}</p>
-                                            <p className="text-[9px] text-emerald-500/60 font-medium italic">Validé numériquement le {doc?.signed_at ? new Date(doc.signed_at).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}</p>
+                                            <p className="text-[10px] text-emerald-500/80 font-bold">ÉMISSION : {formatDateSafe(doc?.created_at)}</p>
+                                            <p className="text-[9px] text-emerald-500/60 font-medium italic">Validé numériquement le {doc?.signed_at ? formatDateSafe(doc.signed_at) : new Date().toLocaleDateString('fr-FR')}</p>
                                         </div>
                                     )}
                                 </div>

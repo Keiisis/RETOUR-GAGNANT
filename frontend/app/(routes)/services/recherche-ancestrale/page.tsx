@@ -26,7 +26,7 @@ interface PageContent {
 const DEFAULT_CONTENT: PageContent = {
     hero_title: "Recherche Ancestrale",
     hero_subtitle: "Retrouvez la trace de ceux que l'histoire a effacés. Reconstruire sa lignée, c'est se réapproprier ce qui nous a été pris.",
-    description: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été délibérément effacée par la traite transatlantique. Retrouver l'ancêtre réduit en esclavage, c'est un acte de mémoire, de dignité et d'identité. Nous mobilisons des bases de données spécialisées, des archives officielles et des associations expertes pour reconstituer votre lignée jusqu'aux racines béninoises ou africaines — avec méthode, rigueur et profond respect pour l'histoire de votre famille.",
+    description: "Pour des millions de descendants de la diaspora africaine, une partie du plan de composition de famille a été délibérément effacée par la traite transatlantique. Retrouver l'ancêtre réduit en esclavage, c'est un acte de mémoire, de dignité et d'identité. Nous mobilisons des bases de données spécialisées, des archives officielles et des associations expertes pour reconstituer votre lignée jusqu'aux racines béninoises ou africaines — avec méthode, rigueur et profond respect pour l'histoire de votre famille.",
     documents: [
         "Extrait de naissance de vos deux parents (père et mère)",
         "Extrait de naissance ou de décès de vos grands-parents (côté paternel et côté maternel)",
@@ -50,13 +50,13 @@ const METHODS = [
     {
         icon: Database,
         title: "Bases de données spécialisées",
-        desc: "Accès aux plateformes de référence : Slave Voyages, FamilySearch, Ancestry, et bases africaines spécialisées dans la généalogie diasporique.",
+        desc: "Accès aux plateformes de référence : Slave Voyages, FamilySearch, Ancestry, et bases africaines spécialisées dans le Plan de composition de Famille diasporique.",
         color: "#008751",
     },
     {
         icon: Users,
         title: "Associations expertes",
-        desc: "Partenariats avec des associations spécialisées dans la généalogie afro-descendante et la recherche de racines africaines.",
+        desc: "Partenariats avec des associations spécialisées dans le Plan de composition de Famille afro-descendant et la recherche de racines africaines.",
         color: "#E8112D",
     },
 ];
@@ -121,7 +121,7 @@ export default function RechercheAncestralePage() {
                         <div>
                             <div className="flex items-center gap-2 mb-3">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FCD116]/70">
-                                    Diaspora · Généalogie · Identité
+                                    Diaspora · Plan de composition de Famille · Identité
                                 </span>
                             </div>
                             <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4">
@@ -267,7 +267,7 @@ export default function RechercheAncestralePage() {
                                         </p>
                                     </div>
                                     <div>
-                                        <Link href="/rendez-vous" className="block">
+                                        <Link href="/rendez-vous?service=recherche-ancestrale" className="block">
                                             <Button className="w-full bg-[#1a2332] hover:bg-[#2c3b55] text-white font-bold h-12 rounded-xl transition-all shadow-md hover:shadow-lg">
                                                 {t(content.cta_button_text)}
                                             </Button>

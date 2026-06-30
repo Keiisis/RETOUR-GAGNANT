@@ -90,6 +90,14 @@ const frontendSections = [
         color: '#FCD116',
         count: 'Cartes & Identité',
     },
+    {
+        title: 'Grille Tarifaire',
+        description: 'Configurez et gérez les grilles tarifaires officielles (Documents & Identité) de Retour Gagnant, et téléchargez les versions PDF officielles.',
+        icon: FileText,
+        href: '/admin/grille-tarifaire',
+        color: '#008751',
+        count: 'Tarifs & PDF',
+    },
 ]
 
 export default function AdminFrontendHub() {

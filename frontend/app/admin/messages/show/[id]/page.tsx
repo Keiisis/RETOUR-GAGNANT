@@ -508,7 +508,7 @@ export default function MessageShow() {
                             <div className="w-full space-y-4 pt-6">
                                 <ContactInfo icon={Mail} value={record.email} label="Email Officiel" />
                                 <ContactInfo icon={Phone} value={record.telephone || 'Non renseigné'} label="Canal Téléphonique" />
-                                <ContactInfo icon={Calendar} value={new Date(record.created_at).toLocaleDateString()} label="Transmission Initiale" />
+                                <ContactInfo icon={Calendar} value={!record.created_at || isNaN(new Date(record.created_at).getTime()) ? '—' : new Date(record.created_at).toLocaleDateString()} label="Transmission Initiale" />
                             </div>
 
                             {/* Status Toggle */}

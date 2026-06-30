@@ -44,13 +44,22 @@ export default function AgentMessagesPage() {
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [replySuggestions, setReplySuggestions] = useState<string[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
     const fetchMessages = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('messages')
             .select('*')
             .neq('type', 'nationality')
             .order('created_at', { ascending: false })
+
+        if (error) {
+            console.error('[agent/messages] fetchMessages error:', error)
+            setFetchError(`${error.code || 'ERR'} — ${error.message}${error.hint ? ` (${error.hint})` : ''}`)
+        } else {
+            console.info('[agent/messages] fetchMessages OK, count =', data?.length, data)
+            setFetchError(null)
+        }
 
         setMessages((data || []) as Message[])
         setLoading(false)
@@ -259,14 +268,12 @@ export default function AgentMessagesPage() {
         setChatHistory(prev => [...prev, tempMsg])
         setTimeout(scrollToBottom, 100)
 
-        // Insert into chat_messages
-        await supabase
-            .from('chat_messages')
-            .insert({
-                conversation_id: selected.id,
-                role: 'agent',
-                content: content
-            })
+        // Insert into chat_messages via API (bypasses RLS for reliability)
+        await fetch('/api/support/agent_reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: selected.id, content }),
+        })
 
         // Also mark as read if it wasn't
         if (!selected.lu) {
@@ -302,7 +309,7 @@ export default function AgentMessagesPage() {
 
         if (filter === 'unread') return matchSearch && !m.lu
         if (filter === 'contact') return matchSearch && m.type === 'contact'
-        if (filter === 'support') return matchSearch && m.type === 'support'
+        if (filter === 'support') return matchSearch && (m.type === 'support' || m.type === 'live_chat')
         return matchSearch
     })
 
@@ -328,6 +335,11 @@ export default function AgentMessagesPage() {
                     </div>
                     <h1 className="text-2xl font-black text-white">Console Live</h1>
                     <p className="text-gray-500 text-sm mt-1">{messages.length} conversation(s) • {unreadCount} en attente</p>
+                    {fetchError && (
+                        <div className="mt-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-mono max-w-xl">
+                            <strong className="font-bold">Erreur Supabase :</strong> {fetchError}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
@@ -380,14 +392,14 @@ export default function AgentMessagesPage() {
                                                 <span className={`text-sm ${!m.lu ? 'text-white font-bold' : 'text-gray-400 font-semibold'}`}>{m.nom} {m.prenom}</span>
                                             </div>
                                             <span className={`text-[10px] ${!m.lu ? 'text-blue-400 font-bold' : 'text-gray-600'} flex-shrink-0`}>
-                                                {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'}
                                             </span>
                                         </div>
                                         <p className={`text-xs pl-8 ${!m.lu ? 'text-gray-300 font-medium' : 'text-gray-500'} truncate`}>{m.sujet}</p>
                                         <div className="flex justify-between items-center pl-8 mt-2">
                                             <span className="text-[10px] text-gray-600 truncate mr-2">{m.message}</span>
-                                            <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${m.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                {m.type}
+                                            <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${m.sujet?.includes('Live Chat') ? 'bg-emerald-500/20 text-emerald-400' : m.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                {m.sujet?.includes('Live Chat') ? '💬 Live' : m.type}
                                             </span>
                                         </div>
                                     </motion.div>
@@ -423,7 +435,7 @@ export default function AgentMessagesPage() {
                             <div className="flex-1 p-6 overflow-y-auto space-y-6">
                                 <div className="flex justify-center">
                                     <span className="text-[10px] uppercase font-bold text-gray-600 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                                        {new Date(selected.created_at).toLocaleDateString('fr-FR')} à {new Date(selected.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                        {selected.created_at && !isNaN(new Date(selected.created_at).getTime()) ? `${new Date(selected.created_at).toLocaleDateString('fr-FR')} à ${new Date(selected.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '—'}
                                     </span>
                                 </div>
 

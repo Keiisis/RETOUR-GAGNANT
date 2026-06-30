@@ -8,10 +8,15 @@ import {
     Crown, LayoutDashboard, ShieldCheck, Users, MessageSquare,
     ShoppingBag, Receipt, BarChart3, Settings, LogOut,
     Bell, Menu, X, ChevronRight, Activity, Globe,
-    TrendingUp, Zap, Lock, FileText, type LucideProps,
+    TrendingUp, Zap, Lock, FileText, Sparkles, type LucideProps,
+    FolderOpen, UserCog, Calculator, Wrench, Package, BookOpen,
+    Image, Star, Globe2, Handshake, Target, Boxes, Tag, Calendar,
+    Share2, Search,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { ThemeProvider } from '@/lib/theme/ThemeContext'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 // ══════════════════════════════════════════════════════════════
 // PALETTE CEO — Or · Vert · Jaune · Rouge · Drapeau Bénin
@@ -21,25 +26,88 @@ const YELLOW  = '#FCD116'
 const GREEN   = '#008751'
 const GREEN_L = '#00A86B'
 const RED     = '#E8112D'
-const BG      = '#0B1F0D'   // Fond vert forêt (pas noir)
-const PANEL   = '#0D2615'   // Sidebar légèrement plus claire
-const TEXT    = '#F0EBD8'   // Blanc crème chaud
+const BG      = '#FFFFFF'   // Fond blanc
+const PANEL   = '#F4FAF5'   // Sidebar très légère teinte verte
+const TEXT    = '#1A2C1A'   // Texte vert forêt foncé
+const BG_DARK = '#0B1F0D'   // Utilisé uniquement pour l'animation de bienvenue
 
-const CEO_NAV = [
-    { label: 'Dashboard',   href: '/ceo/dashboard',  icon: LayoutDashboard },
-    { label: 'Revenus',     href: '/ceo/revenus',    icon: TrendingUp },
-    { label: 'Commandes',   href: '/ceo/commandes',  icon: ShoppingBag },
-    { label: 'Clients',     href: '/ceo/clients',    icon: Users },
-    { label: 'Messages',    href: '/ceo/messages',   icon: MessageSquare },
-    { label: 'Sécurité',    href: '/ceo/securite',   icon: ShieldCheck },
-    { label: 'Activité',    href: '/ceo/activite',   icon: Activity },
-    { label: 'Rapports',    href: '/ceo/rapports',   icon: BarChart3 },
-    { label: 'Site Web',    href: '/ceo/site',       icon: Globe },
-    { label: 'Facturation', href: '/ceo/facturation',icon: Receipt },
-    { label: 'Documents',   href: '/ceo/documents',  icon: FileText },
-    { label: '2FA',         href: '/ceo/2fa',        icon: Lock },
-    { label: 'Paramètres',  href: '/ceo/parametres', icon: Settings },
+interface NavSection { section?: string; items: NavItem[] }
+interface NavItem { label: string; href: string; icon: React.ForwardRefExoticComponent<LucideProps> }
+
+const CEO_NAV_SECTIONS: NavSection[] = [
+    {
+        section: 'CORE',
+        items: [
+            { label: 'Dashboard',    href: '/ceo/dashboard',   icon: LayoutDashboard },
+            { label: 'Gemma 4 IA',   href: '/ceo/assistant',   icon: Sparkles },
+            { label: 'Activité',     href: '/ceo/activite',    icon: Activity },
+        ]
+    },
+    {
+        section: 'FINANCE',
+        items: [
+            { label: 'Revenus',      href: '/ceo/revenus',     icon: TrendingUp },
+            { label: 'Comptabilité', href: '/ceo/comptabilite',icon: Calculator },
+            { label: 'Commandes',    href: '/ceo/commandes',   icon: ShoppingBag },
+            { label: 'Facturation',  href: '/ceo/facturation', icon: Receipt },
+        ]
+    },
+    {
+        section: 'GESTION',
+        items: [
+            { label: 'Dossiers',     href: '/ceo/dossiers',    icon: FolderOpen },
+            { label: 'Clients',      href: '/ceo/clients',     icon: Users },
+            { label: 'Utilisateurs', href: '/ceo/utilisateurs',icon: UserCog },
+            { label: 'Messages',     href: '/ceo/messages',    icon: MessageSquare },
+            { label: 'Leads',        href: '/ceo/leads',       icon: Target },
+        ]
+    },
+    {
+        section: 'CATALOGUE',
+        items: [
+            { label: 'Services',     href: '/ceo/services',    icon: Wrench },
+            { label: 'Boutique',     href: '/ceo/boutique',    icon: Package },
+            { label: 'Inventaire',   href: '/ceo/inventaire',  icon: Boxes },
+            { label: 'Coupons',      href: '/ceo/coupons',     icon: Tag },
+        ]
+    },
+    {
+        section: 'CONTENU',
+        items: [
+            { label: 'Blog',         href: '/ceo/blog',        icon: BookOpen },
+            { label: 'Galerie',      href: '/ceo/galerie',     icon: Image },
+            { label: 'Témoignages',  href: '/ceo/temoignages', icon: Star },
+            { label: 'Événements',   href: '/ceo/evenements',  icon: Calendar },
+        ]
+    },
+    {
+        section: 'PARTENAIRES',
+        items: [
+            { label: 'Nationalité',  href: '/ceo/nationalite', icon: Globe2 },
+            { label: 'Partenaires',  href: '/ceo/partenaires', icon: Handshake },
+        ]
+    },
+    {
+        section: 'SYSTÈME',
+        items: [
+            { label: 'Community Mgr',href: '/ceo/community-manager', icon: Share2 },
+            { label: 'Site Web',     href: '/ceo/site',        icon: Globe },
+            { label: 'Sécurité',     href: '/ceo/securite',    icon: ShieldCheck },
+            { label: 'Rapports',     href: '/ceo/rapports',    icon: BarChart3 },
+        ]
+    },
+    {
+        section: 'CONFIG',
+        items: [
+            { label: 'Documents',    href: '/ceo/documents',   icon: FileText },
+            { label: 'Paramètres',   href: '/ceo/parametres',  icon: Settings },
+            { label: '2FA',          href: '/ceo/2fa',         icon: Lock },
+        ]
+    },
 ]
+
+// Flat list for active detection
+const CEO_NAV = CEO_NAV_SECTIONS.flatMap(s => s.items)
 
 // ── Animation de bienvenue plein écran ───────────────────────
 function WelcomeAnimation({ name, onDone }: { name: string; onDone: () => void }) {
@@ -281,7 +349,8 @@ export default function CeoLayout({ children }: { children: React.ReactNode }) {
     const activeLabel = CEO_NAV.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label || 'CEO Panel'
 
     return (
-        <div className="flex h-screen overflow-hidden" style={{ background: BG, color: TEXT }}>
+        <ThemeProvider panel="ceo" defaultTheme="light">
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
 
             {/* Welcome animation */}
             <AnimatePresence>
@@ -346,11 +415,23 @@ export default function CeoLayout({ children }: { children: React.ReactNode }) {
                 </AnimatePresence>
 
                 {/* Nav */}
-                <nav className="flex-1 overflow-y-auto py-4 px-2.5 space-y-0.5">
-                    {CEO_NAV.map(item => (
-                        <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label}
-                            active={pathname === item.href || pathname.startsWith(item.href + '/')}
-                            collapsed={collapsed} />
+                <nav className="flex-1 overflow-y-auto py-3 px-2.5">
+                    {CEO_NAV_SECTIONS.map(section => (
+                        <div key={section.section} className="mb-2">
+                            {section.section && !collapsed && (
+                                <p className="px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5"
+                                    style={{ color: `${GREEN}60` }}>
+                                    {section.section}
+                                </p>
+                            )}
+                            <div className="space-y-0.5">
+                                {section.items.map(item => (
+                                    <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label}
+                                        active={pathname === item.href || pathname.startsWith(item.href + '/')}
+                                        collapsed={collapsed} />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </nav>
 
@@ -421,6 +502,7 @@ export default function CeoLayout({ children }: { children: React.ReactNode }) {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <ThemeToggle />
                         <button className="relative p-2 rounded-xl transition-colors"
                             style={{ background: `${GREEN}15`, color: `${GREEN_L}80` }}
                             onMouseEnter={e => (e.currentTarget.style.color = GREEN_L)}
@@ -481,11 +563,23 @@ export default function CeoLayout({ children }: { children: React.ReactNode }) {
                                 <div className="flex-1" style={{ background: RED }} />
                             </div>
 
-                            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-                                {CEO_NAV.map(item => (
-                                    <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label}
-                                        active={pathname === item.href || pathname.startsWith(item.href + '/')}
-                                        collapsed={false} onClick={() => setMobileOpen(false)} />
+                            <nav className="flex-1 overflow-y-auto py-3 px-3">
+                                {CEO_NAV_SECTIONS.map(section => (
+                                    <div key={section.section} className="mb-2">
+                                        {section.section && (
+                                            <p className="px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5"
+                                                style={{ color: `${GREEN}60` }}>
+                                                {section.section}
+                                            </p>
+                                        )}
+                                        <div className="space-y-0.5">
+                                            {section.items.map(item => (
+                                                <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label}
+                                                    active={pathname === item.href || pathname.startsWith(item.href + '/')}
+                                                    collapsed={false} onClick={() => setMobileOpen(false)} />
+                                            ))}
+                                        </div>
+                                    </div>
                                 ))}
                             </nav>
 
@@ -504,5 +598,6 @@ export default function CeoLayout({ children }: { children: React.ReactNode }) {
                 )}
             </AnimatePresence>
         </div>
+        </ThemeProvider>
     )
 }

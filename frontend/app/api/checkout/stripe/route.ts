@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         // Devise d'affichage optionnelle transmise par le modal (x-display-currency / x-display-amount)
         const displayCurrencyHeader = request.headers.get('x-display-currency')?.toUpperCase()
         const displayAmountHeader = request.headers.get('x-display-amount')
-        const VALID_CURRENCIES = new Set(['XOF', 'EUR', 'USD', 'GBP'])
+        const VALID_CURRENCIES = new Set(['XOF', 'EUR', 'USD', 'GBP', 'HTG'])
         const useDisplayCurrency = (
             displayCurrencyHeader &&
             VALID_CURRENCIES.has(displayCurrencyHeader) &&

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    const [docsRes, ordersRes, depsRes, settingsRes] = await Promise.all([
+    const [docsRes, ordersRes, depsRes, settingsRes, paiemRes, agentsRes, cloturesRes] = await Promise.all([
         supabase
             .from('documents_financiers')
             .select(`
@@ -44,6 +44,19 @@ export async function GET(request: NextRequest) {
             .select('key,value')
             .eq('key', 'commission_rate')
             .maybeSingle(),
+        supabase
+            .from('paiements_manuels')
+            .select('id,document_id,type,montant,date_paiement,reference,notes,agent_id')
+            .order('date_paiement', { ascending: false })
+            .limit(10000),
+        supabase
+            .from('user_profiles')
+            .select('id,full_name,role')
+            .in('role', ['agent', 'admin', 'ceo', 'super_admin']),
+        supabase
+            .from('clotures_mensuelles')
+            .select('id,periode,date_cloture,cloture_par_nom,total_encaisse,total_depenses,total_tva,benefice_net,total_commissions,benefice_net_final,nb_documents,nb_paiements,nb_depenses,notes,hash_integrite,status,reopened_at,reopened_par_nom,reopen_count')
+            .order('periode', { ascending: false }),
     ])
 
     // Validation commissionRate : doit être entre 0 et 1 (pas un % comme 10)
@@ -61,11 +74,17 @@ export async function GET(request: NextRequest) {
         docs:           docsRes.data     || [],
         orders:         ordersRes.data   || [],
         depenses:       depsRes.data     || [],
+        paiements:      paiemRes.data    || [],
+        agents:         agentsRes.data   || [],
+        clotures:       cloturesRes.data || [],
         commissionRate,
         errors: {
             docs:     docsRes.error?.message     || null,
             orders:   ordersRes.error?.message   || null,
             depenses: depsRes.error?.message     || null,
+            paiements: paiemRes.error?.message   || null,
+            agents:   agentsRes.error?.message   || null,
+            clotures: cloturesRes.error?.message || null,
         }
     })
 }

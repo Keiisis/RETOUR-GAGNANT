@@ -40,6 +40,13 @@ const statusLabel: Record<string, { label: string; color: string }> = {
 
 const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
+// Safe date formatter to avoid RangeError: Invalid time value
+const formatDateSafe = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+}
+
 export default function ClientDashboardPage() {
     const [stats, setStats] = useState<Stats>({ devisEnAttente: 0, facturesToPay: 0, dossierActif: false, messagesNonLus: 0, totalDépenses: 0 })
     const [recentDocs, setRecentDocs] = useState<RecentDoc[]>([])
@@ -293,7 +300,7 @@ export default function ClientDashboardPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-white">{doc.numero}</p>
-                                                <p className="text-[11px] text-gray-500">{new Date(doc.created_at).toLocaleDateString('fr-FR')}</p>
+                                                <p className="text-[11px] text-gray-500">{formatDateSafe(doc.created_at)}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-mono font-bold text-white">{fmtN(doc.total)} {doc.currency || 'XOF'}</p>

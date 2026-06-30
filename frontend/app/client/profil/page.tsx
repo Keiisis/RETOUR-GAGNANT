@@ -152,7 +152,11 @@ export default function ClientProfilPage() {
                         <Mail size={12} /> {profile?.email}
                     </p>
                     <p className="text-[10px] text-gray-700 mt-0.5">
-                        Membre depuis {profile ? new Date(profile.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '—'}
+                        Membre depuis {(() => {
+                            if (!profile?.created_at) return '—';
+                            const d = new Date(profile.created_at);
+                            return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                        })()}
                     </p>
                 </div>
             </div>
@@ -185,44 +189,44 @@ export default function ClientProfilPage() {
                 <form onSubmit={handleSave} className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Prénom</label>
-                            <input type="text" value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
+                            <label htmlFor="clientPrenom" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Prénom</label>
+                            <input id="clientPrenom" type="text" value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
                                 placeholder="Votre prénom"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Nom</label>
-                            <input type="text" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+                            <label htmlFor="clientNom" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Nom</label>
+                            <input id="clientNom" type="text" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
                                 placeholder="Votre nom"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Email</label>
+                        <label htmlFor="clientEmail" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                            <input type="email" value={profile?.email || ''} disabled
+                            <input id="clientEmail" type="email" value={profile?.email || ''} disabled
                                 className="w-full bg-white/[0.02] border border-white/[0.04] rounded-xl py-2.5 pl-9 pr-3 text-gray-500 text-sm cursor-not-allowed" />
                         </div>
                         <p className="text-[10px] text-gray-700 mt-1">L'email ne peut pas être modifié.</p>
                     </div>
 
                     <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Téléphone</label>
+                        <label htmlFor="clientPhone" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Téléphone</label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                            <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                            <input id="clientPhone" type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                                 placeholder="+33 6 00 00 00 00"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Adresse</label>
+                        <label htmlFor="clientAdresse" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Adresse</label>
                         <div className="relative">
                             <MapPin className="absolute left-3 top-3 text-gray-600" size={14} />
-                            <input type="text" value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
+                            <input id="clientAdresse" type="text" value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
                                 placeholder="Votre adresse"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
@@ -230,14 +234,14 @@ export default function ClientProfilPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Ville</label>
-                            <input type="text" value={form.ville} onChange={e => setForm(f => ({ ...f, ville: e.target.value }))}
+                            <label htmlFor="clientVille" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Ville</label>
+                            <input id="clientVille" type="text" value={form.ville} onChange={e => setForm(f => ({ ...f, ville: e.target.value }))}
                                 placeholder="Paris"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Pays</label>
-                            <input type="text" value={form.pays} onChange={e => setForm(f => ({ ...f, pays: e.target.value }))}
+                            <label htmlFor="clientPays" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Pays</label>
+                            <input id="clientPays" type="text" value={form.pays} onChange={e => setForm(f => ({ ...f, pays: e.target.value }))}
                                 placeholder="France"
                                 className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
@@ -278,12 +282,13 @@ export default function ClientProfilPage() {
                 <form onSubmit={handlePasswordChange} className="space-y-3">
                     {(['current', 'new', 'confirm'] as const).map(field => (
                         <div key={field}>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">
+                            <label htmlFor={`pwd-${field}`} className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">
                                 {field === 'current' ? 'Mot de passe actuel' : field === 'new' ? 'Nouveau mot de passe' : 'Confirmer le nouveau'}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
                                 <input
+                                    id={`pwd-${field}`}
                                     type={showPwd[field] ? 'text' : 'password'}
                                     required
                                     value={pwdForm[field]}
@@ -293,6 +298,8 @@ export default function ClientProfilPage() {
                                     className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-10 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors"
                                 />
                                 <button type="button" onClick={() => setShowPwd(s => ({ ...s, [field]: !s[field] }))}
+                                    title={showPwd[field] ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                    aria-label={showPwd[field] ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-400 transition-colors" tabIndex={-1}>
                                     {showPwd[field] ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>

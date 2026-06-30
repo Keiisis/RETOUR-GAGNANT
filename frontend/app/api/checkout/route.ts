@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, CHECKOUT_LIMIT } from '@/lib/rate-limit'
+import { scanRequestBody } from '@/lib/waf'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -28,7 +29,12 @@ export async function POST(request: Request) {
         }
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
-        const body = await request.json()
+
+        // ── WAF #2 : analyse structurelle du body (proto pollution / RCE / SSRF / DoS) ──
+        const { body: scanned, rejection } = await scanRequestBody(request)
+        if (rejection) return rejection
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const body = (scanned ?? {}) as any
 
         const {
             product_id,
@@ -255,35 +261,21 @@ export async function POST(request: Request) {
                 validatedAmount = expectedTotal
             }
 
-            // ═══ STOCK RESERVATION (Atomic) ═══════════════════════════
-            // Reserve stock for each product before creating the order.
-            // If any reservation fails, roll back all previous ones.
+            // ═══ STOCK RESERVATION (Désactivé à la création) ═══════════════════════════
+            // On ne réserve plus le stock à l'étape du checkout car cela crée des ruptures
+            // de stock fantômes si le client abandonne la page de paiement Kkiapay/Fedapay.
+            // Le stock sera décrémenté uniquement par le Webhook lors du succès du paiement.
             const itemsToReserve = cart_items && cart_items.length > 0
                 ? cart_items
                 : [{ product_id, quantity: quantity || 1 }]
 
+            // Vérification simple du stock sans le décrémenter
             for (const item of itemsToReserve) {
-                if (!item.product_id) continue
-
-                const { data: result, error: rpcError } = await supabase.rpc('reserve_stock', {
-                    p_product_id: item.product_id,
-                    p_quantity: item.quantity || 1,
-                })
-
-                if (rpcError || (result && !result.success)) {
-                    // Rollback all previously reserved items
-                    for (const reserved of reservedItems) {
-                        await supabase.rpc('release_stock', {
-                            p_product_id: reserved.product_id,
-                            p_quantity: reserved.quantity,
-                        })
-                    }
-
-                    const errorMsg = result?.error || rpcError?.message || 'Erreur de réservation du stock'
-                    return NextResponse.json({ error: errorMsg }, { status: 409 })
+                if (!item.product_id) continue;
+                const { data: prod } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+                if (prod && prod.stock < (item.quantity || 1)) {
+                     return NextResponse.json({ error: `Stock insuffisant pour l'un des articles` }, { status: 409 })
                 }
-
-                reservedItems.push({ product_id: item.product_id, quantity: item.quantity || 1 })
             }
         }
 
@@ -312,13 +304,6 @@ export async function POST(request: Request) {
             .single()
 
         if (error) {
-            // Rollback stock if order creation fails
-            for (const reserved of reservedItems) {
-                await supabase.rpc('release_stock', {
-                    p_product_id: reserved.product_id,
-                    p_quantity: reserved.quantity,
-                })
-            }
             console.error('Order creation error:', error)
             return NextResponse.json(
                 { error: `Erreur DB: ${error.message}` },
@@ -337,12 +322,6 @@ export async function POST(request: Request) {
                 // L'incrément a échoué (fonction SQL manquante ou erreur DB) — annuler la commande
                 console.error('[Checkout] increment_coupon_use failed:', incrErr.message)
                 await supabase.from('orders').delete().eq('id', data.id)
-                for (const reserved of reservedItems) {
-                    await supabase.rpc('release_stock', {
-                        p_product_id: reserved.product_id,
-                        p_quantity: reserved.quantity,
-                    })
-                }
                 return NextResponse.json(
                     { error: 'Erreur lors de l\'application du code promo. Veuillez réessayer.' },
                     { status: 500 }
@@ -362,12 +341,6 @@ export async function POST(request: Request) {
                 if (decrErr) console.error('[Checkout] decrement_coupon_use failed:', decrErr.message)
                 // Annuler la commande et libérer le stock
                 await supabase.from('orders').delete().eq('id', data.id)
-                for (const reserved of reservedItems) {
-                    await supabase.rpc('release_stock', {
-                        p_product_id: reserved.product_id,
-                        p_quantity: reserved.quantity,
-                    })
-                }
                 return NextResponse.json(
                     { error: 'Ce code promo a atteint sa limite d\'utilisation. Veuillez réessayer sans coupon.' },
                     { status: 409 }
@@ -376,6 +349,8 @@ export async function POST(request: Request) {
         }
 
         // Auto-create Nexus Tracker entry for order tracking
+        // (Modifié : On ne crée plus le dossier_tracking ici. Il sera créé uniquement quand le paiement sera complété, via un trigger ou le webhook, pour éviter d'encombrer le dashboard avec des commandes non payées).
+        /*
         const orderRef = `RG-CMD-${data.id.substring(0, 8).toUpperCase()}`
         const orderSteps = [
             { id: 1, label: 'Commande reçue', status: 'completed', date: new Date().toISOString().split('T')[0], note: 'Commande en ligne' },
@@ -401,6 +376,7 @@ export async function POST(request: Request) {
         }).then(({ error: trackErr }) => {
             if (trackErr) console.error('[TRACKER] Boutique track error:', trackErr.message)
         })
+        */
 
         return NextResponse.json({ order_id: data.id })
     } catch {

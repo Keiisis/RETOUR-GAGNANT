@@ -36,30 +36,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Commande déjà payée, annulation impossible' }, { status: 409 })
         }
 
-        // Déjà annulée — idempotent
-        if (order.payment_status === 'cancelled') {
+        // Déjà annulée ou abandonnée — idempotent
+        if (order.payment_status === 'cancelled' || order.payment_status === 'abandoned') {
             return NextResponse.json({ success: true })
         }
 
-        // Libérer le stock (inverse de reserve_stock)
-        const itemsToRelease: { product_id: string; quantity: number }[] =
-            order.cart_items && order.cart_items.length > 0
-                ? order.cart_items
-                : [{ product_id: order.product_id, quantity: order.quantity || 1 }]
-
-        for (const item of itemsToRelease) {
-            if (!item.product_id) continue
-            await supabase.rpc('release_stock', {
-                p_product_id: item.product_id,
-                p_quantity: item.quantity || 1,
-            })
-        }
-
-        // Marquer la commande comme annulée
+        // Marquer la commande comme panier abandonné
         await supabase
             .from('orders')
-            .update({ payment_status: 'cancelled' })
+            .update({ payment_status: 'abandoned' })
             .eq('id', order_id)
+
+        // Déclencher la notification d'abandon
+        try {
+            const proto = request.headers.get('x-forwarded-proto') || 'http'
+            const host = request.headers.get('host')
+            const notifUrl = new URL('/api/notifications/order', `${proto}://${host}`).toString()
+            await fetch(notifUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id, type: 'abandoned' })
+            })
+        } catch (e) {
+            console.error('Erreur notification abandon:', e)
+        }
 
         return NextResponse.json({ success: true })
     } catch {

@@ -1,64 +1,55 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import PartnerCard from './PartnerCard'
+import PartnerCard, { Partner } from './PartnerCard'
 import PartnerProfileModal from './PartnerProfileModal'
-import type { Partner } from './PartnerCard'
 import { Button } from '@/components/ui/button'
 import { Search, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
-import { useTranslation, T } from '@/lib/translation'
 
 const FALLBACK_PARTNERS: Partner[] = [
     {
-        id: 1,
-        name: 'Immo Bénin Prestige',
+        id: 1, name: 'Immo Bénin Prestige', isPremium: true,
         description: 'Agence immobilière de luxe spécialisée dans les villas et appartements meublés à Cotonou et Ouidah.',
-        logo: '', coverImage: '',
-        category: 'Immobilier', location: 'Cotonou, Haie Vive',
-        isPremium: true, products: [],
-    },
-    {
-        id: 2,
-        name: 'Saveurs du Terroir',
-        description: 'Exportation de produits agroalimentaires béninois bio.',
-        logo: '', coverImage: '',
-        category: 'Agro-Business', location: 'Abomey-Calavi',
+        logo: '', coverImage: '', category: 'Immobilier', location: 'Cotonou, Haie Vive',
+        email: 'contact@immobeninprestige.bj', phone: '+229 97000000', whatsapp: '+22997000000',
         products: [],
     },
     {
-        id: 3,
-        name: 'Art & Racines',
-        description: "Galerie d'art proposant des sculptures et toiles d'artistes béninois.",
-        logo: '', coverImage: '',
-        category: 'Art & Culture', location: 'Ouidah',
-        isPremium: true, products: [],
+        id: 2, name: 'Saveurs du Terroir',
+        description: 'Exportation de produits agroalimentaires béninois bio certifiés vers la diaspora.',
+        logo: '', coverImage: '', category: 'Agro-Business', location: 'Abomey-Calavi',
+        email: 'info@saveursterroir.bj', whatsapp: '+22996000000',
+        products: [],
     },
     {
-        id: 4,
-        name: 'Tech Hub Cotonou',
-        description: 'Espace de coworking et incubateur pour startups numériques.',
-        logo: '', coverImage: '',
-        category: 'Services & Tech', location: 'Cotonou, Ganhi',
+        id: 3, name: 'Art & Racines', isPremium: true,
+        description: 'Galerie d\'art proposant des sculptures et toiles d\'artistes béninois reconnus.',
+        logo: '', coverImage: '', category: 'Art & Culture', location: 'Ouidah',
+        email: 'galerie@artracines.bj', phone: '+229 95000000', whatsapp: '+22995000000',
+        products: [],
+    },
+    {
+        id: 4, name: 'Tech Hub Cotonou',
+        description: 'Espace de coworking et incubateur pour startups numériques de l\'Afrique de l\'Ouest.',
+        logo: '', coverImage: '', category: 'Services & Tech', location: 'Cotonou, Ganhi',
+        email: 'hello@techubcotonou.bj',
         products: [],
     },
 ]
 
 const CATEGORIES = [
-    'Tous', 'Immobilier', 'Agro-Business', 'Art & Culture',
-    'Services & Tech', 'Mode & Beauté', 'Tourisme & Hôtellerie',
-    'Santé & Bien-être', 'Finance & Investissement',
-    'Éducation & Formation', 'Commerce & Distribution',
+    'Tous', 'Immobilier', 'Agro-Business', 'Art & Culture', 'Services & Tech',
+    'Mode & Beauté', 'Tourisme & Hôtellerie', 'Santé & Bien-être', 'Finance & Investissement',
 ]
 
 export default function PartnerDirectory() {
-    const { t } = useTranslation()
     const [partners, setPartners] = useState<Partner[]>(FALLBACK_PARTNERS)
     const [selectedCategory, setSelectedCategory] = useState('Tous')
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
-    const [selected, setSelected] = useState<Partner | null>(null)
+    const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null)
 
     useEffect(() => {
         const fetchPartners = async () => {
@@ -78,16 +69,15 @@ export default function PartnerDirectory() {
                         coverImage: p.cover_image ? String(p.cover_image) : '',
                         category: String(p.category || ''),
                         location: String(p.location || ''),
-                        website: p.website ? String(p.website) : undefined,
-                        phone: p.phone ? String(p.phone) : undefined,
-                        email: p.email ? String(p.email) : undefined,
-                        whatsapp: p.whatsapp ? String(p.whatsapp) : undefined,
-                        facebook: p.facebook_url ? String(p.facebook_url) : undefined,
-                        instagram: p.instagram_url ? String(p.instagram_url) : undefined,
-                        linkedin: p.linkedin_url ? String(p.linkedin_url) : undefined,
                         isPremium: Boolean(p.is_premium),
+                        email:    p.email        ? String(p.email)        : undefined,
+                        phone:    p.phone        ? String(p.phone)        : undefined,
+                        whatsapp: p.whatsapp     ? String(p.whatsapp)     : undefined,
+                        website:  p.website      ? String(p.website)      : undefined,
+                        facebook: p.facebook_url ? String(p.facebook_url) : undefined,
+                        instagram:p.instagram_url? String(p.instagram_url): undefined,
+                        linkedin: p.linkedin_url ? String(p.linkedin_url) : undefined,
                         products: Array.isArray(p.products) ? p.products : [],
-                        gallery: Array.isArray(p.gallery) ? p.gallery : [],
                     })))
                 }
             } catch {
@@ -99,87 +89,81 @@ export default function PartnerDirectory() {
         fetchPartners()
     }, [])
 
-    const filtered = partners.filter(p => {
-        const matchesCat = selectedCategory === 'Tous' || p.category === selectedCategory
-        const q = searchQuery.toLowerCase()
-        const tName = t(p.name).toLowerCase()
-        const tDesc = t(p.description).toLowerCase()
-        const tLoc = t(p.location).toLowerCase()
-
-        const matchesSearch = !q ||
-            tName.includes(q) ||
-            tDesc.includes(q) ||
-            tLoc.includes(q)
-        return matchesCat && matchesSearch
+    const filteredPartners = partners.filter(partner => {
+        const matchesCategory = selectedCategory === 'Tous' || partner.category === selectedCategory
+        const matchesSearch =
+            partner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            partner.description.toLowerCase().includes(searchQuery.toLowerCase())
+        return matchesCategory && matchesSearch
     })
 
     return (
         <>
-            <section className="py-12 bg-gray-50 min-h-screen">
+            <section className="py-12 bg-[#FAF8F4] min-h-screen">
                 <div className="container mx-auto px-4">
-
                     {/* Filters */}
-                    <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-12">
+                    <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-12">
                         <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto no-scrollbar">
                             {CATEGORIES.map(cat => (
                                 <Button
                                     key={cat}
-                                    type="button"
                                     variant={selectedCategory === cat ? 'default' : 'outline'}
                                     onClick={() => setSelectedCategory(cat)}
-                                    className={`rounded-full whitespace-nowrap text-sm flex-shrink-0 ${selectedCategory === cat
-                                            ? 'bg-[#008751] hover:bg-[#006e42] text-white border-transparent'
-                                            : 'border-gray-200 text-gray-600 hover:border-[#008751] hover:text-[#008751]'
-                                        }`}
+                                    className={`rounded-full whitespace-nowrap text-sm ${selectedCategory === cat
+                                        ? 'bg-[#008751] hover:bg-[#006e42] text-white border-none'
+                                        : 'border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751]'
+                                    }`}
                                 >
-                                    {t(cat)}
+                                    {cat}
                                 </Button>
                             ))}
                         </div>
                         <div className="relative w-full md:w-72 flex-shrink-0">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <Input
-                                placeholder={t("Rechercher un partenaire...")}
-                                className="pl-10 bg-white border-gray-200 rounded-full"
+                                placeholder="Rechercher un partenaire..."
+                                className="pl-10 bg-white border-gray-200 rounded-full shadow-sm"
                                 value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </div>
 
                     {/* Grid */}
                     {loading ? (
-                        <div className="flex justify-center py-24">
+                        <div className="flex justify-center py-20">
                             <Loader2 className="w-8 h-8 animate-spin text-[#008751]" />
                         </div>
-                    ) : filtered.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filtered.map(partner => (
-                                <PartnerCard
-                                    key={partner.id}
-                                    partner={partner}
-                                    onClick={() => setSelected(partner)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-24 flex flex-col items-center gap-3 opacity-50">
-                            <p className="text-xl font-semibold"><T>Aucun partenaire trouvé.</T></p>
+                    ) : filteredPartners.length === 0 ? (
+                        <div className="text-center py-20 opacity-50">
+                            <p className="text-xl font-medium text-[#1a2332]">Aucun partenaire trouvé.</p>
                             <Button
-                                type="button"
                                 variant="link"
                                 className="text-[#008751]"
                                 onClick={() => { setSelectedCategory('Tous'); setSearchQuery('') }}
                             >
-                                <T>Réinitialiser les filtres</T>
+                                Réinitialiser les filtres
                             </Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredPartners.map(partner => (
+                                <PartnerCard
+                                    key={partner.id}
+                                    partner={partner}
+                                    onClick={() => setSelectedPartner(partner)}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Profile modal — rendered outside the section to escape overflow */}
-            <PartnerProfileModal partner={selected} onClose={() => setSelected(null)} />
+            {/* Profile Modal */}
+            <PartnerProfileModal
+                partner={selectedPartner}
+                onClose={() => setSelectedPartner(null)}
+            />
         </>
     )
 }

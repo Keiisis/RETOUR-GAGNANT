@@ -50,6 +50,11 @@ export default function AgentAgendaPage() {
     const [selectedRDV, setSelectedRDV] = useState<RDV | null>(null)
     const [selectedDay, setSelectedDay] = useState<number | null>(null)
     const [saving, setSaving] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Inline email reply state
     const [replyMode, setReplyMode] = useState(false)
@@ -182,14 +187,16 @@ export default function AgentAgendaPage() {
         const sA = statutOrder[a.statut] ?? 4
         const sB = statutOrder[b.statut] ?? 4
         if (sA !== sB) return sA - sB
-        if (!a.date && !b.date) return 0
-        if (!a.date) return 1
-        if (!b.date) return -1
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
+        const timeA = a.date && !isNaN(new Date(a.date).getTime()) ? new Date(a.date).getTime() : 0
+        const timeB = b.date && !isNaN(new Date(b.date).getTime()) ? new Date(b.date).getTime() : 0
+        return timeB - timeA
     })
 
     const upcomingEvents = events.filter(e => {
+        if (!mounted) return false
+        if (!e.date) return false
         const d = new Date(e.date)
+        if (isNaN(d.getTime())) return false
         const diff = (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
         return diff >= -1 && diff <= 14
     })
@@ -217,9 +224,9 @@ export default function AgentAgendaPage() {
                 {/* Calendar */}
                 <div className="xl:col-span-2 bg-white/[0.03] border border-white/5 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <button type="button" onClick={prevMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois précédent"><ChevronLeft size={20} /></button>
-                        <h2 className="text-lg font-bold text-white capitalize">{currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h2>
-                        <button type="button" onClick={nextMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois suivant"><ChevronRight size={20} /></button>
+                        <button type="button" onClick={prevMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois précédent" aria-label="Mois précédent"><ChevronLeft size={20} /></button>
+                        <h2 className="text-lg font-bold text-white capitalize">{mounted ? currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : ''}</h2>
+                        <button type="button" onClick={nextMonth} className="text-gray-500 hover:text-white transition-colors" title="Mois suivant" aria-label="Mois suivant"><ChevronRight size={20} /></button>
                     </div>
                     <div className="grid grid-cols-7 gap-1">
                         {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(d => (
@@ -274,7 +281,7 @@ export default function AgentAgendaPage() {
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
                                             <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                                                {new Date(selectedDayItems.dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                                {mounted && selectedDayItems?.dateStr && !isNaN(new Date(selectedDayItems.dateStr + 'T12:00:00').getTime()) ? new Date(selectedDayItems.dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
                                             </p>
                                             <p className="text-xs text-gray-500 mt-0.5">
                                                 {selectedDayItems.events.length + selectedDayItems.rdvs.length} élément(s)
@@ -286,10 +293,11 @@ export default function AgentAgendaPage() {
                                                 onClick={() => openAddEventForDay(selectedDay)}
                                                 className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
                                                 title="Ajouter un événement"
+                                                aria-label="Ajouter un événement"
                                             >
                                                 <Plus size={14} />
                                             </button>
-                                            <button type="button" onClick={() => setSelectedDay(null)} className="text-gray-500 hover:text-white" title="Fermer">
+                                            <button type="button" onClick={() => setSelectedDay(null)} className="text-gray-500 hover:text-white" title="Fermer" aria-label="Fermer">
                                                 <X size={14} />
                                             </button>
                                         </div>
@@ -306,7 +314,7 @@ export default function AgentAgendaPage() {
                                                     const Icon = config.icon
                                                     return (
                                                         <div key={event.id} className={`p-3 rounded-xl border ${config.color} group relative`}>
-                                                            <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer"><Trash2 size={11} /></button>
+                                                            <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer" aria-label="Supprimer l'événement"><Trash2 size={11} /></button>
                                                             <div className="flex items-start gap-2">
                                                                 <Icon size={13} className="mt-0.5 flex-shrink-0" />
                                                                 <div>
@@ -356,7 +364,7 @@ export default function AgentAgendaPage() {
                                                     </span>
                                                 </div>
                                                 <p className="text-[10px] text-gray-500 mt-0.5">
-                                                    {rdv.date ? new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR') : 'Date à confirmer'}{rdv.heure ? ` à ${rdv.heure}` : ''}
+                                                    {rdv.date && !isNaN(new Date(rdv.date + 'T12:00:00').getTime()) ? new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR') : 'Date à confirmer'}{rdv.heure ? ` à ${rdv.heure}` : ''}
                                                 </p>
                                                 <p className="text-[10px] text-gray-600 mt-0.5 line-clamp-1">{rdv.motif}</p>
                                             </div>
@@ -377,12 +385,12 @@ export default function AgentAgendaPage() {
                                             const Icon = config.icon
                                             return (
                                                 <div key={event.id} className={`p-3 rounded-xl border ${config.color} group relative`}>
-                                                    <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer"><X size={12} /></button>
+                                                    <button type="button" onClick={() => handleDeleteEvent(event.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all" title="Supprimer" aria-label="Supprimer l'événement"><X size={12} /></button>
                                                     <div className="flex items-start gap-2">
                                                         <Icon size={14} className="mt-0.5 flex-shrink-0" />
                                                         <div>
                                                             <p className="text-xs font-bold">{event.title}</p>
-                                                            <p className="text-[10px] opacity-70 mt-0.5">{new Date(event.date).toLocaleDateString('fr-FR')} à {event.time}</p>
+                                                            <p className="text-[10px] opacity-70 mt-0.5">{event.date && !isNaN(new Date(event.date).getTime()) ? new Date(event.date).toLocaleDateString('fr-FR') : '—'} à {event.time}</p>
                                                             {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
                                                         </div>
                                                     </div>
@@ -404,7 +412,7 @@ export default function AgentAgendaPage() {
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-[#0a0f14] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-white">Demande de Rendez-vous</h3>
-                                <button type="button" onClick={() => { setSelectedRDV(null); setReplyMode(false); setReplyMsg(''); setEmailSent(false) }} className="text-gray-500 hover:text-white" title="Fermer"><X size={18} /></button>
+                                <button type="button" onClick={() => { setSelectedRDV(null); setReplyMode(false); setReplyMsg(''); setEmailSent(false) }} className="text-gray-500 hover:text-white" title="Fermer" aria-label="Fermer"><X size={18} /></button>
                             </div>
                             <div className="space-y-3">
                                 {/* Statut */}
@@ -426,7 +434,7 @@ export default function AgentAgendaPage() {
                                     {getVisitorPhone(selectedRDV) && <div className="flex items-center gap-2 text-sm text-gray-300"><Phone size={14} className="text-emerald-400" /> {getVisitorPhone(selectedRDV)}</div>}
                                     <div className="flex items-center gap-2 text-sm text-gray-300">
                                         <CalendarDays size={14} className="text-emerald-400" />
-                                        {selectedRDV.date
+                                     {selectedRDV.date && !isNaN(new Date(selectedRDV.date + 'T12:00:00').getTime())
                                             ? new Date(selectedRDV.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
                                             : 'Date à confirmer'
                                         }{selectedRDV.heure ? ` à ${selectedRDV.heure}` : ''}
@@ -454,7 +462,7 @@ export default function AgentAgendaPage() {
                                     ) : null
                                 })()}
 
-                                <p className="text-[10px] text-gray-500">Reçu le {new Date(selectedRDV.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                 <p className="text-[10px] text-gray-500">Reçu le {selectedRDV.created_at && !isNaN(new Date(selectedRDV.created_at).getTime()) ? new Date(selectedRDV.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</p>
 
                                 {/* Actions statut */}
                                 {selectedRDV.statut === 'en_attente' && (
@@ -522,7 +530,7 @@ export default function AgentAgendaPage() {
                                     <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} title="Date" className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50" />
                                     <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} title="Heure" className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50" />
                                 </div>
-                                <select value={newType} onChange={e => setNewType(e.target.value)} title="Type" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50">
+                                <select value={newType} onChange={e => setNewType(e.target.value)} title="Type" aria-label="Type d'événement" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50">
                                     <option value="rdv_client">RDV Client</option>
                                     <option value="appel">Appel</option>
                                     <option value="visite">Visite Terrain</option>

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function POST(request: Request) {
     try {
@@ -16,35 +15,45 @@ export async function POST(request: Request) {
 
         const supabase = createClient(supabaseUrl, serviceKey);
 
-        // 1. Create the session in `messages` table
-        const { data: sessionData, error: sessionError } = await supabase
+        // 1. Créer une entrée dans `messages` (visible dans l'inbox agent immédiatement)
+        //    On utilise le même id comme conversation_id dans chat_messages → cohérence garantie
+        const { data: msgData, error: msgError } = await supabase
             .from('messages')
             .insert({
-                nom: nom,
-                prenom: "",
-                email: email || "anonyme@livechat.com",
-                sujet: "Live Chat Session",
-                message: question,
+                nom: nom.trim(),
+                prenom: '',
+                email: (email || 'anonyme@livechat.com').toLowerCase().trim(),
+                sujet: `💬 Live Chat — ${nom.trim()}`,
+                message: question.trim(),
                 type: 'support',
-                lu: false
+                lu: false,
             })
             .select('id')
             .single();
 
-        if (sessionError) throw sessionError;
+        if (msgError) {
+            console.error('[start_live] messages insert error:', msgError.message);
+            return NextResponse.json({ error: msgError.message }, { status: 500 });
+        }
 
-        // 2. Insert the first message into `chat_messages`
-        const { error: msgError } = await supabase
+        const sessionId = msgData.id;
+
+        // 2. Stocker le premier message dans chat_messages (history du chat)
+        const { error: chatError } = await supabase
             .from('chat_messages')
             .insert({
-                conversation_id: sessionData.id,
+                conversation_id: sessionId,
                 role: 'client',
-                content: question
+                content: question.trim(),
             });
 
-        if (msgError) throw msgError;
+        if (chatError) {
+            // Table chat_messages manquante — retourner quand même le sessionId
+            // Le message sera stocké dans `messages.message` comme fallback
+            console.error('[start_live] chat_messages error (table missing?):', chatError.message);
+        }
 
-        return NextResponse.json({ sessionId: sessionData.id });
+        return NextResponse.json({ sessionId });
     } catch (error) {
         console.error("Live Chat Start Error:", error);
         const message = error instanceof Error ? error.message : 'Unknown error'

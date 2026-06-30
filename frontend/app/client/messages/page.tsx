@@ -223,8 +223,16 @@ export default function ClientMessagesPage() {
     }
 
     const totalUnread = threads.filter(t => t.hasUnread).length
-    const fmtTime = (d: string) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+    const fmtTime = (d: string) => {
+        if (!d) return '—'
+        const dateObj = new Date(d)
+        return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    }
+    const fmtDate = (d: string) => {
+        if (!d) return '—'
+        const dateObj = new Date(d)
+        return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+    }
 
     return (
         <div className="space-y-6">

@@ -1,0 +1,94 @@
+{
+  "expo": {
+    "name": "Retour Gagnant Bénin",
+    "slug": "retour-gagnant-benin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "retourgagnant",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B2A4A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "bj.retourgagnantbenin.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Prenez une photo pour votre profil ou vos documents.",
+        "NSPhotoLibraryUsageDescription": "Sélectionnez des photos pour votre profil ou vos documents.",
+        "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux."
+      },
+      "associatedDomains": [
+        "applinks:www.retourgagnantbenin.bj",
+        "applinks:retourgagnantbenin.bj"
+      ]
+    },
+    "android": {
+      "package": "bj.retourgagnantbenin.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1B2A4A"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "www.retourgagnantbenin.bj", "pathPrefix": "/mobile-payment" },
+            { "scheme": "https", "host": "retourgagnantbenin.bj", "pathPrefix": "/mobile-payment" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6101f41c-f687-4263-af3e-049669ec6973"
+      }
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sélectionnez des photos pour vos documents.",
+          "cameraPermission": "Prenez une photo pour votre profil ou vos documents.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C9A84C",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ]
+    ],
+    "owner": "keysosi"
+  }
+}

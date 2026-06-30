@@ -5,6 +5,7 @@ import { useTranslation, T } from "@/lib/translation"
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Sparkles, Globe, Target, Calendar, Wallet, Award, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 
 interface OracleResult {
     service: string
@@ -90,6 +91,7 @@ export default function SimulateurPage() {
     const [nom, setNom] = useState('')
     const [prenom, setPrenom] = useState('')
     const [email, setEmail] = useState('')
+    const [consent, setConsent] = useState(false)
     const [whatsapp, setWhatsapp] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [result, setResult] = useState<OracleResult | null>(null)
@@ -110,7 +112,7 @@ export default function SimulateurPage() {
     }
 
     const handleSubmit = async () => {
-        if (!nom.trim() || !email.trim()) return
+        if (!nom.trim() || !email.trim() || !consent) return
         setIsSubmitting(true)
 
         try {
@@ -133,7 +135,7 @@ export default function SimulateurPage() {
     const progressPercent = isResultStep ? 100 : Math.round((currentStep / totalSteps) * 100)
 
     return (
-        <div className="min-h-screen bg-[#05080a] text-white relative overflow-hidden flex flex-col">
+        <div className="min-h-screen bg-white text-gray-900 relative overflow-hidden flex flex-col">
             {/* Background Effects */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#008751]/8 rounded-full blur-[200px]" />
@@ -155,7 +157,7 @@ export default function SimulateurPage() {
                     <h1 className="text-3xl md:text-5xl font-black font-heading mb-4 tracking-tight">
                         Trouvez votre <span className="bg-gradient-to-r from-[#FCD116] to-[#E8112D] bg-clip-text text-transparent"><T>voie</T></span>
                     </h1>
-                    <p className="text-gray-400 max-w-xl mx-auto">
+                    <p className="text-gray-500 max-w-xl mx-auto">
                         En 5 questions, découvrez le service Retour Gagnant fait pour vous.
                     </p>
                 </motion.div>
@@ -163,7 +165,7 @@ export default function SimulateurPage() {
                 {/* Progress Bar */}
                 {!isResultStep && (
                     <div className="w-full max-w-xl mb-10">
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <motion.div
                                 className="h-full bg-gradient-to-r from-[#008751] to-[#FCD116] rounded-full"
                                 animate={{ width: `${progressPercent}%` }}
@@ -193,11 +195,11 @@ export default function SimulateurPage() {
                                     const StepIcon = step.icon
                                     return (
                                         <div className="text-center">
-                                            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/5 border border-gray-200 flex items-center justify-center">
                                                 <StepIcon size={28} className="text-[#FCD116]" />
                                             </div>
                                             <h2 className="text-2xl font-black font-heading mb-2">{t(step.title)}</h2>
-                                            <p className="text-gray-400 mb-8">{t(step.subtitle)}</p>
+                                            <p className="text-gray-500 mb-8">{t(step.subtitle)}</p>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 {step.options.map((opt) => (
@@ -206,7 +208,7 @@ export default function SimulateurPage() {
                                                         onClick={() => selectAnswer(step.id, opt.value)}
                                                         className={`p-5 rounded-2xl border text-left transition-all group hover:scale-[1.02] ${answers[step.id] === opt.value
                                                                 ? 'bg-[#008751]/20 border-[#008751]/50 shadow-[0_0_30px_rgba(0,135,81,0.2)]'
-                                                                : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
+                                                                : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                                             }`}
                                                     >
                                                         <span className="text-2xl mb-2 block">{opt.emoji}</span>
@@ -233,36 +235,39 @@ export default function SimulateurPage() {
                                         <contactStep.icon size={28} className="text-[#FCD116]" />
                                     </div>
                                     <h2 className="text-2xl font-black font-heading mb-2">{t(contactStep.title)}</h2>
-                                    <p className="text-gray-400">{t(contactStep.subtitle)}</p>
+                                    <p className="text-gray-500">{t(contactStep.subtitle)}</p>
                                 </div>
 
                                 <div className="max-w-md mx-auto space-y-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block"><T>Nom</T></label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5 block"><T>Nom</T></label>
                                             <input type="text" required value={nom} onChange={e => setNom(e.target.value)} placeholder={t("Votre nom")}
-                                                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#008751]" />
+                                                className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl text-slate-900 placeholder-gray-400 focus:outline-none focus:border-[#008751] focus:bg-slate-50/50" />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block"><T>Prénom</T></label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5 block"><T>Prénom</T></label>
                                             <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)} placeholder={t("Votre prénom")}
-                                                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#008751]" />
+                                                className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl text-slate-900 placeholder-gray-400 focus:outline-none focus:border-[#008751] focus:bg-slate-50/50" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block"><T>Email</T></label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5 block"><T>Email</T></label>
                                         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={t("votre@email.com")}
-                                            className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#008751]" />
+                                            className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl text-slate-900 placeholder-gray-400 focus:outline-none focus:border-[#008751] focus:bg-slate-50/50" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 block"><T>WhatsApp (optionnel)</T></label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5 block"><T>WhatsApp (optionnel)</T></label>
                                         <input type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder={t("+229 XX XX XX XX")}
-                                            className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#008751]" />
+                                            className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl text-slate-900 placeholder-gray-400 focus:outline-none focus:border-[#008751] focus:bg-slate-50/50" />
                                     </div>
+
+                                    <ConsentCheckbox id="simulateur-consent" checked={consent} onChange={setConsent}
+                                        purpose="afin d'analyser mon profil et de me recontacter au sujet de mes besoins" className="mt-4" />
 
                                     <button
                                         onClick={handleSubmit}
-                                        disabled={isSubmitting || !nom.trim() || !email.trim()}
+                                        disabled={isSubmitting || !nom.trim() || !email.trim() || !consent}
                                         className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FCD116] to-[#E5BD14] text-black font-black uppercase tracking-[3px] text-[13px] hover:shadow-[0_8px_30px_rgba(252,209,22,0.3)] transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-6"
                                     >
                                         {isSubmitting ? (
@@ -293,10 +298,10 @@ export default function SimulateurPage() {
                                 {/* Score Ring */}
                                 <div className="relative w-40 h-40 mx-auto mb-8">
                                     <svg className="w-40 h-40 -rotate-90" viewBox="0 0 100 100">
-                                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+                                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(0,135,81,0.1)" strokeWidth="6" />
                                         <motion.circle
                                             cx="50" cy="50" r="42" fill="none"
-                                            stroke="#FCD116"
+                                            stroke="#008751"
                                             strokeWidth="6"
                                             strokeLinecap="round"
                                             strokeDasharray={`${2 * Math.PI * 42}`}
@@ -306,8 +311,8 @@ export default function SimulateurPage() {
                                         />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-4xl font-black font-mono text-[#FCD116]">{result.score}</span>
-                                        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold"><T>score</T></span>
+                                        <span className="text-4xl font-black font-mono text-[#008751]">{result.score}</span>
+                                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold"><T>score</T></span>
                                     </div>
                                 </div>
 
@@ -316,10 +321,10 @@ export default function SimulateurPage() {
                                 </h2>
 
                                 {/* Recommendation Card */}
-                                <div className="bg-gradient-to-br from-[#008751]/20 to-[#008751]/5 border border-[#008751]/30 rounded-3xl p-8 mb-8 backdrop-blur-xl max-w-lg mx-auto">
-                                    <Sparkles size={32} className="text-[#FCD116] mx-auto mb-4" />
-                                    <h3 className="text-2xl font-black font-heading text-[#FCD116] mb-2">{t(result.service)}</h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed">
+                                <div className="bg-gradient-to-br from-[#008751]/10 to-[#008751]/5 border border-[#008751]/20 rounded-3xl p-8 mb-8 backdrop-blur-xl max-w-lg mx-auto shadow-sm">
+                                    <Sparkles size={32} className="text-[#A68B3C] mx-auto mb-4" />
+                                    <h3 className="text-2xl font-black font-heading text-[#008751] mb-2">{t(result.service)}</h3>
+                                    <p className="text-gray-500 text-sm leading-relaxed">
                                         {result.hasOrigins
                                             ? t('Vos origines béninoises renforcent votre éligibilité. Notre équipe est prête à vous accompagner dans cette démarche.')
                                             : t('Votre profil montre un fort intérêt pour le Bénin. Nous sommes prêts à vous accompagner.')}
@@ -357,7 +362,7 @@ export default function SimulateurPage() {
                     >
                         <button
                             onClick={() => setCurrentStep(prev => prev - 1)}
-                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+                            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
                         >
                             <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                             <span className="text-sm font-bold uppercase tracking-widest"><T>Précédent</T></span>

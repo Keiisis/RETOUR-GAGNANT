@@ -10,6 +10,12 @@ import {
     Sparkles, Mail, Target
 } from 'lucide-react'
 
+const formatDate = (val: string | null | undefined) => {
+    if (!val) return '—'
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+}
+
 interface Lead {
     id: number
     client_nom: string
@@ -102,8 +108,10 @@ export default function AdminAnalyticsPage() {
             const monthCounts: Record<string, number> = {}
             leads.forEach((l) => {
                 const d = new Date(l.created_at)
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-                monthCounts[key] = (monthCounts[key] || 0) + 1
+                if (!isNaN(d.getTime())) {
+                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                    monthCounts[key] = (monthCounts[key] || 0) + 1
+                }
             })
             const leadsByMonth = Object.entries(monthCounts)
                 .map(([month, count]) => ({ month, count }))
@@ -251,7 +259,7 @@ export default function AdminAnalyticsPage() {
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${lead.is_contacted || lead.contacted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
                                         {lead.is_contacted || lead.contacted ? 'Contacté' : 'En attente'}
                                     </span>
-                                    <p className="text-[10px] text-gray-600 mt-1">{new Date(lead.created_at).toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-[10px] text-gray-600 mt-1">{formatDate(lead.created_at)}</p>
                                 </div>
                             </div>
                         ))}

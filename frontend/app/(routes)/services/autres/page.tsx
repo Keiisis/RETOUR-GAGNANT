@@ -166,7 +166,7 @@ export default function AutresServicesPage() {
                         <p className="text-gray-600 mb-6 max-w-xl mx-auto">
                             {t(content.cta_description)}
                         </p>
-                        <Link href="/rendez-vous">
+                        <Link href="/rendez-vous?service=autres">
                             <button type="button" className="px-8 py-3 bg-[#008751] text-white font-bold rounded-full hover:bg-[#006e42] transition-colors shadow-md hover:shadow-lg">
                                 {t(content.cta_button_text)}
                             </button>

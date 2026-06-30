@@ -10,6 +10,7 @@ export interface LangConfig {
     nativeLabel: string
     flag: string
     groqName: string
+    promptHint?: string // Extra instruction for the AI when translating to this language
 }
 
 export const SUPPORTED_LANGUAGES: LangConfig[] = [
@@ -17,8 +18,8 @@ export const SUPPORTED_LANGUAGES: LangConfig[] = [
     { code: 'en', label: 'Anglais', nativeLabel: 'English', flag: '🇬🇧', groqName: 'English' },
     { code: 'es', label: 'Espagnol', nativeLabel: 'Español', flag: '🇪🇸', groqName: 'Spanish' },
     { code: 'pt', label: 'Portugais', nativeLabel: 'Português', flag: '🇧🇷', groqName: 'Portuguese (Brazilian)' },
-    { code: 'cr', label: 'Créole', nativeLabel: 'Kréyòl', flag: '🇬🇵', groqName: 'Guadeloupean Creole (Antillean Creole)' },
-    { code: 'ht', label: 'Créole Haïtien', nativeLabel: 'Kreyòl Ayisyen', flag: '🇭🇹', groqName: 'Haitian Creole' },
+    { code: 'cr', label: 'Créole', nativeLabel: 'Kréyòl', flag: '🇬🇵', groqName: 'Antillean Creole French', promptHint: 'This is Kréyòl (Antillean Creole spoken in Guadeloupe, Martinique, and the French Caribbean). Use authentic Creole expressions. Example: "Bonjour" → "Bonjou", "Comment allez-vous ?" → "Ka ou fè ?", "Merci" → "Mèsi", "Bienvenue" → "Byenvini".' },
+    { code: 'ht', label: 'Créole Haïtien', nativeLabel: 'Kreyòl Ayisyen', flag: '🇭🇹', groqName: 'Haitian Creole', promptHint: 'This is Kreyòl Ayisyen (Haitian Creole). Use authentic Haitian Creole. Example: "Bonjour" → "Bonjou", "Comment allez-vous ?" → "Kijan ou ye ?", "Merci" → "Mèsi", "Bienvenue" → "Byenvini", "Je suis" → "Mwen se".' },
 ]
 
 export const DEFAULT_LANG: LangCode = 'fr'

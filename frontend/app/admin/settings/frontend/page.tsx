@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation, T } from '@/lib/translation';
-import { useList, useUpdate } from "@refinedev/core";
+import { useList, useUpdate, useCreate } from "@refinedev/core";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -30,6 +30,7 @@ export default function FrontendSettingsPage() {
     const isLoading = queryResult.query?.isLoading;
 
     const { mutate: updateSetting } = useUpdate();
+    const { mutate: createSetting } = useCreate();
     const [isSaving, setIsSaving] = useState(false);
 
     const [form, setForm] = useState({
@@ -39,6 +40,7 @@ export default function FrontendSettingsPage() {
         frontend_hero_subtitle: "",
         frontend_colors_primary: "#008751",
         passeport_show_calculator: "false",
+        services_show_calculator: "true",
         autres_services_json: "",
         about_us_title: "",
         about_us_video: "",
@@ -112,7 +114,13 @@ export default function FrontendSettingsPage() {
                         }, { onSuccess: resolve, onError: resolve });
                     });
                 }
-                return Promise.resolve();
+                // Clé absente en base → on la crée (ex. nouveau réglage déployé)
+                return new Promise((resolve) => {
+                    createSetting({
+                        resource: "settings",
+                        values: { key, value, category: "frontend" }
+                    }, { onSuccess: resolve, onError: resolve });
+                });
             });
 
             // Navbar links update
@@ -350,11 +358,28 @@ export default function FrontendSettingsPage() {
                         </div>
 
                         <div className="space-y-8">
-                            {/* Toggle PricingCalculator */}
+                            {/* Toggle GLOBAL — Calculateurs intelligents (tous les services) */}
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-green-500/[0.04] border border-green-500/20">
+                                <div>
+                                    <p className="text-sm font-bold text-white"><T>Calculateurs intelligents (tous les services)</T></p>
+                                    <p className="text-xs text-gray-500 mt-1"><T>Active ou désactive le calculateur de prix sur toutes les pages service en une fois.</T></p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, services_show_calculator: prev.services_show_calculator === 'true' ? 'false' : 'true' }))}
+                                    title={form.services_show_calculator === 'true' ? 'Désactiver tous les calculateurs' : 'Activer tous les calculateurs'}
+                                    aria-label={form.services_show_calculator === 'true' ? 'Désactiver tous les calculateurs' : 'Activer tous les calculateurs'}
+                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${form.services_show_calculator === 'true' ? 'bg-green-500' : 'bg-white/10'}`}
+                                >
+                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300 ${form.services_show_calculator === 'true' ? 'translate-x-8' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+
+                            {/* Toggle PricingCalculator — spécifique Passeport / Nationalité VIP */}
                             <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5">
                                 <div>
                                     <p className="text-sm font-bold text-white"><T>Afficher le calculateur de prix</T></p>
-                                    <p className="text-xs text-gray-500 mt-1"><T>Page Passeport / Nationalité Béninoise VIP</T></p>
+                                    <p className="text-xs text-gray-500 mt-1"><T>Page Passeport / Nationalité Béninoise VIP (ignoré si le réglage global est désactivé)</T></p>
                                 </div>
                                 <button
                                     type="button"

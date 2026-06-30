@@ -16,9 +16,13 @@ const TEXT_DARK  = '#1a1005'
 const TEXT_MED   = '#3d2e15'
 const TEXT_LIGHT = '#5c4a2a'
 
+const FONT = "var(--font-montserrat), 'Inter', 'Helvetica Neue', sans-serif"
+
 // A4 portrait en pixels (72 ppi de référence)
 export const BASE_W = 595
 export const BASE_H = 842
+export const A3_W = 1190
+export const A3_H = 842
 
 /* ══════════════════════════════════════════════════════════════
    IMAGES DU DÉPLIANT
@@ -173,11 +177,11 @@ function DepliantImage({ src, s, w, h, radius = 6, caption, captionSub, position
             </div>
             {caption && (
                 <div style={{ textAlign: 'center', lineHeight: 1.25 }}>
-                    <div style={{ color: TEXT_DARK, fontSize: 7.5 * s, fontWeight: 700, letterSpacing: '0.06em', fontStyle: 'italic', fontFamily: "'Georgia',serif" }}>
+                    <div style={{ color: TEXT_DARK, fontSize: 7.5 * s, fontWeight: 700, letterSpacing: '0.06em', fontStyle: 'italic', fontFamily: FONT }}>
                         {caption}
                     </div>
                     {captionSub && (
-                        <div style={{ color: TEXT_MED, fontSize: 6.5 * s, fontWeight: 600, letterSpacing: '0.05em', fontStyle: 'italic', fontFamily: "'Georgia',serif", marginTop: 1 * s }}>
+                        <div style={{ color: TEXT_MED, fontSize: 6.5 * s, fontWeight: 600, letterSpacing: '0.05em', fontStyle: 'italic', fontFamily: FONT, marginTop: 1 * s }}>
                             {captionSub}
                         </div>
                     )}
@@ -196,31 +200,31 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
     ({ scale = 1 }, ref) => {
         const W = BASE_W * scale, H = BASE_H * scale, s = scale
         return (
-            <div ref={ref} style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_DARK, fontFamily: "'Georgia',serif", flexShrink: 0 }}>
+            <div ref={ref} style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_DARK, fontFamily: FONT, flexShrink: 0 }}>
 
                 {/* Lueur centrale élargie */}
-                <div style={{ position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%,-50%)', width: 500 * s, height: 500 * s, background: `radial-gradient(ellipse, rgba(201,168,76,0.12) 0%, transparent 60%)`, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%,-50%)', width: 500 * s, height: 500 * s, background: `transparent`, boxShadow: `0 0 250px 100px rgba(201,168,76,0.12)`, borderRadius: '50%', pointerEvents: 'none' }} />
                 {/* Accent vert haut droite */}
-                <div style={{ position: 'absolute', top: 0, right: 0, width: 250 * s, height: 250 * s, background: `radial-gradient(circle at 100% 0%, rgba(0,135,81,0.12) 0%, transparent 60%)`, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: -50 * s, right: -50 * s, width: 250 * s, height: 250 * s, background: `transparent`, boxShadow: `0 0 150px 80px rgba(0,135,81,0.12)`, borderRadius: '50%', pointerEvents: 'none' }} />
                 {/* Accent bleu bas gauche */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, width: 200 * s, height: 200 * s, background: `radial-gradient(circle at 0% 100%, rgba(11,32,84,0.3) 0%, transparent 60%)`, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: -50 * s, left: -50 * s, width: 200 * s, height: 200 * s, background: `transparent`, boxShadow: `0 0 150px 80px rgba(11,32,84,0.3)`, borderRadius: '50%', pointerEvents: 'none' }} />
 
                 <CornerBrackets s={s} arm={32} />
 
                 {/* ── LOGO + ORG — centré verticalement ── */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 80 * s, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18 * s }}>
                     {/* Médaillon logo AGRANDI */}
-                    <div style={{ width: 170 * s, height: 170 * s, borderRadius: 28 * s, border: `1.5px solid ${GOLD}40`, background: `radial-gradient(circle, rgba(201,168,76,0.08), transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 60px rgba(201,168,76,0.08)` }}>
+                    <div style={{ width: 170 * s, height: 170 * s, borderRadius: 28 * s, border: `1.5px solid ${GOLD}40`, background: `rgba(201,168,76,0.04)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 60px rgba(201,168,76,0.08)` }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/images/logo-transparent.png" alt="RGB" style={{ width: 130 * s, height: 130 * s, objectFit: 'contain' }} />
                     </div>
 
                     {/* Titre AGRANDI */}
                     <div style={{ textAlign: 'center', lineHeight: 1 }}>
-                        <div style={{ color: `${GOLD}cc`, fontSize: 34 * s, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: "'Cinzel','Georgia',serif" }}>
+                        <div style={{ color: `${GOLD}cc`, fontSize: 34 * s, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT }}>
                             RETOUR GAGNANT
                         </div>
-                        <div style={{ color: GOLD_L, fontSize: 56 * s, fontWeight: 700, letterSpacing: '0.26em', textTransform: 'uppercase', fontFamily: "'Cinzel','Georgia',serif", marginTop: 4 * s }}>
+                        <div style={{ color: GOLD_L, fontSize: 56 * s, fontWeight: 700, letterSpacing: '0.26em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT, marginTop: 4 * s }}>
                             BÉNIN
                         </div>
                     </div>
@@ -234,29 +238,29 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
 
                     {/* Sous-titre */}
                     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 * s }}>
-                        <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13 * s, letterSpacing: '0.08em', fontFamily: "'Arial','Helvetica',sans-serif" }}>
+                        <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13 * s, letterSpacing: '0.08em', fontFamily: FONT }}>
                             L&apos;Agence du Retour des Afro-descendants
                         </div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 * s, letterSpacing: '0.12em', fontFamily: "'Arial','Helvetica',sans-serif" }}>
+                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 * s, letterSpacing: '0.12em', fontFamily: FONT }}>
                             au Bénin
                         </div>
                     </div>
                 </div>
 
                 {/* Watermark RGB */}
-                <div style={{ position: 'absolute', bottom: 100 * s, left: 0, right: 0, textAlign: 'center', color: `${GOLD}06`, fontSize: 180 * s, fontWeight: 900, letterSpacing: '-0.02em', fontFamily: "'Cinzel','Georgia',serif", pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
+                <div style={{ position: 'absolute', bottom: 100 * s, left: 0, right: 0, textAlign: 'center', color: `${GOLD}06`, fontSize: 180 * s, fontWeight: 900, letterSpacing: '-0.02em', fontFamily: "'Cinzel', " + FONT, pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>
                     RGB
                 </div>
 
                 {/* Bande bas — AGRANDIE + CONTRASTE AMÉLIORÉ */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 18 * s, paddingBottom: 24 * s, borderTop: `1.5px solid ${GOLD}40`, background: 'rgba(0,0,0,0.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 * s }}>
-                    <div style={{ color: GOLD, fontSize: 12 * s, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', fontFamily: "'Cinzel','Georgia',serif" }}>
+                    <div style={{ color: GOLD, fontSize: 12 * s, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT }}>
                         VOTRE RETOUR, NOTRE MISSION
                     </div>
-                    <div style={{ color: GOLD_L, fontSize: 9.5 * s, letterSpacing: '0.12em', fontFamily: "'Arial',sans-serif", fontWeight: 600 }}>
+                    <div style={{ color: GOLD_L, fontSize: 9.5 * s, letterSpacing: '0.12em', fontFamily: FONT, fontWeight: 600 }}>
                         www.retourgagnantbenin.bj
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9 * s, letterSpacing: '0.07em', fontFamily: "'Arial',sans-serif" }}>
+                    <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9 * s, letterSpacing: '0.07em', fontFamily: FONT }}>
                         Haie-Vive Cocotiers, Cotonou — BÉNIN
                     </div>
                 </div>
@@ -291,19 +295,19 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
     const captions = IMG_CAPTIONS[lang]
 
     const SH = ({ children }: { children: React.ReactNode }) => (
-        <div style={{ color: TEXT_DARK, fontSize: 9 * s, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', fontFamily: "'Arial',sans-serif", marginBottom: 4 * s, paddingBottom: 3 * s, borderBottom: `1.5px solid ${GOLD}`, lineHeight: 1.1 }}>
+        <div style={{ color: TEXT_DARK, fontSize: 9 * s, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', fontFamily: FONT, marginBottom: 4 * s, paddingBottom: 3 * s, borderBottom: `1.5px solid ${GOLD}`, lineHeight: 1.1 }}>
             {children}
         </div>
     )
 
     const Body = ({ children, size = 7.8 }: { children: React.ReactNode; size?: number }) => (
-        <div style={{ color: TEXT_MED, fontSize: size * s, lineHeight: 1.4, fontFamily: "'Arial',sans-serif", whiteSpace: 'pre-line' }}>
+        <div style={{ color: TEXT_MED, fontSize: size * s, lineHeight: 1.4, fontFamily: FONT, whiteSpace: 'pre-line' }}>
             {children}
         </div>
     )
 
     const ItemHead = ({ children }: { children: React.ReactNode }) => (
-        <div style={{ color: TEXT_DARK, fontSize: 7.8 * s, fontWeight: 700, fontFamily: "'Arial',sans-serif", marginBottom: 1 * s, marginTop: 4 * s }}>
+        <div style={{ color: TEXT_DARK, fontSize: 7.8 * s, fontWeight: 700, fontFamily: FONT, marginBottom: 1 * s, marginTop: 4 * s }}>
             {children}
         </div>
     )
@@ -312,16 +316,16 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
         <div style={{ marginBottom: 3 * s }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 * s, marginBottom: 1 * s }}>
                 <div style={{ width: 3.5 * s, height: 3.5 * s, borderRadius: '50%', background: GOLD, flexShrink: 0 }} />
-                <span style={{ color: TEXT_DARK, fontSize: 7.5 * s, fontWeight: 700, fontFamily: "'Arial',sans-serif" }}>{label}</span>
+                <span style={{ color: TEXT_DARK, fontSize: 7.5 * s, fontWeight: 700, fontFamily: FONT }}>{label}</span>
             </div>
-            <div style={{ color: TEXT_LIGHT, fontSize: 7 * s, lineHeight: 1.35, fontFamily: "'Arial',sans-serif", paddingLeft: 7.5 * s }}>{body}</div>
+            <div style={{ color: TEXT_LIGHT, fontSize: 7 * s, lineHeight: 1.35, fontFamily: FONT, paddingLeft: 7.5 * s }}>{body}</div>
         </div>
     )
 
     const colPad = 22 * s
     const colGap = 10 * s
     const colW = (W - colPad * 2 - colGap) / 2
-    const headerH = 68 * s
+    const headerH = 75 * s
     const footerH = 30 * s
     const imgStripH = 115 * s   // Bande images — réduite pour laisser de la place au texte agrandi
     const imgGap = 10 * s
@@ -332,7 +336,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
     const imgW = (W - colPad * 2 - imgGap) / 2
 
     return (
-        <div style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_CREAM, fontFamily: "'Arial',sans-serif", flexShrink: 0 }}>
+        <div style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_CREAM, fontFamily: FONT, flexShrink: 0 }}>
 
             {/* Bordure haut dorée */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4 * s, background: `linear-gradient(90deg, ${GOLD}, ${GOLD_L}, ${GOLD})` }} />
@@ -342,10 +346,10 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/images/logo-transparent.png" alt="RGB" style={{ width: 42 * s, height: 42 * s, objectFit: 'contain', opacity: 0.95 }} />
                 <div style={{ flex: 1 }}>
-                    <div style={{ color: GOLD, fontSize: 14 * s, fontWeight: 700, letterSpacing: '0.16em', fontFamily: "'Cinzel','Georgia',serif" }}>RETOUR GAGNANT BÉNIN</div>
+                    <div style={{ color: GOLD, fontSize: 14 * s, fontWeight: 700, letterSpacing: '0.16em', fontFamily: "'Cinzel', " + FONT }}>RETOUR GAGNANT BÉNIN</div>
                     <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 8.5 * s, letterSpacing: '0.12em', marginTop: 2 * s }}>{lang === 'FR' ? 'PRÉSENTATION & SERVICES' : 'PRESENTATION & SERVICES'}</div>
                 </div>
-                <div style={{ paddingLeft: 10 * s, paddingRight: 10 * s, paddingTop: 5 * s, paddingBottom: 5 * s, border: `1.5px solid ${GOLD}60`, borderRadius: 4 * s, color: GOLD, fontSize: 12 * s, fontWeight: 700, letterSpacing: '0.18em', fontFamily: "'Cinzel',serif" }}>
+                <div style={{ paddingLeft: 10 * s, paddingRight: 10 * s, paddingTop: 5 * s, paddingBottom: 5 * s, border: `1.5px solid ${GOLD}60`, borderRadius: 4 * s, color: GOLD, fontSize: 12 * s, fontWeight: 700, letterSpacing: '0.18em', fontFamily: "'Cinzel', " + FONT }}>
                     {lang}
                 </div>
             </div>
@@ -368,15 +372,11 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                         ))}
                     </div>
 
-                    {/* Image passeport béninois sous service #3 — s'adapte à l'espace disponible */}
-                    <div style={{ marginTop: 4 * s, flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={DEPLIANT_IMAGES.passeport} alt={lang === 'FR' ? 'Passeport République du Bénin' : 'Republic of Benin Passport'} style={{ maxWidth: 140 * s, maxHeight: '100%', objectFit: 'contain', display: 'block' }} />
-                    </div>
+
 
                     {/* CTA toujours visible en bas */}
                     <div style={{ flexShrink: 0, paddingTop: 5 * s, borderTop: `1px solid ${GOLD}45`, marginTop: 4 * s }}>
-                        <div style={{ color: TEXT_DARK, fontSize: 8 * s, fontWeight: 700, lineHeight: 1.4, fontFamily: "'Georgia',serif", fontStyle: 'italic' }}>
+                        <div style={{ color: TEXT_DARK, fontSize: 8 * s, fontWeight: 700, lineHeight: 1.4, fontFamily: FONT, fontStyle: 'italic' }}>
                             &ldquo;{content.s3_cta}&rdquo;
                         </div>
                     </div>
@@ -396,7 +396,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
 
                     <div style={{ marginTop: 5 * s }}>
                         <SH>{content.s3_title}</SH>
-                        <div style={{ color: TEXT_MED, fontSize: 7.2 * s, lineHeight: 1.35, fontFamily: "'Arial',sans-serif", marginBottom: 4 * s }}>
+                        <div style={{ color: TEXT_MED, fontSize: 7.2 * s, lineHeight: 1.35, fontFamily: FONT, marginBottom: 4 * s }}>
                             {content.s3_intro}
                         </div>
                         {content.s3_items.map((item, i) => (
@@ -404,10 +404,14 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                         ))}
                     </div>
 
-                    {/* Image registre historique sous Santé & Éducation */}
-                    <div style={{ marginTop: 3 * s, borderRadius: 4 * s, overflow: 'hidden', border: `1px solid ${GOLD}40`, flex: '1 1 auto', minHeight: 0, background: '#f5efe4' }}>
+                    {/* Images passeport + registre cote a cote */}
+                    <div style={{ marginTop: 4 * s, flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center', gap: 8 * s, alignItems: 'center' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={DEPLIANT_IMAGES.registre} alt={lang === 'FR' ? 'Registre historique des affranchis' : 'Historical registry of freed citizens'} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                        <img src={DEPLIANT_IMAGES.passeport} alt="Passeport" style={{ maxWidth: 100 * s, maxHeight: '100%', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+                        <div style={{ borderRadius: 4 * s, overflow: 'hidden', border: `1px solid ${GOLD}40`, background: '#f5efe4', maxHeight: '100%', flexShrink: 1, minWidth: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={DEPLIANT_IMAGES.registre} alt="Registre" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }} />
+                        </div>
                     </div>
 
                     {/* Contacts épinglés en bas — TOUJOURS VISIBLES */}
@@ -443,7 +447,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: footerH, background: TEXT_DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 * s }}>
                 <div style={{ color: GOLD, fontSize: 7.5 * s, letterSpacing: '0.1em', fontWeight: 600 }}>contact@retourgagnantbenin.bj</div>
                 <div style={{ width: 1.2 * s, height: 12 * s, background: `${GOLD}50` }} />
-                <div style={{ color: GOLD, fontSize: 7.5 * s, letterSpacing: '0.1em', fontWeight: 600 }}>+229 01 60 32 21 21</div>
+                <div style={{ color: GOLD, fontSize: 7.5 * s, letterSpacing: '0.1em', fontWeight: 600 }}>+229 01 60 32 21 21  ·  +229 01 94 35 50 50</div>
                 <div style={{ width: 1.2 * s, height: 12 * s, background: `${GOLD}50` }} />
                 <div style={{ color: GOLD, fontSize: 7.5 * s, letterSpacing: '0.1em', fontWeight: 600 }}>www.retourgagnantbenin.bj</div>
             </div>
@@ -488,10 +492,10 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
     ({ scale = 1 }, ref) => {
         const W = BASE_W * scale, H = BASE_H * scale, s = scale
         return (
-            <div ref={ref} style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_DARK, fontFamily: "'Arial',sans-serif", flexShrink: 0 }}>
+            <div ref={ref} style={{ width: W, height: H, position: 'relative', overflow: 'hidden', background: BG_DARK, fontFamily: FONT, flexShrink: 0 }}>
 
                 {/* Lueur */}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 450 * s, height: 450 * s, background: `radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 65%)`, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 450 * s, height: 450 * s, background: `transparent`, boxShadow: `0 0 200px 80px rgba(201,168,76,0.07)`, borderRadius: '50%', pointerEvents: 'none' }} />
                 <CornerBrackets s={s} arm={28} />
 
                 {/* Bande haut */}
@@ -499,11 +503,11 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
 
                 {/* Logo + nom AGRANDIS */}
                 <div style={{ position: 'absolute', top: 45 * s, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 * s }}>
-                    <div style={{ width: 110 * s, height: 110 * s, borderRadius: 20 * s, border: `1.5px solid ${GOLD}35`, background: `radial-gradient(circle, rgba(201,168,76,0.07), transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 40px rgba(201,168,76,0.06)` }}>
+                    <div style={{ width: 110 * s, height: 110 * s, borderRadius: 20 * s, border: `1.5px solid ${GOLD}35`, background: `rgba(201,168,76,0.03)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 40px rgba(201,168,76,0.06)` }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/images/logo-transparent.png" alt="RGB" style={{ width: 84 * s, height: 84 * s, objectFit: 'contain' }} />
                     </div>
-                    <div style={{ color: GOLD, fontSize: 22 * s, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: "'Cinzel','Georgia',serif", textAlign: 'center' }}>
+                    <div style={{ color: GOLD, fontSize: 22 * s, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT, textAlign: 'center' }}>
                         RETOUR GAGNANT BÉNIN
                     </div>
                     <HRule s={s} w={260 * s} opacity={0.4} />
@@ -538,7 +542,7 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                 </div>
 
                 {/* Slogan bas — AGRANDI */}
-                <div style={{ position: 'absolute', bottom: 22 * s, left: 0, right: 0, textAlign: 'center', color: GOLD, fontSize: 11 * s, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', fontFamily: "'Cinzel','Georgia',serif" }}>
+                <div style={{ position: 'absolute', bottom: 22 * s, left: 0, right: 0, textAlign: 'center', color: GOLD, fontSize: 11 * s, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT }}>
                     VOTRE RETOUR, NOTRE MISSION
                 </div>
             </div>
@@ -546,3 +550,317 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
     }
 )
 Panel2Recto.displayName = 'Panel2Recto'
+
+/* ══════════════════════════════════════════════════════════════
+   A3 VERSO — FULL PAGE MONOLINGUAL (FR or EN)
+   Two A4 halves side by side with fold line
+══════════════════════════════════════════════════════════════ */
+
+function A3Image({
+    src, caption, s, width, height = 80, position = 'center', objectFit = 'cover', bg = '#0b1a3a',
+}: {
+    src: string; caption: string; s: number; width?: number; height?: number;
+    position?: string; objectFit?: 'cover' | 'contain'; bg?: string;
+}) {
+    const noBg = bg === 'transparent'
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 * s }}>
+            <div style={{
+                width: width ? width * s : '100%',
+                height: height * s,
+                borderRadius: noBg ? 0 : 8 * s, overflow: 'hidden',
+                border: noBg ? 'none' : `2.5px solid ${GOLD}66`,
+                boxShadow: noBg ? 'none' : `0 6px 20px rgba(0,0,0,0.18), 0 0 0 1px ${GOLD}22`,
+                background: bg,
+                flexShrink: 0,
+            }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={src} alt={caption}
+                    style={{ width: '100%', height: '100%', objectFit, objectPosition: position, display: 'block' }}
+                />
+            </div>
+            <div style={{
+                fontSize: 11 * s, color: TEXT_DARK, fontWeight: 700,
+                fontFamily: FONT, fontStyle: 'italic',
+                letterSpacing: '0.04em', textAlign: 'center', lineHeight: 1.25,
+            }}>{caption}</div>
+        </div>
+    )
+}
+
+// Strings used inside A3VersoInner (kept here to keep JSX readable)
+const PASSPORT_FR = 'Passeport de la République du Bénin'
+const PASSPORT_EN = 'Republic of Benin Passport'
+const REGISTER_FR = "Acte d'ancestralité — Registre historique"
+const REGISTER_EN = 'Certificate of Ancestry — Historical Registry'
+const FOOTER_ITEMS = [
+    { icon: '☎', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
+    { icon: '✉', text: 'contact@retourgagnantbenin.bj' },
+    { icon: '◆', text: 'www.retourgagnantbenin.bj' },
+    { icon: '●', text: 'Haie-Vive Cocotiers, Cotonou — BÉNIN' },
+]
+
+function A3VersoInner({ s, content, lang }: { s: number; content: ContentData; lang: 'FR' | 'EN' }) {
+    const W = A3_W * s, H = A3_H * s
+    const pad = 32 * s
+
+    // Layout : header bleu (haut) + zone contenu + bande 4 photos + footer bleu
+    const headerH  = 62 * s
+    const footerH  = 44 * s
+    const photosH  = 158 * s
+    const contentH = H - headerH - footerH - photosH
+
+    const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+        <div style={{
+            color: GOLD, fontSize: 15 * s, fontWeight: 800,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
+            fontFamily: "'Cinzel', " + FONT,
+            paddingBottom: 5 * s,
+            borderBottom: `2px solid ${GOLD}80`,
+            marginBottom: 7 * s,
+        }}>{children}</div>
+    )
+
+    const Body = ({ children, size = 10 }: { children: React.ReactNode; size?: number }) => (
+        <div style={{
+            color: TEXT_MED, fontSize: size * s, lineHeight: 1.45,
+            fontFamily: FONT,
+            whiteSpace: 'pre-line',
+        }}>{children}</div>
+    )
+
+    const ServiceItem = ({ title, body }: { title: string; body: string }) => (
+        <div style={{ marginBottom: 6 * s }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 * s }}>
+                <div style={{
+                    width: 6 * s, height: 6 * s, borderRadius: '50%',
+                    background: GOLD, marginTop: 6 * s, flexShrink: 0,
+                    boxShadow: `0 0 0 2px ${GOLD}25`,
+                }} />
+                <div style={{ flex: 1 }}>
+                    <div style={{
+                        color: TEXT_DARK, fontSize: 12 * s, fontWeight: 700,
+                        fontFamily: FONT, marginBottom: 2 * s,
+                        letterSpacing: '0.01em',
+                    }}>{title}</div>
+                    <Body size={9.5}>{body}</Body>
+                </div>
+            </div>
+        </div>
+    )
+
+    /* Bande basse : 4 images intactes du patrimoine béninois */
+    const HERITAGE_FR = [
+        { src: DEPLIANT_IMAGES.ganvie,   caption: 'Cité Lacustre de Ganvié',     pos: 'center' },
+        { src: DEPLIANT_IMAGES.amazone,  caption: 'Place de l’Amazone',                pos: 'top center' },
+        { src: DEPLIANT_IMAGES.pendjari, caption: 'Parc National de la Pendjari',          pos: 'center' },
+        { src: DEPLIANT_IMAGES.porte,    caption: 'Porte du Non-Retour, Ouidah',           pos: 'center' },
+    ]
+    const HERITAGE_EN = [
+        { src: DEPLIANT_IMAGES.ganvie,   caption: 'Ganvié Lake City',                  pos: 'center' },
+        { src: DEPLIANT_IMAGES.amazone,  caption: 'Amazon Square',                          pos: 'top center' },
+        { src: DEPLIANT_IMAGES.pendjari, caption: 'Pendjari National Park',                 pos: 'center' },
+        { src: DEPLIANT_IMAGES.porte,    caption: 'Gate of No Return, Ouidah',              pos: 'center' },
+    ]
+    const heritage = lang === 'FR' ? HERITAGE_FR : HERITAGE_EN
+
+    return (
+        <div style={{
+            width: W, height: H, position: 'relative',
+            background: BG_CREAM, overflow: 'hidden',
+            fontFamily: FONT,
+        }}>
+
+            {/* HEADER bleu (meme bleu que le recto) */}
+            <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: headerH, background: BG_DARK,
+                display: 'flex', alignItems: 'center',
+                paddingLeft: pad, paddingRight: pad, gap: 18 * s,
+                borderBottom: `3px solid ${GOLD}`,
+            }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/logo-transparent.png" alt="RGB"
+                    style={{ width: 42 * s, height: 42 * s, objectFit: 'contain', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                    <div style={{
+                        color: GOLD, fontSize: 18 * s, fontWeight: 700,
+                        letterSpacing: '0.16em', fontFamily: "'Cinzel', " + FONT,
+                        textTransform: 'uppercase',
+                    }}>RETOUR GAGNANT BENIN</div>
+                    <div style={{
+                        color: 'rgba(255,255,255,0.65)', fontSize: 9 * s,
+                        letterSpacing: '0.10em', marginTop: 2 * s,
+                        textTransform: 'uppercase',
+                    }}>{lang === 'FR' ? 'PRÉSENTATION OFFICIELLE & SERVICES' : 'OFFICIAL PRESENTATION & SERVICES'}</div>
+                </div>
+                <div style={{
+                    paddingLeft: 14 * s, paddingRight: 14 * s,
+                    paddingTop: 7 * s, paddingBottom: 7 * s,
+                    border: `2px solid ${GOLD}`, borderRadius: 6 * s,
+                    color: GOLD, fontSize: 16 * s, fontWeight: 700,
+                    letterSpacing: '0.22em', fontFamily: "'Cinzel', " + FONT,
+                }}>{lang}</div>
+            </div>
+
+            {/* CONTENU PRINCIPAL */}
+            <div style={{
+                position: 'absolute', top: headerH, left: 0, right: 0,
+                height: contentH, display: 'flex',
+                paddingLeft: pad, paddingRight: pad,
+                paddingTop: 14 * s, paddingBottom: 10 * s,
+                gap: 20 * s, boxSizing: 'border-box',
+            }}>
+
+                {/* COLONNE GAUCHE */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                    <SectionTitle>{content.s1_title}</SectionTitle>
+                    <Body size={9.5}>{content.s1_body}</Body>
+
+                    <div style={{ height: 8 * s }} />
+
+                    <SectionTitle>{content.s2_title}</SectionTitle>
+                    {content.s2_items.slice(0, 3).map((item, i) => (
+                        <ServiceItem key={i} title={item.title} body={item.body} />
+                    ))}
+
+
+                </div>
+
+                {/* Separateur central dore */}
+                <div style={{
+                    width: 2 * s, alignSelf: 'stretch',
+                    background: `linear-gradient(180deg, transparent, ${GOLD}55, ${GOLD}55, transparent)`,
+                    flexShrink: 0,
+                }} />
+
+                {/* COLONNE DROITE */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                    {content.s2_items.slice(3, 6).map((item, i) => (
+                        <ServiceItem key={i} title={item.title} body={item.body} />
+                    ))}
+
+                    <div style={{ height: 5 * s }} />
+
+                    <SectionTitle>{content.s3_title}</SectionTitle>
+                    <Body size={9}>{content.s3_intro}</Body>
+
+                    <div style={{
+                        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 * s,
+                        marginTop: 8 * s,
+                    }}>
+                        {content.s3_items.map((p, i) => (
+                            <div key={i} style={{
+                                background: `${GOLD}10`,
+                                border: `1.5px solid ${GOLD}30`,
+                                borderRadius: 6 * s,
+                                padding: `${5 * s}px ${8 * s}px`,
+                            }}>
+                                <div style={{
+                                    fontSize: 10 * s, fontWeight: 800, color: GOLD,
+                                    letterSpacing: '0.04em', marginBottom: 1 * s,
+                                }}>{p.label}</div>
+                                <div style={{
+                                    fontSize: 8.5 * s, color: TEXT_LIGHT,
+                                    lineHeight: 1.4,
+                                }}>{p.body}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ marginTop: 8 * s, display: 'flex', justifyContent: 'center', gap: 12 * s, alignItems: 'flex-end' }}>
+                        <A3Image
+                            src={DEPLIANT_IMAGES.passeport}
+                            caption={lang === 'FR' ? PASSPORT_FR : PASSPORT_EN}
+                            s={s} width={120} height={78} objectFit="contain" bg="transparent"
+                        />
+                        <A3Image
+                            src={DEPLIANT_IMAGES.registre}
+                            caption={lang === 'FR' ? REGISTER_FR : REGISTER_EN}
+                            s={s} width={150} height={78} objectFit="contain"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* BANDE 4 PHOTOS DU PATRIMOINE */}
+            <div style={{
+                position: 'absolute',
+                bottom: footerH, left: 0, right: 0,
+                height: photosH,
+                background: `linear-gradient(180deg, ${BG_CREAM} 0%, #f5efe4 100%)`,
+                borderTop: `2px solid ${GOLD}40`,
+                paddingLeft: pad, paddingRight: pad,
+                paddingTop: 14 * s, paddingBottom: 12 * s,
+                boxSizing: 'border-box',
+            }}>
+                <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: 16 * s, height: '100%',
+                }}>
+                    {heritage.map((img, i) => (
+                        <A3Image
+                            key={i}
+                            src={img.src}
+                            caption={img.caption}
+                            s={s}
+                            height={108}
+                            position={img.pos}
+                            objectFit="cover"
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* FOOTER bleu (meme bleu que le recto) */}
+            <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                height: footerH, background: BG_DARK,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 22 * s, borderTop: `3px solid ${GOLD}`,
+                paddingLeft: pad, paddingRight: pad,
+            }}>
+                {FOOTER_ITEMS.map(({ icon, text }, i, arr) => (
+                    <React.Fragment key={text}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 * s }}>
+                            <span style={{ fontSize: 12 * s, color: GOLD }}>{icon}</span>
+                            <span style={{
+                                color: 'rgba(255,255,255,0.92)', fontSize: 11 * s,
+                                letterSpacing: '0.04em', fontWeight: 600,
+                            }}>{text}</span>
+                        </div>
+                        {i < arr.length - 1 && (
+                            <div style={{ width: 1.5 * s, height: 16 * s, background: `${GOLD}55` }} />
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+export const FullPageVersoFR = forwardRef<HTMLDivElement, { scale?: number }>(
+    ({ scale = 1 }, ref) => {
+        const s = scale
+        return (
+            <div ref={ref} style={{ flexShrink: 0 }}>
+                <A3VersoInner s={s} content={FR} lang="FR" />
+            </div>
+        )
+    }
+)
+FullPageVersoFR.displayName = 'FullPageVersoFR'
+
+export const FullPageVersoEN = forwardRef<HTMLDivElement, { scale?: number }>(
+    ({ scale = 1 }, ref) => {
+        const s = scale
+        return (
+            <div ref={ref} style={{ flexShrink: 0 }}>
+                <A3VersoInner s={s} content={EN} lang="EN" />
+            </div>
+        )
+    }
+)
+FullPageVersoEN.displayName = 'FullPageVersoEN'
+

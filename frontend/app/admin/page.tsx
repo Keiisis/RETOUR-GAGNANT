@@ -33,6 +33,7 @@ interface RecentMessage {
 
 export default function AdminDashboard() {
     const { t } = useTranslation();
+    const [mounted, setMounted] = useState(false);
     const [stats, setStats] = useState({
         patrimoine: 0,
         services: 0,
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setMounted(true);
         const fetchDashboardData = async () => {
             try {
                 const [patCount, serCount, msgCount, testCount] = await Promise.all([
@@ -153,7 +155,7 @@ export default function AdminDashboard() {
                         <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1"><T>Dernière Sync</T></span>
                         <div className="flex items-center gap-2 text-white font-mono text-xs">
                             <Clock size={12} className="text-[#008751]" />
-                            {new Date().toLocaleTimeString()}
+                            {mounted ? new Date().toLocaleTimeString() : '...'}
                         </div>
                     </div>
                     <div className="w-[1px] h-10 bg-white/10" />
@@ -297,7 +299,7 @@ export default function AdminDashboard() {
                                             <div className="flex-1 overflow-hidden">
                                                 <div className="flex items-center gap-3 mb-1">
                                                     <span className="text-xs font-black text-white uppercase tracking-wider">{msg.nom} {msg.prenom}</span>
-                                                    <span className="text-[10px] text-gray-600 font-mono">• {new Date(msg.created_at).toLocaleDateString()}</span>
+                                                    <span className="text-[10px] text-gray-600 font-mono">• {!msg.created_at || isNaN(new Date(msg.created_at).getTime()) ? '—' : new Date(msg.created_at).toLocaleDateString()}</span>
                                                 </div>
                                                 <p className="text-sm text-gray-400 font-medium truncate group-hover/item:text-white transition-colors">{msg.sujet || 'Demande de renseignement'}</p>
                                             </div>
