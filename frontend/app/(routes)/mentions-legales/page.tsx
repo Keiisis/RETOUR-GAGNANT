@@ -38,9 +38,7 @@ export default function MentionsLegalesPage() {
                             2. Hébergeur
                         </h2>
                         <div className="text-gray-600 space-y-2 pl-4">
-                            <p><strong>Hébergeur :</strong> Vercel Inc.</p>
-                            <p><strong>Adresse :</strong> 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis</p>
-                            <p><strong>Site web :</strong> <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-[#008751] hover:underline">vercel.com</a></p>
+                            <p>Le site est hébergé sur une infrastructure cloud sécurisée et certifiée. L&apos;identité et les coordonnées complètes de l&apos;hébergeur sont disponibles sur simple demande à <a href="mailto:contact@retourgagnantbenin.bj" className="text-[#008751] hover:underline">contact@retourgagnantbenin.bj</a>.</p>
                         </div>
                     </section>
 

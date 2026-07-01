@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
+import TwoFactorScreen from '../screens/auth/TwoFactorScreen'
 import MainTabNavigator from './MainTabNavigator'
 import SplashScreen from '../screens/SplashScreen'
 import OnboardingScreen from '../screens/OnboardingScreen'
@@ -59,6 +60,7 @@ export type RootStackParamList = {
     Login: undefined
     Register: undefined
     ForgotPassword: undefined
+    TwoFactor: undefined
     Main: undefined
     ServiceDetails: {
         serviceId: string
@@ -188,7 +190,7 @@ const rootSwitch: NativeStackNavigationOptions = {
 }
 
 export default function AppNavigator() {
-    const { session, loading } = useAuth()
+    const { session, loading, twoFactorRequired } = useAuth()
     const [onboardingChecked, setOnboardingChecked] = useState(false)
     const [onboardingDone, setOnboardingDone] = useState(false)
     const [langChosen, setLangChosen] = useState(false)
@@ -268,6 +270,9 @@ export default function AppNavigator() {
                         options={pushIOS}
                     />
                 </Stack.Group>
+            ) : twoFactorRequired ? (
+                // Connecté mais 2FA non validée pour cette session → défi obligatoire
+                <Stack.Screen name="TwoFactor" component={TwoFactorScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
             ) : (
                 <>
                     {/* Racine authentifiée — tabs */}

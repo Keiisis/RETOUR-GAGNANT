@@ -386,11 +386,11 @@ export default function LegalScreen({ navigation }: any) {
                 },
                 {
                     heading: t('Partage des données'),
-                    text: t('Vos données personnelles ne sont jamais vendues à des tiers. Elles peuvent être partagées avec : nos agents internes habilités au traitement de vos dossiers, nos prestataires de paiement (Kkiapay) dans le cadre strict du traitement des transactions, les autorités béninoises compétentes dans le cadre des démarches administratives que vous avez initiées.'),
+                    text: t('Vos données personnelles ne sont jamais vendues à des tiers. Elles peuvent être partagées avec : nos agents internes habilités au traitement de vos dossiers, nos prestataires de paiement agréés dans le cadre strict du traitement des transactions, les autorités béninoises compétentes dans le cadre des démarches administratives que vous avez initiées.'),
                 },
                 {
                     heading: t('Sécurité'),
-                    text: t('Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles appropriées : chiffrement des données en transit (TLS/SSL), stockage sécurisé via Supabase (hébergement certifié), authentification sécurisée avec tokens JWT, accès restreint aux données selon le principe du moindre privilège.'),
+                    text: t('Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles appropriées : chiffrement des données en transit (TLS/SSL), stockage sécurisé auprès d\'un hébergeur certifié, authentification sécurisée, accès restreint aux données selon le principe du moindre privilège.'),
                 },
                 {
                     heading: t('Conservation'),
@@ -571,7 +571,7 @@ export default function LegalScreen({ navigation }: any) {
                                 <Ionicons name="server-outline" size={16} color={C.info} />
                             </View>
                             <Text style={styles.securityLabel}>{t('HÉBERGEMENT')}</Text>
-                            <Text style={styles.securityValue}>Supabase EU</Text>
+                            <Text style={styles.securityValue}>{t('Certifié UE')}</Text>
                         </View>
 
                         <View style={styles.securityCard}>
@@ -579,7 +579,7 @@ export default function LegalScreen({ navigation }: any) {
                                 <Ionicons name="key-outline" size={16} color={C.accent} />
                             </View>
                             <Text style={styles.securityLabel}>{t('AUTH')}</Text>
-                            <Text style={styles.securityValue}>JWT Tokens</Text>
+                            <Text style={styles.securityValue}>{t('Tokens chiffrés')}</Text>
                         </View>
                     </View>
                 </AnimatedSection>

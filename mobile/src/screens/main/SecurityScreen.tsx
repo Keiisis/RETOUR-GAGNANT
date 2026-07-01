@@ -269,13 +269,17 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     const [showNew, setShowNew] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
 
+    // Politique forte (identique au web/inscription) : 12+ car., majuscule, 2 chiffres, spécial
+    const isPasswordStrong = (p: string) =>
+        p.length >= 12 && /[A-Z]/.test(p) && (p.match(/\d/g) || []).length >= 2 && /[^A-Za-z0-9]/.test(p)
+
     const strength = useMemo(() => {
         const p = newPassword
         if (p.length === 0) return { level: 0, label: '', color: 'transparent' }
         let score = 0
-        if (p.length >= 8) score++
+        if (p.length >= 12) score++
         if (/[A-Z]/.test(p)) score++
-        if (/[0-9]/.test(p)) score++
+        if ((p.match(/\d/g) || []).length >= 2) score++
         if (/[^A-Za-z0-9]/.test(p)) score++
         if (score <= 1) return { level: 1, label: t('Faible'), color: C.danger }
         if (score === 2) return { level: 2, label: t('Moyen'), color: C.warning }
@@ -288,8 +292,8 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             Alert.alert(t('Champ requis'), t('Veuillez saisir un nouveau mot de passe.'))
             return
         }
-        if (newPassword.length < 8) {
-            Alert.alert(t('Mot de passe trop court'), t('Le mot de passe doit contenir au moins 8 caractères.'))
+        if (!isPasswordStrong(newPassword)) {
+            Alert.alert(t('Mot de passe trop faible'), t('Requis : 12 caractères minimum, 1 majuscule, 2 chiffres et 1 caractère spécial.'))
             return
         }
         if (newPassword !== confirmPassword) {
@@ -311,9 +315,9 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     }, [newPassword, confirmPassword, navigation, t])
 
     const rules = [
-        { rule: newPassword.length >= 8, text: t('Au moins 8 caractères') },
+        { rule: newPassword.length >= 12, text: t('Au moins 12 caractères') },
         { rule: /[A-Z]/.test(newPassword), text: t('Une majuscule') },
-        { rule: /[0-9]/.test(newPassword), text: t('Un chiffre') },
+        { rule: (newPassword.match(/\d/g) || []).length >= 2, text: t('Deux chiffres') },
         { rule: /[^A-Za-z0-9]/.test(newPassword), text: t('Un caractère spécial') },
     ]
 
