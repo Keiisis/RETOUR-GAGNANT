@@ -24,6 +24,7 @@ import { decode } from 'base64-arraybuffer'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
+import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
 
 /* ═══════════════════════════════════════════════════════════
@@ -199,8 +200,8 @@ export default function DossierScreen({ navigation }: any) {
         if (!profile) { setLoading(false); return }
         try {
             const text = await fetchWithTimeout(
-                `${API_BASE}/api/mobile/dossiers?client_id=${profile.id}`,
-                { timeoutMs: 10000 },
+                `${API_BASE}/api/mobile/dossiers`,
+                { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
             ).then(r => r.text())
             let json: { dossiers?: Dossier[] } = {}
             try { json = JSON.parse(text) } catch { /* ignore */ }

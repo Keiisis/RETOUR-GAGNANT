@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 /* ════════════════════════════════════════════════════════════════════════════
-   Mobile signature endpoint — same shape as web /api/client/signature but
-   client_id passed in query/body (mobile uses Supabase JS auth, no cookies).
+   Mobile signature endpoint — l'identité vient du JETON (Bearer), jamais d'un
+   client_id fourni en query/body (anti-IDOR).
    ════════════════════════════════════════════════════════════════════════════ */
 
 const supabase = createClient(
@@ -13,11 +14,11 @@ const supabase = createClient(
 
 const VALID_AUTO_SIGN = ['ask', 'auto', 'never']
 
-// GET ?client_id=...
+// GET — signature du client authentifié
 export async function GET(req: NextRequest) {
     try {
-        const clientId = new URL(req.url).searchParams.get('client_id')
-        if (!clientId) return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
+        const clientId = await getMobileUserId(req)
+        if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
         const { data, error } = await supabase
             .from('client_signatures')
@@ -38,12 +39,12 @@ export async function GET(req: NextRequest) {
 // POST { client_id, signature_data, auto_sign }
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json()
-        const { client_id, signature_data, auto_sign } = body
+        const client_id = await getMobileUserId(req)
+        if (!client_id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-        if (!client_id) {
-            return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
-        }
+        const body = await req.json()
+        const { signature_data, auto_sign } = body
+
         if (!signature_data || typeof signature_data !== 'string') {
             return NextResponse.json({ error: 'Données de signature manquantes' }, { status: 400 })
         }
@@ -79,10 +80,12 @@ export async function POST(req: NextRequest) {
 // PATCH { client_id, auto_sign } — updates only the preference
 export async function PATCH(req: NextRequest) {
     try {
-        const body = await req.json()
-        const { client_id, auto_sign } = body
+        const client_id = await getMobileUserId(req)
+        if (!client_id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-        if (!client_id) return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
+        const body = await req.json()
+        const { auto_sign } = body
+
         if (!VALID_AUTO_SIGN.includes(auto_sign)) {
             return NextResponse.json({ error: 'Valeur auto_sign invalide' }, { status: 400 })
         }
@@ -104,11 +107,11 @@ export async function PATCH(req: NextRequest) {
     }
 }
 
-// DELETE ?client_id=...
+// DELETE — supprime la signature du client authentifié
 export async function DELETE(req: NextRequest) {
     try {
-        const clientId = new URL(req.url).searchParams.get('client_id')
-        if (!clientId) return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
+        const clientId = await getMobileUserId(req)
+        if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
         const { error } = await supabase
             .from('client_signatures')

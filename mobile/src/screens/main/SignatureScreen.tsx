@@ -22,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 
 /* ═══════════════════════════════════════════════════════════
@@ -144,8 +145,8 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
             if (!profile) { setLoading(false); return }
             try {
                 const res = await fetchWithTimeout(
-                    `${API_BASE}/api/mobile/signature?client_id=${profile.id}`,
-                    { timeoutMs: 8000 }
+                    `${API_BASE}/api/mobile/signature`,
+                    { timeoutMs: 8000, headers: { ...(await authHeaders()) } }
                 )
                 const data = await res.json().catch(() => ({}))
                 if (data.signature) {
@@ -170,10 +171,9 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/signature`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 12000,
                 body: JSON.stringify({
-                    client_id: profile.id,
                     signature_data: signature,
                     auto_sign: autoSign,
                 }),
@@ -204,9 +204,9 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/signature`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 8000,
-                body: JSON.stringify({ client_id: profile.id, auto_sign: next }),
+                body: JSON.stringify({ auto_sign: next }),
             })
             const data = await res.json().catch(() => ({}))
             if (res.ok && data.signature) {
@@ -228,8 +228,8 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                         if (!profile) return
                         try {
                             const res = await fetchWithTimeout(
-                                `${API_BASE}/api/mobile/signature?client_id=${profile.id}`,
-                                { method: 'DELETE', timeoutMs: 8000 }
+                                `${API_BASE}/api/mobile/signature`,
+                                { method: 'DELETE', timeoutMs: 8000, headers: { ...(await authHeaders()) } }
                             )
                             if (res.ok) {
                                 setSavedSig(null)

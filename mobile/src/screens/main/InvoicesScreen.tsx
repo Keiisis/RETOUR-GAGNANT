@@ -22,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 
 /* ═══════════════════════════════════════════════════════════
@@ -347,8 +348,8 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
         if (!profile) { setLoading(false); return }
         try {
             const res = await fetchWithTimeout(
-                `${API_BASE}/api/mobile/invoices?client_id=${profile.id}`,
-                { timeoutMs: 10000 }
+                `${API_BASE}/api/mobile/invoices`,
+                { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
             )
             const data = await res.json().catch(() => ({}))
             setInvoices(data.invoices || [])

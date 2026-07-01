@@ -25,6 +25,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 
 /* ═══════════════════════════════════════════════════════════
@@ -320,7 +321,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/orders`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 20000,
                 body: JSON.stringify({
                     client_id: profile.id,

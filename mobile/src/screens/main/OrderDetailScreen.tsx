@@ -23,6 +23,7 @@ import { RouteProp } from '@react-navigation/native'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -272,8 +273,8 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             if (!profile?.id) { setLoading(false); return }
             try {
                 const res = await fetchWithTimeout(
-                    `${API_BASE}/api/mobile/orders?order_id=${orderId}&client_id=${profile.id}`,
-                    { timeoutMs: 10000 }
+                    `${API_BASE}/api/mobile/orders?order_id=${orderId}`,
+                    { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
                 )
                 const data = await res.json().catch(() => ({}))
                 if (data.order) {

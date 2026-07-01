@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Mobile invoices listing.
@@ -16,12 +17,11 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
     try {
         const url = new URL(req.url)
-        const clientId = url.searchParams.get('client_id')
         const invoiceId = url.searchParams.get('id')
 
-        if (!clientId) {
-            return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
-        }
+        // Identité dérivée du jeton (anti-IDOR)
+        const clientId = await getMobileUserId(req)
+        if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
         if (invoiceId) {
             const { data, error } = await supabase

@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import fsNode from 'fs'
 import path from 'path'
+import { rateLimit, getClientIp, type RateLimitConfig } from '@/lib/rate-limit'
+
+// Limite par IP (en plus de la limite par email) : empêche un attaquant de
+// faire tourner les emails pour épuiser le quota SMTP.
+const RESEND_IP_LIMIT: RateLimitConfig = { limit: 10, window: 60 * 60 * 1000, blockDuration: 60 * 60 * 1000 }
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,6 +32,12 @@ function isRateLimited(email: string): boolean {
 
 export async function POST(req: NextRequest) {
     try {
+        // Limite par IP (anti-abus SMTP par rotation d'emails)
+        const ipLimit = rateLimit(`resend:${getClientIp(req)}`, RESEND_IP_LIMIT)
+        if (!ipLimit.allowed) {
+            return NextResponse.json({ error: 'Trop de tentatives. Réessayez plus tard.' }, { status: 429 })
+        }
+
         const body = await req.json()
         const email = body?.email
         if (!email || typeof email !== 'string') {

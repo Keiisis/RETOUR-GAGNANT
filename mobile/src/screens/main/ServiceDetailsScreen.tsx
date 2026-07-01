@@ -29,6 +29,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const { width: SCREEN_W } = Dimensions.get('window')
@@ -362,7 +363,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 20000,
                 body: JSON.stringify({
                     client_id: profile.id,

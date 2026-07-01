@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 // Service role — bypasse RLS pour créer/lire les dossiers depuis l'app mobile
 const supabase = createClient(
@@ -11,9 +12,9 @@ const supabase = createClient(
 // ─── GET : tous les dossiers d'un client avec leurs documents ────────────────
 export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url)
-        const clientId = searchParams.get('client_id')
-        if (!clientId) return NextResponse.json({ error: 'client_id manquant' }, { status: 400 })
+        // Identité dérivée du jeton (anti-IDOR) — on ignore tout client_id fourni
+        const clientId = await getMobileUserId(req)
+        if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
         const { data: dossiers, error } = await supabase
             .from('dossiers')
@@ -93,9 +94,13 @@ export async function POST(req: NextRequest) {
         // ── WAF #2 : analyse structurelle du body (proto pollution / RCE / SSRF / DoS) ──
         const { body: scanned, rejection } = await scanRequestBody(req)
         if (rejection) return rejection
+        // Identité dérivée du jeton (anti-IDOR) — on ignore tout client_id du corps
+        const client_id = await getMobileUserId(req)
+        if (!client_id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body = (scanned ?? {}) as any
-        const { client_id, service_type, service_id, notes } = body
+        const { service_type, service_id, notes } = body
         const transactionId: string | undefined = body.payment_tx_id || body.transaction_id
         const paymentAmount: number | null =
             body.payment_amount !== undefined && body.payment_amount !== null
@@ -103,9 +108,9 @@ export async function POST(req: NextRequest) {
                 : null
         const paymentCurrency: string = String(body.payment_currency || 'XOF')
 
-        if (!client_id || !service_type) {
+        if (!service_type) {
             return NextResponse.json(
-                { error: 'client_id et service_type sont requis' },
+                { error: 'service_type est requis' },
                 { status: 400 }
             )
         }

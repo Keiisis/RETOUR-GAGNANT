@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
 import { assertOwnership, createSupabaseOwnershipResolver } from '@/lib/waf'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Mobile orders endpoint.
@@ -81,9 +82,12 @@ async function verifyKkiapayTransaction(transactionId: string): Promise<{ ok: bo
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url)
-        const clientId = searchParams.get('client_id')
         const tracking = searchParams.get('tracking')
         const orderId = searchParams.get('order_id')
+        // Suivi par code = public (le code fait office de secret). Tout le reste
+        // exige l'identité dérivée du JETON (anti-IDOR) — on ignore tout client_id fourni.
+        const clientId = tracking ? null : await getMobileUserId(req)
+        if (!tracking && !clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
         // 1. Detail by order_id
         if (orderId) {
@@ -187,6 +191,11 @@ export async function POST(req: NextRequest) {
     try {
         const body = (await req.json()) as OrderBody
 
+        // Si un jeton est fourni, l'identité prime sur tout client_id du corps
+        // (anti-usurpation). Sinon commande invitée (client_id null) — le paiement
+        // reste vérifié serveur plus bas.
+        const authUid = await getMobileUserId(req)
+
         if (!body.transaction_id || typeof body.transaction_id !== 'string') {
             return NextResponse.json({ error: 'transaction_id manquant' }, { status: 400 })
         }
@@ -256,7 +265,7 @@ export async function POST(req: NextRequest) {
         // Create order with shipping if provided
         const shipping = body.shipping || {}
         const orderPayload = {
-            client_id: body.client_id || null,
+            client_id: authUid || body.client_id || null,
             customer_name: body.customer_name,
             customer_phone: body.customer_phone,
             customer_email: body.customer_email || null,
