@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Alert, Dimensions, Pressable,
+    ActivityIndicator, Alert, Dimensions, Pressable, Image,
 } from 'react-native'
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, withRepeat,
@@ -15,6 +15,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Security'>
 
@@ -269,6 +271,75 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     const [showNew, setShowNew] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
 
+    // ── 2FA (double authentification) ──
+    const [twofaEnabled, setTwofaEnabled] = useState(false)
+    const [twofaLoading, setTwofaLoading] = useState(true)
+    const [twofaStep, setTwofaStep] = useState<'idle' | 'enroll' | 'disable'>('idle')
+    const [twofaQr, setTwofaQr] = useState('')
+    const [twofaSecret, setTwofaSecret] = useState('')
+    const [twofaCode, setTwofaCode] = useState('')
+    const [twofaBusy, setTwofaBusy] = useState(false)
+
+    const getToken = useCallback(async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        return session?.access_token || ''
+    }, [])
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const token = await getToken()
+                if (!token) { setTwofaLoading(false); return }
+                const res = await fetch(`${API_BASE}/api/client/2fa/status`, { headers: { Authorization: `Bearer ${token}` } })
+                const json = await res.json().catch(() => ({}))
+                setTwofaEnabled(!!json?.enabled)
+            } catch { /* ignore */ } finally { setTwofaLoading(false) }
+        })()
+    }, [getToken])
+
+    const startEnroll2fa = useCallback(async () => {
+        setTwofaBusy(true)
+        try {
+            const token = await getToken()
+            const res = await fetch(`${API_BASE}/api/client/2fa/setup`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+            const json = await res.json()
+            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Erreur')); return }
+            setTwofaQr(json.qrCode); setTwofaSecret(json.secret); setTwofaCode(''); setTwofaStep('enroll')
+        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+    }, [getToken, t])
+
+    const confirmEnroll2fa = useCallback(async () => {
+        if (!/^\d{6}$/.test(twofaCode)) { Alert.alert(t('Code requis'), t('Entrez le code à 6 chiffres.')); return }
+        setTwofaBusy(true)
+        try {
+            const token = await getToken()
+            const res = await fetch(`${API_BASE}/api/client/2fa/verify`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ code: twofaCode, action: 'setup' }),
+            })
+            const json = await res.json()
+            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Code incorrect')); return }
+            setTwofaEnabled(true); setTwofaStep('idle'); setTwofaQr(''); setTwofaSecret(''); setTwofaCode('')
+            Alert.alert(t('2FA activée'), t('La double authentification est maintenant active sur votre compte.'))
+        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+    }, [twofaCode, getToken, t])
+
+    const disable2fa = useCallback(async () => {
+        if (!/^\d{6}$/.test(twofaCode)) { Alert.alert(t('Code requis'), t('Entrez le code à 6 chiffres pour confirmer.')); return }
+        setTwofaBusy(true)
+        try {
+            const token = await getToken()
+            const res = await fetch(`${API_BASE}/api/client/2fa/disable`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ code: twofaCode }),
+            })
+            const json = await res.json()
+            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Code incorrect')); return }
+            setTwofaEnabled(false); setTwofaStep('idle'); setTwofaCode('')
+            Alert.alert(t('2FA désactivée'), t('La double authentification a été retirée de votre compte.'))
+        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+    }, [twofaCode, getToken, t])
+
     // Politique forte (identique au web/inscription) : 12+ car., majuscule, 2 chiffres, spécial
     const isPasswordStrong = (p: string) =>
         p.length >= 12 && /[A-Z]/.test(p) && (p.match(/\d/g) || []).length >= 2 && /[^A-Za-z0-9]/.test(p)
@@ -501,6 +572,75 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </AnimatedSection>
 
+                {/* 2FA CARD */}
+                <AnimatedSection delay={300}>
+                    <View style={styles.twofaCard}>
+                        <View style={styles.twofaHead}>
+                            <View style={styles.twofaIconBox}>
+                                <ShieldCheck size={18} color={C.primary} strokeWidth={2} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.cardTitle}>{t('Double authentification (2FA)')}</Text>
+                                <Text style={styles.twofaStatus}>
+                                    {twofaLoading ? t('Vérification…') : twofaEnabled ? t('Activée') : t('Désactivée')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <Text style={styles.twofaDesc}>
+                            {t('Ajoutez un code à usage unique (Google Authenticator, Authy…) en plus de votre mot de passe.')}
+                        </Text>
+
+                        {!twofaLoading && !twofaEnabled && twofaStep === 'idle' && (
+                            <TouchableOpacity onPress={startEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}>
+                                {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Activer la 2FA')}</Text>}
+                            </TouchableOpacity>
+                        )}
+
+                        {!twofaEnabled && twofaStep === 'enroll' && (
+                            <View style={{ gap: 12 }}>
+                                {!!twofaQr && (
+                                    <View style={styles.twofaQrWrap}>
+                                        <Image source={{ uri: twofaQr }} style={styles.twofaQr} />
+                                    </View>
+                                )}
+                                <Text style={styles.twofaHint}>{t('1. Scannez le QR code, ou saisissez la clé :')}</Text>
+                                <Text selectable style={styles.twofaSecret}>{twofaSecret}</Text>
+                                <Text style={styles.twofaHint}>{t('2. Entrez le code à 6 chiffres généré :')}</Text>
+                                <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    style={styles.twofaInput} maxLength={6} />
+                                <TouchableOpacity onPress={confirmEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}>
+                                    {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Confirmer')}</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {twofaEnabled && twofaStep === 'idle' && (
+                            <TouchableOpacity onPress={() => { setTwofaStep('disable'); setTwofaCode('') }} style={styles.twofaGhostBtn}>
+                                <Text style={styles.twofaGhostText}>{t('Désactiver la 2FA')}</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {twofaEnabled && twofaStep === 'disable' && (
+                            <View style={{ gap: 10 }}>
+                                <Text style={styles.twofaHint}>{t('Entrez un code pour confirmer la désactivation :')}</Text>
+                                <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    style={styles.twofaInput} maxLength={6} />
+                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                    <TouchableOpacity onPress={disable2fa} disabled={twofaBusy} style={[styles.twofaDangerBtn, { flex: 1 }]}>
+                                        {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Désactiver')}</Text>}
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setTwofaStep('idle'); setTwofaCode('') }} style={styles.twofaCancelBtn}>
+                                        <Text style={styles.twofaGhostText}>{t('Annuler')}</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                </AnimatedSection>
+
                 {/* SESSION CARD */}
                 <AnimatedSection delay={340}>
                     <View style={styles.sessionCard}>
@@ -595,6 +735,24 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: C.primary + '20',
     },
     cardTitle: { fontSize: 15, fontWeight: '700', color: C.primary, letterSpacing: 0.2 },
+
+    /* 2FA */
+    twofaCard: { backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18, gap: 12 },
+    twofaHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    twofaIconBox: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(4,120,87,0.10)', alignItems: 'center', justifyContent: 'center' },
+    twofaStatus: { fontSize: 12, color: C.textMuted, marginTop: 2 },
+    twofaDesc: { fontSize: 13, color: '#475569', lineHeight: 19 },
+    twofaHint: { fontSize: 12.5, color: C.textMuted },
+    twofaSecret: { fontSize: 13, color: '#1a2332', fontWeight: '700', backgroundColor: '#F1F5F9', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, letterSpacing: 1 },
+    twofaQrWrap: { alignSelf: 'center', backgroundColor: '#fff', padding: 8, borderRadius: 14, borderWidth: 1, borderColor: C.border },
+    twofaQr: { width: 168, height: 168 },
+    twofaInput: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, letterSpacing: 6, color: '#1a2332', backgroundColor: '#FBFCFD' },
+    twofaPrimaryBtn: { backgroundColor: C.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+    twofaPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+    twofaGhostBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+    twofaGhostText: { color: C.danger, fontWeight: '700', fontSize: 13.5 },
+    twofaDangerBtn: { backgroundColor: C.danger, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+    twofaCancelBtn: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
     cardSub: { fontSize: 11, color: C.textMuted, marginTop: 2 },
     cardBody: { padding: 20 },
 

@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Mes Services', icon: Briefcase, href: '/client/services' },
     { title: 'Factures & Commandes', icon: Receipt, href: '/client/factures' },
     { title: 'Messages', icon: MessageSquare, href: '/client/messages' },
+    { title: 'Notifications', icon: Bell, href: '/client/notifications' },
     { title: 'Rendez-vous', icon: CalendarDays, href: '/client/rendez-vous' },
     { title: 'Ma Signature', icon: FileSignature, href: '/client/signature' },
     { title: 'Mon Profil', icon: UserCircle, href: '/client/profil' },
@@ -49,6 +50,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const [loading, setLoading] = useState(!isAuthPage)
     const [mobileOpen, setMobileOpen] = useState(false)
     const [unreadMessages, setUnreadMessages] = useState(0)
+    const [unreadNotifs, setUnreadNotifs] = useState(0)
 
     useEffect(() => {
         if (isAuthPage) return
@@ -102,6 +104,25 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             )
             .subscribe()
 
+        return () => { supabase.removeChannel(channel) }
+    }, [client, isAuthPage])
+
+    // Notifications non lues + realtime
+    useEffect(() => {
+        if (isAuthPage || !client) return
+        const fetchNotifs = async () => {
+            const { count } = await supabase
+                .from('notifications')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', client.id)
+                .eq('is_read', false)
+            setUnreadNotifs(count || 0)
+        }
+        fetchNotifs()
+        const channel = supabase
+            .channel(`client-notifs-${client.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${client.id}` }, () => fetchNotifs())
+            .subscribe()
         return () => { supabase.removeChannel(channel) }
     }, [client, isAuthPage])
 
@@ -161,7 +182,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 {NAV_ITEMS.map((item) => {
                     const isActive = pathname === item.href || (item.href !== '/client/dashboard' && pathname.startsWith(item.href))
                     const Icon = item.icon
-                    const badge = item.href === '/client/messages' ? unreadMessages : 0
+                    const badge = item.href === '/client/messages' ? unreadMessages
+                        : item.href === '/client/notifications' ? unreadNotifs : 0
                     return (
                         <Link key={item.href} href={item.href}
                             className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 ${
