@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Rendez-vous', icon: CalendarDays, href: '/client/rendez-vous' },
     { title: 'Ma Signature', icon: FileSignature, href: '/client/signature' },
     { title: 'Mon Profil', icon: UserCircle, href: '/client/profil' },
+    { title: 'Sécurité (2FA)', icon: Shield, href: '/client/securite' },
 ]
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {

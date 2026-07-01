@@ -948,6 +948,25 @@ export async function middleware(request: NextRequest) {
         if (isClientRoute) {
             if (agentProfile) return redirectTo(new URL('/client/login?error=unauthorized', request.url))
             if (!clientProfile) return redirectTo(new URL('/client/login?error=no-profile', request.url))
+
+            // ─── 2FA Client ───────────────────────────────────
+            // Si le client a activé la 2FA et n'a pas encore validé le code
+            // pour cette session, on le renvoie vers le défi /client/2fa.
+            const is2FAPage = pathname.startsWith('/client/2fa')
+            const clientTotpVerified = request.cookies.get('client_totp_verified')?.value
+            if (!is2FAPage && clientTotpVerified !== 'true') {
+                const { data: totpRow } = await adminSupabase
+                    .from('totp_secrets')
+                    .select('enabled')
+                    .eq('user_id', user.id)
+                    .maybeSingle()
+                if (totpRow?.enabled) {
+                    const redirect2FA = new URL('/client/2fa', request.url)
+                    const safeNext = /^\/client\/[a-zA-Z0-9/_-]*$/.test(pathname) ? pathname : '/client/dashboard'
+                    redirect2FA.searchParams.set('next', safeNext)
+                    return redirectTo(redirect2FA)
+                }
+            }
             return supabaseResponse
         }
 
