@@ -17,14 +17,25 @@ import Animated, {
     interpolateColor,
     interpolate,
 } from 'react-native-reanimated'
-import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
+import { fetchWithTimeout } from '../../lib/fetch'
 
 /* ═══════════════════════════════════════════════════════════
    RegisterScreen — THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width, height } = Dimensions.get('window')
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
+
+// Règles de mot de passe fort — IDENTIQUES au web (frontend/app/api/client/register).
+// L'inscription passe par l'API serveur qui revalide (obligation systeme).
+const PWD_CRITERIA: { id: string; label: string; test: (p: string) => boolean }[] = [
+    { id: 'length',  label: '12 caractères minimum', test: (p) => p.length >= 12 },
+    { id: 'upper',   label: '1 lettre majuscule',    test: (p) => /[A-Z]/.test(p) },
+    { id: 'digits',  label: '2 chiffres minimum',    test: (p) => (p.match(/\d/g) || []).length >= 2 },
+    { id: 'special', label: '1 caractère spécial',   test: (p) => !/^[A-Za-z0-9]*$/.test(p) },
+]
 
 // Palette de l'agence (0% noir, 100% premium)
 const C = {
@@ -44,7 +55,6 @@ const C = {
 }
 
 export default function RegisterScreen({ navigation }: any) {
-    const { signUp } = useAuth()
     const { t } = useLang()
 
     const [prenom, setPrenom] = useState('')
@@ -56,6 +66,9 @@ export default function RegisterScreen({ navigation }: any) {
     const [loading, setLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [focused, setFocused] = useState<string | null>(null)
+
+    const pwdChecks = PWD_CRITERIA.map(c => ({ ...c, ok: c.test(password) }))
+    const passwordStrong = pwdChecks.every(c => c.ok)
 
     /* ── Animations d'entrée (Stagger) ── */
     const headerAnim = useSharedValue(0)
@@ -108,16 +121,40 @@ export default function RegisterScreen({ navigation }: any) {
             Alert.alert(t('Champs requis'), t('Veuillez remplir tous les champs obligatoires.'))
             return
         }
+        // Mot de passe fort obligatoire (revérifié côté serveur par l'API)
+        if (!passwordStrong) {
+            const missing = pwdChecks.filter(c => !c.ok).map(c => t(c.label)).join(', ')
+            Alert.alert(t('Mot de passe trop faible'), `${t('Il manque')} : ${missing}.`)
+            return
+        }
         setLoading(true)
-        const { error } = await signUp(email.trim(), password, { prenom: prenom.trim(), nom: nom.trim(), telephone: phone.trim() })
-        setLoading(false)
-        if (error) Alert.alert(t('Erreur'), error.message)
-        else {
-            Alert.alert(t('Bienvenue'), t('Veuillez vérifier votre email.'), [{ text: t('Continuer'), onPress: () => navigation.navigate('Login') }])
+        try {
+            const res = await fetchWithTimeout(`${API_BASE}/api/client/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                timeoutMs: 20000,
+                body: JSON.stringify({
+                    email: email.trim().toLowerCase(),
+                    password,
+                    nom: nom.trim(),
+                    prenom: prenom.trim(),
+                    phone: phone.trim(),
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            setLoading(false)
+            if (!res.ok) {
+                Alert.alert(t('Erreur'), json.error || t('Inscription impossible. Réessayez.'))
+                return
+            }
+            Alert.alert(t('Bienvenue'), t('Veuillez vérifier votre email pour activer votre compte.'), [{ text: t('Continuer'), onPress: () => navigation.navigate('Login') }])
+        } catch {
+            setLoading(false)
+            Alert.alert(t('Erreur'), t('Erreur de connexion. Réessayez.'))
         }
     }
 
-    const isValid = prenom.trim() && nom.trim() && email.trim() && password.trim().length >= 8
+    const isValid = prenom.trim() && nom.trim() && email.trim() && passwordStrong
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -168,7 +205,7 @@ export default function RegisterScreen({ navigation }: any) {
 
                     <Field
                         icon="lock-closed-outline"
-                        placeholder={t('Mot de passe (8 min.)')}
+                        placeholder={t('Mot de passe sécurisé')}
                         value={password}
                         onChangeText={setPassword}
                         focused={focused === 'password'}
@@ -181,6 +218,22 @@ export default function RegisterScreen({ navigation }: any) {
                             </TouchableOpacity>
                         }
                     />
+
+                    {/* Critères de mot de passe fort */}
+                    {password.length > 0 && (
+                        <View style={{ marginTop: 8, paddingHorizontal: 4, gap: 4 }}>
+                            {pwdChecks.map(c => (
+                                <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <Ionicons
+                                        name={c.ok ? 'checkmark-circle' : 'ellipse-outline'}
+                                        size={15}
+                                        color={c.ok ? C.auraGreen : C.placeholder}
+                                    />
+                                    <Text style={{ fontSize: 12, color: c.ok ? C.primary : C.textSec }}>{t(c.label)}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
                 </Animated.View>
 
                 {/* BOUTON & LOGIN LINK */}

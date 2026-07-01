@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { validateStrongPassword } from '@/lib/password'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -21,8 +22,9 @@ export async function POST(request: NextRequest) {
     if (!email || !password || !fullName) {
         return NextResponse.json({ error: 'email, password et fullName requis' }, { status: 400 })
     }
-    if (password.length < 6) {
-        return NextResponse.json({ error: 'Mot de passe trop court (min 6 caractères)' }, { status: 400 })
+    const pwdErrors = validateStrongPassword(password)
+    if (pwdErrors.length > 0) {
+        return NextResponse.json({ error: `Mot de passe insuffisant : ${pwdErrors.join(', ')}` }, { status: 400 })
     }
 
     const cleanEmail = email.trim().toLowerCase()

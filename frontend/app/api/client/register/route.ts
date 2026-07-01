@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import fs from 'fs'
 import path from 'path'
+import { validateStrongPassword } from '@/lib/password'
 
 // Service role — bypass RLS pour créer le profil, lier les documents
 const supabase = createClient(
@@ -20,11 +21,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Validation sécurité mot de passe (serveur — ne jamais faire confiance au client seul)
-        const pwdErrors: string[] = []
-        if (password.length < 12) pwdErrors.push('12 caractères minimum')
-        if (!/[A-Z]/.test(password)) pwdErrors.push('1 lettre majuscule')
-        if ((password.match(/\d/g) || []).length < 2) pwdErrors.push('2 chiffres minimum')
-        if (/^[A-Za-z0-9]*$/.test(password)) pwdErrors.push('1 caractère spécial')
+        const pwdErrors = validateStrongPassword(password)
         if (pwdErrors.length > 0) {
             return NextResponse.json({ error: `Mot de passe insuffisant : ${pwdErrors.join(', ')}` }, { status: 400 })
         }
