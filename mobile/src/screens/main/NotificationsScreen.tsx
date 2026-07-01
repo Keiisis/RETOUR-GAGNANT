@@ -303,6 +303,23 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
         checkPushStatus()
     }, [fetchNotifications, checkPushStatus])
 
+    /* ── Temps réel : nouvelle notification poussée par le staff ── */
+    useEffect(() => {
+        if (!profile?.id) return
+        const channel = supabase
+            .channel(`notifications-${profile.id}`)
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },
+                (payload) => {
+                    const n = payload.new as AppNotification
+                    setNotifications(prev => (prev.some(p => p.id === n.id) ? prev : [n, ...prev]))
+                },
+            )
+            .subscribe()
+        return () => { supabase.removeChannel(channel) }
+    }, [profile?.id])
+
     const onRefresh = async () => {
         setRefreshing(true)
         await fetchNotifications()
