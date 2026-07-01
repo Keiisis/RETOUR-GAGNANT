@@ -267,7 +267,7 @@ export default function MessagesScreen({ navigation }: any) {
                     prenom: profile.prenom || '',
                     email: profile.email || '',
                     telephone: profile.phone || '',
-                    sujet: `💬 Chat — ${profile.prenom || ''} ${profile.nom || ''}`.trim(),
+                    sujet: `Chat — ${profile.prenom || ''} ${profile.nom || ''}`.trim(),
                     is_read: false,
                     lu: false,
                 })

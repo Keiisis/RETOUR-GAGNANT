@@ -22,7 +22,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
+import { fetchWithTimeout } from '../../lib/fetch'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
+
+// Mappings rdv_requests (partagé avec le site web) ↔ affichage mobile
+const APPT_TYPE_TO_RDV: Record<'video' | 'phone' | 'in_person', string> = { video: 'visio', phone: 'telephone', in_person: 'presentiel' }
+const RDV_TYPE_TO_APPT: Record<string, 'video' | 'phone' | 'in_person'> = { visio: 'video', telephone: 'phone', presentiel: 'in_person' }
+const RDV_STATUT_TO_APPT: Record<string, 'confirmed' | 'pending' | 'cancelled' | 'completed'> = {
+    en_attente: 'pending', confirme: 'confirmed', confirmed: 'confirmed', annule: 'cancelled', cancelled: 'cancelled', termine: 'completed', completed: 'completed',
+}
 
 /* ═══════════════════════════════════════════════════════════
    AppointmentsScreen — THEME "CORPORATE PREMIUM 2026"
@@ -269,14 +279,28 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
     const fetchAppointments = useCallback(async () => {
         if (!profile) return
         try {
+            // Source unifiée avec le site web : rdv_requests (vus par les agents)
             const { data } = await supabase
-                .from('appointments')
-                .select('id, scheduled_at, type, status, notes, agent_name')
-                .eq('client_id', profile.id)
+                .from('rdv_requests')
+                .select('id, date, heure, type, motif, notes, statut, created_at')
+                .or(`client_id.eq.${profile.id},client_email.eq.${profile.email}`)
                 .order('created_at', { ascending: false })
                 .limit(30)
 
-            setAppointments((data || []) as Appointment[])
+            const mapped: Appointment[] = (data || []).map((r: Record<string, unknown>) => {
+                const date = r.date as string | null
+                const heure = (r.heure as string | null) || '09:00'
+                const rawNotes = String(r.notes || '')
+                const msg = rawNotes.includes('Message:') ? rawNotes.split('Message:')[1].trim() : rawNotes
+                return {
+                    id: String(r.id),
+                    scheduled_at: date ? `${date}T${heure.length === 5 ? heure : '09:00'}:00` : null,
+                    type: RDV_TYPE_TO_APPT[String(r.type)] || 'phone',
+                    status: RDV_STATUT_TO_APPT[String(r.statut)] || 'pending',
+                    notes: msg || String(r.motif || ''),
+                }
+            })
+            setAppointments(mapped)
         } catch { /* ignore */ } finally { setLoading(false) }
     }, [profile])
 
@@ -308,16 +332,40 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
         setSubmitting(true)
         try {
-            const { error } = await supabase.from('appointments').insert({
+            const rdvType = APPT_TYPE_TO_RDV[formType]
+            const clientName = `${profile!.prenom || ''} ${profile!.nom || ''}`.trim() || (profile!.email || '')
+
+            // 1. Écriture dans rdv_requests (table partagée, vue par les agents dans l'agenda)
+            const { data: inserted, error } = await supabase.from('rdv_requests').insert({
                 client_id: profile!.id,
-                type: formType,
-                status: 'pending',
+                client_email: profile!.email,
+                date: null,
+                heure: null,
+                type: rdvType,
+                motif: 'Consultation',
                 notes: formNotes.trim(),
-                scheduled_at: null,
-            })
+                statut: 'en_attente',
+            }).select('id').single()
 
             if (error) throw error
 
+            // 2. Notification staff (email admin/agent) — même chemin que le panel web
+            fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                timeoutMs: 12000,
+                body: JSON.stringify({
+                    rdvId: inserted?.id,
+                    clientName,
+                    clientEmail: profile!.email,
+                    service: 'Consultation',
+                    date: null,
+                    heure: null,
+                    type: rdvType,
+                }),
+            }).catch(() => { /* non bloquant */ })
+
+            // 3. Notification locale au client (informative)
             await supabase.from('notifications').insert({
                 user_id: profile!.id,
                 title: 'Demande de RDV envoyée',
@@ -351,7 +399,7 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                 { text: t('Non'), style: 'cancel' },
                 {
                     text: t('Oui, annuler'), style: 'destructive', onPress: async () => {
-                        const { error } = await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', id)
+                        const { error } = await supabase.from('rdv_requests').update({ statut: 'annule' }).eq('id', id)
                         if (error) {
                             Alert.alert(t('Erreur'), t("L'annulation a échoué. Réessayez."))
                             return
