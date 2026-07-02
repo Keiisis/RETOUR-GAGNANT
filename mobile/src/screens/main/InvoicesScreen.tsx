@@ -1,10 +1,11 @@
 'use strict'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
     RefreshControl, Platform, ActivityIndicator, Linking, Alert,
     Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -296,6 +297,7 @@ function InvoiceCard({
 export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
+    const insets = useSafeAreaInsets()
     const [invoices, setInvoices] = useState<Invoice[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -430,9 +432,23 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                 )}
             </View>
 
-            <ScrollView
+            <FlatList
+                data={loading || invoices.length === 0 ? [] : filteredInvoices}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={({ item, index }) => (
+                    <View style={styles.listWrap}>
+                        <InvoiceCard
+                            invoice={item}
+                            index={index}
+                            onPress={() => openInvoice(item)}
+                            t={t}
+                            formatPrice={formatPrice}
+                            formatDate={formatDate}
+                        />
+                    </View>
+                )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -440,25 +456,13 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                         tintColor={C.primary}
                     />
                 }
-            >
-                {/* HEADER TITRE */}
-                <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Vos')}</Text>
-                    <Text style={styles.titleHighlight}>{t('factures.')}</Text>
-                    <Text style={styles.subtitle}>
-                        {t('Historique complet de votre facturation Retour Gagnant.')}
-                    </Text>
-                </Animated.View>
-
-                {/* LOADING */}
-                {loading ? (
-                    <View style={styles.centerState}>
-                        <ActivityIndicator color={C.primary} size="large" />
-                        <Text style={styles.loadingText}>{t('Chargement de vos factures...')}</Text>
-                    </View>
-                ) : invoices.length === 0 ? (
-                    /* ─── EMPTY STATE ─── */
-                    <AnimatedSection delay={150}>
+                ListEmptyComponent={
+                    loading ? (
+                        <View style={styles.centerState}>
+                            <ActivityIndicator color={C.primary} size="large" />
+                            <Text style={styles.loadingText}>{t('Chargement de vos factures...')}</Text>
+                        </View>
+                    ) : invoices.length === 0 ? (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
                                 <Ionicons name="receipt-outline" size={42} color={C.accent} />
@@ -482,144 +486,141 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                 {t('Tirez pour rafraîchir')}
                             </Text>
                         </View>
-                    </AnimatedSection>
-                ) : (
-                    <>
-                        {/* ═══ CARD TOTAL HERO (Bleu massif premium) ═══ */}
-                        <AnimatedSection delay={150}>
-                            <View style={styles.totalCard}>
-                                {/* Halo doré pulsant */}
-                                <Animated.View style={[styles.totalGlow, totalGlowStyle]} />
-
-                                {/* Pattern décoratif */}
-                                <View style={styles.patternDot1} />
-                                <View style={styles.patternDot2} />
-
-                                <View style={styles.totalBadge}>
-                                    <Ionicons name="wallet-outline" size={11} color={C.accent} />
-                                    <Text style={styles.totalBadgeText}>
-                                        {t('TOTAL FACTURÉ')}
-                                    </Text>
-                                </View>
-
-                                <Text style={styles.totalAmount}>
-                                    {formatPrice(stats.total, stats.currency)}
-                                </Text>
-
-                                <Text style={styles.totalSub}>
-                                    {invoices.length} {invoices.length > 1 ? t('factures émises') : t('facture émise')}
-                                </Text>
-
-                                <View style={styles.totalDivider} />
-
-                                {/* Split paid/pending */}
-                                <View style={styles.totalSplit}>
-                                    <View style={styles.totalSplitItem}>
-                                        <View style={styles.totalSplitDot}>
-                                            <Ionicons name="checkmark" size={10} color={C.primary} />
-                                        </View>
-                                        <View>
-                                            <Text style={styles.totalSplitLabel}>{t('Payé')}</Text>
-                                            <Text style={styles.totalSplitValue}>
-                                                {formatPrice(stats.paid, stats.currency)}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    <View style={styles.totalSplitDivider} />
-
-                                    <View style={styles.totalSplitItem}>
-                                        <View style={[styles.totalSplitDot, { backgroundColor: 'rgba(212,160,23,0.25)' }]}>
-                                            <Ionicons name="time-outline" size={10} color={C.accent} />
-                                        </View>
-                                        <View>
-                                            <Text style={styles.totalSplitLabel}>{t('En attente')}</Text>
-                                            <Text style={styles.totalSplitValue}>
-                                                {formatPrice(stats.pending, stats.currency)}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
+                    ) : (
+                        <View style={styles.emptyCatWrap}>
+                            <View style={styles.emptyCatIcon}>
+                                <Ionicons name="filter-outline" size={28} color={C.textMuted} />
                             </View>
-                        </AnimatedSection>
-
-                        {/* ═══ FILTRES STATUT ═══ */}
-                        <AnimatedSection delay={250}>
-                            <View style={styles.filterTitleWrap}>
-                                <Text style={styles.filterTitle}>{t('FILTRER')}</Text>
-                                <View style={styles.filterUnderline} />
-                            </View>
-
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.filtersContent}
+                            <Text style={styles.emptyCatTitle}>
+                                {t('Aucune facture')}
+                            </Text>
+                            <Text style={styles.emptyCatText}>
+                                {t('Aucune facture dans cette catégorie.')}
+                            </Text>
+                            <Pressable
+                                onPress={() => setFilter('all')}
+                                style={styles.emptyCatBtn}
                             >
-                                <FilterPill
-                                    label={t('Toutes')}
-                                    icon="apps-outline"
-                                    count={invoices.length}
-                                    active={filter === 'all'}
-                                    onPress={() => setFilter('all')}
-                                />
-                                <FilterPill
-                                    label={t('Payées')}
-                                    icon="checkmark-circle"
-                                    count={stats.countPaid}
-                                    active={filter === 'paid'}
-                                    onPress={() => setFilter('paid')}
-                                />
-                                <FilterPill
-                                    label={t('En attente')}
-                                    icon="time-outline"
-                                    count={stats.countPending}
-                                    active={filter === 'pending'}
-                                    onPress={() => setFilter('pending')}
-                                />
-                            </ScrollView>
-                        </AnimatedSection>
+                                <Text style={styles.emptyCatBtnText}>
+                                    {t('Voir toutes')}
+                                </Text>
+                                <Ionicons name="arrow-forward" size={13} color={C.accent} />
+                            </Pressable>
+                        </View>
+                    )
+                }
+                ListHeaderComponent={
+                    <>
+                        {/* HEADER TITRE */}
+                        <Animated.View style={[styles.headerContainer, styleHeader]}>
+                            <Text style={styles.title}>{t('Vos')}</Text>
+                            <Text style={styles.titleHighlight}>{t('factures.')}</Text>
+                            <Text style={styles.subtitle}>
+                                {t('Historique complet de votre facturation Retour Gagnant.')}
+                            </Text>
+                        </Animated.View>
 
-                        {/* ═══ LISTE ═══ */}
-                        {filteredInvoices.length === 0 ? (
-                            <AnimatedSection delay={350}>
-                                <View style={styles.emptyCatWrap}>
-                                    <View style={styles.emptyCatIcon}>
-                                        <Ionicons name="filter-outline" size={28} color={C.textMuted} />
-                                    </View>
-                                    <Text style={styles.emptyCatTitle}>
-                                        {t('Aucune facture')}
-                                    </Text>
-                                    <Text style={styles.emptyCatText}>
-                                        {t('Aucune facture dans cette catégorie.')}
-                                    </Text>
-                                    <Pressable
-                                        onPress={() => setFilter('all')}
-                                        style={styles.emptyCatBtn}
-                                    >
-                                        <Text style={styles.emptyCatBtnText}>
-                                            {t('Voir toutes')}
+                        {!loading && invoices.length > 0 && (
+                            <>
+                                {/* ═══ CARD TOTAL HERO (Bleu massif premium) ═══ */}
+                                <AnimatedSection delay={150}>
+                                    <View style={styles.totalCard}>
+                                        {/* Halo doré pulsant */}
+                                        <Animated.View style={[styles.totalGlow, totalGlowStyle]} />
+
+                                        {/* Pattern décoratif */}
+                                        <View style={styles.patternDot1} />
+                                        <View style={styles.patternDot2} />
+
+                                        <View style={styles.totalBadge}>
+                                            <Ionicons name="wallet-outline" size={11} color={C.accent} />
+                                            <Text style={styles.totalBadgeText}>
+                                                {t('TOTAL FACTURÉ')}
+                                            </Text>
+                                        </View>
+
+                                        <Text style={styles.totalAmount}>
+                                            {formatPrice(stats.total, stats.currency)}
                                         </Text>
-                                        <Ionicons name="arrow-forward" size={13} color={C.accent} />
-                                    </Pressable>
-                                </View>
-                            </AnimatedSection>
-                        ) : (
-                            <View style={styles.listWrap}>
-                                {filteredInvoices.map((inv, idx) => (
-                                    <InvoiceCard
-                                        key={inv.id}
-                                        invoice={inv}
-                                        index={idx}
-                                        onPress={() => openInvoice(inv)}
-                                        t={t}
-                                        formatPrice={formatPrice}
-                                        formatDate={formatDate}
-                                    />
-                                ))}
-                            </View>
-                        )}
 
-                        {/* ═══ INFO BOX ═══ */}
+                                        <Text style={styles.totalSub}>
+                                            {invoices.length} {invoices.length > 1 ? t('factures émises') : t('facture émise')}
+                                        </Text>
+
+                                        <View style={styles.totalDivider} />
+
+                                        {/* Split paid/pending */}
+                                        <View style={styles.totalSplit}>
+                                            <View style={styles.totalSplitItem}>
+                                                <View style={styles.totalSplitDot}>
+                                                    <Ionicons name="checkmark" size={10} color={C.primary} />
+                                                </View>
+                                                <View>
+                                                    <Text style={styles.totalSplitLabel}>{t('Payé')}</Text>
+                                                    <Text style={styles.totalSplitValue}>
+                                                        {formatPrice(stats.paid, stats.currency)}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            <View style={styles.totalSplitDivider} />
+
+                                            <View style={styles.totalSplitItem}>
+                                                <View style={[styles.totalSplitDot, { backgroundColor: 'rgba(212,160,23,0.25)' }]}>
+                                                    <Ionicons name="time-outline" size={10} color={C.accent} />
+                                                </View>
+                                                <View>
+                                                    <Text style={styles.totalSplitLabel}>{t('En attente')}</Text>
+                                                    <Text style={styles.totalSplitValue}>
+                                                        {formatPrice(stats.pending, stats.currency)}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </View>
+                                </AnimatedSection>
+
+                                {/* ═══ FILTRES STATUT ═══ */}
+                                <AnimatedSection delay={250}>
+                                    <View style={styles.filterTitleWrap}>
+                                        <Text style={styles.filterTitle}>{t('FILTRER')}</Text>
+                                        <View style={styles.filterUnderline} />
+                                    </View>
+
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        contentContainerStyle={styles.filtersContent}
+                                    >
+                                        <FilterPill
+                                            label={t('Toutes')}
+                                            icon="apps-outline"
+                                            count={invoices.length}
+                                            active={filter === 'all'}
+                                            onPress={() => setFilter('all')}
+                                        />
+                                        <FilterPill
+                                            label={t('Payées')}
+                                            icon="checkmark-circle"
+                                            count={stats.countPaid}
+                                            active={filter === 'paid'}
+                                            onPress={() => setFilter('paid')}
+                                        />
+                                        <FilterPill
+                                            label={t('En attente')}
+                                            icon="time-outline"
+                                            count={stats.countPending}
+                                            active={filter === 'pending'}
+                                            onPress={() => setFilter('pending')}
+                                        />
+                                    </ScrollView>
+                                </AnimatedSection>
+                            </>
+                        )}
+                    </>
+                }
+                ListFooterComponent={
+                    !loading && invoices.length > 0 ? (
                         <AnimatedSection delay={500}>
                             <View style={styles.infoBox}>
                                 <View style={styles.infoIconWrap}>
@@ -635,11 +636,9 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                 </View>
                             </View>
                         </AnimatedSection>
-                    </>
-                )}
-
-                <View style={{ height: 60 }} />
-            </ScrollView>
+                    ) : null
+                }
+            />
         </View>
     )
 }

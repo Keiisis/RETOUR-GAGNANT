@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Linking, Alert } from 'react-native'
@@ -41,6 +41,9 @@ Notifications.setNotificationHandler({
         shouldShowList: true,
     }),
 })
+
+/* ── Référence de navigation (pour ouvrir un écran depuis une notification) ── */
+export const navigationRef = createNavigationContainerRef()
 
 /* ── Configuration Deep Links ── */
 const linking = {
@@ -106,6 +109,17 @@ export default function App() {
         return () => sub.remove()
     }, [])
 
+    /* ── Tap sur une notification push → ouvre l'écran Notifications ── */
+    useEffect(() => {
+        const sub = Notifications.addNotificationResponseReceivedListener(() => {
+            if (navigationRef.isReady()) {
+                // @ts-expect-error navigation dynamique
+                navigationRef.navigate('Notifications')
+            }
+        })
+        return () => sub.remove()
+    }, [])
+
     // Attendre que les polices soient prêtes avant d'afficher l'app
     if (!fontsLoaded) {
         return <SplashScreen isLoading />
@@ -118,7 +132,7 @@ export default function App() {
                     <LangProvider>
                         <AuthProvider>
                             <CartProvider>
-                                <NavigationContainer linking={linking}>
+                                <NavigationContainer ref={navigationRef} linking={linking}>
                                     <StatusBar style="dark" />
                                     <AppNavigator />
                                     <OfflineBanner />

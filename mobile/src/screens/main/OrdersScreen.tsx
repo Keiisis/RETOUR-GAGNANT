@@ -1,10 +1,12 @@
 'use strict'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
     RefreshControl, Platform, ActivityIndicator, TextInput, Alert,
     Dimensions, Pressable,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -315,6 +317,7 @@ function OrderCard({
 export default function OrdersScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
+    const insets = useSafeAreaInsets()
     const [orders, setOrders] = useState<OrderListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -454,9 +457,21 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 </Pressable>
             </View>
 
-            <ScrollView
+            <FlatList
+                data={loading ? [] : filteredOrders}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={({ item, index }) => (
+                    <OrderCard
+                        order={item}
+                        onPress={() => { Haptics.selectionAsync(); navigation.navigate('OrderDetail', { orderId: item.id }) }}
+                        formatPrice={formatPrice}
+                        formatDate={formatDate}
+                        t={t}
+                        delay={Math.min(index, 8) * 45}
+                    />
+                )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -465,7 +480,69 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                         colors={[C.accent]}
                     />
                 }
-            >
+                ListEmptyComponent={
+                    loading ? (
+                        <View style={styles.loadingState}>
+                            <View style={styles.loadingIconWrap}>
+                                <ActivityIndicator color={C.primary} size="large" />
+                            </View>
+                            <Text style={styles.loadingTitle}>{t('Chargement')}</Text>
+                            <Text style={styles.loadingText}>{t('Récupération de vos commandes…')}</Text>
+                        </View>
+                    ) : orders.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <View style={styles.emptyHero}>
+                                <View style={styles.emptyHeroGlow} />
+                                <View style={styles.emptyIconWrap}>
+                                    <Ionicons name="bag-outline" size={36} color={C.accent} />
+                                </View>
+                                <View style={styles.emptyHeroBadge}>
+                                    <Ionicons name="sparkles" size={10} color={C.accent} />
+                                    <Text style={styles.emptyHeroBadgeText}>{t('DÉCOUVRIR')}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.emptyTitle}>{t('Aucune commande')}</Text>
+                            <Text style={styles.emptyText}>
+                                {t('Vos commandes apparaîtront ici. Découvrez notre boutique culturelle et artisanale.')}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.shopBtn}
+                                onPress={() => navigation.navigate('Boutique' as any)}
+                                activeOpacity={0.85}
+                            >
+                                <Ionicons name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
+                                <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.emptyFilterState}>
+                            <View style={styles.emptyFilterIcon}>
+                                <Ionicons name="filter-outline" size={28} color={C.textSec} />
+                            </View>
+                            <Text style={styles.emptyFilterTitle}>{t('Aucun résultat')}</Text>
+                            <Text style={styles.emptyFilterText}>
+                                {t("Aucune commande ne correspond à ce filtre.")}
+                            </Text>
+                        </View>
+                    )
+                }
+                ListFooterComponent={
+                    orders.length > 0 ? (
+                        <View style={styles.footerInfo}>
+                            <View style={styles.footerDivider}>
+                                <View style={styles.dividerLine} />
+                                <View style={styles.dividerDot} />
+                                <View style={styles.dividerLine} />
+                            </View>
+                            <Text style={styles.footerText}>
+                                {t('Tirez vers le bas pour rafraîchir.')}
+                            </Text>
+                        </View>
+                    ) : null
+                }
+                ListHeaderComponent={
+                    <>
                 {/* HEADER TITRE */}
                 <AnimatedSection delay={0}>
                     <View style={styles.headerContainer}>
@@ -574,91 +651,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     </AnimatedSection>
                 )}
 
-                {/* ═══ LISTE / ÉTATS ═══ */}
-                {loading ? (
-                    <View style={styles.loadingState}>
-                        <View style={styles.loadingIconWrap}>
-                            <ActivityIndicator color={C.primary} size="large" />
-                        </View>
-                        <Text style={styles.loadingTitle}>{t('Chargement')}</Text>
-                        <Text style={styles.loadingText}>{t('Récupération de vos commandes…')}</Text>
-                    </View>
-                ) : orders.length === 0 ? (
-                    <AnimatedSection delay={300}>
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyHero}>
-                                <View style={styles.emptyHeroGlow} />
-                                <View style={styles.emptyIconWrap}>
-                                    <Ionicons name="bag-outline" size={36} color={C.accent} />
-                                </View>
-                                <View style={styles.emptyHeroBadge}>
-                                    <Ionicons name="sparkles" size={10} color={C.accent} />
-                                    <Text style={styles.emptyHeroBadgeText}>{t('DÉCOUVRIR')}</Text>
-                                </View>
-                            </View>
-
-                            <Text style={styles.emptyTitle}>{t('Aucune commande')}</Text>
-                            <Text style={styles.emptyText}>
-                                {t('Vos commandes apparaîtront ici. Découvrez notre boutique culturelle et artisanale.')}
-                            </Text>
-
-                            <TouchableOpacity
-                                style={styles.shopBtn}
-                                onPress={() => navigation.navigate('Boutique' as any)}
-                                activeOpacity={0.85}
-                            >
-                                <Ionicons name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
-                                <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
-                                <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
-                            </TouchableOpacity>
-                        </View>
-                    </AnimatedSection>
-                ) : filteredOrders.length === 0 ? (
-                    <AnimatedSection delay={300}>
-                        <View style={styles.emptyFilterState}>
-                            <View style={styles.emptyFilterIcon}>
-                                <Ionicons name="filter-outline" size={28} color={C.textSec} />
-                            </View>
-                            <Text style={styles.emptyFilterTitle}>{t('Aucun résultat')}</Text>
-                            <Text style={styles.emptyFilterText}>
-                                {t("Aucune commande ne correspond à ce filtre.")}
-                            </Text>
-                        </View>
-                    </AnimatedSection>
-                ) : (
-                    <View style={styles.list}>
-                        {filteredOrders.map((order, i) => (
-                            <OrderCard
-                                key={order.id}
-                                order={order}
-                                onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
-                                formatPrice={formatPrice}
-                                formatDate={formatDate}
-                                t={t}
-                                delay={i * 60}
-                            />
-                        ))}
-                    </View>
-                )}
-
-                {/* ═══ FOOTER INFO ═══ */}
-                {orders.length > 0 && (
-                    <AnimatedSection delay={500}>
-                        <View style={styles.footerInfo}>
-                            <View style={styles.footerDivider}>
-                                <View style={styles.dividerLine} />
-                                <View style={styles.dividerDot} />
-                                <View style={styles.dividerLine} />
-                            </View>
-                            <Text style={styles.footerText}>
-                                {t('Tirez vers le bas pour rafraîchir.')}
-                            </Text>
-                        </View>
-                    </AnimatedSection>
-                )}
-
-                <View style={{ height: 80 }} />
-            </ScrollView>
+                    </>
+                }
+            />
         </View>
     )
 }

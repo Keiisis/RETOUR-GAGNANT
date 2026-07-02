@@ -1,10 +1,12 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
 import {
-    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    View, Text, FlatList, StyleSheet, TouchableOpacity,
     RefreshControl, Platform, Switch, Alert, ActivityIndicator,
     Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -232,6 +234,7 @@ function NotifCard({
 export default function NotificationsScreen({ navigation }: { navigation: Nav }) {
     const { profile, updateProfile } = useAuth()
     const { t } = useLang()
+    const insets = useSafeAreaInsets()
     const [notifications, setNotifications] = useState<AppNotification[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -443,9 +446,21 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 </View>
             </View>
 
-            <ScrollView
+            <FlatList
+                data={loading ? [] : filteredNotifs}
+                keyExtractor={(n) => n.id}
+                renderItem={({ item, index }) => (
+                    <NotifCard
+                        notif={item}
+                        onPress={() => { Haptics.selectionAsync(); markAsRead(item.id) }}
+                        formatDate={formatDate}
+                        t={t}
+                        delay={Math.min(index, 8) * 45}
+                    />
+                )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
+                ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -454,7 +469,60 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                         colors={[C.accent]}
                     />
                 }
-            >
+                ListEmptyComponent={
+                    loading ? (
+                        <View style={styles.loadingState}>
+                            <View style={styles.loadingIconWrap}>
+                                <ActivityIndicator color={C.primary} size="large" />
+                            </View>
+                            <Text style={styles.loadingTitle}>{t('Chargement')}</Text>
+                            <Text style={styles.loadingText}>{t('Récupération de vos notifications…')}</Text>
+                        </View>
+                    ) : notifications.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <View style={styles.emptyHero}>
+                                <View style={styles.emptyHeroGlow} />
+                                <View style={styles.emptyIconWrap}>
+                                    <Ionicons name="notifications-off-outline" size={36} color={C.accent} />
+                                </View>
+                                <View style={styles.emptyHeroBadge}>
+                                    <Ionicons name="checkmark" size={10} color={C.accent} />
+                                    <Text style={styles.emptyHeroBadgeText}>{t('À JOUR')}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.emptyTitle}>{t('Aucune notification')}</Text>
+                            <Text style={styles.emptyText}>
+                                {t('Vous serez alerté ici lors des mises à jour de vos dossiers, messages et rendez-vous.')}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={styles.emptyFilterState}>
+                            <View style={styles.emptyFilterIcon}>
+                                <Ionicons name="checkmark-done" size={28} color={C.success} />
+                            </View>
+                            <Text style={styles.emptyFilterTitle}>{t('Tout est lu')}</Text>
+                            <Text style={styles.emptyFilterText}>
+                                {t("Vous n'avez plus de notifications non lues.")}
+                            </Text>
+                        </View>
+                    )
+                }
+                ListFooterComponent={
+                    notifications.length > 0 ? (
+                        <View style={styles.footerInfo}>
+                            <View style={styles.footerDivider}>
+                                <View style={styles.dividerLine} />
+                                <View style={styles.dividerDot} />
+                                <View style={styles.dividerLine} />
+                            </View>
+                            <Text style={styles.footerText}>
+                                {t('Les notifications sont conservées 30 jours.')}
+                            </Text>
+                        </View>
+                    ) : null
+                }
+                ListHeaderComponent={
+                    <>
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
                     <Text style={styles.title}>{t('Vos')}</Text>
@@ -592,80 +660,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                     </AnimatedSection>
                 )}
 
-                {/* ═══ LISTE / ÉTATS ═══ */}
-                {loading ? (
-                    <View style={styles.loadingState}>
-                        <View style={styles.loadingIconWrap}>
-                            <ActivityIndicator color={C.primary} size="large" />
-                        </View>
-                        <Text style={styles.loadingTitle}>{t('Chargement')}</Text>
-                        <Text style={styles.loadingText}>{t('Récupération de vos notifications…')}</Text>
-                    </View>
-                ) : notifications.length === 0 ? (
-                    <AnimatedSection delay={300}>
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyHero}>
-                                <View style={styles.emptyHeroGlow} />
-                                <View style={styles.emptyIconWrap}>
-                                    <Ionicons name="notifications-off-outline" size={36} color={C.accent} />
-                                </View>
-                                <View style={styles.emptyHeroBadge}>
-                                    <Ionicons name="checkmark" size={10} color={C.accent} />
-                                    <Text style={styles.emptyHeroBadgeText}>{t('À JOUR')}</Text>
-                                </View>
-                            </View>
-
-                            <Text style={styles.emptyTitle}>{t('Aucune notification')}</Text>
-                            <Text style={styles.emptyText}>
-                                {t('Vous serez alerté ici lors des mises à jour de vos dossiers, messages et rendez-vous.')}
-                            </Text>
-                        </View>
-                    </AnimatedSection>
-                ) : filteredNotifs.length === 0 ? (
-                    <AnimatedSection delay={300}>
-                        <View style={styles.emptyFilterState}>
-                            <View style={styles.emptyFilterIcon}>
-                                <Ionicons name="checkmark-done" size={28} color={C.success} />
-                            </View>
-                            <Text style={styles.emptyFilterTitle}>{t('Tout est lu')}</Text>
-                            <Text style={styles.emptyFilterText}>
-                                {t("Vous n'avez plus de notifications non lues.")}
-                            </Text>
-                        </View>
-                    </AnimatedSection>
-                ) : (
-                    <View style={styles.notifList}>
-                        {filteredNotifs.map((notif, i) => (
-                            <NotifCard
-                                key={notif.id}
-                                notif={notif}
-                                onPress={() => markAsRead(notif.id)}
-                                formatDate={formatDate}
-                                t={t}
-                                delay={i * 60}
-                            />
-                        ))}
-                    </View>
-                )}
-
-                {/* ═══ FOOTER INFO ═══ */}
-                {notifications.length > 0 && (
-                    <AnimatedSection delay={400}>
-                        <View style={styles.footerInfo}>
-                            <View style={styles.footerDivider}>
-                                <View style={styles.dividerLine} />
-                                <View style={styles.dividerDot} />
-                                <View style={styles.dividerLine} />
-                            </View>
-                            <Text style={styles.footerText}>
-                                {t('Les notifications sont conservées 30 jours.')}
-                            </Text>
-                        </View>
-                    </AnimatedSection>
-                )}
-
-                <View style={{ height: 60 }} />
-            </ScrollView>
+                    </>
+                }
+            />
         </View>
     )
 }
