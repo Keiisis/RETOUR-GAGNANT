@@ -5,6 +5,7 @@ import {
     Platform, Alert, ActivityIndicator, Modal,
     Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -318,6 +319,7 @@ const ticketStyles = StyleSheet.create({
 ═══════════════════════════════════════════════════════════ */
 
 export default function EventDetailScreen({ route, navigation }: any) {
+    const insets = useSafeAreaInsets()
     const { event } = route.params as { event: AppEvent }
     const { profile } = useAuth()
     const { t } = useLang()
@@ -521,7 +523,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -895,7 +897,6 @@ const styles = StyleSheet.create({
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,

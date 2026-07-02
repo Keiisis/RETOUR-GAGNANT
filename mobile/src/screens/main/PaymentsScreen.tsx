@@ -6,6 +6,7 @@ import {
     Platform, ActivityIndicator, Alert, Pressable, Dimensions,
     TouchableOpacity, RefreshControl,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -104,6 +105,7 @@ function AnimatedSection({ children, delay = 0, style }: { children: React.React
    ECRAN PRINCIPAL
 ═══════════════════════════════════════════════════════════ */
 export default function PaymentsScreen({ navigation }: any) {
+    const insets = useSafeAreaInsets()
     const { user } = useAuth() as any
     const { t } = useLang()
 
@@ -173,7 +175,7 @@ export default function PaymentsScreen({ navigation }: any) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation?.goBack?.()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -542,7 +544,6 @@ const styles = StyleSheet.create({
 
     /* ── Nav ── */
     navBar: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         flexDirection: 'row',

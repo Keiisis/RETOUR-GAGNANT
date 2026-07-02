@@ -12,6 +12,7 @@ import {
     Alert,
     Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -197,6 +198,7 @@ function AnimatedSection({
 }
 
 export default function ProductDetailScreen({ navigation, route }: Props) {
+    const insets = useSafeAreaInsets();
     const { product, onAddToCart } = route.params;
     const { t } = useLang();
     const [quantity, setQuantity] = useState(1);
@@ -299,7 +301,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     colors={[C.bg, 'rgba(245,241,234,0.92)']}
                     style={StyleSheet.absoluteFill}
                 />
-                <View style={styles.floatingHeaderInner}>
+                <View style={[styles.floatingHeaderInner, { paddingTop: insets.top + 8 }]}>
                     <Text numberOfLines={1} style={styles.floatingTitle}>
                         {t(product.title)}
                     </Text>
@@ -348,7 +350,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     </Animated.View>
 
                     {/* Top action bar */}
-                    <View style={styles.topBar}>
+                    <View style={[styles.topBar, { top: insets.top + 8 }]}>
                         <InteractiveButton onPress={() => navigation.goBack()} style={styles.iconBtn}>
                             <ArrowLeft size={20} color={C.surface} strokeWidth={2} />
                         </InteractiveButton>
@@ -601,7 +603,6 @@ const styles = StyleSheet.create({
     },
     floatingHeaderInner: {
         flex: 1,
-        paddingTop: Platform.OS === 'ios' ? 48 : 28,
         paddingHorizontal: 72,
         justifyContent: 'center',
         alignItems: 'center',
@@ -632,7 +633,6 @@ const styles = StyleSheet.create({
 
     topBar: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 52 : 32,
         left: 16,
         right: 16,
         flexDirection: 'row',

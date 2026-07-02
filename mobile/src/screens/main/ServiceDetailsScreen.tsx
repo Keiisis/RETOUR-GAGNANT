@@ -4,6 +4,7 @@ import {
     View, Text, ScrollView, StyleSheet, Pressable,
     Platform, Alert, ActivityIndicator, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ArrowLeft, Calendar, Check, Clock, CreditCard, Star, Tag, Users,
     Sparkles, ShieldCheck, Award, ChevronRight, Zap, FileText,
@@ -140,6 +141,7 @@ const InteractiveButton = ({ children, onPress, style, disabled, accessibilityLa
    HERO SERVICE — gradient bleu nuit + shimmer or + icône premium
 ═══════════════════════════════════════════════════════════ */
 const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
+    const insets = useSafeAreaInsets()
     const shine = useSharedValue(-1)
     const iconScale = useSharedValue(0.6)
     const iconRotate = useSharedValue(-12)
@@ -177,7 +179,7 @@ const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
     }))
 
     return (
-        <View style={hero.wrap}>
+        <View style={[hero.wrap, { paddingTop: insets.top + 20 }]}>
             <LinearGradient
                 colors={[C.primary, C.primaryLight, C.primary]}
                 start={{ x: 0, y: 0 }}
@@ -244,6 +246,7 @@ const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
    ÉCRAN PRINCIPAL
 ═══════════════════════════════════════════════════════════ */
 export default function ServiceDetailsScreen({ route, navigation }: any) {
+    const insets = useSafeAreaInsets()
     const {
         serviceId, title, subtitle, desc, fullDescription,
         icon, duration: paramDuration, price: paramPrice, documents: paramDocuments,
@@ -440,7 +443,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             <FloatingAura size={200} color={C.primaryGlow} top={500} left={-60} duration={10000} delay={3500} />
 
             {/* Sticky header (apparait au scroll) */}
-            <Animated.View style={[styles.stickyHeader, stickyHeaderStyle]} pointerEvents="box-none">
+            <Animated.View style={[styles.stickyHeader, { paddingTop: insets.top + 8 }, stickyHeaderStyle]} pointerEvents="box-none">
                 <LinearGradient
                     colors={['rgba(255,255,255,0.96)', 'rgba(255,255,255,0.86)']}
                     style={StyleSheet.absoluteFillObject}
@@ -762,7 +765,6 @@ const PressableCardLite = ({ children }: any) => {
 ═══════════════════════════════════════════════════════════ */
 const hero = StyleSheet.create({
     wrap: {
-        paddingTop: Platform.OS === 'ios' ? 64 : 48,
         paddingBottom: 56,
         paddingHorizontal: spacing.lg,
         alignItems: 'center',
@@ -842,7 +844,6 @@ const styles = StyleSheet.create({
     /* Sticky header */
     stickyHeader: {
         position: 'absolute', top: 0, left: 0, right: 0,
-        paddingTop: Platform.OS === 'ios' ? 50 : 30,
         paddingBottom: 12, paddingHorizontal: spacing.lg,
         zIndex: 100,
         borderBottomWidth: 1, borderBottomColor: C.border,

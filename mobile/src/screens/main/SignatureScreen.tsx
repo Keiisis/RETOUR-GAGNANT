@@ -5,6 +5,7 @@ import {
     ActivityIndicator, Alert, ScrollView, Image, Pressable,
     Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import SignatureScreenLib, { SignatureViewRef } from 'react-native-signature-canvas'
 import Animated, {
@@ -78,6 +79,7 @@ const AUTO_SIGN_DESC: Record<AutoSign, string> = {
 }
 
 export default function SignatureScreen({ navigation }: { navigation: Nav }) {
+    const insets = useSafeAreaInsets()
     const { profile } = useAuth()
     const { t } = useLang()
     const sigRef = useRef<SignatureViewRef>(null)
@@ -257,7 +259,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -552,7 +554,6 @@ const styles = StyleSheet.create({
 
     /* ── Nav Bar ── */
     navBar: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,

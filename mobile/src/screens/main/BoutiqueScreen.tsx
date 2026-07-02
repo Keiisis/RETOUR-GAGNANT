@@ -5,6 +5,7 @@ import {
     Image, Dimensions, Platform, RefreshControl, ActivityIndicator,
     ScrollView, Pressable,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -535,6 +536,7 @@ const cardStyles = StyleSheet.create({
 ═══════════════════════════════════════════════════════════ */
 
 export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
+    const insets = useSafeAreaInsets()
     const [products, setProducts] = useState<BoutiqueProduct[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -712,7 +714,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR (fixe, style RegisterScreen avec ajout panier) */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
                     <View style={styles.iconCircle}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -942,7 +944,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 20,

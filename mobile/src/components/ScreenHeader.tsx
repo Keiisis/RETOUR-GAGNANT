@@ -1,6 +1,7 @@
 'use strict'
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft } from 'lucide-react-native'
 
@@ -19,8 +20,9 @@ interface ScreenHeaderProps {
  * gold-accented title badge, and optional back/right actions.
  */
 export default function ScreenHeader({ title, subtitle, onBack, rightAction }: ScreenHeaderProps) {
+    const insets = useSafeAreaInsets()
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
             <View style={styles.headerBgWrap}>
                 <LinearGradient colors={[royal.deepEmerald, royal.deepLightEmerald]} style={StyleSheet.absoluteFillObject} />
             </View>
@@ -50,7 +52,6 @@ export default function ScreenHeader({ title, subtitle, onBack, rightAction }: S
 
 const styles = StyleSheet.create({
     header: {
-        paddingTop: Platform.OS === 'ios' ? 56 : 44,
         paddingBottom: 24,
         paddingHorizontal: 20,
         shadowColor: royal.deepEmerald,

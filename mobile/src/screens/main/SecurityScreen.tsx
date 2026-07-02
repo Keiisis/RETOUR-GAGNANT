@@ -5,6 +5,7 @@ import {
     ScrollView, KeyboardAvoidingView, Platform,
     ActivityIndicator, Alert, Dimensions, Pressable, Image,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, withRepeat,
     withSequence, withDelay, withSpring, interpolate, Easing,
@@ -263,6 +264,7 @@ function PasswordField({
    MAIN SCREEN
    ────────────────────────────────────────────── */
 export default function SecurityScreen({ navigation }: { navigation: Nav }) {
+    const insets = useSafeAreaInsets()
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const { t } = useLang()
@@ -409,7 +411,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             </View>
 
             {/* Header custom */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
                 <InteractiveButton
                     onPress={() => navigation.goBack()}
                     style={styles.headerBtn}
@@ -678,7 +680,7 @@ const styles = StyleSheet.create({
 
     header: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 56 : 36,
+        paddingHorizontal: 20,
         paddingBottom: 12, gap: 12,
     },
     headerBtn: {

@@ -5,6 +5,7 @@ import {
     TextInput, ActivityIndicator, Alert, Platform, KeyboardAvoidingView,
     Switch, Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -237,6 +238,7 @@ function SwitchRow({ label, value, onValueChange, icon, highlight }: any) {
    ÉCRAN PRINCIPAL
 ═══════════════════════════════════════════════════════════ */
 export default function NationaliteFormScreen({ navigation }: any) {
+    const insets = useSafeAreaInsets()
     const { profile } = useAuth()
     const { t } = useLang()
 
@@ -938,7 +940,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable
                     onPress={() => (currentStep > 0 && currentStep < 6 ? prevStep() : navigation.goBack())}
                     style={styles.navBack}
@@ -1050,7 +1052,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,

@@ -5,6 +5,7 @@ import {
     Platform, ActivityIndicator, Alert, Linking,
     Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -221,6 +222,7 @@ function ShippingStepper({ currentIdx, statusColor }: { currentIdx: number; stat
    ÉCRAN PRINCIPAL
 ═══════════════════════════════════════════════════════════ */
 export default function OrderDetailScreen({ navigation, route }: { navigation: Nav; route: Route }) {
+    const insets = useSafeAreaInsets()
     const { orderId } = route.params
     const { t } = useLang()
     const { profile } = useAuth()
@@ -322,7 +324,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             <View style={styles.container}>
                 <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
                 <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
-                <View style={styles.navBar}>
+                <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                     <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                         <View style={styles.iconContainer}>
                             <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -346,7 +348,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             <View style={styles.container}>
                 <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
                 <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
-                <View style={styles.navBar}>
+                <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                     <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                         <View style={styles.iconContainer}>
                             <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -384,7 +386,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -729,7 +731,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,
