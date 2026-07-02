@@ -203,6 +203,18 @@ export async function middleware(request: NextRequest) {
     const wafConfig = getWafConfig()
     const isIpWhitelisted = !emergencyBypass && wafConfig.whitelistedIps && wafConfig.whitelistedIps.includes(ip)
 
+    // ── Chemins publics protégés par un jeton signé (HMAC) ────────
+    // Le lien de complément de dossier nationalité porte un jeton signé en query
+    // string. Le scan de contenu du WAF (CRS/RPC) analyse cette query et peut
+    // bloquer à tort un jeton légitime (faux positif SQLi → 403). Ces routes sont
+    // déjà protégées par la vérification du jeton côté serveur : on les exempte du
+    // SCAN DE CONTENU uniquement (les protections niveau IP/rate-limit restent).
+    const isTokenAuthedPublic = (
+        pathname === '/nationalite/formulaire' ||
+        pathname.startsWith('/api/nationality/resume') ||
+        pathname.startsWith('/api/nationality/complete')
+    )
+
     // ── Définir si on est sur un panel interne ────────────────
     const isInternalPanelPath = (
         pathname.startsWith('/admin') ||
@@ -212,7 +224,8 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/api/admin') ||
         pathname.startsWith('/api/agent') ||
         pathname.startsWith('/api/client') ||
-        pathname.startsWith('/api/ceo')
+        pathname.startsWith('/api/ceo') ||
+        isTokenAuthedPublic
     )
 
     // ─── 1b. COURT-CIRCUIT ANTI-DoS (avant tout appel Supabase) ───
