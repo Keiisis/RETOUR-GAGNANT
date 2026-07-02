@@ -517,6 +517,15 @@ git log --oneline -20           # Historique
 
 > **Format** : `[Date] — Résumé de session`
 
+### 2026-07-02 — Session 6 (Refonte native mobile complète, en 4 lots)
+- Objectif : que les écrans respectent vraiment l'architecture d'une app mobile (et non des pages web encapsulées).
+- **Lot 1** : NotificationsScreen, OrdersScreen, InvoicesScreen → `ScrollView` remplacé par `FlatList` (recyclage + momentum natif), en-têtes en `ListHeaderComponent`, états vide/chargement en `ListEmptyComponent`, footer en `ListFooterComponent`, `useSafeAreaInsets`, `expo-haptics` au tap.
+- **Lot 2** : AppointmentsScreen → `FlatList`. MessagesScreen (déjà chat FlatList) + DossierScreen → barre de nav via `useSafeAreaInsets`. Sweep safe-area sur les nav bars du lot 1.
+- **Lot 3** : ServicesScreen, EventsScreen, ProfilScreen → nav bar safe-area (catalogue/feed/settings restent en ScrollView, pattern natif correct).
+- **Lot 4** : 17 écrans secondaires (auth, détails, flux paiement, formulaires) + `ScreenHeader` partagé → suppression de **tous** les `paddingTop: Platform.OS === 'ios' ? … : …` codés en dur, remplacés par `insets.top`. Headers flottant (ProductDetail) et sticky/hero (ServiceDetails) gérés nativement.
+- Résultat : plus aucun offset de status bar en dur dans l'app ; tout s'adapte aux encoches, Dynamic Island et barres système Android. `npx tsc --noEmit` → 0 erreur. 4 commits, mergés sur `main` (merge --no-ff) et poussés.
+- Note technique : les fichiers mobile sont en **CRLF** — les codemods regex doivent utiliser `\r?\n` (un premier passage en `\n` a échoué silencieusement sur l'insertion du hook).
+
 ### 2026-05-26 — Session 5 (Web & Mobile theme sync, compilation checks)
 - Démarrage du serveur web dev Next.js sur le port 3000.
 - Correction des erreurs de typecheck TypeScript (`npx tsc --noEmit`) sur l'application mobile Expo :
