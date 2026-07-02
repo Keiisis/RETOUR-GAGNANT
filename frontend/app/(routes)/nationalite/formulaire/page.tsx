@@ -106,6 +106,10 @@ export default function NationaliteFormPage() {
     // Garde : les listeners Kkiapay ne doivent être enregistrés qu'UNE fois
     // (sinon empilement de callbacks à chaque clic — piège connu du SDK k.js)
     const kkiapayBound = useRef(false)
+    // Garde : la soumission auto post-paiement ne doit se déclencher qu'UNE fois.
+    // (Incident nationalité : des clients ont payé mais la fiche n'était créée
+    //  qu'au clic manuel « Confirmer » — perdue si l'étape n'était pas franchie.)
+    const autoSubmitRef = useRef(false)
 
     // ── Types ──────────────────────────────────────────────────────────────────
     interface DocSlot {
@@ -490,10 +494,25 @@ export default function NationaliteFormPage() {
                 setErrors([result.error || t('Erreur lors de la soumission. Veuillez réessayer.')])
             }
         } catch {
-            setErrors([t('Erreur réseau. Vérifiez votre connexion et réessayez.')])
+            // Échec réseau APRÈS paiement : ne pas perdre le dossier en silence.
+            // On réarme la soumission auto pour permettre un nouvel essai (bouton + effet).
+            autoSubmitRef.current = false
+            setErrors([t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Ne fermez pas cette page : réessayez avec le bouton « Confirmer et Soumettre ». En cas de problème persistant, contactez-nous en gardant votre référence de paiement.')])
         }
         setSubmitting(false)
     }
+
+    // ── Filet de sécurité : dès que le paiement est confirmé, on enregistre le
+    //    dossier automatiquement (upload + création de la fiche), sans dépendre
+    //    d'un clic manuel. C'est la faille qui avait fait perdre des clients ayant
+    //    pourtant payé. Le bouton « Confirmer » reste disponible comme relance.
+    useEffect(() => {
+        if (paymentDone && !autoSubmitRef.current && !submitting && !showWelcome) {
+            autoSubmitRef.current = true
+            submit()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paymentDone])
 
     // ═══ WELCOME HOME ANIMATION ═══
     if (showWelcome) return (
