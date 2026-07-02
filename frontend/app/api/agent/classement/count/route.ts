@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
-import { daysSince, dueMilestones } from '@/lib/classement/categories'
+import { daysSince, dueMilestones, isRelanceEligible } from '@/lib/classement/categories'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
             .select('status, first_contact_at, relances_sent')
         let due = 0
         for (const c of data || []) {
-            if (['perdu', 'termine'].includes(c.status)) continue
+            if (!isRelanceEligible(c.status)) continue
             const sent = Array.isArray(c.relances_sent) ? c.relances_sent : []
             if (dueMilestones(daysSince(c.first_contact_at), sent).length > 0) due++
         }

@@ -4,6 +4,8 @@ import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
+import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
+import { markClientConverted } from '@/lib/classement/track'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
@@ -387,6 +389,30 @@ export async function POST(request: NextRequest) {
             type: 'nationality',
             lu: false,
         }])
+
+        // 3b. Paiement confirmé → alerte équipe + reçu client + statut « Payé »
+        //     au Classement. Fire-and-forget : ne bloque jamais la réponse.
+        //     (Incident 2026-06 : paiements encaissés sans AUCUNE notification.)
+        if (body.payment_ref) {
+            const paymentInfo = {
+                nom, prenom, email,
+                telephone: body.telephone || null,
+                refDossier: ref,
+                amount: Number(body.amount ?? 250),
+                currency: String(body.currency || 'USD'),
+                paymentMethod: String(body.payment_method || 'en ligne'),
+                paymentRef: String(body.payment_ref),
+            }
+            void notifyStaffNationalityPayment(paymentInfo)
+            void sendNationalityPaymentReceipt(paymentInfo)
+            void markClientConverted({
+                email,
+                full_name: `${prenom} ${nom}`.trim(),
+                phone: body.telephone || null,
+                serviceLabel: 'nationalite-vip',
+                source: 'nationalite',
+            })
+        }
 
         // 3. Send auto email to client
         const emailSent = await sendConfirmationEmail({

@@ -11,7 +11,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import {
     SERVICE_CATEGORIES, CLIENT_STATUSES, getCategory, getStatus,
-    daysSince, nextMilestone, dueMilestones, RELANCE_MILESTONES,
+    daysSince, nextMilestone, dueMilestones, RELANCE_MILESTONES, isRelanceEligible,
 } from '@/lib/classement/categories'
 
 interface ClientRow {
@@ -227,10 +227,10 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
             .filter(g => g.rows.length > 0)
     , [filtered])
 
-    // Vue relances : clients avec jalon dû, triés du plus en retard au moins
+    // Vue relances : clients PAYÉS avec jalon dû, triés du plus en retard au moins
     const relances = useMemo(() => {
         return filtered
-            .filter(c => !['perdu', 'termine'].includes(c.status))
+            .filter(c => isRelanceEligible(c.status))
             .map(c => {
                 const d = daysSince(c.first_contact_at)
                 const sent = Array.isArray(c.relances_sent) ? c.relances_sent : []
@@ -246,7 +246,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
         for (const c of clients) {
             const d = daysSince(c.first_contact_at)
             if (dueMilestones(d, Array.isArray(c.relances_sent) ? c.relances_sent : []).length > 0
-                && !['perdu', 'termine'].includes(c.status)) dues++
+                && isRelanceEligible(c.status)) dues++
         }
         const actifs = clients.filter(c => !['perdu', 'termine', 'converti'].includes(c.status)).length
         return { total: clients.length, dues, actifs }
@@ -263,7 +263,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
         const cat = getCategory(c.service_category)
         const d = daysSince(c.first_contact_at)
         const sent = Array.isArray(c.relances_sent) ? c.relances_sent : []
-        const due = dueMilestones(d, sent).length > 0 && !['perdu', 'termine'].includes(c.status)
+        const due = dueMilestones(d, sent).length > 0 && isRelanceEligible(c.status)
         const nm = nextMilestone(d)
         const st = getStatus(c.status)
         const isEditing = editingId === c.id

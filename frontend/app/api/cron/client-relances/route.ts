@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
-import { daysSince, dueMilestones, getCategory, getStatus } from '@/lib/classement/categories'
+import { daysSince, dueMilestones, getCategory, getStatus, isRelanceEligible } from '@/lib/classement/categories'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -25,7 +25,8 @@ const FIXED_RECIPIENTS = [
     'tiamiounadjathrgb@gmail.com',
 ]
 
-const SKIP_STATUSES = ['perdu', 'termine']
+// Décision 2026-07-02 : relances UNIQUEMENT pour les clients qui ont payé
+// (statut « Payé »). La règle vit dans isRelanceEligible (categories.ts).
 
 function verifyAuth(request: NextRequest): boolean {
     const authHeader = request.headers.get('authorization')
@@ -124,7 +125,7 @@ async function run() {
     const report: string[] = []
 
     for (const c of (data || []) as ClientRow[]) {
-        if (SKIP_STATUSES.includes(c.status)) continue
+        if (!isRelanceEligible(c.status)) continue
         const days = daysSince(c.first_contact_at)
         const sent = Array.isArray(c.relances_sent) ? c.relances_sent : []
         const due = dueMilestones(days, sent)

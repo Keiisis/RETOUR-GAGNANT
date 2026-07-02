@@ -81,7 +81,7 @@ export const CLIENT_STATUSES: StatusInfo[] = [
     { value: 'en_cours',          label: 'En cours',           color: '#C9A84C' },
     { value: 'en_attente_client', label: 'En attente client',  color: '#F59E0B' },
     { value: 'bloque',            label: 'Bloqué',             color: '#EF4444' },
-    { value: 'converti',          label: 'Converti',           color: '#10B981' },
+    { value: 'converti',          label: 'Payé',               color: '#10B981' },
     { value: 'termine',           label: 'Terminé',            color: '#059669' },
     { value: 'perdu',             label: 'Perdu',              color: '#94A3B8' },
 ]
@@ -89,4 +89,14 @@ export const CLIENT_STATUSES: StatusInfo[] = [
 const STATUS_BY_VALUE = new Map(CLIENT_STATUSES.map(s => [s.value, s]))
 export function getStatus(value: string): StatusInfo {
     return STATUS_BY_VALUE.get(value) || CLIENT_STATUSES[0]
+}
+
+/**
+ * Éligibilité aux relances automatiques (décision 2026-07-02) :
+ * on ne relance QUE les clients qui ont payé (statut « Payé », valeur DB
+ * `converti` — posée automatiquement par markClientConverted au paiement).
+ * Règle unique partagée par le cron, le badge de nav et le board UI.
+ */
+export function isRelanceEligible(status: string): boolean {
+    return status === 'converti'
 }
