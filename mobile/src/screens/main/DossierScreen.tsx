@@ -5,6 +5,7 @@ import {
     RefreshControl, Platform, Alert, ActivityIndicator, Modal, Dimensions,
     Pressable,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -148,6 +149,7 @@ function SkeletonShimmer({ height = 80 }: { height?: number }) {
 export default function DossierScreen({ navigation }: any) {
     const { profile } = useAuth()
     const { t } = useLang()
+    const insets = useSafeAreaInsets()
     const [dossiers, setDossiers] = useState<Dossier[]>([])
     const [selected, setSelected] = useState<Dossier | null>(null)
     const [refreshing, setRefreshing] = useState(false)
@@ -344,7 +346,7 @@ export default function DossierScreen({ navigation }: any) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* ═══ NAV BAR ═══ */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 {navigation?.canGoBack?.() ? (
                     <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                         <View style={styles.iconContainer}>
@@ -906,7 +908,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,

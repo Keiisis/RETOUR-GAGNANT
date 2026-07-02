@@ -1,10 +1,12 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
 import {
-    View, Text, ScrollView, StyleSheet, TouchableOpacity,
+    View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
     RefreshControl, Platform, Alert, ActivityIndicator, Modal,
     TextInput, Pressable, Dimensions,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -210,6 +212,7 @@ function AppointmentCard({
 export default function AppointmentsScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
+    const insets = useSafeAreaInsets()
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -437,7 +440,7 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -450,13 +453,62 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                 </Pressable>
             </View>
 
-            <ScrollView
+            <FlatList
+                data={loading ? [] : displayed}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={({ item, index }) => (
+                    <View style={styles.rdvList}>
+                        <AppointmentCard
+                            appt={item}
+                            index={index}
+                            onCancel={handleCancel}
+                            t={t}
+                            formatDateShort={formatDateShort}
+                        />
+                    </View>
+                )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
                 }
-            >
+                ListEmptyComponent={
+                    loading ? (
+                        <View style={styles.centerState}>
+                            <ActivityIndicator color={C.primary} size="large" />
+                            <Text style={styles.loadingText}>{t('Chargement de vos rendez-vous...')}</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.emptyCard}>
+                            <View style={styles.emptyIconWrap}>
+                                <Ionicons name="calendar-outline" size={36} color={C.accent} />
+                            </View>
+                            <Text style={styles.emptyTitle}>
+                                {tab === 'upcoming'
+                                    ? t('Aucun rendez-vous à venir')
+                                    : t('Aucun rendez-vous passé')}
+                            </Text>
+                            <Text style={styles.emptyText}>
+                                {tab === 'upcoming'
+                                    ? t('Demandez un rendez-vous avec notre équipe pour discuter de votre dossier.')
+                                    : t("L'historique de vos rendez-vous apparaîtra ici.")}
+                            </Text>
+                            {tab === 'upcoming' && (
+                                <TouchableOpacity
+                                    style={styles.emptyBtn}
+                                    onPress={() => { Haptics.selectionAsync(); setShowModal(true) }}
+                                    activeOpacity={0.85}
+                                >
+                                    <Ionicons name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                    <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
+                                    <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )
+                }
+                ListHeaderComponent={
+                    <>
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
                     <Text style={styles.title}>{t('Vos')}</Text>
@@ -546,59 +598,9 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                         ))}
                     </View>
                 </AnimatedSection>
-
-                {/* ═══ LISTE ═══ */}
-                {loading ? (
-                    <View style={styles.centerState}>
-                        <ActivityIndicator color={C.primary} size="large" />
-                        <Text style={styles.loadingText}>{t('Chargement de vos rendez-vous...')}</Text>
-                    </View>
-                ) : displayed.length === 0 ? (
-                    <AnimatedSection delay={350}>
-                        <View style={styles.emptyCard}>
-                            <View style={styles.emptyIconWrap}>
-                                <Ionicons name="calendar-outline" size={36} color={C.accent} />
-                            </View>
-                            <Text style={styles.emptyTitle}>
-                                {tab === 'upcoming'
-                                    ? t('Aucun rendez-vous à venir')
-                                    : t('Aucun rendez-vous passé')}
-                            </Text>
-                            <Text style={styles.emptyText}>
-                                {tab === 'upcoming'
-                                    ? t('Demandez un rendez-vous avec notre équipe pour discuter de votre dossier.')
-                                    : t("L'historique de vos rendez-vous apparaîtra ici.")}
-                            </Text>
-                            {tab === 'upcoming' && (
-                                <TouchableOpacity
-                                    style={styles.emptyBtn}
-                                    onPress={() => setShowModal(true)}
-                                    activeOpacity={0.85}
-                                >
-                                    <Ionicons name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
-                                    <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
-                                    <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    </AnimatedSection>
-                ) : (
-                    <View style={styles.rdvList}>
-                        {displayed.map((appt, idx) => (
-                            <AppointmentCard
-                                key={appt.id}
-                                appt={appt}
-                                index={idx}
-                                onCancel={handleCancel}
-                                t={t}
-                                formatDateShort={formatDateShort}
-                            />
-                        ))}
-                    </View>
-                )}
-
-                <View style={{ height: 80 }} />
-            </ScrollView>
+                    </>
+                }
+            />
 
             {/* ═══ MODAL DEMANDE DE RDV ═══ */}
             {showModal && (
@@ -744,7 +746,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,
