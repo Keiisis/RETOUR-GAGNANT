@@ -5,6 +5,7 @@ import {
     Image, Alert, Platform, ActivityIndicator, Dimensions,
     Pressable, Modal,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -182,6 +183,7 @@ const menuStyles = StyleSheet.create({
 export default function ProfilScreen() {
     const { profile, signOut, updateProfile, refreshProfile } = useAuth()
     const navigation = useNavigation<Nav>()
+    const insets = useSafeAreaInsets()
     const { langConfig, t } = useLang()
     const [langPickerVisible, setLangPickerVisible] = useState(false)
     const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -584,7 +586,7 @@ export default function ProfilScreen() {
                 contentContainerStyle={styles.scroll}
             >
                 {/* NAV BAR */}
-                <View style={styles.navBar}>
+                <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                     <View style={{ width: 44 }} />
                     <Text style={styles.navTitle}>{t('Mon Profil')}</Text>
                     <Pressable
@@ -893,7 +895,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
     },

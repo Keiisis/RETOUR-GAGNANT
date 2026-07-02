@@ -5,6 +5,7 @@ import {
     Dimensions, Platform, RefreshControl, ActivityIndicator,
     Pressable, TouchableOpacity,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
@@ -524,6 +525,7 @@ function SkeletonServiceCard() {
 ═══════════════════════════════════════════════════════════ */
 
 export default function ServicesScreen({ navigation }: any) {
+    const insets = useSafeAreaInsets()
     const [services, setServices] = useState<ServiceFull[]>(SERVICES_DATA)
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -673,7 +675,7 @@ export default function ServicesScreen({ navigation }: any) {
             <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={styles.navBar}>
+            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
@@ -780,7 +782,6 @@ const styles = StyleSheet.create({
 
     /* ── Nav Bar (identique RegisterScreen) ── */
     navBar: {
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 10,
         zIndex: 10,
