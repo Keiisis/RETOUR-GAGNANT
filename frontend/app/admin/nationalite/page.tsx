@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import {
     Globe2, CheckCircle2, Clock, Download,
     Mail, Search, ChevronDown, ChevronUp, MapPin,
-    CreditCard, ExternalLink
+    CreditCard, ExternalLink, Check, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -65,6 +65,31 @@ export default function AdminNationalitePage() {
 
     const updateNotes = async (id: string, notes: string) => {
         await supabase.from('nationality_applications').update({ agent_notes: notes }).eq('id', id)
+    }
+
+    const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
+
+    // Envoie au client un lien sécurisé pour déposer ses documents (dossier déjà payé).
+    const sendRelance = async (id: string) => {
+        if (relanceState[id] === 'sending') return
+        setRelanceState(prev => ({ ...prev, [id]: 'sending' }))
+        try {
+            const res = await fetch('/api/agent/nationalite/relance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                setRelanceState(prev => ({ ...prev, [id]: 'sent' }))
+            } else {
+                setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+                alert(data.error || 'Échec de l\'envoi de la relance.')
+            }
+        } catch {
+            setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+            alert('Erreur réseau lors de l\'envoi de la relance.')
+        }
     }
 
     const downloadZip = async (id: string, ref: string) => {
@@ -198,6 +223,18 @@ export default function AdminNationalitePage() {
                                         {/* Actions */}
                                         <div className="flex gap-2 flex-wrap">
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Download size={12} /> <T>Télécharger ZIP</T></button>
+                                            <button
+                                                onClick={() => sendRelance(a.id)}
+                                                disabled={relanceState[a.id] === 'sending'}
+                                                title={t('Envoyer au client un lien sécurisé pour déposer ses documents (sans nouveau paiement)')}
+                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[a.id] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
+                                            >
+                                                {relanceState[a.id] === 'sending'
+                                                    ? <><Loader2 size={12} className="animate-spin" /> <T>Envoi…</T></>
+                                                    : relanceState[a.id] === 'sent'
+                                                        ? <><Check size={12} /> <T>Relance envoyée</T></>
+                                                        : <><Mail size={12} /> <T>Relancer (documents)</T></>}
+                                            </button>
                                             {['soumis', 'en_traitement', 'verification', 'approuve', 'rejete'].filter(s => s !== a.status).map(s => (
                                                 <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${statusMap[s]?.color}`}>{statusMap[s]?.label}</button>
                                             ))}

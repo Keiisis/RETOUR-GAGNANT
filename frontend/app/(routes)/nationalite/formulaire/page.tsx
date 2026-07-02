@@ -110,6 +110,10 @@ export default function NationaliteFormPage() {
     // (Incident nationalité : des clients ont payé mais la fiche n'était créée
     //  qu'au clic manuel « Confirmer » — perdue si l'étape n'était pas franchie.)
     const autoSubmitRef = useRef(false)
+    // Mode « reprise » : le client complète un dossier DÉJÀ PAYÉ via un lien signé
+    // (relance depuis le panel). Aucun paiement redemandé, on met à jour la fiche.
+    const [resumeMode, setResumeMode] = useState(false)
+    const resumeTokenRef = useRef('')
 
     // ── Types ──────────────────────────────────────────────────────────────────
     interface DocSlot {
@@ -219,6 +223,31 @@ export default function NationaliteFormPage() {
                     }
                 }
             })
+    }, [])
+
+    // ── Mode « reprise » : lien de complément (dossier déjà payé) ──────────────
+    // Si l'URL porte ?resume=<token>, on charge la fiche existante, on pré-remplit,
+    // on saute la pré-inscription + le paiement, et la soumission mettra à jour la
+    // fiche au lieu d'en créer une nouvelle.
+    useEffect(() => {
+        const token = new URLSearchParams(window.location.search).get('resume')
+        if (!token) return
+        ;(async () => {
+            try {
+                const res = await fetch(`/api/nationality/resume?token=${encodeURIComponent(token)}`)
+                const data = await res.json()
+                if (res.ok && data?.ok && data.prefill) {
+                    resumeTokenRef.current = token
+                    setResumeMode(true)
+                    setForm(prev => ({ ...prev, ...data.prefill }))
+                    setPreInscriptionDone(true)
+                    setLawAccepted(true)
+                    setPaymentDone(true)
+                    if (data.application_ref) setAppRef(data.application_ref)
+                    setStep(1)
+                }
+            } catch { /* lien invalide → formulaire normal */ }
+        })()
     }, [])
 
     const submitPreInscription = async () => {
@@ -451,23 +480,36 @@ export default function NationaliteFormPage() {
         const dateFields = ['date_naissance', 'ancestor1_date_naissance', 'ancestor2_date_naissance', 'pere_date_naissance', 'mere_date_naissance', 'date_expiration_document']
         dateFields.forEach(key => { if (!cleanedForm[key]) cleanedForm[key] = null })
 
-        // Submit via secure API route (Service Role Key, bypasses RLS)
+        // Submit via secure API route (Service Role Key, bypasses RLS).
+        // En mode reprise (dossier déjà payé) → on MET À JOUR la fiche existante
+        // via /api/nationality/complete (jeton signé, aucun paiement redemandé).
         try {
-            const res = await fetch('/api/nationality', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...cleanedForm,
-                    documents: finalUploadedUrls,
-                    documents_uploaded: finalUploadedUrls,
-                    payment_method: paymentProvider || 'none',
-                    payment_ref: paymentTxId,
-                    payment_status: paymentDone ? 'payé' : 'non_payé',
-                    amount: formAmount,
-                    currency: formCurrency,
-                    last_step_completed: 6,
+            const res = resumeMode
+                ? await fetch('/api/nationality/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: resumeTokenRef.current,
+                        ...cleanedForm,
+                        documents: finalUploadedUrls,
+                        documents_uploaded: finalUploadedUrls,
+                    })
                 })
-            })
+                : await fetch('/api/nationality', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...cleanedForm,
+                        documents: finalUploadedUrls,
+                        documents_uploaded: finalUploadedUrls,
+                        payment_method: paymentProvider || 'none',
+                        payment_ref: paymentTxId,
+                        payment_status: paymentDone ? 'payé' : 'non_payé',
+                        amount: formAmount,
+                        currency: formCurrency,
+                        last_step_completed: 6,
+                    })
+                })
 
             setUploadProgress(90)
             const result = await res.json()
@@ -507,7 +549,9 @@ export default function NationaliteFormPage() {
     //    d'un clic manuel. C'est la faille qui avait fait perdre des clients ayant
     //    pourtant payé. Le bouton « Confirmer » reste disponible comme relance.
     useEffect(() => {
-        if (paymentDone && !autoSubmitRef.current && !submitting && !showWelcome) {
+        // En mode reprise, paymentDone est vrai dès le chargement : NE PAS
+        // auto-soumettre (le client doit d'abord re-déposer ses documents).
+        if (paymentDone && !resumeMode && !autoSubmitRef.current && !submitting && !showWelcome) {
             autoSubmitRef.current = true
             submit()
         }
@@ -946,13 +990,21 @@ export default function NationaliteFormPage() {
                             })()}
 
                             {step === 6 && <div className="space-y-5">
-                                <h2 className="text-lg font-black text-slate-900"><T>Paiement des frais de traitement</T></h2>
-                                <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
-                                    <p className="text-3xl font-black text-[#008751]"><Price amount={formAmount} currency={formCurrency} showOriginal /></p>
-                                    <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T></p>
-                                </div>
+                                <h2 className="text-lg font-black text-slate-900">{resumeMode ? <T>Finalisation de votre dossier</T> : <T>Paiement des frais de traitement</T>}</h2>
+                                {!resumeMode && (
+                                    <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
+                                        <p className="text-3xl font-black text-[#008751]"><Price amount={formAmount} currency={formCurrency} showOriginal /></p>
+                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T></p>
+                                    </div>
+                                )}
 
-                                {paymentDone ? (
+                                {resumeMode ? (
+                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
+                                        <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
+                                        <p className="text-sm font-bold text-emerald-700"><T>Vos frais de traitement sont déjà réglés.</T></p>
+                                        <p className="text-xs text-gray-500 mt-1"><T>Il ne vous reste plus qu&apos;à confirmer l&apos;envoi de vos pièces justificatives.</T></p>
+                                    </div>
+                                ) : paymentDone ? (
                                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
                                         <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
                                         <p className="text-sm font-bold text-emerald-700"><T>Paiement effectué via</T> {paymentProvider}</p>
@@ -1041,7 +1093,7 @@ export default function NationaliteFormPage() {
                         <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]"><T>Suivant</T> <ArrowRight size={16} /></button>
                     ) : (
                         <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                            {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
+                            {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
                         </button>
                     )}
                 </div>
