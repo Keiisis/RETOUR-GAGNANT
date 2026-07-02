@@ -1,5 +1,182 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
+import { markClientConverted } from '@/lib/classement/track'
+
+/* ══════════════════════════════════════════════════════════════
+   FILET DE SÉCURITÉ NATIONALITÉ — paiement confirmé côté serveur.
+   Le widget du formulaire passe `data: {"context":"nationality","email":…}`.
+   Si le navigateur du client meurt après le paiement (fiche jamais créée par
+   le formulaire — incident 2026-06), ce webhook :
+     1. vérifie la transaction auprès de Kkiapay (anti-fraude),
+     2. crée une fiche minimale (identité récupérée depuis le lead
+        `eligibility_results` capturé AVANT paiement) marquée
+        `last_step_completed = 0`,
+     3. alerte l'équipe + envoie le reçu client + statut Classement « Payé ».
+   Si le formulaire aboutit ensuite, /api/nationality COMPLÈTE cette fiche
+   (même payment_ref) au lieu d'en créer une seconde. Un cron envoie le lien
+   de complément aux fiches restées incomplètes 2h+.
+   ══════════════════════════════════════════════════════════════ */
+
+async function verifyKkiapayTx(transactionId: string): Promise<{ ok: boolean; amount?: number; status: string }> {
+    const { data: settingsData } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['kkiapay_public_key', 'kkiapay_private_key', 'kkiapay_secret_key', 'kkiapay_sandbox', 'kkiapay_sandbox_public_key', 'kkiapay_sandbox_private_key'])
+    const sm: Record<string, string> = {}
+    for (const s of settingsData || []) sm[s.key] = s.value
+
+    const isSandbox = sm.kkiapay_sandbox === 'true'
+    const privateKey = isSandbox
+        ? (sm.kkiapay_sandbox_private_key || sm.kkiapay_private_key || '')
+        : (sm.kkiapay_private_key || '')
+    const base = isSandbox ? 'https://api-sandbox.kkiapay.me' : 'https://api.kkiapay.me'
+
+    try {
+        const res = await fetch(`${base}/api/v1/transactions/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': isSandbox ? (sm.kkiapay_sandbox_public_key || sm.kkiapay_public_key || '') : (sm.kkiapay_public_key || ''),
+                'x-private-key': privateKey,
+                'x-secret-key': sm.kkiapay_secret_key || '',
+            },
+            body: JSON.stringify({ transactionId }),
+        })
+        const data = await res.json()
+        return { ok: data?.status === 'SUCCESS', amount: data?.amount, status: data?.status || 'unknown' }
+    } catch (e) {
+        return { ok: false, status: e instanceof Error ? e.message : 'verify_failed' }
+    }
+}
+
+async function handleNationalityPayment(
+    transactionId: string,
+    status: string,
+    widgetData: Record<string, unknown>,
+): Promise<NextResponse> {
+    // Statuts non finaux / échecs : rien à faire (aucune fiche à marquer)
+    if (status !== 'SUCCESS' && status !== 'TRANSACTION_APPROVED') {
+        return NextResponse.json({ ok: true, message: 'Statut non finalisé — ignoré' })
+    }
+
+    // Idempotence : fiche déjà présente (créée par le formulaire ou une
+    // livraison webhook précédente) → rien à faire.
+    const { data: existing } = await supabase
+        .from('nationality_applications')
+        .select('id')
+        .eq('payment_ref', transactionId)
+        .maybeSingle()
+    if (existing) {
+        return NextResponse.json({ ok: true, message: 'Dossier déjà enregistré' })
+    }
+
+    // Vérification serveur (anti-fraude : ne jamais créer sur simple webhook)
+    const verify = await verifyKkiapayTx(transactionId)
+    if (!verify.ok) {
+        console.warn(`[Kkiapay Webhook][nationality] transaction non confirmée: ${verify.status}`)
+        return NextResponse.json({ ok: true, message: 'Transaction non confirmée — ignorée' })
+    }
+
+    const email = String(widgetData.email || '').toLowerCase().trim()
+    if (!email) {
+        // Paiement réel mais non identifiable → alerte humaine, pas de fiche fantôme
+        await supabase.from('messages').insert([{
+            nom: 'Webhook Kkiapay',
+            email: 'contact@retourgagnantbenin.bj',
+            sujet: `Paiement nationalité NON IDENTIFIABLE — TX ${transactionId}`,
+            message: `Un paiement nationalité a été confirmé par Kkiapay (transaction ${transactionId}, ${verify.amount ?? '?'} XOF) mais le webhook ne contient pas l'email du client. Retrouvez la transaction dans le tableau de bord Kkiapay et créez la fiche manuellement.`,
+            type: 'nationality',
+            lu: false,
+        }])
+        return NextResponse.json({ ok: true, message: 'Paiement sans identité — équipe alertée' })
+    }
+
+    // Identité depuis le lead capturé avant paiement (pré-inscription du formulaire)
+    const { data: lead } = await supabase
+        .from('eligibility_results')
+        .select('client_nom, client_prenom, client_whatsapp')
+        .eq('client_email', email)
+        .eq('objective', 'nationalite')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    const nom = lead?.client_nom || ''
+    const prenom = lead?.client_prenom || ''
+    const telephone = lead?.client_whatsapp || null
+
+    // Montant officiel du formulaire (admin) pour le reçu ; le XOF encaissé va en note
+    let amount = 250
+    let currency = 'USD'
+    const { data: fs } = await supabase
+        .from('page_sections').select('content')
+        .eq('page', 'nationalite').eq('section_key', 'form_settings').maybeSingle()
+    const c = fs?.content as Record<string, unknown> | undefined
+    if (c?.amount) amount = Number(c.amount)
+    if (c?.currency) currency = String(c.currency)
+
+    const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
+    const note = `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement — le client n'a pas (encore) finalisé le formulaire. ` +
+        `Transaction ${transactionId} — encaissé ${verify.amount ?? '?'} XOF. ` +
+        `DOCUMENTS : si le formulaire n'aboutit pas, un lien de complément sera envoyé automatiquement au client (ou utilisez « Relancer (documents) »).`
+
+    const { error: insErr } = await supabase.from('nationality_applications').insert([{
+        application_ref: ref,
+        status: 'soumis',
+        submitted_at: new Date().toISOString(),
+        nom, prenom, email,
+        telephone,
+        nationalite: 'Non spécifiée',
+        documents_uploaded: [],
+        amount, currency,
+        payment_status: 'payé',
+        payment_ref: transactionId,
+        payment_method: 'kkiapay',
+        last_step_completed: 0, // ← marqueur « fiche webhook à compléter »
+        agent_notes: note,
+    }])
+    if (insErr) {
+        console.error('[Kkiapay Webhook][nationality] insert error:', insErr.message)
+        return NextResponse.json({ error: 'Erreur enregistrement' }, { status: 500 })
+    }
+
+    // Suivi de dossier + notification in-app (miroir de /api/nationality)
+    await supabase.from('dossier_tracking').insert({
+        num_dossier: ref,
+        client_nom: nom, client_prenom: prenom,
+        client_email: email,
+        client_whatsapp: telephone || '', client_phone: telephone || '',
+        service_type: 'Reconnaissance de Nationalité', service: 'nationalite',
+        statut: 'reception',
+        etapes: [{ id: 1, label: 'Réception du dossier', status: 'completed', date: new Date().toISOString().split('T')[0], note: 'Paiement confirmé (webhook)' }],
+        progression: 14,
+        notes_internes: note,
+    }).then(({ error }) => { if (error) console.error('[Kkiapay Webhook][nationality] tracking:', error.message) })
+
+    await supabase.from('messages').insert([{
+        nom: `${prenom} ${nom}`.trim() || email,
+        email, telephone,
+        sujet: `Demande de nationalité #${ref} (paiement confirmé — webhook)`,
+        message: `Paiement nationalité confirmé côté serveur.\n\nClient: ${prenom} ${nom}\nEmail: ${email}\nRéférence: ${ref}\nMontant: ${amount} ${currency} (encaissé ${verify.amount ?? '?'} XOF)\nTransaction: ${transactionId}\n\n${note}`,
+        type: 'nationality',
+        lu: false,
+    }])
+
+    // Alerte équipe + reçu client + statut Classement « Payé » (fire-and-forget)
+    const paymentInfo = {
+        nom, prenom, email, telephone,
+        refDossier: ref,
+        amount, currency,
+        paymentMethod: 'kkiapay',
+        paymentRef: transactionId,
+    }
+    void notifyStaffNationalityPayment(paymentInfo)
+    void sendNationalityPaymentReceipt(paymentInfo)
+    void markClientConverted({ email, full_name: `${prenom} ${nom}`.trim() || null, phone: telephone, serviceLabel: 'nationalite-vip', source: 'nationalite' })
+
+    return NextResponse.json({ ok: true, message: 'Dossier nationalité créé (filet webhook)', reference: ref })
+}
 
 // Kkiapay sends POST webhook notifications when payment status changes
 export async function POST(request: Request) {
@@ -13,7 +190,18 @@ export async function POST(request: Request) {
             data,
         } = body
 
-        const orderId = data?.order_id
+        // `data` peut arriver en objet ou en chaîne JSON selon le canal
+        let widgetData: Record<string, unknown> = {}
+        try {
+            widgetData = typeof data === 'string' ? JSON.parse(data) : (data && typeof data === 'object' ? data : {})
+        } catch { widgetData = {} }
+
+        // ── Branche NATIONALITÉ (widget du formulaire, pas de commande boutique) ──
+        if (transactionId && widgetData.context === 'nationality') {
+            return handleNationalityPayment(String(transactionId), String(status || ''), widgetData)
+        }
+
+        const orderId = (widgetData as { order_id?: string }).order_id ?? data?.order_id
 
         if (!transactionId || !orderId) {
             return NextResponse.json({ error: 'Missing transactionId or order_id' }, { status: 400 })

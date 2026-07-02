@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
 import { daysSince, dueMilestones, getCategory, getStatus, isRelanceEligible } from '@/lib/classement/categories'
+import { sendNationalityResumeEmail } from '@/lib/nationality-resume-email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -156,11 +157,45 @@ async function run() {
     return { sentCount, report }
 }
 
+// ── Filet nationalité : fiches créées par le webhook Kkiapay (paiement
+// confirmé) mais jamais complétées par le formulaire (last_step_completed = 0).
+// Après 2h de grâce, on envoie automatiquement au client le lien signé de
+// complément de dossier (sans repaiement). Idempotent via email_logs :
+// contexte `nationality_relance` (couvre aussi une relance manuelle du staff).
+async function recoverNationalityStubs() {
+    const supabase = createClient(supabaseUrl, serviceKey)
+    const { data: stubs } = await supabase
+        .from('nationality_applications')
+        .select('id, application_ref, nom, prenom, email, created_at')
+        .eq('last_step_completed', 0)
+
+    let sent = 0
+    for (const s of stubs || []) {
+        if (!s.email) continue
+        if (Date.now() - new Date(s.created_at).getTime() < 2 * 3600_000) continue // grâce 2h
+        const { data: already } = await supabase
+            .from('email_logs')
+            .select('id')
+            .eq('related_id', s.id)
+            .eq('context', 'nationality_relance')
+            .eq('status', 'sent')
+            .limit(1)
+        if (already && already.length > 0) continue
+        const res = await sendNationalityResumeEmail(s)
+        if (res.success) sent++
+    }
+    return sent
+}
+
 export async function GET(request: NextRequest) {
     if (!verifyAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     try {
         const result = await run()
-        return NextResponse.json({ success: true, ...result, timestamp: new Date().toISOString() })
+        const stubResumesSent = await recoverNationalityStubs().catch(e => {
+            console.error('[CRON client-relances] stubs nationalité:', e instanceof Error ? e.message : e)
+            return 0
+        })
+        return NextResponse.json({ success: true, ...result, stubResumesSent, timestamp: new Date().toISOString() })
     } catch (err) {
         console.error('[CRON client-relances]', err)
         return NextResponse.json({ error: 'Relances failed' }, { status: 500 })

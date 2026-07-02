@@ -235,29 +235,42 @@ export async function POST(request: NextRequest) {
         // Évite qu'un client envoie un faux transaction_id et obtienne un dossier
         // nationalité (150 000 FCFA) sans avoir vraiment payé.
         // Si payment_method = 'kkiapay' et payment_ref renseigné, on vérifie.
+        // Fiche « filet webhook » à compléter (créée par /api/webhooks/kkiapay
+        // AVANT que le formulaire n'aboutisse — marquée last_step_completed = 0).
+        let stubToComplete: { id: string; application_ref: string } | null = null
+
         if (body.payment_method === 'kkiapay' && body.payment_ref) {
-            // Idempotence : si une demande existe déjà avec ce payment_ref, on la retourne
+            // Idempotence : si une demande existe déjà avec ce payment_ref…
             const { data: existing } = await supabase
                 .from('nationality_applications')
-                .select('application_ref')
+                .select('id, application_ref, last_step_completed')
                 .eq('payment_ref', body.payment_ref)
                 .maybeSingle()
             if (existing?.application_ref) {
-                return NextResponse.json({
-                    success: true,
-                    reference: existing.application_ref,
-                    message: 'Demande déjà enregistrée pour ce paiement.',
-                })
+                if (existing.last_step_completed === 0) {
+                    // …fiche minimale créée par le webhook : on la COMPLÈTE avec les
+                    // données du formulaire (paiement déjà vérifié par le webhook).
+                    stubToComplete = { id: existing.id, application_ref: existing.application_ref }
+                } else {
+                    // …fiche complète : on la retourne telle quelle.
+                    return NextResponse.json({
+                        success: true,
+                        reference: existing.application_ref,
+                        message: 'Demande déjà enregistrée pour ce paiement.',
+                    })
+                }
             }
 
-            // Vérification Kkiapay
-            const verify = await verifyKkiapayTransaction(body.payment_ref)
-            if (!verify.ok) {
-                console.warn(`[nationality] Paiement Kkiapay non confirmé : ${verify.status}`)
-                return NextResponse.json(
-                    { error: `Paiement non confirmé (${verify.status})` },
-                    { status: 402 }
-                )
+            // Vérification Kkiapay (inutile si le webhook a déjà validé la transaction)
+            if (!stubToComplete) {
+                const verify = await verifyKkiapayTransaction(body.payment_ref)
+                if (!verify.ok) {
+                    console.warn(`[nationality] Paiement Kkiapay non confirmé : ${verify.status}`)
+                    return NextResponse.json(
+                        { error: `Paiement non confirmé (${verify.status})` },
+                        { status: 402 }
+                    )
+                }
             }
         }
 
@@ -336,6 +349,51 @@ export async function POST(request: NextRequest) {
             nombre_enfants: body.nombre_enfants ?? 0,
             motivation_lettre: body.motivation_lettre || null,
             consentement_rgpd: body.consentement_rgpd ?? false,
+        }
+
+        // ── Complément d'une fiche « filet webhook » : UPDATE au lieu d'INSERT ──
+        if (stubToComplete) {
+            // On conserve application_ref, submitted_at et payment_* posés par le
+            // webhook ; last_step_completed passe de 0 (stub) à 6 (complet).
+            const {
+                application_ref: _ref, submitted_at: _sub,
+                payment_status: _pst, payment_ref: _pref,
+                ...updateData
+            } = insertData
+            void _ref; void _sub; void _pst; void _pref
+
+            const { error: updError } = await supabase
+                .from('nationality_applications')
+                .update(updateData)
+                .eq('id', stubToComplete.id)
+            if (updError) {
+                console.error('Stub update error:', JSON.stringify(updError))
+                return NextResponse.json({ error: `Erreur DB: ${updError.message}` }, { status: 500 })
+            }
+
+            // Aligne le suivi de dossier sur l'identité définitive du formulaire
+            await supabase.from('dossier_tracking')
+                .update({
+                    client_nom: nom, client_prenom: prenom,
+                    client_phone: body.telephone || '', client_whatsapp: body.telephone || '',
+                })
+                .eq('num_dossier', stubToComplete.application_ref)
+
+            // Alerte paiement / reçu / Classement : DÉJÀ envoyés par le webhook.
+            // On envoie uniquement la confirmation de réception du dossier complet.
+            const emailSentStub = await sendConfirmationEmail({
+                nom, prenom, email,
+                nationalite: body.nationalite || 'Non spécifiée',
+                refId: stubToComplete.application_ref,
+                baseUrl,
+            })
+
+            return NextResponse.json({
+                success: true,
+                reference: stubToComplete.application_ref,
+                emailSent: emailSentStub,
+                message: 'Votre demande a été complétée avec succès.',
+            })
         }
 
         const { error: insertError } = await supabase
