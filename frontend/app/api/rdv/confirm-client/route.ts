@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email';
+import { createClient } from '@supabase/supabase-js';
+import { sendEmail, getEmailTemplates } from '@/lib/email';
+import { getStaffToLine } from '@/lib/staff-recipients';
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+);
 
 async function generateAutoReply(clientName: string, service: string): Promise<string> {
     try {
@@ -37,6 +44,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'clientName et clientEmail sont requis.' }, { status: 400 });
         }
 
+        // Notification in-app pour les panels Admin + Agent (fire-and-forget)
+        void supabase.from('messages').insert([{
+            nom: clientName,
+            email: clientEmail,
+            sujet: `Nouvelle demande de RDV (espace client) — ${service || 'Consultation'}`,
+            message: `${clientName} a demandé un rendez-vous depuis son espace client.\n\nService : ${service || 'Consultation'}\n${date ? `Date souhaitée : ${date} ${heure || ''}\n` : ''}Canal : ${type || 'téléphone'}\n\n→ À traiter dans l'onglet Rendez-vous (Agenda) du panel Agent.`,
+            type: 'rdv',
+            lu: false,
+        }]).then(({ error: msgErr }) => {
+            if (msgErr) console.log('[RDV confirm-client] notification in-app échouée (non bloquant):', msgErr.message);
+        });
+
         // Fire-and-forget — ne bloque pas la réponse HTTP
         (async () => {
             try {
@@ -59,24 +78,22 @@ export async function POST(req: NextRequest) {
                     relatedId: rdvId || undefined,
                 });
 
-                // Notification admin/agent
-                const config = await getEmailConfig();
-                if (config.adminEmail) {
-                    await sendEmail({
-                        to: config.adminEmail,
-                        subject: `📅 Nouveau RDV (espace client) — ${clientName} (${service || 'Consultation'})`,
-                        html: await templates.rdvAdminNotification(
-                            clientName,
-                            clientEmail,
-                            service || 'Consultation',
-                            date || null,
-                            heure || 'À définir',
-                            type || 'telephone'
-                        ),
-                        context: 'admin_notification',
-                        relatedId: rdvId || undefined,
-                    });
-                }
+                // Notification équipe — 5 destinataires fixes + admin configuré
+                const staffTo = await getStaffToLine();
+                await sendEmail({
+                    to: staffTo,
+                    subject: `📅 Nouveau RDV (espace client) — ${clientName} (${service || 'Consultation'})`,
+                    html: await templates.rdvAdminNotification(
+                        clientName,
+                        clientEmail,
+                        service || 'Consultation',
+                        date || null,
+                        heure || 'À définir',
+                        type || 'telephone'
+                    ),
+                    context: 'admin_notification',
+                    relatedId: rdvId || undefined,
+                });
             } catch (emailErr) {
                 console.log('[RDV confirm-client] Email send failed (non-blocking):', emailErr);
             }
