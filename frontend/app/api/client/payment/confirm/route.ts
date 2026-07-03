@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import Stripe from 'stripe'
+import { sendDocumentPaymentEmails } from '@/lib/document-payment'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -176,6 +177,10 @@ export async function POST(req: NextRequest) {
         if (!updated || updated.length === 0) {
             return NextResponse.json({ success: true, already_paid: true })
         }
+
+        // Garde atomique gagnée → alerte équipe + reçu client (fire-and-forget,
+        // une seule fois : le webhook trouvera le document déjà payé).
+        void sendDocumentPaymentEmails(doc_id, provider, transaction_id)
 
         return NextResponse.json({ success: true })
     } catch (err) {

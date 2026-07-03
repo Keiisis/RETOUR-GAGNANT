@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { markClientConverted } from '@/lib/classement/track'
+import { confirmDocumentPayment } from '@/lib/document-payment'
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ══════════════════════════════════════════════════════════════
    FILET DE SÉCURITÉ NATIONALITÉ — paiement confirmé côté serveur.
@@ -199,6 +202,52 @@ export async function POST(request: Request) {
         // ── Branche NATIONALITÉ (widget du formulaire, pas de commande boutique) ──
         if (transactionId && widgetData.context === 'nationality') {
             return handleNationalityPayment(String(transactionId), String(status || ''), widgetData)
+        }
+
+        // ── Branche DEVIS / FACTURES (portail /portail/[id] et panel client) ──
+        // Le widget passe { doc_id, type } (portail) ou { context:'client-facture',
+        // doc_id } (panel). confirmDocumentPayment vérifie la transaction, marque
+        // le document payé (garde atomique) et envoie alerte staff + reçu client.
+        if (transactionId && widgetData.doc_id && (status === 'SUCCESS' || status === 'TRANSACTION_APPROVED')) {
+            const result = await confirmDocumentPayment({
+                docId: String(widgetData.doc_id),
+                provider: 'kkiapay',
+                transactionId: String(transactionId),
+            })
+            return NextResponse.json(
+                result.success
+                    ? { ok: true, message: result.alreadyPaid ? 'Document déjà payé' : 'Document marqué payé (filet webhook)' }
+                    : { ok: false, error: result.error },
+                { status: result.success ? 200 : (result.status || 500) },
+            )
+        }
+
+        // ── Branche RECHERCHE ANCESTRALE (complément du dossier nationalité) ──
+        // Le widget passe { context:'recherche-ancestrale', ref }. La route interne
+        // /api/nationality/recherche-ancestrale est idempotente (flag payé) et fait
+        // tout : flag + suivi + message + alerte staff + email client.
+        if (transactionId && widgetData.context === 'recherche-ancestrale' && widgetData.ref
+            && (status === 'SUCCESS' || status === 'TRANSACTION_APPROVED')) {
+            const verify = await verifyKkiapayTx(String(transactionId))
+            if (!verify.ok) {
+                return NextResponse.json({ ok: true, message: 'Transaction non confirmée — ignorée' })
+            }
+            try {
+                await fetch(`${SITE}/api/nationality/recherche-ancestrale`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ref: String(widgetData.ref),
+                        payment_provider: 'kkiapay',
+                        payment_tx_id: String(transactionId),
+                        amount: 250,
+                        amount_xof: verify.amount,
+                    }),
+                })
+            } catch (e) {
+                console.error('[Kkiapay Webhook][ancestrale] relai interne échoué:', e instanceof Error ? e.message : e)
+            }
+            return NextResponse.json({ ok: true, message: 'Recherche ancestrale enregistrée (filet webhook)' })
         }
 
         const orderId = (widgetData as { order_id?: string }).order_id ?? data?.order_id

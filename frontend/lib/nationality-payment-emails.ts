@@ -32,6 +32,8 @@ export interface NationalityPaymentInfo {
     currency: string
     paymentMethod: string
     paymentRef?: string | null
+    /** Libellé du service (défaut : « Demande de nationalité »). */
+    service?: string
 }
 
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -49,7 +51,7 @@ export async function notifyStaffNationalityPayment(p: NationalityPaymentInfo): 
           <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
           <div style="padding:26px 28px">
             <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin — Alerte Paiement</p>
-            <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Paiement reçu — Demande de nationalité</h1>
+            <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Paiement reçu — ${esc(p.service || 'Demande de nationalité')}</h1>
             <p style="margin:0 0 18px;color:#8B94A6;font-size:13px">${esc(frDate())}</p>
 
             <div style="background:#F4FAF6;border:1px solid rgba(0,135,81,0.2);border-radius:10px;padding:16px 18px;text-align:center;margin:0 0 18px">
@@ -72,7 +74,7 @@ export async function notifyStaffNationalityPayment(p: NationalityPaymentInfo): 
 
         await sendEmail({
             to: recipients.join(', '),
-            subject: `Paiement reçu — Nationalité — ${p.prenom} ${p.nom} (${p.amount} ${p.currency})`,
+            subject: `Paiement reçu — ${p.service || 'Nationalité'} — ${p.prenom} ${p.nom} (${p.amount} ${p.currency})`,
             html,
             context: 'nationality_payment_alert',
             relatedId: p.refDossier,

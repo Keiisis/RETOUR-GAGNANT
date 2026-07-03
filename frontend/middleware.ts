@@ -203,16 +203,26 @@ export async function middleware(request: NextRequest) {
     const wafConfig = getWafConfig()
     const isIpWhitelisted = !emergencyBypass && wafConfig.whitelistedIps && wafConfig.whitelistedIps.includes(ip)
 
-    // ── Chemins publics protégés par un jeton signé (HMAC) ────────
-    // Le lien de complément de dossier nationalité porte un jeton signé en query
-    // string. Le scan de contenu du WAF (CRS/RPC) analyse cette query et peut
-    // bloquer à tort un jeton légitime (faux positif SQLi → 403). Ces routes sont
-    // déjà protégées par la vérification du jeton côté serveur : on les exempte du
-    // SCAN DE CONTENU uniquement (les protections niveau IP/rate-limit restent).
+    // ── Chemins publics protégés par un jeton/secret ou une vérification
+    //    serveur propre — exemptés du SCAN DE CONTENU (CRS/RPC) uniquement.
+    // Pourquoi : le WAF peut bloquer à tort (403 « Accès refusé ») des jetons
+    // signés, des secrets d'URL ou les serveurs des prestataires de paiement.
+    //  • /nationalite/formulaire + resume/complete : jeton HMAC vérifié serveur
+    //  • /api/webhooks/* : serveurs Kkiapay/FedaPay/Stripe/PayPal — chaque
+    //    webhook re-vérifie la transaction/signature ; un blocage WAF ici
+    //    détruirait tout le filet de sécurité paiement
+    //  • /portail/[id] et /p/[secret] : liens de paiement devis/factures dont
+    //    l'URL EST le secret ; confirmation vérifiée côté serveur
+    //  • /api/documents/confirm-payment : l'autorisation EST la vérification
+    //    de la transaction chez le provider
     const isTokenAuthedPublic = (
         pathname === '/nationalite/formulaire' ||
         pathname.startsWith('/api/nationality/resume') ||
-        pathname.startsWith('/api/nationality/complete')
+        pathname.startsWith('/api/nationality/complete') ||
+        pathname.startsWith('/api/webhooks/') ||
+        pathname.startsWith('/portail/') ||
+        pathname.startsWith('/p/') ||
+        pathname.startsWith('/api/documents/confirm-payment')
     )
 
     // ── Définir si on est sur un panel interne ────────────────

@@ -302,8 +302,11 @@ export default function ClientPortalPage() {
             // KKiapay : toujours XOF (pas de paramètre devise)
             const amountXOF = doc.currency === 'XOF' ? doc.total : convertCurrency(doc.total, doc.currency as any, 'XOF')
             
+            // Config minimale et conforme : pas de `paymentmethod` (tableau rejeté
+            // par le widget → « paramètres invalides ») ni de `callback` (forcerait
+            // une redirection qui contourne le listener de succès).
             ;(window as any).openKkiapayWidget({
-                amount: amountXOF,
+                amount: Math.round(amountXOF),
                 position: 'center',
                 key: paymentSettings.kkiapay_sandbox === 'true'
                     ? (paymentSettings.kkiapay_sandbox_public_key || paymentSettings.kkiapay_public_key)
@@ -311,9 +314,7 @@ export default function ClientPortalPage() {
                 sandbox: paymentSettings.kkiapay_sandbox === 'true',
                 email: doc.client_email || undefined,
                 name: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || undefined,
-                paymentmethod: ['momo', 'card'],
                 data: JSON.stringify({ doc_id: id, type: doc.type }),
-                callback: `${window.location.origin}/portail/${id}`,
             })
 
             ;(window as any).addKkiapayListener('success', async (response: any) => {
@@ -340,23 +341,31 @@ export default function ClientPortalPage() {
     }
 
     const finalizePayment = async (method: string, txId: string) => {
+        // Confirmation CÔTÉ SERVEUR : vérification de la transaction chez le
+        // provider + garde atomique + reçu client + alerte équipe.
+        // (L'ancien update Supabase côté client échouait — colonne inexistante —
+        //  et n'était de toute façon ni vérifié ni notifié.)
         try {
-            await supabase
-                .from('documents_financiers')
-                .update({ 
-                    status: 'paye',
-                    payment_method: method,
-                    payment_id: txId,
-                    paid_at: new Date().toISOString()
-                })
-                .eq('id', id)
-                
-            setDoc(prev => prev ? { ...prev, status: 'paye' } : null)
-            setShowPaymentMethods(false)
-            alert("Paiement confirmé ! Merci de votre confiance.")
+            const res = await fetch('/api/documents/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    doc_id: id,
+                    provider: method.toLowerCase().includes('feda') ? 'fedapay' : 'kkiapay',
+                    transaction_id: txId,
+                }),
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                setDoc(prev => prev ? { ...prev, status: 'paye' } : null)
+                setShowPaymentMethods(false)
+                alert('Paiement confirmé ! Un reçu vous a été envoyé par email. Merci de votre confiance.')
+            } else {
+                alert(data.error || 'Paiement reçu mais confirmation en attente. Notre équipe va régulariser cela.')
+            }
         } catch (e) {
             console.error('Finalize error:', e)
-            alert("Paiement reçu mais erreur lors de la mise à jour. Notre équipe va régulariser cela.")
+            alert('Paiement reçu mais erreur lors de la mise à jour. Notre équipe va régulariser cela.')
         }
         setIsProcessing(false)
     }

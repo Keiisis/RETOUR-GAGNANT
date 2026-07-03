@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
+import { notifyStaffNationalityPayment } from '@/lib/nationality-payment-emails'
+import { markClientConverted } from '@/lib/classement/track'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -22,12 +24,22 @@ export async function POST(request: NextRequest) {
         // Récupérer les infos du demandeur
         const { data: app, error: fetchErr } = await supabase
             .from('nationality_applications')
-            .select('email, prenom, nom, missing_docs')
+            .select('email, prenom, nom, missing_docs, recherche_ancestrale_paid, recherche_ancestrale_ref, telephone')
             .eq('application_ref', ref)
             .single()
 
         if (fetchErr || !app) {
             return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
+        }
+
+        // Idempotence : déjà enregistré (formulaire OU filet webhook Kkiapay)
+        // → aucun doublon de suivi/notification/email.
+        if (app.recherche_ancestrale_paid) {
+            return NextResponse.json({
+                success: true,
+                search_ref: app.recherche_ancestrale_ref || null,
+                message: 'Recherche ancestrale déjà enregistrée pour ce dossier.',
+            })
         }
 
         // Mettre à jour le dossier nationalité
@@ -59,6 +71,27 @@ export async function POST(request: NextRequest) {
             ],
             progression: Math.round((1 / 6) * 100),
             notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${payment_provider} — TX: ${payment_tx_id}`,
+        })
+
+        // Alerte email équipe + statut « Payé » au Classement (fire-and-forget)
+        void notifyStaffNationalityPayment({
+            nom: app.nom || '',
+            prenom: app.prenom || '',
+            email: app.email,
+            telephone: app.telephone || null,
+            refDossier: searchRef,
+            amount: Number(amount) || 250,
+            currency: 'EUR',
+            paymentMethod: String(payment_provider || 'en ligne'),
+            paymentRef: payment_tx_id ? String(payment_tx_id) : null,
+            service: 'Recherche Ancestrale',
+        })
+        void markClientConverted({
+            email: app.email,
+            full_name: `${app.prenom || ''} ${app.nom || ''}`.trim() || null,
+            phone: app.telephone || null,
+            serviceLabel: 'recherche-ancestrale',
+            source: 'recherche-ancestrale',
         })
 
         // Créer un message admin

@@ -237,8 +237,9 @@ export default function ClientPayerPage() {
         w.openKkiapayWidget?.({
             amount: Math.round(doc.total),
             position: 'center',
-            callback: '',
-            data: id,
+            // data JSON structuré : permet au webhook Kkiapay serveur de marquer
+            // la facture payée même si le navigateur meurt après le paiement.
+            data: JSON.stringify({ context: 'client-facture', doc_id: id }),
             theme: '#3b82f6',
             key: settings.kkiapay_public_key,
             sandbox: settings.kkiapay_sandbox === 'true',

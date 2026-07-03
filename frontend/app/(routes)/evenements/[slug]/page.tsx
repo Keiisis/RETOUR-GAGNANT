@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
@@ -52,6 +53,97 @@ export default function EventDetailPage() {
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
     useEffect(() => { setSelectedCurrency(getCurrencyForLang(lang)) }, [lang])
 
+    // ── Paiement (étape 2) : l'inscription crée un order pending côté serveur,
+    //    puis on encaisse ici. Le webhook Kkiapay (order_id) + /api/checkout/verify
+    //    marquent l'inscription payée et génèrent le ticket envoyé par email.
+    const [paymentSettings, setPaymentSettings] = useState<Record<string, string>>({})
+    const [payProcessing, setPayProcessing] = useState(false)
+    const orderIdRef = useRef<string>('')
+    const kkiapayBound = useRef(false)
+
+    useEffect(() => {
+        fetch('/api/settings/payment').then(r => r.json()).then(d => setPaymentSettings(d)).catch(() => { })
+    }, [])
+
+    const verifyAndFinish = useCallback(async (oid: string, txId: string, method: string) => {
+        try {
+            const res = await fetch('/api/checkout/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: oid, transaction_id: txId, payment_method: method }),
+            })
+            const data = await res.json()
+            if (data.success) {
+                setSuccess(true)
+            } else {
+                setError(data.error || 'Paiement reçu — confirmation en cours. Votre ticket arrivera par email.')
+            }
+        } catch {
+            setError('Paiement reçu — confirmation en cours. Votre ticket arrivera par email.')
+        }
+        setPayProcessing(false)
+    }, [])
+
+    const launchPayment = useCallback(async (oid: string) => {
+        orderIdRef.current = oid
+        setError(''); setPayProcessing(true)
+        const isSandbox = paymentSettings.kkiapay_sandbox === 'true'
+        // Montant recalculé ici (jamais capturé) : pas de closure périmée si le
+        // type de ticket change entre deux rendus.
+        const price = ticketType === 'vip' ? (event?.price_vip || 0) : (event?.price_standard || 0)
+        try {
+            if (form.payment_method === 'fedapay') {
+                await ensureFedaPaySDK()
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const FP = (window as any).FedaPay
+                FP.init({
+                    public_key: paymentSettings.fedapay_public_key,
+                    environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
+                    transaction: { amount: Math.round(price), description: `Ticket — ${event?.title || 'Événement'}`, currency: { iso: 'XOF' } },
+                    customer: { email: form.email || undefined, lastname: form.full_name || 'Client' },
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onComplete: (resp: any) => {
+                        const tx = resp?.transaction
+                        if (resp?.reason === 'checkout complete' || resp?.reason === 'APPROVED' || tx?.status === 'approved') {
+                            verifyAndFinish(orderIdRef.current, String(tx?.id || resp?.id || ''), 'fedapay')
+                        } else { setError('Paiement non finalisé.'); setPayProcessing(false) }
+                    },
+                }).open()
+                return
+            }
+            // Kkiapay (défaut) — config minimale, listeners enregistrés UNE fois
+            await ensureKkiapaySDK()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const w = window as any
+            if (!kkiapayBound.current && typeof w.addKkiapayListener === 'function') {
+                kkiapayBound.current = true
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                w.addKkiapayListener('success', (response: any) => {
+                    verifyAndFinish(orderIdRef.current, String(response?.transactionId || ''), 'kkiapay')
+                })
+                w.addKkiapayListener('failed', () => {
+                    setError('Le paiement a échoué ou a été refusé.'); setPayProcessing(false)
+                })
+            }
+            w.openKkiapayWidget({
+                amount: Math.round(price),
+                position: 'center',
+                key: isSandbox
+                    ? (paymentSettings.kkiapay_sandbox_public_key || paymentSettings.kkiapay_public_key)
+                    : paymentSettings.kkiapay_public_key,
+                sandbox: isSandbox,
+                email: form.email || undefined,
+                phone: form.phone || undefined,
+                name: form.full_name || undefined,
+                data: JSON.stringify({ order_id: oid }),
+            })
+        } catch {
+            setError('Impossible d\'ouvrir le module de paiement. Réessayez.')
+            setPayProcessing(false)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paymentSettings, form, event, ticketType, verifyAndFinish])
+
     useEffect(() => {
         if (!slug) return
         fetch('/api/events?admin=false')
@@ -87,8 +179,13 @@ export default function EventDetailPage() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Erreur')
-            if (data.requires_payment) setFormStep(2)
-            else setSuccess(true)
+            if (data.requires_payment) {
+                // Inscription enregistrée (order pending) → encaissement immédiat
+                setFormStep(2)
+                launchPayment(String(data.order_id))
+            } else {
+                setSuccess(true)
+            }
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Erreur lors de l\'inscription')
         } finally {
@@ -558,13 +655,33 @@ export default function EventDetailPage() {
                                             </div>
                                         )}
 
+                                        {/* Étape 3 — Encaissement (widget provider) */}
+                                        {formStep === 2 && (
+                                            <div className="flex flex-col items-center py-6 space-y-3">
+                                                {payProcessing ? (
+                                                    <>
+                                                        <div className="w-10 h-10 border-3 border-[#008751] border-t-transparent rounded-full animate-spin" />
+                                                        <p className="text-sm font-bold text-[#1a2332]"><T>Finalisez le paiement dans la fenêtre sécurisée…</T></p>
+                                                        <p className="text-[11px] text-gray-400 text-center max-w-xs"><T>Votre ticket vous sera envoyé par email dès la confirmation du paiement.</T></p>
+                                                    </>
+                                                ) : (
+                                                    <button type="button"
+                                                        onClick={() => launchPayment(orderIdRef.current)}
+                                                        className="px-6 py-3 rounded-2xl text-xs font-black text-white cursor-pointer transition-all hover:scale-[1.02]"
+                                                        style={{ background: 'linear-gradient(135deg, #008751, #006039)' }}>
+                                                        <T>La fenêtre s&apos;est fermée ? Relancer le paiement</T>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {error && (
                                             <p className="text-xs text-[#E8112D] text-center bg-[#E8112D]/5 p-3 rounded-xl border border-[#E8112D]/15">
                                                 {error}
                                             </p>
                                         )}
 
-                                        <div className="flex gap-3">
+                                        {formStep < 2 && <div className="flex gap-3">
                                             {formStep > 0 && (
                                                 <button type="button" onClick={() => setFormStep(f => f - 1)}
                                                     className="flex-1 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-500 hover:text-[#1a2332] hover:border-gray-300 cursor-pointer transition-all">
@@ -592,7 +709,7 @@ export default function EventDetailPage() {
                                                         : isFree ? t("Confirmer l'inscription")
                                                             : t('Procéder au paiement')}
                                             </button>
-                                        </div>
+                                        </div>}
                                     </>
                                 )}
                             </div>

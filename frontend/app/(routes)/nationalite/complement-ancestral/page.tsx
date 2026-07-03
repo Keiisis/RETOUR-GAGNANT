@@ -49,6 +49,10 @@ function ComplementAncestralContent() {
     const [paymentProcessing, setPaymentProcessing] = useState(false)
     const [paymentError, setPaymentError] = useState('')
     const kkiapayBound = useRef(false)
+    // Garde : enregistrement auto dès paiement confirmé (une seule fois).
+    // Sans ça, la commande n'était créée qu'au clic manuel post-paiement —
+    // perdue si l'onglet fermait (même faille que le formulaire nationalité).
+    const autoSubmitRef = useRef(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
@@ -161,9 +165,24 @@ function ComplementAncestralContent() {
                 const d = await res.json()
                 setError(d.error || 'Erreur lors de la confirmation')
             }
-        } catch { setError('Erreur réseau') }
+        } catch {
+            // Échec APRÈS paiement : réarmer pour permettre un nouvel essai
+            autoSubmitRef.current = false
+            setError(t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Réessayez avec le bouton de confirmation — votre paiement est conservé.'))
+        }
         setSubmitting(false)
     }
+
+    // Filet de sécurité : enregistrement automatique dès que le paiement est
+    // confirmé, sans dépendre d'un clic manuel (le webhook Kkiapay couvre en
+    // plus le cas où le navigateur meurt avant même cet effet).
+    useEffect(() => {
+        if (paymentDone && !autoSubmitRef.current && !submitting && !submitted) {
+            autoSubmitRef.current = true
+            handleSubmit()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paymentDone])
 
     if (loading) return (
         <div className="min-h-screen bg-white flex items-center justify-center">
