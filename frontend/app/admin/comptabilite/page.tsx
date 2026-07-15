@@ -740,11 +740,13 @@ export default function AdminComptabilitePage() {
     }
 
     // ── Export FEC / SYSCOHADA (écritures partie double pour expert-comptable) ──
-    const handleFecExport = async () => {
+    // Par défaut : classeur Excel professionnel (Synthèse + Écritures stylées).
+    // format='txt' : fichier réglementaire tabulé, importable par un logiciel comptable.
+    const handleFecExport = async (format: 'xlsx' | 'txt' = 'xlsx') => {
         setFecExporting(true)
         try {
             const qs = isMonth(period) ? `periode=${period}` : `annee=${new Date().getFullYear()}`
-            const res = await fetch(`/api/admin/comptabilite/fec?${qs}`, { credentials: 'same-origin' })
+            const res = await fetch(`/api/admin/comptabilite/fec?${qs}&format=${format}`, { credentials: 'same-origin' })
             if (!res.ok) {
                 const j = await res.json().catch(() => ({}))
                 throw new Error(j.error || `Erreur ${res.status}`)
@@ -753,7 +755,7 @@ export default function AdminComptabilitePage() {
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `RGB_FEC_${isMonth(period) ? period : new Date().getFullYear()}.txt`
+            a.download = `RGB_FEC_${isMonth(period) ? period : new Date().getFullYear()}.${format}`
             document.body.appendChild(a); a.click(); a.remove()
             setTimeout(() => URL.revokeObjectURL(url), 1000)
         } catch (e) {
@@ -1271,11 +1273,16 @@ export default function AdminComptabilitePage() {
                         {exporting ? <div className="w-4 h-4 border-2 border-[#0a0f18] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
                         Export comptable mensuel
                     </button>
-                    <button type="button" onClick={handleFecExport} disabled={fecExporting}
-                        title="Export FEC / SYSCOHADA — écritures en partie double, pour votre expert-comptable"
+                    <button type="button" onClick={() => handleFecExport('xlsx')} disabled={fecExporting}
+                        title="Export FEC / SYSCOHADA — classeur Excel professionnel (Synthèse + écritures en partie double)"
                         className="flex items-center gap-2 bg-white/5 border border-[#008751]/40 text-[#00c870] hover:bg-[#008751]/15 font-black text-xs px-5 py-3 rounded-xl transition-all disabled:opacity-60">
                         {fecExporting ? <div className="w-4 h-4 border-2 border-[#00c870] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
-                        Export FEC (comptable)
+                        Export FEC (Excel)
+                    </button>
+                    <button type="button" onClick={() => handleFecExport('txt')} disabled={fecExporting}
+                        title="Format réglementaire tabulé (.txt) — import direct dans un logiciel comptable"
+                        className="flex items-center gap-2 bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300 font-black text-[10px] px-3 py-3 rounded-xl transition-all disabled:opacity-60">
+                        .txt
                     </button>
                 </div>
             </div>

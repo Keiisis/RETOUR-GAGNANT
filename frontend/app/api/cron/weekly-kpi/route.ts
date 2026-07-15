@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 📊 CRON — Rapport KPI Hebdomadaire (chaque lundi matin)
+// 📊 CRON — Rapport KPI Hebdomadaire (chaque samedi à 10h, heure Bénin)
 // Destinataires : contact@retourgagnantbenin.bj + pdg.retourgagnantbenin@gmail.com
 // Contenu : visiteurs de la semaine (volume + évolution vs semaine
 // précédente), localisations, pages consultées, appareils et sources,
@@ -278,7 +278,7 @@ async function buildReport() {
         <!-- PIED -->
         <tr><td style="background:#0d1117;padding:18px 32px;text-align:center;">
           <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.7;">
-            Rapport généré automatiquement chaque lundi matin à partir des données réelles du site.<br>
+            Rapport généré automatiquement chaque samedi à 10 h (heure Bénin) à partir des données réelles du site.<br>
             &copy; ${now.getFullYear()} Retour Gagnant Bénin — <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
           </p>
         </td></tr>
