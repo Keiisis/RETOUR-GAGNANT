@@ -8,6 +8,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'
 import PricingCalculator3D from '@/components/services/PricingCalculator3D'
+import FaConsultationBooking from '@/components/services/FaConsultationBooking'
+import LanguesRacinesChoice from '@/components/services/LanguesRacinesChoice'
 
 import { useTranslation, T } from '@/lib/translation'
 
@@ -203,6 +205,46 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
             { label: 'Pack VIP — suivi prioritaire', price: '350 000 FCFA' },
             { label: 'Consultation initiale', price: 'Gratuit' },
         ],
+    },
+    'consultation-fa-racines': {
+        title: 'Consultation Fa & Racines',
+        subtitle: 'Rencontrez un Bokonon — la sagesse du Fa, dans un cadre organisé et respectueux',
+        description: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un Bokonon (prêtre du Fa) reconnu, pour une consultation traditionnelle menée dans les règles de l'art. En présentiel au Bénin, nous organisons l'intégralité de votre venue ; à distance, nous assurons une assistance de bout en bout pour que la séance se déroule dans les meilleures conditions.",
+        features: [
+            "Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté",
+            "Présentiel — accueil à l'arrivée et accompagnement sur place",
+            "Présentiel — prise de rendez-vous avec le prêtre Fa et coordination complète",
+            "Présentiel — réservation d'hôtel et change de monnaie sur place",
+            "Visio — organisation de la séance à distance et liaison avec le Bokonon",
+            "Visio — assistance et veille technique pendant toute la consultation",
+            "Cadre contractuel clair : un accord de mise en relation est signé avant le début de la procédure",
+        ],
+        price: 'Présentiel 550 € · Visio 780 €',
+        color: '#7C5CCA',
+        icon_type: 'cowrie',
+        image_url: '/assets/icones/icone_Consultation_Fa_Racines.png',
+        pricing_options: [
+            { label: 'Consultation en Présentiel — accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
+            { label: 'Consultation en Visio — assistance et veille à distance de bout en bout', price: '780 €' },
+        ],
+    },
+    'langues-racines': {
+        title: 'Langues & Racines',
+        subtitle: 'La langue de vos ancêtres est la première porte du retour',
+        description: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Le fon, le yoruba, le goun ou le mina portent la mémoire, l'humour et la vision du monde de vos ancêtres : les apprendre, c'est renouer le fil que l'histoire a interrompu. Nos parcours sont animés par des locuteurs natifs et pensés pour la diaspora — vocabulaire du quotidien, usages culturels, salutations et codes sociaux — en présentiel au Bénin ou en visioconférence où que vous soyez.",
+        features: [
+            "Cours animés par des locuteurs natifs qualifiés",
+            "Fon, Yoruba, Goun, Mina — selon votre lignée et votre région d'origine",
+            "Parcours débutant à avancé, adapté à votre rythme",
+            "Immersion culturelle : proverbes, salutations, codes sociaux",
+            "En présentiel au Bénin ou en visioconférence depuis l'étranger",
+            "Programme personnalisé défini ensemble lors d'un premier rendez-vous",
+        ],
+        price: 'Sur devis — premier rendez-vous gratuit',
+        color: '#0EA5E9',
+        icon_type: 'drum',
+        image_url: '/assets/icones/icone_Langues_Racines.png',
+        pricing_options: [],
     },
     autres: {
         title: 'Autres Services',
@@ -472,6 +514,22 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                         </div>
                                     </motion.div>
                                 )}
+
+                                {/* Section réservation — uniquement Consultation Fa & Racines */}
+                                {slug === 'consultation-fa-racines' && (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+                                        <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Réserver votre consultation</T></h2>
+                                        <FaConsultationBooking />
+                                    </motion.div>
+                                )}
+
+                                {/* Section choix de format — uniquement Langues & Racines */}
+                                {slug === 'langues-racines' && (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+                                        <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Commencer votre apprentissage</T></h2>
+                                        <LanguesRacinesChoice />
+                                    </motion.div>
+                                )}
                             </motion.div>
 
                             {/* Sidebar */}
@@ -482,7 +540,10 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                 className="lg:col-span-1"
                             >
                                 <div className="sticky top-24 space-y-6">
-                                    {showCalculator && (
+                                    {/* Exception : le calculateur reste affiché pour la Consultation Fa
+                                        (décision boss 2026-07-03 : prix 550/780 € montrés directement),
+                                        même quand le toggle global services_show_calculator est désactivé. */}
+                                    {(showCalculator || slug === 'consultation-fa-racines') && (
                                         <PricingCalculator3D
                                             options={service.pricing_options}
                                             baseColor={service.color}

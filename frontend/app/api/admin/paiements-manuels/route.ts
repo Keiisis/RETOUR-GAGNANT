@@ -13,9 +13,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { document_id, agent_id, type, montant, date_paiement, reference, notes } = body
 
-    if (!document_id || !montant || !type) {
-        return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
+    if (!montant || !type) {
+        return NextResponse.json({ error: 'Champs requis manquants (type, montant)' }, { status: 400 })
     }
+
+    const isExterne = !document_id && typeof notes === 'string' && /^\[EXTERNE\]/i.test(notes)
+    if (!document_id && !isExterne) {
+        return NextResponse.json({ error: 'document_id requis pour les paiements non-externes' }, { status: 400 })
+    }
+
 
     const supabase = createClient(supabaseUrl, serviceKey)
 
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error } = await supabase.from('paiements_manuels').insert({
-        document_id,
+        document_id: document_id || null,
         agent_id: agent_id || null,
         type,
         montant: Number(montant),

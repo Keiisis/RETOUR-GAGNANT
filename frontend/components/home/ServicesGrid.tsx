@@ -31,6 +31,8 @@ const IMG_BY_SLUG: Record<string, string> = {
     investissement: '/assets/icones/icone_Investissement.png',
     'nationalite-vip': '/assets/icones/Nationalité Béninoise VIP.png',
     'recherche-ancestrale': '/assets/icones/Recherche Ancestrale.png',
+    'consultation-fa-racines': '/assets/icones/icone_Consultation_Fa_Racines.png',
+    'langues-racines': '/assets/icones/icone_Langues_Racines.png',
     autres: '/assets/icones/Autres Services.png',
 }
 
@@ -83,6 +85,18 @@ const FALLBACK_SERVICES: ServiceItem[] = [
         title: 'Recherche Ancestrale',
         description: "Retrouvez la trace de vos ancêtres réduits en esclavage — archives, bases de données spécialisées et accompagnement généalogique pour reconstituer votre lignée africaine.",
         imageUrl: '/assets/icones/Recherche Ancestrale.png',
+    },
+    {
+        id: 'f-7c', slug: 'consultation-fa-racines', iconType: 'cowrie',
+        title: 'Consultation Fa & Racines',
+        description: "Mise en relation avec un Bokonon (prêtre Fa) pour une consultation traditionnelle — en présentiel au Bénin ou à distance en visioconférence, dans un cadre organisé et respectueux.",
+        imageUrl: '/assets/icones/icone_Consultation_Fa_Racines.png',
+    },
+    {
+        id: 'f-7d', slug: 'langues-racines', iconType: 'drum',
+        title: 'Langues & Racines',
+        description: "Apprenez les langues de vos ancêtres — fon, yoruba, goun, mina — avec des locuteurs natifs, en présentiel ou en visio. La langue est la première porte du retour aux racines.",
+        imageUrl: '/assets/icones/icone_Langues_Racines.png',
     },
     {
         id: 'f-8', slug: 'autres', iconType: 'standard',

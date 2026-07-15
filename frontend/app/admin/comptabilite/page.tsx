@@ -377,7 +377,7 @@ export default function AdminComptabilitePage() {
     const [commissionRate, setCommissionRate] = useState(0.10)
     const [clotures, setClotures]   = useState<ClotureRow[]>([])
 
-    const [journalTab, setJournalTab]   = useState<'docs' | 'boutique' | 'depenses'>('docs')
+    const [journalTab, setJournalTab]   = useState<'docs' | 'boutique' | 'depenses' | 'paiements'>('docs')
     const [searchQ, setSearchQ]         = useState('')
     const [sortAgent, setSortAgent]     = useState<'encaisse' | 'commission' | 'docs'>('encaisse')
     const [journalPage, setJournalPage] = useState(1)
@@ -440,17 +440,23 @@ export default function AdminComptabilitePage() {
     const pvDocs   = useMemo(() => docs.filter(d => inRange(d.created_at, pS, pE)), [docs, pS, pE])
     const pvOrders = useMemo(() => orders.filter(o => inRange(o.created_at, pS, pE)), [orders, pS, pE])
     const pvDeps   = useMemo(() => depenses.filter(d => inRange(d.date_depense, pS, pE)), [depenses, pS, pE])
+    const pvPaiements = useMemo(() => paiementsList.filter(p => inRange(p.date_paiement, pS, pE)), [paiementsList, pS, pE])
 
     // ── KPIs globaux ──────────────────────────────────────────────
     const kpis = useMemo(() => {
-        const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[]) => {
+        const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[], pList: typeof paiementsList) => {
             const invoices = dList.filter(d => d.type === 'facture')
-            // Tous les agrégats sont normalisés en XOF (devise de référence).
-            // Sans ça, une facture en EUR (ex. recherche-ancestrale 250 €) était
-            // additionnée brute au XOF → KPI faux. cf. lib/currency-convert.ts
-            // Commission calculée sur le montant NET (total - remise)
-            const payees = invoices.filter(d => d.status === 'paye')
-            const encaisseFactu = payees.reduce((a, d) => a + toXOF(d.total - (Number(d.remise) || 0), d.currency), 0)
+            
+            // Somme de tous les paiements manuels de la période
+            const encaissePaiements = pList.reduce((a, p) => a + Number(p.montant || 0), 0)
+            
+            // Plus factures passées payées sans paiement manuel lié (Stripe/web)
+            const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
+            const invoicesPayeesSansP = invoices
+                .filter(d => d.status === 'paye' && !docsWithP.has(d.id))
+                .reduce((a, d) => a + toXOF(d.total - (Number(d.remise) || 0), d.currency), 0)
+
+            const encaisseFactu = encaissePaiements + invoicesPayeesSansP
             const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
             const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + toXOF(o.amount, o.currency), 0)
             const totalEncaisse = encaisseFactu + boutique
@@ -459,14 +465,14 @@ export default function AdminComptabilitePage() {
             const caEmis        = invoices.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
             const totalTVA      = invoices.reduce((a, d) => a + toXOF(Number(d.total_tva) || 0, d.currency), 0)
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
-            const nbFactPaye    = payees.length
+            const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
             const nbFactTotal   = invoices.length
             return { encaisseFactu, boutique, totalEncaisse, enAttente, commission, totalDeps, caEmis, totalTVA,
                      benefice: totalEncaisse - commission - totalDeps,
                      proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
-        const curr = calc(pDocs, pOrders, pDeps)
-        const prev = calc(pvDocs, pvOrders, pvDeps)
+        const curr = calc(pDocs, pOrders, pDeps, pPaiements)
+        const prev = calc(pvDocs, pvOrders, pvDeps, pvPaiements)
         return {
             ...curr,
             trends: period === 'tous' ? null : {
@@ -477,7 +483,7 @@ export default function AdminComptabilitePage() {
                 tva:       calcTrend(curr.totalTVA,      prev.totalTVA),
             }
         }
-    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end])
+    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements])
 
     // ── Balance âgée des créances (aged receivables) — toutes périodes ─
     // Feature ERP type-Odoo : qui doit combien, et depuis combien de temps.
@@ -565,6 +571,8 @@ export default function AdminComptabilitePage() {
         for (const a of agents) {
             map.set(a.id, { agent: a, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0, tvaCollectee: 0 })
         }
+        
+        // Documents (Devis, CA émis, factures en attente)
         for (const d of pDocs) {
             if (!d.agent_id) continue
             if (!map.has(d.agent_id)) {
@@ -574,20 +582,45 @@ export default function AdminComptabilitePage() {
             const s = map.get(d.agent_id)!
             if (d.type === 'devis') { s.nbDevis++ } else {
                 s.nbFactures++; s.caEmis += d.total
-                if (d.status === 'paye') { s.encaisse += (d.total - (Number(d.remise) || 0)); s.nbPayees++; s.tvaCollectee += Number(d.total_tva) || 0 }
                 if (['envoye', 'accepte'].includes(d.status)) s.enAttente += d.total
             }
         }
+        
+        // Dépenses de la période par agent
         for (const dep of pDeps) {
             if (dep.agent_id && map.has(dep.agent_id)) map.get(dep.agent_id)!.depenses += Number(dep.montant)
         }
+
+        // Paiements manuels de la période par agent
+        for (const p of pPaiements) {
+            if (!p.agent_id) continue
+            if (!map.has(p.agent_id)) {
+                map.set(p.agent_id, { agent: { id: p.agent_id, full_name: '', email: 'Agent…', role: 'agent', is_active: true }, caEmis: 0, encaisse: 0, enAttente: 0, commission: 0, depenses: 0, benefice: 0, nbDevis: 0, nbFactures: 0, nbPayees: 0, tvaCollectee: 0 })
+            }
+            const s = map.get(p.agent_id)!
+            s.encaisse += Number(p.montant || 0)
+        }
+
+        // Factures payées de la période sans paiement lié (web)
+        const docsWithP = new Set(pPaiements.map(p => p.document_id).filter(Boolean))
+        for (const d of pDocs) {
+            if (d.type === 'facture' && d.status === 'paye' && d.agent_id && !docsWithP.has(d.id)) {
+                if (map.has(d.agent_id)) {
+                    const s = map.get(d.agent_id)!
+                    s.encaisse += toXOF(d.total - (Number(d.remise) || 0), d.currency)
+                    s.nbPayees++
+                    s.tvaCollectee += toXOF(Number(d.total_tva) || 0, d.currency)
+                }
+            }
+        }
+
         for (const [, s] of map) {
             s.commission = Math.round(s.encaisse * commissionRate)
             s.benefice = s.encaisse - s.commission - s.depenses
         }
         const all = [...map.values()]
-        return showAllAgents ? all : all.filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0)
-    }, [agents, pDocs, pDeps, commissionRate, showAllAgents])
+        return showAllAgents ? all : all.filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0 || s.encaisse > 0)
+    }, [agents, pDocs, pDeps, pPaiements, commissionRate, showAllAgents])
 
     // ── Charts ────────────────────────────────────────────────────
     const areaData = useMemo(() => {
@@ -649,11 +682,26 @@ export default function AdminComptabilitePage() {
         return list
     }, [pDeps, agentFilter, searchQ])
 
-    const jCount     = journalTab === 'docs' ? jDocs.length : journalTab === 'boutique' ? jOrders.length : jDeps.length
+    const jPaiements = useMemo(() => {
+        let list = pPaiements
+        if (agentFilter !== 'tous') list = list.filter(p => p.agent_id === agentFilter)
+        if (searchQ) {
+            const q = searchQ.toLowerCase()
+            list = list.filter(p =>
+                (p.reference || '').toLowerCase().includes(q) ||
+                (p.notes || '').toLowerCase().includes(q) ||
+                (p.type || '').toLowerCase().includes(q)
+            )
+        }
+        return list
+    }, [pPaiements, agentFilter, searchQ])
+
+    const jCount     = journalTab === 'docs' ? jDocs.length : journalTab === 'boutique' ? jOrders.length : journalTab === 'depenses' ? jDeps.length : jPaiements.length
     const totalPages = Math.max(1, Math.ceil(jCount / ITEMS))
     const pgDocs     = jDocs.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
     const pgOrders   = jOrders.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
     const pgDeps     = jDeps.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
+    const pgPaiements = jPaiements.slice((journalPage - 1) * ITEMS, journalPage * ITEMS)
 
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -1628,6 +1676,7 @@ export default function AdminComptabilitePage() {
                             ['docs',     'Factures',  pDocs.filter(d => d.type === 'facture').length, Calculator],
                             ['boutique', 'Boutique',  pOrders.length, ShoppingBag],
                             ['depenses', 'Dépenses',  pDeps.length,   Receipt],
+                            ['paiements', 'Paiements', pPaiements.length, Banknote],
                         ] as const).map(([k, l, c, Icon]) => (
                             <button key={k} type="button" onClick={() => { setJournalTab(k); setJournalPage(1); setAlertFilter(null) }}
                                 className={cn('text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5',
@@ -1756,6 +1805,50 @@ export default function AdminComptabilitePage() {
                                             <td className="p-4 text-right font-mono text-sm text-red-400 font-bold">−{fmt(Number(d.montant))}</td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.date_depense)}</td>
                                             <td className="p-4 pr-5 text-[10px] text-gray-600 truncate max-w-[160px]">{d.notes || '—'}</td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    )}
+                    {journalTab === 'paiements' && (
+                        <table className="w-full min-w-[640px]">
+                            <thead><tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
+                                {['Type', 'Facture / Libellé', 'Agent', 'Montant', 'Date', 'Référence'].map((h, i) => (
+                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 4 ? 'text-right' : i === 3 ? 'text-right' : i === 5 ? 'text-left pr-5' : 'text-left')}>{h}</th>
+                                ))}
+                            </tr></thead>
+                            <tbody className="divide-y divide-white/[0.03]">
+                                {pgPaiements.length === 0 && <tr><td colSpan={6} className="text-center py-12 text-gray-600 text-sm">Aucun paiement</td></tr>}
+                                {pgPaiements.map(p => {
+                                    const ag = agents.find(a => a.id === p.agent_id)
+                                    const linkedDoc = docs.find(d => d.id === p.document_id)
+                                    const isExterne = !linkedDoc && /^\[EXTERNE\]/i.test(p.notes || '')
+                                    const cleanNotes = isExterne ? p.notes?.replace(/^\[EXTERNE\]\s*/i, '') : p.notes
+                                    return (
+                                        <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                                            <td className="p-4 pl-5">
+                                                <span className="text-[9px] font-black px-2.5 py-1 rounded-lg uppercase border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                                    {p.type}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-xs text-gray-300">
+                                                {linkedDoc ? (
+                                                    <div>
+                                                        <p className="font-bold text-white">Facture {linkedDoc.numero}</p>
+                                                        <p className="text-[9px] text-gray-500">{linkedDoc.client_nom} {linkedDoc.client_prenom}</p>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <p className="font-bold text-amber-400">Paiement Externe</p>
+                                                        <p className="text-xs text-gray-400">{cleanNotes || '—'}</p>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-right font-mono text-sm text-emerald-400 font-bold">{fmt(p.montant)}</td>
+                                            <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(p.date_paiement)}</td>
+                                            <td className="p-4 pr-5 font-mono text-xs text-gray-400">{p.reference || '—'}</td>
                                         </tr>
                                     )
                                 })}

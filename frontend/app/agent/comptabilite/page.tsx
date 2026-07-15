@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import {
     Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Download, Activity, CheckCircle2,
     BarChart3, Landmark, ArrowRight, FileText, X, TrendingDown, Zap, MessageCircle,
-    RefreshCw, Plus, AlertTriangle, Banknote, CreditCard, Bell, ChevronLeft, ChevronRight
+    RefreshCw, Plus, AlertTriangle, Banknote, CreditCard, Bell, ChevronLeft, ChevronRight,
+    Receipt, ShoppingBag
 } from 'lucide-react'
 import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
@@ -158,6 +159,7 @@ export default function AgentComptabilitePage() {
     const [paymentMode, setPaymentMode] = useState<'site' | 'externe'>('site')
     const [externePayment, setExternePayment] = useState({ libelle: '', client: '' })
     const [currentPage, setCurrentPage] = useState(1)
+    const [activeTab, setActiveTab] = useState<'docs' | 'depenses' | 'paiements'>('docs')
     const ITEMS_PER_PAGE = 8
 
     const [commissionRate, setCommissionRate] = useState(0.10)
@@ -249,11 +251,34 @@ export default function AgentComptabilitePage() {
             return date >= prevStart && date <= prevEnd
         }), [allDocs, prevStart, prevEnd])
 
+    const periodPaiements = useMemo(() => 
+        paiementsList.filter(p => {
+            if (!p.date_paiement) return false
+            const date = new Date(p.date_paiement)
+            if (isNaN(date.getTime())) return false
+            return date >= pStart && date <= pEnd
+        }), [paiementsList, pStart, pEnd])
+
+    const prevPaiements = useMemo(() => 
+        paiementsList.filter(p => {
+            if (!p.date_paiement) return false
+            const date = new Date(p.date_paiement)
+            if (isNaN(date.getTime())) return false
+            return date >= prevStart && date <= prevEnd
+        }), [paiementsList, prevStart, prevEnd])
+
     const stats = useMemo(() => {
-        const getStats = (list: DocumentFinancier[], expList: Depense[]) => {
+        const getStats = (list: DocumentFinancier[], expList: Depense[], pList: typeof paiementsList) => {
             const invoices = list.filter(d => d.type === 'facture')
-            // Agrégats normalisés en XOF (parité EUR fixe) — cf. lib/currency-convert.ts
-            const encaisse = invoices.filter(d => d.status === 'paye').reduce((acc, d) => acc + toXOF(d.total, d.currency), 0)
+            // Somme des paiements réels reçus
+            const encaissePaiements = pList.reduce((acc, p) => acc + Number(p.montant), 0)
+            // Plus factures passées payées sans paiement manuel lié (ventes web)
+            const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
+            const invoicesPayeesSansP = invoices
+                .filter(d => d.status === 'paye' && !docsWithP.has(d.id))
+                .reduce((acc, d) => acc + toXOF(d.total, d.currency), 0)
+
+            const encaisse = encaissePaiements + invoicesPayeesSansP
             const facture = invoices.reduce((acc, d) => acc + toXOF(d.total, d.currency), 0)
             const attente = invoices.filter(d => d.status === 'envoye' || d.status === 'accepte').reduce((acc, d) => acc + toXOF(d.total, d.currency), 0)
             const totalDepenses = expList.reduce((acc, e) => acc + Number(e.montant), 0)  // dépenses en XOF
@@ -271,13 +296,13 @@ export default function AgentComptabilitePage() {
             const date = new Date(e.date_depense)
             if (isNaN(date.getTime())) return false
             return date >= pStart && date <= pEnd
-        }))
+        }), periodPaiements)
         const prev = getStats(prevDocs, expenses.filter(e => {
             if (!e.date_depense) return false
             const date = new Date(e.date_depense)
             if (isNaN(date.getTime())) return false
             return date >= prevStart && date <= prevEnd
-        }))
+        }), prevPaiements)
 
         // Predictive Logic
         const daysInPeriod = Math.max(1, (pEnd.getTime() - pStart.getTime()) / (1000 * 60 * 60 * 24))
@@ -295,19 +320,19 @@ export default function AgentComptabilitePage() {
                 benefice: (selectedPeriod === 'tous') ? null : calcTrend(curr.beneficeNet, prev.beneficeNet)
             }
         }
-    }, [periodDocs, prevDocs, expenses, selectedPeriod, pStart, pEnd, prevStart, prevEnd, commissionRate])
+    }, [periodDocs, prevDocs, expenses, selectedPeriod, pStart, pEnd, prevStart, prevEnd, commissionRate, periodPaiements, prevPaiements])
 
-    // Data for Recharts
+    // Data for Recharts (flux de trésorerie réel basé sur les paiements reçus par jour)
     const chartData = useMemo(() => {
         const days: Record<string, number> = {}
-        periodDocs.filter(d => d.status === 'paye').forEach(d => {
-            if (d.created_at && !isNaN(new Date(d.created_at).getTime())) {
-                const day = new Date(d.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-                days[day] = (days[day] || 0) + d.total
+        periodPaiements.forEach(p => {
+            if (p.date_paiement) {
+                const day = new Date(p.date_paiement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+                days[day] = (days[day] || 0) + Number(p.montant)
             }
         })
         return Object.entries(days).map(([name, total]) => ({ name, total })).reverse()
-    }, [periodDocs])
+    }, [periodPaiements])
 
     const displayedDocs = useMemo(() => {
         let docs = periodDocs
@@ -317,10 +342,33 @@ export default function AgentComptabilitePage() {
         return docs
     }, [periodDocs, showRelancesOnly])
 
-    const totalPages = Math.max(1, Math.ceil(displayedDocs.length / ITEMS_PER_PAGE))
+    const displayedExpenses = useMemo(() => {
+        return expenses.filter(e => {
+            if (!e.date_depense) return false
+            const date = new Date(e.date_depense)
+            if (isNaN(date.getTime())) return false
+            return date >= pStart && date <= pEnd
+        })
+    }, [expenses, pStart, pEnd])
+
+    const displayedPaiements = useMemo(() => {
+        return periodPaiements
+    }, [periodPaiements])
+
+    const jCount = activeTab === 'docs' ? displayedDocs.length : activeTab === 'depenses' ? displayedExpenses.length : displayedPaiements.length
+    const totalPages = Math.max(1, Math.ceil(jCount / ITEMS_PER_PAGE))
+
     const paginatedDocs = useMemo(() => 
         displayedDocs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
         [displayedDocs, currentPage])
+
+    const paginatedExpenses = useMemo(() => 
+        displayedExpenses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+        [displayedExpenses, currentPage])
+
+    const paginatedPaiements = useMemo(() => 
+        displayedPaiements.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+        [displayedPaiements, currentPage])
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('fr-BJ', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val)
@@ -705,99 +753,222 @@ export default function AgentComptabilitePage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 glass-nexus-card overflow-hidden">
-                    <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-                        <div className="flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
-                            <BarChart3 size={16} className="text-emerald-400" /> Journal - Page {currentPage}/{totalPages}
+                    <div className="p-5 border-b border-white/5 space-y-4 bg-white/[0.01]">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                                <BarChart3 size={16} className="text-emerald-400" /> Journal des Transactions
+                            </div>
+                            <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-2 py-0.5 rounded">
+                                Affichage {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, jCount)}–{Math.min(currentPage * ITEMS_PER_PAGE, jCount)} / {jCount}
+                            </span>
+                        </div>
+                        <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-fit">
+                            {[
+                                { key: 'docs', label: 'Factures & Devis', count: displayedDocs.length, Icon: FileText },
+                                { key: 'depenses', label: 'Mes Dépenses', count: displayedExpenses.length, Icon: Receipt },
+                                { key: 'paiements', label: 'Paiements Reçus', count: displayedPaiements.length, Icon: Banknote }
+                            ].map(({ key: k, label: l, count, Icon }) => {
+                                const active = activeTab === k
+                                return (
+                                    <button
+                                        key={k}
+                                        type="button"
+                                        onClick={() => { setActiveTab(k as any); setCurrentPage(1) }}
+                                        className={`text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                                            active ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white'
+                                        }`}
+                                    >
+                                        <Icon size={11} /> {l} <span className="text-[9px] font-mono opacity-60">{count}</span>
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                    <th className="py-4 px-6">Document</th>
-                                    <th className="py-4 px-6">Client</th>
-                                    <th className="py-4 px-6 text-right">Total</th>
-                                    <th className="py-4 px-6 text-right">Payé</th>
-                                    <th className="py-4 px-6 text-right">Solde</th>
-                                    <th className="py-4 px-6 text-center">État</th>
-                                    <th className="py-4 px-4 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {paginatedDocs.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="py-16 text-center text-gray-500 italic text-sm">
-                                            Aucun document trouvé pour cette sélection.
-                                        </td>
+                        {activeTab === 'docs' && (
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        <th className="py-4 px-6">Document</th>
+                                        <th className="py-4 px-6">Client</th>
+                                        <th className="py-4 px-6 text-right">Total</th>
+                                        <th className="py-4 px-6 text-right">Payé</th>
+                                        <th className="py-4 px-6 text-right">Solde</th>
+                                        <th className="py-4 px-6 text-center">État</th>
+                                        <th className="py-4 px-4 text-center">Action</th>
                                     </tr>
-                                ) : paginatedDocs.map((tx) => {
-                                    const montantPaye = paiements[tx.id] || 0
-                                    const solde = Math.max(0, tx.total - montantPaye)
-                                    const isSolde = solde === 0 && tx.type === 'facture'
-                                    return (
-                                    <tr key={tx.id} className={`hover:bg-white/[0.02] transition-colors group ${solde > 0 && tx.type === 'facture' ? 'border-l-2 border-amber-500/40' : ''}`}>
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-center gap-3">
-                                                <FileText size={15} className="text-emerald-400" />
-                                                <div>
-                                                    <p className="text-sm font-bold text-white">{tx.numero}</p>
-                                                    <p className="text-[9px] text-gray-500">
-                                                        {tx.created_at && !isNaN(new Date(tx.created_at).getTime()) ? new Date(tx.created_at).toLocaleDateString('fr-FR') : '—'}
-                                                    </p>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {paginatedDocs.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="py-16 text-center text-gray-500 italic text-sm">
+                                                Aucun document trouvé pour cette sélection.
+                                            </td>
+                                        </tr>
+                                    ) : paginatedDocs.map((tx) => {
+                                        const montantPaye = paiements[tx.id] || 0
+                                        const solde = Math.max(0, tx.total - montantPaye)
+                                        const isSolde = solde === 0 && tx.type === 'facture'
+                                        return (
+                                        <tr key={tx.id} className={`hover:bg-white/[0.02] transition-colors group ${solde > 0 && tx.type === 'facture' ? 'border-l-2 border-amber-500/40' : ''}`}>
+                                            <td className="py-4 px-6">
+                                                <div className="flex items-center gap-3">
+                                                    <FileText size={15} className="text-emerald-400" />
+                                                    <div>
+                                                        <p className="text-sm font-bold text-white">{tx.numero}</p>
+                                                        <p className="text-[9px] text-gray-500">
+                                                            {tx.created_at && !isNaN(new Date(tx.created_at).getTime()) ? new Date(tx.created_at).toLocaleDateString('fr-FR') : '—'}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 text-sm text-gray-300">{tx.client_nom} {tx.client_prenom}</td>
-                                        <td className="py-4 px-6 text-right font-mono text-sm font-bold text-white">{formatCurrency(tx.total)}</td>
-                                        <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400">
-                                            {montantPaye > 0 ? formatCurrency(montantPaye) : <span className="text-gray-600">—</span>}
-                                        </td>
-                                        <td className="py-4 px-6 text-right font-mono text-sm">
-                                            {tx.type === 'facture' ? (
-                                                <span className={solde > 0 ? 'text-amber-400 font-bold' : 'text-gray-600'}>
-                                                    {solde > 0 ? formatCurrency(solde) : '✓ Soldé'}
-                                                </span>
-                                            ) : <span className="text-gray-600">—</span>}
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className="flex items-center justify-center gap-1">
-                                                <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase border ${
-                                                    isSolde || tx.status === 'paye' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                                    tx.status === 'envoye' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                    tx.status === 'accepte' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                                    'bg-gray-500/10 text-gray-400 border-white/10'
-                                                }`}>
-                                                    {isSolde ? 'payé' : tx.status}
-                                                </span>
-                                                {(tx.status === 'envoye' || tx.status === 'accepte') && (
+                                            </td>
+                                            <td className="py-4 px-6 text-sm text-gray-300">{tx.client_nom} {tx.client_prenom}</td>
+                                            <td className="py-4 px-6 text-right font-mono text-sm font-bold text-white">{formatCurrency(tx.total)}</td>
+                                            <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400">
+                                                {montantPaye > 0 ? formatCurrency(montantPaye) : <span className="text-gray-600">—</span>}
+                                            </td>
+                                            <td className="py-4 px-6 text-right font-mono text-sm">
+                                                {tx.type === 'facture' ? (
+                                                    <span className={solde > 0 ? 'text-amber-400 font-bold' : 'text-gray-600'}>
+                                                        {solde > 0 ? formatCurrency(solde) : '✓ Soldé'}
+                                                    </span>
+                                                ) : <span className="text-gray-600">—</span>}
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase border ${
+                                                        isSolde || tx.status === 'paye' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                        tx.status === 'envoye' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                        tx.status === 'accepte' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                                        'bg-gray-500/10 text-gray-400 border-white/10'
+                                                    }`}>
+                                                        {isSolde ? 'payé' : tx.status}
+                                                    </span>
+                                                    {(tx.status === 'envoye' || tx.status === 'accepte') && (
+                                                        <button
+                                                            onClick={() => handleWhatsAppReminder(tx)}
+                                                            className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
+                                                            title="Envoyer une relance WhatsApp"
+                                                        >
+                                                            <MessageCircle size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                {tx.type === 'facture' && solde > 0 && (
                                                     <button
-                                                        onClick={() => handleWhatsAppReminder(tx)}
-                                                        className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
-                                                        title="Envoyer une relance WhatsApp"
+                                                        type="button"
+                                                        title="Enregistrer un paiement"
+                                                        onClick={() => { setPaymentDoc(tx); setNewPayment(p => ({ ...p, montant: String(solde) })); setShowPaymentModal(true) }}
+                                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all text-[10px] font-bold border border-emerald-500/20"
                                                     >
-                                                        <MessageCircle size={14} />
+                                                        <Banknote size={12} />
+                                                        Encaisser
                                                     </button>
                                                 )}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-4 text-center">
-                                            {tx.type === 'facture' && solde > 0 && (
-                                                <button
-                                                    type="button"
-                                                    title="Enregistrer un paiement"
-                                                    onClick={() => { setPaymentDoc(tx); setNewPayment(p => ({ ...p, montant: String(solde) })); setShowPaymentModal(true) }}
-                                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all text-[10px] font-bold border border-emerald-500/20"
-                                                >
-                                                    <Banknote size={12} />
-                                                    Encaisser
-                                                </button>
-                                            )}
-                                        </td>
+                                            </td>
+                                        </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {activeTab === 'depenses' && (
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        <th className="py-4 px-6">Titre</th>
+                                        <th className="py-4 px-6">Catégorie</th>
+                                        <th className="py-4 px-6 text-right">Montant</th>
+                                        <th className="py-4 px-6 text-right">Date</th>
                                     </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {paginatedExpenses.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-16 text-center text-gray-500 italic text-sm">
+                                                Aucune dépense trouvée pour cette période.
+                                            </td>
+                                        </tr>
+                                    ) : paginatedExpenses.map((exp) => (
+                                        <tr key={exp.id} className="hover:bg-white/[0.02] transition-colors">
+                                            <td className="py-4 px-6 text-sm font-bold text-white">{exp.titre}</td>
+                                            <td className="py-4 px-6">
+                                                <span className="text-[9px] font-bold bg-white/5 text-gray-400 px-2.5 py-1 rounded-lg uppercase border border-white/10 capitalize">
+                                                    {exp.categorie}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 text-right font-mono text-sm text-rose-400 font-bold">
+                                                -{formatCurrency(exp.montant)}
+                                            </td>
+                                            <td className="py-4 px-6 text-right font-mono text-xs text-gray-500">
+                                                {new Date(exp.date_depense).toLocaleDateString('fr-FR')}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {activeTab === 'paiements' && (
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        <th className="py-4 px-6">Type</th>
+                                        <th className="py-4 px-6">Facture / Libellé</th>
+                                        <th className="py-4 px-6 text-right">Montant</th>
+                                        <th className="py-4 px-6 text-right">Date</th>
+                                        <th className="py-4 px-6">Référence</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {paginatedPaiements.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-16 text-center text-gray-500 italic text-sm">
+                                                Aucun paiement trouvé pour cette période.
+                                            </td>
+                                        </tr>
+                                    ) : paginatedPaiements.map((p) => {
+                                        const linkedDoc = allDocs.find(d => d.id === p.document_id)
+                                        const isExterne = !linkedDoc && /^\[EXTERNE\]/i.test(p.notes || '')
+                                        const cleanNotes = isExterne ? p.notes?.replace(/^\[EXTERNE\]\s*/i, '') : p.notes
+                                        return (
+                                            <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                                                <td className="py-4 px-6">
+                                                    <span className="text-[9px] font-black px-2.5 py-1 rounded-lg uppercase border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                                        {p.type}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6 text-sm text-gray-300">
+                                                    {linkedDoc ? (
+                                                        <div>
+                                                            <p className="font-bold text-white">Facture {linkedDoc.numero}</p>
+                                                            <p className="text-[9px] text-gray-500">{linkedDoc.client_nom} {linkedDoc.client_prenom}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <p className="font-bold text-amber-400">Paiement Externe</p>
+                                                            <p className="text-xs text-gray-400">{cleanNotes || '—'}</p>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400 font-bold">
+                                                    {formatCurrency(p.montant)}
+                                                </td>
+                                                <td className="py-4 px-6 text-right font-mono text-xs text-gray-500">
+                                                    {new Date(p.date_paiement).toLocaleDateString('fr-FR')}
+                                                </td>
+                                                <td className="py-4 px-6 font-mono text-xs text-gray-400">
+                                                    {p.reference || '—'}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                     <div className="p-4 border-t border-white/5 flex justify-center gap-2">
                         {Array.from({ length: totalPages }).map((_, i) => (
