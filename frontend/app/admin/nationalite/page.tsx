@@ -50,7 +50,10 @@ export default function AdminNationalitePage() {
 
     const fetchApps = async () => {
         let q = supabase.from('nationality_applications').select('*').order('created_at', { ascending: false })
+        // Les dossiers MyAfroOrigins en attente de revue vivent dans /admin/documents
+        // jusqu'à leur approbation (qui les bascule en statut 'soumis').
         if (filter !== 'all') q = q.eq('status', filter)
+        else q = q.neq('status', 'revue_myafro')
         if (search) q = q.or(`nom.ilike.%${search}%,prenom.ilike.%${search}%,email.ilike.%${search}%,application_ref.ilike.%${search}%`)
         const { data } = await q
         setApps((data || []) as Application[])

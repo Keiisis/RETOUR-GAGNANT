@@ -6,6 +6,7 @@ import { getGroqApiKey } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { markClientConverted } from '@/lib/classement/track'
+import { verifyMyafroToken } from '@/lib/nationality-token'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
@@ -282,9 +283,18 @@ export async function POST(request: NextRequest) {
         // sends extra fields (documents, last_step_completed, etc.)
         // that don't exist as columns in nationality_applications.
         // ══════════════════════════════════════════════════════════════
+        // ── Mode MyAfroOrigins : tarif réduit 50 € autorisé par jeton signé.
+        //    Le montant est FIXÉ SERVEUR (jamais celui du client) et le dossier
+        //    entre en file de revue documents (status 'revue_myafro') avant d'être
+        //    approuvé vers la file nationalité standard.
+        const isMyafro = body.myafro_token ? verifyMyafroToken(String(body.myafro_token)) : false
+        const initialStatus = isMyafro ? 'revue_myafro' : 'soumis'
+        const secureAmount = isMyafro ? 50 : (body.amount ?? 250)
+        const secureCurrency = isMyafro ? 'EUR' : (body.currency || 'USD')
+
         const insertData: Record<string, unknown> = {
             application_ref: ref,
-            status: 'soumis',
+            status: initialStatus,
             submitted_at: new Date().toISOString(),
             // Identity
             nom,
@@ -338,12 +348,13 @@ export async function POST(request: NextRequest) {
             mere_date_naissance: body.mere_date_naissance || null,
             // Documents & Payment
             documents_uploaded: body.documents_uploaded || body.documents || [],
-            amount: body.amount ?? 250,
-            currency: body.currency || 'USD',
+            amount: secureAmount,
+            currency: secureCurrency,
             payment_status: body.payment_ref ? 'payé' : 'en_attente',
             payment_ref: body.payment_ref || null,
             payment_method: body.payment_method || null,
             last_step_completed: body.last_step_completed ?? 6,
+            admin_notes: isMyafro ? '[MYAFROORIGINS] Dossier bloqué sur MyAfroOrigins — reçu via le lien de complément (tarif 50 €). À vérifier puis approuver vers la file Nationalité.' : null,
             // New fields
             situation_matrimoniale: body.situation_matrimoniale || null,
             nombre_enfants: body.nombre_enfants ?? 0,

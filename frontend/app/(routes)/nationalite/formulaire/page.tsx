@@ -114,6 +114,11 @@ export default function NationaliteFormPage() {
     // (relance depuis le panel). Aucun paiement redemandé, on met à jour la fiche.
     const [resumeMode, setResumeMode] = useState(false)
     const resumeTokenRef = useRef('')
+    // Mode MyAfroOrigins : reprise d'un dossier bloqué, tarif réduit 50 €,
+    // dépôt libre de documents nommés. Le jeton (dans l'URL) autorise le tarif.
+    const [myafroMode, setMyafroMode] = useState(false)
+    const myafroTokenRef = useRef('')
+    const [customDocs, setCustomDocs] = useState<{ name: string; file: File }[]>([])
 
     // ── Types ──────────────────────────────────────────────────────────────────
     interface DocSlot {
@@ -216,13 +221,26 @@ export default function NationaliteFormPage() {
             .then(({ data }) => {
                 if (data?.content) {
                     const c = data.content as Record<string, unknown>
-                    if (c.amount) setFormAmount(Number(c.amount))
-                    if (c.currency) setFormCurrency(c.currency as CurrencyCode)
+                    // En mode MyAfroOrigins, le tarif (50 €) est imposé — ne pas l'écraser.
+                    const isMyafroUrl = new URLSearchParams(window.location.search).has('myafro')
+                    if (c.amount && !isMyafroUrl) setFormAmount(Number(c.amount))
+                    if (c.currency && !isMyafroUrl) setFormCurrency(c.currency as CurrencyCode)
                     if (c.doc_slots && Array.isArray(c.doc_slots)) {
                         setDocSlots(c.doc_slots as DocSlot[])
                     }
                 }
             })
+    }, [])
+
+    // ── Mode MyAfroOrigins (?myafro=<token>) : tarif de reprise 50 € ──────────
+    useEffect(() => {
+        const token = new URLSearchParams(window.location.search).get('myafro')
+        if (!token) return
+        myafroTokenRef.current = token
+        setMyafroMode(true)
+        setPreInscriptionDone(true)
+        setFormAmount(50)
+        setFormCurrency('EUR')
     }, [])
 
     // ── Mode « reprise » : lien de complément (dossier déjà payé) ──────────────
@@ -437,9 +455,16 @@ export default function NationaliteFormPage() {
         const finalUploadedUrls: string[] = []
         let uploadFailCount = 0
 
+        // Documents complémentaires nommés (mode MyAfroOrigins) fusionnés dans la
+        // file d'upload avec une clé unique et le nom saisi par le client.
+        const allDocs = [
+            ...rawDocs,
+            ...customDocs.map((d, k) => ({ key: `custom_${k}`, label: d.name || `Document ${k + 1}`, name: d.name, file: d.file })),
+        ]
+
         // Upload documents to Supabase Storage (with 1 retry)
-        for (let i = 0; i < rawDocs.length; i++) {
-            const doc = rawDocs[i]
+        for (let i = 0; i < allDocs.length; i++) {
+            const doc = allDocs[i]
             const ext = doc.file.name.split('.').pop()
             const folder = `nat-${Date.now()}`
             const filename = `${folder}/${doc.key}_${i}.${ext}`
@@ -466,11 +491,11 @@ export default function NationaliteFormPage() {
                 finalUploadedUrls.push(`${t(doc.label)}: ${doc.name} (upload échoué)`)
                 uploadFailCount++
             }
-            setUploadProgress(10 + Math.floor((i + 1) / rawDocs.length * 50))
+            setUploadProgress(10 + Math.floor((i + 1) / allDocs.length * 50))
         }
 
         if (uploadFailCount > 0) {
-            console.warn(`[UPLOAD] ${uploadFailCount}/${rawDocs.length} fichier(s) n'ont pas pu être envoyés.`)
+            console.warn(`[UPLOAD] ${uploadFailCount}/${allDocs.length} fichier(s) n'ont pas pu être envoyés.`)
         }
 
         setUploadProgress(70)
@@ -508,6 +533,8 @@ export default function NationaliteFormPage() {
                         amount: formAmount,
                         currency: formCurrency,
                         last_step_completed: 6,
+                        // Mode MyAfroOrigins : le serveur vérifie le jeton et impose le tarif 50 €
+                        myafro_token: myafroMode ? myafroTokenRef.current : undefined,
                     })
                 })
 
@@ -960,6 +987,32 @@ export default function NationaliteFormPage() {
                                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Documents complémentaires <span className="text-gray-400 font-normal normal-case tracking-normal">(facultatifs — peuvent être transmis dans les 7 semaines suivant la soumission)</span></p>
                                             {facultatifs.map(renderSlot)}
                                         </div>
+
+                                        {/* Documents libres nommés — mode MyAfroOrigins */}
+                                        {myafroMode && (
+                                            <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 p-4">
+                                                <div>
+                                                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Tous vos documents MyAfroOrigins</p>
+                                                    <p className="text-[11px] text-gray-500 mt-1">Ajoutez ici <strong>autant de documents que vous le souhaitez</strong> et nommez chacun d&apos;eux (ex. « Acte de naissance grand-père », « Résultat ADN »…).</p>
+                                                </div>
+                                                {customDocs.map((d, i) => (
+                                                    <div key={i} className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-2.5">
+                                                        <input
+                                                            value={d.name}
+                                                            onChange={e => setCustomDocs(prev => prev.map((x, k) => k === i ? { ...x, name: e.target.value } : x))}
+                                                            placeholder="Nom du document"
+                                                            className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-emerald-500/50"
+                                                        />
+                                                        <span className="text-[10px] text-gray-400 max-w-[110px] truncate">{d.file.name}</span>
+                                                        <button type="button" onClick={() => setCustomDocs(prev => prev.filter((_, k) => k !== i))} title="Retirer" className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"><X size={15} /></button>
+                                                    </div>
+                                                ))}
+                                                <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-emerald-300 bg-white py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors">
+                                                    <FileText size={16} /> Ajouter un document
+                                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" onChange={e => { const f = e.target.files; if (f && f[0]) { const file = f[0]; setCustomDocs(prev => [...prev, { name: file.name.replace(/\.[^.]+$/, ''), file }]); e.target.value = '' } }} />
+                                                </label>
+                                            </div>
+                                        )}
 
                                         {/* Fichiers ajoutés */}
                                         {rawDocs.length > 0 && (
