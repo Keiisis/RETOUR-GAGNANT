@@ -216,15 +216,28 @@ export async function confirmDocumentPayment(opts: {
     // Garde atomique : seul le chemin qui gagne la transition envoie les emails.
     // NB colonnes réelles : payment_provider + payment_transaction_id (le portail
     // écrivait `payment_id`, colonne inexistante → update rejeté silencieusement).
+    // TRAÇABILITÉ COMPTABLE : un DEVIS payé est automatiquement converti en
+    // FACTURE (type='facture' + n° de facture) pour entrer dans la comptabilité,
+    // qui ne comptabilise l'encaissé que sur les factures.
+    const convertToInvoice = doc.type === 'devis'
+    const invoiceNumero = convertToInvoice && !doc.numero
+        ? `FAC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Date.now() % 10000).padStart(4, '0')}`
+        : doc.numero
+    const updatePayload: Record<string, unknown> = {
+        status: 'paye',
+        payment_provider: provider,
+        payment_method: provider,
+        payment_transaction_id: transactionId,
+        paid_at: new Date().toISOString(),
+    }
+    if (convertToInvoice) {
+        // Conversion « en place » : le document passe de devis à facture payée.
+        updatePayload.type = 'facture'
+        updatePayload.numero = invoiceNumero
+    }
     const { data: updated, error: updErr } = await supabase
         .from('documents_financiers')
-        .update({
-            status: 'paye',
-            payment_provider: provider,
-            payment_method: provider,
-            payment_transaction_id: transactionId,
-            paid_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', docId)
         .neq('status', 'paye')
         .select('id')
