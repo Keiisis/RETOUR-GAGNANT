@@ -227,7 +227,7 @@ export default function AgentPresentationsPage() {
                                         <FileText className="w-5 h-5" />
                                     </div>
                                     <span className={`text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider ${prop.status === 'paid' ? 'bg-[#008751]/20 text-[#008751]' : prop.status === 'ready' ? 'bg-[#FCD116]/20 text-[#FCD116]' : 'bg-slate-800 text-slate-400'}`}>
-                                        {prop.status === 'paid' ? '✅ Payé' : prop.status === 'ready' ? '📨 Prêt' : '⏳ Brouillon'}
+                                        {prop.status === 'paid' ? 'Payé' : prop.status === 'ready' ? 'Prêt' : 'Brouillon'}
                                     </span>
                                 </div>
 

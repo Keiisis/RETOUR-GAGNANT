@@ -15,6 +15,7 @@ import {
     Command, UserCog, Globe, Handshake, Radar, MonitorPlay, Landmark, CreditCard, Mail
 } from 'lucide-react'
 import { useTranslation, T } from '@/lib/translation'
+import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
@@ -418,7 +419,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Smart Slides'), icon: MonitorPlay, href: '/agent/presentations' },
                 { title: t('Grille Tarifaire'), icon: Landmark, href: '/agent/grille-tarifaire' },
                 { title: t('Devis & Paiements'), icon: Send, href: '/agent/devis' },
-                { title: t('Comptabilité'), icon: Landmark, href: '/agent/comptabilite' },
+                // Comptabilité : visible uniquement pour Ornel (décision boss 2026-07-16)
+                ...(agentHasComptaAccess(agent?.email)
+                    ? [{ title: t('Comptabilité'), icon: Landmark, href: '/agent/comptabilite' }]
+                    : []),
                 { title: t('Performances'), icon: TrendingUp, href: '/agent/performances' },
                 { title: t('Base de Connaissance'), icon: BookOpen, href: '/agent/wiki' },
             ],

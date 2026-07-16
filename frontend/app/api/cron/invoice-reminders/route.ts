@@ -166,7 +166,7 @@ export async function POST(request: Request) {
                         const levelLabel = targetLevel === 'reminder_1' ? '1er' : (targetLevel === 'reminder_2' ? '2ème' : 'DERNIER')
                         await sendEmail({
                             to: config.adminEmail,
-                            subject: `🔔 ${levelLabel} rappel envoyé — ${invoice.numero} (${invoice.client_nom})`,
+ subject: `${levelLabel} rappel envoyé — ${invoice.numero} (${invoice.client_nom})`,
                             html: await (await getEmailTemplates('fr')).newLeadNotification(
                                 invoice.client_nom,
                                 invoice.client_email,

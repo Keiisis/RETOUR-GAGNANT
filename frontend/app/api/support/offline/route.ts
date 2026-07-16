@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       await transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
         to: email,
-        subject: "✨ [URGENT] Votre Super Assistance Retour Gagnant",
+ subject: "[URGENT] Votre Super Assistance Retour Gagnant",
         html: emailHtml,
       });
     }

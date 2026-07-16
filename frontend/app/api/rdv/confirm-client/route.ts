@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
                 // Email de confirmation au client (sans CTA "réserver" — déjà fait)
                 await sendEmail({
                     to: clientEmail,
-                    subject: `✅ Retour Gagnant — Votre rendez-vous est enregistré`,
+ subject: `Retour Gagnant — Votre rendez-vous est enregistré`,
                     html: await templates.rdvConfirmation(
                         clientName,
                         service || 'Consultation',
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
                 const staffTo = await getStaffToLine();
                 await sendEmail({
                     to: staffTo,
-                    subject: `📅 Nouveau RDV (espace client) — ${clientName} (${service || 'Consultation'})`,
+ subject: `Nouveau RDV (espace client) — ${clientName} (${service || 'Consultation'})`,
                     html: await templates.rdvAdminNotification(
                         clientName,
                         clientEmail,

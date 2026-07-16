@@ -23,6 +23,10 @@ interface ProposalItem {
     location: string | null
     highlights?: string[]
     image_url: string | null
+    /** Galerie multi-images du slide : chaque image porte sa propre légende
+     *  (comme une vraie slide de présentation). Rétrocompatible : si absent,
+     *  seule image_url est utilisée. */
+    images?: Array<{ url: string; caption?: string }>
     original_price: number
     selling_price: number
     order_index: number
@@ -43,13 +47,14 @@ interface Proposal {
 }
 
 // ─── Constants ────────────────────────────────────────────────
-const TYPE_META: Record<string, { label: string; emoji: string; accent: string; accentBg: string }> = {
-    hero:       { label: 'Bienvenue',      emoji: '✨', accent: '#FCD116', accentBg: 'rgba(252,209,22,0.12)' },
-    hotel:      { label: 'Hébergement',    emoji: '🏨', accent: '#38BDF8', accentBg: 'rgba(56,189,248,0.12)' },
-    restaurant: { label: 'Gastronomie',    emoji: '🍽️', accent: '#FB923C', accentBg: 'rgba(251,146,60,0.12)' },
-    activity:   { label: 'Découverte',     emoji: '🎯', accent: '#34D399', accentBg: 'rgba(52,211,153,0.12)' },
-    transport:  { label: 'Transport VIP',  emoji: '🚗', accent: '#A78BFA', accentBg: 'rgba(167,139,250,0.12)' },
-    pricing:    { label: 'Votre Devis',    emoji: '💰', accent: '#FCD116', accentBg: 'rgba(252,209,22,0.10)' },
+// Icônes premium (lucide) — plus aucun emoji dans les Smart Slides
+const TYPE_META: Record<string, { label: string; Icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>; accent: string; accentBg: string }> = {
+    hero:       { label: 'Bienvenue',      Icon: Sparkles,         accent: '#FCD116', accentBg: 'rgba(252,209,22,0.12)' },
+    hotel:      { label: 'Hébergement',    Icon: Hotel,            accent: '#38BDF8', accentBg: 'rgba(56,189,248,0.12)' },
+    restaurant: { label: 'Gastronomie',    Icon: UtensilsCrossed,  accent: '#FB923C', accentBg: 'rgba(251,146,60,0.12)' },
+    activity:   { label: 'Découverte',     Icon: Mountain,         accent: '#34D399', accentBg: 'rgba(52,211,153,0.12)' },
+    transport:  { label: 'Transport VIP',  Icon: Car,              accent: '#A78BFA', accentBg: 'rgba(167,139,250,0.12)' },
+    pricing:    { label: 'Votre Devis',    Icon: CreditCard,       accent: '#FCD116', accentBg: 'rgba(252,209,22,0.10)' },
 }
 
 // ─── Highlight icon auto-detect ────────────────────────────────
@@ -180,7 +185,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     if (!proposal || items.length === 0) {
         return (
             <div className="h-[100dvh] w-screen bg-[#050D1A] flex flex-col items-center justify-center text-white p-6 text-center">
-                <span className="text-4xl mb-6">🔒</span>
+                <Shield size={44} className="mb-6 text-[#FCD116]" />
                 <h1 className="text-2xl font-black mb-3">Proposition introuvable</h1>
                 <p className="text-slate-400 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-[#FCD116] font-bold">Retour Gagnant</span>.</p>
             </div>
@@ -302,6 +307,35 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 </div>
             </div>
 
+            {/* ═══ GALERIE MULTI-IMAGES (chaque image avec sa légende) ═══ */}
+            <AnimatePresence>
+                {(currentItem.images?.length || 0) > 0 && !['pricing'].includes(currentItem.type) && (
+                    <motion.div
+                        key={currentItem.id + '-gallery'}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0, transition: { delay: 0.35, duration: 0.6 } }}
+                        exit={{ opacity: 0, y: 30 }}
+                        className="absolute bottom-24 left-0 right-0 z-30 px-4 md:px-10"
+                    >
+                        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {currentItem.images!.map((img, gi) => (
+                                <figure key={gi}
+                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-black/50 backdrop-blur-xl border border-white/10"
+                                    style={{ boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 30px ${meta.accent}20` }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" />
+                                    {img.caption && (
+                                        <figcaption className="px-3 py-2 text-[10px] md:text-[11px] font-semibold text-white/85 leading-snug">
+                                            {img.caption}
+                                        </figcaption>
+                                    )}
+                                </figure>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* ═══ FLOATING IMAGE CARD (desktop, non-hero slides) ═══ */}
             <AnimatePresence>
                 {currentItem.image_url && !['hero', 'pricing'].includes(currentItem.type) && (
@@ -409,17 +443,17 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             )}
                                             {hotelCount > 0 && (
                                                 <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
-                                                    🏨 {hotelCount} hôtel{hotelCount > 1 ? 's' : ''}
+                                                    <Hotel size={12} className="inline-block mr-1 -mt-0.5" /> {hotelCount} hôtel{hotelCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {activityCount > 0 && (
                                                 <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
-                                                    🎯 {activityCount} activité{activityCount > 1 ? 's' : ''}
+                                                    <Mountain size={12} className="inline-block mr-1 -mt-0.5" /> {activityCount} activité{activityCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {restaurantCount > 0 && (
                                                 <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
-                                                    🍽️ {restaurantCount} restaurant{restaurantCount > 1 ? 's' : ''}
+                                                    <UtensilsCrossed size={12} className="inline-block mr-1 -mt-0.5" /> {restaurantCount} restaurant{restaurantCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             <span className="px-3 py-1.5 bg-[#008751]/25 backdrop-blur-xl border border-[#008751]/40 rounded-full text-[10px] md:text-xs font-bold text-[#008751]">
@@ -468,7 +502,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     >
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-black tracking-[0.15em] uppercase border backdrop-blur-xl"
                                             style={{ background: meta.accentBg, borderColor: meta.accent + '40', color: meta.accent }}>
-                                            <span className="text-sm">{meta.emoji}</span> {meta.label}
+                                            <meta.Icon size={14} className="inline-block" /> {meta.label}
                                         </span>
                                         {currentItem.location && (
                                             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[10px] md:text-xs font-bold text-white/70">
@@ -585,7 +619,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                     <div key={item.id} className="pb-2.5 border-b border-white/5 last:border-0">
                                                         <div className="flex items-center justify-between mb-1.5">
                                                             <span className="text-white/75 text-[11px] md:text-sm flex items-center gap-2 truncate pr-3">
-                                                                <span className="text-sm flex-shrink-0">{m.emoji}</span>
+                                                                <m.Icon size={14} className="flex-shrink-0" style={{ color: m.accent }} />
                                                                 <span className="truncate">{item.title}</span>
                                                             </span>
                                                             <span className="text-white font-bold text-[11px] md:text-sm whitespace-nowrap">

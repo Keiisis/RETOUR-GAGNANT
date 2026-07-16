@@ -22,10 +22,11 @@ export async function GET(request: NextRequest) {
     if (!auth.authenticated) return auth.error!
 
     const supabase = sb()
+    // Les NOUVEAUX clients en premier (plus il est récent, plus il est haut)
     const { data, error } = await supabase
         .from('client_classement')
         .select('*')
-        .order('first_contact_at', { ascending: true })
+        .order('first_contact_at', { ascending: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -239,4 +240,19 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })
+}
+
+// DELETE /api/agent/classement — supprime un client du classement (id requis).
+export async function DELETE(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'agent')
+    if (!auth.authenticated) return auth.error!
+
+    const body = await request.json().catch(() => ({}))
+    const id = String(body.id || '')
+    if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
+
+    const supabase = sb()
+    const { error } = await supabase.from('client_classement').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
 }

@@ -150,7 +150,7 @@ export async function POST(req: Request) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         to: client_email,
-                        subject: `✅ Confirmation de réservation — Voyage ${proposal.destination}`,
+ subject: `Confirmation de réservation — Voyage ${proposal.destination}`,
                         html: `
                         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #0f141e; color: white; border-radius: 16px; overflow: hidden;">
                             <div style="background: linear-gradient(135deg, #F59E0B, #D97706); padding: 32px; text-align: center;">

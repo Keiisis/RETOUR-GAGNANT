@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
                 if (config.adminEmail) {
                     await sendEmail({
                         to: config.adminEmail,
-                        subject: `🇧🇯 Nouveau prospect nationalité — ${clientName}`,
+ subject: `Nouveau prospect nationalité — ${clientName}`,
                         html: await templates.newLeadNotification(
                             clientName,
                             cleanEmail,

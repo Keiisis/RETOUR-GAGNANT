@@ -285,7 +285,7 @@ async function buildReport() {
       </table>
     </div>`
 
-    const subject = `📊 Rapport hebdomadaire — ${nf(sess.length)} visites, ${nf((rdvs || []).length)} RDV, ${revenueTxt} encaissés`
+ const subject = `Rapport hebdomadaire — ${nf(sess.length)} visites, ${nf((rdvs || []).length)} RDV, ${revenueTxt} encaissés`
     return { html, subject, stats: { sessions: sess.length, rdv: (rdvs || []).length, messages: (weekMessages || []).length, paymentsCount } }
 }
 

@@ -200,7 +200,7 @@ export default function ClientDashboardPage() {
     const cards = [
         { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, color: 'from-blue-500 to-blue-600', href: '/client/documents', desc: 'À signer' },
         { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, color: 'from-amber-500 to-orange-600', href: '/client/documents', desc: 'En attente de paiement' },
-        { title: 'Dossier actif', value: stats.dossierActif ? '✓' : '—', icon: FolderOpen, color: 'from-indigo-500 to-purple-600', href: '/client/dossier', desc: 'Suivi en cours' },
+ { title: 'Dossier actif', value: stats.dossierActif ? '': '—', icon: FolderOpen, color: 'from-indigo-500 to-purple-600', href: '/client/dossier', desc: 'Suivi en cours'},
         { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, color: 'from-emerald-500 to-teal-600', href: '/client/messages', desc: 'De votre agent' },
     ]
 

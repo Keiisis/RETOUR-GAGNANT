@@ -12,6 +12,7 @@ import {
     EyeOff, Eye, ExternalLink, Banknote, CreditCard, Bell
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { expenseCategoryLabel } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
@@ -458,6 +459,11 @@ export default function AdminComptabilitePage() {
 
             const encaisseFactu = encaissePaiements + invoicesPayeesSansP
             const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            // Devis clients en attente de validation — pipeline introduit
+            // dynamiquement dans la lecture de trésorerie réelle
+            const devisList     = dList.filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
+            const devisEnAttente = devisList.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            const nbDevisAttente = devisList.length
             const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + toXOF(o.amount, o.currency), 0)
             const totalEncaisse = encaisseFactu + boutique
             const commission    = Math.round(encaisseFactu * commissionRate)
@@ -467,7 +473,7 @@ export default function AdminComptabilitePage() {
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
             const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
             const nbFactTotal   = invoices.length
-            return { encaisseFactu, boutique, totalEncaisse, enAttente, commission, totalDeps, caEmis, totalTVA,
+            return { encaisseFactu, boutique, totalEncaisse, enAttente, devisEnAttente, nbDevisAttente, commission, totalDeps, caEmis, totalTVA,
                      benefice: totalEncaisse - commission - totalDeps,
                      proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
@@ -555,11 +561,11 @@ export default function AdminComptabilitePage() {
         return list
     }, [pDocs, pOrders, kpis, agents])
 
-    // ── Dépenses par catégorie ────────────────────────────────────
+    // ── Dépenses par catégorie (libellés officiels, salaires inclus) ──
     const depParCat = useMemo(() => {
         const map: Record<string, number> = {}
         for (const d of pDeps) {
-            const cat = d.categorie || 'autre'
+            const cat = expenseCategoryLabel(d.categorie)
             map[cat] = (map[cat] || 0) + Number(d.montant)
         }
         return Object.entries(map).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }))
@@ -810,6 +816,7 @@ export default function AdminComptabilitePage() {
                     { label: "TOTAL ENCAISSÉ", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
                     { label: "TVA collectée", value: kpis.totalTVA, detail: 'Sur factures émises' },
                     { label: "Factures en attente", value: kpis.enAttente, detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours` },
+                    { label: "Devis en attente de validation", value: kpis.devisEnAttente, detail: `${kpis.nbDevisAttente} devis — pipeline trésorerie` },
                     { label: `Commission agents (${(commissionRate * 100).toFixed(0)}%)`, value: kpis.commission, detail: 'Sur encaissements nets' },
                     { label: "Dépenses totales", value: kpis.totalDeps, detail: `${pDeps.length} dépenses` },
                     { label: "BÉNÉFICE NET", value: kpis.benefice, detail: 'Encaissé - Commissions - Dépenses' },
@@ -1146,6 +1153,7 @@ export default function AdminComptabilitePage() {
                         { label: 'Revenus boutique', value: kpis.boutique, type: 'currency', tone: 'accent', detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées` },
                         { label: 'TVA collectée', value: kpis.totalTVA, type: 'currency', tone: 'neutral', detail: 'À déclarer à la DGI' },
                         { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours` },
+                        { label: 'Devis en attente de validation', value: kpis.devisEnAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbDevisAttente} devis — pipeline introduit dans la trésorerie réelle` },
                         { label: `Commission agents ${(commissionRate * 100).toFixed(0)}%`, value: kpis.commission, type: 'currency', tone: 'warn', detail: 'Sur encaissements nets' },
                         { label: 'Dépenses totales', value: kpis.totalDeps, type: 'currency', tone: 'bad', detail: `${pDeps.length} dépenses enregistrées` },
                         { label: 'Bénéfice net', value: kpis.benefice, type: 'currency', tone: kpis.benefice >= 0 ? 'good' : 'bad', detail: 'Encaissé − Commissions − Dépenses' },
@@ -1369,6 +1377,7 @@ export default function AdminComptabilitePage() {
                 <KpiCard icon={Wallet}        label="Total Encaissé"         value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation net + Boutique" highlight />
                 <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées`} />
                 <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures`} />
+                <KpiCard icon={FileText} label="Devis en attente" value={fmt(kpis.devisEnAttente)} color="#38bdf8" sub={`${kpis.nbDevisAttente} devis à valider — pipeline trésorerie`} />
                 <KpiCard icon={Users}         label={`Commissions (${(commissionRate * 100).toFixed(0)}%)`} value={fmt(kpis.commission)} color="#8b5cf6" sub="Sur encaissements nets" />
                 <KpiCard icon={TrendingDown}  label="Dépenses Totales"       value={fmt(kpis.totalDeps)}     color="#E8112D" sub={`${pDeps.length} dépenses`} />
                 <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après comm. et dépenses" />

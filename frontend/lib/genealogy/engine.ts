@@ -97,15 +97,15 @@ export function buildDossierReport(
   });
 
   items.filter(i => i.missingPerson).forEach(i => {
-    alerts.push({ level: 'error', message: `👤 ${ROLE_LABELS[i.targetRole] ?? i.label} absent de l'arbre — ajoutez-le pour avancer.`, relatedRole: i.targetRole });
+ alerts.push({ level: 'error', message: `${ROLE_LABELS[i.targetRole] ?? i.label} absent de l'arbre — ajoutez-le pour avancer.`, relatedRole: i.targetRole });
   });
 
   items.filter(i => i.required && !i.fulfilled && !i.missingPerson && !i.expired).forEach(i => {
-    alerts.push({ level: 'error', message: `🔴 ${i.message}`, relatedRole: i.targetRole });
+ alerts.push({ level: 'error', message: `${i.message}`, relatedRole: i.targetRole });
   });
 
   if (progress === 100) {
-    alerts.unshift({ level: 'success', message: '✅ Dossier complet ! Vous pouvez générer le PDF final.' });
+ alerts.unshift({ level: 'success', message: 'Dossier complet ! Vous pouvez générer le PDF final.'});
   }
 
   return { dossierType, progress, totalRequired, totalFulfilled, items, alerts };
@@ -144,13 +144,13 @@ export function detectInconsistencies(persons: Person[]): Alert[] {
 
     // 1. Enfant né avant/le même jour que le parent
     if (childTs <= parentTs) {
-      alerts.push({ level: 'warning', message: `⚠️ ${name} serait né(e) avant ou en même temps que ${rel === 'père' ? 'son père' : 'sa mère'}.` });
+ alerts.push({ level: 'warning', message: `${name} serait né(e) avant ou en même temps que ${rel === 'père'? 'son père': 'sa mère'}.`});
       return;
     }
     // 2. Parent trop jeune (< 12 ans) ou trop âgé (> 70 ans) à la naissance
     const ageAtBirth = (childTs - parentTs) / YEAR;
     if (ageAtBirth < 12) {
-      alerts.push({ level: 'warning', message: `⚠️ ${rel === 'père' ? 'Le père' : 'La mère'} de ${name} aurait moins de 12 ans à sa naissance (écart improbable).` });
+ alerts.push({ level: 'warning', message: `${rel === 'père'? 'Le père': 'La mère'} de ${name} aurait moins de 12 ans à sa naissance (écart improbable).`});
     } else if (ageAtBirth > 70) {
       alerts.push({ level: 'info', message: `ℹ️ ${rel === 'père' ? 'Le père' : 'La mère'} de ${name} aurait plus de 70 ans à sa naissance — à vérifier.` });
     }
@@ -159,14 +159,14 @@ export function detectInconsistencies(persons: Person[]): Alert[] {
       const deathTs = new Date(parent.death_date).getTime();
       const limit = rel === 'père' ? deathTs + NINE_MONTHS : deathTs;
       if (childTs > limit) {
-        alerts.push({ level: 'warning', message: `⚠️ ${name} serait né(e) après le décès de ${rel === 'père' ? 'son père' : 'sa mère'}.` });
+ alerts.push({ level: 'warning', message: `${name} serait né(e) après le décès de ${rel === 'père'? 'son père': 'sa mère'}.`});
       }
     }
   };
 
   for (const p of persons) {
     if (p.birth_date && p.death_date && new Date(p.death_date) < new Date(p.birth_date)) {
-      alerts.push({ level: 'warning', message: `⚠️ ${p.first_name ?? 'Personne'} : date de décès antérieure à la naissance.` });
+ alerts.push({ level: 'warning', message: `${p.first_name ?? 'Personne'} : date de décès antérieure à la naissance.`});
     }
     checkParent(p, byId.get(p.father_id ?? ''), 'père');
     checkParent(p, byId.get(p.mother_id ?? ''), 'mère');
@@ -187,13 +187,13 @@ export function buildResearchHints(persons: Person[]): Alert[] {
     const year = new Date(oldest.birth_date).getFullYear();
     if (year > 1894) {
       // Période coloniale française du Dahomey (1894–1960)
-      hints.push({ level: 'info', message: `🔍 Votre ancêtre le plus ancien est né en ${year}. Pour remonter avant 1894, consultez les registres de l'état civil colonial du Dahomey (ANOM, Archives Nationales du Bénin à Porto-Novo).` });
+ hints.push({ level: 'info', message: `Votre ancêtre le plus ancien est né en ${year}. Pour remonter avant 1894, consultez les registres de l'état civil colonial du Dahomey (ANOM, Archives Nationales du Bénin à Porto-Novo).`});
     } else {
       // Avant l'établissement colonial : traite atlantique & royaumes (Danxomè)
-      hints.push({ level: 'info', message: `🔍 Vous atteignez la période précoloniale (${year}). Explorez les registres de la traite atlantique, les archives missionnaires et la mémoire orale des royaumes (Danxomè, Porto-Novo, Allada).` });
+ hints.push({ level: 'info', message: `Vous atteignez la période précoloniale (${year}). Explorez les registres de la traite atlantique, les archives missionnaires et la mémoire orale des royaumes (Danxomè, Porto-Novo, Allada).`});
     }
   } else {
-    hints.push({ level: 'info', message: `🔍 Commencez par renseigner les dates de naissance pour activer les pistes d'archives.` });
+ hints.push({ level: 'info', message: `Commencez par renseigner les dates de naissance pour activer les pistes d'archives.`});
   }
   return hints;
 }

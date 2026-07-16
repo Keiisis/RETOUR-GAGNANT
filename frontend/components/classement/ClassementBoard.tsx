@@ -6,7 +6,7 @@ import {
     Users, Search, RefreshCw, Loader2, AlertCircle, Clock, BellRing,
     ChevronDown, Save, Phone, Mail, DownloadCloud, CheckCircle2, Inbox,
     UserPlus, X, Sparkles, FileSpreadsheet, LayoutGrid, FileText, Home,
-    Briefcase, Globe, HardHat, TrendingUp, Award, Dna, type LucideIcon,
+    Briefcase, Globe, HardHat, TrendingUp, Award, Dna, Trash2, type LucideIcon,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -170,6 +170,26 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
         } finally { setSaving(false) }
     }
 
+    // Suppression définitive d'un client du classement (avec confirmation)
+    const deleteClient = async (id: string, name: string) => {
+        if (!confirm(`Supprimer définitivement « ${name} » du Classement Client ?\nCette action est irréversible.`)) return
+        setSaving(true)
+        try {
+            const res = await fetch('/api/agent/classement', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify({ id }),
+            })
+            if (res.ok) {
+                setClients(prev => prev.filter(c => c.id !== id))
+                setEditingId(null)
+            } else {
+                const j = await res.json().catch(() => ({}))
+                alert(j.error || 'Suppression impossible.')
+            }
+        } finally { setSaving(false) }
+    }
+
     const askAi = async (id: string) => {
         setAiLoading(true); setAiText('')
         try {
@@ -218,6 +238,8 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
             if (!q) return true
             return (c.full_name || '').toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.phone || '').includes(q)
         })
+            // Les NOUVEAUX clients toujours en haut (plus récent = plus haut)
+            .sort((a, b) => new Date(b.first_contact_at || 0).getTime() - new Date(a.first_contact_at || 0).getTime())
     }, [clients, search, catFilter, statusFilter])
 
     // Vue catégorie
@@ -362,6 +384,11 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer
                                     </button>
                                     <button type="button" onClick={() => setEditingId(null)} className={`px-4 py-2 rounded-xl border text-sm font-medium ${p.chip}`}>Fermer</button>
+                                    <button type="button" onClick={() => deleteClient(c.id, c.full_name || c.email)} disabled={saving}
+                                        title="Supprimer ce client du classement"
+                                        className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
+                                        <Trash2 className="w-4 h-4" /> Supprimer
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>

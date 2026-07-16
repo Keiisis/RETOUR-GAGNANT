@@ -197,7 +197,7 @@ export async function POST(request: Request) {
             from: fromString,
             to: order.customer_email,
             replyTo: settings.smtp_from_email,
-            subject: `✅ Facture & Confirmation de commande — ${siteName}`,
+ subject: `Facture & Confirmation de commande — ${siteName}`,
             html: generateCustomerEmailHTML(order, siteName, baseUrl, eventTicket, settings),
           })
           console.log('[Notification] Email client envoyé OK')

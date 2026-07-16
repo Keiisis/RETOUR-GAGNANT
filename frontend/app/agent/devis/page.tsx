@@ -450,7 +450,7 @@ export default function AgentDevisPage() {
                 body: JSON.stringify({
                     to: doc.client_email,
                     subject: `${typeLabel} N° ${doc.numero}${statusLabel} — Retour Gagnant Bénin`,
-                    message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n📋 Détails :\n${doc.items?.map(i => `  • ${i.description} — ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n💰 Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n📝 Notes : ${doc.notes}` : ''}\n${doc.conditions ? `\n⚖️ Conditions : ${doc.conditions}` : ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
+ message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n Détails :\n${doc.items?.map(i => `• ${i.description} — ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n Notes : ${doc.notes}`: ''}\n${doc.conditions ? `\n Conditions : ${doc.conditions}`: ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
                     clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim(),
                     context: 'document_financier',
                     relatedId: doc.id,

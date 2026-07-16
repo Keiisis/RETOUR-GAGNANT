@@ -7,8 +7,9 @@ import {
     Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Download, Activity, CheckCircle2,
     BarChart3, Landmark, ArrowRight, FileText, X, TrendingDown, Zap, MessageCircle,
     RefreshCw, Plus, AlertTriangle, Banknote, CreditCard, Bell, ChevronLeft, ChevronRight,
-    Receipt, ShoppingBag
+    Receipt, ShoppingBag, Users
 } from 'lucide-react'
+import { EXPENSE_CATEGORIES, agentHasComptaAccess, expenseCategoryLabel } from '@/lib/constants/compta'
 import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
@@ -141,13 +142,29 @@ export default function AgentComptabilitePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { t } = useTranslation()
     const [loading, setLoading] = useState(true)
+    // ── Accès restreint : la Comptabilité agent est réservée à Ornel
+    //    (décision boss 2026-07-16). Les autres agents sont renvoyés au dashboard.
+    const [accessChecked, setAccessChecked] = useState(false)
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!agentHasComptaAccess(user?.email)) {
+                window.location.replace('/agent')
+            } else {
+                setAccessChecked(true)
+            }
+        })
+    }, [])
     const [allDocs, setAllDocs] = useState<DocumentFinancier[]>([])
     const [expenses, setExpenses] = useState<Depense[]>([])
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(() => currentMonthKey())
     const [showRelancesOnly, setShowRelancesOnly] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
-    const [newExpense, setNewExpense] = useState({ titre: '', categorie: 'operationnel', montant: '' })
+    const [newExpense, setNewExpense] = useState({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
     const [savingExpense, setSavingExpense] = useState(false)
+    // Salaires du personnel (espace salaire — impact comptable via depenses/categorie 'salaires')
+    const [showSalaireModal, setShowSalaireModal] = useState(false)
+    const [newSalaire, setNewSalaire] = useState({ nom: '', prenom: '', poste: '', montant: '', mois: currentMonthKey() })
+    const [savingSalaire, setSavingSalaire] = useState(false)
     // Paiements manuels
     const [paiements, setPaiements] = useState<Record<string, number>>({}) // document_id → montant total payé
     const [paiementsList, setPaiementsList] = useState<Array<{ id: string; document_id: string; type: string; montant: number; date_paiement: string; reference: string | null; notes: string | null }>>([])
@@ -387,20 +404,52 @@ export default function AgentComptabilitePage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setSavingExpense(false); return }
 
+        // Date optionnelle (peut ne pas être connue pour le moment → date du jour)
+        // IFU optionnel : tracé dans le titre (pas de colonne dédiée en base)
+        const titre = newExpense.ifu.trim()
+            ? `${newExpense.titre.trim()} · IFU: ${newExpense.ifu.trim()}`
+            : newExpense.titre.trim()
+
         const { error } = await supabase.from('depenses').insert({
             agent_id: user.id,
-            titre: newExpense.titre,
+            titre,
             categorie: newExpense.categorie,
             montant: Number(newExpense.montant),
-            date_depense: new Date().toISOString()
+            date_depense: newExpense.date ? new Date(newExpense.date).toISOString() : new Date().toISOString(),
         })
 
         if (!error) {
             setShowExpenseModal(false)
-            setNewExpense({ titre: '', categorie: 'operationnel', montant: '' })
+            setNewExpense({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
             fetchAllData()
         }
         setSavingExpense(false)
+    }
+
+    // ── Salaires : enregistrés dans `depenses` (categorie 'salaires') pour que
+    //    l'impact comptable (totaux, exports, FEC) soit AUTOMATIQUE. Le titre
+    //    encode Nom / Prénom / Poste de façon parseable.
+    const handleAddSalaire = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setSavingSalaire(true)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setSavingSalaire(false); return }
+
+        const { nom, prenom, poste, montant, mois } = newSalaire
+        const { error } = await supabase.from('depenses').insert({
+            agent_id: user.id,
+            titre: `Salaire ${mois} — ${nom.trim().toUpperCase()} ${prenom.trim()} — ${poste.trim()}`,
+            categorie: 'salaires',
+            montant: Number(montant),
+            date_depense: new Date(`${mois}-28T12:00:00Z`).toISOString(),
+        })
+
+        if (!error) {
+            setShowSalaireModal(false)
+            setNewSalaire({ nom: '', prenom: '', poste: '', montant: '', mois: currentMonthKey() })
+            fetchAllData()
+        }
+        setSavingSalaire(false)
     }
 
     const handleAddPayment = async (e: React.FormEvent) => {
@@ -509,13 +558,7 @@ export default function AgentComptabilitePage() {
         // car elles ne représentent pas de l'argent réellement reçu
 
         // ── Mapper les dépenses → RegistreDepense ──
-        // Correspondance catégorie agent → catégorie registre officiel
-        const catMap: Record<string, string> = {
-            marketing: 'Communication et Pub',
-            operationnel: 'Fournitures bureau',
-            logistique: 'Deplacement et carburant',
-            autre: 'Autre depense',
-        }
+        // Libellés officiels des 12 catégories (salaires inclus) + héritage
         const expensesPeriod = expenses.filter(e => {
             if (!e.date_depense) return false
             const date = new Date(e.date_depense)
@@ -526,7 +569,7 @@ export default function AgentComptabilitePage() {
             date: new Date(e.date_depense),
             numero: '',
             fournisseur: e.titre,
-            categorie: catMap[e.categorie] || 'Autre depense',
+            categorie: expenseCategoryLabel(e.categorie),
             ref: '',
             montantHT: Number(e.montant),
             statut: 'Payé',
@@ -541,6 +584,9 @@ export default function AgentComptabilitePage() {
             depenses: depensesRegistre,
         })
     }
+
+    // Rien n'est rendu tant que l'accès (Ornel uniquement) n'est pas confirmé
+    if (!accessChecked) return null
 
     if (loading) {
         return (
@@ -656,6 +702,15 @@ export default function AgentComptabilitePage() {
                     >
                         <Banknote size={18} />
                         <span className="text-xs">Paiement</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowSalaireModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-400 hover:bg-sky-500/30 transition-all font-bold"
+                        title="Enregistrer un salaire du personnel — impact comptable automatique sur les dépenses"
+                    >
+                        <Users size={18} />
+                        <span className="text-xs">Salaire</span>
                     </button>
                 </div>
             </div>
@@ -1081,15 +1136,74 @@ export default function AgentComptabilitePage() {
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Catégorie</label>
                                         <select title="Catégorie de dépense" value={newExpense.categorie} onChange={e => setNewExpense({...newExpense, categorie: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm appearance-none">
-                                            <option value="marketing">Marketing</option>
-                                            <option value="operationnel">Opérationnel</option>
-                                            <option value="logistique">Logistique</option>
-                                            <option value="autre">Autre</option>
+                                            {EXPENSE_CATEGORIES.map(c => (
+                                                <option key={c.value} value={c.value}>{c.label}</option>
+                                            ))}
                                         </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date <span className="normal-case font-medium text-gray-600">(Optionnel — date du jour si vide)</span></label>
+                                        <input type="date" value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} title="Date de la dépense (optionnel)" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">IFU <span className="normal-case font-medium text-gray-600">(Optionnel)</span></label>
+                                        <input value={newExpense.ifu} onChange={e => setNewExpense({...newExpense, ifu: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" placeholder="N° IFU du fournisseur" />
                                     </div>
                                 </div>
                                 <button disabled={savingExpense} type="submit" className="w-full py-4 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-4">
                                     {savingExpense ? <RefreshCw size={18} className="animate-spin" /> : <Plus size={18} />} Enregistrer la dépense
+                                </button>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* SALAIRE MODAL — espace salaires du personnel */}
+            <AnimatePresence>
+                {showSalaireModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setShowSalaireModal(false)}>
+                        <motion.div initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 16 }}
+                            onClick={e => e.stopPropagation()}
+                            className="w-full max-w-md bg-[#0d1424] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                            <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                    <Users size={18} className="text-sky-400" /> Enregistrer un salaire
+                                </h3>
+                                <button type="button" onClick={() => setShowSalaireModal(false)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-500"><X size={18} /></button>
+                            </div>
+                            <p className="text-[11px] text-gray-500 mb-5">Suivi du volet salarial — l&apos;impact comptable est calculé automatiquement dans les dépenses (catégorie « Salaires du personnel »), les exports et le FEC.</p>
+                            <form onSubmit={handleAddSalaire} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Nom</label>
+                                        <input required value={newSalaire.nom} onChange={e => setNewSalaire({ ...newSalaire, nom: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sky-500/50 outline-none text-sm" placeholder="AHOSSI" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Prénom</label>
+                                        <input required value={newSalaire.prenom} onChange={e => setNewSalaire({ ...newSalaire, prenom: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sky-500/50 outline-none text-sm" placeholder="Jean" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Intitulé de poste</label>
+                                    <input required value={newSalaire.poste} onChange={e => setNewSalaire({ ...newSalaire, poste: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sky-500/50 outline-none text-sm" placeholder="Agent terrain, Comptable, Chauffeur…" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Salaire (XOF)</label>
+                                        <input required type="number" min="1" value={newSalaire.montant} onChange={e => setNewSalaire({ ...newSalaire, montant: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sky-500/50 outline-none text-sm font-mono" placeholder="0" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Mois concerné</label>
+                                        <input required type="month" value={newSalaire.mois} onChange={e => setNewSalaire({ ...newSalaire, mois: e.target.value })} title="Mois du salaire" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sky-500/50 outline-none text-sm" />
+                                    </div>
+                                </div>
+                                <button disabled={savingSalaire} type="submit" className="w-full py-4 bg-sky-500 text-white font-black rounded-xl hover:bg-sky-600 transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
+                                    {savingSalaire ? <RefreshCw size={18} className="animate-spin" /> : <Plus size={18} />} Enregistrer le salaire
                                 </button>
                             </form>
                         </motion.div>

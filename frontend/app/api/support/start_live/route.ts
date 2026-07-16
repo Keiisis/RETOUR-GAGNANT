@@ -23,7 +23,7 @@ export async function POST(request: Request) {
                 nom: nom.trim(),
                 prenom: '',
                 email: (email || 'anonyme@livechat.com').toLowerCase().trim(),
-                sujet: `💬 Live Chat — ${nom.trim()}`,
+ sujet: `Live Chat — ${nom.trim()}`,
                 message: question.trim(),
                 type: 'support',
                 lu: false,

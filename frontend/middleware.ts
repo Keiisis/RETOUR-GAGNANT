@@ -276,7 +276,7 @@ export async function middleware(request: NextRequest) {
                 if (SUPA_URL && SUPA_KEY) {
                     createAlert({
                         level: 'warning',
-                        message: `🤖 Navigateur headless détecté: IP ${ip} — ${headless.indicators.join(', ')}`,
+ message: `Navigateur headless détecté: IP ${ip} — ${headless.indicators.join(', ')}`,
                         context: { ip, indicators: headless.indicators, fingerprint: fp.hash },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
@@ -312,7 +312,7 @@ export async function middleware(request: NextRequest) {
                     })
                     createAlert({
                         level: 'nuclear',
-                        message: `🔀 HTTP REQUEST SMUGGLING: IP ${ip} — ${smuggling.detail}`,
+ message: `HTTP REQUEST SMUGGLING: IP ${ip} — ${smuggling.detail}`,
                         context: { ip, pattern: smuggling.pattern, detail: smuggling.detail, fingerprint: fingerprintHash },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
@@ -334,7 +334,7 @@ export async function middleware(request: NextRequest) {
             updateIpMemory({ ip, isAttack: true, attackType: 'honeypot', supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY })
             createAlert({
                 level: 'critical',
-                message: `🍯 HONEYPOT : IP ${ip} a tenté d'accéder à ${pathname} — déception activée`,
+ message: `HONEYPOT : IP ${ip} a tenté d'accéder à ${pathname} — déception activée`,
                 context: { ip, path: pathname, fingerprint: fingerprintHash },
                 supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
             })
@@ -541,7 +541,7 @@ export async function middleware(request: NextRequest) {
                 })
                 createAlert({
                     level: ssrf.confidence >= 95 ? 'nuclear' : 'critical',
-                    message: `🕳️ SSRF BLOQUÉ: IP ${ip} — ${ssrf.detail}`,
+ message: `SSRF BLOQUÉ: IP ${ip} — ${ssrf.detail}`,
                     context: { ip, category: ssrf.category, pattern: ssrf.pattern, fingerprint: fingerprintHash },
                     supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                 })
@@ -568,7 +568,7 @@ export async function middleware(request: NextRequest) {
                 })
                 createAlert({
                     level: rce.confidence >= 95 ? 'nuclear' : 'critical',
-                    message: `💀 RCE BLOQUÉ [${rce.category}]: IP ${ip} — ${rce.pattern}`,
+ message: `RCE BLOQUÉ [${rce.category}]: IP ${ip} — ${rce.pattern}`,
                     context: { ip, category: rce.category, pattern: rce.pattern, fingerprint: fingerprintHash },
                     supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                 })
@@ -596,7 +596,7 @@ export async function middleware(request: NextRequest) {
                     })
                     createAlert({
                         level: 'critical',
-                        message: `🔐 IDOR DÉTECTÉ [${idor.pattern}]: IP ${ip} — ${idor.distinctIds} IDs sur ${idor.endpointPattern}`,
+ message: `IDOR DÉTECTÉ [${idor.pattern}]: IP ${ip} — ${idor.distinctIds} IDs sur ${idor.endpointPattern}`,
                         context: { ip, pattern: idor.pattern, distinctIds: idor.distinctIds, endpoint: idor.endpointPattern, fingerprint: fingerprintHash },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
@@ -626,7 +626,7 @@ export async function middleware(request: NextRequest) {
                     })
                     createAlert({
                         level: 'critical',
-                        message: `🔐 IDOR CROSS-INSTANCE: IP ${ip} — ${crossInstance.distinctIds} IDs (agrégé multi-instances)`,
+ message: `IDOR CROSS-INSTANCE: IP ${ip} — ${crossInstance.distinctIds} IDs (agrégé multi-instances)`,
                         context: { ip, distinctIds: crossInstance.distinctIds, fingerprint: fingerprintHash },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
@@ -670,7 +670,7 @@ export async function middleware(request: NextRequest) {
                 })
                 createAlert({
                     level: 'nuclear',
-                    message: `🐦 CANARY TOKEN RÉUTILISÉ: IP ${ip} a utilisé des infos volées — ${canary.tokens.join(', ')}`,
+ message: `CANARY TOKEN RÉUTILISÉ: IP ${ip} a utilisé des infos volées — ${canary.tokens.join(', ')}`,
                     context: { ip, tokens: canary.tokens, path: pathname, fingerprint: fingerprintHash },
                     supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                 })

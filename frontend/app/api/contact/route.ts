@@ -118,7 +118,7 @@ async function handleContact(req: NextRequest) {
                 if (config.adminEmail) {
                     await sendEmail({
                         to: config.adminEmail,
-                        subject: `🔔 Nouveau Contact — ${clientName} (${sujet || 'Contact'})`,
+ subject: `Nouveau Contact — ${clientName} (${sujet || 'Contact'})`,
                         html: await (await getEmailTemplates('fr')).newLeadNotification(clientName, email, 0, sujet || 'Contact', 'Formulaire de Contact'),
                         context: 'admin_notification',
                         relatedId: msgId,

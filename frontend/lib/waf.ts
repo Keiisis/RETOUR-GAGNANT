@@ -746,7 +746,7 @@ export function triggerHoneypot(
 
     createAlert({
         level: 'critical',
-        message: `🍯 HONEYPOT : IP ${ip} a tenté d'accéder à ${path} — bannissement immédiat`,
+ message: `HONEYPOT : IP ${ip} a tenté d'accéder à ${path} — bannissement immédiat`,
         context: { ip, path },
         supabaseUrl, serviceKey,
     })
