@@ -837,10 +837,38 @@
   background-color: var(--panel-surface-hover) !important;
 }
 
+/* --- INPUT & TEXTAREA OVERRIDES (light) ------------------------------
+   Correctif définitif du texte invisible en mode clair : on force la
+   couleur du texte SAISI (color + -webkit-text-fill-color, ce dernier étant
+   la vraie cause du texte blanc-sur-blanc) + le placeholder + l'autofill,
+   quel que soit le `text-white`/`text-gray-*` codé en dur sur le champ.
+   S'applique à TOUS les formulaires des panels, sans éditer les TSX. */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]),
+[data-theme="light"] textarea {
+  color: var(--panel-text) !important;
+  -webkit-text-fill-color: var(--panel-text) !important;
+  caret-color: var(--panel-accent);
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: var(--panel-text-faint) !important;
+  -webkit-text-fill-color: var(--panel-text-faint) !important;
+  opacity: 1;
+}
+/* Autofill Chrome/Safari : garde un texte lisible sur fond clair */
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] input:-webkit-autofill:hover,
+[data-theme="light"] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--panel-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--panel-surface) inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* --- SELECT & FORM ELEMENT OVERRIDES --- */
 [data-theme="light"] select {
   background-color: var(--panel-surface) !important;
   color: var(--panel-text) !important;
+  -webkit-text-fill-color: var(--panel-text) !important;
   border-color: var(--panel-border-strong) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
