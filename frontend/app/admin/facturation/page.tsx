@@ -577,7 +577,7 @@ export default function AdminFacturationPage() {
             </div>
 
             {/* Document List (Tables are cleaner for ERP) */}
-            <div className="bg-[#0c1420] border border-white/5 rounded-xl overflow-hidden shadow-xl">
+            <div className="rounded-xl overflow-hidden shadow-xl border" style={{ backgroundColor: 'var(--panel-surface, #0c1420)', borderColor: 'var(--panel-border, rgba(255,255,255,0.05))' }}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -606,17 +606,17 @@ export default function AdminFacturationPage() {
                                                 {doc.type === 'devis' ? <FileText size={16} /> : <Receipt size={16} />}
                                             </div>
                                             <div>
-                                                <p className="text-white font-bold text-sm">{doc.numero}</p>
+                                                <p className="font-bold text-sm" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.numero}</p>
                                                 <p className="text-gray-500 text-[10px]">{formatDate(doc.created_at)}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="py-3 px-5">
-                                        <p className="text-white text-sm font-medium">{doc.client_nom} {doc.client_prenom}</p>
+                                        <p className="text-sm font-medium" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.client_nom} {doc.client_prenom}</p>
                                         <p className="text-gray-500 text-[10px]">{doc.client_email || doc.client_phone}</p>
                                     </td>
                                     <td className="py-3 px-5 text-right">
-                                        <p className="text-white font-mono text-sm font-bold">{doc.total.toLocaleString('fr-FR')} XOF</p>
+                                        <p className="font-mono text-sm font-bold" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.total.toLocaleString('fr-FR')} XOF</p>
                                     </td>
                                     <td className="py-3 px-5 text-center">
                                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label}</span>
