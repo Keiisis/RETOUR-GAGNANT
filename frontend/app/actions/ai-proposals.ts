@@ -38,7 +38,15 @@ export async function getProposalById(id: string) {
 
         if (iError) throw iError
 
-        return { success: true, proposal, items: items || [] }
+        // Galerie multi-images : stockée dans metadata.images (jsonb) —
+        // remontée en champ `images` pour le rendu et l'édition des slides.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = (items || []).map((it: any) => ({
+            ...it,
+            images: (it.metadata?.images as Array<{ url: string; caption?: string }>) || [],
+        }))
+
+        return { success: true, proposal, items: mapped }
     } catch (err: unknown) {
         return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
@@ -62,7 +70,15 @@ export async function getProposalBySecret(secret: string) {
 
         if (iError) throw iError
 
-        return { success: true, proposal, items: items || [] }
+        // Galerie multi-images : stockée dans metadata.images (jsonb) —
+        // remontée en champ `images` pour le rendu et l'édition des slides.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = (items || []).map((it: any) => ({
+            ...it,
+            images: (it.metadata?.images as Array<{ url: string; caption?: string }>) || [],
+        }))
+
+        return { success: true, proposal, items: mapped }
     } catch (err: unknown) {
         return { success: false, error: err instanceof Error ? err.message : String(err) }
     }

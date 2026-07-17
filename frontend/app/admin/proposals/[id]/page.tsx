@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getProposalById, updateProposalAndItems } from '@/app/actions/ai-proposals'
+import SlideGalleryEditor, { type SlideImage } from '@/components/proposals/SlideGalleryEditor'
 import { motion, Reorder } from 'framer-motion'
 import {
     ArrowLeft, Save, Loader2, Eye, Trash2, Plus, Copy, Check,
@@ -23,6 +24,8 @@ interface ProposalItem {
     original_price: number
     selling_price: number
     order_index: number
+    images?: SlideImage[]
+    metadata?: Record<string, unknown> | null
 }
 
 interface Proposal {
@@ -67,7 +70,11 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
             return
         }
         setProposal(result.proposal)
-        setItems(result.items || [])
+        setItems((result.items || []).map((it: Record<string, unknown>) => ({
+            ...it,
+            // Galerie stockée dans metadata.images (jsonb) — remontée en champ éditable
+            images: ((it.metadata as Record<string, unknown> | null)?.images as SlideImage[]) || [],
+        })) as unknown as ProposalItem[])
         setCurrency(result.proposal.currency || 'XOF')
         setLoading(false)
     }, [id, router])
@@ -136,10 +143,14 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
         if (!proposal) return
         setSaving(true)
         try {
+            const itemsForDb = items.map(({ images, metadata, ...rest }) => ({
+                ...rest,
+                metadata: { ...((metadata as Record<string, unknown>) || {}), images: images || [] },
+            }))
             const result = await updateProposalAndItems(
                 proposal.id,
                 calculateTotal(),
-                items as unknown as Record<string, unknown>[],
+                itemsForDb as unknown as Record<string, unknown>[],
                 currency
             )
             if (result.success) {
@@ -392,6 +403,10 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                                                     </div>
                                                     {/* URL fallback */}
                                                     <input type="text" title="URL image" value={item.image_url || ''} onChange={e => updateItem(item.id, 'image_url', e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-500 text-xs focus:border-[#FCD116] focus:outline-none mt-2" placeholder="Ou coller une URL..." />
+                                                    <SlideGalleryEditor
+                                                        images={item.images || []}
+                                                        onChange={imgs => setItems(prev => prev.map(x => x.id === item.id ? { ...x, images: imgs } : x))}
+                                                    />
                                                 </div>
 
                                                 {/* Prices */}

@@ -1061,11 +1061,71 @@ export default function AdminComptabilitePage() {
                 data: pDeps.map(e => ({
                     date: new Date(e.date_depense),
                     titre: e.titre || '—',
-                    categorie: e.categorie || '—',
+                    categorie: expenseCategoryLabel(e.categorie),
                     agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
                     montant: Number(e.montant || 0),
                     notes: e.notes || '—',
                 })),
+            }
+
+            // ── Feuille SALAIRES : suivi RH dédié (dépenses catégorie 'salaires',
+            //    titre encodé « Salaire {mois} — {NOM Prénom} — {poste} ») ──
+            const parseSalaire = (titre: string) => {
+                const m = titre.match(/^Salaire\s+(\S+)\s+—\s+(.+?)\s+—\s+(.+)$/)
+                return m ? { mois: m[1], personne: m[2], poste: m[3] } : { mois: '—', personne: titre, poste: '—' }
+            }
+            const salairesSheet = {
+                sheetName: 'Salaires',
+                title: 'SALAIRES DU PERSONNEL',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Mois', key: 'mois', width: 12 },
+                    { header: 'Nom & Prénom', key: 'personne', width: 30 },
+                    { header: 'Intitulé de poste', key: 'poste', width: 28 },
+                    { header: 'Salaire (FCFA)', key: 'montant', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Enregistré par', key: 'agent', width: 22 },
+                    { header: 'Date de saisie', key: 'date', width: 13, type: 'date' as const },
+                ],
+                data: pDeps.filter(e => e.categorie === 'salaires').map(e => {
+                    const p = parseSalaire(e.titre || '')
+                    return {
+                        mois: p.mois, personne: p.personne, poste: p.poste,
+                        montant: Number(e.montant || 0),
+                        agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
+                        date: new Date(e.date_depense),
+                    }
+                }),
+            }
+
+            // ── Feuille DEVIS EN ATTENTE : pipeline introduit dans la trésorerie ──
+            const devisSheet = {
+                sheetName: 'Devis en attente',
+                title: 'DEVIS CLIENTS EN ATTENTE DE VALIDATION — PIPELINE TRÉSORERIE',
+                subtitle,
+                legalHeader: true,
+                totalRow: true,
+                columns: [
+                    { header: 'Numéro', key: 'numero', width: 16 },
+                    { header: 'Client', key: 'client', width: 30 },
+                    { header: 'Statut', key: 'statut', width: 14 },
+                    { header: 'Montant', key: 'montant', width: 16, type: 'currency' as const },
+                    { header: 'Devise', key: 'devise', width: 9 },
+                    { header: 'Équivalent FCFA', key: 'xof', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Émis le', key: 'date', width: 13, type: 'date' as const },
+                ],
+                data: pDocs
+                    .filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
+                    .map(d => ({
+                        numero: d.numero || d.id.slice(0, 8).toUpperCase(),
+                        client: `${d.client_prenom || ''} ${d.client_nom || ''}`.trim() || '—',
+                        statut: d.status,
+                        montant: Number(d.total || 0),
+                        devise: d.currency || 'XOF',
+                        xof: toXOF(d.total, d.currency),
+                        date: new Date(d.created_at),
+                    })),
             }
 
             // ── 8. Boutique ──────────────────────────────────────
@@ -1168,6 +1228,8 @@ export default function AdminComptabilitePage() {
                     lignesSheet,
                     paiementsSheet,
                     depensesSheet,
+                    salairesSheet,
+                    devisSheet,
                     boutiqueSheet,
                     rapprochementSheet,
                 ],

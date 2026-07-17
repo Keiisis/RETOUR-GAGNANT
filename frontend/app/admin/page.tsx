@@ -139,14 +139,14 @@ export default function AdminDashboard() {
             <motion.div variants={item} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-[#FCD116]">
-                        <Activity size={18} className="animate-pulse" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.4em]"><T>Opérations en Cours</T></span>
+                        <Activity size={16} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em]"><T>Opérations en cours</T></span>
                     </div>
                     <h2 className="text-3xl md:text-5xl font-black text-white font-heading tracking-tight leading-none">
-                        VIBE <span className="text- benin-gradient"><T>CONTROL</T></span>
+                        <T>Tableau de</T> <span className="text-[#008751]"><T>bord</T></span>
                     </h2>
                     <p className="text-gray-500 max-w-xl font-medium">
-                        Bienvenue dans le centre de commandement de Retour Gagnant. Pilotez l&apos;expérience digitale du futur du Bénin.
+                        <T>Vue d&apos;ensemble en temps réel : activité, revenus et opérations de Retour Gagnant Bénin.</T>
                     </p>
                 </div>
 

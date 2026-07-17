@@ -356,8 +356,11 @@ export default function AgentDashboard() {
                             className={`block p-5 glass-nexus-card group ${kpi.borderGlow} transition-all duration-300`}
                         >
                             <div className="flex items-start justify-between mb-3">
-                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${kpi.gradient} flex items-center justify-center shadow-lg`}>
-                                    <kpi.icon size={18} className="text-white" />
+                                {/* Pastille sobre : la couleur vit dans l'icône et la sparkline,
+                                    pas dans un dégradé criard (cohérence Nexus Emerald) */}
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                                    style={{ backgroundColor: `${kpi.sparkColor}14`, borderColor: `${kpi.sparkColor}33` }}>
+                                    <kpi.icon size={18} style={{ color: kpi.sparkColor }} />
                                 </div>
                                 <ArrowUpRight
                                     size={14}

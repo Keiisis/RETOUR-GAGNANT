@@ -198,14 +198,14 @@ export default function ClientDashboardPage() {
     }, [clientId, clientEmail])
 
     const cards = [
-        { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, color: 'from-blue-500 to-blue-600', href: '/client/documents', desc: 'À signer' },
-        { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, color: 'from-amber-500 to-orange-600', href: '/client/documents', desc: 'En attente de paiement' },
- { title: 'Dossier actif', value: stats.dossierActif ? '': '—', icon: FolderOpen, color: 'from-indigo-500 to-purple-600', href: '/client/dossier', desc: 'Suivi en cours'},
+        { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, color: 'from-emerald-500 to-emerald-600', href: '/client/documents', desc: 'À signer' },
+        { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, color: 'from-[#C9A84C] to-[#A68B3C]', href: '/client/documents', desc: 'En attente de paiement' },
+ { title: 'Dossier actif', value: stats.dossierActif ? 'Actif' : '—', icon: FolderOpen, color: 'from-teal-500 to-emerald-700', href: '/client/dossier', desc: 'Suivi en cours'},
         { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, color: 'from-emerald-500 to-teal-600', href: '/client/messages', desc: 'De votre agent' },
     ]
 
     const quickActions = [
-        { label: 'Mes documents', icon: FileText, href: '/client/documents', color: 'text-blue-400', bg: 'bg-blue-500/10 hover:bg-blue-500/20' },
+        { label: 'Mes documents', icon: FileText, href: '/client/documents', color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20' },
         { label: 'Mon dossier', icon: FolderOpen, href: '/client/dossier', color: 'text-indigo-400', bg: 'bg-indigo-500/10 hover:bg-indigo-500/20' },
         { label: 'Envoyer message', icon: MessageSquare, href: '/client/messages', color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20' },
         { label: 'Prendre RDV', icon: CalendarDays, href: '/client/rendez-vous', color: 'text-amber-400', bg: 'bg-amber-500/10 hover:bg-amber-500/20' },
@@ -214,7 +214,7 @@ export default function ClientDashboardPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
             </div>
         )
     }
@@ -225,11 +225,11 @@ export default function ClientDashboardPage() {
             <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <Sparkles size={14} className="text-blue-400" />
-                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Mon Espace Client</span>
+                        <Sparkles size={14} className="text-[#C9A84C]" />
+                        <span className="text-[10px] font-bold text-[#C9A84C] uppercase tracking-[0.3em]">Mon Espace Client</span>
                     </div>
                     <h1 className="text-2xl font-black text-white">
-                        Bonjour, <span className="text-blue-400">{clientNom || clientEmail.split('@')[0]}</span> 👋
+                        Bonjour, <span className="text-emerald-400">{clientNom || clientEmail.split('@')[0]}</span>
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">Voici un résumé de votre compte.</p>
                 </div>
@@ -252,14 +252,14 @@ export default function ClientDashboardPage() {
                     const hasAlert = numVal !== null && numVal > 0
                     return (
                         <motion.div key={card.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
-                            <Link href={card.href} className={`block bg-[#0a1221] border rounded-xl p-5 hover:border-white/[0.12] transition-all group ${hasAlert ? 'border-blue-500/30' : 'border-white/[0.06]'}`}>
+                            <Link href={card.href} className={`block bg-[#0a1221] border rounded-xl p-5 hover:border-white/[0.12] transition-all group ${hasAlert ? 'border-[#C9A84C]/40' : 'border-white/[0.06]'}`}>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} p-[1px]`}>
                                         <div className="w-full h-full bg-[#0a1221] rounded-[10px] flex items-center justify-center">
                                             <Icon size={18} className="text-white/80" />
                                         </div>
                                     </div>
-                                    {hasAlert && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+                                    {hasAlert && <span className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse" />}
                                 </div>
                                 <p className="text-2xl font-black text-white">{card.value}</p>
                                 <p className="text-[11px] text-gray-500 font-semibold mt-1">{card.title}</p>
@@ -276,9 +276,9 @@ export default function ClientDashboardPage() {
                     <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl overflow-hidden">
                         <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
                             <h2 className="font-black text-white text-sm flex items-center gap-2">
-                                <FileText size={16} className="text-blue-400" /> Documents récents
+                                <FileText size={16} className="text-emerald-400" /> Documents récents
                             </h2>
-                            <Link href="/client/documents" className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                            <Link href="/client/documents" className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors">
                                 Tout voir <ArrowRight size={12} />
                             </Link>
                         </div>
@@ -306,7 +306,7 @@ export default function ClientDashboardPage() {
                                                 <p className="text-sm font-mono font-bold text-white">{fmtN(doc.total)} {doc.currency || 'XOF'}</p>
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.color}`}>{s.label}</span>
                                             </div>
-                                            <ArrowRight size={14} className="text-gray-600 group-hover:text-blue-400 transition-colors" />
+                                            <ArrowRight size={14} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
                                         </Link>
                                     )
                                 })}
