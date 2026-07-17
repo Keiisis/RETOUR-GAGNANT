@@ -419,6 +419,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Smart Slides'), icon: MonitorPlay, href: '/agent/presentations' },
                 { title: t('Grille Tarifaire'), icon: Landmark, href: '/agent/grille-tarifaire' },
                 { title: t('Devis & Paiements'), icon: Send, href: '/agent/devis' },
+                { title: t('Contrats'), icon: FileText, href: '/agent/contrats' },
                 // Comptabilité : visible uniquement pour Ornel (décision boss 2026-07-16)
                 ...(agentHasComptaAccess(agent?.email)
                     ? [{ title: t('Comptabilité'), icon: Landmark, href: '/agent/comptabilite' }]

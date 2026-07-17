@@ -222,7 +222,11 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/api/webhooks/') ||
         pathname.startsWith('/portail/') ||
         pathname.startsWith('/p/') ||
-        pathname.startsWith('/api/documents/confirm-payment')
+        pathname.startsWith('/api/documents/confirm-payment') ||
+        // /contrat/[token] + /api/contracts : signature en ligne — l'URL EST le
+        // secret (token hex), signature re-vérifiée côté serveur
+        pathname.startsWith('/contrat/') ||
+        pathname.startsWith('/api/contracts/')
     )
 
     // ── Définir si on est sur un panel interne ────────────────
