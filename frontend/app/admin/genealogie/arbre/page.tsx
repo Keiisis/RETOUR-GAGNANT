@@ -1906,7 +1906,9 @@ export default function DedicatedTreePage() {
             className="fixed inset-0"
             style={{
               zIndex: 9998,
-              backgroundColor: isDark ? '#02060C' : '#0F172A',
+              // Backdrop opaque ASSORTI au thème : en clair, un voile navy
+              // donnait l'impression d'une page cassée (sombre + tiroir blanc)
+              backgroundColor: isDark ? '#02060C' : '#EEF2F6',
               opacity: 1,
             }}
             onClick={handleCancelEdit}
