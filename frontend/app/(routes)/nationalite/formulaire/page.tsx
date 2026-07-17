@@ -616,7 +616,7 @@ export default function NationaliteFormPage() {
                         </p>            <div className="flex items-center justify-center gap-1 text-[10px] text-gray-400"><Heart size={10} className="text-[#E8112D]" /> <T>Retour Gagnant Bénin</T></div>
                     </motion.div>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-                        <Link href="/suivi-dossier" className="bg-gradient-to-r from-[#008751] to-[#00b06a] hover:shadow-[0_8px_30px_rgba(0,135,81,0.4)] text-white font-black text-sm px-6 py-3 rounded-xl transition-all uppercase tracking-widest text-[11px]">📍 <T>Suivre mon dossier</T></Link>
+                        <Link href="/suivi-dossier" className="bg-gradient-to-r from-[#008751] to-[#00b06a] hover:shadow-[0_8px_30px_rgba(0,135,81,0.4)] text-white font-black text-sm px-6 py-3 rounded-xl transition-all uppercase tracking-widest text-[11px]"> <T>Suivre mon dossier</T></Link>
                         <Link href="/nationalite" className="bg-white/10 hover:bg-white/15 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all"><T>Retour à la page</T></Link>
                         <Link href="/" className="text-xs text-gray-500 hover:text-gray-900 transition-colors"><T>Accueil</T></Link>
                     </motion.div>

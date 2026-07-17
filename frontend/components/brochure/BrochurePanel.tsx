@@ -528,10 +528,10 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                     <HRule s={s} w={320 * s} opacity={0.35} />
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 * s }}>
                         {[
-                            { icon: '📍', text: 'Haie-Vive Cocotiers, Carré N°1158, Cotonou — BÉNIN' },
-                            { icon: '☎', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
-                            { icon: '✉', text: 'contact@retourgagnantbenin.bj' },
-                            { icon: '🌐', text: 'www.retourgagnantbenin.bj' },
+                            { icon: '', text: 'Haie-Vive Cocotiers, Carré N°1158, Cotonou — BÉNIN' },
+                            { icon: '', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
+                            { icon: '', text: 'contact@retourgagnantbenin.bj' },
+                            { icon: '', text: 'www.retourgagnantbenin.bj' },
                         ].map(({ icon, text }) => (
                             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8 * s }}>
                                 <span style={{ fontSize: 10 * s }}>{icon}</span>
@@ -595,8 +595,8 @@ const PASSPORT_EN = 'Republic of Benin Passport'
 const REGISTER_FR = "Acte d'ancestralité — Registre historique"
 const REGISTER_EN = 'Certificate of Ancestry — Historical Registry'
 const FOOTER_ITEMS = [
-    { icon: '☎', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
-    { icon: '✉', text: 'contact@retourgagnantbenin.bj' },
+    { icon: '', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
+    { icon: '', text: 'contact@retourgagnantbenin.bj' },
     { icon: '◆', text: 'www.retourgagnantbenin.bj' },
     { icon: '●', text: 'Haie-Vive Cocotiers, Cotonou — BÉNIN' },
 ]

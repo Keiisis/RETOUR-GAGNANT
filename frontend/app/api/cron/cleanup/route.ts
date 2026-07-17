@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🧹 CRON — Purge automatique des dossiers de nationalité (24h)
+//  CRON — Purge automatique des dossiers de nationalité (24h)
 // ──────────────────────────────────────────────────────────────
 // Ce endpoint s'exécute chaque nuit via Vercel Cron.
 //
@@ -11,7 +11,7 @@
 //  5. Supprime définitivement le dossier ET ses fichiers du serveur
 //  6. Journalise l'opération dans security_logs
 //
-// ⚠️ Utilise SUPABASE_SERVICE_ROLE_KEY pour bypasser le RLS
+//  Utilise SUPABASE_SERVICE_ROLE_KEY pour bypasser le RLS
 // ══════════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -140,7 +140,7 @@ async function runPurge() {
                 } catch (mailErr) {
                     const msg = mailErr instanceof Error ? mailErr.message : 'Erreur email inconnue'
                     results.errors.push(`Email échoué pour dossier ${dossier.id}: ${msg}`)
-                    // ⚠️ NE PAS supprimer si l'email a échoué — on réessaiera demain
+                    //  NE PAS supprimer si l'email a échoué — on réessaiera demain
                     continue
                 }
             }
@@ -235,7 +235,7 @@ function buildDossierArchiveEmail(
     <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:24px;text-align:center">
-            <h1 style="color:#f59e0b;margin:0;font-size:18px">📁 Archive de Dossier — Purge Automatique</h1>
+            <h1 style="color:#f59e0b;margin:0;font-size:18px"> Archive de Dossier — Purge Automatique</h1>
             <p style="color:#94a3b8;margin:6px 0 0;font-size:12px">${date.toLocaleString('fr-FR')} UTC</p>
         </div>
         <!-- Infos dossier -->
@@ -270,7 +270,7 @@ function buildDossierArchiveEmail(
                 </ul>
             </div>` : ''}
             <div style="margin-top:20px;background:#fef2f2;border-left:3px solid #ef4444;padding:12px 16px;border-radius:0 8px 8px 0">
-                <p style="margin:0;color:#991b1b;font-size:12px;font-weight:700">⚠️ Ce dossier a été définitivement supprimé de la base de données de production.</p>
+                <p style="margin:0;color:#991b1b;font-size:12px;font-weight:700"> Ce dossier a été définitivement supprimé de la base de données de production.</p>
                 <p style="margin:4px 0 0;color:#7f1d1d;font-size:11px">Cet email constitue l'unique copie de sauvegarde (Cold Storage).</p>
             </div>
         </div>
@@ -290,7 +290,7 @@ function buildPurgeReportEmail(
 <body style="margin:0;padding:20px;background:#0f172a;font-family:'Segoe UI',Arial,sans-serif">
     <div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:16px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#dc2626,#f59e0b);padding:20px 24px">
-            <h1 style="color:#fff;margin:0;font-size:18px">🧹 Rapport de Purge Automatique — 24h</h1>
+            <h1 style="color:#fff;margin:0;font-size:18px"> Rapport de Purge Automatique — 24h</h1>
             <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px">Retour Gagnant Bénin · ${date.toLocaleString('fr-FR')}</p>
         </div>
         <div style="padding:24px">
@@ -314,13 +314,13 @@ function buildPurgeReportEmail(
             </table>
             ${hasErrors ? `
             <div style="margin-top:16px;background:#450a0a;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px">
-                <p style="margin:0 0 8px;color:#fca5a5;font-size:12px;font-weight:700">⚠️ Erreurs rencontrées :</p>
+                <p style="margin:0 0 8px;color:#fca5a5;font-size:12px;font-weight:700"> Erreurs rencontrées :</p>
                 <ul style="margin:0;padding-left:18px;color:#fca5a5;font-size:12px">
                     ${results.errors.map(e => `<li>${e}</li>`).join('')}
                 </ul>
             </div>` : `
             <div style="margin-top:16px;background:#052e16;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;text-align:center">
-                <p style="margin:0;color:#6ee7b7;font-size:13px;font-weight:700">✅ Purge complète — Aucune erreur</p>
+                <p style="margin:0;color:#6ee7b7;font-size:13px;font-weight:700"> Purge complète — Aucune erreur</p>
             </div>`}
         </div>
     </div>

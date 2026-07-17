@@ -41,7 +41,7 @@ export default function ResearchAssistant({ hints }: ResearchAssistantProps) {
               key={i} 
               className="bg-[#eff6ff]/[0.02] border border-[#3b82f6]/20 p-3.5 rounded-2xl flex items-start gap-2.5"
             >
-              <span className="text-base shrink-0 select-none">💡</span>
+              <span className="text-base shrink-0 select-none"></span>
               <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
                 {h.message}
               </p>

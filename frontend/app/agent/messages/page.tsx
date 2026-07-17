@@ -399,7 +399,7 @@ export default function AgentMessagesPage() {
                                         <div className="flex justify-between items-center pl-8 mt-2">
                                             <span className="text-[10px] text-gray-600 truncate mr-2">{m.message}</span>
                                             <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full flex-shrink-0 ${m.sujet?.includes('Live Chat') ? 'bg-emerald-500/20 text-emerald-400' : m.type === 'support' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                {m.sujet?.includes('Live Chat') ? '💬 Live' : m.type}
+                                                {m.sujet?.includes('Live Chat') ? ' Live' : m.type}
                                             </span>
                                         </div>
                                     </motion.div>

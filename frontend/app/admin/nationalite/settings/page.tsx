@@ -300,7 +300,7 @@ export default function NationaliteSettingsPage() {
                                         : 'bg-white/5 text-gray-500 border border-white/10'
                                         }`}
                                 >
-                                    {doc.multi ? 'Multi-fichier ✓' : 'Un seul'}
+                                    {doc.multi ? 'Multi-fichier ' : 'Un seul'}
                                 </button>
                                 <button
                                     title={t("Supprimer ce document")}

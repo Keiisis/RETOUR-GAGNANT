@@ -98,10 +98,10 @@ const ZONE_FEES: Record<string, number> = {
 
 const ZONE_LABELS: Record<string, string> = {
     benin: '🇧🇯 Bénin — Livraison gratuite',
-    'afrique-ouest': "🌍 Afrique de l'Ouest — +5 000 FCFA",
+    'afrique-ouest': " Afrique de l'Ouest — +5 000 FCFA",
     europe: '🇪🇺 Europe — +15 000 FCFA',
-    international: '🌐 International — +25 000 FCFA',
-    digital: '💻 Service digital — Gratuit',
+    international: ' International — +25 000 FCFA',
+    digital: ' Service digital — Gratuit',
 }
 
 const ALL_COUNTRIES = [

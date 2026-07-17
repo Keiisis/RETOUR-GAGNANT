@@ -341,15 +341,15 @@ export default function ClientGenealogyPage() {
             return (
               <div className="max-w-4xl mx-auto space-y-6">
                 <div>
-                  <h2 className="text-lg font-black text-white">📊 Statistiques familiales</h2>
+                  <h2 className="text-lg font-black text-white"> Statistiques familiales</h2>
                   <p className="text-xs text-gray-500">Vue d'ensemble de vos données de composition de famille</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Membres', value: stats.total, icon: <Users size={18} />, color: '#3b82f6' },
-                    { label: 'Hommes', value: stats.males, icon: <span className="text-lg">♂</span>, color: '#3B82F6' },
-                    { label: 'Femmes', value: stats.females, icon: <span className="text-lg">♀</span>, color: '#EC4899' },
+                    { label: 'Hommes', value: stats.males, icon: <span className="text-lg"></span>, color: '#3B82F6' },
+                    { label: 'Femmes', value: stats.females, icon: <span className="text-lg"></span>, color: '#EC4899' },
                     { label: 'Générations', value: stats.generationCount, icon: <TreeDeciduous size={18} />, color: '#8B5CF6' },
                   ].map(kpi => (
                     <div
@@ -367,7 +367,7 @@ export default function ClientGenealogyPage() {
 
                 {/* Data completeness */}
                 <div className="rounded-2xl p-5 bg-[#0a0f18] border border-white/5">
-                  <h3 className="text-sm font-bold text-white mb-3">📋 Complétude des données</h3>
+                  <h3 className="text-sm font-bold text-white mb-3"> Complétude des données</h3>
                   <div className="space-y-3">
                     {[
                       { label: 'Dates de naissance', value: stats.withBirth, total: stats.total, color: '#10B981' },
@@ -396,7 +396,7 @@ export default function ClientGenealogyPage() {
                 {/* Top Places */}
                 {stats.topPlaces.length > 0 && (
                   <div className="rounded-2xl p-5 bg-[#0a0f18] border border-white/5">
-                    <h3 className="text-sm font-bold text-white mb-3">📍 Lieux les plus fréquents</h3>
+                    <h3 className="text-sm font-bold text-white mb-3"> Lieux les plus fréquents</h3>
                     <div className="space-y-2">
                       {stats.topPlaces.map((p, i) => (
                         <div
@@ -422,7 +422,7 @@ export default function ClientGenealogyPage() {
                 {/* Siblings */}
                 {selfSiblings && (selfSiblings.fullSiblings.length > 0 || selfSiblings.halfSiblings.length > 0) && (
                   <div className="rounded-2xl p-5 bg-[#0a0f18] border border-white/5">
-                    <h3 className="text-sm font-bold text-white mb-3">👨‍👩‍👧‍👦 Fratrie du proposant</h3>
+                    <h3 className="text-sm font-bold text-white mb-3">‍‍‍ Fratrie du proposant</h3>
                     {selfSiblings.fullSiblings.length > 0 && (
                       <div className="mb-3">
                         <p className="text-[10px] font-bold uppercase tracking-wider mb-2 text-emerald-400">Frères/Sœurs (mêmes parents)</p>
@@ -484,9 +484,9 @@ export default function ClientGenealogyPage() {
                       }}
                     >
                       {isBirth ? (
-                        <span className="text-[10px]" title="Naissance">👶</span>
+                        <span className="text-[10px]" title="Naissance"></span>
                       ) : (
-                        <span className="text-[10px]" title="Décès">✝️</span>
+                        <span className="text-[10px]" title="Décès"></span>
                       )}
                     </div>
 
@@ -541,7 +541,7 @@ export default function ClientGenealogyPage() {
         <div className="bg-[#040810] border border-white/5 rounded-[2.5rem] p-6 space-y-6 overflow-y-auto max-h-[600px]">
           <div className="max-w-2xl mx-auto space-y-6">
             <div>
-              <h2 className="text-lg font-black text-white">📅 Éphéméride & Anniversaires</h2>
+              <h2 className="text-lg font-black text-white"> Éphéméride & Anniversaires</h2>
               <p className="text-xs text-gray-500">Prochains anniversaires ou commémorations à venir</p>
             </div>
 
@@ -550,7 +550,7 @@ export default function ClientGenealogyPage() {
                 const p = anniv.person;
                 const isBirth = anniv.type === 'birth';
                 const formatDays = (days: number) => {
-                  if (days === 0) return "Aujourd'hui 🎉";
+                  if (days === 0) return "Aujourd'hui ";
                   if (days === 1) return "Demain";
                   return `Dans ${days} jours`;
                 };
@@ -567,7 +567,7 @@ export default function ClientGenealogyPage() {
                           color: isBirth ? '#3b82f6' : '#6B7280',
                         }}
                       >
-                        {isBirth ? '🎂' : '🕯️'}
+                        {isBirth ? '' : ''}
                       </div>
                       <div>
                         <h4 className="text-xs font-bold text-white">

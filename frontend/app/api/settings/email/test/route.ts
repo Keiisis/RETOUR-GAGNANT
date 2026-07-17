@@ -5,7 +5,7 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
     try {
-        // 🛡️ SECURITY: Require 'admin' role
+        //  SECURITY: Require 'admin' role
         const auth = await verifyApiAuth(request, 'admin');
         if (!auth.authenticated) return auth.error!;
 

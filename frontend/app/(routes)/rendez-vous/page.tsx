@@ -335,7 +335,7 @@ function RendezVousContent() {
 
                                             {step === 4 && (
                                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="text-center space-y-4 py-6">
-                                                    <div className="text-5xl">📋</div>
+                                                    <div className="text-5xl"></div>
                                                     <h3 className="text-xl font-bold text-[#1a2332]"><T>Récapitulatif</T></h3>
                                                     <div className="text-left bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                                                         <p><span className="font-semibold"><T>Nom:</T></span> {form.nom} {form.prenom}</p>
@@ -372,7 +372,7 @@ function RendezVousContent() {
                                                 ) : (
                                                     <Button type="submit" disabled={status === 'loading'}
                                                         className="bg-[#008751] hover:bg-[#006B40] text-white font-bold rounded-xl px-8">
-                                                        {status === 'loading' ? <T>Envoi...</T> : <>✅ <T>Confirmer</T></>}
+                                                        {status === 'loading' ? <T>Envoi...</T> : <> <T>Confirmer</T></>}
                                                     </Button>
                                                 )}
                                             </div>

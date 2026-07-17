@@ -112,7 +112,7 @@ export default function AudioPlayer() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1 }}
                 aria-label={isMuted ? t("Activer le son") : t("Couper le son")}
-                title={isMuted ? `🔊 ${t("Activer l'ambiance sonore")}` : `🔇 ${t("Couper le son")}` }
+                title={isMuted ? ` ${t("Activer l'ambiance sonore")}` : ` ${t("Couper le son")}` }
             >
                 {isMuted ? (
                     <VolumeX size={18} className="text-white/70" />

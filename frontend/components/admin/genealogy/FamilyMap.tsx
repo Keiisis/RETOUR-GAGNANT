@@ -98,7 +98,7 @@ export default function FamilyMap({ persons }: FamilyMapProps) {
             lng: geo.lng,
             person: entry.person,
             type: entry.type,
-            label: `${name}\n${entry.type === 'birth' ? '🎂 Naissance' : '✝ Décès'} — ${entry.place}`,
+            label: `${name}\n${entry.type === 'birth' ? ' Naissance' : ' Décès'} — ${entry.place}`,
           });
         }
       }
@@ -171,7 +171,7 @@ export default function FamilyMap({ persons }: FamilyMapProps) {
           marker.bindPopup(`
             <div style="font-family: Inter, sans-serif; font-size: 13px; line-height: 1.5;">
               <strong style="color: ${color};">${name || 'Inconnu'}</strong><br/>
-              <span style="color: #666;">${pt.type === 'birth' ? '🎂 Naissance' : '✝ Décès'}</span><br/>
+              <span style="color: #666;">${pt.type === 'birth' ? ' Naissance' : ' Décès'}</span><br/>
               <em>${pt.person[pt.type === 'birth' ? 'birth_place' : 'death_place']}</em>
               ${pt.person[pt.type === 'birth' ? 'birth_date' : 'death_date'] ? `<br/><small>${pt.person[pt.type === 'birth' ? 'birth_date' : 'death_date']}</small>` : ''}
             </div>
@@ -214,7 +214,7 @@ export default function FamilyMap({ persons }: FamilyMapProps) {
         className="w-full h-full flex flex-col items-center justify-center gap-3"
         style={{ color: 'var(--panel-text-muted)' }}
       >
-        <div className="text-4xl">🗺️</div>
+        <div className="text-4xl"></div>
         <p className="text-sm font-medium">Aucun lieu renseigné</p>
         <p className="text-xs opacity-60">
           Ajoutez des lieux de naissance ou de décès aux membres pour visualiser la carte.

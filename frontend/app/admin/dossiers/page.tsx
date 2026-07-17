@@ -126,7 +126,7 @@ export default function AdminDossiersPage() {
         try {
             const res = await fetch('/api/cron/sync-dossiers', { method: 'POST' })
             const data = await res.json()
-            setSyncResult(`✓ ${data.synced} dossier(s) synchronisé(s) sur ${data.total}`)
+            setSyncResult(` ${data.synced} dossier(s) synchronisé(s) sur ${data.total}`)
             refetch()
         } catch {
             setSyncResult('Erreur de synchronisation')

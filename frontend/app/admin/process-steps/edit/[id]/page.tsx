@@ -105,7 +105,7 @@ export default function ProcessStepEdit() {
                                 onClick={() => setFormData((p) => ({ ...p, is_active: !p.is_active }))}
                                 className={`w-full py-4 px-6 rounded-2xl font-bold text-sm transition-all ${formData.is_active ? 'bg-[#008751]/20 text-[#008751] border-2 border-[#008751]/30' : 'bg-red-500/20 text-red-400 border-2 border-red-500/30'}`}
                             >
-                                {formData.is_active ? '✓ Active' : '✗ Masquée'}
+                                {formData.is_active ? ' Active' : ' Masquée'}
                             </button>
                         </div>
                     </div>

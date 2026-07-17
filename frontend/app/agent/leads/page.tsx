@@ -315,7 +315,7 @@ export default function AgentLeadsPage() {
                                                     : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
                                                     }`}
                                             >
-                                                {lead.is_contacted ? '✓ Contacté' : 'À contacter'}
+                                                {lead.is_contacted ? ' Contacté' : 'À contacter'}
                                             </button>
 
                                             {/* Email Button — ouvre le drawer */}

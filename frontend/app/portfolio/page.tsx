@@ -7,7 +7,7 @@ import { ArrowUpRight, Phone, Mail, MapPin, Globe, CheckCircle2, ChevronRight, L
 import { useTranslation } from '@/lib/translation/useTranslation'
 import { SUPPORTED_LANGUAGES } from '@/lib/translation/constants'
 
-// --- 🌐 Selecteur de Langue Mobile-First (Dynamic Island Style) ---
+// ---  Selecteur de Langue Mobile-First (Dynamic Island Style) ---
 const MinimalLanguageSelector = () => {
     const { lang, setLang } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
@@ -72,7 +72,7 @@ const MinimalLanguageSelector = () => {
     )
 }
 
-// --- 🌐 Interaction Card (Ultra Premium Light Glass) ---------------------------
+// ---  Interaction Card (Ultra Premium Light Glass) ---------------------------
 interface InteractionCardProps {
     children: React.ReactNode;
     href: string;
@@ -116,7 +116,7 @@ const InteractionCard = ({ children, href, isPrimary = false, delay = 0 }: Inter
     )
 }
 
-// --- 🎥 Composant Principal -----------------------------------------
+// ---  Composant Principal -----------------------------------------
 export default function PortfolioImmersivePage() {
     const { t } = useTranslation()
     const containerRef = useRef<HTMLDivElement>(null)
@@ -172,7 +172,7 @@ export default function PortfolioImmersivePage() {
     return (
         <div ref={containerRef} className="relative min-h-screen bg-[#F0F2F5] text-gray-900 font-sans selection:bg-[#008751] selection:text-white overflow-x-hidden pt-10 pb-28">
 
-            {/* --- 🎬 Splash Screen Video Intro --- */}
+            {/* ---  Splash Screen Video Intro --- */}
             <AnimatePresence>
                 {showIntro && (
                     <motion.div

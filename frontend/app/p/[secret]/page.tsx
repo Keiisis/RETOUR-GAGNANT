@@ -457,7 +457,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 </span>
                                             )}
                                             <span className="px-3 py-1.5 bg-[#008751]/25 backdrop-blur-xl border border-[#008751]/40 rounded-full text-[10px] md:text-xs font-bold text-[#008751]">
-                                                ✓ Offre Exclusive
+                                                 Offre Exclusive
                                             </span>
                                         </motion.div>
                                     )}
@@ -646,7 +646,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <div className="bg-[#008751]/12 border border-[#008751]/25 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between relative z-10">
                                                 <span className="text-[10px] font-black text-[#008751] uppercase tracking-wider">Vous économisez</span>
                                                 <span className="text-[#008751] font-black text-sm">
-                                                    <Price amount={savings} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} /> 🎁
+                                                    <Price amount={savings} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} /> 
                                                 </span>
                                             </div>
                                         )}

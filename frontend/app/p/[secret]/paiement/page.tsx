@@ -747,7 +747,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                             </div>
                             <div className="text-center space-y-3">
-                                <h1 className="text-3xl font-black">Réservation confirmée ! 🎉</h1>
+                                <h1 className="text-3xl font-black">Réservation confirmée ! </h1>
                                 <p className="text-slate-400 max-w-md">
                                     Votre voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span> est en cours de préparation.
                                     Vous recevrez un email de confirmation sous peu.

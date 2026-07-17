@@ -283,7 +283,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             {dbService.pricing_options && dbService.pricing_options.length > 0 ? (
                                                 <div className="space-y-2">
                                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-1.5">
-                                                        <span>💰</span>Tarifs & Options
+                                                        <span></span>Tarifs & Options
                                                     </p>
                                                     <PricingCalculator3D
                                                         options={dbService.pricing_options}

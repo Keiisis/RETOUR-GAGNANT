@@ -1607,7 +1607,7 @@ export default function AdminComptabilitePage() {
                                         <td className="p-4 pl-5">
                                             <span className={cn('text-[11px] font-black font-mono',
                                                 i === 0 ? 'text-[#FCD116]' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-600')}>
-                                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                                                {i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : `#${i + 1}`}
                                             </span>
                                         </td>
                                         <td className="p-4">
@@ -1813,7 +1813,7 @@ export default function AdminComptabilitePage() {
                                                 {solde !== null ? (
                                                     solde > 0
                                                         ? <span className="text-amber-400 font-bold">{fmt(solde)}</span>
-                                                        : <span className="text-[#00c870]">✓ Soldé</span>
+                                                        : <span className="text-[#00c870]"> Soldé</span>
                                                 ) : <span className="text-gray-600">—</span>}
                                             </td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>

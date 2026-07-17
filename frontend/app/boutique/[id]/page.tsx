@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
                                                     exit={{ y: -20, opacity: 0 }}
                                                     className="flex items-center gap-2 text-[#008751]"
                                                 >
-                                                    ✓ <T>Ajouté !</T>
+                                                     <T>Ajouté !</T>
                                                 </motion.span>
                                             ) : (
                                                 <motion.span

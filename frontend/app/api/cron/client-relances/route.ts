@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔔 CRON — Relances Classement Client
+//  CRON — Relances Classement Client
 // Chaque jour : pour chaque client, si un jalon (15/20/30/45/60/75/90 j)
 // est atteint et pas encore notifié, envoie un email de rappel (à l'équipe)
 // avec l'état du dossier (statut + notes/problèmes) ET des suggestions

@@ -214,7 +214,7 @@ export async function GET(
       const featuresHtml = features.length > 0
         ? `<ul style="margin:5px 0 0 0;padding:0;list-style:none;">${features.slice(0, 6).map(f =>
             `<li style="font-size:10px;color:#556;line-height:1.6;">
-              <span style="color:#008751;margin-right:4px;">✓</span>${escapeHtml(f)}
+              <span style="color:#008751;margin-right:4px;"></span>${escapeHtml(f)}
             </li>`).join('')}</ul>`
         : ''
 
@@ -537,7 +537,7 @@ export async function GET(
         </div>` : ''}
       </div>
 
-      <button class="print-btn" onclick="window.print()">🖨&nbsp; Télécharger / Imprimer</button>
+      <button class="print-btn" onclick="window.print()">&nbsp; Télécharger / Imprimer</button>
     </div>
 
     <!-- FOOTER DARK (style ERP) -->

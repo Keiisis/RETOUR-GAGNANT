@@ -116,7 +116,7 @@ export default function AdminNewsletterPage() {
                 <div>
                     <label className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1.5">Contenu (HTML autorisé)</label>
                     <textarea value={bodyHtml} onChange={e => setBodyHtml(e.target.value)} rows={10}
-                        placeholder="<h2>Bonjour 👋</h2><p>Voici nos actualités…</p>"
+                        placeholder="<h2>Bonjour </h2><p>Voici nos actualités…</p>"
                         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1a2332] font-mono focus:outline-none focus:border-emerald-500 resize-y" />
                     <p className="text-[10px] text-gray-400 mt-1">L&apos;email est automatiquement habillé (logo, bandeau tricolore, lien de désinscription).</p>
                 </div>

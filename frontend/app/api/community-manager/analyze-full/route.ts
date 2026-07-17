@@ -253,7 +253,7 @@ async function scrapePosts(profileUrl: string, platform: string): Promise<{ post
                 apifyKeyIndex = (keyIdx + 1) % APIFY_KEYS.length
                 const items: unknown[] = Array.isArray(res.data) ? res.data : []
                 const posts = normalizeItems(items, profileUrl, platform)
-                console.log(`[analyze-full] Apify ✓ clé ${keyIdx + 1} — ${posts.length} posts`)
+                console.log(`[analyze-full] Apify  clé ${keyIdx + 1} — ${posts.length} posts`)
 
                 if (posts.length === 0) {
                     // Apify OK mais 0 résultats (profil privé / personnel / vide) → Serper
@@ -570,10 +570,10 @@ ${ci.system_prompt || `Tu es un expert en community management. Tu imites le sty
 ---
 
 ## REGLES A SUIVRE
-${ensureArray(ci.do_list).map(d => `✅ ${d}`).join('\n') || '(aucune)'}
+${ensureArray(ci.do_list).map(d => ` ${d}`).join('\n') || '(aucune)'}
 
 ## A EVITER
-${ensureArray(ci.dont_list).map(d => `❌ ${d}`).join('\n') || '(aucune)'}
+${ensureArray(ci.dont_list).map(d => ` ${d}`).join('\n') || '(aucune)'}
 
 ## EMPREINTE VOCALE
 - Rythme: ${vf.rhythm || '?'}
@@ -617,7 +617,7 @@ ${rewrites.map((r: Record<string, unknown>, i: number) => `### Exemple ${i + 1}\
 - Sujets non couverts: ${ensureArray(ce.content_gaps).join(', ') || '?'}
 
 ## SCORES (sur 100)
-🎯 Global: ${sc.overall || '?'}/100
+ Global: ${sc.overall || '?'}/100
 - Accroche: ${sc.hook_power || '?'} | Emotion: ${sc.emotional_depth || '?'} | Story: ${sc.storytelling || '?'}
 - Autorité: ${sc.authority || '?'} | Viralité: ${sc.viral_potential || '?'} | Communauté: ${sc.community_building || '?'}
 
@@ -775,7 +775,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log(`[analyze-full] ✓ Dossier construit — engagement: ${engagementLevel} | style analysé: ${deepResult !== null}`)
+        console.log(`[analyze-full]  Dossier construit — engagement: ${engagementLevel} | style analysé: ${deepResult !== null}`)
         return NextResponse.json({ success: true, dossier })
     } catch (err) {
         console.error('[analyze-full] Error:', err)

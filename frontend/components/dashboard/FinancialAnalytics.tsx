@@ -295,7 +295,7 @@ export const FinancialAnalytics = () => {
                                 Génération...
                             </>
                         ) : (
-                            <>📄 Rapport PDF</>
+                            <> Rapport PDF</>
                         )}
                     </button>
                 </div>
@@ -429,7 +429,7 @@ export const FinancialAnalytics = () => {
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                 }}>
-                    📈 Tendance CA · 6 derniers mois
+                     Tendance CA · 6 derniers mois
                 </p>
 
                 <div style={{
@@ -531,7 +531,7 @@ export const FinancialAnalytics = () => {
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                     }}>
-                        🔴 Alertes — Factures en retard
+                         Alertes — Factures en retard
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

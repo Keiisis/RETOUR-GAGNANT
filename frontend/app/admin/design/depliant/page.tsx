@@ -256,7 +256,7 @@ export default function DepliantPage() {
                 <>
                     {/* Recto = Extérieur A3 (Face 2 Recto + Face 1 Recto) */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📄 Recto — Extérieur (A3 paysage)</h2>
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2"> Recto — Extérieur (A3 paysage)</h2>
                         <p className="text-gray-500 text-xs">Face 2 Recto (QR Code) à gauche + Face 1 Recto (Couverture) à droite — identique au bilingue</p>
                         <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                             <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
@@ -275,7 +275,7 @@ export default function DepliantPage() {
 
                     {/* Verso = Intérieur A3 Français pleine page */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-3">
-                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📖 Verso — Intérieur Français (A3 paysage pleine page)</h2>
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2"> Verso — Intérieur Français (A3 paysage pleine page)</h2>
                         <p className="text-gray-500 text-xs">Contenu français étendu sur toute la surface A3 · Police agrandie · Mise en page optimale</p>
                         <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                             <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
@@ -304,7 +304,7 @@ export default function DepliantPage() {
             {activeTab === 'english' && (
                 <>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📄 Recto — Outside (A3 Landscape)</h2>
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2"> Recto — Outside (A3 Landscape)</h2>
                         <p className="text-gray-500 text-xs">Panel 2 Recto (QR Code) left + Panel 1 Recto (Cover) right — same as bilingual</p>
                         <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                             <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">
@@ -322,7 +322,7 @@ export default function DepliantPage() {
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-3">
-                        <h2 className="text-sm font-bold text-white flex items-center gap-2">📖 Verso — Inside English (A3 Landscape Full Page)</h2>
+                        <h2 className="text-sm font-bold text-white flex items-center gap-2"> Verso — Inside English (A3 Landscape Full Page)</h2>
                         <p className="text-gray-500 text-xs">English content spread across the full A3 surface · Enlarged fonts · Professional layout</p>
                         <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                             <div className="overflow-hidden rounded-xl border border-white/[0.06] flex justify-center bg-black/20">

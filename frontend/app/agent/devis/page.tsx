@@ -442,7 +442,7 @@ export default function AgentDevisPage() {
         setSendingEmail(doc.id)
         try {
             const typeLabel = doc.type === 'devis' ? 'Devis' : 'Facture'
-            const statusLabel = doc.status === 'paye' ? ' ✅ PAYÉ' : doc.status === 'accepte' ? ' ✅ ACCEPTÉ' : ''
+            const statusLabel = doc.status === 'paye' ? ' PAYÉ' : doc.status === 'accepte' ? ' ACCEPTÉ' : ''
 
             await fetch('/api/email/send', {
                 method: 'POST',
@@ -466,7 +466,7 @@ export default function AgentDevisPage() {
                 fetchDocuments()
             }
 
-            alert(`✅ ${typeLabel} envoyé(e) par email à ${doc.client_email}`)
+            alert(` ${typeLabel} envoyé(e) par email à ${doc.client_email}`)
         } catch (err) {
             console.error('Email error:', err)
             alert('Erreur lors de l\'envoi du mail.')
@@ -513,7 +513,7 @@ export default function AgentDevisPage() {
                 body: JSON.stringify({ to: doc.client_email, subject, html }),
             })
             if (!res.ok) throw new Error('Erreur envoi')
-            alert(`✉️ Relance envoyée à ${doc.client_email}`)
+            alert(` Relance envoyée à ${doc.client_email}`)
         } catch (e) {
             alert(`Erreur lors de l'envoi : ${e instanceof Error ? e.message : 'inconnue'}`)
         } finally {
@@ -843,7 +843,7 @@ export default function AgentDevisPage() {
                                                     <div className="flex items-baseline justify-between pt-1 border-t border-white/5">
                                                         <span className="text-[10px] text-gray-500 font-bold uppercase">Reste</span>
                                                         <span className={`text-lg font-black font-mono ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
-                                                            {fullyPaid ? 'SOLDÉ ✓' : `${remaining.toLocaleString('fr-FR')} XOF`}
+                                                            {fullyPaid ? 'SOLDÉ ' : `${remaining.toLocaleString('fr-FR')} XOF`}
                                                         </span>
                                                     </div>
                                                 </div>

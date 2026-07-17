@@ -157,7 +157,7 @@ export default function DedicatedTreePage() {
       const { error } = await supabase.from('persons').delete().eq('id', id);
       if (error) throw error;
       
-      alert('Parent retiré avec succès 🗑️');
+      alert('Parent retiré avec succès ');
       setSelectedPerson(null);
       loadData(true);
     } catch (err: any) {
@@ -383,7 +383,7 @@ export default function DedicatedTreePage() {
           <div style="display:inline-block;background:#008751;color:white;padding:10px 36px;border-radius:14px;margin-bottom:10px;">
             <span style="font-size:18px;font-weight:900;letter-spacing:2px;">RETOUR GAGNANT BÉNIN</span>
           </div>
-          <h2 style="font-size:24px;font-weight:900;margin:14px 0 6px;color:#0A0F18;">📋 RAPPORT DU PLAN DE COMPOSITION DE FAMILLE</h2>
+          <h2 style="font-size:24px;font-weight:900;margin:14px 0 6px;color:#0A0F18;"> RAPPORT DU PLAN DE COMPOSITION DE FAMILLE</h2>
           <p style="font-size:16px;font-weight:700;color:#008751;margin:0 0 4px;">Famille ${clientName.toUpperCase()}</p>
           <p style="font-size:13px;color:#6B7280;margin:0;">
             Généré le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} • ${persons.length} membre(s) enregistré(s)
@@ -394,7 +394,7 @@ export default function DedicatedTreePage() {
       // Summary table of all members
       reportHtml += `
         <div style="margin-bottom:28px;padding:24px;background:#F9FAFB;border-radius:16px;border:1px solid #E5E7EB;">
-          <h3 style="font-size:16px;font-weight:800;color:#0A0F18;margin:0 0 16px;">👥 Membres enregistrés (${persons.length})</h3>
+          <h3 style="font-size:16px;font-weight:800;color:#0A0F18;margin:0 0 16px;"> Membres enregistrés (${persons.length})</h3>
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="border-bottom:2px solid #D1D5DB;">
@@ -424,7 +424,7 @@ export default function DedicatedTreePage() {
       // Missing roles
       if (missingRoles.length > 0) {
         reportHtml += `<div style="margin-bottom:20px;padding:20px;background:#FEF3C7;border-radius:14px;border:1px solid #FCD34D;">`;
-        reportHtml += `<h3 style="font-size:15px;font-weight:800;color:#92400E;margin:0 0 12px;">⚠️ Membres manquants (${missingRoles.length})</h3>`;
+        reportHtml += `<h3 style="font-size:15px;font-weight:800;color:#92400E;margin:0 0 12px;"> Membres manquants (${missingRoles.length})</h3>`;
         reportHtml += `<ul style="margin:0;padding:0 0 0 20px;font-size:13px;color:#78350F;line-height:1.8;">`;
         missingRoles.forEach(r => {
           reportHtml += `<li style="margin-bottom:4px;">${ROLE_LABELS[r] || r}</li>`;
@@ -435,7 +435,7 @@ export default function DedicatedTreePage() {
       // Incomplete persons
       if (incompletePersons.length > 0) {
         reportHtml += `<div style="margin-bottom:20px;padding:20px;background:#FEE2E2;border-radius:14px;border:1px solid #FCA5A5;">`;
-        reportHtml += `<h3 style="font-size:15px;font-weight:800;color:#991B1B;margin:0 0 12px;">🔴 Fiches incomplètes (${incompletePersons.length})</h3>`;
+        reportHtml += `<h3 style="font-size:15px;font-weight:800;color:#991B1B;margin:0 0 12px;"> Fiches incomplètes (${incompletePersons.length})</h3>`;
         reportHtml += `<ul style="margin:0;padding:0 0 0 20px;font-size:13px;color:#7F1D1D;line-height:1.8;">`;
         incompletePersons.forEach(p => {
           const missing: string[] = [];
@@ -450,7 +450,7 @@ export default function DedicatedTreePage() {
       // All complete message
       if (missingRoles.length === 0 && incompletePersons.length === 0) {
         reportHtml += `<div style="padding:20px;background:#D1FAE5;border-radius:14px;border:1px solid #6EE7B7;">`;
-        reportHtml += `<p style="font-size:15px;font-weight:700;color:#065F46;margin:0;">✅ Arbre complet — Toutes les fiches sont renseignées</p>`;
+        reportHtml += `<p style="font-size:15px;font-weight:700;color:#065F46;margin:0;"> Arbre complet — Toutes les fiches sont renseignées</p>`;
         reportHtml += `</div>`;
       }
 
@@ -1522,7 +1522,7 @@ export default function DedicatedTreePage() {
                 {/* Title */}
                 <div>
                   <h2 className="text-lg font-black" style={{ color: 'var(--panel-text-heading)' }}>
-                    📊 Statistiques de l'arbre
+                     Statistiques de l'arbre
                   </h2>
                   <p className="text-xs" style={{ color: 'var(--panel-text-muted)' }}>
                     Vue d'ensemble de la famille de {tree?.client_first_name || 'l\'arbre'}
@@ -1533,8 +1533,8 @@ export default function DedicatedTreePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Membres', value: stats.total, icon: <Users size={18} />, color: '#008751' },
-                    { label: 'Hommes', value: stats.males, icon: <span className="text-lg">♂</span>, color: '#3B82F6' },
-                    { label: 'Femmes', value: stats.females, icon: <span className="text-lg">♀</span>, color: '#EC4899' },
+                    { label: 'Hommes', value: stats.males, icon: <span className="text-lg"></span>, color: '#3B82F6' },
+                    { label: 'Femmes', value: stats.females, icon: <span className="text-lg"></span>, color: '#EC4899' },
                     { label: 'Générations', value: stats.generationCount, icon: <TreeDeciduous size={18} />, color: '#8B5CF6' },
                   ].map(kpi => (
                     <div
@@ -1562,7 +1562,7 @@ export default function DedicatedTreePage() {
                   style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                 >
                   <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--panel-text-heading)' }}>
-                    📋 Complétude des données
+                     Complétude des données
                   </h3>
                   <div className="space-y-3">
                     {[
@@ -1598,7 +1598,7 @@ export default function DedicatedTreePage() {
                     style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                   >
                     <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--panel-text-heading)' }}>
-                      📍 Lieux les plus fréquents
+                       Lieux les plus fréquents
                     </h3>
                     <div className="space-y-2">
                       {stats.topPlaces.map((p, i) => (
@@ -1634,7 +1634,7 @@ export default function DedicatedTreePage() {
                     style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                   >
                     <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--panel-text-heading)' }}>
-                      👨‍👩‍👧‍👦 Fratrie du proposant
+                      ‍‍‍ Fratrie du proposant
                     </h3>
                     {selfSiblings.fullSiblings.length > 0 && (
                       <div className="mb-3">
@@ -1691,7 +1691,7 @@ export default function DedicatedTreePage() {
                       style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                     >
                       <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#8B5CF6' }}>
-                        🧓 Ancêtre le plus ancien
+                         Ancêtre le plus ancien
                       </p>
                       <p className="text-sm font-bold" style={{ color: 'var(--panel-text-heading)' }}>
                         {stats.oldest.first_name} {stats.oldest.last_name}
@@ -1708,7 +1708,7 @@ export default function DedicatedTreePage() {
                       style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                     >
                       <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#10B981' }}>
-                        👶 Membre le plus jeune
+                         Membre le plus jeune
                       </p>
                       <p className="text-sm font-bold" style={{ color: 'var(--panel-text-heading)' }}>
                         {stats.youngest.first_name} {stats.youngest.last_name}
@@ -1754,9 +1754,9 @@ export default function DedicatedTreePage() {
                       }}
                     >
                       {isBirth ? (
-                        <span className="text-[10px]" title="Naissance">👶</span>
+                        <span className="text-[10px]" title="Naissance"></span>
                       ) : (
-                        <span className="text-[10px]" title="Décès">✝️</span>
+                        <span className="text-[10px]" title="Décès"></span>
                       )}
                     </div>
 
@@ -1822,7 +1822,7 @@ export default function DedicatedTreePage() {
           <div className="max-w-2xl mx-auto space-y-6">
             <div>
               <h2 className="text-lg font-black" style={{ color: 'var(--panel-text-heading)' }}>
-                📅 Éphéméride & Anniversaires
+                 Éphéméride & Anniversaires
               </h2>
               <p className="text-xs" style={{ color: 'var(--panel-text-muted)' }}>
                 Prochains événements commémoratifs à venir dans l'année
@@ -1834,7 +1834,7 @@ export default function DedicatedTreePage() {
                 const p = anniv.person;
                 const isBirth = anniv.type === 'birth';
                 const formatDays = (days: number) => {
-                  if (days === 0) return "Aujourd'hui 🎉";
+                  if (days === 0) return "Aujourd'hui ";
                   if (days === 1) return "Demain";
                   return `Dans ${days} jours`;
                 };
@@ -1856,7 +1856,7 @@ export default function DedicatedTreePage() {
                           color: isBirth ? '#10B981' : '#6B7280',
                         }}
                       >
-                        {isBirth ? '🎂' : '🕯️'}
+                        {isBirth ? '' : ''}
                       </div>
                       <div>
                         <h4 className="text-xs font-bold text-white">

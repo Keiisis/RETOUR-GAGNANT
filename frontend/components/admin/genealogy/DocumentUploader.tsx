@@ -83,7 +83,7 @@ export default function DocumentUploader({
       if (insErr) throw insErr;
 
       onUploaded?.();
-      alert('Document téléversé et enregistré avec succès ! ✅');
+      alert('Document téléversé et enregistré avec succès ! ');
       
       // Reset inputs
       setIssuedDate('');

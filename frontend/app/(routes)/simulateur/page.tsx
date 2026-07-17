@@ -25,8 +25,8 @@ export default function SimulateurPage() {
             icon: Globe,
             options: [
                 { value: 'oui', label: t('Oui, origines béninoises'), emoji: '🇧🇯' },
-                { value: 'partiel', label: t('Liens familiaux / affectifs'), emoji: '💚' },
-                { value: 'non', label: t('Non, mais intéressé(e)'), emoji: '🌍' },
+                { value: 'partiel', label: t('Liens familiaux / affectifs'), emoji: '' },
+                { value: 'non', label: t('Non, mais intéressé(e)'), emoji: '' },
             ]
         },
         {
@@ -35,12 +35,12 @@ export default function SimulateurPage() {
             subtitle: t('Quel est votre objectif principal au Bénin ?'),
             icon: Target,
             options: [
-                { value: 'nationalite', label: t('Obtenir la nationalité'), emoji: '🛂' },
-                { value: 'investir', label: t('Investir au Bénin'), emoji: '📈' },
-                { value: 'construire', label: t('Construire une maison'), emoji: '🏗️' },
-                { value: 'business', label: t('Créer une entreprise'), emoji: '💼' },
-                { value: 'culture', label: t('Découvrir mes racines'), emoji: '🌳' },
-                { value: 'logement', label: t('Acheter / Louer un bien'), emoji: '🏠' },
+                { value: 'nationalite', label: t('Obtenir la nationalité'), emoji: '' },
+                { value: 'investir', label: t('Investir au Bénin'), emoji: '' },
+                { value: 'construire', label: t('Construire une maison'), emoji: '' },
+                { value: 'business', label: t('Créer une entreprise'), emoji: '' },
+                { value: 'culture', label: t('Découvrir mes racines'), emoji: '' },
+                { value: 'logement', label: t('Acheter / Louer un bien'), emoji: '' },
             ]
         },
         {
@@ -49,10 +49,10 @@ export default function SimulateurPage() {
             subtitle: t('Dans quel délai souhaitez-vous avancer ?'),
             icon: Calendar,
             options: [
-                { value: 'urgent', label: t('Dès que possible'), emoji: '⚡' },
-                { value: '6mois', label: t('Dans les 6 prochains mois'), emoji: '📅' },
-                { value: '1an', label: t("D'ici 1 an"), emoji: '🗓️' },
-                { value: 'exploration', label: t('Je suis en exploration'), emoji: '🔍' },
+                { value: 'urgent', label: t('Dès que possible'), emoji: '' },
+                { value: '6mois', label: t('Dans les 6 prochains mois'), emoji: '' },
+                { value: '1an', label: t("D'ici 1 an"), emoji: '' },
+                { value: 'exploration', label: t('Je suis en exploration'), emoji: '' },
             ]
         },
         {
@@ -61,10 +61,10 @@ export default function SimulateurPage() {
             subtitle: t('Quelle enveloppe avez-vous en tête ?'),
             icon: Wallet,
             options: [
-                { value: 'petit', label: t('Moins de 5M XOF'), emoji: '💰' },
-                { value: 'moyen', label: t('5M - 25M XOF'), emoji: '💰💰' },
-                { value: 'grand', label: t('25M - 100M XOF'), emoji: '💰💰💰' },
-                { value: 'illimite', label: t('Plus de 100M XOF'), emoji: '🏦' },
+                { value: 'petit', label: t('Moins de 5M XOF'), emoji: '' },
+                { value: 'moyen', label: t('5M - 25M XOF'), emoji: '' },
+                { value: 'grand', label: t('25M - 100M XOF'), emoji: '' },
+                { value: 'illimite', label: t('Plus de 100M XOF'), emoji: '' },
             ]
         },
         {
@@ -74,8 +74,8 @@ export default function SimulateurPage() {
             icon: Award,
             options: [
                 { value: 'jamais', label: t("Jamais, c'est ma première fois"), emoji: '🆕' },
-                { value: 'peu', label: t('Quelques tentatives'), emoji: '📝' },
-                { value: 'oui', label: t("Oui, j'ai de l'expérience"), emoji: '✅' },
+                { value: 'peu', label: t('Quelques tentatives'), emoji: '' },
+                { value: 'oui', label: t("Oui, j'ai de l'expérience"), emoji: '' },
             ]
         },
     ], [t])

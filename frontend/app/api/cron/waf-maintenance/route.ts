@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🛡️ CRON — Maintenance quotidienne du WAF
+//  CRON — Maintenance quotidienne du WAF
 // ──────────────────────────────────────────────────────────────
 // S'exécute chaque nuit via Vercel Cron (voir vercel.json).
 //
@@ -10,7 +10,7 @@
 //   • réhabilite graduellement les IP inactives + auto-unblock
 //   • RAFRAÎCHIT la vue matérialisée waf_threat_dashboard (sinon données figées)
 //
-// ⚠️ SUPABASE_SERVICE_ROLE_KEY requis (la fonction est SECURITY DEFINER,
+//  SUPABASE_SERVICE_ROLE_KEY requis (la fonction est SECURITY DEFINER,
 //    GRANT EXECUTE TO service_role).
 // ══════════════════════════════════════════════════════════════
 

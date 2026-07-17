@@ -28,10 +28,10 @@ interface TeamMember {
 }
 
 const team: TeamMember[] = [
-    { name: "Équipe Juridique", role: "Passeports & Documents", emoji: "⚖️" },
-    { name: "Équipe Immobilier", role: "Logement & Construction", emoji: "🏠" },
-    { name: "Équipe Business", role: "Investissement & Entreprise", emoji: "💼" },
-    { name: "Équipe Culture", role: "Guide & Accompagnement", emoji: "🌍" },
+    { name: "Équipe Juridique", role: "Passeports & Documents", emoji: "" },
+    { name: "Équipe Immobilier", role: "Logement & Construction", emoji: "" },
+    { name: "Équipe Business", role: "Investissement & Entreprise", emoji: "" },
+    { name: "Équipe Culture", role: "Guide & Accompagnement", emoji: "" },
 ];
 
 export default function AProposPage() {

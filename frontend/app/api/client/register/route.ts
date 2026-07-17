@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                         <p style="color:#9ca3af;margin-bottom:24px;">Bonjour ${prenom || nom || ''}, merci de vous être inscrit(e) sur Retour Gagnant Bénin.</p>
                         <p style="color:#d1d5db;margin-bottom:32px;">Pour activer votre compte et accéder à votre espace personnel, cliquez sur le bouton ci-dessous :</p>
                         <a href="${confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:15px;">
-                            ✅ Confirmer mon adresse email
+                             Confirmer mon adresse email
                         </a>
                         <p style="color:#6b7280;font-size:12px;margin-top:32px;">Ce lien est valable 24 heures. Si vous n'avez pas créé de compte, ignorez cet email.</p>
                         <p style="color:#6b7280;font-size:11px;margin-top:8px;">Ou copiez ce lien dans votre navigateur :<br><span style="color:#93c5fd;word-break:break-all;">${confirmUrl}</span></p>

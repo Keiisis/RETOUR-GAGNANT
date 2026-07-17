@@ -16,7 +16,7 @@ const PROVIDERS = [
     {
         id: 'groq',
         name: 'Groq',
-        logo: '⚡',
+        logo: '',
         color: '#f97316',
         description: 'Ultra-rapide, Llama 3.3',
         models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
@@ -24,7 +24,7 @@ const PROVIDERS = [
     {
         id: 'openai',
         name: 'OpenAI (GPT)',
-        logo: '🤖',
+        logo: '',
         color: '#10a37f',
         description: 'GPT-4o, GPT-4o-mini',
         models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
@@ -32,7 +32,7 @@ const PROVIDERS = [
     {
         id: 'anthropic',
         name: 'Claude AI',
-        logo: '🧠',
+        logo: '',
         color: '#d97706',
         description: 'Claude 3.5 Sonnet',
         models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'],
@@ -40,7 +40,7 @@ const PROVIDERS = [
     {
         id: 'google',
         name: 'Google Gemini',
-        logo: '💎',
+        logo: '',
         color: '#4285f4',
         description: 'Gemini 2.0 Flash',
         models: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
@@ -208,7 +208,7 @@ export default function AIConfigPage() {
                         )}
                         <div>
                             <h4 className={cn('font-bold text-sm mb-1', testResult.ok ? 'text-[#008751]' : 'text-red-400')}>
-                                {testResult.ok ? 'IA Opérationnelle ✓' : 'Erreur de connexion'}
+                                {testResult.ok ? 'IA Opérationnelle ' : 'Erreur de connexion'}
                             </h4>
                             <p className="text-gray-400 text-sm leading-relaxed">{testResult.message}</p>
                         </div>
@@ -372,7 +372,7 @@ export default function AIConfigPage() {
                                         'text-[10px] font-black uppercase px-2 py-0.5 rounded-full',
                                         form.api_key ? 'text-[#008751] bg-[#008751]/10' : 'text-red-400 bg-red-500/10'
                                     )}>
-                                        {form.api_key ? '✓ Configurée' : '✗ Manquante'}
+                                        {form.api_key ? ' Configurée' : ' Manquante'}
                                     </span>
                                 </div>
                             </div>

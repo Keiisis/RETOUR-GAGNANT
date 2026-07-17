@@ -103,7 +103,7 @@ export default function ClientSignaturePage() {
             if (!res.ok) throw new Error(data.error)
             setSignature(data.signature)
             setShowDraw(false)
-            toast('✓ Signature enregistrée avec succès')
+            toast(' Signature enregistrée avec succès')
         } catch (e) {
             toast(e instanceof Error ? e.message : 'Erreur lors de l\'enregistrement', 'error')
         } finally {

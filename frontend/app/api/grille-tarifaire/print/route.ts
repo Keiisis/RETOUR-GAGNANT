@@ -572,7 +572,7 @@ export async function GET(request: NextRequest) {
 </head>
 <body>
   <div class="actions">
-    <button class="btn btn-print" onclick="window.print()">🖨&nbsp; Télécharger / Imprimer la Grille</button>
+    <button class="btn btn-print" onclick="window.print()">&nbsp; Télécharger / Imprimer la Grille</button>
   </div>
   
   ${gridsHtml}

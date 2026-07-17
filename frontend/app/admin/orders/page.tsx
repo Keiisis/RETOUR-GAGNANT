@@ -285,7 +285,7 @@ export default function AdminOrdersPage() {
                                                 )}
                                                 {order.tracking_code && (
                                                     <p className="text-[9px] text-[#FCD116] font-mono mt-0.5 truncate">
-                                                        🚚 {order.tracking_code}
+                                                         {order.tracking_code}
                                                     </p>
                                                 )}
                                             </div>

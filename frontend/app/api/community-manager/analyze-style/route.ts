@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
             call_to_action_style: pass1.content_blueprint.cta_formulas.join(' / '),
         }
 
-        console.log(`[analyze-style] ✓ Deep Style DNA — score global: ${scores.overall}/100`)
+        console.log(`[analyze-style]  Deep Style DNA — score global: ${scores.overall}/100`)
         return NextResponse.json({ success: true, analysis, platform, profile_url })
     } catch (err) {
         console.error('[analyze-style] Error:', err)

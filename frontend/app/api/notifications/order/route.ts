@@ -139,7 +139,7 @@ export async function POST(request: Request) {
       title: type === 'payment_success'
         ? `Nouvelle commande payée - ${order.product_title}`
         : type === 'abandoned'
-        ? `⚠️ Panier abandonné - ${order.product_title}`
+        ? ` Panier abandonné - ${order.product_title}`
         : `Commande mise à jour - ${order.product_title}`,
       message: type === 'payment_success'
         ? `${order.customer_name} a payé ${formatPrice(order.amount)} ${order.currency || 'XOF'} pour "${order.product_title}" (x${order.quantity || 1}). Tel: ${order.customer_phone}`
@@ -179,7 +179,7 @@ export async function POST(request: Request) {
             subject: type === 'payment_success'
               ? `[${siteName}] Nouvelle commande - ${order.product_title}`
               : type === 'abandoned'
-              ? `[${siteName}] ⚠️ Panier abandonné - ${order.product_title}`
+              ? `[${siteName}]  Panier abandonné - ${order.product_title}`
               : `[${siteName}] Commande #${order_id.slice(0, 8)} mise a jour`,
             html: generateOrderEmailHTML(order, siteName, type, baseUrl),
           })
@@ -233,7 +233,7 @@ function generateOrderEmailHTML(order: Record<string, unknown>, siteName: string
       <img src="${logoUrl}" alt="${siteName}" width="52" height="52" style="border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,.3);" />
       <div>
         <div style="font-size:20px;font-weight:900;color:#fff;">${siteName}</div>
-        <div style="font-size:10px;color:#FCD116;text-transform:uppercase;letter-spacing:3px;margin-top:3px;">${type === 'payment_success' ? '🛒 Nouvelle commande reçue' : type === 'abandoned' ? '⚠️ Panier abandonné par le client' : 'Mise à jour commande'}</div>
+        <div style="font-size:10px;color:#FCD116;text-transform:uppercase;letter-spacing:3px;margin-top:3px;">${type === 'payment_success' ? ' Nouvelle commande reçue' : type === 'abandoned' ? ' Panier abandonné par le client' : 'Mise à jour commande'}</div>
       </div>
     </div>
     <div style="padding:32px 40px;">

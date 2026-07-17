@@ -281,7 +281,7 @@ export default function PlexiglasHorairesPage() {
 
             {/* Notes production */}
             <div className="rounded-xl bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-4">
-                <p className="text-[#C9A84C] font-bold text-sm mb-2">📐 Notes pour l&apos;imprimeur</p>
+                <p className="text-[#C9A84C] font-bold text-sm mb-2"> Notes pour l&apos;imprimeur</p>
                 <ul className="text-gray-400 text-xs space-y-1 list-disc list-inside">
                     <li>Le <strong className="text-white">contour bleu marine extérieur</strong> est le trait de découpe CNC/laser</li>
                     <li>Contient les <strong className="text-white">3 entités</strong> : R.G.B, O.H.T et A.C.S.T avec noms complets</li>

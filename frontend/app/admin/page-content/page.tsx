@@ -18,11 +18,11 @@ interface PageSection {
 }
 
 const PAGE_LABELS: Record<string, string> = {
-    'a-propos': '📄 À Propos',
-    'notre-histoire': '📜 Notre Histoire',
-    'contact': '📞 Contact',
-    'simulateur': '🔮 Simulateur Oracle',
-    'nationalite': '🌍 Nationalité (Formulaire)',
+    'a-propos': ' À Propos',
+    'notre-histoire': ' Notre Histoire',
+    'contact': ' Contact',
+    'simulateur': ' Simulateur Oracle',
+    'nationalite': ' Nationalité (Formulaire)',
 }
 
 export default function AdminPageContent() {

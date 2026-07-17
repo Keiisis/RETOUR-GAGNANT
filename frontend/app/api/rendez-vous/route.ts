@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
             // Notification WhatsApp automatique (no-op si non configuré)
             try {
                 await sendWhatsAppNotification(
-                    `📅 Nouveau RDV — Retour Gagnant\n` +
+                    ` Nouveau RDV — Retour Gagnant\n` +
                     `Client : ${clientName}\n` +
                     `Service : ${service || 'Consultation'}\n` +
                     `Tél : ${telephone || 'non communiqué'}\n` +

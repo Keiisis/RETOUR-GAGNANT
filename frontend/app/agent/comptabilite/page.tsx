@@ -885,7 +885,7 @@ export default function AgentComptabilitePage() {
                                             <td className="py-4 px-6 text-right font-mono text-sm">
                                                 {tx.type === 'facture' ? (
                                                     <span className={solde > 0 ? 'text-amber-400 font-bold' : 'text-gray-600'}>
-                                                        {solde > 0 ? formatCurrency(solde) : '✓ Soldé'}
+                                                        {solde > 0 ? formatCurrency(solde) : ' Soldé'}
                                                     </span>
                                                 ) : <span className="text-gray-600">—</span>}
                                             </td>

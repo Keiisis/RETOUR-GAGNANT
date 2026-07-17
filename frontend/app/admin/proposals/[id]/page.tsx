@@ -40,12 +40,12 @@ interface Proposal {
 }
 
 const TYPE_OPTIONS = [
-    { value: 'hero', label: '✨ Accueil (Hero)', color: '#FCD116' },
-    { value: 'hotel', label: '🏨 Hébergement', color: '#38BDF8' },
-    { value: 'restaurant', label: '🍽️ Restaurant', color: '#FB923C' },
-    { value: 'activity', label: '🎯 Activité / Visite', color: '#34D399' },
-    { value: 'transport', label: '🚗 Transport', color: '#A78BFA' },
-    { value: 'pricing', label: '💰 Récapitulatif', color: '#FCD116' },
+    { value: 'hero', label: ' Accueil (Hero)', color: '#FCD116' },
+    { value: 'hotel', label: ' Hébergement', color: '#38BDF8' },
+    { value: 'restaurant', label: ' Restaurant', color: '#FB923C' },
+    { value: 'activity', label: ' Activité / Visite', color: '#34D399' },
+    { value: 'transport', label: ' Transport', color: '#A78BFA' },
+    { value: 'pricing', label: ' Récapitulatif', color: '#FCD116' },
 ]
 
 export default function AdminPresentationEditor({ params }: { params: Promise<{ id: string }> }) {
@@ -258,7 +258,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                     <div>
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Statut</p>
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${proposal.status === 'paid' ? 'bg-[#008751]/20 text-[#008751]' : proposal.status === 'ready' ? 'bg-[#FCD116]/20 text-[#FCD116]' : 'bg-slate-800 text-slate-300'}`}>
-                            {proposal.status === 'paid' ? '✅ Payé' : proposal.status === 'ready' ? '📨 Prêt' : '⏳ Brouillon'}
+                            {proposal.status === 'paid' ? ' Payé' : proposal.status === 'ready' ? ' Prêt' : '⏳ Brouillon'}
                         </span>
                     </div>
                     <div>

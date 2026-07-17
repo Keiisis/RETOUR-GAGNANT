@@ -33,12 +33,12 @@ interface BlogPost {
 }
 
 const CATEGORIES = [
-    { value: 'general', label: 'Général', icon: '📰' },
-    { value: 'citoyennete', label: 'Citoyenneté', icon: '🏛️' },
-    { value: 'investissement', label: 'Investissement', icon: '💰' },
-    { value: 'immobilier', label: 'Immobilier', icon: '🏠' },
-    { value: 'culture', label: 'Culture', icon: '🎭' },
-    { value: 'business', label: 'Business', icon: '💼' },
+    { value: 'general', label: 'Général', icon: '' },
+    { value: 'citoyennete', label: 'Citoyenneté', icon: '' },
+    { value: 'investissement', label: 'Investissement', icon: '' },
+    { value: 'immobilier', label: 'Immobilier', icon: '' },
+    { value: 'culture', label: 'Culture', icon: '' },
+    { value: 'business', label: 'Business', icon: '' },
 ]
 
 // Markdown toolbar actions
@@ -603,7 +603,7 @@ export default function AdminBlogPage() {
                                                         folder="content"
                                                         accept="image"
                                                         maxSizeMB={10}
-                                                        label="📷 Image"
+                                                        label=" Image"
                                                     />
                                                     <MediaUpload
                                                         value=""
@@ -612,7 +612,7 @@ export default function AdminBlogPage() {
                                                         folder="content"
                                                         accept="video"
                                                         maxSizeMB={50}
-                                                        label="🎬 Vidéo"
+                                                        label=" Vidéo"
                                                     />
                                                 </div>
                                             </div>

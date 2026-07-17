@@ -131,7 +131,7 @@ async function handleContact(req: NextRequest) {
             // Notification WhatsApp automatique (no-op si non configuré)
             try {
                 await sendWhatsAppNotification(
-                    `🔔 Nouveau message de contact — Retour Gagnant\n` +
+                    ` Nouveau message de contact — Retour Gagnant\n` +
                     `De : ${clientName}\n` +
                     `Email : ${email}\n` +
                     `Sujet : ${sujet || 'Contact'}\n` +

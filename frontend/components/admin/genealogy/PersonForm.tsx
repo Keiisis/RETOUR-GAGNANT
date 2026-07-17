@@ -361,7 +361,7 @@ export default function PersonForm({
         .getPublicUrl(fileName);
 
       set('avatar_url', publicUrl);
-      flash('Photo téléchargée avec succès ! 📸', true);
+      flash('Photo téléchargée avec succès ! ', true);
     } catch (err: any) {
       flash('Erreur photo : ' + err.message, false);
     } finally {

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 📊 CRON — Rapport KPI Hebdomadaire (chaque samedi à 10h, heure Bénin)
+//  CRON — Rapport KPI Hebdomadaire (chaque samedi à 10h, heure Bénin)
 // Destinataires : contact@retourgagnantbenin.bj + pdg.retourgagnantbenin@gmail.com
 // Contenu : visiteurs de la semaine (volume + évolution vs semaine
 // précédente), localisations, pages consultées, appareils et sources,

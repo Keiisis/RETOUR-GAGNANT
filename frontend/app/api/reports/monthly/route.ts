@@ -240,10 +240,10 @@ export async function GET(request: Request) {
 
         const summaryData = [
             ['Type', 'Nombre', 'Montant Total', 'Statut principal'],
-            ['Factures payées', String(facturesPaye.length), `${fmtN(caTotal)} FCFA`, '✅ Encaissé'],
+            ['Factures payées', String(facturesPaye.length), `${fmtN(caTotal)} FCFA`, ' Encaissé'],
             ['Factures impayées', String(facturesImpayees.length), `${fmtN(montantImpaye)} FCFA`, '⏳ En attente'],
             ['Devis émis', String(devis.length), `${fmtN(montantDevis)} FCFA`, `${tauxConversion}% acceptés`],
-            ['Devis acceptés', String(devisAcceptes.length), `${fmtN(montantDevisAcceptes)} FCFA`, '✅ Convertis'],
+            ['Devis acceptés', String(devisAcceptes.length), `${fmtN(montantDevisAcceptes)} FCFA`, ' Convertis'],
             ['TOTAL documents', String(docs.length), `${fmtN(caTotal + montantImpaye + montantDevis)} FCFA`, ''],
         ]
 
@@ -334,7 +334,7 @@ export async function GET(request: Request) {
             y += 6
 
             const statusLabels: Record<string, string> = {
-                paye: 'Payé ✅',
+                paye: 'Payé ',
                 accepte: 'Accepté',
                 envoye: 'Envoyé',
                 brouillon: 'Brouillon',

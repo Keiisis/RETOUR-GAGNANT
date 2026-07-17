@@ -178,7 +178,7 @@ export default function CeoCommandes() {
                         className="w-full max-w-md rounded-3xl p-6" style={{ background: '#0D2615', border: `1px solid ${GOLD}30` }}>
                         <div className="flex items-center justify-between mb-5">
                             <h3 className="font-black" style={{ color: GOLD }}>Détail commande</h3>
-                            <button onClick={() => setSelected(null)} className="opacity-40 hover:opacity-70 transition-opacity">✕</button>
+                            <button onClick={() => setSelected(null)} className="opacity-40 hover:opacity-70 transition-opacity"></button>
                         </div>
                         {[
                             ['ID', selected.id],

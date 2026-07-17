@@ -78,7 +78,7 @@ export async function POST(request: Request) {
                         { id: 1, label: 'Demande soumise', status: 'completed', date: natData.submitted_at, note: 'Votre demande a été reçue et enregistrée.' },
                         { id: 2, label: 'Vérification des documents', status: 'completed', date: natData.submitted_at, note: 'Pièces justificatives validées.' },
                         { id: 3, label: 'Examen du dossier', status: 'completed', date: natData.decision_date || null, note: 'Dossier examiné et validé.' },
-                        { id: 4, label: 'Décision finale — Approuvé', status: 'completed', date: natData.decision_date || null, note: 'Félicitations ! Votre demande de nationalité a été approuvée. 🎉' },
+                        { id: 4, label: 'Décision finale — Approuvé', status: 'completed', date: natData.decision_date || null, note: 'Félicitations ! Votre demande de nationalité a été approuvée. ' },
                     ]
                 },
                 'rejeté': {

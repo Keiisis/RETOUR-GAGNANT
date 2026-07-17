@@ -8,8 +8,8 @@ export async function GET() {
     const report: Record<string, unknown> = {
         timestamp: new Date().toISOString(),
         env: {
-            supabaseUrl: supabaseUrl ? '✓ défini' : '✗ MANQUANT',
-            serviceKey: supabaseServiceKey ? '✓ défini' : '✗ MANQUANT',
+            supabaseUrl: supabaseUrl ? ' défini' : ' MANQUANT',
+            serviceKey: supabaseServiceKey ? ' défini' : ' MANQUANT',
         }
     }
 
@@ -27,10 +27,10 @@ export async function GET() {
             .limit(1)
 
         report.column_last_seen_at = colErr
-            ? `✗ ERREUR: ${colErr.message}`
-            : '✓ colonne existe'
+            ? ` ERREUR: ${colErr.message}`
+            : ' colonne existe'
     } catch (e) {
-        report.column_last_seen_at = `✗ EXCEPTION: ${e}`
+        report.column_last_seen_at = ` EXCEPTION: ${e}`
     }
 
     // 2. Lister tous les agents/admins avec leur last_seen_at
@@ -41,7 +41,7 @@ export async function GET() {
             .in('role', ['agent', 'admin'])
 
         if (agentsErr) {
-            report.agents = `✗ ERREUR: ${agentsErr.message}`
+            report.agents = ` ERREUR: ${agentsErr.message}`
         } else {
             report.agents = agents?.map(a => ({
                 name: a.full_name,
@@ -55,7 +55,7 @@ export async function GET() {
             report.total_agents = agents?.length || 0
         }
     } catch (e) {
-        report.agents = `✗ EXCEPTION: ${e}`
+        report.agents = ` EXCEPTION: ${e}`
     }
 
     // 3. Vérifier la fenêtre 5 minutes
@@ -68,11 +68,11 @@ export async function GET() {
             .gte('last_seen_at', fiveMinutesAgo)
 
         report.online_last_5min = onlineErr
-            ? `✗ ERREUR: ${onlineErr.message}`
+            ? ` ERREUR: ${onlineErr.message}`
             : online?.length || 0
         report.five_min_threshold = fiveMinutesAgo
     } catch (e) {
-        report.online_last_5min = `✗ EXCEPTION: ${e}`
+        report.online_last_5min = ` EXCEPTION: ${e}`
     }
 
     // 4. Test d'un UPDATE simulé (sans userId réel — just schema check)
@@ -83,10 +83,10 @@ export async function GET() {
             .eq('id', '00000000-0000-0000-0000-000000000000') // ID inexistant volontairement
 
         report.update_schema_check = schemaErr
-            ? `✗ ERREUR SCHEMA: ${schemaErr.message}`
-            : '✓ schéma OK (0 lignes affectées — normal, ID fictif)'
+            ? ` ERREUR SCHEMA: ${schemaErr.message}`
+            : ' schéma OK (0 lignes affectées — normal, ID fictif)'
     } catch (e) {
-        report.update_schema_check = `✗ EXCEPTION: ${e}`
+        report.update_schema_check = ` EXCEPTION: ${e}`
     }
 
     return NextResponse.json(report, { status: 200 })

@@ -259,8 +259,8 @@ export default function InventoryPage() {
                             className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 appearance-none font-bold w-full sm:w-auto"
                         >
                             <option value="all">Tous les articles</option>
-                            <option value="boutique">🛒 Boutique uniquement</option>
-                            <option value="inventory">📦 ERP uniquement</option>
+                            <option value="boutique"> Boutique uniquement</option>
+                            <option value="inventory"> ERP uniquement</option>
                             <option value="physical">Produits Physiques</option>
                             <option value="service">Services</option>
                             <option value="digital">Biens Numériques</option>

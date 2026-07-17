@@ -13,7 +13,7 @@ import { useTheme } from '@/lib/theme/ThemeContext';
    
    Architecture de rendu :
    - Chaque génération est une ligne horizontale
-   - Les couples sont liés par un nœud mariage (♥)
+   - Les couples sont liés par un nœud mariage ()
    - Les enfants descendent depuis le nœud mariage
    - Courbes de Bézier pour les connexions
    - Design premium avec dégradés et animations
@@ -868,7 +868,7 @@ export default function FamilyTree({
                     fontSize="15"
                     fill="#FCD116"
                   >
-                    ♥
+                    
                   </text>
                 </g>
               )}

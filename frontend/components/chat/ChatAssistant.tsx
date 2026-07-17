@@ -112,7 +112,7 @@ export default function ChatAssistant() {
     const sendVoiceMessage = useCallback(async (transcript: string, duration: number) => {
         if (!transcript.trim()) return;
 
-        const voiceContent = `🎙️ [Message vocal — ${duration}s] : ${transcript.trim()}`;
+        const voiceContent = ` [Message vocal — ${duration}s] : ${transcript.trim()}`;
 
         setInput("");
         setMessages((prev) => [...prev, { role: "user", content: voiceContent }]);
@@ -450,7 +450,7 @@ export default function ChatAssistant() {
                                             type="text"
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
-                                            placeholder={isRecording ? t("🎙️ Parlez maintenant...") : t("Posez votre question...")}
+                                            placeholder={isRecording ? t(" Parlez maintenant...") : t("Posez votre question...")}
                                             className="flex-1 px-5 py-3.5 rounded-xl bg-[#f8f9fc] border border-black/5 text-[14px] focus:outline-none focus:border-[#008751] transition-colors"
                                             disabled={isLoading || isRecording}
                                         />

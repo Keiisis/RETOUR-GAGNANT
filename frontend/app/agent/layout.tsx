@@ -142,7 +142,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
             // Browser desktop notification
             if ('Notification' in window && Notification.permission === 'granted') {
-                const notif = new Notification('💬 Nouveau message — Retour Gagnant', {
+                const notif = new Notification(' Nouveau message — Retour Gagnant', {
                     body: `Vous avez ${unreadMessages} message(s) en attente.`,
                     icon: '/logo.jpg',
                     tag: 'rg-new-message',

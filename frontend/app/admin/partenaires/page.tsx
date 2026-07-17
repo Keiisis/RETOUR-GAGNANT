@@ -457,7 +457,7 @@ export default function AdminPartenaires() {
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="font-bold text-sm text-white">{p.name}</p>
-                                                {p.is_premium && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FCD116]/15 text-[#FCD116] border border-[#FCD116]/25 font-black uppercase"><T>★ PREMIUM</T></span>}
+                                                {p.is_premium && <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FCD116]/15 text-[#FCD116] border border-[#FCD116]/25 font-black uppercase"><T> PREMIUM</T></span>}
                                                 {!p.is_active && <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 font-black uppercase"><T>INACTIF</T></span>}
                                             </div>
                                             <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">

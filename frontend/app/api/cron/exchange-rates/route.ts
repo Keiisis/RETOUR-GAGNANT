@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 💱 CRON — Rafraîchissement des taux de change réels
+//  CRON — Rafraîchissement des taux de change réels
 // ──────────────────────────────────────────────────────────────
 // S'exécute chaque nuit via Vercel Cron (voir vercel.json).
 //

@@ -57,7 +57,7 @@ function formatPage(page: string): string {
     return page.replace(/^\//, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-const DEVICE_EMOJI: Record<string, string> = { mobile: '📱', tablet: '📲', desktop: '🖥️' }
+const DEVICE_EMOJI: Record<string, string> = { mobile: '', tablet: '', desktop: '' }
 
 const WorldMap = memo(function WorldMap({ sessions }: { sessions: Session[] }) {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null)
@@ -160,7 +160,7 @@ const WorldMap = memo(function WorldMap({ sessions }: { sessions: Session[] }) {
                     )}
                     <div className="border-t border-white/10 mt-1.5 pt-1.5 space-y-0.5">
                         <p className="text-gray-400 text-[10px]">{DEVICE_EMOJI[tooltip.device_type]} {tooltip.browser}</p>
-                        <p className="text-purple-400 text-[10px]">📄 {tooltip.page}</p>
+                        <p className="text-purple-400 text-[10px]"> {tooltip.page}</p>
                     </div>
                 </motion.div>
             )}

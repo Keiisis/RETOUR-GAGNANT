@@ -156,7 +156,7 @@ export default function AdminGenealogyPage() {
 
       if (pErr) throw pErr;
 
-      alert('Arbre client créé avec succès ! 🌳');
+      alert('Arbre client créé avec succès ! ');
       setNewClient({ first_name: '', last_name: '', email: '', tree_name: '', user_id: '' });
       setShowCreateForm(false);
       loadAllTrees(true);
@@ -196,7 +196,7 @@ export default function AdminGenealogyPage() {
         await supabase.from('persons').update({ user_id: userId || null }).eq('id', selfPerson.id);
       }
 
-      alert('Compte client associé avec succès ! 🔗');
+      alert('Compte client associé avec succès ! ');
       setSelectedTree({ ...selectedTree, user_id: userId || null });
       loadTreeDetails({ ...selectedTree, user_id: userId || null }, true);
     } catch (err: any) {
@@ -225,7 +225,7 @@ export default function AdminGenealogyPage() {
       const { error } = await supabase.from('persons').delete().eq('id', id);
       if (error) throw error;
       
-      alert('Parent retiré avec succès 🗑️');
+      alert('Parent retiré avec succès ');
       setSelectedPerson(null);
       if (selectedTree) loadTreeDetails(selectedTree, true);
     } catch (err: any) {

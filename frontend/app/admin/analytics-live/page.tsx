@@ -77,7 +77,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
     PT: '🇵🇹', NL: '🇳🇱', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', CM2: '🇨🇲',
     CD: '🇨🇩', GA: '🇬🇦', MR: '🇲🇷', NE: '🇳🇪', XX: '🌍',
 }
-const getFlag = (code: string) => COUNTRY_FLAGS[code] || '🌍'
+const getFlag = (code: string) => COUNTRY_FLAGS[code] || ''
 
 const DEVICE_ICONS = { mobile: Smartphone, tablet: Tablet, desktop: Monitor }
 const DEVICE_COLORS = { mobile: '#818cf8', tablet: '#34d399', desktop: '#60a5fa' }
@@ -95,7 +95,7 @@ function timeAgo(iso: string): string {
 }
 
 function formatPage(page: string): string {
-    if (page === '/' || page === '') return '🏠 Accueil'
+    if (page === '/' || page === '') return ' Accueil'
     return page.replace(/^\//, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 

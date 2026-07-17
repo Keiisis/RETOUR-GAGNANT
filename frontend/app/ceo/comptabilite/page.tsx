@@ -615,7 +615,7 @@ export default function CeoComptabilite() {
                         className="px-4 py-2 rounded-xl text-sm font-semibold bg-white border"
                         style={{ borderColor: `${GOLD}30`, color: TEXT }}
                     >
-                        <option value="all">🌍 Tous les agents</option>
+                        <option value="all"> Tous les agents</option>
                         {agents.filter(a => a.role === 'agent').map(a => (
                             <option key={a.id} value={a.id}>{a.full_name || a.id.slice(0, 8)}</option>
                         ))}

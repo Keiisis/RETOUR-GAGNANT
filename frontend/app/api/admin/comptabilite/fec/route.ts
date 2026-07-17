@@ -156,7 +156,7 @@ async function buildFecWorkbook(
         ["Nombre d'écritures (lignes)", rows.length],
         ['Total Débit (XOF)', balance.debit],
         ['Total Crédit (XOF)', balance.credit],
-        ['Équilibre débit / crédit', balance.balanced ? 'ÉQUILIBRÉ ✓' : 'DÉSÉQUILIBRÉ — à vérifier'],
+        ['Équilibre débit / crédit', balance.balanced ? 'ÉQUILIBRÉ ' : 'DÉSÉQUILIBRÉ — à vérifier'],
     ]
     let r = 5
     for (const [k, v] of synRows) {

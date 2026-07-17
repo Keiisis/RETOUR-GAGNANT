@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔄 CRON — Cycle de vie des données sensibles
+//  CRON — Cycle de vie des données sensibles
 // Déclenché chaque nuit à 02h00 UTC
 // 1. Suppression automatique des fichiers sensibles traités
 // 2. Nettoyage des logs WAF anciens (> 90 jours)
@@ -46,9 +46,9 @@ async function runLifecycle() {
 
     if (!docsErr && deletedDocs) {
         totalDeleted += deletedDocs.length
-        report.push(`✅ Documents traités supprimés : <strong>${deletedDocs.length}</strong> (> ${SENSITIVE_DOC_RETENTION_DAYS}j)`)
+        report.push(` Documents traités supprimés : <strong>${deletedDocs.length}</strong> (> ${SENSITIVE_DOC_RETENTION_DAYS}j)`)
     } else if (docsErr) {
-        report.push(`⚠️ Erreur suppression documents : ${docsErr.message}`)
+        report.push(` Erreur suppression documents : ${docsErr.message}`)
     }
 
     // ── 2. Supprimer les métadonnées de fichiers chiffrés orphelins ──
@@ -60,7 +60,7 @@ async function runLifecycle() {
         .select('id')
 
     if (deletedEncFiles?.length) {
-        report.push(`✅ Fichiers chiffrés orphelins supprimés : <strong>${deletedEncFiles.length}</strong>`)
+        report.push(` Fichiers chiffrés orphelins supprimés : <strong>${deletedEncFiles.length}</strong>`)
     }
 
     // ── 2bis. Purger les prospects/leads non convertis (> 3 ans, reco CNIL) ──
@@ -74,7 +74,7 @@ async function runLifecycle() {
                 .select('id')
             if (del?.length) {
                 totalDeleted += del.length
-                report.push(`✅ Prospects « ${table} » supprimés : <strong>${del.length}</strong> (> 3 ans)`)
+                report.push(` Prospects « ${table} » supprimés : <strong>${del.length}</strong> (> 3 ans)`)
             }
         } catch { /* table absente : ignorer silencieusement */ }
     }
@@ -88,7 +88,7 @@ async function runLifecycle() {
 
     if (wafDeleted) {
         totalDeleted += wafDeleted
-        report.push(`✅ Logs WAF purgés : <strong>${wafDeleted}</strong> (> ${WAF_LOG_RETENTION_DAYS}j)`)
+        report.push(` Logs WAF purgés : <strong>${wafDeleted}</strong> (> ${WAF_LOG_RETENTION_DAYS}j)`)
     }
 
     // ── 4. Purger les IPs débloquées depuis > 30j ─────────────
@@ -100,7 +100,7 @@ async function runLifecycle() {
         .lt('unblocked_at', ipThreshold.toISOString())
 
     if (ipDeleted) {
-        report.push(`✅ Historique IP purgé : <strong>${ipDeleted}</strong> entrées`)
+        report.push(` Historique IP purgé : <strong>${ipDeleted}</strong> entrées`)
     }
 
     // ── 5. Statistiques du jour ───────────────────────────────
@@ -152,14 +152,14 @@ async function runLifecycle() {
     <body style="background:#0f172a;font-family:Arial,sans-serif;margin:0;padding:20px">
         <div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden">
             <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);padding:20px 24px">
-                <h1 style="color:#0f172a;margin:0;font-size:18px">🛡️ Rapport Quotidien — Sécurité & Données</h1>
+                <h1 style="color:#0f172a;margin:0;font-size:18px"> Rapport Quotidien — Sécurité & Données</h1>
                 <p style="color:#0f172a;margin:4px 0 0;font-size:13px;opacity:0.8">Retour Gagnant Bénin · ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
             <div style="padding:24px">
-                <h2 style="color:#f59e0b;font-size:15px;margin:0 0 12px">📊 Activité des 24 dernières heures</h2>
+                <h2 style="color:#f59e0b;font-size:15px;margin:0 0 12px"> Activité des 24 dernières heures</h2>
                 ${statsHtml}
 
-                <h2 style="color:#f59e0b;font-size:15px;margin:20px 0 8px">🧹 Nettoyage automatique</h2>
+                <h2 style="color:#f59e0b;font-size:15px;margin:20px 0 8px"> Nettoyage automatique</h2>
                 ${cleanupHtml}
 
                 <div style="margin-top:20px;padding:12px;background:#0f172a;border-radius:8px;border-left:3px solid #f59e0b">

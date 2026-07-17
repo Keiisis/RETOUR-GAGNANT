@@ -190,12 +190,12 @@ const formatDateTimeSafe = (val: any, mounted: boolean = true) => {
 }
 
 const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string; placeholder?: string }> = {
-    facebook:    { label: 'Facebook',     color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20',   icon: '📘', placeholder: 'https://www.facebook.com/nomDeLaPage' },
-    instagram:   { label: 'Instagram',    color: 'text-pink-400',   bg: 'bg-pink-500/10 border-pink-500/20',   icon: '📸', placeholder: 'https://www.instagram.com/username' },
-    tiktok:      { label: 'TikTok',       color: 'text-cyan-400',   bg: 'bg-cyan-500/10 border-cyan-500/20',   icon: '🎵', placeholder: 'https://www.tiktok.com/@username' },
-    twitter:     { label: 'X / Twitter',  color: 'text-gray-300',   bg: 'bg-gray-500/10 border-gray-500/20',   icon: '🐦', placeholder: 'https://twitter.com/username' },
-    google_maps: { label: 'Google Maps',  color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', icon: '📍', placeholder: 'https://maps.google.com/?cid=... ou nom du lieu' },
-    linkedin:    { label: 'LinkedIn',     color: 'text-blue-300',   bg: 'bg-blue-400/10 border-blue-400/20',   icon: '💼', placeholder: 'https://www.linkedin.com/company/nom' },
+    facebook:    { label: 'Facebook',     color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20',   icon: '', placeholder: 'https://www.facebook.com/nomDeLaPage' },
+    instagram:   { label: 'Instagram',    color: 'text-pink-400',   bg: 'bg-pink-500/10 border-pink-500/20',   icon: '', placeholder: 'https://www.instagram.com/username' },
+    tiktok:      { label: 'TikTok',       color: 'text-cyan-400',   bg: 'bg-cyan-500/10 border-cyan-500/20',   icon: '', placeholder: 'https://www.tiktok.com/@username' },
+    twitter:     { label: 'X / Twitter',  color: 'text-gray-300',   bg: 'bg-gray-500/10 border-gray-500/20',   icon: '', placeholder: 'https://twitter.com/username' },
+    google_maps: { label: 'Google Maps',  color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', icon: '', placeholder: 'https://maps.google.com/?cid=... ou nom du lieu' },
+    linkedin:    { label: 'LinkedIn',     color: 'text-blue-300',   bg: 'bg-blue-400/10 border-blue-400/20',   icon: '', placeholder: 'https://www.linkedin.com/company/nom' },
 }
 
 const ENGAGEMENT_COLOR: Record<string, string> = {
@@ -207,7 +207,7 @@ const ENGAGEMENT_COLOR: Record<string, string> = {
 }
 
 function PlatformBadge({ platform }: { platform: string }) {
-    const cfg = PLATFORM_CONFIG[platform] || { label: platform, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/20', icon: '🌐' }
+    const cfg = PLATFORM_CONFIG[platform] || { label: platform, color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/20', icon: '' }
     return (
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.color}`}>
             {cfg.icon} {cfg.label}
@@ -589,11 +589,11 @@ function VeilleTab({
                         </h2>
                         <div className="flex flex-col items-end gap-1">
                             <span className="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded-full">
-                                via {scrapedData.method === 'apify' ? '🤖 Apify' : '🔍 Serper (fallback)'}
+                                via {scrapedData.method === 'apify' ? ' Apify' : ' Serper (fallback)'}
                             </span>
                             {scrapedData.apifyError && (
                                 <span className="text-[10px] text-orange-400/60 max-w-xs text-right" title={scrapedData.apifyError}>
-                                    ⚠ Apify: {scrapedData.apifyError.substring(0, 60)}...
+                                     Apify: {scrapedData.apifyError.substring(0, 60)}...
                                 </span>
                             )}
                         </div>
@@ -653,10 +653,10 @@ function VeilleTab({
                     {/* Stats engagement */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                            { label: 'Moy. Likes', value: activeDossier.stats.avg_likes.toLocaleString(), color: 'text-blue-400', icon: '👍' },
-                            { label: 'Moy. Commentaires', value: activeDossier.stats.avg_comments.toLocaleString(), color: 'text-yellow-400', icon: '💬' },
-                            { label: 'Moy. Partages', value: activeDossier.stats.avg_shares.toLocaleString(), color: 'text-pink-400', icon: '🔁' },
-                            { label: 'Engagement', value: activeDossier.stats.engagement_level, color: activeDossier.stats.engagement_level === 'viral' ? 'text-yellow-400' : activeDossier.stats.engagement_level === 'élevé' ? 'text-emerald-400' : 'text-orange-400', icon: '📊' },
+                            { label: 'Moy. Likes', value: activeDossier.stats.avg_likes.toLocaleString(), color: 'text-blue-400', icon: '' },
+                            { label: 'Moy. Commentaires', value: activeDossier.stats.avg_comments.toLocaleString(), color: 'text-yellow-400', icon: '' },
+                            { label: 'Moy. Partages', value: activeDossier.stats.avg_shares.toLocaleString(), color: 'text-pink-400', icon: '' },
+                            { label: 'Engagement', value: activeDossier.stats.engagement_level, color: activeDossier.stats.engagement_level === 'viral' ? 'text-yellow-400' : activeDossier.stats.engagement_level === 'élevé' ? 'text-emerald-400' : 'text-orange-400', icon: '' },
                         ].map(s => (
                             <div key={s.label} className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
                                 <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wider mb-1">{s.icon} {s.label}</p>
@@ -667,7 +667,7 @@ function VeilleTab({
 
                     {/* Formule virale + style */}
                     <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-5">
-                        <p className="text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-2">✨ Formule Virale Détectée</p>
+                        <p className="text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-2"> Formule Virale Détectée</p>
                         <p className="text-white font-bold text-base">{activeDossier.style.viral_formula || 'Non détectée'}</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                             {[
@@ -698,10 +698,10 @@ function VeilleTab({
                                             <p className="text-gray-300 text-xs line-clamp-2">{post.text || post.url}</p>
                                             <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-600">
                                                 {post.stars !== undefined && post.stars > 0 && <span className="text-yellow-400">{'⭐'.repeat(Math.round(post.stars))} {post.stars}/5</span>}
-                                                {post.likes > 0 && <span>👍 {post.likes.toLocaleString()}</span>}
-                                                {post.comments > 0 && <span>💬 {post.comments.toLocaleString()}</span>}
-                                                {post.shares > 0 && <span>🔁 {post.shares.toLocaleString()}</span>}
-                                                {(post.views ?? 0) > 0 && <span>👁 {(post.views ?? 0).toLocaleString()}</span>}
+                                                {post.likes > 0 && <span> {post.likes.toLocaleString()}</span>}
+                                                {post.comments > 0 && <span> {post.comments.toLocaleString()}</span>}
+                                                {post.shares > 0 && <span> {post.shares.toLocaleString()}</span>}
+                                                {(post.views ?? 0) > 0 && <span> {(post.views ?? 0).toLocaleString()}</span>}
                                                 <span className="text-emerald-400 font-bold">Score: {post.viral_score}/100</span>
                                                 {post.url && <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300"><ExternalLink size={10} /></a>}
                                             </div>
@@ -740,7 +740,7 @@ function VeilleTab({
                     {/* Hooks Masterclass (v3) */}
                     {activeDossier.style_dna?.hooks_masterclass && activeDossier.style_dna.hooks_masterclass.length > 0 && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                            <p className="text-yellow-400 text-xs font-bold mb-3 flex items-center gap-2">🎣 Hooks Masterclass</p>
+                            <p className="text-yellow-400 text-xs font-bold mb-3 flex items-center gap-2"> Hooks Masterclass</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {activeDossier.style_dna.hooks_masterclass.map((h, i) => (
                                     <div key={i} className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
@@ -855,7 +855,7 @@ function VeilleTab({
                         <pre className="text-gray-500 text-[11px] font-mono leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap bg-black/20 rounded-lg p-3 border border-white/5">
                             {activeDossier.claude_prompt.slice(0, 1000)}...
                         </pre>
-                        <p className="text-gray-600 text-[10px] mt-2">💡 Copiez ce prompt dans Claude.ai, ChatGPT ou Gemini avec le JSON pour générer du contenu optimisé qui surpasse ce concurrent.</p>
+                        <p className="text-gray-600 text-[10px] mt-2"> Copiez ce prompt dans Claude.ai, ChatGPT ou Gemini avec le JSON pour générer du contenu optimisé qui surpasse ce concurrent.</p>
                     </div>
                 </motion.div>
             )}
@@ -954,7 +954,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                         placeholder="Collez ici plusieurs publications du profil que vous souhaitez analyser...&#10;&#10;Exemple :&#10;---&#10;Publication 1&#10;---&#10;Publication 2&#10;---"
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600 resize-none"
                     />
-                    <p className="text-gray-600 text-xs mt-1">{samples.length} caractères — {samples.length < 50 ? `encore ${50 - samples.length} min` : '✓ prêt à analyser'}</p>
+                    <p className="text-gray-600 text-xs mt-1">{samples.length} caractères — {samples.length < 50 ? `encore ${50 - samples.length} min` : ' prêt à analyser'}</p>
                 </div>
                 {error && (
                     <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center gap-2">
@@ -1039,7 +1039,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                     {/* Hooks Masterclass */}
                     {analysis.hooks_masterclass && analysis.hooks_masterclass.length > 0 && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                            <p className="text-yellow-400 text-xs font-bold mb-4 flex items-center gap-2">🎣 Hooks Masterclass — Accroches décortiquées</p>
+                            <p className="text-yellow-400 text-xs font-bold mb-4 flex items-center gap-2"> Hooks Masterclass — Accroches décortiquées</p>
                             <div className="space-y-3">
                                 {analysis.hooks_masterclass.map((h, i) => (
                                     <div key={i} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
@@ -1213,7 +1213,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                     {analysis.content_blueprint && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
-                                <p className="text-gray-500 text-xs font-bold mb-2">📐 Structure type</p>
+                                <p className="text-gray-500 text-xs font-bold mb-2"> Structure type</p>
                                 <p className="text-gray-300 text-sm">{analysis.content_blueprint.structure_template}</p>
                                 <div className="flex flex-wrap gap-2 mt-3">
                                     <span className="text-[10px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-full">{analysis.content_blueprint.ideal_length_words} mots</span>
@@ -1222,7 +1222,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                                 </div>
                             </div>
                             <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
-                                <p className="text-gray-500 text-xs font-bold mb-2">📅 Planning</p>
+                                <p className="text-gray-500 text-xs font-bold mb-2"> Planning</p>
                                 {analysis.content_blueprint.posting_frequency && <p className="text-gray-300 text-xs mb-2">Fréquence : {analysis.content_blueprint.posting_frequency}</p>}
                                 {analysis.content_blueprint.best_days.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mb-2">{analysis.content_blueprint.best_days.map((d, i) => <span key={i} className="text-[10px] bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full">{d}</span>)}</div>
@@ -1246,12 +1246,12 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
 // TAB 5 — CALENDRIER ÉDITORIAL IA
 // ═════════════════════════════════════════════════════════
 const CONTENT_TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
-    post: { icon: '📝', color: 'text-gray-300' },
-    reel: { icon: '🎬', color: 'text-pink-400' },
+    post: { icon: '', color: 'text-gray-300' },
+    reel: { icon: '', color: 'text-pink-400' },
     story: { icon: '⭕', color: 'text-orange-400' },
-    carrousel: { icon: '🎠', color: 'text-blue-400' },
-    live: { icon: '🔴', color: 'text-red-400' },
-    sondage: { icon: '📊', color: 'text-cyan-400' },
+    carrousel: { icon: '', color: 'text-blue-400' },
+    live: { icon: '', color: 'text-red-400' },
+    sondage: { icon: '', color: 'text-cyan-400' },
 }
 
 function CalendarTab({
@@ -1326,7 +1326,7 @@ function CalendarTab({
 
     const exportText = () => {
         const text = calendar.map(d =>
-            `=== Jour ${d.day} — ${d.date} (${d.weekday}) ===\n📌 ${d.topic}\n🎬 Format: ${d.content_type} | 🕐 ${d.posting_time}\n💬 Accroche: ${d.hook}\n📋 Brief: ${d.brief}\n🏷 Hashtags: ${d.hashtags.join(' ')}\n🖼 Visuel: ${d.visual_idea}\n`
+            `=== Jour ${d.day} — ${d.date} (${d.weekday}) ===\n ${d.topic}\n Format: ${d.content_type} |  ${d.posting_time}\n Accroche: ${d.hook}\n Brief: ${d.brief}\n Hashtags: ${d.hashtags.join(' ')}\n Visuel: ${d.visual_idea}\n`
         ).join('\n')
         copyToClipboard(text, 'calendar-text')
     }
@@ -1355,7 +1355,7 @@ function CalendarTab({
                         </span>
                         <button type="button" onClick={() => setForm(f => ({ ...f, use_dossier: !f.use_dossier }))}
                             className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${form.use_dossier ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
-                            {form.use_dossier ? '✓ Utilisé comme inspiration' : 'Activer'}
+                            {form.use_dossier ? ' Utilisé comme inspiration' : 'Activer'}
                         </button>
                     </div>
                 )}
@@ -1374,9 +1374,9 @@ function CalendarTab({
                         <label className="text-xs text-gray-500 font-bold mb-1.5 block">Fréquence</label>
                         <select value={form.frequency} onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/50">
-                            <option value="daily">📅 Quotidien (30 posts)</option>
-                            <option value="3x_semaine">📅 3x/semaine (~13 posts)</option>
-                            <option value="hebdo">📅 Hebdomadaire (~5 posts)</option>
+                            <option value="daily"> Quotidien (30 posts)</option>
+                            <option value="3x_semaine"> 3x/semaine (~13 posts)</option>
+                            <option value="hebdo"> Hebdomadaire (~5 posts)</option>
                         </select>
                     </div>
                     <div>
@@ -1389,10 +1389,10 @@ function CalendarTab({
                         <label className="text-xs text-gray-500 font-bold mb-1.5 block">Ton général</label>
                         <select value={form.tone} onChange={e => setForm(f => ({ ...f, tone: e.target.value }))}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/50">
-                            <option value="varié">🎭 Varié (recommandé)</option>
-                            <option value="inspirant">💫 Inspirant</option>
-                            <option value="informatif">📚 Informatif</option>
-                            <option value="urgent">⚡ Urgence</option>
+                            <option value="varié"> Varié (recommandé)</option>
+                            <option value="inspirant"> Inspirant</option>
+                            <option value="informatif"> Informatif</option>
+                            <option value="urgent"> Urgence</option>
                         </select>
                     </div>
                     <div>
@@ -1451,7 +1451,7 @@ function CalendarTab({
                     {/* Grille calendrier */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         {calendar.map(day => {
-                            const typeCfg = CONTENT_TYPE_CONFIG[day.content_type] || { icon: '📝', color: 'text-gray-300' }
+                            const typeCfg = CONTENT_TYPE_CONFIG[day.content_type] || { icon: '', color: 'text-gray-300' }
                             const isExpanded = expandedDay === day.day
                             return (
                                 <motion.div key={day.day}
@@ -1524,14 +1524,14 @@ function CalendarTab({
 // COMPOSANTS DEEP STYLE DNA
 // ═════════════════════════════════════════════════════════
 const RADAR_AXES = [
-    { key: 'hook_power', label: 'Accroche', icon: '🎣' },
-    { key: 'emotional_depth', label: 'Émotion', icon: '❤️' },
-    { key: 'storytelling', label: 'Narration', icon: '📖' },
-    { key: 'authority', label: 'Autorité', icon: '👑' },
-    { key: 'viral_potential', label: 'Viralité', icon: '🔥' },
-    { key: 'community_building', label: 'Communauté', icon: '👥' },
-    { key: 'urgency', label: 'Urgence', icon: '⚡' },
-    { key: 'humor', label: 'Humour', icon: '😄' },
+    { key: 'hook_power', label: 'Accroche', icon: '' },
+    { key: 'emotional_depth', label: 'Émotion', icon: '' },
+    { key: 'storytelling', label: 'Narration', icon: '' },
+    { key: 'authority', label: 'Autorité', icon: '' },
+    { key: 'viral_potential', label: 'Viralité', icon: '' },
+    { key: 'community_building', label: 'Communauté', icon: '' },
+    { key: 'urgency', label: 'Urgence', icon: '' },
+    { key: 'humor', label: 'Humour', icon: '' },
 ] as const
 
 function RadarChart({ scores, size = 220 }: { scores: Record<string, number>; size?: number }) {
@@ -1706,7 +1706,7 @@ function ViralTab({
                             onChange={e => setPlatform(e.target.value)}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
                         >
-                            <option value="all">🌐 Toutes</option>
+                            <option value="all"> Toutes</option>
                             {Object.entries(PLATFORM_CONFIG).map(([key, cfg]) => (
                                 <option key={key} value={key}>{cfg.icon} {cfg.label}</option>
                             ))}
@@ -1765,7 +1765,7 @@ function ViralTab({
                                         <PlatformBadge platform={post.platform} />
                                         {post.engagement_estimate !== 'inconnu' && (
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ENGAGEMENT_COLOR[post.engagement_estimate] || ''}`}>
-                                                {post.engagement_estimate === 'viral' ? '🔥' : post.engagement_estimate === 'élevé' ? '📈' : '📊'} {post.engagement_estimate}
+                                                {post.engagement_estimate === 'viral' ? '' : post.engagement_estimate === 'élevé' ? '' : ''} {post.engagement_estimate}
                                             </span>
                                         )}
                                         {post.date && <span className="text-[10px] text-gray-600">{post.date}</span>}
@@ -1930,10 +1930,10 @@ function GenerationTab({
     }
 
     const ENGAGEMENT_ICON: Record<string, string> = {
-        viral: '🔥 Viral',
-        élevé: '📈 Élevé',
-        moyen: '📊 Moyen',
-        faible: '📉 Faible',
+        viral: ' Viral',
+        élevé: ' Élevé',
+        moyen: ' Moyen',
+        faible: ' Faible',
     }
 
     return (
@@ -1965,12 +1965,12 @@ function GenerationTab({
                         <label className="text-xs text-gray-500 font-bold mb-1.5 block">Ton</label>
                         <select value={form.tone} onChange={e => setForm(f => ({ ...f, tone: e.target.value }))}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50">
-                            <option value="inspirant">💫 Inspirant</option>
-                            <option value="informatif">📚 Informatif</option>
-                            <option value="urgent">⚡ Urgent / Offre limitée</option>
-                            <option value="humoristique">😄 Humoristique</option>
-                            <option value="autoritaire">💎 Autoritaire / Expert</option>
-                            <option value="storytelling">📖 Storytelling</option>
+                            <option value="inspirant"> Inspirant</option>
+                            <option value="informatif"> Informatif</option>
+                            <option value="urgent"> Urgent / Offre limitée</option>
+                            <option value="humoristique"> Humoristique</option>
+                            <option value="autoritaire"> Autoritaire / Expert</option>
+                            <option value="storytelling"> Storytelling</option>
                         </select>
                     </div>
                     <div>
@@ -2010,12 +2010,12 @@ function GenerationTab({
                             <div className="flex items-center gap-2">
                                 {activeDossier && (
                                     <span className="text-[10px] text-emerald-400/70 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                        ✓ Dossier @{activeDossier.profile.username} chargé
+                                         Dossier @{activeDossier.profile.username} chargé
                                     </span>
                                 )}
                                 <button type="button" onClick={() => setUseDossier(u => !u)}
                                     className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${useDossier ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
-                                    {useDossier ? '✓ Activé' : 'Activer'}
+                                    {useDossier ? ' Activé' : 'Activer'}
                                 </button>
                             </div>
                         </div>
@@ -2111,11 +2111,11 @@ function GenerationTab({
                             {/* Tips et infos */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="bg-white/[0.02] rounded-lg p-3">
-                                    <p className="text-gray-600 text-[10px] font-bold mb-1.5">🕐 Meilleur moment de publication</p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-1.5"> Meilleur moment de publication</p>
                                     <p className="text-gray-300 text-xs">{variant.best_time}</p>
                                 </div>
                                 <div className="bg-white/[0.02] rounded-lg p-3">
-                                    <p className="text-gray-600 text-[10px] font-bold mb-1.5">😀 Emojis recommandés</p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-1.5"> Emojis recommandés</p>
                                     <p className="text-2xl">{variant.emoji_suggestions?.join(' ')}</p>
                                 </div>
                                 {variant.viral_tips?.map((tip, i) => (

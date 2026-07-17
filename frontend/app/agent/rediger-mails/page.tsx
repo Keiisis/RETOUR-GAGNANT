@@ -362,7 +362,7 @@ export default function AgentRedigerMailsPage() {
                 editorRef.current.innerHTML = enhancedHtml
             }
             setBodyHtml(enhancedHtml)
-            setSendResult({ ok: true, msg: '✨ Mail amélioré par l\'IA. Relisez avant d\'envoyer.' })
+            setSendResult({ ok: true, msg: ' Mail amélioré par l\'IA. Relisez avant d\'envoyer.' })
             setTimeout(() => setSendResult(null), 4000)
         } catch (err) {
             setSendResult({

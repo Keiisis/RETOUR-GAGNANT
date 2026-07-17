@@ -34,12 +34,12 @@ const W = 13.33
 const H = 7.5
 
 const CATEGORY: Record<string, { bg: string; accent: string; label: string; emoji: string }> = {
-    hotel:      { bg: '061830', accent: '38BDF8', label: 'Hébergement',      emoji: '🏨' },
-    restaurant: { bg: '180A00', accent: 'FB923C', label: 'Gastronomie',      emoji: '🍽️' },
-    activity:   { bg: '051A0A', accent: '34D399', label: 'Activité & Visite', emoji: '🎯' },
-    transport:  { bg: '0E0620', accent: 'A78BFA', label: 'Transport VIP',    emoji: '🚗' },
-    hero:       { bg: C.dark,  accent: C.yellow,  label: '',                 emoji: '✨' },
-    pricing:    { bg: '020E04', accent: C.green,  label: 'Devis',            emoji: '💰' },
+    hotel:      { bg: '061830', accent: '38BDF8', label: 'Hébergement',      emoji: '' },
+    restaurant: { bg: '180A00', accent: 'FB923C', label: 'Gastronomie',      emoji: '' },
+    activity:   { bg: '051A0A', accent: '34D399', label: 'Activité & Visite', emoji: '' },
+    transport:  { bg: '0E0620', accent: 'A78BFA', label: 'Transport VIP',    emoji: '' },
+    hero:       { bg: C.dark,  accent: C.yellow,  label: '',                 emoji: '' },
+    pricing:    { bg: '020E04', accent: C.green,  label: 'Devis',            emoji: '' },
 }
 
 // ── Fetch image URL → base64 data URI ────────────────────────────
@@ -278,7 +278,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             // ── Prix (badge haut droite côté texte) ──
             if (item.selling_price > 0) {
                 slide.addShape('rect', { x: 4.8, y: 0.22, w: 3.0, h: 0.42, fill: { color: cat.accent + '28' }, line: { color: cat.accent, width: 0.8 } })
-                slide.addText(`💰  ${item.selling_price.toLocaleString('fr-FR')} FCFA`, {
+                slide.addText(` ${item.selling_price.toLocaleString('fr-FR')} FCFA`, {
                     x: 4.8, y: 0.22, w: 3.0, h: 0.42,
                     fontSize: 11, bold: true, color: cat.accent,
                     align: 'center', fontFace: 'Calibri',
@@ -287,7 +287,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
             // ── Location ──
             if (item.location) {
-                slide.addText(`📍  ${item.location}`, {
+                slide.addText(` ${item.location}`, {
                     x: 0.5, y: 0.78, w: 7.4, h: 0.38,
                     fontSize: 12, color: C.grayLight, fontFace: 'Calibri',
                 })
@@ -332,7 +332,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                     fill: { color: cat.accent + '18' },
                     line: { color: cat.accent + '55', width: 0.5 },
                 })
-                slide.addText(`✦  ${h}`, {
+                slide.addText(` ${h}`, {
                     x, y, w: 2.4, h: 0.4,
                     fontSize: 9.5, color: C.white, fontFace: 'Calibri', inset: 0.1,
                 })
@@ -387,7 +387,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                 // Bande couleur catégorie sur bord gauche
                 slide.addShape('rect', { x: tX, y: rY, w: 0.06, h: rH, fill: { color: acc }, line: { width: 0 } })
 
-                slide.addText(cat?.emoji ?? '✦', { x: cEmo, y: rY, w: 0.7, h: rH, fontSize: 14, align: 'center', fontFace: 'Calibri' })
+                slide.addText(cat?.emoji ?? '', { x: cEmo, y: rY, w: 0.7, h: rH, fontSize: 14, align: 'center', fontFace: 'Calibri' })
                 slide.addText(item.title, { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 11, color: C.white, fontFace: 'Calibri', inset: 0.1 })
                 slide.addText(item.selling_price.toLocaleString('fr-FR'), { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 11, color: C.grayLight, align: 'right', fontFace: 'Calibri', inset: 0.1 })
                 rY += rH

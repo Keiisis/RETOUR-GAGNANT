@@ -341,7 +341,7 @@ async function callApifyWithRotation(
             const firstItemKeys = firstItem ? Object.keys(firstItem) : []
             const posts = flattenAndNormalize(items, platform, profileUrl)
 
-            console.log(`${label} ✓ raw:${items.length} → posts:${posts.length} | clés:[${firstItemKeys.slice(0, 8).join(',')}]`)
+            console.log(`${label}  raw:${items.length} → posts:${posts.length} | clés:[${firstItemKeys.slice(0, 8).join(',')}]`)
 
             return { posts, usedKeyIndex: keyIdx, rawItemsCount: items.length, firstItemKeys }
         } catch (err) {
@@ -351,7 +351,7 @@ async function callApifyWithRotation(
                 : (err instanceof Error ? err.message : String(err))
 
             errors.push(`clé ${keyIdx + 1}: ${status ? `HTTP ${status}` : ''} ${msg}`)
-            console.warn(`${label} ✗ ${status ? `HTTP ${status}` : ''} ${msg}`)
+            console.warn(`${label}  ${status ? `HTTP ${status}` : ''} ${msg}`)
 
             apifyKeyIndex = (keyIdx + 1) % APIFY_KEYS.length
 
@@ -400,7 +400,7 @@ async function serperFallback(profileUrl: string, platform: string): Promise<Nor
                 )
                 const results = filtered.length > 0 ? filtered : organic.slice(0, 5)
                 if (results.length > 0) {
-                    console.log(`[Serper fallback] ✓ query="${query}" → ${results.length} résultats`)
+                    console.log(`[Serper fallback]  query="${query}" → ${results.length} résultats`)
                     return results.map(item => ({
                         text: item.snippet || item.title || '',
                         likes: 0, comments: 0, shares: 0,
@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
                 } else {
                     posts = result.posts
                     method = 'apify'
-                    console.log(`[scrape] ✓ Apify clé #${apifyKeyUsed} — ${posts.length} posts`)
+                    console.log(`[scrape]  Apify clé #${apifyKeyUsed} — ${posts.length} posts`)
                 }
             } catch (err) {
                 apifyError = err instanceof Error ? err.message : String(err)

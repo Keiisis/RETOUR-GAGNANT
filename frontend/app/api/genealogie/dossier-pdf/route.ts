@@ -304,7 +304,7 @@ export async function POST(request: NextRequest) {
                 startY: 40,
                 head: [['Nom complet', 'Sexe', 'Naissance', 'Lieu', 'Lien de parenté', 'Décès']],
                 body: (persons || []).map(p => [
-                    `${p.first_name || ''} ${p.last_name || ''}`.trim() + (p.is_self ? '  ★' : ''),
+                    `${p.first_name || ''} ${p.last_name || ''}`.trim() + (p.is_self ? ' ' : ''),
                     p.gender === 'male' ? 'H' : p.gender === 'female' ? 'F' : '—',
                     fmtDate(p.birth_date),
                     p.birth_place || '—',

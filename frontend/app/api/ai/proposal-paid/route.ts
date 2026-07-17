@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         const proposalCurrency = (proposal.currency || 'XOF').toUpperCase()
 
         // ═══════════════════════════════════════════════════════════
-        // 🔴 FIX CRITIQUE : Auto-génération Facture ERP
+        //  FIX CRITIQUE : Auto-génération Facture ERP
         // Les revenus IA doivent apparaître dans documents_financiers
         // ═══════════════════════════════════════════════════════════
         try {
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
                                 <p style="margin: 8px 0 0; color: #0f141e; opacity: 0.8; font-size: 14px;">Votre voyage est confirmé !</p>
                             </div>
                             <div style="padding: 32px;">
-                                <h2 style="color: #F59E0B; font-size: 22px; margin-bottom: 8px;">Bonjour ${client_name || 'cher client'} 👋</h2>
+                                <h2 style="color: #F59E0B; font-size: 22px; margin-bottom: 8px;">Bonjour ${client_name || 'cher client'} </h2>
                                 <p style="color: #94a3b8; line-height: 1.8;">Nous avons bien reçu votre paiement pour votre voyage à <strong style="color: white;">${proposal.destination}</strong>.</p>
                                 <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin: 24px 0;">
                                     <p style="color: #94a3b8; margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Montant payé</p>

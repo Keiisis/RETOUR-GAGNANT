@@ -65,7 +65,7 @@ export default function MonComptePage() {
             setContracts(contractRes.data || [])
             setOrders(orderRes.data || [])
             setClientName(allDossiers[0]?.client_prenom || allOracle[0]?.client_prenom || orderRes.data?.[0]?.customer_name || '')
-            localStorage.setItem('rg_client_email', email) // 🔐 Sauvegarde l'identité pour la Cloche
+            localStorage.setItem('rg_client_email', email) //  Sauvegarde l'identité pour la Cloche
             setAuthenticated(true)
         } catch {
             setError(t('Erreur de connexion. Réessayez.'))
@@ -342,7 +342,7 @@ export default function MonComptePage() {
                                             <p className="text-xs text-gray-500">{c.amount?.toLocaleString(lang === 'en' ? 'en-US' : 'fr-FR')} {c.currency}</p>
                                         </div>
                                         <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${c.status === 'signe' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'envoye' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-500'}`}>
-                                            {c.status === 'signe' ? t('✓ Signé') : c.status === 'envoye' ? t('À signer') : t(c.status)}
+                                            {c.status === 'signe' ? t(' Signé') : c.status === 'envoye' ? t('À signer') : t(c.status)}
                                         </span>
                                     </div>
                                     {c.status === 'envoye' && (

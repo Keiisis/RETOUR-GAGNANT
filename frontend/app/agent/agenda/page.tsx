@@ -467,8 +467,8 @@ export default function AgentAgendaPage() {
                                 {/* Actions statut */}
                                 {selectedRDV.statut === 'en_attente' && (
                                     <div className="flex gap-2">
-                                        <button type="button" onClick={() => updateRdvStatus(selectedRDV.id, 'confirme')} className="flex-1 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/30 transition-all">✓ Confirmer</button>
-                                        <button type="button" onClick={() => updateRdvStatus(selectedRDV.id, 'annule')} className="flex-1 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition-all">✗ Annuler</button>
+                                        <button type="button" onClick={() => updateRdvStatus(selectedRDV.id, 'confirme')} className="flex-1 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/30 transition-all"> Confirmer</button>
+                                        <button type="button" onClick={() => updateRdvStatus(selectedRDV.id, 'annule')} className="flex-1 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold hover:bg-red-500/20 transition-all"> Annuler</button>
                                     </div>
                                 )}
                                 {selectedRDV.statut === 'confirme' && (

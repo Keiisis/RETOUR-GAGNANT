@@ -26,7 +26,7 @@ export default function WhatsAppButton() {
                             <X size={12} className="text-gray-400" />
                         </button>
                         <p className="text-sm font-semibold text-[#1a2332] mb-1">
-                            Besoin d&apos;aide ? 💬
+                            Besoin d&apos;aide ? 
                         </p>
                         <p className="text-xs text-gray-500 mb-3">
                             Discutez directement avec notre équipe sur WhatsApp.
@@ -38,7 +38,7 @@ export default function WhatsAppButton() {
                                 rel="noopener noreferrer"
                                 className="text-xs font-bold text-[#008751] bg-[#008751]/10 hover:bg-[#008751]/20 py-2 px-3 rounded-lg transition-colors text-center"
                             >
-                                📞 {COMPANY_INFO.phoneDisplay}
+                                 {COMPANY_INFO.phoneDisplay}
                             </a>
                             <a
                                 href={COMPANY_INFO.whatsapp2Link}
@@ -46,7 +46,7 @@ export default function WhatsAppButton() {
                                 rel="noopener noreferrer"
                                 className="text-xs font-bold text-[#008751] bg-[#008751]/10 hover:bg-[#008751]/20 py-2 px-3 rounded-lg transition-colors text-center"
                             >
-                                📞 {COMPANY_INFO.phone2Display}
+                                 {COMPANY_INFO.phone2Display}
                             </a>
                         </div>
                     </motion.div>

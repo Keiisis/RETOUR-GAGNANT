@@ -146,9 +146,9 @@ export async function GET(request: Request) {
 function getSubject(emailNum: number, name: string): string {
     const prenom = (name || '').split(' ')[0] || 'vous'
     switch (emailNum) {
-        case 1: return `🛒 ${prenom}, votre panier vous attend sur Retour Gagnant Bénin`
-        case 2: return `⚡ ${prenom}, vos articles sont encore disponibles — mais pour combien de temps ?`
-        case 3: return `🎯 Dernière chance, ${prenom} — votre panier expire bientôt`
+        case 1: return ` ${prenom}, votre panier vous attend sur Retour Gagnant Bénin`
+        case 2: return ` ${prenom}, vos articles sont encore disponibles — mais pour combien de temps ?`
+        case 3: return ` Dernière chance, ${prenom} — votre panier expire bientôt`
         default: return `Votre panier Retour Gagnant Bénin`
     }
 }
@@ -205,15 +205,15 @@ function buildRecoveryEmail(order: {
             urgency: '',
         },
         2: {
-            headline: `⚡ Vos articles sont encore disponibles, ${prenom} !`,
+            headline: ` Vos articles sont encore disponibles, ${prenom} !`,
             body: `Votre panier est toujours enregistré chez nous. Mais les stocks de certains articles sont limités — nous ne pouvons pas garantir leur disponibilité indéfiniment.`,
             cta: 'Sécuriser ma commande maintenant',
             urgency: `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin:20px 0;">
-                <p style="color:#c2410c;font-weight:bold;margin:0;font-size:13px;">⚠️ Stock limité — commandez avant qu'il ne soit trop tard !</p>
+                <p style="color:#c2410c;font-weight:bold;margin:0;font-size:13px;"> Stock limité — commandez avant qu'il ne soit trop tard !</p>
             </div>`,
         },
         3: {
-            headline: `🎯 Dernière chance, ${prenom} !`,
+            headline: ` Dernière chance, ${prenom} !`,
             body: `C'est votre dernier rappel concernant votre panier. Après cela, nous libérerons vos articles pour d'autres clients. Profitez-en maintenant ou contactez-nous si vous avez besoin d'aide.`,
             cta: 'Commander avant qu\'il ne soit trop tard',
             urgency: `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;margin:20px 0;">
@@ -252,7 +252,7 @@ function buildRecoveryEmail(order: {
             <!-- Récapitulatif panier -->
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin:20px 0;">
                 <div style="background:#1e293b;padding:12px 16px;">
-                    <p style="color:#fff;margin:0;font-size:13px;font-weight:bold;">🛒 Votre panier</p>
+                    <p style="color:#fff;margin:0;font-size:13px;font-weight:bold;"> Votre panier</p>
                 </div>
                 <table width="100%" cellpadding="0" cellspacing="0">
                     ${itemsHtml}

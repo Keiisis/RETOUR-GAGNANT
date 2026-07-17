@@ -140,9 +140,9 @@ export async function POST(request: Request) {
 
                 // Sujet adapté au niveau
                 const subjectMap: Record<ReminderLevel, string> = {
-                    reminder_1: `📋 Rappel — Facture ${invoice.numero} en attente`,
+                    reminder_1: ` Rappel — Facture ${invoice.numero} en attente`,
                     reminder_2: `⏳ 2ème Rappel — Facture ${invoice.numero} impayée`,
-                    reminder_3: `🔴 Dernier Rappel — Facture ${invoice.numero} — Action requise`,
+                    reminder_3: ` Dernier Rappel — Facture ${invoice.numero} — Action requise`,
                 }
 
                 // Envoyer au client

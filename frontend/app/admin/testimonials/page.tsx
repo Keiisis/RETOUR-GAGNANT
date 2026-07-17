@@ -383,7 +383,7 @@ export default function AdminTestimonialsPage() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
             setItems(p => p.map(i => i.id === item.id ? { ...i, ...data.testimonial } : i))
-            toast(!prev ? '✓ Témoignage approuvé et publié' : 'Témoignage dépublié')
+            toast(!prev ? ' Témoignage approuvé et publié' : 'Témoignage dépublié')
         } catch (e) {
             // Rollback
             setItems(p => p.map(i => i.id === item.id ? { ...i, approved: prev } : i))

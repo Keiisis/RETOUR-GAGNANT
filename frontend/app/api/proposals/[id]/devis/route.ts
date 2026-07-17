@@ -153,7 +153,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                 .replace(/—/g, '-')      // Em dash
                 .replace(/–/g, '-')      // En dash
                 .replace(/’/g, "'")      // Smart quote
-                .replace(/✓/g, 'OK ')   // Checkmark
+                .replace(/✓|✔/g, 'OK ')   // Checkmark (echappement unicode)
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, (match) => {
                     const map: Record<string, string> = { 'é': 'e', 'è': 'e', 'ê': 'e', 'à': 'a', 'â': 'a', 'î': 'i', 'ï': 'i', 'ô': 'o', 'û': 'u', 'ç': 'c', 'É': 'E' }
                     return map[match] || match
