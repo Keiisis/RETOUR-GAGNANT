@@ -105,8 +105,8 @@ export default function AdminFacturationPage() {
 
             const tpl = templateData?.content || {}
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj"
-            const presidentName = tpl.signature_name || "N. R. G"
+            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
+            const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
             const presidentTitle = tpl.signature_title || "LA DIRECTION GÉNÉRALE"
 
             const jsPDF = (await import('jspdf')).default

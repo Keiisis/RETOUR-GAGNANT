@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
             .maybeSingle()
 
         const tpl = templateData?.content || {}
-        const presidentName = tpl.signature_name || 'N. R. G'
+        const presidentName = tpl.signature_name || 'Nathalie RIFFERT GERMANY'
 
         // Default layout data if settings are empty
         const defaultGrids = [

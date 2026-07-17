@@ -53,6 +53,7 @@ export async function POST(request: Request) {
             shipping_zone,
             shipping_fee,
             is_proposal,
+            selected_item_ids,
         } = body
 
         // ═══ VALIDATION STRICTE DES ENTRÉES ══════════════════════
@@ -141,6 +142,10 @@ export async function POST(request: Request) {
         // Déclaré ici pour être accessible dans le rollback de la création d'ordre
         const reservedItems: { product_id: string, quantity: number }[] = []
 
+        // Sélection à la carte d'une proposition : détail des prestations choisies,
+        // recalculé serveur et stocké dans cart_items pour la traçabilité compta
+        let proposalSelection: { proposal_item_id: string; title: string; price: number }[] | null = null
+
         if (isProposalPayment) {
             // Valider l'UUID de la proposition contre ai_client_proposals
             const proposalUuid = product_id
@@ -157,19 +162,58 @@ export async function POST(request: Request) {
                 )
             }
 
-            // Validation stricte du montant : tolérance 1 XOF pour arrondis
-            if (Math.abs(parsedAmount - proposal.total_amount) > 1) {
-                console.error(
-                    `[Checkout/Proposal] Montant invalide — reçu: ${parsedAmount}, attendu: ${proposal.total_amount}`
-                )
-                return NextResponse.json(
-                    { error: 'Montant invalide pour cette proposition. Veuillez actualiser la page.' },
-                    { status: 400 }
-                )
-            }
+            // ── SÉLECTION À LA CARTE : le client a choisi certaines prestations.
+            // Le total est TOUJOURS recalculé serveur depuis ai_proposal_items —
+            // le montant envoyé par le client ne sert qu'au contrôle de cohérence.
+            if (Array.isArray(selected_item_ids) && selected_item_ids.length > 0) {
+                if (selected_item_ids.length > 100 || selected_item_ids.some((x: unknown) => typeof x !== 'string')) {
+                    return NextResponse.json({ error: 'Sélection invalide' }, { status: 400 })
+                }
+                const { data: selItems } = await supabase
+                    .from('ai_proposal_items')
+                    .select('id, type, title, selling_price')
+                    .eq('proposal_id', proposalUuid)
+                    .in('id', selected_item_ids)
 
-            // Utiliser le montant côté serveur, jamais celui du client
-            validatedAmount = proposal.total_amount
+                const billable = (selItems || []).filter(
+                    it => it.type !== 'hero' && it.type !== 'pricing' && Number(it.selling_price) > 0
+                )
+                if (billable.length !== selected_item_ids.length) {
+                    return NextResponse.json(
+                        { error: 'Sélection invalide — certaines prestations sont introuvables. Actualisez la page.' },
+                        { status: 400 }
+                    )
+                }
+                const expectedSelection = billable.reduce((s, it) => s + Number(it.selling_price), 0)
+                if (expectedSelection <= 0 || Math.abs(parsedAmount - expectedSelection) > 1) {
+                    console.error(
+                        `[Checkout/Proposal] Sélection — montant invalide — reçu: ${parsedAmount}, attendu: ${expectedSelection}`
+                    )
+                    return NextResponse.json(
+                        { error: 'Montant invalide pour cette sélection. Veuillez actualiser la page.' },
+                        { status: 400 }
+                    )
+                }
+                validatedAmount = expectedSelection
+                proposalSelection = billable.map(it => ({
+                    proposal_item_id: it.id, title: it.title, price: Number(it.selling_price),
+                }))
+            } else {
+                // ── Proposition complète (comportement historique) ──
+                // Validation stricte du montant : tolérance 1 XOF pour arrondis
+                if (Math.abs(parsedAmount - proposal.total_amount) > 1) {
+                    console.error(
+                        `[Checkout/Proposal] Montant invalide — reçu: ${parsedAmount}, attendu: ${proposal.total_amount}`
+                    )
+                    return NextResponse.json(
+                        { error: 'Montant invalide pour cette proposition. Veuillez actualiser la page.' },
+                        { status: 400 }
+                    )
+                }
+
+                // Utiliser le montant côté serveur, jamais celui du client
+                validatedAmount = proposal.total_amount
+            }
 
             // Les coupons boutique ne s'appliquent pas aux propositions voyage
             if (coupon_id) {
@@ -293,7 +337,7 @@ export async function POST(request: Request) {
                 customer_phone,
                 payment_method,
                 payment_status: 'pending',
-                cart_items: cart_items || [],
+                cart_items: proposalSelection ?? (cart_items || []),
                 coupon_id: coupon_id || null,
                 shipping_country: shipping_country || null,
                 shipping_address: shipping_address || null,

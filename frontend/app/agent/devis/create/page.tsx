@@ -132,10 +132,12 @@ export default function AgentCreateDocumentPage() {
                     tva: it.tva,
                     unit_cost: it.unit_cost,
                 })),
-                sous_total: sousTotal,
-                total_tva: totalTVA,
-                remise,
-                total: totalFinal,
+                sous_total: (currency === 'XOF') ? Math.round(sousTotal) : Math.round(sousTotal * 100) / 100,
+                total_tva: (currency === 'XOF') ? Math.round(totalTVA) : Math.round(totalTVA * 100) / 100,
+                remise: (currency === 'XOF') ? Math.round(remise) : Math.round(remise * 100) / 100,
+                total: ((currency === 'XOF') ? Math.round(sousTotal) : Math.round(sousTotal * 100) / 100) + 
+                       ((currency === 'XOF') ? Math.round(totalTVA) : Math.round(totalTVA * 100) / 100) - 
+                       ((currency === 'XOF') ? Math.round(remise) : Math.round(remise * 100) / 100),
                 status,
                 notes,
                 conditions,

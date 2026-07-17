@@ -43,9 +43,9 @@ const securityHeaders = [
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com",
+      "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://unpkg.com",
       // connexions API paiement — CRITIQUE : kkiapay init via XHR avant d'exposer openKkiapayWidget
       "connect-src 'self'" +
         " https://*.supabase.co wss://*.supabase.co" +
@@ -53,7 +53,8 @@ const securityHeaders = [
         " https://api.stripe.com https://m.stripe.com https://m.stripe.network" +
         " https://*.kkiapay.me wss://*.kkiapay.me" +
         " https://api.fedapay.com https://sandbox-api.fedapay.com https://checkout.fedapay.com" +
-        " https://api-m.paypal.com https://api-m.sandbox.paypal.com",
+        " https://api-m.paypal.com https://api-m.sandbox.paypal.com" +
+        " https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://tiles.openfreemap.org",
       // iframes widgets de paiement
       "frame-src 'self'" +
         " https://js.stripe.com https://hooks.stripe.com" +

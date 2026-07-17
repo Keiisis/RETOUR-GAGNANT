@@ -61,6 +61,10 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     const [proposal, setProposal] = useState<Proposal | null>(null)
     const [items, setItems] = useState<ProposalItem[]>([])
 
+    // Sélection à la carte : le client coche les prestations qu'il veut payer.
+    // Par défaut tout est sélectionné ; le total payé = somme exacte de la sélection.
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
     const [step, setStep] = useState<Step>('info')
     const [provider, setProvider] = useState<PaymentProvider | null>(null)
     const [customerName, setCustomerName] = useState('')
@@ -94,6 +98,11 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             if (result.success && result.proposal) {
                 setProposal(result.proposal)
                 setItems(result.items || [])
+                setSelectedIds(new Set(
+                    (result.items || [])
+                        .filter((i: ProposalItem) => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
+                        .map((i: ProposalItem) => i.id)
+                ))
                 setCustomerName(result.proposal.client_name || '')
                 setCustomerEmail(result.proposal.client_email || '')
             }
@@ -251,6 +260,21 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, settings.paypal_client_id])
 
+    // ─── Total exact de la sélection (recalculé aussi côté serveur) ──
+    const billableAll = items.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
+    const hasItemSelection = billableAll.length > 0
+    const payableTotal = hasItemSelection
+        ? billableAll.filter(i => selectedIds.has(i.id)).reduce((s, i) => s + i.selling_price, 0)
+        : (proposal?.total_amount || 0)
+
+    const toggleItem = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
+
     // ─── Helpers ──────────────────────────
     const markProposalAsPaid = async () => {
         if (!proposal) return
@@ -274,7 +298,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                     product_title: `Voyage ${proposal.destination} - ${proposal.client_name}`,
                     is_proposal: true,
                     quantity: 1,
-                    amount: proposal.total_amount,
+                    amount: payableTotal,
+                    selected_item_ids: hasItemSelection ? Array.from(selectedIds) : undefined,
                     currency: proposal.currency || 'XOF',
                     customer_name: customerName,
                     customer_email: customerEmail,
@@ -366,7 +391,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             await ensureKkiapaySDK()
             // Pas de `paymentmethod` (tableau rejeté → « paramètres invalides »)
             // ni de `callback` (redirection qui contourne le listener de succès).
-            window.openKkiapayWidget({ amount: Math.round(proposal.total_amount), position: 'center', key: publicKey, sandbox, phone: customerPhone || undefined, email: customerEmail || undefined, name: customerName || undefined, data: JSON.stringify({ order_id: oid }) })
+            window.openKkiapayWidget({ amount: Math.round(payableTotal), position: 'center', key: publicKey, sandbox, phone: customerPhone || undefined, email: customerEmail || undefined, name: customerName || undefined, data: JSON.stringify({ order_id: oid }) })
             window.addKkiapayListener('success', async (response) => { await verifyPayment(oid, response.transactionId as string) })
             window.addKkiapayListener('failed', () => { cancelOrder(oid); setErrorMessage('Paiement échoué'); setStep('error') })
         } catch (err) { cancelOrder(oid); setErrorMessage(err instanceof Error ? err.message : 'Erreur Kkiapay'); setStep('error') }
@@ -401,7 +426,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
         try { await ensureFedaPay() } catch (err) { cancelOrder(oid); setErrorMessage(err instanceof Error ? err.message : 'Erreur FedaPay'); setStep('error'); return }
 
         // FedaPay et KKiapay traitent uniquement en XOF — sélecteur de devise = affichage uniquement
-        const fedaAmountXOF = Math.round(proposal.total_amount)
+        const fedaAmountXOF = Math.round(payableTotal)
 
         let fedapayTxId: number | null = null
         try {
@@ -449,7 +474,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
         if (!redirectUrl) { setErrorMessage('Zeyow non configuré'); setStep('error'); return }
         const returnUrl = `${window.location.origin}/boutique/payment/return`
         const cancelUrl = `${window.location.origin}/p/${secret}`
-        window.location.href = `${redirectUrl}?amount=${proposal.total_amount}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(`Voyage ${proposal.destination}`)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
+        window.location.href = `${redirectUrl}?amount=${payableTotal}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(`Voyage ${proposal.destination}`)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
     }
 
     const handleStripe = async () => {
@@ -551,40 +576,61 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <p className="text-slate-400 text-sm">Voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span></p>
                             </div>
 
-                            {/* Recap */}
+                            {/* Recap — sélection à la carte */}
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
-                                <div className="space-y-2 mb-4">
-                                    {billableItems.map(i => (
-                                        <div key={i.id} className="flex justify-between text-sm">
-                                            <span className="text-slate-300">{i.title}</span>
-                                            <span className="text-white font-bold">
-                                                <Price amount={i.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
-                                            </span>
-                                        </div>
-                                    ))}
+                                {hasItemSelection && (
+                                    <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+                                        Composez votre formule : cochez les prestations que vous souhaitez régler.
+                                        Le total est recalculé automatiquement.
+                                    </p>
+                                )}
+                                <div className="space-y-1.5 mb-4">
+                                    {billableItems.map(i => {
+                                        const checked = selectedIds.has(i.id)
+                                        return (
+                                            <label key={i.id}
+                                                className={`flex items-center justify-between gap-3 text-sm rounded-xl px-3 py-2.5 cursor-pointer transition-all border ${checked ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-90'}`}>
+                                                <span className="flex items-center gap-3 min-w-0">
+                                                    <input type="checkbox" checked={checked} onChange={() => toggleItem(i.id)}
+                                                        className="w-4 h-4 accent-amber-500 shrink-0" />
+                                                    <span className={checked ? 'text-white' : 'text-slate-400 line-through'}>{i.title}</span>
+                                                </span>
+                                                <span className={`font-bold shrink-0 ${checked ? 'text-white' : 'text-slate-500'}`}>
+                                                    <Price amount={i.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                </span>
+                                            </label>
+                                        )
+                                    })}
                                 </div>
                                 <div className="border-t border-white/10 pt-3">
                                     <div className="flex justify-between items-center mb-1">
-                                        <span className="text-amber-500 font-bold text-sm">Total</span>
+                                        <span className="text-amber-500 font-bold text-sm">
+                                            Total{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
+                                        </span>
                                         <CurrencySelector
                                             value={selectedCurrency}
                                             onChange={setSelectedCurrency}
-                                            baseAmountXOF={proposal.total_amount}
+                                            baseAmountXOF={payableTotal}
                                         />
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-2xl font-black text-white">
                                             {selectedCurrency === 'XOF'
-                                                ? <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency="XOF" />
-                                                : formatPriceWithMargin(proposal.total_amount, selectedCurrency)
+                                                ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
+                                                : formatPriceWithMargin(payableTotal, selectedCurrency)
                                             }
                                         </span>
                                         {selectedCurrency !== 'XOF' && (
                                             <span className="text-[10px] text-gray-500">
-                                                <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency="XOF" /> XOF
+                                                <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" /> XOF
                                             </span>
                                         )}
                                     </div>
+                                    {hasItemSelection && payableTotal <= 0 && (
+                                        <p className="text-xs text-red-400 font-semibold mt-2 flex items-center gap-1.5">
+                                            <AlertCircle className="w-3.5 h-3.5" /> Sélectionnez au moins une prestation pour continuer.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -623,10 +669,12 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 onClick={() => {
                                     if (!customerName.trim()) { setErrorMessage('Veuillez saisir votre nom'); return }
                                     if (!customerPhone.trim()) { setErrorMessage('Veuillez saisir votre téléphone'); return }
+                                    if (payableTotal <= 0) { setErrorMessage('Sélectionnez au moins une prestation'); return }
                                     setErrorMessage('')
                                     setStep('payment')
                                 }}
-                                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 py-4 rounded-2xl font-black text-base transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2"
+                                disabled={payableTotal <= 0}
+                                className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-900 py-4 rounded-2xl font-black text-base transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2"
                             >
                                 Continuer vers le paiement <CreditCard className="w-5 h-5" />
                             </button>
@@ -645,14 +693,14 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <div className="flex items-center justify-center gap-3 mt-2">
                                     <p className="text-slate-400 text-sm">Montant : <span className="text-amber-400 font-bold">
                                         {selectedCurrency === 'XOF'
-                                            ? <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency="XOF" />
-                                            : formatPriceWithMargin(proposal.total_amount, selectedCurrency)
+                                            ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
+                                            : formatPriceWithMargin(payableTotal, selectedCurrency)
                                         }
                                     </span></p>
                                     <CurrencySelector
                                         value={selectedCurrency}
                                         onChange={setSelectedCurrency}
-                                        baseAmountXOF={proposal.total_amount}
+                                        baseAmountXOF={payableTotal}
                                     />
                                 </div>
                                 {selectedCurrency !== 'XOF' && (
@@ -704,7 +752,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 </div>
                                 {errorMessage && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-4">{errorMessage}</div>}
                                 <button type="button" onClick={confirmStripePayment} disabled={!stripeReady || stripeSubmitting} className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-900 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2">
-                                    <Lock className="w-4 h-4" /> Payer <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                    <Lock className="w-4 h-4" /> Payer <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                 </button>
                                 <button type="button" onClick={() => setStep('payment')} className="w-full text-slate-400 hover:text-white py-3 text-sm mt-2">← Autre moyen de paiement</button>
                             </div>
@@ -756,7 +804,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center">
                                 <p className="text-xs text-slate-500 mb-1">Montant payé</p>
                                 <p className="text-2xl font-black text-amber-400">
-                                    <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                    <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                 </p>
                             </div>
                             <Link href="/" className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-8 py-3 rounded-xl font-black transition-all">

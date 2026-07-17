@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
+import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Send invoice email to a client.
@@ -39,7 +40,7 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
         // 1. Trouver l'order
         const { data: order, error: orderErr } = await supabase
             .from('orders')
-            .select('id, customer_name, customer_email, amount, currency, payment_status, transaction_id, product_title, cart_items')
+            .select('id, customer_name, customer_email, customer_phone, shipping_address, shipping_country, amount, currency, payment_status, transaction_id, payment_method, product_title, cart_items, created_at, quantity, shipping_fee, coupon_id')
             .eq('id', orderId)
             .maybeSingle()
 
@@ -92,13 +93,93 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
             <div class="invoice-wrap">${stripHtmlDocWrappers(html)}</div>
         </body></html>`
 
-        // 5. Envoyer
+        // 5. Générer le PDF en PJ
+        let pdfBase64 = ''
+        try {
+            const isXof = order.currency === 'XOF' || order.currency === 'FCFA'
+            const grandTotal = order.amount
+            const shippingFee = order.shipping_fee || 0
+            const couponDiscount = order.coupon_id ? Math.max(0, (order.amount + 1) * 0.1) : 0 // approximate or fallback
+
+            // Parser les items du panier
+            interface CartItem {
+                product_id?: string
+                title?: string
+                product_title?: string
+                name?: string
+                price?: number
+                unit_price?: number
+                sale_price?: number
+                quantity?: number
+            }
+
+            const cartItems: CartItem[] = (order.cart_items && Array.isArray(order.cart_items) && order.cart_items.length > 0)
+                ? order.cart_items
+                : [{ title: order.product_title, price: order.amount / (order.quantity || 1), quantity: order.quantity || 1 }]
+
+            const resolveItemPrice = (item: CartItem): number => {
+                if (item.unit_price !== undefined) return item.unit_price
+                if (item.sale_price !== undefined && item.price !== undefined && item.sale_price < item.price) return item.sale_price
+                return item.price || 0
+            }
+            const resolveItemTitle = (item: CartItem): string =>
+                item.title || item.product_title || item.name || order.product_title || 'Produit'
+
+            const pdfItems: InvoicePdfItem[] = cartItems.map(item => {
+                const price = resolveItemPrice(item)
+                const qty = item.quantity || 1
+                const unitHT = isXof ? Math.round(price / 1.18) : Math.round((price / 1.18) * 100) / 100
+                return {
+                    description: resolveItemTitle(item),
+                    quantity: qty,
+                    unit_price: unitHT,
+                    tva: 18
+                }
+            })
+
+            const subTotal = pdfItems.reduce((acc, item) => acc + item.unit_price * item.quantity, 0)
+            const finalSousTotal = isXof ? Math.round(subTotal) : Math.round(subTotal * 100) / 100
+            const finalTotal = isXof ? Math.round(grandTotal) : Math.round(grandTotal * 100) / 100
+            const finalTva = finalTotal - finalSousTotal
+
+            pdfBase64 = generateInvoicePdf({
+                invoiceRef,
+                date: new Date(order.created_at || Date.now()).toLocaleDateString('fr-FR', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                }),
+                isPaid: order.payment_status === 'completed',
+                clientName: order.customer_name || 'Client',
+                clientEmail: order.customer_email || undefined,
+                clientPhone: order.customer_phone || undefined,
+                clientAddress: order.shipping_address || undefined,
+                items: pdfItems,
+                currency: order.currency || 'XOF',
+                sous_total: finalSousTotal,
+                total_tva: finalTva,
+                remise: isXof ? Math.round(couponDiscount) : Math.round(couponDiscount * 100) / 100,
+                total: finalTotal,
+                notes: `Facture boutique via ${order.payment_method || 'En ligne'}\nTransaction: ${order.transaction_id || ''}`,
+                conditions: 'Paiement effectué en ligne.',
+                isManual: false
+            })
+        } catch (pdfErr) {
+            console.error('[sendInvoiceEmail] PDF Generation failed (will send email without attachment):', pdfErr)
+        }
+
+        // 6. Envoyer
         const result = await sendEmail({
             to: recipient,
             subject,
             html: wrapper,
             context: 'invoice',
             relatedId: orderId,
+            ...(pdfBase64 ? {
+                attachments: [{
+                    filename: `facture-${invoiceRef.replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`,
+                    content: pdfBase64,
+                    contentType: 'application/pdf'
+                }]
+            } : {})
         })
 
         if (!result.success) {

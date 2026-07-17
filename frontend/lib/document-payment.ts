@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { convertCurrency, type CurrencyCode } from '@/lib/currency'
+import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -42,6 +43,14 @@ interface DocRow {
     client_nom?: string | null
     client_prenom?: string | null
     client_email?: string | null
+    client_phone?: string | null
+    client_adresse?: string | null
+    items?: any[] | null
+    sous_total?: number | null
+    total_tva?: number | null
+    remise?: number | null
+    notes?: string | null
+    paid_at?: string | null
 }
 
 /* ── Vérifications provider (montants en XOF côté passerelles africaines) ── */
@@ -146,6 +155,46 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
     // 2. Reçu client
     if (doc.client_email) {
         try {
+            // Générer le PDF en PJ
+            let pdfBase64 = ''
+            try {
+                const isXof = doc.currency === 'XOF' || doc.currency === 'FCFA'
+                const pdfItems: InvoicePdfItem[] = (doc.items || []).map((it: any) => ({
+                    description: it.description || '',
+                    quantity: Number(it.quantity) || 1,
+                    unit_price: Number(it.unit_price) || 0,
+                    tva: Number(it.tva) || 18
+                }))
+
+                const finalSousTotal = isXof ? Math.round(Number(doc.sous_total) || 0) : Math.round((Number(doc.sous_total) || 0) * 100) / 100
+                const finalTotal = isXof ? Math.round(Number(doc.total) || 0) : Math.round((Number(doc.total) || 0) * 100) / 100
+                const finalTva = finalTotal - finalSousTotal
+
+                pdfBase64 = generateInvoicePdf({
+                    invoiceRef: numero,
+                    date: new Date().toLocaleDateString('fr-FR', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    }),
+                    paidAt: doc.paid_at || new Date().toISOString(),
+                    isPaid: true,
+                    clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || 'Client',
+                    clientEmail: doc.client_email || undefined,
+                    clientPhone: doc.client_phone || undefined,
+                    clientAddress: doc.client_adresse || undefined,
+                    items: pdfItems,
+                    currency: doc.currency || 'XOF',
+                    sous_total: finalSousTotal,
+                    total_tva: finalTva,
+                    remise: isXof ? Math.round(Number(doc.remise) || 0) : Math.round((Number(doc.remise) || 0) * 100) / 100,
+                    total: finalTotal,
+                    notes: doc.notes || `Paiement en ligne via ${provider}\nTransaction: ${txId}`,
+                    conditions: 'Paiement effectué en ligne.',
+                    isManual: true
+                })
+            } catch (pdfErr) {
+                console.error('[sendDocPaymentEmails] PDF Generation failed:', pdfErr)
+            }
+
             await sendEmail({
                 to: doc.client_email,
                 subject: `Reçu de paiement — ${typeLabel} ${numero} — ${doc.total} ${doc.currency}`,
@@ -162,7 +211,7 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                     </div>
                     <div style="padding:32px 40px;color:#1f2937;font-size:15px;line-height:1.8;">
                         <p>Cher(e) ${esc(clientName)},</p>
-                        <p>Nous accusons réception de votre paiement. Le présent reçu en atteste officiellement.</p>
+                        <p>Nous accusons réception de votre paiement. Votre facture acquittée est disponible en pièce jointe à cet email.</p>
                         <table style="width:100%;border-collapse:collapse;margin:22px 0;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
                             <tr style="background:#f9fafb;"><td style="padding:12px 16px;color:#6b7280;font-size:13px;width:180px;">Montant réglé</td><td style="padding:12px 16px;color:#008751;font-size:18px;font-weight:800;">${esc(doc.total)} ${esc(doc.currency)}</td></tr>
                             <tr><td style="padding:12px 16px;color:#6b7280;font-size:13px;">Document</td><td style="padding:12px 16px;color:#1f2937;font-size:14px;">${typeLabel} ${esc(numero)}</td></tr>
@@ -182,6 +231,13 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                 </div>`,
                 context: 'doc_payment_receipt',
                 relatedId: doc.id,
+                ...(pdfBase64 ? {
+                    attachments: [{
+                        filename: `facture-${numero.replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`,
+                        content: pdfBase64,
+                        contentType: 'application/pdf'
+                    }]
+                } : {})
             })
         } catch (e) {
             console.error('[DOC-PAYMENT] reçu client échoué (non bloquant):', e instanceof Error ? e.message : e)
@@ -200,7 +256,7 @@ export async function confirmDocumentPayment(opts: {
 
     const { data: doc, error: docErr } = await supabase
         .from('documents_financiers')
-        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email')
+        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
         .eq('id', docId)
         .maybeSingle()
     if (docErr || !doc) return { success: false, error: 'Document introuvable', status: 404 }
@@ -264,7 +320,7 @@ export async function confirmDocumentPayment(opts: {
 export async function sendDocumentPaymentEmails(docId: string, provider: string, transactionId: string): Promise<void> {
     const { data: doc } = await supabase
         .from('documents_financiers')
-        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email')
+        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
         .eq('id', docId)
         .maybeSingle()
     if (doc) await sendDocPaymentEmails(doc as DocRow, provider, transactionId)

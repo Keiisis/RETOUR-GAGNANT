@@ -139,8 +139,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
         const tpl = templateData?.content || {}
         const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-        const devisFooter = tpl.footer || "Haie-Vive Cocotiers, Carré n°1158, Cotonou — République du Bénin\n+229 01 94 35 50 50  /  +229 01 60 32 21 21  /  +596 696 85 36 14\nIFU : 3202644573981   |   RCCM : RB/COT/26 B 42001   |   contact@retourgagnantbenin.bj"
-        const presidentName = tpl.signature_name || "N. R. G"
+        const devisFooter = tpl.footer || "Haie-Vive Cocotiers, Carré n°1158, Cotonou — République du Bénin\n+229 01 94 35 50 50 (WhatsApp)  /  +229 01 60 32 21 21 (WhatsApp)  /  +229 01 66 73 89 71 (Appel)\nIFU : 3202644573981  |  RCCM : RB/COT/26 B 42001  |  TVA 18% applicable\nEn cas de litige, seules les juridictions béninoises sont compétentes."
+        const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
         const presidentTitle = tpl.signature_title || "LA DIRECTION GÉNÉRALE"
 
         // ── Génération PDF ──────────────────────────────────────────────
@@ -314,7 +314,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
         // Lignes du tableau
         billable.forEach((item, i) => {
-            const rowH = 9
+            // Dynamic row height based on text length
+            const titleLines = pdf.splitTextToSize(item.title, cols[0].w - 4)
+            const rowH = Math.max(9, titleLines.length * 4.5 + 3)
             const even = i % 2 === 0
             pdf.setFillColor(even ? 250 : 244, even ? 250 : 246, even ? 250 : 244)
             pdf.rect(ML, y, CW, rowH, 'F')
@@ -326,28 +328,29 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             const ttcFCFA = item.selling_price
             const ttcEUR = Math.round(item.selling_price / XOF_TO_EUR)
 
-            const rowData = [
-                { text: item.title, w: cols[0].w, align: 'left' as const },
-                { text: '1', w: cols[1].w, align: 'center' as const },
-                { text: htFCFA.toLocaleString('fr-FR'), w: cols[2].w, align: 'right' as const },
-                { text: ttcFCFA.toLocaleString('fr-FR'), w: cols[3].w, align: 'right' as const },
-                { text: ttcEUR.toLocaleString('fr-FR'), w: cols[4].w, align: 'right' as const },
-            ]
-
-            cx = ML
+            // Draw title with word wrapping
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(8)
             pdf.setTextColor(30, 30, 30)
-            for (const cell of rowData) {
+            titleLines.forEach((line: string, li: number) => {
+                pdf.text(line, ML + 2, y + 5 + li * 4.5)
+            })
+
+            // Draw other columns (vertically centered in row)
+            const midY = y + rowH / 2 + 2
+            const otherData = [
+                { text: '1', w: cols[1].w, align: 'center' as const, xStart: cols[0].w },
+                { text: htFCFA.toLocaleString('fr-FR'), w: cols[2].w, align: 'right' as const, xStart: cols[0].w + cols[1].w },
+                { text: ttcFCFA.toLocaleString('fr-FR'), w: cols[3].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w },
+                { text: ttcEUR.toLocaleString('fr-FR'), w: cols[4].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w + cols[3].w },
+            ]
+            for (const cell of otherData) {
+                const cellX = ML + cell.xStart
                 if (cell.align === 'right') {
-                    pdf.text(cell.text, cx + cell.w - 2, y + 6, { align: 'right' })
-                } else if (cell.align === 'center') {
-                    pdf.text(cell.text, cx + cell.w / 2, y + 6, { align: 'center' })
+                    pdf.text(cell.text, cellX + cell.w - 2, midY, { align: 'right' })
                 } else {
-                    const lines = pdf.splitTextToSize(cell.text, cell.w - 4)
-                    pdf.text(lines[0], cx + 2, y + 6)
+                    pdf.text(cell.text, cellX + cell.w / 2, midY, { align: 'center' })
                 }
-                cx += cell.w
             }
             y += rowH
         })
@@ -464,23 +467,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         }
 
         // ── FOOTER ───────────────────────────────────────────────────────
+        // Footer with 4 lines
+        const footerLines = devisFooter.split('\n')
+        const footerLineCount = footerLines.length
+        const footerH = Math.max(18, footerLineCount * 4.5 + 6)
         pdf.setFillColor(20, 40, 30)
-        pdf.rect(0, PH - 18, PW, 18, 'F')
+        pdf.rect(0, PH - footerH, PW, footerH, 'F')
 
         pdf.setFont('helvetica', 'normal')
-        pdf.setFontSize(6.5)
+        pdf.setFontSize(7.5)
         pdf.setTextColor(180, 220, 190)
         
-        const footerLines = devisFooter.split('\n')
-        if (footerLines.length > 0) pdf.text(safe(footerLines[0]), PW / 2, PH - 13, { align: 'center' })
-        
-        pdf.setTextColor(252, 209, 22)
-        if (footerLines.length > 1) pdf.text(safe(footerLines[1]), PW / 2, PH - 9, { align: 'center' })
-        
-        pdf.setTextColor(150, 200, 165)
-        if (footerLines.length > 2) {
-            pdf.text(safe(footerLines.slice(2).join(' | ')), PW / 2, PH - 4.5, { align: 'center' })
-        }
+        const footerStartY = PH - footerH + 5
+        footerLines.forEach((line: string, i: number) => {
+            if (i === 1) pdf.setTextColor(252, 209, 22)
+            else if (i >= 2) pdf.setTextColor(150, 200, 165)
+            else pdf.setTextColor(180, 220, 190)
+            pdf.text(safe(line), PW / 2, footerStartY + i * 4.5, { align: 'center' })
+        })
 
         // ── OUTPUT ───────────────────────────────────────────────────────
         const pdfBuffer = Buffer.from(pdf.output('arraybuffer'))

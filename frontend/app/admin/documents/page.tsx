@@ -28,6 +28,94 @@ interface MyafroApp {
     id: string; application_ref: string; nom: string; prenom: string; email: string
     telephone: string; pays_residence: string; amount: number; currency: string
     payment_status: string; documents_uploaded: string[]; created_at: string
+    myafro_date?: string; needs_recherche_ancestrale?: boolean; recherche_ancestrale_paid?: boolean
+}
+
+const getUrgencyLevel = (myafroDateStr: string | null | undefined): { label: string, color: string, border: string, bg: string } => {
+    if (!myafroDateStr) return { label: 'Urgence indéterminée', color: 'text-gray-400', border: 'border-gray-500/20', bg: 'bg-gray-500/10' }
+
+    const clean = myafroDateStr.toLowerCase().trim()
+    let months = 1 // default
+
+    const monthMatch = clean.match(/(\d+)\s*mois/)
+    const yearMatch = clean.match(/(\d+)\s*an/)
+    const weekMatch = clean.match(/(\d+)\s*semaine/)
+    const dayMatch = clean.match(/(\d+)\s*jour/)
+
+    if (yearMatch) {
+        months = parseInt(yearMatch[1], 10) * 12
+    } else if (monthMatch) {
+        months = parseInt(monthMatch[1], 10)
+    } else if (weekMatch) {
+        months = parseInt(weekMatch[1], 10) / 4
+    } else if (dayMatch) {
+        months = parseInt(dayMatch[1], 10) / 30
+    } else {
+        const parts = clean.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/)
+        let date: Date | null = null
+        if (parts) {
+            date = new Date(parseInt(parts[3], 10), parseInt(parts[2], 10) - 1, parseInt(parts[1], 10))
+        } else {
+            const parsedTs = Date.parse(clean)
+            if (!isNaN(parsedTs)) date = new Date(parsedTs)
+        }
+
+        if (date) {
+            const diffMs = Date.now() - date.getTime()
+            const diffDays = diffMs / (1000 * 60 * 60 * 24)
+            months = diffDays / 30
+        }
+    }
+
+    if (months > 6) {
+        return { label: `Urgence Haute (${myafroDateStr})`, color: 'text-red-400 font-black animate-pulse', border: 'border-red-500/30', bg: 'bg-red-500/10' }
+    } else if (months >= 3) {
+        return { label: `Urgence Moyenne (${myafroDateStr})`, color: 'text-amber-400 font-bold', border: 'border-amber-500/30', bg: 'bg-amber-500/10' }
+    } else {
+        return { label: `Urgence Faible (${myafroDateStr})`, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' }
+    }
+}
+
+const generateVirtualAssistantRecap = (apps: MyafroApp[]) => {
+    const total = apps.length
+    const unpaid = apps.filter(a => a.payment_status !== 'payé').length
+    const paid = total - unpaid
+
+    let high = 0
+    let medium = 0
+    let low = 0
+
+    const suggestions: string[] = []
+
+    apps.forEach(a => {
+        const level = getUrgencyLevel(a.myafro_date)
+        if (level.label.includes('Haute')) {
+            high++
+            suggestions.push(`Le dossier de **${a.prenom} ${a.nom}** (${a.myafro_date || 'date inconnue'}) est en attente depuis longtemps. Relancez-le pour la recherche ancestrale de 250 €.`)
+        } else if (level.label.includes('Moyenne')) {
+            medium++
+        } else {
+            low++
+        }
+    })
+
+    if (unpaid > 0) {
+        suggestions.push(`Paiement manquant : **${unpaid}** client(s) n'ont pas encore finalisé les frais de reprise de 50 €.`);
+    }
+
+    if (paid > 0) {
+        suggestions.push(`Instruction : **${paid}** client(s) ont payé les 50 € de reprise et attendent la validation de leurs documents.`);
+    }
+
+    return {
+        total,
+        paid,
+        unpaid,
+        high,
+        medium,
+        low,
+        suggestions
+    }
 }
 
 const formatDate = (val: string | null | undefined) => {
@@ -54,6 +142,30 @@ export default function AdminDocumentsPage() {
     const [previewDocs, setPreviewDocs] = useState<Array<{ label: string; url: string | null; type: string }>>([])
     const [previewLoading, setPreviewLoading] = useState(false)
     const [approvingId, setApprovingId] = useState<string | null>(null)
+    
+    // Nouveaux états pour le paiement manuel et la relance
+    const [invoices, setInvoices] = useState<any[]>([])
+    const [linkPaid, setLinkPaid] = useState(false)
+    const [selectedInvoiceId, setSelectedInvoiceId] = useState('')
+    const [sendingRelanceId, setSendingRelanceId] = useState<string | null>(null)
+
+    // Effacer le lien généré si les paramètres de paiement changent
+    useEffect(() => {
+        setGenLink('')
+    }, [linkPaid, selectedInvoiceId])
+
+    const fetchInvoices = async () => {
+        try {
+            const { data } = await supabase
+                .from('documents_financiers')
+                .select('id, numero, client_name, total, currency, type')
+                .eq('type', 'facture')
+                .order('created_at', { ascending: false })
+            setInvoices(data || [])
+        } catch (e) {
+            console.error('Failed to fetch invoices:', e)
+        }
+    }
 
     const fetchDocs = useCallback(async () => {
         let query = supabase.from('client_documents').select('*').order('created_at', { ascending: false })
@@ -98,24 +210,79 @@ export default function AdminDocumentsPage() {
     }
 
     // ── MyAfroOrigins actions ──
+    // ── MyAfroOrigins actions ──
     const sendInvite = async () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) { alert('Email invalide.'); return }
         setInviteState('sending')
         try {
-            const res = await fetch('/api/admin/documents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'invite', email: inviteEmail.trim(), name: inviteName.trim() }) })
+            const res = await fetch('/api/admin/documents', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    action: 'invite', 
+                    email: inviteEmail.trim(), 
+                    name: inviteName.trim(),
+                    paid: linkPaid,
+                    invoice_id: linkPaid && selectedInvoiceId ? selectedInvoiceId : undefined
+                }) 
+            })
             const data = await res.json()
-            if (res.ok && data.success) { setInviteState('sent'); setInviteEmail(''); setInviteName(''); setTimeout(() => setInviteState('idle'), 4000) }
-            else { setInviteState('error'); alert(data.error || 'Envoi impossible.') }
+            if (res.ok && data.success) { 
+                setInviteState('sent')
+                setInviteEmail('')
+                setInviteName('')
+                setLinkPaid(false)
+                setSelectedInvoiceId('')
+                setTimeout(() => setInviteState('idle'), 4000) 
+            } else { 
+                setInviteState('error')
+                alert(data.error || 'Envoi impossible.') 
+            }
         } catch { setInviteState('error') }
     }
     const generateLink = async () => {
         try {
-            const res = await fetch('/api/admin/documents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'link' }) })
+            const res = await fetch('/api/admin/documents', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    action: 'link',
+                    paid: linkPaid,
+                    invoice_id: linkPaid && selectedInvoiceId ? selectedInvoiceId : undefined
+                }) 
+            })
             const data = await res.json()
             if (data.link) setGenLink(data.link)
         } catch { /* ignore */ }
     }
     const copyLink = () => { navigator.clipboard.writeText(genLink); setCopied(true); setTimeout(() => setCopied(false), 2000) }
+    
+    // Action de relance Recherche Ancestrale (250 €)
+    const sendAncestralRelance = async (a: MyafroApp) => {
+        if (!confirm(`Envoyer la relance Recherche Ancestrale (250 €) à ${a.prenom} ${a.nom} ?`)) return
+        setSendingRelanceId(a.id)
+        try {
+            const res = await fetch('/api/admin/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'relance_ancestrale', id: a.id })
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                alert('Email de relance pour la Recherche Ancestrale envoyé avec succès !')
+                // Mettre à jour l'état local pour refléter le changement
+                setMyafroApps(prev => prev.map(x => x.id === a.id ? { ...x, needs_recherche_ancestrale: true } : x))
+            } else {
+                alert(data.error || 'Erreur lors de l\'envoi de la relance.')
+            }
+        } catch (err) {
+            console.error(err)
+            alert('Erreur réseau ou serveur.')
+        } finally {
+            setSendingRelanceId(null)
+        }
+    }
+
     const openPreview = async (a: MyafroApp) => {
         setPreviewApp(a); setPreviewDocs([]); setPreviewLoading(true)
         try {
@@ -163,6 +330,48 @@ export default function AdminDocumentsPage() {
                         </div>
                     </div>
 
+                    {/* Option de paiement manuel lié à une facture */}
+                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 mb-6">
+                        <p className="text-sm font-black text-white flex items-center gap-2 mb-2">
+                            <ShieldCheck size={18} className="text-emerald-400" />
+                            Paiement manuel préalable des 50 € de reprise
+                        </p>
+                        <p className="text-[11px] text-gray-500 mb-4">
+                            Si le client a déjà réglé ces frais de façon manuelle, cochez cette case et sélectionnez la facture associée. L&apos;étape de paiement en ligne sera contournée pour ce client.
+                        </p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-300">
+                                <input
+                                    type="checkbox"
+                                    checked={linkPaid}
+                                    onChange={(e) => {
+                                        setLinkPaid(e.target.checked)
+                                        if (e.target.checked && invoices.length === 0) {
+                                            fetchInvoices()
+                                        }
+                                    }}
+                                    className="rounded border-white/10 bg-[#0d1424] text-emerald-500 focus:ring-emerald-500/50"
+                                />
+                                Le client a déjà payé manuellement
+                            </label>
+
+                            {linkPaid && (
+                                <select
+                                    value={selectedInvoiceId}
+                                    onChange={(e) => setSelectedInvoiceId(e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500/50"
+                                >
+                                    <option value="" className="bg-[#0d1424] text-gray-400">-- Choisir une facture --</option>
+                                    {invoices.map(inv => (
+                                        <option key={inv.id} value={inv.id} className="bg-[#0d1424] text-white">
+                                            {inv.numero} - {inv.client_name || 'Sans nom'} ({inv.total} XOF/FCFA)
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Invitation + lien */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
@@ -190,6 +399,62 @@ export default function AdminDocumentsPage() {
                         </div>
                     </div>
 
+                    {/* Assistant Virtuel de Suivi */}
+                    {!myafroLoading && myafroApps.length > 0 && (
+                        <div className="bg-gradient-to-r from-emerald-950/30 to-emerald-900/20 border border-emerald-500/20 rounded-2xl p-6 mb-6 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
+                            
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                                    <ShieldCheck className="text-emerald-400" size={24} />
+                                </div>
+                                <div className="flex-1 min-w-0 space-y-3">
+                                    <div>
+                                        <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest">Assistant Virtuel · Suivi & Relances</h3>
+                                        <p className="text-xs text-gray-400 mt-1">Résumé intelligent automatique de l&apos;état des dossiers de reprise MyAfroOrigins en attente.</p>
+                                    </div>
+                                    
+                                    {(() => {
+                                        const recap = generateVirtualAssistantRecap(myafroApps)
+                                        return (
+                                            <div className="space-y-4">
+                                                {/* Urgency indicators */}
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    <div className="bg-white/5 border border-white/5 rounded-xl px-3 py-2">
+                                                        <span className="block text-[10px] text-gray-500 uppercase tracking-wider font-bold">Total dossiers</span>
+                                                        <span className="text-lg font-black text-white">{recap.total}</span>
+                                                    </div>
+                                                    <div className="bg-red-500/5 border border-red-500/10 rounded-xl px-3 py-2">
+                                                        <span className="block text-[10px] text-red-400 uppercase tracking-wider font-bold">Urgence Haute</span>
+                                                        <span className="text-lg font-black text-red-400">{recap.high}</span>
+                                                    </div>
+                                                    <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl px-3 py-2">
+                                                        <span className="block text-[10px] text-amber-400 uppercase tracking-wider font-bold">Urgence Moyenne</span>
+                                                        <span className="text-lg font-black text-amber-400">{recap.medium}</span>
+                                                    </div>
+                                                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-3 py-2">
+                                                        <span className="block text-[10px] text-emerald-400 uppercase tracking-wider font-bold">Payé (Reprise)</span>
+                                                        <span className="text-lg font-black text-emerald-400">{recap.paid} / {recap.total}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Suggestions list */}
+                                                <div className="space-y-2">
+                                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Recommandations d&apos;actions</p>
+                                                    <ul className="text-xs text-gray-300 space-y-1.5 list-disc list-inside">
+                                                        {recap.suggestions.map((s, idx) => (
+                                                            <li key={idx} dangerouslySetInnerHTML={{ __html: s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Liste dossiers reçus */}
                     <div className="bg-white/[0.02] border border-white/10 rounded-2xl overflow-hidden">
                         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
@@ -206,27 +471,51 @@ export default function AdminDocumentsPage() {
                             </div>
                         ) : (
                             <div className="divide-y divide-white/5">
-                                {myafroApps.map(a => (
-                                    <div key={a.id} className="p-5 flex flex-col md:flex-row md:items-center gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-white">{a.prenom} {a.nom} <span className="text-[10px] font-mono text-gray-500 ml-2">{a.application_ref}</span></p>
-                                            <p className="text-[11px] text-gray-500 mt-0.5">{a.email}{a.telephone ? ` · ${a.telephone}` : ''}{a.pays_residence ? ` · ${a.pays_residence}` : ''}</p>
-                                            <div className="flex items-center gap-2 mt-2 text-[10px]">
-                                                <span className={`px-2 py-0.5 rounded-full font-black ${a.payment_status === 'payé' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{a.payment_status === 'payé' ? `Payé ${a.amount} ${a.currency}` : 'Paiement en attente'}</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-400 font-bold">{(a.documents_uploaded || []).length} pièce(s)</span>
+                                {myafroApps.map(a => {
+                                    const urgency = getUrgencyLevel(a.myafro_date)
+                                    return (
+                                        <div key={a.id} className="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-white flex items-center gap-2 flex-wrap">
+                                                    {a.prenom} {a.nom} 
+                                                    <span className="text-[10px] font-mono text-gray-500">{a.application_ref}</span>
+                                                    {a.myafro_date && (
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] border ${urgency.border} ${urgency.bg} ${urgency.color}`}>
+                                                            {urgency.label}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500 mt-0.5">{a.email}{a.telephone ? ` · ${a.telephone}` : ''}{a.pays_residence ? ` · ${a.pays_residence}` : ''}</p>
+                                                <div className="flex items-center gap-2 mt-2 text-[10px]">
+                                                    <span className={`px-2 py-0.5 rounded-full font-black ${a.payment_status === 'payé' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                                        {a.payment_status === 'payé' ? `Payé ${a.amount} ${a.currency}` : 'Paiement en attente'}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-400 font-bold">{(a.documents_uploaded || []).length} pièce(s)</span>
+                                                    {a.recherche_ancestrale_paid ? (
+                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-black">Recherche Ancestrale Payée</span>
+                                                    ) : a.needs_recherche_ancestrale ? (
+                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-bold">Relancé (Recherche)</span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {!a.recherche_ancestrale_paid && (
+                                                    <button onClick={() => sendAncestralRelance(a)} disabled={sendingRelanceId === a.id} className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1 disabled:opacity-60">
+                                                        {sendingRelanceId === a.id ? <Loader2 size={13} className="animate-spin" /> : null}
+                                                        Relancer Recherche (250 €)
+                                                    </button>
+                                                )}
+                                                {(a.documents_uploaded || []).length > 0 && (
+                                                    <button onClick={() => openPreview(a)} className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1"><Eye size={13} /> Prévisualiser</button>
+                                                )}
+                                                <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1"><Download size={13} /> ZIP</button>
+                                                <button onClick={() => approve(a)} disabled={approvingId === a.id} className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1 disabled:opacity-60">
+                                                    {approvingId === a.id ? <Loader2 size={13} className="animate-spin" /> : <ArrowRight size={13} />} Approuver → Nationalité
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(a.documents_uploaded || []).length > 0 && (
-                                                <button onClick={() => openPreview(a)} className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1"><Eye size={13} /> Prévisualiser</button>
-                                            )}
-                                            <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1"><Download size={13} /> ZIP</button>
-                                            <button onClick={() => approve(a)} disabled={approvingId === a.id} className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-bold text-[11px] px-3 py-2 rounded-lg flex items-center gap-1 disabled:opacity-60">
-                                                {approvingId === a.id ? <Loader2 size={13} className="animate-spin" /> : <ArrowRight size={13} />} Approuver → Nationalité
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </div>

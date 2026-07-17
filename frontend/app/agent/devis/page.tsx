@@ -143,8 +143,8 @@ export default function AgentDevisPage() {
 
             const tpl = templateData?.content || {}
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj"
-            const presidentName = tpl.signature_name || "N. R. G"
+            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
+            const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
             const presidentTitle = tpl.signature_title || "LA DIRECTION GÉNÉRALE"
 
             const jsPDF = (await import('jspdf')).default
@@ -236,7 +236,10 @@ export default function AgentDevisPage() {
             pdf.setTextColor(80, 80, 80)
             pdf.text(`N° ${doc.numero}`, pw - mr, headerTop + 22, { align: 'right' })
             pdf.text(`Date : ${doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}`, pw - mr, headerTop + 27, { align: 'right' })
-            pdf.text(doc.type === 'facture' ? `Délai : ${doc.validite}` : `Validité : ${doc.validite}`, pw - mr, headerTop + 32, { align: 'right' })
+            // Ne pas afficher Délai pour les factures (uniquement Validité pour les devis)
+            if (doc.type === 'devis') {
+                pdf.text(`Validité : ${doc.validite}`, pw - mr, headerTop + 32, { align: 'right' })
+            }
 
             // Status Badge
             const sc = statusColorMap[doc.status] || [90, 90, 90]
@@ -256,9 +259,9 @@ export default function AgentDevisPage() {
             const boxW = (cw - 6) / 2
             const boxH = 50
 
-            // EMETTEUR
-            pdf.setFillColor(12, 20, 32)
-            pdf.setDrawColor(40, 60, 90)
+            // EMETTEUR (bleu clair comme DESTINATAIRE)
+            pdf.setFillColor(240, 244, 255)
+            pdf.setDrawColor(200, 215, 240)
             pdf.roundedRect(ml, y, boxW, boxH, 2, 2, 'FD')
 
             pdf.setFont('helvetica', 'bold')
@@ -273,10 +276,11 @@ export default function AgentDevisPage() {
                 if (isFirst) {
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(10)
+                    pdf.setTextColor(30, 50, 80)
                 } else {
                     pdf.setFont('helvetica', 'normal')
                     pdf.setFontSize(7)
-                    if (i === 1) pdf.setTextColor(160, 180, 210)
+                    pdf.setTextColor(70, 90, 130)
                 }
                 const offset = isFirst ? 15 : (22 + (i - 1) * 6)
                 pdf.text(l, ml + 4, y + offset)
@@ -329,14 +333,24 @@ export default function AgentDevisPage() {
             y += 10
 
             doc.items.forEach((it, i) => {
-                const rh = 9
+                // Dynamic row height for full description text
+                const descLines = pdf.splitTextToSize(it.description, cols[0].w - 6)
+                const rh = Math.max(9, descLines.length * 4 + 3)
                 pdf.setFillColor(i % 2 === 0 ? 252 : 246, i % 2 === 0 ? 253 : 248, i % 2 === 0 ? 255 : 252)
                 pdf.rect(ml, y, cw, rh, 'F')
                 pdf.setDrawColor(220, 230, 240)
                 pdf.line(ml, y + rh, ml + cw, y + rh)
 
-                const data = [
-                    { t: it.description, w: cols[0].w },
+                // Draw full description
+                pdf.setFontSize(8)
+                pdf.setTextColor(40, 50, 70)
+                descLines.forEach((line: string, li: number) => {
+                    pdf.text(line, ml + 3, y + 5 + li * 4)
+                })
+
+                // Draw other columns (vertically centered)
+                const midY = y + rh / 2 + 2
+                const otherData = [
                     { t: it.quantity.toString(), w: cols[1].w, a: 'center' },
                     { t: fmtN(it.unit_price), w: cols[2].w, a: 'right' },
                     { t: it.tva + '%', w: cols[3].w, a: 'center' },
@@ -344,14 +358,11 @@ export default function AgentDevisPage() {
                     { t: fmtN(it.quantity * it.unit_price), w: cols[5].w, a: 'right' },
                 ]
 
-                cx = ml
-                pdf.setFontSize(8)
-                pdf.setTextColor(40, 50, 70)
-                data.forEach(d => {
-                    const tx = d.a === 'right' ? cx + d.w - 2 : d.a === 'center' ? cx + d.w / 2 : cx + 3
-                    const val = d.t.length > 40 ? d.t.substring(0, 37) + '...' : d.t
-                    pdf.text(val, tx, y + 5.5, { align: (d.a || 'left') as any })
-                    cx += d.w
+                let colX = ml + cols[0].w
+                otherData.forEach(d => {
+                    const tx = d.a === 'right' ? colX + d.w - 2 : colX + d.w / 2
+                    pdf.text(d.t, tx, midY, { align: (d.a || 'left') as any })
+                    colX += d.w
                 })
                 y += rh
             })
@@ -417,14 +428,17 @@ export default function AgentDevisPage() {
             pdf.text(presidentName, sig2X + 4, y + 33)
 
             // ── FOOTER ────────────────────────────────────────────
-            pdf.setFillColor(12, 20, 32)
-            pdf.rect(0, ph - 16, pw, 16, 'F')
-            pdf.setFontSize(6)
-            pdf.setTextColor(150, 170, 200)
             const footerLines = devisFooter.split('\n')
-            if (footerLines.length > 0) pdf.text(footerLines[0], pw / 2, ph - 11, { align: 'center' })
-            if (footerLines.length > 1) pdf.text(footerLines[1], pw / 2, ph - 7, { align: 'center' })
-            pdf.text(`Doc N° ${doc.numero} — Page 1/1`, pw / 2, ph - 4, { align: 'center' })
+            const footerLinesCount = footerLines.length
+            const fH = Math.max(16, footerLinesCount * 4.5 + 4)
+            pdf.setFillColor(12, 20, 32)
+            pdf.rect(0, ph - fH, pw, fH, 'F')
+            pdf.setFontSize(7.5)
+            pdf.setTextColor(150, 170, 200)
+            const fStartY = ph - fH + 4.5
+            footerLines.forEach((l: string, i: number) => {
+                pdf.text(l, pw / 2, fStartY + i * 4.5, { align: 'center' })
+            })
 
             pdf.save(`${doc.type}_${doc.numero}.pdf`)
         } catch (err) {

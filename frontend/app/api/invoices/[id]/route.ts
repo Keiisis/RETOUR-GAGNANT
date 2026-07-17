@@ -107,9 +107,9 @@ export async function GET(
 
     const tpl = templateRes.data?.content || {}
     const erpHeader: string = tpl.header || 'RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj'
-    const erpFooter: string = tpl.footer || 'RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj'
+    const erpFooter: string = tpl.footer || 'RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes.'
     const presidentTitle: string = tpl.signature_title || 'LA DIRECTION GÉNÉRALE'
-    const presidentName: string = tpl.signature_name || 'N. R. G'
+    const presidentName: string = tpl.signature_name || 'Nathalie RIFFERT GERMANY'
 
     // Parse infos entreprise depuis l'en-tête ERP
     const erpLines = erpHeader.split('\n').map((l: string) => l.trim()).filter(Boolean)
@@ -224,7 +224,7 @@ export async function GET(
         </td>
         <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">${qty}</td>
         <td style="padding:10px 12px;font-size:12px;color:#445;text-align:right;border-bottom:1px solid #e2e8f0;vertical-align:top;white-space:nowrap;">${fmtPrice(price)}</td>
-        <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">—</td>
+        <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">18%</td>
         <td style="padding:10px 12px;font-size:12px;font-weight:700;color:#1a2035;text-align:right;border-bottom:1px solid #e2e8f0;vertical-align:top;white-space:nowrap;">${fmtPrice(lineTotal)}</td>
       </tr>`
     }).join('')
@@ -292,13 +292,13 @@ export async function GET(
 
     /* ── Boîtes émetteur/destinataire ── */
     .parties{display:flex;gap:16px;margin-bottom:24px}
-    .party-emetteur{flex:1;background:#121c2a;border:1px solid #1e3055;border-radius:8px;padding:16px}
+    .party-emetteur{flex:1;background:#f0f4ff;border:1px solid #c8d5f0;border-radius:8px;padding:16px}
     .party-destinataire{flex:1;background:#f8faff;border:1px solid #c8d5f0;border-radius:8px;padding:16px}
     .party-label{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px;padding-bottom:6px}
-    .party-emetteur .party-label{color:#4d7cc4;border-bottom:1px solid #1e3055}
+    .party-emetteur .party-label{color:#4d7cc4;border-bottom:1px solid #c8d5f0}
     .party-destinataire .party-label{color:#6478b0;border-bottom:1px solid #c8d5f0}
-    .party-emetteur .company-name{font-size:13px;font-weight:800;color:#dce8f5;margin-bottom:4px}
-    .party-emetteur .company-detail{font-size:10px;color:#7a9bc4;line-height:1.8}
+    .party-emetteur .company-name{font-size:13px;font-weight:800;color:#1e2d50;margin-bottom:4px}
+    .party-emetteur .company-detail{font-size:10px;color:#4a5580;line-height:1.8}
     .party-destinataire .client-name{font-size:13px;font-weight:800;color:#1e2d50;margin-bottom:4px}
     .party-destinataire .client-detail{font-size:10px;color:#4a5580;line-height:1.8}
 
@@ -346,9 +346,9 @@ export async function GET(
     .qr-label{font-size:8px;color:#aaa;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
 
     /* ── Footer dark ── */
-    .dark-footer{background:#0a1018;padding:10px 32px;text-align:center}
-    .dark-footer p{font-size:9px;color:#7a9bc4;line-height:1.8}
-    .dark-footer .doc-ref{font-size:8px;color:#3a5070;margin-top:2px}
+    .dark-footer{background:#0a1018;padding:12px 32px;text-align:center}
+    .dark-footer p{font-size:11px;color:#7a9bc4;line-height:1.8}
+    .dark-footer .doc-ref{font-size:10px;color:#3a5070;margin-top:2px}
 
     /* ── Bouton impression ── */
     .print-btn{display:block;margin:22px auto;padding:11px 36px;background:#008751;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.5px}
@@ -411,7 +411,8 @@ export async function GET(
           <div class="company-detail">
             ${escapeHtml(companyMeta)}<br>
             ${escapeHtml(companyAddress)}<br>
-            ${escapeHtml(companyPhone)}<br>
+            📱 WhatsApp : (+229) 01 94 35 50 50 / 01 60 32 21 21<br>
+            📞 Appel direct : (+229) 01 66 73 89 71<br>
             ${escapeHtml(companyEmail)}
           </div>
         </div>

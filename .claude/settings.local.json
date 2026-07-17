@@ -253,7 +253,10 @@
       "Bash(node --test test/*.test.mjs)",
       "Bash(echo \"=== sslCAInfo configuré ? ===\" && git config --global --get http.sslCAInfo; echo \"\\(vide=non\\)\"; echo \"=== Git install dir / CA bundle présent ? ===\" && ls \"C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt\" 2>&1 | head -1; ls \"C:/Program Files/Git/mingw64/ssl/certs/ca-bundle.crt\" 2>&1 | head -1)",
       "Read(//c/Program Files/Git/mingw64/etc/ssl/certs/**)",
-      "Read(//c/Program Files/Git/mingw64/ssl/certs/**)"
+      "Read(//c/Program Files/Git/mingw64/ssl/certs/**)",
+      "Bash(git commit *)",
+      "Bash(git -c http.sslBackend=schannel push origin main)",
+      "Bash(git stash *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend\\app\\api\\admin\\users"

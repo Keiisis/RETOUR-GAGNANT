@@ -397,7 +397,7 @@ export default function ClientPortalPage() {
             // Fetch ERP Templates
             let devisHeader = "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
             let devisFooter = "RETOUR GAGNANT BÉNIN - RCCM: RB/COT/26 B 42001 - IFU: 3202644573981 - Haie-Vive Cocotiers, Cotonou - contact@retourgagnantbenin.bj\nDocument N° - Généré le"
-            let presidentName = "N. R. G"
+            let presidentName = "Nathalie RIFFERT GERMANY"
             let presidentTitle = "LA DIRECTION GÉNÉRALE"
 
             try {
@@ -907,9 +907,9 @@ export default function ClientPortalPage() {
                         </p>
                         <p className="text-xl font-black text-white font-mono break-all">{doc.numero}</p>
                         <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/5">
-                            <div className={`w-2 h-2 rounded-full ${isPaid ? 'bg-emerald-400' : isAccepted ? 'bg-emerald-400' : 'bg-blue-400 animate-pulse'}`}></div>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${statusColor.split(' ')[0]}`}>
-                                {doc.status}
+                            <div className={`w-2 h-2 rounded-full ${(isPaid || (doc.type === 'facture' && doc.status === 'envoye')) ? 'bg-emerald-400' : isAccepted ? 'bg-emerald-400' : 'bg-blue-400 animate-pulse'}`}></div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${(isPaid || (doc.type === 'facture' && doc.status === 'envoye')) ? 'text-emerald-400 bg-emerald-500/10' : statusColor.split(' ')[0]}`}>
+                                {doc.status === 'paye' || (doc.type === 'facture' && doc.status === 'envoye') ? 'ACQUITTEE' : doc.status}
                             </span>
                         </div>
                     </div>
@@ -922,10 +922,10 @@ export default function ClientPortalPage() {
                     className="bg-[#0c1420] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative"
                 >
                     {/* Watermark */}
-                    {(isPaid || doc.status === 'brouillon') && (
+                    {(isPaid || doc.status === 'brouillon' || doc.type === 'facture') && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 opacity-5">
                             <p className="text-[150px] font-black italic transform -rotate-45 text-white blur-[2px]">
-                                {doc.status.toUpperCase()}
+                                {doc.status === 'paye' || (doc.type === 'facture' && doc.status === 'envoye') ? 'ACQUITTEE' : doc.status.toUpperCase()}
                             </p>
                         </div>
                     )}
@@ -988,23 +988,27 @@ export default function ClientPortalPage() {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Conditions Générales & Validité</p>
                                 <p className="text-xs text-gray-400 bg-white/5 p-4 rounded-xl border border-white/5 whitespace-pre-wrap leading-relaxed">
                                     {doc.conditions}
-                                    <br/><br/>
-                                    <strong><Calendar size={12} className="inline mr-1 relative -top-[1px]"/> Délai / Validité :</strong> {doc.validite}
+                                    {doc.type === 'devis' && (
+                                        <>
+                                            <br/><br/>
+                                            <strong><Calendar size={12} className="inline mr-1 relative -top-[1px]"/> Délai / Validité :</strong> {doc.validite}
+                                        </>
+                                    )}
                                 </p>
                             </div>
                             <div className="lg:w-1/2 lg:max-w-xs ml-auto space-y-3">
                                 <div className="flex justify-between items-center text-sm text-gray-400 border-b border-white/5 pb-3">
                                     <span>Sous-total HT</span>
-                                    <span className="font-mono">{doc.sous_total.toLocaleString('fr-FR')} {doc.currency}</span>
+                                    <span className="font-mono">{((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.sous_total) : doc.sous_total).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm text-gray-400 border-b border-white/5 pb-3">
                                     <span>TVA</span>
-                                    <span className="font-mono">+ {doc.total_tva.toLocaleString('fr-FR')} {doc.currency}</span>
+                                    <span className="font-mono">+ {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total_tva) : doc.total_tva).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
                                 {doc.remise > 0 && (
                                     <div className="flex justify-between items-center text-sm text-amber-500 border-b border-white/5 pb-3">
                                         <span>Remise appliquée</span>
-                                        <span className="font-mono">- {doc.remise.toLocaleString('fr-FR')} {doc.currency}</span>
+                                        <span className="font-mono">- {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.remise) : doc.remise).toLocaleString('fr-FR')} {doc.currency}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center pt-2">
@@ -1012,7 +1016,7 @@ export default function ClientPortalPage() {
                                     <div className="text-right space-y-1">
                                         <div className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">
                                             {selectedCurrency === 'XOF'
-                                                ? `${doc.total.toLocaleString('fr-FR')} XOF`
+                                                ? `${Math.round(doc.total).toLocaleString('fr-FR')} XOF`
                                                 : formatPriceWithMargin(doc.total, selectedCurrency)
                                             }
                                         </div>
@@ -1037,37 +1041,39 @@ export default function ClientPortalPage() {
                         {(signatureUrl || STAMP_BASE64) && (
                             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Side A: Client Signature */}
-                                <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl">
-                                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">Signature du Client (Approbation)</p>
-                                    <div className="bg-white/90 h-56 rounded-xl flex flex-col items-center justify-center p-4 border border-emerald-500/10">
-                                        {signatureUrl ? (
-                                            <>
-                                                <Image src={signatureUrl} alt="Signature Client" width={250} height={120} className="h-4/5 w-auto object-contain pointer-events-none mb-2" />
-                                                <p className="text-gray-900 font-bold text-sm uppercase tracking-tight">{doc.client_prenom} {doc.client_nom}</p>
-                                            </>
-                                        ) : (
-                                            <div className="text-center">
-                                                <p className="text-xs text-gray-400 italic mb-2">Signature en attente</p>
-                                                <p className="text-gray-900 font-bold text-sm uppercase opacity-50">{doc.client_prenom} {doc.client_nom}</p>
+                                {doc.type !== 'facture' && (
+                                    <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl">
+                                        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">Signature du Client (Approbation)</p>
+                                        <div className="bg-white/90 h-56 rounded-xl flex flex-col items-center justify-center p-4 border border-emerald-500/10">
+                                            {signatureUrl ? (
+                                                <>
+                                                    <Image src={signatureUrl} alt="Signature Client" width={250} height={120} className="h-4/5 w-auto object-contain pointer-events-none mb-2" />
+                                                    <p className="text-gray-900 font-bold text-sm uppercase tracking-tight">{doc.client_prenom} {doc.client_nom}</p>
+                                                </>
+                                            ) : (
+                                                <div className="text-center">
+                                                    <p className="text-xs text-gray-400 italic mb-2">Signature en attente</p>
+                                                    <p className="text-gray-900 font-bold text-sm uppercase opacity-50">{doc.client_prenom} {doc.client_nom}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {signatureUrl && (
+                                            <div className="mt-3 space-y-1 text-center">
+                                                <p className="text-[10px] text-emerald-500/80 font-bold">ÉMISSION : {formatDateSafe(doc?.created_at)}</p>
+                                                <p className="text-[9px] text-emerald-500/60 font-medium italic">Validé numériquement le {doc?.signed_at ? formatDateSafe(doc.signed_at) : new Date().toLocaleDateString('fr-FR')}</p>
                                             </div>
                                         )}
                                     </div>
-                                    {signatureUrl && (
-                                        <div className="mt-3 space-y-1 text-center">
-                                            <p className="text-[10px] text-emerald-500/80 font-bold">ÉMISSION : {formatDateSafe(doc?.created_at)}</p>
-                                            <p className="text-[9px] text-emerald-500/60 font-medium italic">Validé numériquement le {doc?.signed_at ? formatDateSafe(doc.signed_at) : new Date().toLocaleDateString('fr-FR')}</p>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
 
                                 {/* Side B: PDG Stamp & Sign */}
-                                <div className="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl relative text-gray-900">
+                                <div className={`${doc.type === 'facture' ? 'md:col-span-2 max-w-md mx-auto w-full' : ''} bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl relative text-gray-900`}>
                                     <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">Cachet & Signature Direction</p>
                                     <div className="bg-white/90 h-56 rounded-xl flex items-center justify-center p-4 relative">
                                         <div className="text-center z-10">
                                             <p className="text-[10px] text-gray-400 font-bold mb-1">RETOUR GAGNANT BÉNIN</p>
                                             <p className="text-[9px] text-emerald-600 font-black uppercase">La Présidente Directrice Générale</p>
-                                            <p className="text-sm text-gray-900 font-bold mt-1">N. R. G</p>
+                                            <p className="text-sm text-gray-900 font-bold mt-1">Nathalie RIFFERT GERMANY</p>
                                         </div>
                                         {STAMP_BASE64 && (
                                             <Image 

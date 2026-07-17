@@ -7,7 +7,7 @@ import Script from 'next/script'
 import {
     ArrowLeft, ArrowRight, CheckCircle2,
     FileText, Send, ChevronLeft, Loader2, AlertCircle,
-    CreditCard, Heart, Home, Shield, ChevronRight, X, User, Mail, Phone, MapPin, Globe2
+    CreditCard, Heart, Home, Shield, ChevronRight, X, User, Mail, Phone, MapPin, Globe2, Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 import { Price, useCurrency } from '@/components/ui/Price'
@@ -173,6 +173,7 @@ export default function NationaliteFormPage() {
         pays_delivrance: '', lieu_delivrance: '', autorite_delivrance: '',
         pere_nom: '', pere_prenom: '', pere_date_naissance: '',
         mere_nom: '', mere_prenom: '', mere_date_naissance: '',
+        myafro_date: '',
     })
 
     const [particles] = useState(() => Array.from({ length: 30 }).map((_, i) => ({
@@ -241,6 +242,25 @@ export default function NationaliteFormPage() {
         setPreInscriptionDone(true)
         setFormAmount(50)
         setFormCurrency('EUR')
+
+        // Détection de paiement manuel déjà associé
+        try {
+            const [bodyHex] = token.split('.')
+            if (bodyHex) {
+                let decodedStr = ''
+                for (let i = 0; i < bodyHex.length; i += 2) {
+                    decodedStr += String.fromCharCode(parseInt(bodyHex.substring(i, i + 2), 16))
+                }
+                const payload = JSON.parse(decodedStr)
+                if (payload && payload.paid) {
+                    setPaymentDone(true)
+                    setPaymentProvider('facture' as any)
+                    setPaymentTxId(payload.invoice_id ? `facture_${payload.invoice_id}` : 'manuel')
+                }
+            }
+        } catch (e) {
+            console.error('[MYAFRO] Erreur décodage jeton:', e)
+        }
     }, [])
 
     // ── Mode « reprise » : lien de complément (dossier déjà payé) ──────────────
@@ -1014,6 +1034,25 @@ export default function NationaliteFormPage() {
                                             </div>
                                         )}
 
+                                        {myafroMode && (
+                                            <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/20 p-5 mt-4">
+                                                <div className="flex items-center gap-2 text-emerald-800">
+                                                    <Calendar size={18} className="shrink-0" />
+                                                    <p className="text-sm font-black uppercase tracking-wider">Date d&apos;émission sur MyAfroOrigins</p>
+                                                </div>
+                                                <p className="text-[11px] text-gray-500">
+                                                    Indiquez depuis combien de temps exactement ou la date exacte à laquelle votre dossier a été fait sur la plateforme MyAfroOrigins (pour permettre des alertes de suivi).
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    value={form.myafro_date || ''}
+                                                    onChange={e => setForm(prev => ({ ...prev, myafro_date: e.target.value }))}
+                                                    placeholder="Ex: 15/04/2024, ou Depuis 6 mois, ou 1 an..."
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-emerald-500/50"
+                                                />
+                                            </div>
+                                        )}
+
                                         {/* Fichiers ajoutés */}
                                         {rawDocs.length > 0 && (
                                             <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-3">
@@ -1100,7 +1139,7 @@ export default function NationaliteFormPage() {
                                 <p className="text-xs text-gray-500"><T>Vérifiez attentivement vos informations avant de procéder au paiement.</T></p>
                                 {[
                                     { title: t('Identité'), items: [[t('Nom complet'), `${form.prenom} ${form.nom}`], [t('Genre'), form.genre], [t('Né(e) le'), form.date_naissance], [t('Nationalité'), form.nationalite], [t('Résidence'), `${form.adresse_residence ? form.adresse_residence + ', ' : ''}${form.pays_residence}`], [t('Email'), form.email], [t('Téléphone'), form.telephone], [t('Profession'), form.profession]] },
-                                    { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} — ${form.ancestor2_lien_parente}`]] : [])] },
+                                    { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} — ${form.ancestor2_lien_parente}`]] : []), ...(myafroMode ? [[t('Date MyAfroOrigins'), form.myafro_date]] : [])] },
                                     { title: t("Document d'identité"), items: [[t('Type'), form.type_document_identite], [t('Numéro'), form.numero_document], [t('Pays délivrance'), form.pays_delivrance], [t('Expiration'), form.date_expiration_document]] },
                                     { title: t('Parents'), items: [[t('Père'), `${form.pere_prenom} ${form.pere_nom}`], [t('Mère'), `${form.mere_prenom} ${form.mere_nom}`]] },
                                 ].map((sec, si) => (

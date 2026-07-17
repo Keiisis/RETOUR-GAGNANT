@@ -6,7 +6,7 @@ import { getGroqApiKey } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { markClientConverted } from '@/lib/classement/track'
-import { verifyMyafroToken } from '@/lib/nationality-token'
+import { verifyMyafroToken, decodeMyafroToken } from '@/lib/nationality-token'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
@@ -287,10 +287,18 @@ export async function POST(request: NextRequest) {
         //    Le montant est FIXÉ SERVEUR (jamais celui du client) et le dossier
         //    entre en file de revue documents (status 'revue_myafro') avant d'être
         //    approuvé vers la file nationalité standard.
-        const isMyafro = body.myafro_token ? verifyMyafroToken(String(body.myafro_token)) : false
+        const myafroPayload = body.myafro_token ? decodeMyafroToken(String(body.myafro_token)) : null
+        const isMyafro = !!myafroPayload
         const initialStatus = isMyafro ? 'revue_myafro' : 'soumis'
         const secureAmount = isMyafro ? 50 : (body.amount ?? 250)
         const secureCurrency = isMyafro ? 'EUR' : (body.currency || 'USD')
+
+        const isPrepaid = myafroPayload?.paid ?? false
+        const invoiceRef = myafroPayload?.invoice_id ? `facture_${myafroPayload.invoice_id}` : null
+
+        const paymentStatus = isPrepaid ? 'payé' : (body.payment_ref ? 'payé' : 'en_attente')
+        const paymentRef = isPrepaid ? (invoiceRef || 'manuel_prepaid') : (body.payment_ref || null)
+        const paymentMethod = isPrepaid ? 'manuel' : (body.payment_method || null)
 
         const insertData: Record<string, unknown> = {
             application_ref: ref,
@@ -350,16 +358,17 @@ export async function POST(request: NextRequest) {
             documents_uploaded: body.documents_uploaded || body.documents || [],
             amount: secureAmount,
             currency: secureCurrency,
-            payment_status: body.payment_ref ? 'payé' : 'en_attente',
-            payment_ref: body.payment_ref || null,
-            payment_method: body.payment_method || null,
+            payment_status: paymentStatus,
+            payment_ref: paymentRef,
+            payment_method: paymentMethod,
             last_step_completed: body.last_step_completed ?? 6,
-            admin_notes: isMyafro ? '[MYAFROORIGINS] Dossier bloqué sur MyAfroOrigins — reçu via le lien de complément (tarif 50 €). À vérifier puis approuver vers la file Nationalité.' : null,
+            admin_notes: isMyafro ? `[MYAFROORIGINS] Dossier bloqué sur MyAfroOrigins — reçu via le lien de complément (tarif 50 €).${isPrepaid ? ` Associé au paiement manuel de la facture ${invoiceRef || ''}.` : ''} À vérifier puis approuver vers la file Nationalité.` : null,
             // New fields
             situation_matrimoniale: body.situation_matrimoniale || null,
             nombre_enfants: body.nombre_enfants ?? 0,
             motivation_lettre: body.motivation_lettre || null,
             consentement_rgpd: body.consentement_rgpd ?? false,
+            myafro_date: body.myafro_date || null,
         }
 
         // ── Complément d'une fiche « filet webhook » : UPDATE au lieu d'INSERT ──
