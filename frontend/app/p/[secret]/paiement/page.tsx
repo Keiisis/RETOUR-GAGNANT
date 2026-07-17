@@ -50,6 +50,7 @@ interface Proposal {
     destination: string
     total_amount: number
     currency?: string
+    notes?: string | null
 }
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal'
@@ -260,6 +261,11 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, settings.paypal_client_id])
 
+    // Lien de paiement générique (Admin/Agent) vs proposition voyage :
+    // adapte les libellés sans toucher au flux de paiement
+    const isPaymentLink = String(proposal?.notes || '').startsWith('LIEN-PAIEMENT')
+    const payLabel = proposal ? (isPaymentLink ? proposal.destination : `Voyage ${proposal.destination}`) : ''
+
     // ─── Total exact de la sélection (recalculé aussi côté serveur) ──
     const billableAll = items.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
     const hasItemSelection = billableAll.length > 0
@@ -295,7 +301,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     product_id: proposal.id,
-                    product_title: `Voyage ${proposal.destination} - ${proposal.client_name}`,
+                    product_title: `${payLabel} - ${proposal.client_name}`,
                     is_proposal: true,
                     quantity: 1,
                     amount: payableTotal,
@@ -430,7 +436,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
         let fedapayTxId: number | null = null
         try {
-            const createRes = await fetch('/api/checkout/fedapay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: oid, amount: fedaAmountXOF, description: `Voyage ${proposal.destination}`, customer_email: customerEmail || undefined, customer_phone: customerPhone }) })
+            const createRes = await fetch('/api/checkout/fedapay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: oid, amount: fedaAmountXOF, description: payLabel, customer_email: customerEmail || undefined, customer_phone: customerPhone }) })
             const createData = await createRes.json()
             if (!createRes.ok || !createData.fedapay_transaction_id) { cancelOrder(oid); setErrorMessage(createData.error || 'FedaPay erreur'); setStep('error'); return }
             fedapayTxId = createData.fedapay_transaction_id
@@ -443,7 +449,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                 transaction: {
                     id: fedapayTxId,
                     amount: fedaAmountXOF,
-                    description: `Voyage ${proposal.destination} — ${proposal.client_name}`,
+                    description: `${payLabel} — ${proposal.client_name}`,
                     currency: { iso: 'XOF' },
                 },
                 onComplete: async (resp: Record<string, unknown>) => {
@@ -474,7 +480,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
         if (!redirectUrl) { setErrorMessage('Zeyow non configuré'); setStep('error'); return }
         const returnUrl = `${window.location.origin}/boutique/payment/return`
         const cancelUrl = `${window.location.origin}/p/${secret}`
-        window.location.href = `${redirectUrl}?amount=${payableTotal}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(`Voyage ${proposal.destination}`)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
+        window.location.href = `${redirectUrl}?amount=${payableTotal}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(payLabel)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
     }
 
     const handleStripe = async () => {
@@ -572,8 +578,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                     {step === 'info' && (
                         <motion.div key="info" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                             <div className="text-center mb-8">
-                                <h1 className="text-2xl md:text-3xl font-black mb-2">Finalisez votre réservation</h1>
-                                <p className="text-slate-400 text-sm">Voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span></p>
+                                <h1 className="text-2xl md:text-3xl font-black mb-2">{isPaymentLink ? 'Finalisez votre paiement' : 'Finalisez votre réservation'}</h1>
+                                <p className="text-slate-400 text-sm">{isPaymentLink ? 'Prestation :' : 'Voyage vers'} <span className="text-amber-400 font-semibold">{proposal.destination}</span></p>
                             </div>
 
                             {/* Recap — sélection à la carte */}
@@ -795,9 +801,9 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                             </div>
                             <div className="text-center space-y-3">
-                                <h1 className="text-3xl font-black">Réservation confirmée ! </h1>
+                                <h1 className="text-3xl font-black">{isPaymentLink ? 'Paiement confirmé !' : 'Réservation confirmée !'}</h1>
                                 <p className="text-slate-400 max-w-md">
-                                    Votre voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span> est en cours de préparation.
+                                    {isPaymentLink ? <>Votre règlement pour <span className="text-amber-400 font-semibold">{proposal.destination}</span> a bien été enregistré.</> : <>Votre voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span> est en cours de préparation.</>}
                                     Vous recevrez un email de confirmation sous peu.
                                 </p>
                             </div>
