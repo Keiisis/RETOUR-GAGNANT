@@ -865,6 +865,9 @@ export default function ClientPortalPage() {
 
     const isPaid = doc.status === 'paye'
     const isAccepted = doc.status === 'accepte'
+    // Facture émise manuellement (preuve d'un paiement déjà reçu) :
+    // pas issue d'un devis signé → aucun bouton de paiement à afficher
+    const isManualFacture = doc.type === 'facture' && !doc.parent_devis_id
     const statusColor = isPaid ? 'text-emerald-400 bg-emerald-500/10' : 
                        isAccepted ? 'text-emerald-400 bg-emerald-500/10' : 
                        'text-blue-400 bg-blue-500/10'
@@ -1014,15 +1017,14 @@ export default function ClientPortalPage() {
                                 <div className="flex justify-between items-center pt-2">
                                     <span className="text-sm font-bold text-white uppercase tracking-wider">Total TTC</span>
                                     <div className="text-right space-y-1">
+                                        {/* Montant officiel du document : TOUJOURS dans la devise
+                                            d'émission — la conversion n'est qu'indicative dessous */}
                                         <div className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">
-                                            {selectedCurrency === 'XOF'
-                                                ? `${Math.round(doc.total).toLocaleString('fr-FR')} XOF`
-                                                : formatPriceWithMargin(doc.total, selectedCurrency)
-                                            }
+                                            {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total) : doc.total).toLocaleString('fr-FR')} {doc.currency || 'XOF'}
                                         </div>
-                                        {selectedCurrency !== 'XOF' && (
+                                        {selectedCurrency !== (doc.currency || 'XOF') && (
                                             <div className="text-[10px] text-gray-500">
-                                                {doc.total.toLocaleString('fr-FR')} XOF
+                                                soit environ {formatPriceWithMargin(doc.total, selectedCurrency)}
                                             </div>
                                         )}
                                     </div>
@@ -1120,8 +1122,10 @@ export default function ClientPortalPage() {
                         </button>
                     )}
 
-                    {/* CASE 2: Facture not paid -> Require Payment (FedaPay) */}
-                    {doc.type === 'facture' && !isPaid && (
+                    {/* CASE 2: Facture issue d'un devis signé, non payée -> paiement.
+                        Les factures émises manuellement attestent d'un paiement déjà
+                        reçu : jamais de bouton « Payer » dessus. */}
+                    {doc.type === 'facture' && !isPaid && !isManualFacture && (
                         <button 
                             onClick={processPayment}
                             disabled={isProcessing}

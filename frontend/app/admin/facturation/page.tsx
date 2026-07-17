@@ -107,7 +107,6 @@ export default function AdminFacturationPage() {
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
             const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
             const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
-            const presidentTitle = tpl.signature_title || "LA DIRECTION GÉNÉRALE"
 
             const jsPDF = (await import('jspdf')).default
             const pdf = new jsPDF('p', 'mm', 'a4')
@@ -207,9 +206,9 @@ export default function AdminFacturationPage() {
             pdf.setTextColor(80, 80, 80)
             pdf.text('N. ' + doc.numero, pw - mr, headerTop + 22, { align: 'right' })
             pdf.text('Date : ' + formatDate(doc.created_at), pw - mr, headerTop + 27, { align: 'right' })
-            if (doc.validite) {
-                const validLabel = doc.type === 'facture' ? 'Delai : ' : 'Validite : '
-                pdf.text(safe(validLabel + doc.validite), pw - mr, headerTop + 32, { align: 'right' })
+            // Validité uniquement pour les devis — jamais de « Délai » sur une facture
+            if (doc.validite && doc.type === 'devis') {
+                pdf.text(safe('Validite : ' + doc.validite), pw - mr, headerTop + 32, { align: 'right' })
             }
 
             // ── STATUS BADGE (Dans le header, à droite en bas) ──────────────────
@@ -240,29 +239,29 @@ export default function AdminFacturationPage() {
             const boxW = (cw - 6) / 2
             const boxH = 46
 
-            pdf.setFillColor(18, 28, 42)
-            pdf.setDrawColor(40, 60, 90)
+            // Même habillage clair que la case DESTINATAIRE (plus de fond noir)
+            pdf.setFillColor(248, 250, 255)
+            pdf.setDrawColor(200, 215, 240)
             pdf.setLineWidth(0.3)
             pdf.roundedRect(ml, y, boxW, boxH, 2, 2, 'FD')
 
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(6)
-            pdf.setTextColor(80, 120, 180)
+            pdf.setTextColor(100, 110, 160)
             pdf.text('EMETTEUR', ml + 4, y + 6)
-            pdf.setFontSize(8)
-            pdf.setTextColor(220, 230, 245)
             const headerLines = pdf.splitTextToSize(devisHeader, boxW - 8)
             headerLines.forEach((l: string, i: number) => {
                 const isFirst = i === 0
                 if (isFirst) {
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(9)
+                    pdf.setTextColor(30, 40, 70)
                 } else {
                     pdf.setFont('helvetica', 'normal')
                     pdf.setFontSize(6.5)
-                    if (i === 1) pdf.setTextColor(140, 160, 185)
+                    pdf.setTextColor(70, 80, 110)
                 }
-                const offset = isFirst ? 13 : (19 + (i - 1) * 6)
+                const offset = isFirst ? 13 : (19 + (i - 1) * 5.2)
                 pdf.text(safe(l), ml + 4, y + offset)
             })
 
@@ -326,7 +325,10 @@ export default function AdminFacturationPage() {
             y += 10
 
             doc.items.forEach((item: DevisItem, i: number) => {
-                const rowH = 9.5
+                // Intitulé complet du service : multi-lignes, la hauteur de la
+                // rangée s'adapte (plus jamais de description tronquée)
+                const descLines: string[] = pdf.splitTextToSize(safe(item.description || '-'), cols[0].w - 5)
+                const rowH = Math.max(9.5, descLines.length * 4.2 + 5)
                 const even = i % 2 === 0
                 pdf.setFillColor(even ? 252 : 247, even ? 253 : 249, even ? 254 : 252)
                 pdf.rect(ml, y, cw, rowH, 'F')
@@ -337,27 +339,25 @@ export default function AdminFacturationPage() {
                 const tvaMnt = item.quantity * item.unit_price * item.tva / 100
                 const lineTotal = item.quantity * item.unit_price
                 const rowData = [
-                    { text: safe(item.description || '-'), w: cols[0].w, align: 'left' },
-                    { text: String(item.quantity), w: cols[1].w, align: 'center' },
-                    { text: fmtN(item.unit_price), w: cols[2].w, align: 'right' },
-                    { text: item.tva + '%', w: cols[3].w, align: 'center' },
-                    { text: fmtN(tvaMnt), w: cols[4].w, align: 'right' },
-                    { text: fmtN(lineTotal), w: cols[5].w, align: 'right' },
+                    { text: String(item.quantity), w: cols[1].w, align: 'center', x: ml + cols[0].w },
+                    { text: fmtN(item.unit_price), w: cols[2].w, align: 'right', x: ml + cols[0].w + cols[1].w },
+                    { text: item.tva + '%', w: cols[3].w, align: 'center', x: ml + cols[0].w + cols[1].w + cols[2].w },
+                    { text: fmtN(tvaMnt), w: cols[4].w, align: 'right', x: ml + cols[0].w + cols[1].w + cols[2].w + cols[3].w },
+                    { text: fmtN(lineTotal), w: cols[5].w, align: 'right', x: ml + cols[0].w + cols[1].w + cols[2].w + cols[3].w + cols[4].w },
                 ]
-                colX = ml
                 pdf.setFont('helvetica', 'normal')
                 pdf.setFontSize(8)
                 pdf.setTextColor(40, 55, 75)
+                descLines.forEach((line, li) => {
+                    pdf.text(line, ml + 3, y + 6 + li * 4.2)
+                })
+                const midY = y + rowH / 2 + 1.4
                 rowData.forEach(cell => {
                     if (cell.align === 'right') {
-                        pdf.text(cell.text, colX + cell.w - 2, y + 6.5, { align: 'right' })
-                    } else if (cell.align === 'center') {
-                        pdf.text(cell.text, colX + cell.w / 2, y + 6.5, { align: 'center' })
+                        pdf.text(cell.text, cell.x + cell.w - 2, midY, { align: 'right' })
                     } else {
-                        const lines = pdf.splitTextToSize(cell.text, cell.w - 5)
-                        pdf.text(lines[0], colX + 3, y + 6.5)
+                        pdf.text(cell.text, cell.x + cell.w / 2, midY, { align: 'center' })
                     }
-                    colX += cell.w
                 })
                 y += rowH
             })
@@ -407,28 +407,47 @@ export default function AdminFacturationPage() {
                 pdf.setDrawColor(0, 135, 81)
                 pdf.setLineWidth(0.4)
                 pdf.roundedRect(ml, y, sigW, sigBoxH, 2, 2, 'FD')
-                pdf.setFont('helvetica', 'bold')
-                pdf.setFontSize(7)
-                pdf.setTextColor(0, 100, 60)
-                pdf.text('BON POUR ACCORD', ml + 4, y + 8)
-                pdf.setFont('helvetica', 'normal')
-                pdf.setFontSize(6.5)
-                pdf.setTextColor(90, 100, 95)
-                pdf.text('Signature et Cachet du client :', ml + 4, y + 15)
-                if (doc.signature_url) {
-                    try { pdf.addImage(doc.signature_url, 'PNG', ml + 4, y + 17, sigW - 20, 13) } catch {}
-                    const signedDate = doc.signed_at
-                        ? formatDate(doc.signed_at)
-                        : formatDate(doc.created_at)
+                if (doc.type === 'facture') {
+                    // FACTURE : preuve de règlement — jamais de « Bon pour accord »
                     pdf.setFont('helvetica', 'bold')
-                    pdf.setFontSize(6)
+                    pdf.setFontSize(7)
+                    pdf.setTextColor(0, 100, 60)
+                    pdf.text('CONFIRMATION DE PAIEMENT', ml + 4, y + 8)
+                    pdf.setFont('helvetica', 'bold')
+                    pdf.setFontSize(9)
                     pdf.setTextColor(0, 135, 81)
-                    pdf.text('[OK] Accepte et signe le ' + signedDate, ml + 4, y + 33)
+                    pdf.text('PAIEMENT ENREGISTRE', ml + 4, y + 17)
+                    pdf.setFont('helvetica', 'normal')
+                    pdf.setFontSize(6.5)
+                    pdf.setTextColor(90, 100, 95)
+                    pdf.text('Facture acquittee - reglement recu par Retour Gagnant Benin', ml + 4, y + 24)
+                    pdf.text('Etablie le ' + formatDate(doc.created_at), ml + 4, y + 30)
                 } else {
-                    pdf.text('____________________________', ml + 4, y + 24)
-                    pdf.text('Date :  ____/____/________', ml + 4, y + 31)
+                    pdf.setFont('helvetica', 'bold')
+                    pdf.setFontSize(7)
+                    pdf.setTextColor(0, 100, 60)
+                    pdf.text('BON POUR ACCORD', ml + 4, y + 8)
+                    pdf.setFont('helvetica', 'normal')
+                    pdf.setFontSize(6.5)
+                    pdf.setTextColor(90, 100, 95)
+                    pdf.text('Signature et Cachet du client :', ml + 4, y + 15)
+                    if (doc.signature_url) {
+                        try { pdf.addImage(doc.signature_url, 'PNG', ml + 4, y + 17, sigW - 20, 13) } catch {}
+                        const signedDate = doc.signed_at
+                            ? formatDate(doc.signed_at)
+                            : formatDate(doc.created_at)
+                        pdf.setFont('helvetica', 'bold')
+                        pdf.setFontSize(6)
+                        pdf.setTextColor(0, 135, 81)
+                        pdf.text('[OK] Accepte et signe le ' + signedDate, ml + 4, y + 33)
+                    } else {
+                        pdf.text('____________________________', ml + 4, y + 24)
+                        pdf.text('Date :  ____/____/________', ml + 4, y + 31)
+                    }
                 }
 
+                // ── Réplique exacte de la case DIRECTION GÉNÉRALE de la
+                //    Grille Tarifaire (titre, société, PDG, cachet officiel) ──
                 const sig2X = ml + sigW + 8
                 pdf.setFillColor(242, 245, 255)
                 pdf.setDrawColor(100, 110, 200)
@@ -436,26 +455,35 @@ export default function AdminFacturationPage() {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(7)
                 pdf.setTextColor(70, 80, 170)
-                pdf.text(presidentTitle.toUpperCase(), sig2X + 4, y + 12)
+                pdf.text('DIRECTION GENERALE', sig2X + 4, y + 6)
                 pdf.setFont('helvetica', 'bold')
-                pdf.setFontSize(7.5)
-                pdf.text(safe(presidentName), sig2X + 4, y + 18)
+                pdf.setFontSize(6.5)
+                pdf.setTextColor(30, 40, 70)
+                pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(6)
+                pdf.setTextColor(90, 95, 130)
+                pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 16)
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(8)
+                pdf.setTextColor(20, 30, 80)
+                pdf.text(safe(presidentName), sig2X + 4, y + 21.5)
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(6)
+                pdf.setTextColor(90, 95, 130)
+                pdf.text('Signature et Cachet officiel', sig2X + 4, y + 26.5)
+                pdf.text('Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + 30.5)
+                pdf.text('Validite officielle garantie', sig2X + 4, y + 34.5)
 
-                // Add Stamp (cachet) enlarged
+                // Cachet officiel (contenu dans la case)
                 if (STAMP_BASE64) {
                     try {
                         const stampData = STAMP_BASE64.startsWith('data:') ? STAMP_BASE64 : `data:image/png;base64,${STAMP_BASE64}`
-                        pdf.addImage(stampData, 'PNG', sig2X + sigW - 65, y - 5, 65, 65)
+                        pdf.addImage(stampData, 'PNG', sig2X + sigW - 32, y + 3, 30, 30)
                     } catch (e) {
                         console.error('Error adding stamp:', e)
                     }
                 }
-
-                pdf.setFont('helvetica', 'normal')
-                pdf.setFontSize(6.5)
-                pdf.setTextColor(90, 95, 130)
-                pdf.text('Signature et Cachet officiel', sig2X + 4, y + 23)
-                pdf.text('Etabli le ' + formatDate(doc.created_at), sig2X + 4, y + 28)
             }
 
             // ── WATERMARK ──────────────────────────────────────────
@@ -472,16 +500,20 @@ export default function AdminFacturationPage() {
                 pdf.text('PAYE', pw / 2, ph / 2, { align: 'center', angle: 40 })
             }
 
-            // ── LEGAL FOOTER ───────────────────────────────────────
+            // ── LEGAL FOOTER (police agrandie, toutes les lignes) ──
+            const footerLines = devisFooter.split('\n').filter(Boolean)
+            const footH = footerLines.length * 4 + 9
             pdf.setFillColor(10, 16, 24)
-            pdf.rect(0, ph - 14, pw, 14, 'F')
+            pdf.rect(0, ph - footH, pw, footH, 'F')
             pdf.setFont('helvetica', 'normal')
-            pdf.setFontSize(5.5)
+            pdf.setFontSize(7)
+            pdf.setTextColor(165, 185, 205)
+            footerLines.forEach((l: string, i: number) => {
+                pdf.text(safe(l), pw / 2, ph - footH + 5 + i * 4, { align: 'center' })
+            })
+            pdf.setFontSize(6.5)
             pdf.setTextColor(120, 140, 160)
-            const footerLines = devisFooter.split('\n')
-            if (footerLines.length > 0) pdf.text(safe(footerLines[0]), pw / 2, ph - 9, { align: 'center' })
-            if (footerLines.length > 1) pdf.text(safe(footerLines[1]), pw / 2, ph - 6.5, { align: 'center' })
-            pdf.text('Document N. ' + doc.numero + ' - Genere le ' + formatDate(new Date().toISOString()), pw / 2, ph - 3, { align: 'center' })
+            pdf.text('Document N. ' + doc.numero + ' - Genere le ' + formatDate(new Date().toISOString()), pw / 2, ph - 2.5, { align: 'center' })
 
             pdf.save(`${doc.type}_${doc.numero}.pdf`)
         } catch (err) {

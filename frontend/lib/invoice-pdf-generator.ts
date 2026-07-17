@@ -121,7 +121,7 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     // ── HEADER ─────────────────────────────────────────────────────────
     // Company Logo
     try {
-        pdf.addImage(LOGO_BASE64, 'JPEG', ML, y, 16, 16)
+        pdf.addImage(LOGO_BASE64, 'PNG', ML, y, 16, 16)
     } catch (e) {
         console.warn('Failed to add logo to invoice PDF:', e)
     }
@@ -138,8 +138,8 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     pdf.text([
         'RCCM : RB/COT/26 B 42001 | IFU : 3202644573981',
         'Haie-Vive Cocotiers, Cotonou, Bénin',
-        '📱 WhatsApp : +229 01 94 35 50 50 / +229 01 60 32 21 21',
-        '📞 Appel direct : +229 01 66 73 89 71 | contact@retourgagnantbenin.bj'
+        'WhatsApp : +229 01 94 35 50 50 / +229 01 60 32 21 21',
+        'Appel direct : +229 01 66 73 89 71 | contact@retourgagnantbenin.bj'
     ], ML + 20, y + 8)
 
     // Document Meta

@@ -145,7 +145,6 @@ export default function AgentDevisPage() {
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
             const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
             const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
-            const presidentTitle = tpl.signature_title || "LA DIRECTION GÉNÉRALE"
 
             const jsPDF = (await import('jspdf')).default
             const pdf = new jsPDF('p', 'mm', 'a4')
@@ -395,37 +394,64 @@ export default function AgentDevisPage() {
             const sigW = (cw - 8) / 2
             const sigH = 38
 
-            // Client
+            // Client — facture : preuve de paiement (jamais de « bon pour accord »)
             pdf.setDrawColor(0, 135, 81)
             pdf.roundedRect(ml, y, sigW, sigH, 2, 2, 'D')
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(7)
             pdf.setTextColor(0, 80, 50)
-            pdf.text('ACCORD CLIENT', ml + 4, y + 6)
-            pdf.setFontSize(7.5)
-            pdf.text(`${doc.client_nom} ${doc.client_prenom}`, ml + 4, y + sigH - 4)
-
-            if (doc.signature_url) {
-                try { pdf.addImage(doc.signature_url, 'PNG', ml + 4, y + 8, sigW - 8, 20) } catch {}
+            if (doc.type === 'facture') {
+                pdf.text('CONFIRMATION DE PAIEMENT', ml + 4, y + 6)
+                pdf.setFontSize(9)
+                pdf.setTextColor(0, 135, 81)
+                pdf.text('PAIEMENT ENREGISTRE', ml + 4, y + 15)
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(6.5)
+                pdf.setTextColor(90, 100, 95)
+                pdf.text('Facture acquittee - reglement recu par Retour Gagnant Benin', ml + 4, y + 22)
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(7.5)
+                pdf.setTextColor(0, 80, 50)
+                pdf.text(`${doc.client_nom} ${doc.client_prenom}`, ml + 4, y + sigH - 4)
+            } else {
+                pdf.text('ACCORD CLIENT', ml + 4, y + 6)
+                pdf.setFontSize(7.5)
+                pdf.text(`${doc.client_nom} ${doc.client_prenom}`, ml + 4, y + sigH - 4)
+                if (doc.signature_url) {
+                    try { pdf.addImage(doc.signature_url, 'PNG', ml + 4, y + 8, sigW - 8, 20) } catch {}
+                }
             }
 
-            // PDG
+            // PDG — réplique de la case DIRECTION GÉNÉRALE de la Grille Tarifaire
             const sig2X = ml + sigW + 8
             pdf.setDrawColor(20, 40, 80)
             pdf.roundedRect(sig2X, y, sigW, sigH, 2, 2, 'D')
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(7)
             pdf.setTextColor(20, 40, 80)
-            pdf.text(presidentTitle.toUpperCase(), sig2X + 4, y + 6)
-
-            try {
-                // Increased stamp size from 48 to 65 for better visibility
-                const sSz = 65
-                pdf.addImage(STAMP_BASE64, 'PNG', sig2X + (sigW - sSz) / 2, y + (sigH - sSz) / 2 - 2, sSz, sSz)
-            } catch {}
-
+            pdf.text('DIRECTION GENERALE', sig2X + 4, y + 6)
+            pdf.setFontSize(6.5)
+            pdf.setTextColor(30, 40, 70)
+            pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(6)
+            pdf.setTextColor(90, 95, 130)
+            pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 16)
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(8)
-            pdf.setTextColor(0, 100, 60)
-            pdf.text(presidentName, sig2X + 4, y + 33)
+            pdf.setTextColor(20, 30, 80)
+            pdf.text(presidentName, sig2X + 4, y + 21.5)
+            pdf.setFont('helvetica', 'normal')
+            pdf.setFontSize(6)
+            pdf.setTextColor(90, 95, 130)
+            pdf.text('Signature et Cachet officiel', sig2X + 4, y + 27)
+            pdf.text('Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + 31)
+            pdf.text('Validite officielle garantie', sig2X + 4, y + 35)
+
+            try {
+                const sSz = 32
+                pdf.addImage(STAMP_BASE64, 'PNG', sig2X + sigW - sSz - 3, y + 3, sSz, sSz)
+            } catch {}
 
             // ── FOOTER ────────────────────────────────────────────
             const footerLines = devisFooter.split('\n')

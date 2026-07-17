@@ -125,13 +125,16 @@ export default function CreateDocumentPage() {
             currency: currency,
             exchange_rate_applied: currentRate,
             items: items.map(it => ({ description: it.description, quantity: it.quantity, unit_price: it.unit_price, tva: it.tva, unit_cost: it.unit_cost })), 
-            sous_total: sousTotal, 
-            total_tva: totalTVA, 
-            remise, 
+            sous_total: sousTotal,
+            total_tva: totalTVA,
+            remise,
             total: totalFinal,
-            status, 
-            notes, 
-            conditions, 
+            // Une facture émise manuellement atteste d'un paiement déjà reçu :
+            // statut « payé » automatique (jamais « envoyé »), méthode manuelle tracée
+            status: formType === 'facture' ? 'paye' : status,
+            ...(formType === 'facture' ? { payment_method: 'manuel', paid_at: new Date().toISOString() } : {}),
+            notes,
+            conditions,
             validite,
         })
 
