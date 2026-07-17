@@ -1,5 +1,20 @@
 'use client';
 
+// ── Compression adaptative des exports ─────────────────────────
+// Objectif : images ≤ 800 Ko, PDF ≤ 1,5 Mo. On encode en JPEG et on
+// baisse la qualité par paliers jusqu'à tenir dans le budget.
+function compressCanvasToBudget(canvas: HTMLCanvasElement, maxKB: number): string {
+  const qualities = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35];
+  let out = canvas.toDataURL('image/jpeg', qualities[0]);
+  for (const q of qualities) {
+    out = canvas.toDataURL('image/jpeg', q);
+    const sizeKB = (out.length * 0.75) / 1024; // base64 → octets réels
+    if (sizeKB <= maxKB) break;
+  }
+  return out;
+}
+
+
 import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -339,7 +354,7 @@ export default function DedicatedTreePage() {
       // Render at 3x scale for high-resolution print
       const treeCanvas = await html2canvas(treeWrapper, {
         backgroundColor: '#FFFFFF',
-        scale: 3,
+        scale: 2,
         useCORS: true,
         logging: false,
         width: widthNum + 120,
@@ -352,8 +367,8 @@ export default function DedicatedTreePage() {
 
       // Download Image 1 — RECTO
       const link1 = document.createElement('a');
-      link1.download = `arbre-${fileBase}-RECTO-${dateStr}.png`;
-      link1.href = treeCanvas.toDataURL('image/png');
+      link1.download = `arbre-${fileBase}-RECTO-${dateStr}.jpg`;
+      link1.href = compressCanvasToBudget(treeCanvas, 800);
       link1.click();
 
       // Small delay between the two downloads
@@ -466,7 +481,7 @@ export default function DedicatedTreePage() {
 
       const reportCanvas = await html2canvas(reportWrapper, {
         backgroundColor: '#FFFFFF',
-        scale: 3,
+        scale: 2,
         useCORS: true,
         logging: false,
         width: reportWrapper.scrollWidth,
@@ -479,8 +494,8 @@ export default function DedicatedTreePage() {
 
       // Download Image 2 — VERSO
       const link2 = document.createElement('a');
-      link2.download = `arbre-${fileBase}-VERSO-${dateStr}.png`;
-      link2.href = reportCanvas.toDataURL('image/png');
+      link2.download = `arbre-${fileBase}-VERSO-${dateStr}.jpg`;
+      link2.href = compressCanvasToBudget(reportCanvas, 800);
       link2.click();
 
     } catch (err: any) {
@@ -646,7 +661,7 @@ export default function DedicatedTreePage() {
       // 2. Capture the compact tree using the helper that brings it on-screen first
       const { canvas } = await captureCompactTree(html2canvas, { scale: 2 });
 
-      const treeImgData = canvas.toDataURL('image/jpeg', 0.9);
+      const treeImgData = compressCanvasToBudget(canvas, 1100);
 
       // 3. Create PDF Doc
       const pdfDoc = await PDFDocument.create();
@@ -1013,7 +1028,7 @@ export default function DedicatedTreePage() {
       const fileBase = clientName.replace(/\s+/g, '-').toLowerCase();
 
       // 1. Capture the compact tree (the helper brings it on-screen temporarily)
-      const { canvas: treeCanvas, treeWidth, treeHeight } = await captureCompactTree(html2canvas, { scale: 3 });
+      const { canvas: treeCanvas, treeWidth, treeHeight } = await captureCompactTree(html2canvas, { scale: 2 });
 
       // 2. Build the A4 landscape image (1200x848) with header, tree, footer
       const a4Canvas = document.createElement('canvas');
@@ -1093,8 +1108,8 @@ export default function DedicatedTreePage() {
 
       // Download
       const link = document.createElement('a');
-      link.download = `plan-de-composition-de-famille-${fileBase}-A4-${dateStr}.png`;
-      link.href = a4Canvas.toDataURL('image/png');
+      link.download = `plan-de-composition-de-famille-${fileBase}-A4-${dateStr}.jpg`;
+      link.href = compressCanvasToBudget(a4Canvas, 800);
       link.click();
     } catch (err: any) {
       console.error('A4 Image error:', err);
