@@ -382,10 +382,22 @@ export async function POST(request: NextRequest) {
             } = insertData
             void _ref; void _sub; void _pst; void _pref
 
-            const { error: updError } = await supabase
+            let { error: updError } = await supabase
                 .from('nationality_applications')
                 .update(updateData)
                 .eq('id', stubToComplete.id)
+            // Filet : si la colonne myafro_date n'existe pas encore (migration
+            // non appliquée), on réessaie sans elle — la soumission ne doit
+            // JAMAIS échouer pour un champ optionnel.
+            if (updError && updError.message?.includes('myafro_date')) {
+                const { myafro_date: _md, ...withoutMyafro } = updateData as Record<string, unknown>
+                void _md
+                const retry = await supabase
+                    .from('nationality_applications')
+                    .update(withoutMyafro)
+                    .eq('id', stubToComplete.id)
+                updError = retry.error
+            }
             if (updError) {
                 console.error('Stub update error:', JSON.stringify(updError))
                 return NextResponse.json({ error: `Erreur DB: ${updError.message}` }, { status: 500 })
@@ -416,9 +428,18 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        const { error: insertError } = await supabase
+        let { error: insertError } = await supabase
             .from('nationality_applications')
             .insert([insertData])
+
+        // Filet : colonne myafro_date absente (migration non appliquée) →
+        // réessai sans elle, la soumission ne doit jamais échouer pour ça.
+        if (insertError && insertError.message?.includes('myafro_date')) {
+            const { myafro_date: _md, ...withoutMyafro } = insertData as Record<string, unknown>
+            void _md
+            const retry = await supabase.from('nationality_applications').insert([withoutMyafro])
+            insertError = retry.error
+        }
 
         if (insertError) {
             console.error('Insert error:', JSON.stringify(insertError))
