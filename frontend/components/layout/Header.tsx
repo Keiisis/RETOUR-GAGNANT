@@ -52,7 +52,7 @@ export default function Header() {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-12 flex justify-between items-center max-w-[1600px]">
                     {/* Logo Section & Mobile Language Switcher */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                        <Link href="/" className="flex items-center gap-2 sm:gap-4 group shrink-0">
+                        <Link prefetch={false} href="/" className="flex items-center gap-2 sm:gap-4 group shrink-0">
                             <div className="relative w-10 h-10 sm:w-14 sm:h-14 xl:w-20 xl:h-20 overflow-hidden rounded-full border border-white/10 group-hover:border-[#FCD116]/50 transition-colors bg-white shadow-lg">
                                 <Image
                                     src="/images/logo.jpg"
@@ -129,7 +129,7 @@ export default function Header() {
 
                         <ClientBell />
 
-                        <Link href="/rendez-vous">
+                        <Link prefetch={false} href="/rendez-vous">
                             <Button className="font-black rounded-full px-6 xl:px-8 h-12 xl:h-14 text-[11px] xl:text-[13px] uppercase tracking-widest shadow-[0_0_20px_rgba(252,209,22,0.15)] transition-all duration-500 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(252,209,22,0.4)] bg-[#FCD116] text-[#0f141e] border-none relative overflow-hidden group">
                                 <span className="relative z-10"><T>Rendez-vous</T></span>
                                 <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-0" />
@@ -203,7 +203,7 @@ export default function Header() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <Link href="/rendez-vous" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Link prefetch={false} href="/rendez-vous" onClick={() => setIsMobileMenuOpen(false)}>
                                     <Button className="w-full py-7 text-xl font-black bg-[#008751] text-white hover:bg-[#E8112D] rounded-2xl shadow-[0_0_20px_rgba(0,135,81,0.3)] border-none transform transition-all active:scale-95">
                                         {t("RÉSERVER MON RETOUR")}
                                     </Button>

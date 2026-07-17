@@ -17,7 +17,7 @@ export default function Footer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-16">
                     {/* Brand Column */}
                     <div className="space-y-6">
-                        <Link href="/" className="flex items-center gap-3">
+                        <Link prefetch={false} href="/" className="flex items-center gap-3">
                             <div className="relative w-16 h-16 overflow-hidden rounded-full border-2 border-[#FCD116] shadow-[0_0_20px_rgba(252,209,22,0.2)] bg-white">
                                 <Image
                                     src="/images/logo.jpg"
@@ -65,7 +65,7 @@ export default function Footer() {
                                 { name: 'Rendez-vous', href: '/rendez-vous' }
                             ].map((item) => (
                                 <li key={t(item.name)}>
-                                    <Link href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
+                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#FCD116] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}
                                     </Link>
@@ -86,7 +86,7 @@ export default function Footer() {
                                 { name: 'Suivi de Chantier', href: '/services/construction' }
                             ].map((item) => (
                                 <li key={t(item.name)}>
-                                    <Link href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
+                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#008751] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}
                                     </Link>
@@ -128,10 +128,10 @@ export default function Footer() {
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
                     <p>© {new Date().getFullYear()} Retour Gagnant Bénin. <T>Tous droits réservés.</T></p>
                     <div className="flex gap-6 mt-4 md:mt-0">
-                        <Link href="/mentions-legales" className="hover:text-white transition-colors"><T>Mentions Légales</T></Link>
-                        <Link href="/confidentialite" className="hover:text-white transition-colors"><T>Confidentialité</T></Link>
-                        <Link href="/conditions-generales" className="hover:text-white transition-colors"><T>CGV</T></Link>
-                        <Link href="/faq" className="hover:text-white transition-colors"><T>FAQ</T></Link>
+                        <Link prefetch={false} href="/mentions-legales" className="hover:text-white transition-colors"><T>Mentions Légales</T></Link>
+                        <Link prefetch={false} href="/confidentialite" className="hover:text-white transition-colors"><T>Confidentialité</T></Link>
+                        <Link prefetch={false} href="/conditions-generales" className="hover:text-white transition-colors"><T>CGV</T></Link>
+                        <Link prefetch={false} href="/faq" className="hover:text-white transition-colors"><T>FAQ</T></Link>
                     </div>
                 </div>
             </div>

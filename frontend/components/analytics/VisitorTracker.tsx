@@ -3,6 +3,16 @@
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 
+// ══════════════════════════════════════════════════════════════
+// VisitorTracker — OPTIMISÉ QUOTA EDGE (incident Vercel 75% du quota) :
+//   AVANT : ping/page + heartbeat 30s REDÉMARRÉ à chaque navigation + unload
+//   APRÈS : ping/page + UN SEUL heartbeat global 120s pour toute la session,
+//           suspendu quand l'onglet est en arrière-plan (visibilitychange),
+//           + sendBeacon au unload. Réduction ~4-8x des requêtes.
+// ══════════════════════════════════════════════════════════════
+
+const HEARTBEAT_MS = 120_000
+
 // ── Session ID : persisté en sessionStorage (1 par onglet) ──
 function getSessionId(): { sid: string; is_returning: boolean } {
     if (typeof window === 'undefined') return { sid: '', is_returning: false }
@@ -58,21 +68,37 @@ function getClientSignals(is_returning: boolean) {
     }
 }
 
+function send(payload: object) {
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/analytics/track', blob)
+    } else {
+        fetch('/api/analytics/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+        }).catch(() => {})
+    }
+}
+
 export function VisitorTracker() {
     const pathname = usePathname()
-    const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const scrollDepthRef = useRef(0)
+    // Réfs partagées entre le ping par page et le heartbeat global
+    const pathnameRef = useRef(pathname)
+    const payloadRef = useRef<() => object>(() => ({}))
 
+    // ── Effet PAR PAGE : 1 ping + suivi du scroll (aucun timer ici) ──
     useEffect(() => {
         if (pathname.startsWith('/admin') || pathname.startsWith('/agent')) return
 
         const { sid: sessionId, is_returning } = getSessionId()
         if (!sessionId) return
 
-        // Réinitialiser la profondeur de défilement à chaque changement de page
+        pathnameRef.current = pathname
         scrollDepthRef.current = 0
 
-        // Tracker le scroll max vu sur cette page
         const onScroll = () => {
             const scrolled = window.scrollY + window.innerHeight
             const total = document.documentElement.scrollHeight
@@ -82,14 +108,14 @@ export function VisitorTracker() {
             }
         }
         window.addEventListener('scroll', onScroll, { passive: true })
-        onScroll() // capture l'état initial (contenu visible sans scroll)
+        onScroll()
 
         const clientSignals = getClientSignals(is_returning)
         const utmParams = new URLSearchParams(window.location.search)
 
-        const buildPayload = () => ({
+        payloadRef.current = () => ({
             session_id: sessionId,
-            page: pathname,
+            page: pathnameRef.current,
             referrer: document.referrer || '',
             utm_source: utmParams.get('utm_source') || '',
             utm_medium: utmParams.get('utm_medium') || '',
@@ -98,36 +124,52 @@ export function VisitorTracker() {
             ...clientSignals,
         })
 
-        const send = (payload: object) => {
-            const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon('/api/analytics/track', blob)
-            } else {
-                fetch('/api/analytics/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    keepalive: true,
-                }).catch(() => {})
-            }
-        }
-
-        // Premier ping immédiat
-        send(buildPayload())
-
-        // Heartbeat toutes les 30s (met à jour scroll_depth + last_seen_at)
-        heartbeatRef.current = setInterval(() => send(buildPayload()), 30_000)
-
-        // Ping final avant fermeture de page (capture le scroll_depth final)
-        const onUnload = () => send(buildPayload())
-        window.addEventListener('beforeunload', onUnload)
+        // UN ping par page — pas de heartbeat par page
+        send(payloadRef.current())
 
         return () => {
-            if (heartbeatRef.current) clearInterval(heartbeatRef.current)
             window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('beforeunload', onUnload)
         }
     }, [pathname])
+
+    // ── Effet SESSION (monté UNE fois) : heartbeat global 120s + pause
+    //    arrière-plan + ping final au unload ──
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval> | null = null
+
+        const startBeat = () => {
+            if (interval) return
+            interval = setInterval(() => {
+                // Ne rien envoyer depuis les panels internes
+                if (pathnameRef.current.startsWith('/admin') || pathnameRef.current.startsWith('/agent')) return
+                send(payloadRef.current())
+            }, HEARTBEAT_MS)
+        }
+        const stopBeat = () => {
+            if (interval) { clearInterval(interval); interval = null }
+        }
+
+        // Pause complète quand l'onglet est en arrière-plan (30-50% d'économie)
+        const onVisibility = () => {
+            if (document.hidden) stopBeat()
+            else startBeat()
+        }
+        document.addEventListener('visibilitychange', onVisibility)
+        if (!document.hidden) startBeat()
+
+        // Ping final : capture le scroll_depth définitif (sendBeacon survit au unload)
+        const onUnload = () => {
+            if (pathnameRef.current.startsWith('/admin') || pathnameRef.current.startsWith('/agent')) return
+            send(payloadRef.current())
+        }
+        window.addEventListener('pagehide', onUnload)
+
+        return () => {
+            stopBeat()
+            document.removeEventListener('visibilitychange', onVisibility)
+            window.removeEventListener('pagehide', onUnload)
+        }
+    }, [])
 
     return null
 }
