@@ -149,6 +149,23 @@ export default function AdminDocumentsPage() {
     const [selectedInvoiceId, setSelectedInvoiceId] = useState('')
     const [sendingRelanceId, setSendingRelanceId] = useState<string | null>(null)
 
+    // Récap génératif de l'assistant IA (Groq)
+    const [aiRecap, setAiRecap] = useState('')
+    const [aiRecapLoading, setAiRecapLoading] = useState(false)
+
+    const generateAiRecap = async () => {
+        setAiRecapLoading(true)
+        try {
+            const res = await fetch('/api/admin/documents/recap', { method: 'POST' })
+            const data = await res.json()
+            if (data.recap) setAiRecap(data.recap)
+            else setAiRecap('Récap indisponible pour le moment. Réessayez.')
+        } catch {
+            setAiRecap('Récap indisponible pour le moment. Réessayez.')
+        }
+        setAiRecapLoading(false)
+    }
+
     // Effacer le lien généré si les paramètres de paiement changent
     useEffect(() => {
         setGenLink('')
@@ -156,16 +173,25 @@ export default function AdminDocumentsPage() {
 
     const fetchInvoices = async () => {
         try {
-            const { data } = await supabase
+            // NB : les colonnes réelles sont client_nom / client_prenom
+            // (un ancien `client_name` inexistant faisait échouer la requête
+            // → liste toujours vide dans le sélecteur)
+            const { data, error } = await supabase
                 .from('documents_financiers')
-                .select('id, numero, client_name, total, currency, type')
+                .select('id, numero, client_nom, client_prenom, total, currency, type, created_at')
                 .eq('type', 'facture')
                 .order('created_at', { ascending: false })
+                .limit(200)
+            if (error) throw error
             setInvoices(data || [])
         } catch (e) {
             console.error('Failed to fetch invoices:', e)
         }
     }
+
+    // Charger les factures dès l'arrivée sur l'onglet (données en temps réel,
+    // pas seulement au clic sur la case)
+    useEffect(() => { fetchInvoices() }, [])
 
     const fetchDocs = useCallback(async () => {
         let query = supabase.from('client_documents').select('*').order('created_at', { ascending: false })
@@ -364,7 +390,7 @@ export default function AdminDocumentsPage() {
                                     <option value="" className="bg-[#0d1424] text-gray-400">-- Choisir une facture --</option>
                                     {invoices.map(inv => (
                                         <option key={inv.id} value={inv.id} className="bg-[#0d1424] text-white">
-                                            {inv.numero} - {inv.client_name || 'Sans nom'} ({inv.total} XOF/FCFA)
+                                            {inv.numero} — {`${inv.client_nom || ''} ${inv.client_prenom || ''}`.trim() || 'Sans nom'} ({Number(inv.total || 0).toLocaleString('fr-FR')} {inv.currency === 'EUR' ? '€' : inv.currency === 'USD' ? '$' : 'FCFA'})
                                         </option>
                                     ))}
                                 </select>
@@ -446,6 +472,26 @@ export default function AdminDocumentsPage() {
                                                             <li key={idx} dangerouslySetInnerHTML={{ __html: s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                                                         ))}
                                                     </ul>
+                                                </div>
+
+                                                {/* Récap génératif IA (Groq) */}
+                                                <div className="pt-3 border-t border-emerald-500/10">
+                                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Récap détaillé de l&apos;assistant IA</p>
+                                                        <button
+                                                            onClick={generateAiRecap}
+                                                            disabled={aiRecapLoading}
+                                                            className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                                        >
+                                                            {aiRecapLoading ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+                                                            {aiRecapLoading ? 'Analyse en cours…' : (aiRecap ? 'Actualiser le récap IA' : 'Générer le récap IA')}
+                                                        </button>
+                                                    </div>
+                                                    {aiRecap && (
+                                                        <div className="bg-[#0d1424]/80 border border-emerald-500/15 rounded-xl p-4">
+                                                            <pre className="text-xs text-gray-200 whitespace-pre-wrap font-sans leading-relaxed m-0">{aiRecap}</pre>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         )

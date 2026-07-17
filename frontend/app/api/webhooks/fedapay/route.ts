@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import { supabase } from '@/lib/supabase'
 
 // FedaPay sends webhook notifications via POST
@@ -168,6 +169,9 @@ export async function POST(request: Request) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ order_id: orderId, type: 'payment_success' }),
             }).catch(() => { })
+
+            // Facture ERP → compta (idempotent : skip si verify l'a déjà créée)
+            await createErpInvoiceForOrder({ orderId, method: 'fedapay', transactionId: String(transactionId ?? '') })
 
             return NextResponse.json({ ok: true, message: 'Paiement confirmé' })
         }

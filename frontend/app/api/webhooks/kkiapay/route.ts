@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
+import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import { markClientConverted } from '@/lib/classement/track'
 import { confirmDocumentPayment } from '@/lib/document-payment'
 
@@ -354,12 +355,15 @@ export async function POST(request: Request) {
                     })
                 }
 
-                // Send notification
+                // Send notification (email admin + facture client)
                 await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/notifications/order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ order_id: orderId, type: 'payment_success' }),
                 }).catch(() => { })
+
+                // Facture ERP → compta (idempotent : skip si verify l'a déjà créée)
+                await createErpInvoiceForOrder({ orderId, method: 'kkiapay', transactionId })
 
                 return NextResponse.json({ ok: true, message: 'Paiement vérifié et confirmé' })
             }
