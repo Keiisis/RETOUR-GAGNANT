@@ -55,6 +55,7 @@ interface LiveData {
     }
     top_pages: { page: string; count: number }[]
     top_countries: { country: string; count: number; code: string }[]
+    country_points: { country: string; count: number; code: string; lat: number; lon: number }[]
     device_stats: Record<string, number>
     browser_stats: Record<string, number>
     hourly_chart: { hour: string; count: number }[]
@@ -346,12 +347,12 @@ export default function AnalyticsLivePage() {
                             <MapPin size={15} className="text-emerald-400" />
                             Présence mondiale
                         </p>
-                        <span className="text-[10px] text-gray-600">
-                            {uniqueLiveSessions.length} sessions actives
+                        <span className="text-[10px] text-gray-500">
+                            {data?.country_points?.length || 0} pays (24h) — {uniqueLiveSessions.length} en ligne
                         </span>
                     </div>
                     <div style={{ height: 300 }}>
-                        <WorldMapDynamic sessions={uniqueLiveSessions} />
+                        <WorldMapDynamic sessions={uniqueLiveSessions} countryPoints={data?.country_points || []} />
                     </div>
                 </div>
 

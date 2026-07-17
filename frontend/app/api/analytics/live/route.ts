@@ -66,6 +66,27 @@ export async function GET() {
             .sort(([, a], [, b]) => b.count - a.count).slice(0, 10)
             .map(([country, { count, code }]) => ({ country, count, code }))
 
+        // ── Points pays pour la carte monde (visiteurs uniques 24h,
+        //    position = centre moyen des sessions géolocalisées) ────
+        const ptsMap: Record<string, { code: string; count: number; latSum: number; lonSum: number; nGeo: number }> = {}
+        for (const r of uniqueSessions) {
+            const c = r.country || 'Inconnu'
+            if (!ptsMap[c]) ptsMap[c] = { code: r.country_code || 'XX', count: 0, latSum: 0, lonSum: 0, nGeo: 0 }
+            ptsMap[c].count++
+            if (r.latitude && r.longitude) {
+                ptsMap[c].latSum += Number(r.latitude)
+                ptsMap[c].lonSum += Number(r.longitude)
+                ptsMap[c].nGeo++
+            }
+        }
+        const countryPoints = Object.entries(ptsMap)
+            .filter(([, v]) => v.nGeo > 0)
+            .map(([country, v]) => ({
+                country, code: v.code, count: v.count,
+                lat: v.latSum / v.nGeo, lon: v.lonSum / v.nGeo,
+            }))
+            .sort((a, b) => b.count - a.count)
+
         // ── Appareils ────────────────────────────────────────────
         const deviceCounts: Record<string, number> = {}
         for (const r of rows) deviceCounts[r.device_type] = (deviceCounts[r.device_type] || 0) + 1
@@ -155,6 +176,7 @@ export async function GET() {
             },
             top_pages:       topPages,
             top_countries:   topCountries,
+            country_points:  countryPoints,
             device_stats:    deviceCounts,
             browser_stats:   browserCounts,
             hourly_chart:    hourlyChart,
