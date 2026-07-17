@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, memo } from 'react'
 import { motion } from 'framer-motion'
+// CSS Leaflet embarqué depuis node_modules — indispensable au positionnement
+// des tuiles. La version CDN (unpkg) échouait par moments → tuiles noires
+// empilées n'importe comment. Ici c'est bundlé : plus aucune dépendance réseau.
+import 'leaflet/dist/leaflet.css'
 
 interface Session {
     session_id: string
@@ -50,18 +54,9 @@ const WorldMap = memo(function WorldMap({ sessions, countryPoints = [] }: {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null)
     const [leafletLoaded, setLeafletLoaded] = useState(false)
 
-    // Chargement dynamique de Leaflet côté client
+    // Chargement dynamique de Leaflet côté client (CSS déjà bundlé plus haut)
     useEffect(() => {
         if (typeof window === 'undefined') return
-
-        // Injection du CSS de Leaflet si non présent
-        if (!document.querySelector('link[href*="leaflet"]')) {
-            const link = document.createElement('link')
-            link.rel = 'stylesheet'
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-            document.head.appendChild(link)
-        }
-
         setLeafletLoaded(true)
     }, [])
 
@@ -96,9 +91,11 @@ const WorldMap = memo(function WorldMap({ sessions, countryPoints = [] }: {
             // Contrôle de zoom en bas à droite
             L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-            // Fond de carte sombre de CartoDB (très propre, moderne, montre les continents et pays)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            // Fond de carte CLAIR CartoDB Positron : pays et frontières bien
+            // lisibles (le fond dark_all rendait la carte quasi noire)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
                 maxZoom: 18
             }).addTo(map)
 
@@ -277,7 +274,7 @@ const WorldMap = memo(function WorldMap({ sessions, countryPoints = [] }: {
     }, [leafletLoaded, sessions, countryPoints])
 
     return (
-        <div className="relative w-full h-full overflow-hidden rounded-b-2xl bg-[#0E1B2E]" style={{ minHeight: 300 }}>
+        <div className="relative w-full h-full overflow-hidden rounded-b-2xl bg-[#E8EEF2]" style={{ minHeight: 300 }}>
             {/* Conteneur Leaflet */}
             <div ref={mapContainerRef} className="w-full h-full z-0" />
 

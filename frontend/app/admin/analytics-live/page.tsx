@@ -319,13 +319,17 @@ export default function AnalyticsLivePage() {
                                 </div>
                                 <motion.div
                                     initial={{ height: 0 }}
-                                    animate={{ height: `${Math.max(4, (h.count / maxHourly) * 100)}%` }}
+                                    animate={{ height: `${h.count === 0 ? 3 : Math.max(12, (h.count / maxHourly) * 100)}%` }}
                                     transition={{ duration: 0.5, delay: i * 0.02 }}
                                     className="w-full rounded-t-sm"
                                     style={{
-                                        background: h.count === maxHourly
-                                            ? 'linear-gradient(to top, #818cf8, #a78bfa)'
-                                            : 'rgba(129, 140, 248, 0.3)'
+                                        // Couleurs pleines : les barres translucides étaient
+                                        // invisibles en mode clair (30 % d'opacité sur blanc)
+                                        background: h.count === 0
+                                            ? 'rgba(120, 130, 150, 0.18)'
+                                            : h.count === maxHourly
+                                                ? 'linear-gradient(to top, #4F46E5, #8B5CF6)'
+                                                : '#7C7FF2'
                                     }}
                                 />
                                 {i % 4 === 0 && (

@@ -419,8 +419,17 @@ export default function AdminComptabilitePage() {
             setPaiementsList(list)
             const map: Record<string, number> = {}
             list.forEach(p => {
-                map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
+                if (p.document_id) map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
             })
+            // COHÉRENCE : une facture au statut « payé » (paiement en ligne vérifié,
+            // conversion de devis, facture manuelle) est SOLDÉE même sans ligne
+            // dans paiements_manuels — sinon le journal affiche un faux solde,
+            // un faux bouton « Encaisser » et de fausses « factures non soldées ».
+            for (const d of (erpRes.docs || []) as Array<{ id: string; type: string; status: string; total: number }>) {
+                if (d.type === 'facture' && d.status === 'paye') {
+                    map[d.id] = Math.max(map[d.id] || 0, Number(d.total) || 0)
+                }
+            }
             setPaiements(map)
         }
         setClotures(erpRes.clotures || [])
@@ -517,7 +526,9 @@ export default function AdminComptabilitePage() {
 
     // ── Score santé financière ────────────────────────────────────
     const scoreSante = useMemo(() => {
-        const tauxEncaissement = kpis.caEmis > 0 ? (kpis.encaisseFactu / kpis.caEmis) * 100 : 0
+        // Plafonné à 100 : les paiements externes (sans facture émise) peuvent
+        // dépasser le CA facturé — un taux > 100 % n'a pas de sens à l'affichage
+        const tauxEncaissement = kpis.caEmis > 0 ? Math.min(100, (kpis.encaisseFactu / kpis.caEmis) * 100) : 0
         const tauxRentabilite  = kpis.totalEncaisse > 0 ? Math.max(0, (kpis.benefice / kpis.totalEncaisse)) * 100 : 0
         const nbOrders = pOrders.length
         const tauxConvOrders   = nbOrders > 0 ? (pOrders.filter(o => o.payment_status === 'completed').length / nbOrders) * 100 : 50
@@ -555,7 +566,10 @@ export default function AdminComptabilitePage() {
             list.push({ type: 'warning', msg: `${commandesRetard.length} commande${commandesRetard.length > 1 ? 's' : ''} boutique en attente +24h`, action: 'boutique' })
         if (kpis.caEmis > 0 && (kpis.encaisseFactu / kpis.caEmis) < 0.3)
             list.push({ type: 'danger', msg: `Taux d'encaissement bas (${((kpis.encaisseFactu / kpis.caEmis) * 100).toFixed(0)}%) — plus de 70% du CA émis non encaissé`, action: 'retard' })
-        const nonSignes = pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !d.signed_at)
+        // Seules les factures issues d'un devis signé sont censées porter une
+        // signature — les factures manuelles (preuve de paiement) sont exclues
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nonSignes = pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !d.signed_at && (d as any).parent_devis_id)
         if (nonSignes.length > 0)
             list.push({ type: 'info', msg: `${nonSignes.length} facture${nonSignes.length > 1 ? 's' : ''} payée${nonSignes.length > 1 ? 's' : ''} sans signature numérique` })
         return list
