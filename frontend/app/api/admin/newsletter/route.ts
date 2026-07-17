@@ -37,16 +37,19 @@ export async function GET(request: NextRequest) {
     if (!auth.authenticated) return auth.error!
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    const [{ count: active }, { count: total }, { data: campaigns }] = await Promise.all([
+    const [{ count: active }, { count: total }, { data: campaigns }, { data: subscribers }] = await Promise.all([
         supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
         supabase.from('newsletter_campaigns').select('id, subject, status, recipient_count, sent_count, failed_count, sent_by_nom, created_at').order('created_at', { ascending: false }).limit(20),
+        // Liste nominative des abonnés (qui est inscrit, depuis quand, d'où)
+        supabase.from('newsletter_subscribers').select('id, email, status, source, subscribed_at, unsubscribed_at').order('subscribed_at', { ascending: false }).limit(500),
     ])
 
     return NextResponse.json({
         activeSubscribers: active || 0,
         totalSubscribers: total || 0,
         campaigns: campaigns || [],
+        subscribers: subscribers || [],
     })
 }
 

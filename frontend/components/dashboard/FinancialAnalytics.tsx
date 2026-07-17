@@ -198,12 +198,14 @@ export const FinancialAnalytics = () => {
 
     return (
         <div style={{
-            background: 'linear-gradient(135deg, rgba(17,24,39,0.98) 0%, rgba(17,24,39,0.95) 100%)',
+            // Fond thémable : suit le panneau clair/sombre (l'ancien gris-noir en
+            // dur créait un voile illisible en mode éclairé)
+            background: 'var(--panel-surface)',
             borderRadius: '20px',
             padding: '28px',
             marginBottom: '24px',
-            border: '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            border: '1px solid var(--panel-border)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
         }}>
             {/* ── En-tête ── */}
             <div style={{
@@ -219,17 +221,17 @@ export const FinancialAnalytics = () => {
                         margin: 0,
                         fontSize: '18px',
                         fontWeight: 800,
-                        color: '#fff',
+                        color: 'var(--panel-text-heading)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                     }}>
-                        📊 Tableau de Bord Financier
+                        Tableau de Bord Financier
                     </h2>
                     <p style={{
                         margin: '4px 0 0',
                         fontSize: '12px',
-                        color: 'rgba(255,255,255,0.4)',
+                        color: 'var(--panel-text-muted)',
                     }}>
                         Vue temps réel · {currentMonth?.label} {new Date().getFullYear()}
                     </p>
@@ -241,10 +243,10 @@ export const FinancialAnalytics = () => {
                         value={selectedReportMonth}
                         onChange={e => setSelectedReportMonth(e.target.value)}
                         style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'var(--panel-surface-alt)',
+                            border: '1px solid var(--panel-border)',
                             borderRadius: '8px',
-                            color: '#fff',
+                            color: 'var(--panel-text-heading)',
                             padding: '8px 12px',
                             fontSize: '12px',
                             cursor: 'pointer',
@@ -255,7 +257,7 @@ export const FinancialAnalytics = () => {
                             d.setMonth(d.getMonth() - i)
                             const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
                             const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-                            return <option key={val} value={val} style={{ background: '#1f2937' }}>{label}</option>
+                            return <option key={val} value={val} style={{ background: 'var(--panel-surface)', color: 'var(--panel-text)' }}>{label}</option>
                         })}
                     </select>
                     <button
@@ -263,9 +265,9 @@ export const FinancialAnalytics = () => {
                         disabled={downloadingReport}
                         style={{
                             background: downloadingReport
-                                ? 'rgba(255,255,255,0.1)'
+                                ? 'var(--panel-surface-active)'
                                 : 'linear-gradient(135deg, #008751, #00a664)',
-                            color: '#fff',
+                            color: 'var(--panel-text-heading)',
                             border: 'none',
                             borderRadius: '10px',
                             padding: '8px 16px',
@@ -284,8 +286,8 @@ export const FinancialAnalytics = () => {
                                 <span style={{
                                     width: '14px',
                                     height: '14px',
-                                    border: '2px solid rgba(255,255,255,0.3)',
-                                    borderTopColor: '#fff',
+                                    border: '2px solid var(--panel-border-strong)',
+                                    borderTopColor: 'var(--panel-accent)',
                                     borderRadius: '50%',
                                     display: 'inline-block',
                                     animation: 'spin 1s linear infinite',
@@ -323,13 +325,13 @@ export const FinancialAnalytics = () => {
                         height: '2px',
                         background: 'linear-gradient(90deg, #008751, #00c073)',
                     }} />
-                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '10px', color: 'var(--panel-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
                         CA Encaissé
                     </p>
                     <p style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 900, color: '#4ade80' }}>
                         {formatPrice(currentMonth?.ca || 0)}
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>FCFA</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--panel-text-faint)' }}>FCFA</p>
                 </div>
 
                 {/* Impayés */}
@@ -349,13 +351,13 @@ export const FinancialAnalytics = () => {
                         height: '2px',
                         background: 'linear-gradient(90deg, #ef4444, #f87171)',
                     }} />
-                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '10px', color: 'var(--panel-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
                         Impayés
                     </p>
                     <p style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 900, color: '#f87171' }}>
                         {formatPrice(currentMonth?.impaye || 0)}
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>FCFA</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--panel-text-faint)' }}>FCFA</p>
                 </div>
 
                 {/* Documents */}
@@ -375,13 +377,13 @@ export const FinancialAnalytics = () => {
                         height: '2px',
                         background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                     }} />
-                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '10px', color: 'var(--panel-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
                         Documents
                     </p>
                     <p style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 900, color: '#60a5fa' }}>
                         {totalDocs}
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>{currentMonth?.factures || 0} fac · {currentMonth?.devis || 0} dev</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--panel-text-faint)' }}>{currentMonth?.factures || 0} fac · {currentMonth?.devis || 0} dev</p>
                 </div>
 
                 {/* Conversion */}
@@ -401,20 +403,20 @@ export const FinancialAnalytics = () => {
                         height: '2px',
                         background: 'linear-gradient(90deg, #FCD116, #fde047)',
                     }} />
-                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '10px', color: 'var(--panel-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
                         Conv. Devis
                     </p>
                     <p style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 900, color: '#fde047' }}>
                         {conversionRate}%
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>devis → facture</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: 'var(--panel-text-faint)' }}>devis → facture</p>
                 </div>
             </div>
 
             {/* ── Mini Graphique Tendance ── */}
             <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                background: 'var(--panel-surface-alt)',
+                border: '1px solid var(--panel-border)',
                 borderRadius: '14px',
                 padding: '16px 20px',
                 marginBottom: overdueAlerts.length > 0 ? '16px' : '0',
@@ -422,7 +424,7 @@ export const FinancialAnalytics = () => {
                 <p style={{
                     margin: '0 0 12px',
                     fontSize: '11px',
-                    color: 'rgba(255,255,255,0.4)',
+                    color: 'var(--panel-text-muted)',
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
@@ -484,7 +486,7 @@ export const FinancialAnalytics = () => {
                                 </div>
                                 <span style={{
                                     fontSize: '9px',
-                                    color: isCurrentMonth ? '#4ade80' : 'rgba(255,255,255,0.3)',
+                                    color: isCurrentMonth ? '#4ade80' : 'var(--panel-text-faint)',
                                     fontWeight: isCurrentMonth ? 700 : 400,
                                     textTransform: 'capitalize',
                                 }}>
@@ -502,11 +504,11 @@ export const FinancialAnalytics = () => {
                     marginTop: '8px',
                     justifyContent: 'center',
                 }}>
-                    <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--panel-text-faint)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#008751', display: 'inline-block' }} />
                         CA encaissé
                     </span>
-                    <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--panel-text-faint)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#ef4444', display: 'inline-block' }} />
                         Impayés
                     </span>
@@ -541,9 +543,9 @@ export const FinancialAnalytics = () => {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '8px 12px',
-                                    background: 'rgba(255,255,255,0.02)',
+                                    background: 'var(--panel-surface-alt)',
                                     borderRadius: '8px',
-                                    border: '1px solid rgba(255,255,255,0.04)',
+                                    border: '1px solid var(--panel-border)',
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -551,11 +553,11 @@ export const FinancialAnalytics = () => {
                                         fontSize: '10px',
                                         fontWeight: 700,
                                         fontFamily: 'monospace',
-                                        color: 'rgba(255,255,255,0.5)',
+                                        color: 'var(--panel-text-muted)',
                                     }}>
                                         {inv.numero}
                                     </span>
-                                    <span style={{ fontSize: '12px', color: '#fff', fontWeight: 500 }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--panel-text-heading)', fontWeight: 500 }}>
                                         {inv.client_nom}
                                     </span>
                                 </div>
@@ -588,7 +590,7 @@ export const FinancialAnalytics = () => {
                         <p style={{
                             margin: '8px 0 0',
                             fontSize: '10px',
-                            color: 'rgba(255,255,255,0.3)',
+                            color: 'var(--panel-text-faint)',
                             textAlign: 'center',
                         }}>
                             +{overdueAlerts.length - 5} autre(s) facture(s) en retard

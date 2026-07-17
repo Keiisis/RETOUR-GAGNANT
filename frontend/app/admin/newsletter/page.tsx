@@ -14,10 +14,20 @@ interface Campaign {
     created_at: string
 }
 
+interface Subscriber {
+    id: string
+    email: string
+    status: string
+    source: string | null
+    subscribed_at: string
+    unsubscribed_at: string | null
+}
+
 export default function AdminNewsletterPage() {
     const [activeSubscribers, setActive] = useState(0)
     const [totalSubscribers, setTotal] = useState(0)
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
+    const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [loading, setLoading] = useState(true)
 
     const [subject, setSubject] = useState('')
@@ -34,6 +44,7 @@ export default function AdminNewsletterPage() {
                 setActive(j.activeSubscribers || 0)
                 setTotal(j.totalSubscribers || 0)
                 setCampaigns(j.campaigns || [])
+                setSubscribers(j.subscribers || [])
             }
         } finally { setLoading(false) }
     }, [])
@@ -148,6 +159,50 @@ export default function AdminNewsletterPage() {
                                         <td className="px-3 py-2.5 text-right font-mono text-red-500">{c.failed_count || '—'}</td>
                                         <td className="px-3 py-2.5 text-gray-500">{c.sent_by_nom || '—'}</td>
                                         <td className="px-4 py-2.5 text-right text-gray-400">{fmtDate(c.created_at)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* ═══ LISTE NOMINATIVE DES ABONNÉS ═══ */}
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Users size={16} className="text-emerald-700" />
+                        <h2 className="text-sm font-black text-[#1a2332]">Abonnés</h2>
+                        <span className="text-[11px] text-gray-400 font-medium">{subscribers.length} inscrit(s) — {activeSubscribers} actif(s)</span>
+                    </div>
+                </div>
+                {loading ? (
+                    <div className="flex justify-center py-10"><Loader2 size={22} className="animate-spin text-emerald-600" /></div>
+                ) : subscribers.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400 text-sm">
+                        <Mail size={26} className="mx-auto mb-2 text-gray-300" />
+                        Aucun abonné pour le moment.
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                            <thead><tr className="border-b border-gray-100 text-gray-400">
+                                <th className="text-left font-bold px-4 py-2.5">Email</th>
+                                <th className="text-center font-bold px-3 py-2.5">Statut</th>
+                                <th className="text-left font-bold px-3 py-2.5">Source</th>
+                                <th className="text-right font-bold px-4 py-2.5">Inscrit le</th>
+                            </tr></thead>
+                            <tbody>
+                                {subscribers.map(s => (
+                                    <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                        <td className="px-4 py-2.5 text-[#1a2332] font-semibold">{s.email}</td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                {s.status === 'active' ? 'Actif' : 'Désabonné'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-gray-500">{s.source || 'Site web'}</td>
+                                        <td className="px-4 py-2.5 text-right text-gray-400">{fmtDate(s.subscribed_at)}</td>
                                     </tr>
                                 ))}
                             </tbody>
