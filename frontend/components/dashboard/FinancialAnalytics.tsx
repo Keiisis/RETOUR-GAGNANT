@@ -310,7 +310,7 @@ export const FinancialAnalytics = () => {
             }}>
                 {/* CA Encaissé */}
                 <div style={{
-                    background: 'rgba(0,135,81,0.08)',
+                    background: 'var(--panel-surface-alt)',
                     border: '1px solid rgba(0,135,81,0.35)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -336,7 +336,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Impayés */}
                 <div style={{
-                    background: 'rgba(239,68,68,0.06)',
+                    background: 'var(--panel-surface-alt)',
                     border: '1px solid rgba(239,68,68,0.3)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -362,7 +362,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Documents */}
                 <div style={{
-                    background: 'rgba(59,130,246,0.06)',
+                    background: 'var(--panel-surface-alt)',
                     border: '1px solid rgba(59,130,246,0.3)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -388,7 +388,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Conversion */}
                 <div style={{
-                    background: 'rgba(252,209,22,0.06)',
+                    background: 'var(--panel-surface-alt)',
                     border: '1px solid rgba(201,168,76,0.45)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -477,8 +477,8 @@ export const FinancialAnalytics = () => {
                                         width: '60%',
                                         height: `${Math.max(caH, 2)}px`,
                                         background: isCurrentMonth
-                                            ? 'linear-gradient(180deg, #4ade80, #008751)'
-                                            : 'linear-gradient(180deg, rgba(0,135,81,0.6), rgba(0,135,81,0.3))',
+                                            ? 'linear-gradient(180deg, #10b981, #047857)'
+                                            : 'linear-gradient(180deg, #34d399, #059669)',
                                         borderRadius: impH > 0 ? '0 0 3px 3px' : '3px',
                                         transition: 'height 0.6s ease',
                                         boxShadow: isCurrentMonth ? '0 0 8px rgba(0,135,81,0.4)' : 'none',

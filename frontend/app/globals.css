@@ -664,8 +664,16 @@
    ═══════════════════════════════════════════════════════ */
 
 /* --- TEXT COLOR OVERRIDES --- */
-[data-theme="light"] .text-white {
+/* On NE flippe PAS le texte des éléments posés sur un fond explicitement
+   sombre (slate-900/800/950) : ce sont des îlots sombres volontaires
+   (modals, cartes) où le blanc doit rester blanc. */
+[data-theme="light"] .text-white:not(.bg-slate-900):not(.bg-slate-800):not(.bg-slate-950) {
   color: var(--panel-text-heading) !important;
+}
+[data-theme="light"] .bg-slate-900 .text-white,
+[data-theme="light"] .bg-slate-950 .text-white,
+[data-theme="light"] .bg-slate-800 .text-white {
+  color: #ffffff !important;
 }
 [data-theme="light"] .text-gray-200 {
   color: var(--panel-text) !important;
@@ -843,11 +851,21 @@
    la vraie cause du texte blanc-sur-blanc) + le placeholder + l'autofill,
    quel que soit le `text-white`/`text-gray-*` codé en dur sur le champ.
    S'applique à TOUS les formulaires des panels, sans éditer les TSX. */
-[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]),
-[data-theme="light"] textarea {
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not(.bg-slate-900):not(.bg-slate-800):not(.bg-slate-950):not(.bg-slate-900\/50):not(.bg-slate-800\/50),
+[data-theme="light"] textarea:not(.bg-slate-900):not(.bg-slate-800):not(.bg-slate-950):not(.bg-slate-900\/50):not(.bg-slate-800\/50) {
   color: var(--panel-text) !important;
   -webkit-text-fill-color: var(--panel-text) !important;
   caret-color: var(--panel-accent);
+}
+/* Champs sur fond explicitement SOMBRE (modals slate-900/800/950 volontaires,
+   ex. « Nouvelle proposition ») : texte BLANC PUR — sinon le correctif clair
+   ci-dessus les rendait illisibles (texte foncé sur fond sombre). */
+[data-theme="light"] input.bg-slate-900, [data-theme="light"] input.bg-slate-800, [data-theme="light"] input.bg-slate-950,
+[data-theme="light"] input.bg-slate-900\/50, [data-theme="light"] input.bg-slate-800\/50,
+[data-theme="light"] textarea.bg-slate-900, [data-theme="light"] textarea.bg-slate-800, [data-theme="light"] textarea.bg-slate-950 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #FCD116;
 }
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
