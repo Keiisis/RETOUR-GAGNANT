@@ -700,20 +700,23 @@ export default function PersonForm({
         />
       )}
 
-      <div 
+      <div
         className="relative border rounded-[2rem] overflow-hidden"
         style={{
           backgroundColor: isDark ? 'var(--panel-surface)' : '#ffffff',
-          borderColor: 'var(--panel-border)',
+          borderColor: isDark ? 'var(--panel-border)' : 'rgba(27,42,74,0.18)',
+          boxShadow: isDark ? 'none' : '0 1px 3px rgba(27,42,74,0.08)',
           opacity: 1,
         }}
       >
-        {/* Halo de couleur en haut — discret en clair (0.35 d'un jaune/vert
-            étalé sur une carte blanche = voile délavé) */}
-        <div
-          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full blur-[80px]"
-          style={{ background: accent, opacity: isDark ? 0.35 : 0.08 }}
-        />
+        {/* Halo de couleur en haut — UNIQUEMENT en thème sombre. En clair,
+            même à faible opacité il crée un voile délavé sur la carte blanche. */}
+        {isDark && (
+          <div
+            className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full blur-[80px]"
+            style={{ background: accent, opacity: 0.35 }}
+          />
+        )}
         {/* Texture grain subtile — sombre uniquement (invisible/salissant en clair) */}
         {isDark && (
           <div

@@ -169,10 +169,10 @@ export default function InventoryPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-white flex items-center gap-3">
+                    <h1 className="text-2xl font-black text-[var(--panel-text-heading)] flex items-center gap-3">
                         <Box className="text-emerald-400" /> Gestion des Stocks & Catalogue
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-[var(--panel-text-muted)] text-sm mt-1">
                         Catalogue unifié — Boutique + ERP (Devis/Factures). Les articles boutique apparaissent automatiquement ici.
                     </p>
                 </div>
@@ -183,53 +183,53 @@ export default function InventoryPage() {
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-[#0c1420] border border-white/5 rounded-2xl p-5 shadow-xl relative overflow-hidden group">
+                <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-5 shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/10 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
                     <div className="flex items-center gap-3 relative z-10">
                         <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                             <PackageSearch size={18} className="text-emerald-400" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Articles Total</p>
-                            <h3 className="text-2xl font-black text-white">{items.length}</h3>
+                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-widest">Articles Total</p>
+                            <h3 className="text-2xl font-black text-[var(--panel-text-heading)]">{items.length}</h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#0c1420] border border-white/5 rounded-2xl p-5 shadow-xl relative overflow-hidden group">
+                <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-5 shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-28 h-28 bg-[#FCD116]/10 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
                     <div className="flex items-center gap-3 relative z-10">
                         <div className="w-10 h-10 rounded-xl bg-[#FCD116]/10 flex items-center justify-center border border-[#FCD116]/20">
                             <ShoppingBag size={18} className="text-[#FCD116]" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Produits Boutique</p>
-                            <h3 className="text-2xl font-black text-white">{boutiqueCount}</h3>
+                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-widest">Produits Boutique</p>
+                            <h3 className="text-2xl font-black text-[var(--panel-text-heading)]">{boutiqueCount}</h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#0c1420] border border-white/5 rounded-2xl p-5 shadow-xl relative overflow-hidden group">
+                <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-5 shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-28 h-28 bg-red-500/10 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
                     <div className="flex items-center gap-3 relative z-10">
                         <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
                             <AlertTriangle size={18} className="text-red-400" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Stock Faible</p>
+                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-widest">Stock Faible</p>
                             <h3 className="text-2xl font-black text-red-400">{lowStockCount}</h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#0c1420] border border-white/5 rounded-2xl p-5 shadow-xl relative overflow-hidden group">
+                <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-5 shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/10 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110" />
                     <div className="flex items-center gap-3 relative z-10">
                         <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                             <Euro size={18} className="text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valeur Stock</p>
+                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-widest">Valeur Stock</p>
                             <h3 className="text-lg font-black text-blue-400">{formatCurrencySync(totalStockValue, 'XOF')}</h3>
                         </div>
                     </div>
@@ -237,26 +237,26 @@ export default function InventoryPage() {
             </div>
 
             {/* Liste */}
-            <div className="bg-[#0c1420] border border-white/5 rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl shadow-xl overflow-hidden">
                 {/* Outils */}
-                <div className="p-4 border-b border-white/5 flex flex-col sm:flex-row gap-4 items-center justify-between bg-black/20">
+                <div className="p-4 border-b border-[var(--panel-border)] flex flex-col sm:flex-row gap-4 items-center justify-between bg-black/20">
                     <div className="relative w-full sm:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--panel-text-muted)]" size={16} />
                         <input
                             type="text"
                             placeholder="Chercher par nom ou SKU..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                            className="w-full bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--panel-text-heading)] focus:outline-none focus:border-emerald-500/50"
                         />
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Filter className="text-gray-500" size={16} />
+                        <Filter className="text-[var(--panel-text-muted)]" size={16} />
                         <select
                             title="Filtrer"
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value)}
-                            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 appearance-none font-bold w-full sm:w-auto"
+                            className="bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--panel-text-heading)] focus:outline-none focus:border-emerald-500/50 appearance-none font-bold w-full sm:w-auto"
                         >
                             <option value="all">Tous les articles</option>
                             <option value="boutique"> Boutique uniquement</option>
@@ -272,7 +272,7 @@ export default function InventoryPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-black/40 border-b border-white/5 text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                            <tr className="bg-black/40 border-b border-[var(--panel-border)] text-[10px] uppercase tracking-widest text-[var(--panel-text-muted)] font-bold">
                                 <th className="p-4 whitespace-nowrap">Article & Source</th>
                                 <th className="p-4">Type</th>
                                 <th className="p-4">Stock</th>
@@ -284,20 +284,20 @@ export default function InventoryPage() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-gray-500">Chargement du catalogue unifié...</td>
+                                    <td colSpan={6} className="p-8 text-center text-[var(--panel-text-muted)]">Chargement du catalogue unifié...</td>
                                 </tr>
                             ) : filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-gray-500">Aucun article trouvé.</td>
+                                    <td colSpan={6} className="p-8 text-center text-[var(--panel-text-muted)]">Aucun article trouvé.</td>
                                 </tr>
                             ) : (
                                 filteredItems.map((item) => (
-                                    <tr key={`${item.source}-${item.id}`} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                                    <tr key={`${item.source}-${item.id}`} className="border-b border-[var(--panel-border)] hover:bg-[var(--panel-surface-alt)] transition-colors group">
                                         {/* Article & Source */}
                                         <td className="p-4">
                                             <div className="flex items-center gap-2">
                                                 <div>
-                                                    <div className="font-bold text-white text-sm">{item.title}</div>
+                                                    <div className="font-bold text-[var(--panel-text-heading)] text-sm">{item.title}</div>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         {item.source === 'boutique' ? (
                                                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#FCD116]/10 text-[#FCD116] border border-[#FCD116]/20">
@@ -308,7 +308,7 @@ export default function InventoryPage() {
                                                                 <Box size={9} /> ERP
                                                             </span>
                                                         )}
-                                                        <span className="text-[10px] text-gray-500 font-mono">
+                                                        <span className="text-[10px] text-[var(--panel-text-muted)] font-mono">
                                                             {item.sku || (item.source === 'boutique' ? item.category || '—' : 'Sans SKU')}
                                                         </span>
                                                     </div>
@@ -321,7 +321,7 @@ export default function InventoryPage() {
                                             <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider
                                                 ${item.type === 'physical' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
                                                   item.type === 'service' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
-                                                  'bg-gray-500/10 text-gray-400 border border-gray-500/20'}`}>
+                                                  'bg-gray-500/10 text-[var(--panel-text-muted)] border border-gray-500/20'}`}>
                                                 {item.type === 'physical' ? 'Physique' : item.type === 'service' ? 'Service' : 'Digital'}
                                             </span>
                                         </td>
@@ -339,7 +339,7 @@ export default function InventoryPage() {
                                                             value={editStock}
                                                             onChange={e => setEditStock(e.target.value)}
                                                             onKeyDown={e => { if (e.key === 'Enter') saveStock(item.id); if (e.key === 'Escape') setEditingId(null) }}
-                                                            className="w-16 bg-white/10 border border-emerald-500/40 rounded-md px-2 py-1 text-white text-sm font-mono focus:outline-none"
+                                                            className="w-16 bg-[var(--panel-surface-alt)] border border-emerald-500/40 rounded-md px-2 py-1 text-[var(--panel-text-heading)] text-sm font-mono focus:outline-none"
                                                             autoFocus
                                                         />
                                                         <button
@@ -354,7 +354,7 @@ export default function InventoryPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingId(null)}
-                                                            className="w-6 h-6 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400"
+                                                            className="w-6 h-6 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)]"
                                                             title="Annuler"
                                                         >
                                                             <X size={12} />
@@ -372,7 +372,7 @@ export default function InventoryPage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => { setEditingId(item.id); setEditStock(String(item.current_stock)) }}
-                                                                className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all"
+                                                                className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-all"
                                                                 title="Modifier le stock"
                                                             >
                                                                 <Edit2 size={10} />
@@ -381,13 +381,13 @@ export default function InventoryPage() {
                                                     </div>
                                                 )
                                             ) : (
-                                                <span className="text-gray-500 text-xs italic">Non suivi</span>
+                                                <span className="text-[var(--panel-text-muted)] text-xs italic">Non suivi</span>
                                             )}
                                         </td>
 
                                         {/* Prix */}
                                         <td className="p-4">
-                                            <div className="font-mono text-sm font-bold text-white">
+                                            <div className="font-mono text-sm font-bold text-[var(--panel-text-heading)]">
                                                 {formatCurrencySync(item.base_price, 'XOF')}
                                             </div>
                                             {item.source === 'boutique' && (item as BoutiqueItem).sale_price ? (
@@ -395,7 +395,7 @@ export default function InventoryPage() {
                                                     Promo: {formatCurrencySync((item as BoutiqueItem).sale_price!, 'XOF')}
                                                 </div>
                                             ) : (item.cost_price > 0 && item.base_price > 0) ? (
-                                                <div className="text-[10px] text-gray-500 mt-0.5">
+                                                <div className="text-[10px] text-[var(--panel-text-muted)] mt-0.5">
                                                     Marge: {Math.round(((item.base_price - item.cost_price) / item.cost_price) * 100)}%
                                                 </div>
                                             ) : null}
@@ -421,7 +421,7 @@ export default function InventoryPage() {
                                                     <button
                                                         type="button"
                                                         title="Modifier"
-                                                        className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                                                        className="w-8 h-8 rounded-lg bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-colors"
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>

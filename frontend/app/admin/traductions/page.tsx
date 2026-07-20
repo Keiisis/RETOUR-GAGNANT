@@ -96,28 +96,28 @@ function EditModal({
                 initial={{ scale: 0.95, y: 10 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 10 }}
-                className="bg-[#0f141e] border border-white/10 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-4"
+                className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-4"
             >
                 <div className="flex items-center justify-between">
-                    <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                    <h3 className="text-[var(--panel-text-heading)] font-bold text-lg flex items-center gap-2">
                         <Pencil size={18} className="text-blue-400" />
                         Modifier la traduction
                     </h3>
-                    <button type="button" title="Fermer" onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors">
+                    <button type="button" title="Fermer" onClick={onClose} className="text-[var(--panel-text-heading)]/40 hover:text-[var(--panel-text-heading)]/80 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Source */}
                 <div className="space-y-1">
-                    <label className="text-xs text-white/40 uppercase tracking-widest">Texte source (FR)</label>
-                    <p className="text-white/70 text-sm bg-white/5 border border-white/10 rounded-xl px-4 py-3 leading-relaxed">
+                    <label className="text-xs text-[var(--panel-text-heading)]/40 uppercase tracking-widest">Texte source (FR)</label>
+                    <p className="text-[var(--panel-text-heading)]/70 text-sm bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl px-4 py-3 leading-relaxed">
                         {item.source_text}
                     </p>
                 </div>
 
                 {/* Language */}
-                <div className="flex items-center gap-2 text-sm text-white/50">
+                <div className="flex items-center gap-2 text-sm text-[var(--panel-text-heading)]/50">
                     <span className="text-xl">{langConfig?.flag}</span>
                     <span>{langConfig?.label} ({item.lang})</span>
                     <ContextBadge context={item.context} />
@@ -125,19 +125,19 @@ function EditModal({
 
                 {/* Edit */}
                 <div className="space-y-1">
-                    <label htmlFor="edit-translation-text" className="text-xs text-white/40 uppercase tracking-widest">Traduction</label>
+                    <label htmlFor="edit-translation-text" className="text-xs text-[var(--panel-text-heading)]/40 uppercase tracking-widest">Traduction</label>
                     <textarea
                         id="edit-translation-text"
                         ref={textareaRef}
                         value={value}
                         onChange={e => setValue(e.target.value)}
                         rows={4}
-                        className="w-full bg-white/5 border border-white/10 focus:border-blue-500/50 text-white rounded-xl px-4 py-3 text-sm resize-none outline-none transition-colors"
+                        className="w-full bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] focus:border-blue-500/50 text-[var(--panel-text-heading)] rounded-xl px-4 py-3 text-sm resize-none outline-none transition-colors"
                     />
                 </div>
 
                 <div className="flex gap-3 justify-end pt-2">
-                    <Button variant="ghost" onClick={onClose} className="text-white/50 hover:text-white">
+                    <Button variant="ghost" onClick={onClose} className="text-[var(--panel-text-heading)]/50 hover:text-[var(--panel-text-heading)]">
                         Annuler
                     </Button>
                     <Button
@@ -354,12 +354,12 @@ export default function TraductionsAdminPage() {
             {/* ── Header ─────────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-white flex items-center gap-3">
+                    <h1 className="text-3xl font-black text-[var(--panel-text-heading)] flex items-center gap-3">
                         <Languages className="text-[#008751]" size={32} />
                         Moteur de Traduction IA
                     </h1>
-                    <p className="text-white/50 mt-1 text-sm">
-                        Gérez le cache DB des traductions — <span className="text-white/80 font-semibold">{totalCount.toLocaleString('fr-FR')}</span> traductions stockées
+                    <p className="text-[var(--panel-text-heading)]/50 mt-1 text-sm">
+                        Gérez le cache DB des traductions — <span className="text-[var(--panel-text-heading)]/80 font-semibold">{totalCount.toLocaleString('fr-FR')}</span> traductions stockées
                     </p>
                 </div>
 
@@ -399,12 +399,12 @@ export default function TraductionsAdminPage() {
                                 <CheckCircle size={18} />
                                 <span className="font-semibold text-sm">{batchResult.message}</span>
                             </div>
-                            <div className="flex gap-3 text-xs text-white/50 flex-wrap">
+                            <div className="flex gap-3 text-xs text-[var(--panel-text-heading)]/50 flex-wrap">
                                 {batchResult.scannedTexts !== undefined && (
                                     <span>
-                                        <strong className="text-white/80">{batchResult.scannedTexts.toLocaleString('fr-FR')}</strong> textes scannés
+                                        <strong className="text-[var(--panel-text-heading)]/80">{batchResult.scannedTexts.toLocaleString('fr-FR')}</strong> textes scannés
                                         {batchResult.staticStrings !== undefined && batchResult.staticStrings > 0 && (
-                                            <span className="ml-1 text-white/30">
+                                            <span className="ml-1 text-[var(--panel-text-heading)]/30">
                                                 (dont {batchResult.staticStrings} UI statiques)
                                             </span>
                                         )}
@@ -427,10 +427,10 @@ export default function TraductionsAdminPage() {
                                 {Object.entries(batchResult.perLang).map(([code, data]) => {
                                     const lc = SUPPORTED_LANGUAGES.find(l => l.code === code)
                                     return (
-                                        <div key={code} className="bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs">
+                                        <div key={code} className="bg-[var(--panel-surface-alt)] border border-white/8 rounded-xl px-3 py-2 text-xs">
                                             <div className="flex items-center gap-1.5 mb-1">
                                                 <span>{lc?.flag}</span>
-                                                <span className="text-white/60 font-mono">{code}</span>
+                                                <span className="text-[var(--panel-text-heading)]/60 font-mono">{code}</span>
                                             </div>
                                             <div className="text-[#00c97a] font-bold">+{data.translated}</div>
                                             {data.errors > 0 && (
@@ -454,29 +454,29 @@ export default function TraductionsAdminPage() {
                             setSelectedLang(lang.code)
                             setPage(1)
                         }}
-                        className={`bg-white/5 border rounded-2xl p-4 cursor-pointer transition-all hover:border-white/20 group relative overflow-hidden
-                            ${selectedLang === lang.code ? 'border-[#008751]/60 bg-[#008751]/8' : 'border-white/10'}`}
+                        className={`bg-[var(--panel-surface-alt)] border rounded-2xl p-4 cursor-pointer transition-all hover:border-white/20 group relative overflow-hidden
+                            ${selectedLang === lang.code ? 'border-[#008751]/60 bg-[#008751]/8' : 'border-[var(--panel-border)]'}`}
                     >
                         <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/3 rounded-full blur-2xl" />
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-2xl">{lang.flag}</span>
                             {statsLoading ? (
-                                <div className="w-8 h-4 bg-white/10 rounded animate-pulse" />
+                                <div className="w-8 h-4 bg-[var(--panel-surface-alt)] rounded animate-pulse" />
                             ) : (
                                 <span className="text-[#008751] font-black text-lg">
                                     {(stats[lang.code] ?? 0).toLocaleString('fr-FR')}
                                 </span>
                             )}
                         </div>
-                        <p className="text-white font-semibold text-sm">{lang.label}</p>
-                        <p className="text-white/30 text-[10px] font-mono uppercase">{lang.code}</p>
+                        <p className="text-[var(--panel-text-heading)] font-semibold text-sm">{lang.label}</p>
+                        <p className="text-[var(--panel-text-heading)]/30 text-[10px] font-mono uppercase">{lang.code}</p>
 
                         {/* Per-lang batch button */}
                         <button
                             type="button"
                             onClick={e => { e.stopPropagation(); handleBatch(lang.code) }}
                             disabled={batchLang === lang.code || batchGlobal}
-                            className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] text-white/40 hover:text-[#008751] transition-colors disabled:opacity-40"
+                            className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] text-[var(--panel-text-heading)]/40 hover:text-[#008751] transition-colors disabled:opacity-40"
                         >
                             <RefreshCw size={10} className={batchLang === lang.code ? 'animate-spin' : ''} />
                             {batchLang === lang.code
@@ -489,21 +489,21 @@ export default function TraductionsAdminPage() {
                 {/* All card */}
                 <div
                     onClick={() => { setSelectedLang('all'); setPage(1) }}
-                    className={`bg-white/5 border rounded-2xl p-4 cursor-pointer transition-all hover:border-white/20 group relative overflow-hidden
-                        ${selectedLang === 'all' ? 'border-[#FCD116]/60 bg-[#FCD116]/5' : 'border-white/10'}`}
+                    className={`bg-[var(--panel-surface-alt)] border rounded-2xl p-4 cursor-pointer transition-all hover:border-white/20 group relative overflow-hidden
+                        ${selectedLang === 'all' ? 'border-[#FCD116]/60 bg-[#FCD116]/5' : 'border-[var(--panel-border)]'}`}
                 >
                     <div className="flex items-center justify-between mb-3">
                         <Database size={22} className="text-[#FCD116]" />
                         {statsLoading ? (
-                            <div className="w-8 h-4 bg-white/10 rounded animate-pulse" />
+                            <div className="w-8 h-4 bg-[var(--panel-surface-alt)] rounded animate-pulse" />
                         ) : (
                             <span className="text-[#FCD116] font-black text-lg">
                                 {totalCount.toLocaleString('fr-FR')}
                             </span>
                         )}
                     </div>
-                    <p className="text-white font-semibold text-sm">Toutes</p>
-                    <p className="text-white/30 text-[10px] font-mono uppercase">all</p>
+                    <p className="text-[var(--panel-text-heading)] font-semibold text-sm">Toutes</p>
+                    <p className="text-[var(--panel-text-heading)]/30 text-[10px] font-mono uppercase">all</p>
                     <div className="mt-3 h-4" /> {/* spacer */}
                 </div>
             </div>
@@ -511,33 +511,33 @@ export default function TraductionsAdminPage() {
             {/* ── Search + Filter bar ──────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--panel-text-heading)]/30" />
                     <input
                         type="text"
                         placeholder="Rechercher dans les textes sources ou traduits..."
                         value={searchInput}
                         onChange={e => handleSearchChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors placeholder:text-white/25"
+                        className="w-full bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] focus:border-white/20 text-[var(--panel-text-heading)] rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors placeholder:text-[var(--panel-text-heading)]/25"
                     />
                     {searchInput && (
                         <button
                             type="button"
                             title="Effacer la recherche"
                             onClick={() => { setSearchInput(''); handleSearchChange('') }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--panel-text-heading)]/30 hover:text-[var(--panel-text-heading)]/70"
                         >
                             <X size={14} />
                         </button>
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white/50 shrink-0">
+                <div className="flex items-center gap-2 bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl px-3 py-1.5 text-sm text-[var(--panel-text-heading)]/50 shrink-0">
                     <Filter size={14} />
                     <select
                         aria-label="Filtrer par langue"
                         value={selectedLang}
                         onChange={e => { setSelectedLang(e.target.value); setPage(1) }}
-                        className="bg-transparent text-white outline-none cursor-pointer"
+                        className="bg-transparent text-[var(--panel-text-heading)] outline-none cursor-pointer"
                     >
                         <option value="all">Toutes les langues</option>
                         {langOptions.map(l => (
@@ -550,7 +550,7 @@ export default function TraductionsAdminPage() {
             {/* ── Translations Table ───────────────────────────────────── */}
             <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1fr_80px_90px_80px] gap-0 border-b border-white/8 px-5 py-3 text-[11px] uppercase tracking-widest text-white/30 font-semibold">
+                <div className="grid grid-cols-[1fr_1fr_80px_90px_80px] gap-0 border-b border-white/8 px-5 py-3 text-[11px] uppercase tracking-widest text-[var(--panel-text-heading)]/30 font-semibold">
                     <span>Texte source (FR)</span>
                     <span>Traduction</span>
                     <span>Langue</span>
@@ -561,13 +561,13 @@ export default function TraductionsAdminPage() {
                 {/* Loading state */}
                 {loading && (
                     <div className="flex items-center justify-center py-16">
-                        <Loader2 size={32} className="animate-spin text-white/20" />
+                        <Loader2 size={32} className="animate-spin text-[var(--panel-text-heading)]/20" />
                     </div>
                 )}
 
                 {/* Empty state */}
                 {!loading && translations.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 text-white/30 space-y-2">
+                    <div className="flex flex-col items-center justify-center py-16 text-[var(--panel-text-heading)]/30 space-y-2">
                         <Database size={40} />
                         <p className="text-sm">Aucune traduction{search ? ` pour "${search}"` : ''}</p>
                         {selectedLang !== 'all' && !search && (
@@ -589,23 +589,23 @@ export default function TraductionsAdminPage() {
                         <div
                             key={`${t.source_hash}-${t.lang}`}
                             className={`grid grid-cols-[1fr_1fr_80px_90px_80px] gap-0 px-5 py-4 items-start transition-colors hover:bg-white/3
-                                ${idx < translations.length - 1 ? 'border-b border-white/5' : ''}`}
+                                ${idx < translations.length - 1 ? 'border-b border-[var(--panel-border)]' : ''}`}
                         >
                             {/* Source text */}
                             <div className="pr-4">
-                                <p className="text-white/70 text-xs leading-relaxed line-clamp-3">{t.source_text}</p>
-                                <p className="text-white/20 font-mono text-[9px] mt-1">{t.source_hash.slice(0, 12)}…</p>
+                                <p className="text-[var(--panel-text-heading)]/70 text-xs leading-relaxed line-clamp-3">{t.source_text}</p>
+                                <p className="text-[var(--panel-text-heading)]/20 font-mono text-[9px] mt-1">{t.source_hash.slice(0, 12)}…</p>
                             </div>
 
                             {/* Translated text */}
                             <div className="pr-4">
-                                <p className="text-white text-xs leading-relaxed line-clamp-3">{t.translated_text}</p>
+                                <p className="text-[var(--panel-text-heading)] text-xs leading-relaxed line-clamp-3">{t.translated_text}</p>
                             </div>
 
                             {/* Language */}
                             <div className="flex items-center gap-1.5">
                                 <span className="text-lg">{langConfig?.flag}</span>
-                                <span className="text-white/40 text-xs font-mono">{t.lang}</span>
+                                <span className="text-[var(--panel-text-heading)]/40 text-xs font-mono">{t.lang}</span>
                             </div>
 
                             {/* Context */}
@@ -643,7 +643,7 @@ export default function TraductionsAdminPage() {
 
             {/* ── Pagination ───────────────────────────────────────────── */}
             {pages > 1 && (
-                <div className="flex items-center justify-between text-sm text-white/40">
+                <div className="flex items-center justify-between text-sm text-[var(--panel-text-heading)]/40">
                     <span>{total.toLocaleString('fr-FR')} résultat{total > 1 ? 's' : ''}</span>
                     <div className="flex items-center gap-2">
                         <Button
@@ -651,11 +651,11 @@ export default function TraductionsAdminPage() {
                             size="sm"
                             disabled={page <= 1}
                             onClick={() => setPage(p => Math.max(1, p - 1))}
-                            className="text-white/50 hover:text-white disabled:opacity-30"
+                            className="text-[var(--panel-text-heading)]/50 hover:text-[var(--panel-text-heading)] disabled:opacity-30"
                         >
                             <ChevronLeft size={16} />
                         </Button>
-                        <span className="text-white px-3">
+                        <span className="text-[var(--panel-text-heading)] px-3">
                             {page} / {pages}
                         </span>
                         <Button
@@ -663,7 +663,7 @@ export default function TraductionsAdminPage() {
                             size="sm"
                             disabled={page >= pages}
                             onClick={() => setPage(p => Math.min(pages, p + 1))}
-                            className="text-white/50 hover:text-white disabled:opacity-30"
+                            className="text-[var(--panel-text-heading)]/50 hover:text-[var(--panel-text-heading)] disabled:opacity-30"
                         >
                             <ChevronRight size={16} />
                         </Button>
@@ -672,16 +672,16 @@ export default function TraductionsAdminPage() {
             )}
 
             {/* ── Architecture note ─────────────────────────────────────── */}
-            <div className="bg-black/30 border border-white/5 rounded-2xl p-6">
-                <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <div className="bg-black/30 border border-[var(--panel-border)] rounded-2xl p-6">
+                <h3 className="text-sm font-bold text-[var(--panel-text-heading)] mb-3 flex items-center gap-2">
                     <Sparkles size={14} className="text-[#FCD116]" /> Comment fonctionne le moteur ?
                 </h3>
-                <ol className="list-decimal list-inside text-white/50 space-y-2 text-sm leading-relaxed">
+                <ol className="list-decimal list-inside text-[var(--panel-text-heading)]/50 space-y-2 text-sm leading-relaxed">
                     <li>Tout texte affiché en français est haché (djb2) et utilisé comme clé de cache dans Supabase.</li>
                     <li>Au premier affichage par un visiteur étranger, Groq Llama 3.3-70B traduit le texte en moins d&apos;une seconde.</li>
-                    <li>La traduction est <strong className="text-white">sauvegardée définitivement</strong> dans la table <code className="text-[#FCD116] bg-white/5 px-1 rounded">translations</code>.</li>
-                    <li>Les visiteurs suivants reçoivent la traduction depuis le cache — <strong className="text-white">0 latence</strong>.</li>
-                    <li>Les traductions <strong className="text-white">manuelles</strong> (modifiées ici) ont priorité sur les traductions IA.</li>
+                    <li>La traduction est <strong className="text-[var(--panel-text-heading)]">sauvegardée définitivement</strong> dans la table <code className="text-[#FCD116] bg-[var(--panel-surface-alt)] px-1 rounded">translations</code>.</li>
+                    <li>Les visiteurs suivants reçoivent la traduction depuis le cache — <strong className="text-[var(--panel-text-heading)]">0 latence</strong>.</li>
+                    <li>Les traductions <strong className="text-[var(--panel-text-heading)]">manuelles</strong> (modifiées ici) ont priorité sur les traductions IA.</li>
                     <li>Le bouton <em>Forcer la traduction globale</em> pré-traduit tous les textes non encore traduits en une passe.</li>
                 </ol>
             </div>
@@ -711,26 +711,26 @@ export default function TraductionsAdminPage() {
                             initial={{ scale: 0.95 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.95 }}
-                            className="bg-[#0f141e] border border-red-500/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4"
+                            className="bg-[var(--panel-surface)] border border-red-500/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
                                     <Trash2 size={18} className="text-red-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold">Supprimer la traduction</h3>
-                                    <p className="text-white/40 text-xs">Cette action est irréversible</p>
+                                    <h3 className="text-[var(--panel-text-heading)] font-bold">Supprimer la traduction</h3>
+                                    <p className="text-[var(--panel-text-heading)]/40 text-xs">Cette action est irréversible</p>
                                 </div>
                             </div>
-                            <p className="text-white/60 text-sm bg-white/5 rounded-xl px-4 py-3">
+                            <p className="text-[var(--panel-text-heading)]/60 text-sm bg-[var(--panel-surface-alt)] rounded-xl px-4 py-3">
                                 &quot;{deleteTarget.label}{deleteTarget.label.length >= 40 ? '…' : ''}&quot;
-                                <span className="ml-2 text-white/30 font-mono text-xs">({deleteTarget.lang})</span>
+                                <span className="ml-2 text-[var(--panel-text-heading)]/30 font-mono text-xs">({deleteTarget.lang})</span>
                             </p>
-                            <p className="text-white/40 text-xs">
+                            <p className="text-[var(--panel-text-heading)]/40 text-xs">
                                 La prochaine fois qu&apos;un visiteur affichera ce texte dans cette langue, il sera re-traduit automatiquement par l&apos;IA.
                             </p>
                             <div className="flex gap-3 justify-end">
-                                <Button variant="ghost" onClick={() => setDeleteTarget(null)} className="text-white/50">
+                                <Button variant="ghost" onClick={() => setDeleteTarget(null)} className="text-[var(--panel-text-heading)]/50">
                                     Annuler
                                 </Button>
                                 <Button

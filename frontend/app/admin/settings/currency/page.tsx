@@ -91,13 +91,13 @@ export default function CurrencySettingsPage() {
     return (
         <div className="space-y-6 max-w-4xl mx-auto pb-20">
             {/* Action Bar */}
-            <div className="flex items-center justify-between bg-[#0c1420] p-4 rounded-2xl border border-white/5 sticky top-4 z-40 backdrop-blur-xl shadow-xl">
+            <div className="flex items-center justify-between bg-[var(--panel-surface)] p-4 rounded-2xl border border-[var(--panel-border)] sticky top-4 z-40 backdrop-blur-xl shadow-xl">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/settings" className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                    <Link href="/admin/settings" className="w-10 h-10 bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] hover:bg-[var(--panel-surface-alt)] transition-all">
                         <ArrowLeft size={18} />
                     </Link>
                     <div>
-                        <h1 className="text-xl font-black text-white">Devises & Taux de Change</h1>
+                        <h1 className="text-xl font-black text-[var(--panel-text-heading)]">Devises & Taux de Change</h1>
                         <p className="text-emerald-400 text-xs font-medium tracking-wide">MOTEUR MONÉTAIRE ERP</p>
                     </div>
                 </div>
@@ -108,7 +108,7 @@ export default function CurrencySettingsPage() {
                         onClick={fetchCurrencies}
                         disabled={loading}
                         title="Actualiser"
-                        className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                        className="w-10 h-10 bg-[var(--panel-surface-alt)] rounded-xl flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-colors"
                     >
                         <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                     </button>
@@ -136,7 +136,7 @@ export default function CurrencySettingsPage() {
                 </div>
             )}
 
-            <div className="bg-[#0c1420] border border-white/5 rounded-2xl p-6 md:p-8 shadow-xl">
+            <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-6 md:p-8 shadow-xl">
                 <div className="mb-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
                     <Info size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-200">
@@ -154,10 +154,10 @@ export default function CurrencySettingsPage() {
                         <RefreshCw size={24} className="animate-spin text-emerald-500" />
                     </div>
                 ) : currencies.length === 0 ? (
-                    <div className="h-40 flex flex-col items-center justify-center gap-3 text-gray-500">
+                    <div className="h-40 flex flex-col items-center justify-center gap-3 text-[var(--panel-text-muted)]">
                         <AlertTriangle size={28} />
                         <p className="text-sm">Aucune devise trouvée en base de données.</p>
-                        <p className="text-xs opacity-70">Vérifiez que la table <code className="font-mono bg-white/5 px-1 rounded">currencies</code> existe dans Supabase.</p>
+                        <p className="text-xs opacity-70">Vérifiez que la table <code className="font-mono bg-[var(--panel-surface-alt)] px-1 rounded">currencies</code> existe dans Supabase.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -167,30 +167,30 @@ export default function CurrencySettingsPage() {
                                 className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border gap-4 ${
                                     currency.is_base
                                         ? 'bg-emerald-500/5 border-emerald-500/20'
-                                        : 'bg-white/[0.02] border-white/5'
+                                        : 'bg-[var(--panel-surface-alt)] border-[var(--panel-border)]'
                                 }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                                    <div className="w-12 h-12 rounded-xl bg-[var(--panel-surface-alt)] flex items-center justify-center border border-[var(--panel-border)]">
                                         {getIcon(currency.code)}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="text-lg font-bold text-white">{currency.code}</h3>
-                                            <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full font-mono">{currency.symbol}</span>
+                                            <h3 className="text-lg font-bold text-[var(--panel-text-heading)]">{currency.code}</h3>
+                                            <span className="text-xs bg-[var(--panel-surface-alt)] text-gray-300 px-2 py-0.5 rounded-full font-mono">{currency.symbol}</span>
                                             {currency.is_base && (
                                                 <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-widest border border-emerald-500/20">Devise de Base</span>
                                             )}
                                         </div>
-                                        <p className="text-gray-500 text-sm mt-0.5">{currency.name}</p>
-                                        <p className="text-[10px] text-gray-600 mt-1">
+                                        <p className="text-[var(--panel-text-muted)] text-sm mt-0.5">{currency.name}</p>
+                                        <p className="text-[10px] text-[var(--panel-text-muted)] mt-1">
                                             Dernière maj: {new Date(currency.updated_at).toLocaleString('fr-FR')}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <div className="text-sm text-gray-400 font-mono whitespace-nowrap">1 {currency.code} =</div>
+                                    <div className="text-sm text-[var(--panel-text-muted)] font-mono whitespace-nowrap">1 {currency.code} =</div>
                                     <div className="relative w-36">
                                         <input
                                             type="number"
@@ -201,11 +201,11 @@ export default function CurrencySettingsPage() {
                                             value={currency.exchange_rate_to_base}
                                             onChange={(e) => handleRateChange(currency.code, e.target.value)}
                                             disabled={currency.is_base}
-                                            className={`w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-right focus:outline-none focus:border-emerald-500 transition-colors pr-12 ${
+                                            className={`w-full bg-black/40 border border-[var(--panel-border)] rounded-lg px-3 py-2 text-[var(--panel-text-heading)] font-mono text-right focus:outline-none focus:border-emerald-500 transition-colors pr-12 ${
                                                 currency.is_base ? 'opacity-50 cursor-not-allowed' : 'hover:border-white/20'
                                             }`}
                                         />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs font-bold">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--panel-text-muted)] text-xs font-bold">
                                             XOF
                                         </div>
                                     </div>

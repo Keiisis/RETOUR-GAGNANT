@@ -567,9 +567,9 @@ export default function AdminFacturationPage() {
             <div className="flex flex-col sm:flex-row items-center gap-3">
                 <div className="relative flex-1 w-full">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par Numéro ou Client..." className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm" />
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par Numéro ou Client..." className="w-full bg-[var(--panel-surface-alt)] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm" />
                 </div>
-                <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-full sm:w-auto">
+                <div className="flex gap-1 bg-[var(--panel-surface-alt)] rounded-xl p-1 w-full sm:w-auto">
                     {[{ k: 'all', l: 'Tous' }, { k: 'devis', l: 'Devis' }, { k: 'facture', l: 'Factures' }].map(f => (
                         <button key={f.k} type="button" onClick={() => setFilterType(f.k as typeof filterType)} className={`flex-1 sm:flex-none text-xs font-bold px-4 py-2 rounded-lg transition-all ${filterType === f.k ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-white'}`}>{f.l}</button>
                     ))}
@@ -581,7 +581,7 @@ export default function AdminFacturationPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-white/[0.02] border-b border-white/5">
+                            <tr className="bg-[var(--panel-surface-alt)] border-b border-white/5">
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Document</th>
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th>
                                 <th className="py-4 px-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Montant</th>
@@ -599,7 +599,7 @@ export default function AdminFacturationPage() {
                                     </td>
                                 </tr>
                             ) : filtered.map(doc => (
-                                <tr key={doc.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                                <tr key={doc.id} className="border-b border-white/5 hover:bg-[var(--panel-surface-alt)] transition-colors group">
                                     <td className="py-3 px-5">
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-lg ${doc.type==='devis'?'bg-blue-500/10 text-blue-400':'bg-emerald-500/10 text-emerald-400'}`}>
@@ -632,16 +632,16 @@ export default function AdminFacturationPage() {
                                                     navigator.clipboard.writeText(url)
                                                     alert('Lien Magique Client copié dans le presse-papier ! Envoye-le via WhatsApp.')
                                                 }} 
-                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-all" 
+                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" 
                                                 title="Copier le Lien Client"
                                             >
                                                 <LinkIcon size={16} />
                                             </button>
-                                            <button onClick={() => setShowPreview(doc)} className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-all" title="Aperçu / Modifier"><Eye size={16} /></button>
-                                            <button onClick={() => generatePDF(doc)} disabled={generating} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-white/5 rounded-lg transition-all" title="PDF">
+                                            <button onClick={() => setShowPreview(doc)} className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Aperçu / Modifier"><Eye size={16} /></button>
+                                            <button onClick={() => generatePDF(doc)} disabled={generating} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="PDF">
                                                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                             </button>
-                                            <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
+                                            <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -697,13 +697,13 @@ export default function AdminFacturationPage() {
 
                                 {/* Details like inside PDF */}
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-white/5 p-4 rounded-xl">
+                                    <div className="bg-[var(--panel-surface-alt)] p-4 rounded-xl">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Client</p>
                                         <p className="text-white font-bold">{showPreview.client_nom} {showPreview.client_prenom}</p>
                                         <p className="text-gray-400 text-xs mt-1">{showPreview.client_email}</p>
                                         <p className="text-gray-400 text-xs">{showPreview.client_phone}</p>
                                     </div>
-                                    <div className="bg-white/5 p-4 rounded-xl">
+                                    <div className="bg-[var(--panel-surface-alt)] p-4 rounded-xl">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Récapitulatif Total</p>
                                         <p className="text-2xl text-emerald-400 font-black font-mono mt-1">{showPreview.total.toLocaleString('fr-Fr')} XOF</p>
                                     </div>
@@ -711,7 +711,7 @@ export default function AdminFacturationPage() {
 
                                 <div className="border border-white/5 rounded-xl overflow-hidden">
                                     <table className="w-full text-xs">
-                                        <thead className="bg-white/5 text-gray-400 text-left">
+                                        <thead className="bg-[var(--panel-surface-alt)] text-gray-400 text-left">
                                             <tr>
                                                 <th className="p-3">Description</th>
                                                 <th className="p-3 text-center">Qté</th>
