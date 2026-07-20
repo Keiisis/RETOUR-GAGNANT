@@ -142,18 +142,18 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
             const elements = stripeInstanceRef.current!.elements({
                 appearance: {
-                    theme: 'night',
+                    theme: 'stripe',
                     variables: {
-                        colorPrimary: '#F59E0B',
-                        colorBackground: '#0d1520',
-                        colorText: '#ffffff',
+                        colorPrimary: '#D97706',
+                        colorBackground: '#ffffff',
+                        colorText: '#0f172a',
                         borderRadius: '12px',
                     },
                 },
             })
 
             const card = elements.create('card', {
-                style: { base: { color: '#ffffff', fontSize: '15px', '::placeholder': { color: '#4b5563' } } },
+                style: { base: { color: '#0f172a', fontSize: '15px', '::placeholder': { color: '#94a3b8' } } },
                 hidePostalCode: true,
             })
 
@@ -548,21 +548,21 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
     // ─── LOADING ──────────────────────────
     if (loading) {
-        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Loader2 className="w-10 h-10 text-amber-500 animate-spin" /></div>
+        return <div className="min-h-screen bg-[#EEF2F6] flex items-center justify-center"><Loader2 className="w-10 h-10 text-amber-500 animate-spin" /></div>
     }
     if (!proposal) {
-        return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white"><p>Proposition introuvable</p></div>
+        return <div className="min-h-screen bg-[#EEF2F6] flex items-center justify-center text-slate-900"><p>Proposition introuvable</p></div>
     }
 
     const billableItems = items.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
 
     // ─── RENDER ──────────────────────────
     return (
-        <div className="min-h-screen bg-slate-950 text-white">
+        <div className="min-h-screen bg-[#EEF2F6] text-slate-900">
             {/* Header */}
-            <div className="border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
+            <div className="border-b border-slate-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link href={`/p/${secret}`} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
+                    <Link href={`/p/${secret}`} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors text-sm">
                         <ArrowLeft className="w-4 h-4" /> Retour
                     </Link>
                     <div className="flex items-center gap-2">
@@ -579,13 +579,13 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                         <motion.div key="info" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                             <div className="text-center mb-8">
                                 <h1 className="text-2xl md:text-3xl font-black mb-2">{isPaymentLink ? 'Finalisez votre paiement' : 'Finalisez votre réservation'}</h1>
-                                <p className="text-slate-400 text-sm">{isPaymentLink ? 'Prestation :' : 'Voyage vers'} <span className="text-amber-400 font-semibold">{proposal.destination}</span></p>
+                                <p className="text-slate-500 text-sm">{isPaymentLink ? 'Prestation :' : 'Voyage vers'} <span className="text-amber-600 font-semibold">{proposal.destination}</span></p>
                             </div>
 
                             {/* Recap — sélection à la carte */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-8">
                                 {hasItemSelection && (
-                                    <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+                                    <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
                                         Composez votre formule : cochez les prestations que vous souhaitez régler.
                                         Le total est recalculé automatiquement.
                                     </p>
@@ -595,20 +595,20 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                         const checked = selectedIds.has(i.id)
                                         return (
                                             <label key={i.id}
-                                                className={`flex items-center justify-between gap-3 text-sm rounded-xl px-3 py-2.5 cursor-pointer transition-all border ${checked ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/[0.02] border-white/5 opacity-60 hover:opacity-90'}`}>
+                                                className={`flex items-center justify-between gap-3 text-sm rounded-xl px-3 py-2.5 cursor-pointer transition-all border ${checked ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/[0.02] border-slate-200 opacity-60 hover:opacity-90'}`}>
                                                 <span className="flex items-center gap-3 min-w-0">
                                                     <input type="checkbox" checked={checked} onChange={() => toggleItem(i.id)}
                                                         className="w-4 h-4 accent-amber-500 shrink-0" />
-                                                    <span className={checked ? 'text-white' : 'text-slate-400 line-through'}>{i.title}</span>
+                                                    <span className={checked ? 'text-slate-900' : 'text-slate-500 line-through'}>{i.title}</span>
                                                 </span>
-                                                <span className={`font-bold shrink-0 ${checked ? 'text-white' : 'text-slate-500'}`}>
+                                                <span className={`font-bold shrink-0 ${checked ? 'text-slate-900' : 'text-slate-500'}`}>
                                                     <Price amount={i.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </span>
                                             </label>
                                         )
                                     })}
                                 </div>
-                                <div className="border-t border-white/10 pt-3">
+                                <div className="border-t border-slate-200 pt-3">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-amber-500 font-bold text-sm">
                                             Total{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
@@ -620,7 +620,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                         />
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-2xl font-black text-white">
+                                        <span className="text-2xl font-black text-slate-900">
                                             {selectedCurrency === 'XOF'
                                                 ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
                                                 : formatPriceWithMargin(payableTotal, selectedCurrency)
@@ -646,21 +646,21 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Votre nom complet *</label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
-                                        <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Jean Dupont" className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-white focus:border-amber-500 focus:outline-none" />
+                                        <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Jean Dupont" className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-900 focus:border-amber-500 focus:outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Email</label>
                                     <div className="relative">
                                         <Mail className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
-                                        <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="jean@email.com" className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-white focus:border-amber-500 focus:outline-none" />
+                                        <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="jean@email.com" className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-900 focus:border-amber-500 focus:outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Téléphone *</label>
                                     <div className="relative">
                                         <Phone className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
-                                        <input type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="+229 XX XX XX XX" className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 text-white focus:border-amber-500 focus:outline-none" />
+                                        <input type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="+229 XX XX XX XX" className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-900 focus:border-amber-500 focus:outline-none" />
                                     </div>
                                 </div>
                             </div>
@@ -685,7 +685,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 Continuer vers le paiement <CreditCard className="w-5 h-5" />
                             </button>
 
-                            <p className="text-center text-slate-600 text-xs mt-4 flex items-center justify-center gap-1">
+                            <p className="text-center text-slate-500 text-xs mt-4 flex items-center justify-center gap-1">
                                 <Lock className="w-3 h-3" /> Vos données sont protégées et chiffrées
                             </p>
                         </motion.div>
@@ -697,7 +697,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-black mb-2">Choisissez votre moyen de paiement</h2>
                                 <div className="flex items-center justify-center gap-3 mt-2">
-                                    <p className="text-slate-400 text-sm">Montant : <span className="text-amber-400 font-bold">
+                                    <p className="text-slate-500 text-sm">Montant : <span className="text-amber-600 font-bold">
                                         {selectedCurrency === 'XOF'
                                             ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
                                             : formatPriceWithMargin(payableTotal, selectedCurrency)
@@ -710,22 +710,22 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                     />
                                 </div>
                                 {selectedCurrency !== 'XOF' && (
-                                    <p className="text-[10px] text-slate-600 mt-1">FedaPay encaisse en {selectedCurrency} · KKiapay encaisse en XOF</p>
+                                    <p className="text-[10px] text-slate-500 mt-1">FedaPay encaisse en {selectedCurrency} · KKiapay encaisse en XOF</p>
                                 )}
                             </div>
 
                             <div className="space-y-3 mb-6">
                                 {providers.map(p => (
-                                    <button key={p.id} onClick={p.handler} className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/30 rounded-2xl p-4 flex items-center gap-4 transition-all group">
-                                        <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden">
+                                    <button key={p.id} onClick={p.handler} className="w-full bg-white hover:bg-slate-100 border border-slate-200 hover:border-amber-500/30 rounded-2xl p-4 flex items-center gap-4 transition-all group">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center overflow-hidden">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={p.logo} alt={p.name} className="w-8 h-8 object-contain" />
                                         </div>
                                         <div className="text-left flex-1">
-                                            <p className="text-white font-bold text-sm">{p.name}</p>
+                                            <p className="text-slate-900 font-bold text-sm">{p.name}</p>
                                             <p className="text-slate-500 text-xs">{p.subtitle}</p>
                                         </div>
-                                        <CreditCard className="w-5 h-5 text-slate-600 group-hover:text-amber-500 transition-colors" />
+                                        <CreditCard className="w-5 h-5 text-slate-500 group-hover:text-amber-500 transition-colors" />
                                     </button>
                                 ))}
                                 {providers.length === 0 && (
@@ -736,7 +736,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 )}
                             </div>
 
-                            <button onClick={() => setStep('info')} className="w-full text-slate-400 hover:text-white py-3 text-sm transition-colors">
+                            <button onClick={() => setStep('info')} className="w-full text-slate-500 hover:text-slate-900 py-3 text-sm transition-colors">
                                 ← Retour aux informations
                             </button>
                         </motion.div>
@@ -747,26 +747,26 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                         <motion.div key="stripe" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-black mb-2">Carte bancaire</h2>
-                                <p className="text-slate-400 text-sm">Paiement sécurisé par Stripe</p>
+                                <p className="text-slate-500 text-sm">Paiement sécurisé par Stripe</p>
                             </div>
 
                             {/* stripeSubmitting masque le formulaire visuellement SANS changer l'étape,
                                 ce qui évite que le useEffect unmount le card element pendant confirmCardPayment. */}
                             <div className={stripeSubmitting ? 'hidden' : ''}>
-                                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+                                <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
                                     <div id="stripe-card-element" className="min-h-[50px]" />
                                 </div>
                                 {errorMessage && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-4">{errorMessage}</div>}
                                 <button type="button" onClick={confirmStripePayment} disabled={!stripeReady || stripeSubmitting} className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-900 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2">
                                     <Lock className="w-4 h-4" /> Payer <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                 </button>
-                                <button type="button" onClick={() => setStep('payment')} className="w-full text-slate-400 hover:text-white py-3 text-sm mt-2">← Autre moyen de paiement</button>
+                                <button type="button" onClick={() => setStep('payment')} className="w-full text-slate-500 hover:text-slate-900 py-3 text-sm mt-2">← Autre moyen de paiement</button>
                             </div>
 
                             {stripeSubmitting && (
                                 <div className="flex flex-col items-center justify-center py-10 gap-4">
                                     <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-                                    <p className="text-white font-bold text-sm">Traitement en cours, ne fermez pas...</p>
+                                    <p className="text-slate-900 font-bold text-sm">Traitement en cours, ne fermez pas...</p>
                                 </div>
                             )}
                         </motion.div>
@@ -779,7 +779,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <h2 className="text-2xl font-black mb-2">PayPal</h2>
                             </div>
                             <div id="paypal-button-container" className="min-h-[100px] mb-6" />
-                            <button onClick={() => setStep('payment')} className="w-full text-slate-400 hover:text-white py-3 text-sm">← Autre moyen de paiement</button>
+                            <button onClick={() => setStep('payment')} className="w-full text-slate-500 hover:text-slate-900 py-3 text-sm">← Autre moyen de paiement</button>
                         </motion.div>
                     )}
 
@@ -788,8 +788,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                         <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 gap-6">
                             <Loader2 className="w-14 h-14 text-amber-500 animate-spin" />
                             <div className="text-center">
-                                <p className="text-white font-bold text-lg">Traitement en cours...</p>
-                                <p className="text-slate-400 text-sm mt-1">Ne fermez pas cette page</p>
+                                <p className="text-slate-900 font-bold text-lg">Traitement en cours...</p>
+                                <p className="text-slate-500 text-sm mt-1">Ne fermez pas cette page</p>
                             </div>
                         </motion.div>
                     )}
@@ -802,14 +802,14 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                             </div>
                             <div className="text-center space-y-3">
                                 <h1 className="text-3xl font-black">{isPaymentLink ? 'Paiement confirmé !' : 'Réservation confirmée !'}</h1>
-                                <p className="text-slate-400 max-w-md">
-                                    {isPaymentLink ? <>Votre règlement pour <span className="text-amber-400 font-semibold">{proposal.destination}</span> a bien été enregistré.</> : <>Votre voyage vers <span className="text-amber-400 font-semibold">{proposal.destination}</span> est en cours de préparation.</>}
+                                <p className="text-slate-500 max-w-md">
+                                    {isPaymentLink ? <>Votre règlement pour <span className="text-amber-600 font-semibold">{proposal.destination}</span> a bien été enregistré.</> : <>Votre voyage vers <span className="text-amber-600 font-semibold">{proposal.destination}</span> est en cours de préparation.</>}
                                     Vous recevrez un email de confirmation sous peu.
                                 </p>
                             </div>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center">
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm text-center">
                                 <p className="text-xs text-slate-500 mb-1">Montant payé</p>
-                                <p className="text-2xl font-black text-amber-400">
+                                <p className="text-2xl font-black text-amber-600">
                                     <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                 </p>
                             </div>
@@ -827,9 +827,9 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                             </div>
                             <div className="text-center space-y-3">
                                 <h1 className="text-3xl font-black">Paiement échoué</h1>
-                                <p className="text-slate-400 max-w-md">{errorMessage || 'Une erreur est survenue.'}</p>
+                                <p className="text-slate-500 max-w-md">{errorMessage || 'Une erreur est survenue.'}</p>
                             </div>
-                            <button onClick={() => { setErrorMessage(''); setStep('payment') }} className="bg-white/10 hover:bg-white/20 text-white px-8 py-3 rounded-xl font-bold transition-all">
+                            <button onClick={() => { setErrorMessage(''); setStep('payment') }} className="bg-slate-100 hover:bg-white/20 text-slate-900 px-8 py-3 rounded-xl font-bold transition-all">
                                 Réessayer
                             </button>
                         </motion.div>
@@ -838,7 +838,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             </div>
 
             {/* Footer */}
-            <div className="border-t border-white/5 py-4 text-center text-slate-600 text-xs flex items-center justify-center gap-2">
+            <div className="border-t border-slate-200 py-4 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
                 <Shield className="w-3 h-3" /> Paiement sécurisé — Retour Gagnant © {new Date().getFullYear()}
             </div>
 

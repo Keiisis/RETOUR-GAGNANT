@@ -84,19 +84,39 @@ export async function POST(request: NextRequest) {
         const cur = ['XOF', 'EUR', 'USD'].includes(currency) ? currency : 'XOF'
 
         const supabase = createClient(supabaseUrl, serviceKey)
+
+        // ── CONVERSION EN XOF (devise de tenue et de charge Kkiapay) ──
+        // Le montant est saisi dans la devise choisie (ex. 50 €) mais TOUT le
+        // système aval (page de paiement, Kkiapay/FedaPay, facture, compta)
+        // raisonne en FCFA. On convertit donc ici via le taux officiel de la
+        // table `currencies` (exchange_rate_to_base = valeur d'1 unité en XOF)
+        // et on stocke TOUJOURS total_amount en XOF + currency='XOF'.
+        let xofAmount = amt
+        if (cur !== 'XOF') {
+            const { data: rateRow } = await supabase
+                .from('currencies').select('exchange_rate_to_base').eq('code', cur).single()
+            const rate = Number(rateRow?.exchange_rate_to_base) || 0
+            if (!rate || rate <= 0) {
+                return NextResponse.json({ error: `Taux de change ${cur} indisponible. Configurez-le dans Devises & Taux.` }, { status: 400 })
+            }
+            xofAmount = Math.round(amt * rate)
+        }
+        if (xofAmount <= 0) return NextResponse.json({ error: 'Montant converti invalide.' }, { status: 400 })
+
         const base = {
             client_name: String(client_name).trim(),
             client_email: String(client_email || '').trim().toLowerCase() || null,
             client_phone: String(client_phone || '').trim() || null,
             destination: String(label).trim(),
             status: 'ready',
-            total_amount: amt,
-            notes: `LIEN-PAIEMENT — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}`,
+            total_amount: xofAmount, // TOUJOURS en XOF
+            notes: `LIEN-PAIEMENT — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
         }
 
-        // currency conditionnelle (même stratégie que generate-proposal)
+        // currency TOUJOURS 'XOF' (cohérence page + Kkiapay + facture) ;
+        // fallback si la colonne currency n'existe pas encore
         let proposal = null
-        const res1 = await supabase.from('ai_client_proposals').insert({ ...base, currency: cur }).select().single()
+        const res1 = await supabase.from('ai_client_proposals').insert({ ...base, currency: 'XOF' }).select().single()
         if (res1.error) {
             const colErr = res1.error.message?.includes('currency') || res1.error.code === '42703'
             if (!colErr) throw res1.error
@@ -116,7 +136,7 @@ export async function POST(request: NextRequest) {
             const result = await sendEmail({
                 to: base.client_email,
                 subject: `${COMPANY.name} — Lien de paiement sécurisé : ${base.destination}`,
-                html: buildLinkEmail(base.client_name, base.destination, amt, cur, url),
+                html: buildLinkEmail(base.client_name, base.destination, xofAmount, 'XOF', url),
                 context: 'payment_link',
                 relatedId: proposal.id,
             })
