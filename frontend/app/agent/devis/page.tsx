@@ -7,7 +7,7 @@ import {
     FileText, Plus, Trash2, X, Loader2, Search,
     Download, Eye, Calculator, Receipt, Send,
     Phone, Mail, CheckCircle2, AlertCircle, Link as LinkIcon,
-    AlertTriangle, Bell, Clock
+    AlertTriangle, Bell, Clock, BadgeDollarSign
 } from 'lucide-react'
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
@@ -127,6 +127,17 @@ export default function AgentDevisPage() {
         await supabase.from('documents_financiers').update({ status }).eq('id', id)
         setDocuments(prev => prev.map(d => d.id === id ? { ...d, status } : d))
         if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
+    }
+
+    // Marquer une facture (produite manuellement) comme payée / impayée
+    const toggleFacturePaid = async (doc: DocumentFinancier) => {
+        const nowPaid = doc.status !== 'paye'
+        const patch = nowPaid
+            ? { status: 'paye', payment_method: 'manuel', paid_at: new Date().toISOString() }
+            : { status: 'envoye', paid_at: null }
+        await supabase.from('documents_financiers').update(patch).eq('id', doc.id)
+        setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...patch } : d))
+        if (showPreview?.id === doc.id) setShowPreview(prev => prev ? { ...prev, ...patch } : null)
     }
 
     const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
@@ -436,17 +447,23 @@ export default function AgentDevisPage() {
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(6)
             pdf.setTextColor(90, 95, 130)
-            pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 16)
+            pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 15)
+            // Signature manuscrite (script) — times italique, encre bleue
+            pdf.setFont('times', 'italic')
+            pdf.setFontSize(15)
+            pdf.setTextColor(20, 40, 110)
+            pdf.text(presidentName, sig2X + 5, y + 23)
+            pdf.setDrawColor(20, 40, 110)
+            pdf.setLineWidth(0.3)
+            pdf.line(sig2X + 5, y + 24.5, sig2X + 5 + Math.min(sigW - 34, pdf.getTextWidth(presidentName) * 0.5), y + 24.5)
             pdf.setFont('helvetica', 'bold')
-            pdf.setFontSize(8)
+            pdf.setFontSize(7)
             pdf.setTextColor(20, 30, 80)
-            pdf.text(presidentName, sig2X + 4, y + 21.5)
+            pdf.text(presidentName, sig2X + 4, y + 29)
             pdf.setFont('helvetica', 'normal')
-            pdf.setFontSize(6)
+            pdf.setFontSize(5.8)
             pdf.setTextColor(90, 95, 130)
-            pdf.text('Signature et Cachet officiel', sig2X + 4, y + 27)
-            pdf.text('Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + 31)
-            pdf.text('Validite officielle garantie', sig2X + 4, y + 35)
+            pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + 33.5)
 
             try {
                 const sSz = 32
@@ -814,6 +831,15 @@ export default function AgentDevisPage() {
                                                     title={alarm.isOverdue ? `Relancer — en retard de ${alarm.daysLate} jour(s)` : 'Envoyer une relance de paiement'}
                                                 >
                                                     {sendingRelance === doc.id ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+                                                </button>
+                                            )}
+                                            {doc.type === 'facture' && (
+                                                <button
+                                                    onClick={() => toggleFacturePaid(doc)}
+                                                    className={`p-2 rounded-lg transition-all ${doc.status === 'paye' ? 'text-emerald-400 hover:text-amber-400 hover:bg-amber-500/10' : 'text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                                                    title={doc.status === 'paye' ? 'Payée — cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}
+                                                >
+                                                    {doc.status === 'paye' ? <CheckCircle2 size={16} /> : <BadgeDollarSign size={16} />}
                                                 </button>
                                             )}
                                             <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>

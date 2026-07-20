@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { expenseCategoryLabel } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'
-import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
+import { toXOF, loadExchangeRates, rateOf } from '@/lib/currency-convert'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -733,6 +733,13 @@ export default function AdminComptabilitePage() {
         if (!paymentDoc) return
         setSavingPayment(true)
         try {
+            // Le montant est saisi dans la devise DU DOCUMENT (ex. USD) mais les
+            // paiements sont stockés en XOF (devise de tenue). On convertit ici.
+            const docCur = paymentDoc.currency || 'XOF'
+            const saisi = Number(newPayment.montant)
+            const montantXOF = docCur === 'XOF' ? saisi : Math.round(saisi * rateOf(docCur))
+            const refNote = docCur === 'XOF' ? (newPayment.reference || null)
+                : `${newPayment.reference ? newPayment.reference + ' — ' : ''}${saisi.toLocaleString('fr-FR')} ${docCur}`
             const res = await fetch('/api/admin/paiements-manuels', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -740,9 +747,9 @@ export default function AdminComptabilitePage() {
                     document_id: paymentDoc.id,
                     agent_id: paymentDoc.agent_id,
                     type: newPayment.type,
-                    montant: Number(newPayment.montant),
+                    montant: montantXOF,
                     date_paiement: newPayment.date,
-                    reference: newPayment.reference || null,
+                    reference: refNote,
                     notes: newPayment.notes || null,
                 })
             })
@@ -1814,8 +1821,11 @@ export default function AdminComptabilitePage() {
                                 {pgDocs.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     const st = DOC_STATUS[d.status] || { label: d.status, cls: 'bg-gray-500/20 text-gray-400' }
-                                    const montantPaye = paiements[d.id] || 0
-                                    const solde = d.type === 'facture' ? Math.max(0, d.total - montantPaye) : null
+                                    // Paiements stockés en XOF → ramenés dans la devise du document
+                                    // pour un solde cohérent avec le Total TTC affiché
+                                    const docCur = d.currency || 'XOF'
+                                    const montantPayeDoc = docCur === 'XOF' ? (paiements[d.id] || 0) : (paiements[d.id] || 0) / rateOf(docCur)
+                                    const solde = d.type === 'facture' ? Math.max(0, d.total - montantPayeDoc) : null
                                     return (
                                         <tr key={d.id} className={cn('hover:bg-white/[0.02] transition-colors cursor-pointer', solde !== null && solde > 0 ? 'border-l-2 border-amber-500/30' : '')} onClick={() => setDetailDoc(d)}>
                                             <td className="p-4 pl-5">
@@ -1831,7 +1841,7 @@ export default function AdminComptabilitePage() {
                                             <td className="p-4 text-right font-mono text-xs">
                                                 {solde !== null ? (
                                                     solde > 0
-                                                        ? <span className="text-amber-400 font-bold">{fmt(solde)}</span>
+                                                        ? <span className="text-amber-400 font-bold">{fmt(solde, docCur)}</span>
                                                         : <span className="text-[#00c870]"> Soldé</span>
                                                 ) : <span className="text-gray-600">—</span>}
                                             </td>
@@ -2011,7 +2021,7 @@ export default function AdminComptabilitePage() {
                         <div className="px-6 pt-4 pb-0">
                             <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/10">
                                 <span className="text-xs text-gray-500">Solde restant</span>
-                                <span className="text-base font-black text-amber-400">{fmt(Math.max(0, paymentDoc.total - (paiements[paymentDoc.id] || 0)), paymentDoc.currency)}</span>
+                                <span className="text-base font-black text-amber-400">{fmt(Math.max(0, paymentDoc.total - ((paymentDoc.currency && paymentDoc.currency !== 'XOF') ? (paiements[paymentDoc.id] || 0) / rateOf(paymentDoc.currency) : (paiements[paymentDoc.id] || 0))), paymentDoc.currency)}</span>
                             </div>
                         </div>
                         <form onSubmit={handleAddPayment} className="p-6 space-y-4">
@@ -2035,9 +2045,12 @@ export default function AdminComptabilitePage() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Montant</label>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Montant ({paymentDoc.currency || 'XOF'})</label>
                                     <input required type="number" min="1" value={newPayment.montant} onChange={e => setNewPayment(p => ({ ...p, montant: e.target.value }))}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" placeholder="0" />
+                                    {paymentDoc.currency && paymentDoc.currency !== 'XOF' && Number(newPayment.montant) > 0 && (
+                                        <p className="text-[9px] text-gray-500 mt-1">≈ {fmt(Math.round(Number(newPayment.montant) * rateOf(paymentDoc.currency)))} enregistré en comptabilité</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date</label>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FileText, Plus, Trash2, Loader2, Search,
-    Download, Eye, Calculator, Receipt, Undo2, X, AlertTriangle, ShieldCheck,
+    Download, Eye, Calculator, Receipt, Undo2, X, AlertTriangle, ShieldCheck, BadgeDollarSign,
     Link as LinkIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -154,7 +154,20 @@ export default function AdminFacturationPage() {
         if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
     }
 
+    // Marquer une facture (produite manuellement) payée / impayée
+    const toggleFacturePaid = async (doc: DocumentFinancier) => {
+        const nowPaid = doc.status !== 'paye'
+        const patch = nowPaid
+            ? { status: 'paye', payment_method: 'manuel', paid_at: new Date().toISOString() }
+            : { status: 'envoye', paid_at: null }
+        await supabase.from('documents_financiers').update(patch).eq('id', doc.id)
+        setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...patch } as DocumentFinancier : d))
+        if (showPreview?.id === doc.id) setShowPreview(prev => prev ? { ...prev, ...patch } as DocumentFinancier : null)
+    }
+
     const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    // Libellé de devise du DOCUMENT (jamais forcer XOF sur une facture EUR/USD)
+    const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'FCFA' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c
     const formatDate = (val: string | null | undefined) => {
         if (!val) return '—'
         const d = new Date(val)
@@ -543,27 +556,36 @@ export default function AdminFacturationPage() {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(6.5)
                 pdf.setTextColor(30, 40, 70)
-                pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
+                pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 10.5)
                 pdf.setFont('helvetica', 'normal')
-                pdf.setFontSize(6)
+                pdf.setFontSize(5.8)
                 pdf.setTextColor(90, 95, 130)
-                pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 16)
-                pdf.setFont('helvetica', 'bold')
-                pdf.setFontSize(8)
-                pdf.setTextColor(20, 30, 80)
-                pdf.text(safe(presidentName), sig2X + 4, y + 21.5)
-                pdf.setFont('helvetica', 'normal')
-                pdf.setFontSize(6)
-                pdf.setTextColor(90, 95, 130)
-                pdf.text('Signature et Cachet officiel', sig2X + 4, y + 26.5)
-                pdf.text('Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + 30.5)
-                pdf.text('Validite officielle garantie', sig2X + 4, y + 34.5)
+                pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 15)
 
-                // Cachet officiel (contenu dans la case)
+                // Signature manuscrite (script) — police times italique, encre bleue
+                pdf.setFont('times', 'italic')
+                pdf.setFontSize(15)
+                pdf.setTextColor(20, 40, 110)
+                pdf.text(safe(presidentName), sig2X + 5, y + 23)
+                // Trait de signature sous le paraphe
+                pdf.setDrawColor(20, 40, 110)
+                pdf.setLineWidth(0.3)
+                pdf.line(sig2X + 5, y + 24.5, sig2X + 5 + Math.min(sigW - 34, pdf.getTextWidth(safe(presidentName)) * 0.5), y + 24.5)
+
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(7)
+                pdf.setTextColor(20, 30, 80)
+                pdf.text(safe(presidentName), sig2X + 4, y + 29)
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(5.8)
+                pdf.setTextColor(90, 95, 130)
+                pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + 33.5)
+
+                // Cachet officiel (contenu dans la case, a droite)
                 if (STAMP_BASE64) {
                     try {
                         const stampData = STAMP_BASE64.startsWith('data:') ? STAMP_BASE64 : `data:image/png;base64,${STAMP_BASE64}`
-                        pdf.addImage(stampData, 'PNG', sig2X + sigW - 32, y + 3, 30, 30)
+                        pdf.addImage(stampData, 'PNG', sig2X + sigW - 30, y + 5, 28, 28)
                     } catch (e) {
                         console.error('Error adding stamp:', e)
                     }
@@ -735,7 +757,7 @@ export default function AdminFacturationPage() {
                                         <p className="text-gray-500 text-[10px]">{doc.client_email || doc.client_phone}</p>
                                     </td>
                                     <td className="py-3 px-5 text-right">
-                                        <p className="font-mono text-sm font-bold" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.total.toLocaleString('fr-FR')} XOF</p>
+                                        <p className="font-mono text-sm font-bold" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.total.toLocaleString('fr-FR')} {curLabel(doc.currency)}</p>
                                     </td>
                                     <td className="py-3 px-5 text-center">
                                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label}</span>
@@ -760,6 +782,9 @@ export default function AdminFacturationPage() {
                                             <button onClick={() => generatePDF(doc)} disabled={generating} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="PDF">
                                                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                             </button>
+                                            {doc.type === 'facture' && (
+                                                <button onClick={() => toggleFacturePaid(doc)} className={`p-2 rounded-lg transition-all ${doc.status === 'paye' ? 'text-emerald-500 hover:text-amber-500 hover:bg-amber-500/10' : 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/10'}`} title={doc.status === 'paye' ? 'Payée — cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}><BadgeDollarSign size={16} /></button>
+                                            )}
                                             {(doc.type === 'facture' || doc.type === 'avoir') && (
                                                 <button onClick={() => openMecef(doc)} className={`p-2 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all ${doc.mecef_code || doc.mecef_nim ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-400'}`} title="Certification fiscale e-MCF (DGI)"><ShieldCheck size={16} /></button>
                                             )}
@@ -932,7 +957,7 @@ export default function AdminFacturationPage() {
                                     </div>
                                     <div className="bg-[var(--panel-surface-alt)] p-4 rounded-xl">
                                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Récapitulatif Total</p>
-                                        <p className="text-2xl text-emerald-400 font-black font-mono mt-1">{showPreview.total.toLocaleString('fr-Fr')} XOF</p>
+                                        <p className="text-2xl text-emerald-400 font-black font-mono mt-1">{showPreview.total.toLocaleString('fr-FR')} {curLabel(showPreview.currency)}</p>
                                     </div>
                                 </div>
 
