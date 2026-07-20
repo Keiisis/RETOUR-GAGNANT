@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { nextDocumentNumber } from '@/lib/document-numbering'
 
 // Service role key → bypass RLS (le client portail n'est pas authentifié)
 const supabase = createClient(
@@ -80,8 +81,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Générer la facture liée (avec agent_id pour visibilité côté agent/admin)
-        const now = new Date()
-        const numeroFacture = `FAC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(Date.now() % 10000).padStart(4, '0')}`
+        const numeroFacture = await nextDocumentNumber(supabase, 'facture')
 
         const { data: newFacture, error: insertError } = await supabase
             .from('documents_financiers')

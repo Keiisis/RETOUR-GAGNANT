@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { nextDocumentNumber } from '@/lib/document-numbering'
 import {
     FileText, Plus, Trash2, Loader2, ArrowLeft, User, Save, CheckCircle2,
     Calculator, Receipt
@@ -23,14 +24,6 @@ const defaultConditions = `• Validité : 30 jours à compter de la date d'émi
 • Les tarifs sont exprimés en FCFA (XOF)
 • TVA applicable selon la législation béninoise en vigueur`
 
-const generateNumero = (type: 'devis' | 'facture') => {
-    const prefix = type === 'devis' ? 'DEV' : 'FAC'
-    const date = new Date()
-    const yr = date.getFullYear()
-    const mn = String(date.getMonth() + 1).padStart(2, '0')
-    const rand = String(Date.now() % 10000).padStart(4, '0')
-    return `${prefix}-${yr}${mn}-${rand}`
-}
 
 export default function CreateDocumentPage() {
     const router = useRouter()
@@ -113,10 +106,13 @@ export default function CreateDocumentPage() {
         // Snapshot the current exchange rate for immutability
         const currentRate = rates[currency] || 1
 
+        // Numéro séquentiel officiel (compteur atomique en base)
+        const numero = await nextDocumentNumber(supabase, formType)
+
         const { error } = await supabase.from('documents_financiers').insert({
-            agent_id: user.id, 
-            type: formType, 
-            numero: generateNumero(formType),
+            agent_id: user.id,
+            type: formType,
+            numero,
             client_nom: clientNom, 
             client_prenom: clientPrenom, 
             client_email: clientEmail,

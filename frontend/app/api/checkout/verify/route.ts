@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, VERIFY_LIMIT } from '@/lib/rate-limit'
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
 import { markClientConverted } from '@/lib/classement/track'
+import { nextDocumentNumber } from '@/lib/document-numbering'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -604,12 +605,8 @@ export async function POST(request: Request) {
                         })
                     }
 
-                    // Générer le numéro de facture
-                    const now = new Date()
-                    const yr = now.getFullYear()
-                    const mn = String(now.getMonth() + 1).padStart(2, '0')
-                    const rand = String(Date.now() % 10000).padStart(4, '0')
-                    const invoiceNumero = `FAC-${yr}${mn}-${rand}`
+                    // Numéro de facture séquentiel officiel (compteur atomique)
+                    const invoiceNumero = await nextDocumentNumber(supabase, 'facture')
 
                     // Récupérer le taux de change actuel pour le verrouillage
                     const orderCurrency = (fullOrder.currency || 'XOF').toUpperCase()

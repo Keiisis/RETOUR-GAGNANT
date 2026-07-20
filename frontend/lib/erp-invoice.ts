@@ -8,6 +8,7 @@
 // ══════════════════════════════════════════════════════════════
 
 import { createClient } from '@supabase/supabase-js'
+import { nextDocumentNumber } from './document-numbering'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -69,8 +70,7 @@ export async function createErpInvoiceForOrder(opts: {
             })
         }
 
-        const now = new Date()
-        const invoiceNumero = `FAC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(Date.now() % 10000).padStart(4, '0')}`
+        const invoiceNumero = await nextDocumentNumber(supabase, 'facture')
 
         const orderCurrency = (fullOrder.currency || 'XOF').toUpperCase()
         let invoiceExchangeRate = 1

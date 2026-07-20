@@ -14,6 +14,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { convertCurrency, type CurrencyCode } from '@/lib/currency'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
+import { nextDocumentNumber } from './document-numbering'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -276,9 +277,10 @@ export async function confirmDocumentPayment(opts: {
     // FACTURE (type='facture' + n° de facture) pour entrer dans la comptabilité,
     // qui ne comptabilise l'encaissé que sur les factures.
     const convertToInvoice = doc.type === 'devis'
-    const invoiceNumero = convertToInvoice && !doc.numero
-        ? `FAC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Date.now() % 10000).padStart(4, '0')}`
-        : doc.numero
+    // Une facture porte TOUJOURS un numéro de la série FAC (jamais le n° DEV
+    // d'origine) — exigence de numérotation par série. Le devis d'origine
+    // est conservé en note pour la traçabilité.
+    let invoiceNumero = doc.numero
     const updatePayload: Record<string, unknown> = {
         status: 'paye',
         payment_provider: provider,
@@ -287,9 +289,10 @@ export async function confirmDocumentPayment(opts: {
         paid_at: new Date().toISOString(),
     }
     if (convertToInvoice) {
-        // Conversion « en place » : le document passe de devis à facture payée.
+        invoiceNumero = await nextDocumentNumber(supabase, 'facture')
         updatePayload.type = 'facture'
         updatePayload.numero = invoiceNumero
+        updatePayload.notes = `${doc.notes ? doc.notes + '\n' : ''}Facture issue du devis ${doc.numero || '(sans n°)'} accepté et payé.`
     }
     const { data: updated, error: updErr } = await supabase
         .from('documents_financiers')

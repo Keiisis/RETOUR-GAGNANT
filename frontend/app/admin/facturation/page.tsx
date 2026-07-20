@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import {
     FileText, Plus, Trash2, Loader2, Search,
-    Download, Eye, Calculator, Receipt,
+    Download, Eye, Calculator, Receipt, Undo2, X, AlertTriangle, ShieldCheck,
     Link as LinkIcon
 } from 'lucide-react'
 import Link from 'next/link'
@@ -23,8 +23,16 @@ interface DevisItem {
 
 interface DocumentFinancier {
     id: string
-    type: 'devis' | 'facture'
+    type: 'devis' | 'facture' | 'avoir'
     numero: string
+    avoir_de_facture_id?: string
+    motif_avoir?: string
+    client_ifu?: string
+    mecef_nim?: string
+    mecef_code?: string
+    mecef_counters?: string
+    mecef_datetime?: string
+    mecef_qr?: string
     client_nom: string
     client_prenom: string
     client_email: string
@@ -51,9 +59,69 @@ export default function AdminFacturationPage() {
     const [documents, setDocuments] = useState<DocumentFinancier[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture'>('all')
+    const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture' | 'avoir'>('all')
     const [showPreview, setShowPreview] = useState<DocumentFinancier | null>(null)
     const [generating, setGenerating] = useState(false)
+    // Avoir / note de crédit
+    const [avoirTarget, setAvoirTarget] = useState<DocumentFinancier | null>(null)
+    const [avoirMotif, setAvoirMotif] = useState('')
+    const [avoirSaving, setAvoirSaving] = useState(false)
+    const [avoirError, setAvoirError] = useState('')
+
+    // Certification e-MCF / MECeF (DGI Bénin)
+    const [mecefTarget, setMecefTarget] = useState<DocumentFinancier | null>(null)
+    const [mecefForm, setMecefForm] = useState({ mecef_nim: '', mecef_code: '', mecef_counters: '', mecef_datetime: '', mecef_qr: '', client_ifu: '' })
+    const [mecefSaving, setMecefSaving] = useState(false)
+
+    const openMecef = (doc: DocumentFinancier) => {
+        setMecefTarget(doc)
+        setMecefForm({
+            mecef_nim: doc.mecef_nim || '',
+            mecef_code: doc.mecef_code || '',
+            mecef_counters: doc.mecef_counters || '',
+            mecef_datetime: doc.mecef_datetime ? doc.mecef_datetime.slice(0, 16) : '',
+            mecef_qr: doc.mecef_qr || '',
+            client_ifu: doc.client_ifu || '',
+        })
+    }
+
+    const handleSaveMecef = async () => {
+        if (!mecefTarget) return
+        setMecefSaving(true)
+        try {
+            const res = await fetch('/api/admin/facturation/mecef', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: mecefTarget.id, ...mecefForm }),
+            })
+            const data = await res.json()
+            if (data.success) { setMecefTarget(null); fetchDocuments() }
+        } catch { /* silencieux */ }
+        setMecefSaving(false)
+    }
+
+    const handleCreateAvoir = async () => {
+        if (!avoirTarget) return
+        if (!avoirMotif.trim()) { setAvoirError('Le motif est obligatoire.'); return }
+        setAvoirSaving(true)
+        setAvoirError('')
+        try {
+            const res = await fetch('/api/admin/facturation/avoir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ facture_id: avoirTarget.id, motif: avoirMotif.trim() }),
+            })
+            const data = await res.json()
+            if (data.success) {
+                setAvoirTarget(null)
+                setAvoirMotif('')
+                fetchDocuments()
+            } else setAvoirError(data.error || 'Création impossible')
+        } catch {
+            setAvoirError('Création impossible')
+        }
+        setAvoirSaving(false)
+    }
 
     const fetchDocuments = useCallback(async () => {
         const { data } = await supabase
@@ -190,11 +258,13 @@ export default function AdminFacturationPage() {
             })
 
             // ── TYPE DOCUMENT (droite, en haut du header) ────────
-            const typeLabel = doc.type === 'devis' ? 'DEVIS' : 'FACTURE'
+            const typeLabel = doc.type === 'devis' ? 'DEVIS' : doc.type === 'avoir' ? 'AVOIR' : 'FACTURE'
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(24)
             if (doc.type === 'devis') {
                 pdf.setTextColor(180, 120, 0)
+            } else if (doc.type === 'avoir') {
+                pdf.setTextColor(200, 90, 20)   // orange — note de crédit
             } else {
                 pdf.setTextColor(0, 135, 81)
             }
@@ -285,6 +355,7 @@ export default function AdminFacturationPage() {
             let clientY = y + 19
             if (doc.client_email) { pdf.text(doc.client_email, toX + 4, clientY); clientY += 5.5 }
             if (doc.client_phone) { pdf.text(doc.client_phone, toX + 4, clientY); clientY += 5.5 }
+            if (doc.client_ifu) { pdf.text('IFU : ' + doc.client_ifu, toX + 4, clientY); clientY += 5.5 }
             if (doc.client_adresse) {
                 const addrLines = pdf.splitTextToSize(doc.client_adresse, boxW - 8)
                 addrLines.slice(0, 3).forEach((line: string) => {
@@ -407,7 +478,20 @@ export default function AdminFacturationPage() {
                 pdf.setDrawColor(0, 135, 81)
                 pdf.setLineWidth(0.4)
                 pdf.roundedRect(ml, y, sigW, sigBoxH, 2, 2, 'FD')
-                if (doc.type === 'facture') {
+                if (doc.type === 'avoir') {
+                    // AVOIR : note de crédit — référence la facture annulée
+                    pdf.setFont('helvetica', 'bold')
+                    pdf.setFontSize(7)
+                    pdf.setTextColor(200, 90, 20)
+                    pdf.text('NOTE DE CREDIT', ml + 4, y + 8)
+                    pdf.setFont('helvetica', 'normal')
+                    pdf.setFontSize(6.5)
+                    pdf.setTextColor(90, 100, 95)
+                    const motifLines = pdf.splitTextToSize(safe(doc.motif_avoir ? 'Motif : ' + doc.motif_avoir : (doc.notes || 'Avoir sur facture')), sigW - 8)
+                    motifLines.slice(0, 3).forEach((l: string, i: number) => pdf.text(l, ml + 4, y + 15 + i * 4.5))
+                    pdf.setTextColor(120, 120, 120)
+                    pdf.text('Etabli le ' + formatDate(doc.created_at), ml + 4, y + 31)
+                } else if (doc.type === 'facture') {
                     // FACTURE : preuve de règlement — jamais de « Bon pour accord »
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(7)
@@ -486,6 +570,40 @@ export default function AdminFacturationPage() {
                 }
             }
 
+            // ── CERTIFICATION FISCALE e-MCF / MECeF (DGI Bénin) ─────
+            // N'apparaît que sur les factures/avoirs certifiés (données
+            // saisies ou récupérées de l'API DGI). QR de vérification à gauche.
+            if ((doc.type === 'facture' || doc.type === 'avoir') && (doc.mecef_code || doc.mecef_nim)) {
+                const mY = Math.min(y + 4, ph - 62)
+                const boxMH = 30
+                pdf.setFillColor(245, 250, 247)
+                pdf.setDrawColor(0, 135, 81)
+                pdf.setLineWidth(0.4)
+                pdf.roundedRect(ml, mY, cw, boxMH, 2, 2, 'FD')
+                // QR
+                if (doc.mecef_qr) {
+                    try {
+                        const QR = (await import('qrcode')).default
+                        const qrData = await QR.toDataURL(doc.mecef_qr, { margin: 0, width: 200 })
+                        pdf.addImage(qrData, 'PNG', ml + 3, mY + 3, 24, 24)
+                    } catch { /* QR non généré : on garde le bloc texte */ }
+                }
+                const tX = ml + (doc.mecef_qr ? 31 : 4)
+                pdf.setFont('helvetica', 'bold')
+                pdf.setFontSize(7)
+                pdf.setTextColor(0, 100, 60)
+                pdf.text('FACTURE CERTIFIEE - e-MCF / MECeF (DGI BENIN)', tX, mY + 6)
+                pdf.setFont('helvetica', 'normal')
+                pdf.setFontSize(6.5)
+                pdf.setTextColor(60, 70, 90)
+                let mLine = mY + 12
+                if (doc.mecef_code) { pdf.text(safe('Code de controle : ' + doc.mecef_code), tX, mLine); mLine += 4.5 }
+                if (doc.mecef_nim) { pdf.text(safe('NIM : ' + doc.mecef_nim), tX, mLine); mLine += 4.5 }
+                if (doc.mecef_counters) { pdf.text(safe('Compteurs : ' + doc.mecef_counters), tX, mLine); mLine += 4.5 }
+                if (doc.mecef_datetime) { pdf.text('Certifie le ' + formatDate(doc.mecef_datetime), tX, mLine) }
+                y = mY + boxMH + 4
+            }
+
             // ── WATERMARK ──────────────────────────────────────────
             if (doc.status === 'brouillon') {
                 pdf.setFont('helvetica', 'bold')
@@ -537,6 +655,7 @@ export default function AdminFacturationPage() {
         paye: { color: 'bg-green-500/20 text-green-400', label: 'Payé' },
         en_retard: { color: 'bg-orange-500/20 text-orange-400', label: 'En retard' },
         annule: { color: 'bg-zinc-500/20 text-zinc-400', label: 'Annulé' },
+        valide: { color: 'bg-orange-500/20 text-orange-400', label: 'Avoir émis' },
     }
 
     if (loading) {
@@ -570,7 +689,7 @@ export default function AdminFacturationPage() {
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par Numéro ou Client..." className="w-full bg-[var(--panel-surface-alt)] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm" />
                 </div>
                 <div className="flex gap-1 bg-[var(--panel-surface-alt)] rounded-xl p-1 w-full sm:w-auto">
-                    {[{ k: 'all', l: 'Tous' }, { k: 'devis', l: 'Devis' }, { k: 'facture', l: 'Factures' }].map(f => (
+                    {[{ k: 'all', l: 'Tous' }, { k: 'devis', l: 'Devis' }, { k: 'facture', l: 'Factures' }, { k: 'avoir', l: 'Avoirs' }].map(f => (
                         <button key={f.k} type="button" onClick={() => setFilterType(f.k as typeof filterType)} className={`flex-1 sm:flex-none text-xs font-bold px-4 py-2 rounded-lg transition-all ${filterType === f.k ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-white'}`}>{f.l}</button>
                     ))}
                 </div>
@@ -641,6 +760,12 @@ export default function AdminFacturationPage() {
                                             <button onClick={() => generatePDF(doc)} disabled={generating} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="PDF">
                                                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                             </button>
+                                            {(doc.type === 'facture' || doc.type === 'avoir') && (
+                                                <button onClick={() => openMecef(doc)} className={`p-2 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all ${doc.mecef_code || doc.mecef_nim ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-400'}`} title="Certification fiscale e-MCF (DGI)"><ShieldCheck size={16} /></button>
+                                            )}
+                                            {doc.type === 'facture' && (
+                                                <button onClick={() => setAvoirTarget(doc)} className="p-2 text-gray-400 hover:text-orange-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Émettre un avoir (note de crédit)"><Undo2 size={16} /></button>
+                                            )}
                                             <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
@@ -650,6 +775,108 @@ export default function AdminFacturationPage() {
                     </table>
                 </div>
             </div>
+
+            {/* MODAL CERTIFICATION e-MCF / MECeF */}
+            <AnimatePresence>
+                {mecefTarget && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4"
+                        onClick={() => setMecefTarget(null)}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            onClick={e => e.stopPropagation()}
+                            className="border rounded-2xl p-6 max-w-md w-full max-h-[92vh] overflow-y-auto"
+                            style={{ backgroundColor: 'var(--panel-surface, #111827)', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))' }}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="text-emerald-500" size={22} />
+                                    <h3 className="text-base font-black" style={{ color: 'var(--panel-text-heading, #fff)' }}>Certification e-MCF (DGI)</h3>
+                                </div>
+                                <button onClick={() => setMecefTarget(null)} className="opacity-60 hover:opacity-100" style={{ color: 'var(--panel-text, #fff)' }}><X size={18} /></button>
+                            </div>
+                            <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                                Reportez ici les données de certification de la facture normalisée délivrées par le système <strong>e-MCF/MECeF</strong> de la DGI (code de contrôle, NIM, compteurs, QR). Elles s&apos;affichent alors sur le PDF de la facture.
+                            </p>
+                            {([
+                                { k: 'client_ifu', l: 'IFU du client (si professionnel)', ph: '3200000000000' },
+                                { k: 'mecef_code', l: 'Code de contrôle MECeF', ph: 'XXXX-XXXX-XXXX' },
+                                { k: 'mecef_nim', l: 'NIM (identification machine)', ph: 'NIM…' },
+                                { k: 'mecef_counters', l: 'Compteurs', ph: 'ex : 125/340 FV' },
+                                { k: 'mecef_qr', l: 'Contenu du QR (URL de vérification DGI)', ph: 'https://sygmef.impots.bj/...' },
+                            ] as const).map(f => (
+                                <div key={f.k} className="mb-2.5">
+                                    <label className="text-[11px] font-bold mb-1 block" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>{f.l}</label>
+                                    <input type="text" value={mecefForm[f.k]} onChange={e => setMecefForm(s => ({ ...s, [f.k]: e.target.value }))}
+                                        placeholder={f.ph}
+                                        className="w-full border rounded-xl py-2 px-3 text-sm focus:outline-none"
+                                        style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }} />
+                                </div>
+                            ))}
+                            <div className="mb-4">
+                                <label className="text-[11px] font-bold mb-1 block" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>Date/heure de certification</label>
+                                <input type="datetime-local" value={mecefForm.mecef_datetime} onChange={e => setMecefForm(s => ({ ...s, mecef_datetime: e.target.value }))}
+                                    className="w-full border rounded-xl py-2 px-3 text-sm focus:outline-none"
+                                    style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }} />
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={handleSaveMecef} disabled={mecefSaving}
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                                    {mecefSaving ? <Loader2 className="animate-spin" size={15} /> : <ShieldCheck size={15} />}
+                                    Enregistrer la certification
+                                </button>
+                                <button onClick={() => setMecefTarget(null)} className="flex-1 border font-bold text-sm py-2.5 rounded-xl transition-all"
+                                    style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }}>Fermer</button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL AVOIR / NOTE DE CRÉDIT */}
+            <AnimatePresence>
+                {avoirTarget && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4"
+                        onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            onClick={e => e.stopPropagation()}
+                            className="border rounded-2xl p-6 max-w-md w-full"
+                            style={{ backgroundColor: 'var(--panel-surface, #111827)', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))' }}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Undo2 className="text-orange-500" size={22} />
+                                    <h3 className="text-base font-black" style={{ color: 'var(--panel-text-heading, #fff)' }}>Émettre un avoir</h3>
+                                </div>
+                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }} className="opacity-60 hover:opacity-100" style={{ color: 'var(--panel-text, #fff)' }}><X size={18} /></button>
+                            </div>
+                            <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                                En comptabilité normée, une facture émise ne se supprime pas : on émet un <strong>avoir</strong> (note de crédit) qui la crédite. L&apos;avoir <span className="font-mono font-bold">{avoirTarget.numero}</span> reprendra les montants de la facture et entrera en contre-passation dans la comptabilité.
+                            </p>
+                            <label className="text-xs font-bold mb-1 block" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>Motif de l&apos;avoir *</label>
+                            <textarea
+                                rows={3}
+                                value={avoirMotif}
+                                onChange={e => setAvoirMotif(e.target.value)}
+                                placeholder="Erreur de facturation, annulation de commande, geste commercial…"
+                                className="w-full border rounded-xl py-2.5 px-3 text-sm focus:outline-none resize-none mb-2"
+                                style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }}
+                            />
+                            {avoirError && (
+                                <p className="text-xs text-red-500 font-semibold mb-2 flex items-center gap-1.5"><AlertTriangle size={13} /> {avoirError}</p>
+                            )}
+                            <div className="flex gap-3 mt-3">
+                                <button onClick={handleCreateAvoir} disabled={avoirSaving}
+                                    className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                                    {avoirSaving ? <Loader2 className="animate-spin" size={15} /> : <Undo2 size={15} />}
+                                    Émettre l&apos;avoir
+                                </button>
+                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }}
+                                    className="flex-1 border font-bold text-sm py-2.5 rounded-xl transition-all"
+                                    style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }}>Annuler</button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* PREVIEW MODAL */}
             <AnimatePresence>

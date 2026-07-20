@@ -79,7 +79,7 @@ interface DevisItem {
 
 interface DocRow {
     id: string
-    type: 'devis' | 'facture'
+    type: 'devis' | 'facture' | 'avoir'
     numero: string
     client_nom: string
     client_prenom?: string
@@ -477,8 +477,13 @@ export default function AdminComptabilitePage() {
             const totalEncaisse = encaisseFactu + boutique
             const commission    = Math.round(encaisseFactu * commissionRate)
             const totalDeps     = deps.reduce((a, d) => a + Number(d.montant), 0)  // dépenses déjà en XOF
-            const caEmis        = invoices.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
-            const totalTVA      = invoices.reduce((a, d) => a + toXOF(Number(d.total_tva) || 0, d.currency), 0)
+            // Avoirs émis (notes de crédit) : viennent en déduction du CA et de
+            // la TVA collectée (contre-passation des ventes annulées).
+            const avoirsList    = dList.filter(d => d.type === 'avoir')
+            const avoirsTotal   = avoirsList.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            const avoirsTVA     = avoirsList.reduce((a, d) => a + toXOF(Number(d.total_tva) || 0, d.currency), 0)
+            const caEmis        = invoices.reduce((a, d) => a + toXOF(d.total, d.currency), 0) - avoirsTotal
+            const totalTVA      = invoices.reduce((a, d) => a + toXOF(Number(d.total_tva) || 0, d.currency), 0) - avoirsTVA
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
             const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
             const nbFactTotal   = invoices.length
@@ -971,7 +976,7 @@ export default function AdminComptabilitePage() {
                 ],
                 data: docsEnriched.map(d => ({
                     numero: d.numero,
-                    type: d.type === 'facture' ? 'Facture' : 'Devis',
+                    type: d.type === 'facture' ? 'Facture' : d.type === 'avoir' ? 'Avoir' : 'Devis',
                     date: new Date(d.created_at),
                     agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
                     client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),

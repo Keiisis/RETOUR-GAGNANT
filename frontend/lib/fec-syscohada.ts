@@ -197,6 +197,35 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
         }
     }
 
+    // ── Journal des avoirs (AV) : contre-passation des ventes ──
+    // Un avoir crédite le client → écriture inverse de la facture :
+    //   D 706 Ventes (HT)  D 443 TVA facturée  C 411 Clients (TTC)
+    const avoirs = docs.filter(d => d.type === 'avoir')
+    for (const d of avoirs) {
+        const cur = d.currency || 'XOF'
+        const ttc = toXof(Number(d.total) || 0, cur)
+        const tva = toXof(Number(d.total_tva) || 0, cur)
+        const ht = toXof(
+            d.sous_total != null ? Number(d.sous_total) : (Number(d.total) || 0) - (Number(d.total_tva) || 0),
+            cur,
+        )
+        if (ttc <= 0) continue
+        const num = nextNum('AV')
+        const date = ymd(d.created_at)
+        const piece = clean(d.numero) || d.id.slice(0, 8)
+        const cli = clean(`${d.client_nom || ''} ${d.client_prenom || ''}`) || 'Client'
+        const lib = `Avoir ${piece} - ${cli}`
+        const devCols = cur !== 'XOF' ? { Montantdevise: amt(Number(d.total) || 0), Idevise: cur } : { Montantdevise: '', Idevise: '' }
+        // D 706 Ventes (HT) — annule le produit
+        rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.ventes.num, CompteLib: ACC.ventes.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(tva > 0 ? ht : ttc), Credit: amt(0) })
+        // D 443 TVA facturée — annule la TVA collectée
+        if (tva > 0) {
+            rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.tvaFacturee.num, CompteLib: ACC.tvaFacturee.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(tva), Credit: amt(0) })
+        }
+        // C 411 Clients (TTC)
+        rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: d.id.slice(0, 12), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(ttc), ...devCols })
+    }
+
     // ── Journal de trésorerie (BQ / CA) : encaissements ──
     for (const p of paiements) {
         const montant = toXof(Number(p.montant) || 0, 'XOF') // paiements en XOF
