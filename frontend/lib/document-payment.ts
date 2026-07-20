@@ -104,11 +104,18 @@ async function verifyFedapay(txId: string): Promise<{ ok: boolean; amount?: numb
 }
 
 /** Le provider a-t-il encaissé (au moins) le montant du document ? (XOF, tolérance 2%) */
-function amountOk(providerAmountXOF: number | undefined, docTotal: number, docCurrency: string): boolean {
+async function amountOk(providerAmountXOF: number | undefined, docTotal: number, docCurrency: string): Promise<boolean> {
     if (providerAmountXOF === undefined || providerAmountXOF === null) return false
-    const expectedXOF = docCurrency === 'XOF'
-        ? docTotal
-        : convertCurrency(docTotal, docCurrency as CurrencyCode, 'XOF')
+    let expectedXOF = docTotal
+    if (docCurrency && docCurrency !== 'XOF' && docCurrency !== 'FCFA') {
+        // Taux RÉEL depuis la table currencies (serveur) — évite le taux de
+        // secours codé (USD=600) qui, face au taux réel ~574, dépassait la
+        // tolérance de 2% et faisait rejeter à tort un paiement USD légitime.
+        const { data } = await supabase
+            .from('currencies').select('exchange_rate_to_base').eq('code', docCurrency).single()
+        const rate = Number(data?.exchange_rate_to_base) || 0
+        expectedXOF = rate > 0 ? docTotal * rate : convertCurrency(docTotal, docCurrency as CurrencyCode, 'XOF')
+    }
     return providerAmountXOF >= Math.floor(expectedXOF * 0.98)
 }
 
@@ -266,7 +273,7 @@ export async function confirmDocumentPayment(opts: {
     // Vérification provider + montant (anti-fraude)
     const verify = provider === 'kkiapay' ? await verifyKkiapay(transactionId) : await verifyFedapay(transactionId)
     if (!verify.ok) return { success: false, error: `Paiement non confirmé (${verify.reason})`, status: 402 }
-    if (!amountOk(verify.amount, Number(doc.total), doc.currency)) {
+    if (!(await amountOk(verify.amount, Number(doc.total), doc.currency))) {
         return { success: false, error: 'Montant divergent', status: 402 }
     }
 

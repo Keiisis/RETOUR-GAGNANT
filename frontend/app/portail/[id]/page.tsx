@@ -12,7 +12,7 @@ import {
     CreditCard, X, ChevronRight, AlertCircle, Shield
 } from 'lucide-react'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
-import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, type CurrencyCode } from '@/lib/currency'
+import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, refreshRates, type CurrencyCode } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
@@ -81,6 +81,10 @@ export default function ClientPortalPage() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setClientSession(session)
         })
+        // Taux de change à jour AVANT toute conversion vers XOF (charge Kkiapay/
+        // FedaPay d'une facture EUR/USD) — évite d'utiliser le taux de secours
+        // codé (USD=600) et de sur/sous-facturer le client.
+        refreshRates().catch(() => {})
         return () => subscription.unsubscribe()
     }, [])
 

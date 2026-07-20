@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { convertFromBaseSync, getCurrentRates, formatCurrencySync } from '@/lib/currency'
+import { convertFromBaseSync, getCurrentRates, formatCurrencySync, refreshRates } from '@/lib/currency'
 
 interface DevisItem {
     description: string
@@ -46,8 +46,11 @@ export default function CreateDocumentPage() {
     // Suggestions de catalogue
     const [services, setServices] = useState<{ id: string, title: string, base_price: number, cost_price: number }[]>([])
 
-    // Load available current exchange rates from DB
-    const rates = getCurrentRates()
+    // Taux de change : rechargés depuis la DB au montage. Le changement de
+    // `ratesReady` force un re-rendu → les conversions d'affichage
+    // (convertFromBaseSync / formatCurrencySync) relisent les taux frais.
+    const [ratesReady, setRatesReady] = useState(false)
+    void ratesReady
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -56,6 +59,11 @@ export default function CreateDocumentPage() {
             if (data) setServices(data)
         }
         fetchServices()
+        // CRITIQUE : charger les VRAIS taux depuis la DB avant toute conversion
+        // ou stockage. Sans ça, EUR/USD utilisaient les taux de secours codés
+        // (USD=600 au lieu du taux réel ~574) → montants et exchange_rate_applied
+        // faux. On force le rafraîchissement puis on re-rend.
+        refreshRates().then(() => setRatesReady(true)).catch(() => setRatesReady(true))
     }, [])
 
     const sousTotal = items.reduce((sum, it) => sum + (it.quantity * it.unit_price), 0)
@@ -104,7 +112,10 @@ export default function CreateDocumentPage() {
         }
 
         // Snapshot the current exchange rate for immutability
-        const currentRate = rates[currency] || 1
+        // Taux lu à l'instant de l'enregistrement (après refresh DB) — snapshot
+        // immuable pour ce document (EUR = parité fixe 655,957 ; USD = taux DB réel)
+        await refreshRates().catch(() => {})
+        const currentRate = getCurrentRates()[currency] || 1
 
         // Numéro séquentiel officiel (compteur atomique en base)
         const numero = await nextDocumentNumber(supabase, formType)
