@@ -689,13 +689,16 @@ export default function PersonForm({
 
   return (
     <div className="relative group">
-      {/* Aura lumineuse derrière la carte */}
-      <div
-        className="absolute -inset-[1px] rounded-[2rem] opacity-60 blur-md transition-opacity duration-700 group-hover:opacity-100"
-        style={{
-          background: `conic-gradient(from 180deg, ${accent}22, transparent 25%, #E80000_50%, transparent 75%, ${accent}22)`,
-        }}
-      />
+      {/* Aura lumineuse derrière la carte — visible seulement en thème sombre,
+          sinon elle délave la carte blanche (effet « flou » en mode clair) */}
+      {isDark && (
+        <div
+          className="absolute -inset-[1px] rounded-[2rem] opacity-60 blur-md transition-opacity duration-700 group-hover:opacity-100"
+          style={{
+            background: `conic-gradient(from 180deg, ${accent}22, transparent 25%, #E80000_50%, transparent 75%, ${accent}22)`,
+          }}
+        />
+      )}
 
       <div 
         className="relative border rounded-[2rem] overflow-hidden"
@@ -705,19 +708,22 @@ export default function PersonForm({
           opacity: 1,
         }}
       >
-        {/* Halo de couleur en haut */}
+        {/* Halo de couleur en haut — discret en clair (0.35 d'un jaune/vert
+            étalé sur une carte blanche = voile délavé) */}
         <div
-          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full blur-[80px] opacity-35"
-          style={{ background: accent }}
+          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full blur-[80px]"
+          style={{ background: accent, opacity: isDark ? 0.35 : 0.08 }}
         />
-        {/* Texture grain subtile */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.025] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          }}
-        />
+        {/* Texture grain subtile — sombre uniquement (invisible/salissant en clair) */}
+        {isDark && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.025] mix-blend-overlay"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)'/%3E%3C/svg%3E\")",
+            }}
+          />
+        )}
 
         <div className="relative p-6 space-y-5">
           {/* ---------------------------------- Header --------------------------------- */}
