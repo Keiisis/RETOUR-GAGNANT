@@ -50,3 +50,50 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
 }
+
+// Édition d'un paiement (montant, type, référence, libellé externe, date)
+export async function PATCH(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'agent')
+    if (!auth.authenticated) return auth.error!
+
+    const body = await request.json()
+    const id = String(body.id || '')
+    if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
+
+    const supabase = createClient(supabaseUrl, serviceKey)
+    const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
+    if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
+        return NextResponse.json({ error: 'Période clôturée — modification refusée.' }, { status: 423 })
+    }
+
+    const patch: Record<string, unknown> = {}
+    if (body.montant != null) patch.montant = Number(body.montant)
+    if (typeof body.type === 'string') patch.type = body.type
+    if ('reference' in body) patch.reference = body.reference || null
+    if ('notes' in body) patch.notes = body.notes || null
+    if (typeof body.date_paiement === 'string') patch.date_paiement = body.date_paiement
+    if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Rien à modifier' }, { status: 400 })
+
+    const { error } = await supabase.from('paiements_manuels').update(patch).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+}
+
+// Suppression d'un paiement (corrige les doublons qui faussent la compta)
+export async function DELETE(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'agent')
+    if (!auth.authenticated) return auth.error!
+
+    const id = request.nextUrl.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
+
+    const supabase = createClient(supabaseUrl, serviceKey)
+    const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
+    if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
+        return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
+    }
+
+    const { error } = await supabase.from('paiements_manuels').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+}

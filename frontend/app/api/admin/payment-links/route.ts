@@ -75,7 +75,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor } = body
+        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category } = body
+        // Catégorie comptable de destination choisie à la création
+        const cat = ['factures', 'boutique', 'paiements'].includes(category) ? category : 'factures'
 
         const amt = Number(amount)
         if (!label?.trim() || !client_name?.trim() || !amt || amt <= 0) {
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
             destination: String(label).trim(),
             status: 'ready',
             total_amount: xofAmount, // TOUJOURS en XOF
-            notes: `LIEN-PAIEMENT — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
+            notes: `LIEN-PAIEMENT [CAT:${cat}] — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
         }
 
         // currency TOUJOURS 'XOF' (cohérence page + Kkiapay + facture) ;
@@ -164,6 +166,11 @@ export async function DELETE(request: NextRequest) {
         if (link.status === 'paid') {
             return NextResponse.json({ error: 'Ce lien a été payé — suppression interdite (traçabilité comptable).' }, { status: 400 })
         }
+        // Nettoyage : supprimer les commandes NON PAYÉES issues de ce lien
+        // (sinon un ordre « en attente » orphelin reste visible en comptabilité
+        //  Boutique après suppression du lien). Les commandes payées sont
+        //  conservées (traçabilité) — mais un lien payé n'est pas supprimable.
+        await supabase.from('orders').delete().eq('product_id', id).neq('payment_status', 'completed')
         await supabase.from('ai_proposal_items').delete().eq('proposal_id', id)
         const { error } = await supabase.from('ai_client_proposals').delete().eq('id', id)
         if (error) throw error

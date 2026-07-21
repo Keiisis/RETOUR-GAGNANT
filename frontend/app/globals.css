@@ -665,7 +665,7 @@
 
 /* Halos décoratifs de fond (admin) : en mode clair, on les réduit fortement
    pour supprimer toute sensation de voile/flou sur les tableaux de bord. */
-[data-theme="light"] .admin-bg-glow { opacity: 0.25; }
+[data-theme="light"] .admin-bg-glow { display: none !important; }
 
 /* --- TEXT COLOR OVERRIDES --- */
 /* On NE flippe PAS le texte des éléments posés sur un fond explicitement

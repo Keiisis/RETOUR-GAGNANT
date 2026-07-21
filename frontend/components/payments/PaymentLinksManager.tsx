@@ -44,7 +44,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
     const [deleteTarget, setDeleteTarget] = useState<PaymentLink | null>(null)
     const [toasts, setToasts] = useState<Toast[]>([])
     const [form, setForm] = useState({
-        label: '', amount: 0, currency: 'XOF',
+        label: '', amount: 0, currency: 'XOF', category: 'factures',
         client_name: '', client_email: '', client_phone: '', send_email: true,
     })
 
@@ -89,7 +89,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                     ? t('Lien créé, copié et envoyé par email au client')
                     : t('Lien créé et copié dans le presse-papiers'))
                 setCreating(false)
-                setForm({ label: '', amount: 0, currency: 'XOF', client_name: '', client_email: '', client_phone: '', send_email: true })
+                setForm({ label: '', amount: 0, currency: 'XOF', category: 'factures', client_name: '', client_email: '', client_phone: '', send_email: true })
                 fetchLinks()
             } else toast(data.error || t('Création impossible'), 'error')
         } catch { toast(t('Création impossible'), 'error') }
@@ -171,7 +171,19 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                                             <option value="USD">USD</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label className="text-xs font-bold mb-1 block" style={labelStyle}><T>Catégorie comptable</T></label>
+                                        <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+                                            className="w-full border rounded-xl py-3 px-4 text-sm focus:outline-none" style={inputStyle}>
+                                            <option value="factures"><T>Factures</T></option>
+                                            <option value="boutique"><T>Boutique</T></option>
+                                            <option value="paiements"><T>Paiements</T></option>
+                                        </select>
+                                    </div>
                                 </div>
+                                <p className="text-[11px] mb-3 leading-relaxed" style={labelStyle}>
+                                    <T>Au paiement, la transaction est classée automatiquement dans l&apos;onglet choisi de la comptabilité (Factures : une facture est générée ; Boutique : une commande ; Paiements : un encaissement direct).</T>
+                                </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label className="text-xs font-bold mb-1 block" style={labelStyle}><T>Nom du client *</T></label>

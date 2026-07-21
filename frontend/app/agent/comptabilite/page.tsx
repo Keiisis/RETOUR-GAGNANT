@@ -7,7 +7,7 @@ import {
     Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Download, Activity, CheckCircle2,
     BarChart3, Landmark, ArrowRight, FileText, X, TrendingDown, Zap, MessageCircle,
     RefreshCw, Plus, AlertTriangle, Banknote, CreditCard, Bell, ChevronLeft, ChevronRight,
-    Receipt, ShoppingBag, Users
+    Receipt, ShoppingBag, Users, Pencil, Trash2
 } from 'lucide-react'
 import { EXPENSE_CATEGORIES, agentHasComptaAccess, expenseCategoryLabel } from '@/lib/constants/compta'
 import { useTranslation } from '@/lib/translation'
@@ -450,6 +450,37 @@ export default function AgentComptabilitePage() {
             fetchAllData()
         }
         setSavingSalaire(false)
+    }
+
+    // Suppression d'un paiement (notamment les doublons de paiements externes
+    // qui faussent la comptabilité)
+    const deletePaiement = async (id: string, libelle: string) => {
+        if (!confirm(`Supprimer ce paiement ?\n${libelle}\n\nCette action est définitive.`)) return
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/admin/paiements-manuels?id=${id}`, {
+            method: 'DELETE',
+            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) fetchAllData()
+        else alert(data.error || 'Suppression impossible')
+    }
+
+    // Édition rapide du montant d'un paiement
+    const editPaiementMontant = async (id: string, current: number) => {
+        const val = window.prompt('Nouveau montant (FCFA) :', String(Math.round(current)))
+        if (val === null) return
+        const montant = Number(val)
+        if (!isFinite(montant) || montant <= 0) { alert('Montant invalide'); return }
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/admin/paiements-manuels', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ id, montant }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) fetchAllData()
+        else alert(data.error || 'Modification impossible')
     }
 
     const handleAddPayment = async (e: React.FormEvent) => {
@@ -1016,7 +1047,15 @@ export default function AgentComptabilitePage() {
                                                     {new Date(p.date_paiement).toLocaleDateString('fr-FR')}
                                                 </td>
                                                 <td className="py-4 px-6 font-mono text-xs text-gray-400">
-                                                    {p.reference || '—'}
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="truncate">{p.reference || '—'}</span>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <button type="button" title="Modifier le montant" onClick={() => editPaiementMontant(p.id, p.montant)}
+                                                                className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><Pencil size={13} /></button>
+                                                            <button type="button" title="Supprimer ce paiement" onClick={() => deletePaiement(p.id, linkedDoc ? `Facture ${linkedDoc.numero}` : (cleanNotes || 'Paiement externe'))}
+                                                                className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={13} /></button>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )
