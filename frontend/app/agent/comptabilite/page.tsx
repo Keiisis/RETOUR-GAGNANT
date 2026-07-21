@@ -457,7 +457,7 @@ export default function AgentComptabilitePage() {
     const deletePaiement = async (id: string, libelle: string) => {
         if (!confirm(`Supprimer ce paiement ?\n${libelle}\n\nCette action est définitive.`)) return
         const { data: { session } } = await supabase.auth.getSession()
-        const res = await fetch(`/api/admin/paiements-manuels?id=${id}`, {
+        const res = await fetch(`/api/agent/paiements-manuels?id=${id}`, {
             method: 'DELETE',
             headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
         })
@@ -473,7 +473,7 @@ export default function AgentComptabilitePage() {
         const montant = Number(val)
         if (!isFinite(montant) || montant <= 0) { alert('Montant invalide'); return }
         const { data: { session } } = await supabase.auth.getSession()
-        const res = await fetch('/api/admin/paiements-manuels', {
+        const res = await fetch('/api/agent/paiements-manuels', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
             body: JSON.stringify({ id, montant }),
