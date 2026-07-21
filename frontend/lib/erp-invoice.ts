@@ -9,6 +9,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { nextDocumentNumber } from './document-numbering'
+import { classifyProposalPayment } from './proposal-classify'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -32,6 +33,13 @@ export async function createErpInvoiceForOrder(opts: {
         const { data: fullOrder } = await supabase
             .from('orders').select('*').eq('id', orderId).single()
         if (!fullOrder) return
+
+        // Commande issue d'une proposition / lien de paiement : classification
+        // UNIQUE et idempotente (jamais de facture « Boutique » ici → anti-doublon).
+        if (fullOrder.shipping_zone === 'proposal') {
+            await classifyProposalPayment(supabase, String(fullOrder.shipping_address || ''), fullOrder)
+            return
+        }
 
         const { data: eventReg } = await supabase
             .from('event_registrations')

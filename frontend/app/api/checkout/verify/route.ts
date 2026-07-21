@@ -5,6 +5,7 @@ import { rateLimit, getClientIp, rateLimitHeaders, VERIFY_LIMIT } from '@/lib/ra
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
 import { markClientConverted } from '@/lib/classement/track'
 import { nextDocumentNumber } from '@/lib/document-numbering'
+import { classifyProposalPayment } from '@/lib/proposal-classify'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -552,7 +553,12 @@ export async function POST(request: Request) {
                     .eq('id', order_id)
                     .single()
 
-                if (fullOrder) {
+                // Commande issue d'une proposition / lien de paiement : classification
+                // UNIQUE et idempotente (facture / boutique / paiement selon la catégorie)
+                // — surtout PAS de facture « Boutique en ligne » ici (source de doublons).
+                if (fullOrder && fullOrder.shipping_zone === 'proposal') {
+                    await classifyProposalPayment(supabase, String(fullOrder.shipping_address || ''), fullOrder)
+                } else if (fullOrder) {
                     // Déterminer la source (boutique ou événement)
                     const { data: eventReg } = await supabase
                         .from('event_registrations')

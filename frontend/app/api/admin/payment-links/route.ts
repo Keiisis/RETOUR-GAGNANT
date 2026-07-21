@@ -170,7 +170,7 @@ export async function DELETE(request: NextRequest) {
         // (sinon un ordre « en attente » orphelin reste visible en comptabilité
         //  Boutique après suppression du lien). Les commandes payées sont
         //  conservées (traçabilité) — mais un lien payé n'est pas supprimable.
-        await supabase.from('orders').delete().eq('product_id', id).neq('payment_status', 'completed')
+        await supabase.from('orders').delete().eq('shipping_address', id).eq('shipping_zone', 'proposal').neq('payment_status', 'completed')
         await supabase.from('ai_proposal_items').delete().eq('proposal_id', id)
         const { error } = await supabase.from('ai_client_proposals').delete().eq('id', id)
         if (error) throw error

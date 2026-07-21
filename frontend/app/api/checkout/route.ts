@@ -340,8 +340,12 @@ export async function POST(request: Request) {
                 cart_items: proposalSelection ?? (cart_items || []),
                 coupon_id: coupon_id || null,
                 shipping_country: shipping_country || null,
-                shipping_address: shipping_address || null,
-                shipping_zone: shipping_zone || null,
+                // Pour une proposition/lien de paiement : on marque la commande
+                // (shipping_zone='proposal') et on garde le lien vers la proposition
+                // (shipping_address = son id) — product_id a une FK vers products,
+                // inutilisable ici. Permet la classification unique en aval.
+                shipping_address: isProposalPayment ? String(product_id || '') : (shipping_address || null),
+                shipping_zone: isProposalPayment ? 'proposal' : (shipping_zone || null),
                 shipping_fee: validatedShippingFee, // Valeur clampée serveur, jamais celle du client
             })
             .select('id')

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { nextDocumentNumber } from '@/lib/document-numbering'
+import { classifyProposalPayment } from '@/lib/proposal-classify'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -49,90 +49,23 @@ export async function POST(req: Request) {
         const proposalCurrency = (proposal.currency || 'XOF').toUpperCase()
 
         // ═══════════════════════════════════════════════════════════
-        //  FIX CRITIQUE : Auto-génération Facture ERP
-        // Les revenus IA doivent apparaître dans documents_financiers
+        //  CLASSIFICATION UNIQUE (anti-doublon) selon la catégorie choisie
+        //  (Factures / Boutique / Paiements). Autorité partagée avec
+        //  checkout/verify et les webhooks (erp-invoice) → un seul
+        //  enregistrement comptable par proposition.
         // ═══════════════════════════════════════════════════════════
         try {
-            // Garde d'idempotence : éviter les doublons
-            const { data: existingInvoice } = await supabase
-                .from('documents_financiers')
-                .select('id')
-                .ilike('notes', `%Proposal: ${proposal_id.slice(0, 12)}%`)
+            const { data: linkedOrder } = await supabase
+                .from('orders')
+                .select('id, amount, currency')
+                .eq('shipping_address', proposal_id)
+                .eq('shipping_zone', 'proposal')
+                .order('created_at', { ascending: false })
+                .limit(1)
                 .maybeSingle()
-
-            if (!existingInvoice) {
-                // Récupérer les items de la proposition
-                const { data: proposalItems } = await supabase
-                    .from('ai_proposal_items')
-                    .select('*')
-                    .eq('proposal_id', proposal_id)
-                    .order('order_index', { ascending: true })
-
-                // Construire les items de facture à partir des items de la proposition
-                const invoiceItems = (proposalItems || [])
-                    .filter(item => item.type !== 'hero' && item.type !== 'pricing' && item.selling_price > 0)
-                    .map(item => ({
-                        description: `${item.title}${item.location ? ` — ${item.location}` : ''}`,
-                        quantity: 1,
-                        unit_price: item.selling_price || 0,
-                        unit_cost: item.original_price || 0,
-                        tva: 0,
-                    }))
-
-                // Si aucun item détaillé, créer un item global
-                if (invoiceItems.length === 0) {
-                    invoiceItems.push({
-                        description: `Proposition Voyage — ${proposal.destination}`,
-                        quantity: 1,
-                        unit_price: proposal.total_amount || 0,
-                        unit_cost: 0,
-                        tva: 0,
-                    })
-                }
-
-                const sousTotal = invoiceItems.reduce((sum, it) => sum + it.quantity * it.unit_price, 0)
-
-                // Numéro de facture séquentiel officiel (compteur atomique)
-                const invoiceNumero = await nextDocumentNumber(supabase, 'facture')
-
-                // Récupérer le taux de change actuel pour le verrouillage
-                let exchangeRate = 1
-                if (proposalCurrency !== 'XOF') {
-                    const { data: currencyData } = await supabase
-                        .from('currencies')
-                        .select('exchange_rate_to_base')
-                        .eq('code', proposalCurrency)
-                        .single()
-                    if (currencyData) exchangeRate = Number(currencyData.exchange_rate_to_base)
-                }
-
-                // Insérer la facture ERP
-                await supabase.from('documents_financiers').insert({
-                    type: 'facture',
-                    numero: invoiceNumero,
-                    client_nom: proposal.client_name || client_name || 'Client',
-                    client_prenom: '',
-                    client_email: proposal.client_email || client_email || '',
-                    client_phone: proposal.client_phone || '',
-                    client_adresse: '',
-                    currency: proposalCurrency,
-                    exchange_rate_applied: exchangeRate,
-                    items: invoiceItems,
-                    sous_total: sousTotal,
-                    total_tva: 0,
-                    remise: 0,
-                    total: proposal.total_amount || sousTotal,
-                    status: 'paye',
-                    notes: `Facture auto-générée — Proposition IA (Conciergerie)\nDestination: ${proposal.destination}\nProposal: ${proposal_id.slice(0, 12).toUpperCase()}\nClient: ${proposal.client_name || client_name || 'N/A'}`,
-                    conditions: 'Document généré automatiquement après paiement de la proposition IA.',
-                    validite: 'Acquittée',
-                })
-
-                console.log(`[ERP] Facture IA auto-générée: ${invoiceNumero} pour proposal ${proposal_id.slice(0, 8)}`)
-            }
+            await classifyProposalPayment(supabase, proposal_id, linkedOrder)
         } catch (erpErr) {
-            // Non-bloquant : le paiement est validé même si la facturation échoue
-            console.error('[ERP] Erreur auto-génération facture IA:', erpErr)
+            console.error('[ERP] classification proposition:', erpErr)
         }
 
         // ═══════════════════════════════════════════════════════════
