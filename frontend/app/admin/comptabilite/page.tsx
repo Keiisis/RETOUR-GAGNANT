@@ -489,7 +489,13 @@ export default function AdminComptabilitePage() {
             const jours         = Math.max(1, (end.getTime() - start.getTime()) / 864e5)
             const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
             const nbFactTotal   = invoices.length
-            return { encaisseFactu, boutique, totalEncaisse, enAttente, devisEnAttente, nbDevisAttente, commission, totalDeps, caEmis, totalTVA,
+            // Encaissement SUR FACTURES uniquement (pour le taux d'encaissement) :
+            // montant des factures effectivement payées — SANS les paiements
+            // externes (qui gonflaient le taux à 100% alors que peu de factures
+            // sont soldées).
+            const encaisseFactures = invoices.filter(d => d.status === 'paye')
+                .reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            return { encaisseFactu, encaisseFactures, boutique, totalEncaisse, enAttente, devisEnAttente, nbDevisAttente, commission, totalDeps, caEmis, totalTVA,
                      benefice: totalEncaisse - commission - totalDeps,
                      proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
@@ -535,7 +541,10 @@ export default function AdminComptabilitePage() {
     const scoreSante = useMemo(() => {
         // Plafonné à 100 : les paiements externes (sans facture émise) peuvent
         // dépasser le CA facturé — un taux > 100 % n'a pas de sens à l'affichage
-        const tauxEncaissement = kpis.caEmis > 0 ? Math.min(100, (kpis.encaisseFactu / kpis.caEmis) * 100) : 0
+        // Taux d'encaissement = montant des FACTURES payées / CA facturé émis
+        // (cohérent avec « X/Y factures payées » ; les paiements externes ne
+        // gonflent plus ce taux)
+        const tauxEncaissement = kpis.caEmis > 0 ? Math.min(100, (kpis.encaisseFactures / kpis.caEmis) * 100) : 0
         const tauxRentabilite  = kpis.totalEncaisse > 0 ? Math.max(0, (kpis.benefice / kpis.totalEncaisse)) * 100 : 0
         const nbOrders = pOrders.length
         const tauxConvOrders   = nbOrders > 0 ? (pOrders.filter(o => o.payment_status === 'completed').length / nbOrders) * 100 : 50
@@ -1463,14 +1472,13 @@ export default function AdminComptabilitePage() {
 
             {/* ── KPI GRID ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <KpiCard icon={BarChart3}     label="CA Émis (Factures)"    value={fmt(kpis.caEmis)}        color="#FCD116" sub={`${pDocs.filter(d => d.type === 'facture').length} factures`} />
-                <KpiCard icon={Wallet}        label="Total Encaissé"         value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation net + Boutique" highlight />
+                <KpiCard icon={BarChart3}     label="Factures émises"       value={fmt(kpis.caEmis)}        color="#FCD116" sub={`${pDocs.filter(d => d.type === 'facture').length} factures`} />
+                <KpiCard icon={Wallet}        label="Total Caisse Entrant"   value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation + Boutique + Paiements" highlight />
                 <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées`} />
                 <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures`} />
                 <KpiCard icon={FileText} label="Devis en attente" value={fmt(kpis.devisEnAttente)} color="#38bdf8" sub={`${kpis.nbDevisAttente} devis à valider — pipeline trésorerie`} />
-                <KpiCard icon={Users}         label={`Commissions (${(commissionRate * 100).toFixed(0)}%)`} value={fmt(kpis.commission)} color="#8b5cf6" sub="Sur encaissements nets" />
                 <KpiCard icon={TrendingDown}  label="Dépenses Totales"       value={fmt(kpis.totalDeps)}     color="#E8112D" sub={`${pDeps.length} dépenses`} />
-                <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après comm. et dépenses" />
+                <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après dépenses" />
                 <KpiCard icon={Target}        label="Projection 30 jours"    value={fmt(Math.round(kpis.proj30))} color="#FCD116" sub="Basée sur rythme actuel" />
             </div>
             {/* TVA + Signatures row */}
@@ -1853,16 +1861,20 @@ export default function AdminComptabilitePage() {
                                             </td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.created_at)}</td>
                                             <td className="p-4 pr-5 text-center" onClick={e => e.stopPropagation()}>
-                                                {d.type === 'facture' && solde !== null && solde > 0 && !periodLocked && (
-                                                    <button
-                                                        type="button"
-                                                        title="Enregistrer un paiement"
-                                                        onClick={() => { setPaymentDoc(d); setNewPayment(p => ({ ...p, montant: String(solde) })); setShowPaymentModal(true) }}
-                                                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all text-[9px] font-bold border border-emerald-500/20 whitespace-nowrap"
-                                                    >
-                                                        <Banknote size={11} /> Encaisser
-                                                    </button>
-                                                )}
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    <a href={`/portail/${d.id}`} target="_blank" rel="noopener noreferrer" title="Voir exactement comme le client le reçoit"
+                                                        className="p-1.5 rounded-lg text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition-all"><ExternalLink size={13} /></a>
+                                                    {d.type === 'facture' && solde !== null && solde > 0 && !periodLocked && (
+                                                        <button
+                                                            type="button"
+                                                            title="Enregistrer un paiement"
+                                                            onClick={() => { setPaymentDoc(d); setNewPayment(p => ({ ...p, montant: String(solde) })); setShowPaymentModal(true) }}
+                                                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-all text-[9px] font-bold border border-emerald-500/20 whitespace-nowrap"
+                                                        >
+                                                            <Banknote size={11} /> Encaisser
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )

@@ -7,7 +7,7 @@ import {
     FileText, Plus, Trash2, X, Loader2, Search,
     Download, Eye, Calculator, Receipt, Send,
     Phone, Mail, CheckCircle2, AlertCircle, Link as LinkIcon,
-    AlertTriangle, Bell, Clock, BadgeDollarSign
+    AlertTriangle, Bell, Clock, BadgeDollarSign, ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
@@ -116,28 +116,51 @@ export default function AgentDevisPage() {
 
     useEffect(() => { fetchDocuments() }, [fetchDocuments])
 
+    // En-tête d'auth (token session) pour les routes serveur
+    const authHeaders = async (): Promise<Record<string, string>> => {
+        const { data: { session } } = await supabase.auth.getSession()
+        return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+    }
+
     const handleDelete = async (id: string) => {
         if(!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
-        await supabase.from('documents_financiers').delete().eq('id', id)
-        setDocuments(prev => prev.filter(d => d.id !== id))
-        setShowPreview(null)
+        // Passage par l'API serveur (les DELETE directs sont bloqués par RLS)
+        const res = await fetch(`/api/agent/documents-financiers?id=${id}`, { method: 'DELETE', headers: await authHeaders() })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) {
+            setDocuments(prev => prev.filter(d => d.id !== id))
+            setShowPreview(null)
+        } else alert(data.error || 'Suppression impossible')
     }
 
     const handleUpdateStatus = async (id: string, status: string) => {
-        await supabase.from('documents_financiers').update({ status }).eq('id', id)
-        setDocuments(prev => prev.map(d => d.id === id ? { ...d, status } : d))
-        if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
+        const res = await fetch('/api/agent/documents-financiers', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+            body: JSON.stringify({ id, status }),
+        })
+        if (res.ok) {
+            setDocuments(prev => prev.map(d => d.id === id ? { ...d, status } : d))
+            if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
+        }
     }
 
     // Marquer une facture (produite manuellement) comme payée / impayée
     const toggleFacturePaid = async (doc: DocumentFinancier) => {
         const nowPaid = doc.status !== 'paye'
-        const patch = nowPaid
-            ? { status: 'paye', payment_method: 'manuel', paid_at: new Date().toISOString() }
-            : { status: 'envoye', paid_at: null }
-        await supabase.from('documents_financiers').update(patch).eq('id', doc.id)
-        setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...patch } : d))
-        if (showPreview?.id === doc.id) setShowPreview(prev => prev ? { ...prev, ...patch } : null)
+        const res = await fetch('/api/agent/documents-financiers', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+            body: JSON.stringify({ id: doc.id, action: nowPaid ? 'mark_paid' : 'mark_unpaid' }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) {
+            const patch = nowPaid
+                ? { status: 'paye', payment_method: 'manuel', paid_at: new Date().toISOString() }
+                : { status: 'envoye', paid_at: null }
+            setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...patch } : d))
+            if (showPreview?.id === doc.id) setShowPreview(prev => prev ? { ...prev, ...patch } : null)
+        } else alert(data.error || 'Opération impossible')
     }
 
     const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
@@ -817,6 +840,7 @@ export default function AgentDevisPage() {
                                                 <LinkIcon size={16} />
                                             </button>
                                             <button onClick={() => setShowPreview(doc)} className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-all" title="Aperçu / Modifier"><Eye size={16} /></button>
+                                            <a href={`/portail/${doc.id}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-purple-400 hover:bg-white/5 rounded-lg transition-all inline-flex" title="Voir exactement comme le client le reçoit"><ExternalLink size={16} /></a>
                                             <button onClick={() => generatePDF(doc)} disabled={generating} className="p-2 text-gray-400 hover:text-blue-400 hover:bg-white/5 rounded-lg transition-all" title="Télécharger PDF">
                                                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                             </button>
