@@ -39,10 +39,13 @@ export async function GET(request: NextRequest) {
             .select('id,titre,categorie,montant,date_depense,agent_id,notes')
             .order('date_depense', { ascending: false })
             .limit(5000),
+        // Source de vérité du taux de commission : system_settings/comptabilite_erp
+        // (c'est là que l'écran Admin > Paramètres ERP l'enregistre). On lit AUSSI
+        // l'ancienne clé settings.commission_rate en secours.
         supabase
-            .from('settings')
-            .select('key,value')
-            .eq('key', 'commission_rate')
+            .from('system_settings')
+            .select('value')
+            .eq('id', 'comptabilite_erp')
             .maybeSingle(),
         supabase
             .from('paiements_manuels')
@@ -59,15 +62,14 @@ export async function GET(request: NextRequest) {
             .order('periode', { ascending: false }),
     ])
 
-    // Validation commissionRate : doit être entre 0 et 1 (pas un % comme 10)
+    // Taux de commission : lu depuis system_settings/comptabilite_erp (JSON
+    // { commission_rate }). Peut valoir 0 (aucune commission). Validation 0..1.
     let commissionRate = 0.10
-    if (settingsRes.data?.value) {
-        const raw = parseFloat(settingsRes.data.value)
-        if (!isNaN(raw)) {
-            // Si valeur > 1, c'est un pourcentage → diviser par 100
-            commissionRate = raw > 1 ? raw / 100 : raw
-            commissionRate = Math.max(0, Math.min(1, commissionRate))
-        }
+    const erpVal = settingsRes.data?.value as { commission_rate?: number } | null | undefined
+    if (erpVal && typeof erpVal.commission_rate === 'number' && !isNaN(erpVal.commission_rate)) {
+        const raw = erpVal.commission_rate
+        commissionRate = raw > 1 ? raw / 100 : raw
+        commissionRate = Math.max(0, Math.min(1, commissionRate))
     }
 
     return NextResponse.json({

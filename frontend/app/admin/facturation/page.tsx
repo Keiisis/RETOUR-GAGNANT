@@ -124,17 +124,22 @@ export default function AdminFacturationPage() {
     }
 
     const fetchDocuments = useCallback(async () => {
-        const { data } = await supabase
-            .from('documents_financiers')
-            .select(`*, agent:agent_id(email)`)
-            .order('created_at', { ascending: false })
-            
-        // Map agent email if joined
+        // NB : PAS de join `agent:agent_id(email)` — il n'existe aucune relation
+        // FK entre documents_financiers.agent_id et une table joignable par
+        // PostgREST → la requête échouait et l'admin ne voyait AUCUNE facture
+        // (y compris celles émises par les agents comme Ornel). On récupère les
+        // documents seuls, puis on mappe l'email de l'agent séparément.
+        const [{ data, error }, usersRes] = await Promise.all([
+            supabase.from('documents_financiers').select('*').order('created_at', { ascending: false }),
+            fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }).catch(() => ({ users: [] })),
+        ])
+        if (error) console.error('[facturation] chargement documents:', error.message)
+        const emailById: Record<string, string> = {}
+        for (const u of (usersRes.users || [])) emailById[u.id] = u.email || u.full_name || ''
         const mapped = (data || []).map(d => ({
             ...d,
-            agent_email: d.agent?.email || 'N/A'
+            agent_email: emailById[d.agent_id] || 'N/A',
         }))
-        
         setDocuments(mapped as DocumentFinancier[])
         setLoading(false)
     }, [])

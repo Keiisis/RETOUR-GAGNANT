@@ -334,8 +334,9 @@ function AdminLayoutContent({
 
                 {/* ═══════════ MAIN CONTENT ═══════════ */}
                 <main className="flex-1 flex flex-col overflow-hidden relative">
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                    {/* Background Pattern — halos décoratifs (quasi invisibles en
+                        mode clair via .admin-bg-glow pour éviter toute sensation de voile) */}
+                    <div className="admin-bg-glow absolute inset-0 z-0 pointer-events-none overflow-hidden">
                         <div className="absolute top-[20%] left-[30%] w-[800px] h-[800px] bg-[#008751]/5 rounded-full blur-[150px]" />
                         <div className="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] bg-[#E8112D]/5 rounded-full blur-[120px]" />
                     </div>

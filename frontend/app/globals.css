@@ -663,6 +663,10 @@
    This avoids editing hundreds of TSX dashboard files.
    ═══════════════════════════════════════════════════════ */
 
+/* Halos décoratifs de fond (admin) : en mode clair, on les réduit fortement
+   pour supprimer toute sensation de voile/flou sur les tableaux de bord. */
+[data-theme="light"] .admin-bg-glow { opacity: 0.25; }
+
 /* --- TEXT COLOR OVERRIDES --- */
 /* On NE flippe PAS le texte des éléments posés sur un fond explicitement
    sombre (slate-900/800/950) : ce sont des îlots sombres volontaires

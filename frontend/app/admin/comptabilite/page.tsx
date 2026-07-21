@@ -425,9 +425,11 @@ export default function AdminComptabilitePage() {
             // conversion de devis, facture manuelle) est SOLDÉE même sans ligne
             // dans paiements_manuels — sinon le journal affiche un faux solde,
             // un faux bouton « Encaisser » et de fausses « factures non soldées ».
-            for (const d of (erpRes.docs || []) as Array<{ id: string; type: string; status: string; total: number }>) {
+            for (const d of (erpRes.docs || []) as Array<{ id: string; type: string; status: string; total: number; currency?: string }>) {
                 if (d.type === 'facture' && d.status === 'paye') {
-                    map[d.id] = Math.max(map[d.id] || 0, Number(d.total) || 0)
+                    // Seedé en XOF (comme les vrais paiements) pour rester cohérent
+                    // quelle que soit la devise du document (EUR/USD/XOF)
+                    map[d.id] = Math.max(map[d.id] || 0, toXOF(Number(d.total) || 0, d.currency))
                 }
             }
             setPaiements(map)
