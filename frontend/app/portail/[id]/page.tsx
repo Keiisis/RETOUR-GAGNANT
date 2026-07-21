@@ -854,15 +854,15 @@ export default function ClientPortalPage() {
 
 
     if (loading) {
-        return <div className="min-h-screen bg-[#060a10] flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>
+        return <div className="min-h-screen bg-[#F4F7F5] flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>
     }
 
     if (error || !doc) {
         return (
-            <div className="min-h-screen bg-[#060a10] flex flex-col items-center justify-center text-center p-6">
+            <div className="min-h-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-center p-6">
                 <ShieldCheck size={48} className="text-red-500 mb-4 opacity-50" />
-                <h1 className="text-2xl font-black text-white mb-2">Document Sécurisé</h1>
-                <p className="text-gray-400 max-w-sm">{error || "Ce document n'est plus disponible ou vous n'y avez pas accès."}</p>
+                <h1 className="text-2xl font-black text-slate-900 mb-2">Document Sécurisé</h1>
+                <p className="text-slate-500 max-w-sm">{error || "Ce document n'est plus disponible ou vous n'y avez pas accès."}</p>
             </div>
         )
     }
@@ -872,12 +872,12 @@ export default function ClientPortalPage() {
     // Facture émise manuellement (preuve d'un paiement déjà reçu) :
     // pas issue d'un devis signé → aucun bouton de paiement à afficher
     const isManualFacture = doc.type === 'facture' && !doc.parent_devis_id
-    const statusColor = isPaid ? 'text-emerald-400 bg-emerald-500/10' : 
-                       isAccepted ? 'text-emerald-400 bg-emerald-500/10' : 
-                       'text-blue-400 bg-blue-500/10'
+    const statusColor = isPaid ? 'text-emerald-600 bg-emerald-500/10' : 
+                       isAccepted ? 'text-emerald-600 bg-emerald-500/10' : 
+                       'text-blue-600 bg-blue-500/10'
 
     return (
-        <div className="min-h-screen bg-[#060a10] text-gray-300 font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-[#F4F7F5] text-slate-600 font-sans selection:bg-emerald-500/30">
             {/* INJECTION FEDAPAY SCRIPT */}
             <Script src="https://checkout.fedapay.com/js/checkout.js" strategy="lazyOnload" />
 
@@ -893,29 +893,29 @@ export default function ClientPortalPage() {
                 {/* Header Portail */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-white/10 shadow-lg overflow-hidden relative">
+                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-slate-200 shadow-lg overflow-hidden relative">
                             <Image src="/images/logo-transparent.png" alt="Logo Retour Gagnant" width={48} height={48} className="object-contain" />
                         </div>
                         <div>
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 mb-2">
                                 <ShieldCheck size={16} className="text-emerald-500" />
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Espace Client Sécurisé</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Espace Client Sécurisé</span>
                             </motion.div>
-                            <h1 className="text-3xl font-black text-white tracking-tight">
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
                                 RETOUR GAGNANT <span className="text-emerald-500">BÉNIN</span>
                             </h1>
-                            <p className="text-sm text-gray-500 mt-1">Agence de Conciergerie & Services Internationaux</p>
+                            <p className="text-sm text-slate-500 mt-1">Agence de Conciergerie & Services Internationaux</p>
                         </div>
                     </div>
 
-                    <div className="text-left md:text-right bg-white/5 border border-white/10 p-4 rounded-2xl md:min-w-[200px]">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                    <div className="text-left md:text-right bg-slate-50 border border-slate-200 p-4 rounded-2xl md:min-w-[200px]">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
                             {doc.type === 'devis' ? 'Devis Pro-forma' : 'Facture Officielle'}
                         </p>
-                        <p className="text-xl font-black text-white font-mono break-all">{doc.numero}</p>
-                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/5">
+                        <p className="text-xl font-black text-slate-900 font-mono break-all">{doc.numero}</p>
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200">
                             <div className={`w-2 h-2 rounded-full ${(isPaid || (doc.type === 'facture' && doc.status === 'envoye')) ? 'bg-emerald-400' : isAccepted ? 'bg-emerald-400' : 'bg-blue-400 animate-pulse'}`}></div>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${(isPaid || (doc.type === 'facture' && doc.status === 'envoye')) ? 'text-emerald-400 bg-emerald-500/10' : statusColor.split(' ')[0]}`}>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${(isPaid || (doc.type === 'facture' && doc.status === 'envoye')) ? 'text-emerald-600 bg-emerald-500/10' : statusColor.split(' ')[0]}`}>
                                 {doc.status === 'paye' || (doc.type === 'facture' && doc.status === 'envoye') ? 'ACQUITTEE' : doc.status}
                             </span>
                         </div>
@@ -926,12 +926,12 @@ export default function ClientPortalPage() {
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.98 }} 
                     animate={{ opacity: 1, scale: 1 }} 
-                    className="bg-[#0c1420] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative"
+                    className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl relative"
                 >
                     {/* Watermark */}
                     {(isPaid || doc.status === 'brouillon' || doc.type === 'facture') && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 opacity-5">
-                            <p className="text-[150px] font-black italic transform -rotate-45 text-white blur-[2px]">
+                            <p className="text-[150px] font-black italic transform -rotate-45 text-slate-900 blur-[2px]">
                                 {doc.status === 'paye' || (doc.type === 'facture' && doc.status === 'envoye') ? 'ACQUITTEE' : doc.status.toUpperCase()}
                             </p>
                         </div>
@@ -945,44 +945,44 @@ export default function ClientPortalPage() {
                                     <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm overflow-hidden relative">
                                         <Image src="/images/logo-transparent.png" alt="Logo" width={48} height={48} className="object-contain" />
                                     </div>
-                                    <p className="text-white font-bold text-xl leading-tight">RETOUR GAGNANT <br/><span className="text-xs text-emerald-400 font-normal tracking-[0.2em]">BÉNIN</span></p>
+                                    <p className="text-slate-900 font-bold text-xl leading-tight">RETOUR GAGNANT <br/><span className="text-xs text-emerald-600 font-normal tracking-[0.2em]">BÉNIN</span></p>
                                 </div>
-                                <div className="text-sm text-gray-400 mt-2 space-y-1">
+                                <div className="text-sm text-slate-500 mt-2 space-y-1">
                                     <p>RCCM: RB/COT/26 B 42001</p>
                                     <p>IFU: 3202644573981</p>
                                 </div>
                             </div>
-                            <div className="bg-white/[0.03] p-5 rounded-2xl border border-white/5 md:w-1/2">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Destinataire (Client)</p>
-                                <p className="text-lg text-white font-bold">{doc.client_nom} {doc.client_prenom}</p>
-                                <div className="text-sm text-gray-400 mt-2 space-y-1">
-                                    {doc.client_email && <p className="flex items-center gap-2"><Mail size={14} className="text-gray-500"/> {doc.client_email}</p>}
-                                    {doc.client_phone && <p className="flex items-center gap-2"><Phone size={14} className="text-gray-500"/> {doc.client_phone}</p>}
-                                    {doc.client_adresse && <p className="mt-2 text-xs border-t border-white/10 pt-2">{doc.client_adresse}</p>}
+                            <div className="bg-white/[0.03] p-5 rounded-2xl border border-slate-200 md:w-1/2">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Destinataire (Client)</p>
+                                <p className="text-lg text-slate-900 font-bold">{doc.client_nom} {doc.client_prenom}</p>
+                                <div className="text-sm text-slate-500 mt-2 space-y-1">
+                                    {doc.client_email && <p className="flex items-center gap-2"><Mail size={14} className="text-slate-500"/> {doc.client_email}</p>}
+                                    {doc.client_phone && <p className="flex items-center gap-2"><Phone size={14} className="text-slate-500"/> {doc.client_phone}</p>}
+                                    {doc.client_adresse && <p className="mt-2 text-xs border-t border-slate-200 pt-2">{doc.client_adresse}</p>}
                                 </div>
                             </div>
                         </div>
 
                         {/* Table */}
-                        <div className="overflow-x-auto w-full mb-8 rounded-2xl border border-white/5">
+                        <div className="overflow-x-auto w-full mb-8 rounded-2xl border border-slate-200">
                             <table className="w-full text-left border-collapse min-w-full">
                                 <thead>
-                                    <tr className="bg-white/[0.02] border-b border-white/5">
-                                        <th className="py-4 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Description</th>
-                                        <th className="py-4 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Qté</th>
-                                        <th className="py-4 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">PU HT</th>
-                                        <th className="py-4 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">TVA</th>
-                                        <th className="py-4 px-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Total HT</th>
+                                    <tr className="bg-white/[0.02] border-b border-slate-200">
+                                        <th className="py-4 px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</th>
+                                        <th className="py-4 px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Qté</th>
+                                        <th className="py-4 px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">PU HT</th>
+                                        <th className="py-4 px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">TVA</th>
+                                        <th className="py-4 px-5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Total HT</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {doc.items.map((it, i) => (
-                                        <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.01]">
-                                            <td className="py-4 px-3 md:px-5 text-sm text-gray-300 min-w-[150px]">{it.description}</td>
-                                            <td className="py-4 px-5 text-sm text-gray-400 text-center">{it.quantity}</td>
-                                            <td className="py-4 px-5 text-sm text-gray-400 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
-                                            <td className="py-4 px-5 text-sm text-gray-400 text-right">{it.tva}%</td>
-                                            <td className="py-4 px-5 text-sm text-white font-mono text-right">{(it.quantity * it.unit_price).toLocaleString('fr-FR')}</td>
+                                        <tr key={i} className="border-b border-slate-200 last:border-0 hover:bg-white/[0.01]">
+                                            <td className="py-4 px-3 md:px-5 text-sm text-slate-600 min-w-[150px]">{it.description}</td>
+                                            <td className="py-4 px-5 text-sm text-slate-500 text-center">{it.quantity}</td>
+                                            <td className="py-4 px-5 text-sm text-slate-500 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
+                                            <td className="py-4 px-5 text-sm text-slate-500 text-right">{it.tva}%</td>
+                                            <td className="py-4 px-5 text-sm text-slate-900 font-mono text-right">{(it.quantity * it.unit_price).toLocaleString('fr-FR')}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -992,8 +992,8 @@ export default function ClientPortalPage() {
                         {/* Totals & Conditions */}
                         <div className="flex flex-col lg:flex-row justify-between gap-8 mb-8">
                             <div className="lg:w-1/2">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Conditions Générales & Validité</p>
-                                <p className="text-xs text-gray-400 bg-white/5 p-4 rounded-xl border border-white/5 whitespace-pre-wrap leading-relaxed">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Conditions Générales & Validité</p>
+                                <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200 whitespace-pre-wrap leading-relaxed">
                                     {doc.conditions}
                                     {doc.type === 'devis' && (
                                         <>
@@ -1004,30 +1004,30 @@ export default function ClientPortalPage() {
                                 </p>
                             </div>
                             <div className="lg:w-1/2 lg:max-w-xs ml-auto space-y-3">
-                                <div className="flex justify-between items-center text-sm text-gray-400 border-b border-white/5 pb-3">
+                                <div className="flex justify-between items-center text-sm text-slate-500 border-b border-slate-200 pb-3">
                                     <span>Sous-total HT</span>
                                     <span className="font-mono">{((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.sous_total) : doc.sous_total).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm text-gray-400 border-b border-white/5 pb-3">
+                                <div className="flex justify-between items-center text-sm text-slate-500 border-b border-slate-200 pb-3">
                                     <span>TVA</span>
                                     <span className="font-mono">+ {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total_tva) : doc.total_tva).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
                                 {doc.remise > 0 && (
-                                    <div className="flex justify-between items-center text-sm text-amber-500 border-b border-white/5 pb-3">
+                                    <div className="flex justify-between items-center text-sm text-amber-500 border-b border-slate-200 pb-3">
                                         <span>Remise appliquée</span>
                                         <span className="font-mono">- {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.remise) : doc.remise).toLocaleString('fr-FR')} {doc.currency}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center pt-2">
-                                    <span className="text-sm font-bold text-white uppercase tracking-wider">Total TTC</span>
+                                    <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">Total TTC</span>
                                     <div className="text-right space-y-1">
                                         {/* Montant officiel du document : TOUJOURS dans la devise
                                             d'émission — la conversion n'est qu'indicative dessous */}
-                                        <div className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">
+                                        <div className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">
                                             {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total) : doc.total).toLocaleString('fr-FR')} {doc.currency || 'XOF'}
                                         </div>
                                         {selectedCurrency !== (doc.currency || 'XOF') && (
-                                            <div className="text-[10px] text-gray-500">
+                                            <div className="text-[10px] text-slate-500">
                                                 soit environ {formatPriceWithMargin(doc.total, selectedCurrency)}
                                             </div>
                                         )}
@@ -1049,8 +1049,8 @@ export default function ClientPortalPage() {
                                 {/* Side A: Client Signature */}
                                 {doc.type !== 'facture' && (
                                     <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl">
-                                        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3">Signature du Client (Approbation)</p>
-                                        <div className="bg-white/90 h-56 rounded-xl flex flex-col items-center justify-center p-4 border border-emerald-500/10">
+                                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3">Signature du Client (Approbation)</p>
+                                        <div className="bg-white h-56 rounded-xl flex flex-col items-center justify-center p-4 border border-emerald-500/10">
                                             {signatureUrl ? (
                                                 <>
                                                     <Image src={signatureUrl} alt="Signature Client" width={250} height={120} className="h-4/5 w-auto object-contain pointer-events-none mb-2" />
@@ -1058,7 +1058,7 @@ export default function ClientPortalPage() {
                                                 </>
                                             ) : (
                                                 <div className="text-center">
-                                                    <p className="text-xs text-gray-400 italic mb-2">Signature en attente</p>
+                                                    <p className="text-xs text-slate-500 italic mb-2">Signature en attente</p>
                                                     <p className="text-gray-900 font-bold text-sm uppercase opacity-50">{doc.client_prenom} {doc.client_nom}</p>
                                                 </div>
                                             )}
@@ -1074,10 +1074,10 @@ export default function ClientPortalPage() {
 
                                 {/* Side B: PDG Stamp & Sign */}
                                 <div className={`${doc.type === 'facture' ? 'md:col-span-2 max-w-md mx-auto w-full' : ''} bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl relative text-gray-900`}>
-                                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">Cachet & Signature Direction</p>
-                                    <div className="bg-white/90 h-56 rounded-xl flex items-center justify-center p-4 relative">
+                                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-3">Cachet & Signature Direction</p>
+                                    <div className="bg-white h-56 rounded-xl flex items-center justify-center p-4 relative">
                                         <div className="text-center z-10">
-                                            <p className="text-[10px] text-gray-400 font-bold mb-1">RETOUR GAGNANT BÉNIN</p>
+                                            <p className="text-[10px] text-slate-500 font-bold mb-1">RETOUR GAGNANT BÉNIN</p>
                                             <p className="text-[9px] text-emerald-600 font-black uppercase">La Présidente Directrice Générale</p>
                                             <p className="text-sm text-gray-900 font-bold mt-1">Nathalie RIFFERT GERMANY</p>
                                         </div>
@@ -1099,11 +1099,11 @@ export default function ClientPortalPage() {
                         {/* Extra Info (Auto Facture) */}
                         {signatureUrl && doc.type === 'devis' && factureNumero && (
                                     <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex items-center gap-3">
-                                        <Receipt size={20} className="text-amber-400 flex-shrink-0" />
+                                        <Receipt size={20} className="text-amber-600 flex-shrink-0" />
                                         <div>
-                                            <p className="text-sm font-bold text-amber-400">Facture générée automatiquement</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                                Numéro de facture : <span className="font-mono text-white font-bold">{factureNumero}</span>
+                                            <p className="text-sm font-bold text-amber-600">Facture générée automatiquement</p>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                Numéro de facture : <span className="font-mono text-slate-900 font-bold">{factureNumero}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -1149,7 +1149,7 @@ export default function ClientPortalPage() {
                         <button 
                             onClick={generatePDF}
                             disabled={generating}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-gray-300 hover:text-white px-6 py-4 rounded-2xl font-bold transition-all hover:bg-white/10 disabled:opacity-50"
+                            className="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 px-6 py-4 rounded-2xl font-bold transition-all hover:bg-slate-100 disabled:opacity-50"
                         >
                             {generating ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                             {generating ? 'Génération...' : 'Télécharger le PDF'}
@@ -1163,18 +1163,18 @@ export default function ClientPortalPage() {
                 <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 border border-blue-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center flex-shrink-0">
-                            <ShieldCheck size={18} className="text-blue-400" />
+                            <ShieldCheck size={18} className="text-blue-600" />
                         </div>
                         <div>
                             {clientSession ? (
                                 <>
-                                    <p className="font-black text-white text-sm">Vous êtes connecté</p>
-                                    <p className="text-gray-400 text-[12px]">{clientSession.user?.email}</p>
+                                    <p className="font-black text-slate-900 text-sm">Vous êtes connecté</p>
+                                    <p className="text-slate-500 text-[12px]">{clientSession.user?.email}</p>
                                 </>
                             ) : (
                                 <>
-                                    <p className="font-black text-white text-sm">Accédez à votre espace client</p>
-                                    <p className="text-gray-400 text-[12px]">Suivez tous vos dossiers, documents et rendez-vous depuis un seul espace sécurisé.</p>
+                                    <p className="font-black text-slate-900 text-sm">Accédez à votre espace client</p>
+                                    <p className="text-slate-500 text-[12px]">Suivez tous vos dossiers, documents et rendez-vous depuis un seul espace sécurisé.</p>
                                 </>
                             )}
                         </div>
@@ -1188,7 +1188,7 @@ export default function ClientPortalPage() {
                         ) : (
                             <>
                                 <a href={`/client/login?email=${encodeURIComponent(doc?.client_email || '')}&from=/portail/${id}`}
-                                    className="px-4 h-9 rounded-xl bg-white/[0.06] border border-white/[0.1] hover:border-blue-500/30 text-white text-sm font-bold flex items-center transition-colors">
+                                    className="px-4 h-9 rounded-xl bg-white/[0.06] border border-white/[0.1] hover:border-blue-500/30 text-slate-900 text-sm font-bold flex items-center transition-colors">
                                     Se connecter
                                 </a>
                                 <a href={`/client/register?email=${encodeURIComponent(doc?.client_email || '')}&from=/portail/${id}`}
@@ -1206,18 +1206,18 @@ export default function ClientPortalPage() {
                 {signing && (
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+                        className="fixed inset-0 z-50 bg-[#F4F7F5]/90 backdrop-blur-md flex items-center justify-center p-4"
                     >
                         <motion.div 
                             initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                            className="bg-[#0c1420] border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative"
+                            className="bg-[#F4F7F5] border border-slate-200 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative"
                         >
-                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-white/[0.02]">
                                 <div>
-                                    <h3 className="text-xl font-black text-white">Signature Numérique</h3>
-                                    <p className="text-xs text-gray-400 mt-1">Dessinez votre signature dans le cadre ci-dessous.</p>
+                                    <h3 className="text-xl font-black text-slate-900">Signature Numérique</h3>
+                                    <p className="text-xs text-slate-500 mt-1">Dessinez votre signature dans le cadre ci-dessous.</p>
                                 </div>
-                                <button onClick={() => setSigning(false)} title="Fermer" className="text-gray-500 hover:text-white bg-white/5 p-2 rounded-xl">
+                                <button onClick={() => setSigning(false)} title="Fermer" className="text-slate-500 hover:text-slate-900 bg-slate-50 p-2 rounded-xl">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -1226,7 +1226,7 @@ export default function ClientPortalPage() {
                                 <div className="bg-white rounded-2xl shadow-inner border-[3px] border-emerald-500/30 overflow-hidden relative touch-none">
                                     {/* Ligne pointillée pour guider */}
                                     <div className="absolute top-[70%] left-8 right-8 h-px border-b-2 border-dashed border-gray-200 pointer-events-none"></div>
-                                    <span className="absolute bottom-4 right-6 text-gray-300 font-bold text-xs pointer-events-none select-none italic">
+                                    <span className="absolute bottom-4 right-6 text-slate-600 font-bold text-xs pointer-events-none select-none italic">
                                         Signez au-dessus de la ligne
                                     </span>
 
@@ -1246,7 +1246,7 @@ export default function ClientPortalPage() {
                                 </div>
                                 
                                 <div className="flex justify-between items-center mt-4">
-                                    <button onClick={clearSignature} className="text-sm font-bold text-gray-400 hover:text-white px-4 py-2">
+                                    <button onClick={clearSignature} className="text-sm font-bold text-slate-500 hover:text-slate-900 px-4 py-2">
                                         Effacer
                                     </button>
                                     <button 
@@ -1269,26 +1269,26 @@ export default function ClientPortalPage() {
                 {showPaymentMethods && (
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[60] bg-[#F4F7F5]/90 backdrop-blur-md flex items-center justify-center p-4"
                     >
                         <motion.div 
                             initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                            className="bg-[#0f172a] border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
+                            className="bg-[#F4F7F5] border border-slate-200 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
                         >
-                            <div className="p-6 border-b border-white/5">
+                            <div className="p-6 border-b border-slate-200">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xl font-black text-white flex items-center gap-3">
-                                        <CreditCard className="text-amber-400" />
+                                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                        <CreditCard className="text-amber-600" />
                                         Moyen de paiement
                                     </h3>
-                                    <button onClick={() => setShowPaymentMethods(false)} title="Fermer" className="p-2 text-gray-500 hover:text-white transition-colors">
+                                    <button onClick={() => setShowPaymentMethods(false)} title="Fermer" className="p-2 text-slate-500 hover:text-slate-900 transition-colors">
                                         <X size={20} />
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-xs text-gray-500">Montant à payer</p>
-                                        <p className="text-lg font-black text-emerald-400 font-mono">
+                                        <p className="text-xs text-slate-500">Montant à payer</p>
+                                        <p className="text-lg font-black text-emerald-600 font-mono">
                                             {selectedCurrency === 'XOF'
                                                 ? `${doc.total.toLocaleString('fr-FR')} XOF`
                                                 : formatPriceWithMargin(doc.total, selectedCurrency)
@@ -1315,21 +1315,21 @@ export default function ClientPortalPage() {
                                             else if (p.id === 'kkiapay') handleKkiapay()
                                             else if (p.id === 'zeyow') handleZeyow()
                                         }}
-                                        className="w-full flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group text-left"
+                                        className="w-full flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-slate-200 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group text-left"
                                     >
                                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${p.color}`}>
                                             <CreditCard size={22} />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">{p.name}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p>
+                                            <p className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors">{p.name}</p>
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">{p.subtitle}</p>
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-white transition-colors" />
+                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-slate-900 transition-colors" />
                                     </button>
                                 ))}
 
                                 {paymentError && (
-                                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-400 text-xs">
+                                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-600 text-xs">
                                         <AlertCircle size={14} className="flex-shrink-0" />
                                         {paymentError}
                                     </div>

@@ -99,9 +99,9 @@ const slideVariants = {
 // ─── Stat card ────────────────────────────────────────────────
 function StatCard({ label, value, accent }: { label: string; value: string; accent: string }) {
     return (
-        <div className="flex-1 min-w-0 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4">
+        <div className="flex-1 min-w-0 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-2xl p-3 md:p-4">
             <p className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] font-bold mb-1" style={{ color: accent + 'aa' }}>{label}</p>
-            <p className="text-white font-black text-xs md:text-sm truncate leading-tight">{value}</p>
+            <p className="text-slate-900 font-black text-xs md:text-sm truncate leading-tight">{value}</p>
         </div>
     )
 }
@@ -172,7 +172,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     // ─── Loading ──────────────────────────────────────────────
     if (loading) {
         return (
-            <div className="h-[100dvh] w-screen bg-[#050D1A] flex flex-col items-center justify-center gap-6">
+            <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center gap-6">
                 <div className="relative">
                     <div className="absolute -inset-6 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full blur-3xl opacity-25 animate-pulse" />
                     <Loader2 className="w-16 h-16 text-[#FCD116] animate-spin relative z-10" />
@@ -184,10 +184,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
     if (!proposal || items.length === 0) {
         return (
-            <div className="h-[100dvh] w-screen bg-[#050D1A] flex flex-col items-center justify-center text-white p-6 text-center">
+            <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-slate-900 p-6 text-center">
                 <Shield size={44} className="mb-6 text-[#FCD116]" />
                 <h1 className="text-2xl font-black mb-3">Proposition introuvable</h1>
-                <p className="text-slate-400 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-[#FCD116] font-bold">Retour Gagnant</span>.</p>
+                <p className="text-slate-500 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-[#FCD116] font-bold">Retour Gagnant</span>.</p>
             </div>
         )
     }
@@ -211,7 +211,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     const clientInitials = proposal.client_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
     return (
-        <div className="h-[100dvh] w-screen bg-[#050D1A] text-white overflow-hidden relative select-none flex flex-col" style={{ perspective: '1200px' }}>
+        <div className="h-[100dvh] w-screen bg-[#F4F7F5] text-slate-900 overflow-hidden relative select-none flex flex-col" style={{ perspective: '1200px' }}>
 
             {/* ═══ BACKGROUND ═══ */}
             <AnimatePresence mode="wait" custom={direction}>
@@ -230,8 +230,8 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={currentItem.image_url} alt="" className="w-full h-full object-cover object-center" />
                             {/* Strong gradient from bottom for text readability */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#050D1A] via-[#050D1A]/80 to-[#050D1A]/30" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#050D1A]/60 via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/70 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/50 via-transparent to-transparent" />
                         </>
                     ) : currentItem.type === 'hero' ? (
                         <div className="absolute inset-0">
@@ -254,7 +254,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
             {/* ═══ PROGRESS BAR ═══ */}
             <div className="absolute top-0 left-0 right-0 z-50 h-[3px]">
-                <div className="h-full bg-white/5" />
+                <div className="h-full bg-slate-50" />
                 <motion.div
                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]"
                     animate={{ width: `${progress}%` }}
@@ -271,16 +271,16 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         <p className="text-[8px] font-black uppercase tracking-[0.25em] drop-shadow-md">
                             <span className="text-[#008751]">Retour</span> <span className="text-[#FCD116]">Gagnant</span> <span className="text-[#E8112D]">Bénin</span>
                         </p>
-                        <p className="font-bold text-white/80 text-[11px] drop-shadow-md truncate max-w-[140px]">{proposal.client_name}</p>
+                        <p className="font-bold text-slate-900/80 text-[11px] drop-shadow-md truncate max-w-[140px]">{proposal.client_name}</p>
                     </div>
                 </div>
 
                 {/* Dots — mobile (centered) */}
                 <div className="flex sm:hidden fixed top-3.5 inset-x-0 justify-center pointer-events-auto z-50">
-                    <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10">
+                    <div className="flex items-center gap-1.5 bg-slate-1005 backdrop-blur-xl px-3 py-1.5 rounded-full border border-slate-200">
                         {items.map((_, i) => (
                             <button key={i} title={`Slide ${i + 1}`} onClick={() => goToSlide(i)}
-                                className={`rounded-full transition-all duration-300 ${i === currentSlide ? 'w-5 h-1.5 bg-gradient-to-r from-[#008751] to-[#FCD116]' : i < currentSlide ? 'w-1.5 h-1.5 bg-[#008751]/70' : 'w-1.5 h-1.5 bg-white/25'}`}
+                                className={`rounded-full transition-all duration-300 ${i === currentSlide ? 'w-5 h-1.5 bg-gradient-to-r from-[#008751] to-[#FCD116]' : i < currentSlide ? 'w-1.5 h-1.5 bg-[#008751]/70' : 'w-1.5 h-1.5 bg-slate-300'}`}
                             />
                         ))}
                     </div>
@@ -290,7 +290,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
                     {items.map((_, i) => (
                         <button key={i} title={`Slide ${i + 1}`} onClick={() => goToSlide(i)}
-                            className={`rounded-full transition-all duration-500 ${i === currentSlide ? 'w-8 h-2 bg-gradient-to-r from-[#008751] to-[#FCD116] shadow-[0_0_10px_rgba(252,209,22,0.5)]' : i < currentSlide ? 'w-2 h-2 bg-[#008751]/50' : 'w-2 h-2 bg-white/15 hover:bg-white/30'}`}
+                            className={`rounded-full transition-all duration-500 ${i === currentSlide ? 'w-8 h-2 bg-gradient-to-r from-[#008751] to-[#FCD116] shadow-[0_0_10px_rgba(252,209,22,0.5)]' : i < currentSlide ? 'w-2 h-2 bg-[#008751]/50' : 'w-2 h-2 bg-slate-200 hover:bg-slate-300'}`}
                         />
                     ))}
                 </div>
@@ -299,7 +299,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 <div className="text-right pointer-events-auto">
                     <p className="text-[9px] font-black text-[#FCD116] tracking-[0.2em] uppercase drop-shadow-md truncate max-w-[110px] md:max-w-none">{proposal.destination}</p>
                     {proposal.start_date && (
-                        <p className="text-[9px] md:text-[10px] text-white/60 flex items-center justify-end gap-1 mt-0.5">
+                        <p className="text-[9px] md:text-[10px] text-slate-900/60 flex items-center justify-end gap-1 mt-0.5">
                             <Calendar className="w-2.5 h-2.5" />
                             {new Date(proposal.start_date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}
                         </p>
@@ -320,12 +320,12 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {currentItem.images!.map((img, gi) => (
                                 <figure key={gi}
-                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-black/50 backdrop-blur-xl border border-white/10"
+                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-slate-1005 backdrop-blur-xl border border-slate-200"
                                     style={{ boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 30px ${meta.accent}20` }}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" />
                                     {img.caption && (
-                                        <figcaption className="px-3 py-2 text-[10px] md:text-[11px] font-semibold text-white/85 leading-snug">
+                                        <figcaption className="px-3 py-2 text-[10px] md:text-[11px] font-semibold text-slate-900/85 leading-snug">
                                             {img.caption}
                                         </figcaption>
                                     )}
@@ -349,7 +349,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={currentItem.image_url} alt="" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
                         {/* Price badge overlay */}
                         {currentItem.selling_price > 0 && (
                             <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-black"
@@ -384,7 +384,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: -20 }}
                                 transition={{ repeat: Infinity, duration: 1.5, repeatType: 'reverse' }}
-                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-[#FCD116]/80 text-[10px] font-bold uppercase tracking-widest bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10"
+                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-[#FCD116]/80 text-[10px] font-bold uppercase tracking-widest bg-slate-1005 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200"
                             >
                                 <HandIcon className="w-4 h-4" /> Balayez l&apos;écran
                             </motion.div>
@@ -406,8 +406,8 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             {clientInitials}
                                         </div>
                                         <div>
-                                            <p className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-widest">Préparé exclusivement pour</p>
-                                            <p className="text-sm md:text-base font-black text-white">{proposal.client_name}</p>
+                                            <p className="text-[9px] md:text-[10px] text-slate-900/40 uppercase tracking-widest">Préparé exclusivement pour</p>
+                                            <p className="text-sm md:text-base font-black text-slate-900">{proposal.client_name}</p>
                                         </div>
                                     </motion.div>
 
@@ -424,7 +424,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {currentItem.description && (
                                         <motion.p
                                             initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-                                            className="text-sm md:text-lg text-white/70 leading-relaxed mb-5 max-w-lg"
+                                            className="text-sm md:text-lg text-slate-900/70 leading-relaxed mb-5 max-w-lg"
                                         >
                                             {currentItem.description}
                                         </motion.p>
@@ -437,22 +437,22 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             className="flex flex-wrap gap-2 mb-5"
                                         >
                                             {durationDays > 0 && (
-                                                <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90 flex items-center gap-1.5">
+                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90 flex items-center gap-1.5">
                                                     <Calendar className="w-3 h-3 text-[#FCD116]" /> {durationDays} jour{durationDays > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {hotelCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
+                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <Hotel size={12} className="inline-block mr-1 -mt-0.5" /> {hotelCount} hôtel{hotelCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {activityCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
+                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <Mountain size={12} className="inline-block mr-1 -mt-0.5" /> {activityCount} activité{activityCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {restaurantCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full text-[10px] md:text-xs font-bold text-white/90">
+                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <UtensilsCrossed size={12} className="inline-block mr-1 -mt-0.5" /> {restaurantCount} restaurant{restaurantCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
@@ -465,9 +465,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Total price chip */}
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.32 }}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-xl border border-[#FCD116]/20 rounded-full mb-6"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-1005 backdrop-blur-xl border border-[#FCD116]/20 rounded-full mb-6"
                                     >
-                                        <span className="text-[10px] text-white/40 uppercase tracking-widest">Total</span>
+                                        <span className="text-[10px] text-slate-900/40 uppercase tracking-widest">Total</span>
                                         <span className="text-[#FCD116] font-black text-base md:text-lg">
                                             <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                         </span>
@@ -480,7 +480,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         className="relative px-8 md:px-10 py-3.5 md:py-4 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full text-[#050D1A] font-black uppercase tracking-wider text-xs md:text-sm transition-all flex items-center gap-2.5 active:scale-95 touch-manipulation overflow-hidden group"
                                     >
                                         <motion.div
-                                            className="absolute inset-0 bg-white/20"
+                                            className="absolute inset-0 bg-slate-200"
                                             animate={{ x: ['-100%', '200%'] }}
                                             transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
                                             style={{ transform: 'skewX(-20deg)', width: '30%' }}
@@ -505,7 +505,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <meta.Icon size={14} className="inline-block" /> {meta.label}
                                         </span>
                                         {currentItem.location && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[10px] md:text-xs font-bold text-white/70">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-1005 backdrop-blur-xl border border-slate-200 text-[10px] md:text-xs font-bold text-slate-900/70">
                                                 <MapPin className="w-3 h-3 text-[#E8112D]" /> {currentItem.location}
                                             </span>
                                         )}
@@ -535,7 +535,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {currentItem.description && (
                                         <motion.p
                                             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                                            className="text-sm md:text-base text-white/75 leading-relaxed mb-4 md:mb-5 max-w-xl line-clamp-3 md:line-clamp-4"
+                                            className="text-sm md:text-base text-slate-900/75 leading-relaxed mb-4 md:mb-5 max-w-xl line-clamp-3 md:line-clamp-4"
                                         >
                                             {currentItem.description}
                                         </motion.p>
@@ -567,13 +567,13 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         >
                                             {currentItem.highlights.map((h, i) => (
                                                 <div key={i}
-                                                    className="flex items-center gap-2 px-3 py-2.5 bg-black/40 backdrop-blur-xl border border-white/8 rounded-xl"
+                                                    className="flex items-center gap-2 px-3 py-2.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-xl"
                                                     style={{ borderColor: meta.accent + '20' }}
                                                 >
                                                     <span style={{ color: meta.accent }}>
                                                         <HighlightIcon text={h} />
                                                     </span>
-                                                    <span className="text-[10px] md:text-xs font-semibold text-white/85 leading-tight line-clamp-2">{h}</span>
+                                                    <span className="text-[10px] md:text-xs font-semibold text-slate-900/85 leading-tight line-clamp-2">{h}</span>
                                                 </div>
                                             ))}
                                         </motion.div>
@@ -589,7 +589,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                                 >
                                     {/* Glass panel */}
-                                    <div className="bg-black/45 backdrop-blur-2xl border border-white/10 p-5 md:p-7 rounded-[2rem] shadow-[0_0_60px_rgba(252,209,22,0.07)] relative overflow-hidden">
+                                    <div className="bg-white/92 backdrop-blur-2xl border border-slate-200 p-5 md:p-7 rounded-[2rem] shadow-[0_0_60px_rgba(252,209,22,0.07)] relative overflow-hidden">
                                         {/* Glow corner */}
                                         <div className="absolute top-0 right-0 w-40 h-40 bg-[#FCD116]/8 rounded-full blur-3xl pointer-events-none" />
                                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#008751]/8 rounded-full blur-3xl pointer-events-none" />
@@ -599,11 +599,11 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <div>
                                                 <p className="text-[9px] md:text-[10px] font-black text-[#FCD116] uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
                                                 {totalOriginal > proposal.total_amount && (
-                                                    <p className="text-xs text-white/25 line-through mb-0.5">
+                                                    <p className="text-xs text-slate-900/25 line-through mb-0.5">
                                                         <Price amount={totalOriginal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                     </p>
                                                 )}
-                                                <p className="text-2xl md:text-4xl font-black text-white">
+                                                <p className="text-2xl md:text-4xl font-black text-slate-900">
                                                     <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
@@ -616,18 +616,18 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 const pct = maxPrice > 0 ? (item.selling_price / maxPrice) * 100 : 0
                                                 const m = TYPE_META[item.type] || TYPE_META.activity
                                                 return (
-                                                    <div key={item.id} className="pb-2.5 border-b border-white/5 last:border-0">
+                                                    <div key={item.id} className="pb-2.5 border-b border-slate-200 last:border-0">
                                                         <div className="flex items-center justify-between mb-1.5">
-                                                            <span className="text-white/75 text-[11px] md:text-sm flex items-center gap-2 truncate pr-3">
+                                                            <span className="text-slate-900/75 text-[11px] md:text-sm flex items-center gap-2 truncate pr-3">
                                                                 <m.Icon size={14} className="flex-shrink-0" style={{ color: m.accent }} />
                                                                 <span className="truncate">{item.title}</span>
                                                             </span>
-                                                            <span className="text-white font-bold text-[11px] md:text-sm whitespace-nowrap">
+                                                            <span className="text-slate-900 font-bold text-[11px] md:text-sm whitespace-nowrap">
                                                                 <Price amount={item.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                             </span>
                                                         </div>
                                                         {/* Progress bar */}
-                                                        <div className="h-1 bg-white/8 rounded-full overflow-hidden">
+                                                        <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
                                                             <motion.div
                                                                 initial={{ width: 0 }}
                                                                 animate={{ width: `${pct}%` }}
@@ -661,7 +661,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); router.push(`/p/${secret}/paiement`) }}
-                                                className="bg-white/8 border border-white/10 hover:bg-white/12 text-white py-3.5 md:py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 touch-manipulation"
+                                                className="bg-slate-100 border border-slate-200 hover:bg-slate-100 text-slate-900 py-3.5 md:py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 touch-manipulation"
                                             >
                                                 <BookOpen className="w-4 h-4 text-[#FCD116]" /> Réserver
                                             </button>
@@ -673,7 +673,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 href={`/api/proposals/${proposal.id}/devis`}
                                                 target="_blank" rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="bg-white/5 border border-white/10 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-white/60 hover:text-[#FCD116] py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
+                                                className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-white/60 hover:text-[#FCD116] py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
                                             >
                                                 <FileDown className="w-3.5 h-3.5" /> Devis PDF
                                             </a>
@@ -681,7 +681,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 href={`/api/proposals/${proposal.id}/pptx`}
                                                 target="_blank" rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="bg-white/5 border border-white/10 hover:bg-blue-500/10 hover:border-blue-400/30 text-white/60 hover:text-blue-400 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
+                                                className="bg-slate-50 border border-slate-200 hover:bg-blue-500/10 hover:border-blue-400/30 text-slate-900/60 hover:text-blue-400 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
                                             >
                                                 <Download className="w-3.5 h-3.5" /> PPTX
                                             </a>
@@ -689,7 +689,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
                                         {/* Trust + validity */}
                                         <div className="flex flex-col items-center gap-1 relative z-10">
-                                            <p className="text-white/35 text-[9px] md:text-[10px] flex items-center gap-1.5">
+                                            <p className="text-slate-900/35 text-[9px] md:text-[10px] flex items-center gap-1.5">
                                                 <CheckCircle className="w-3 h-3 text-[#008751]" /> Paiement 100% sécurisé — Retour Gagnant Bénin
                                             </p>
                                             <p className="text-[#FCD116]/35 text-[9px]">
@@ -715,12 +715,12 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
             {/* ═══ NAVIGATION CONTROLS ═══ */}
             <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-5 md:px-10 z-40 flex items-center justify-between pointer-events-none">
-                <div className="text-white/25 text-[10px] font-black font-mono tracking-widest">
-                    {String(currentSlide + 1).padStart(2, '0')}<span className="text-white/10 mx-1">/</span>{String(items.length).padStart(2, '0')}
+                <div className="text-slate-900/25 text-[10px] font-black font-mono tracking-widest">
+                    {String(currentSlide + 1).padStart(2, '0')}<span className="text-slate-900/10 mx-1">/</span>{String(items.length).padStart(2, '0')}
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
                     <button onClick={() => goToSlide(currentSlide - 1)} title="Précédent"
-                        className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center backdrop-blur-2xl border transition-all active:scale-90 touch-manipulation ${currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'bg-black/50 border-white/10 text-white hover:bg-black/70'}`}
+                        className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center backdrop-blur-2xl border transition-all active:scale-90 touch-manipulation ${currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'bg-slate-1005 border-slate-200 text-slate-900 hover:bg-white/88'}`}
                         disabled={currentSlide === 0}
                     >
                         <ChevronLeft className="w-5 h-5" />
@@ -739,7 +739,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 href={`/api/proposals/${proposal.id}/devis`}
                 target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="fixed bottom-[88px] left-4 md:bottom-20 md:left-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-[#0a0e17]/80 hover:bg-[#FCD116]/20 backdrop-blur-xl border border-[#FCD116]/30 hover:border-[#FCD116]/70 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 touch-manipulation"
+                className="fixed bottom-[88px] left-4 md:bottom-20 md:left-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-white/90 hover:bg-[#FCD116]/20 backdrop-blur-xl border border-[#FCD116]/30 hover:border-[#FCD116]/70 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 touch-manipulation"
                 title="Télécharger le devis PDF"
             >
                 <FileDown className="w-5 h-5 md:w-6 md:h-6 text-[#FCD116]" />
@@ -753,7 +753,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 className="fixed bottom-[88px] right-4 md:bottom-20 md:right-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-[#25D366] hover:bg-[#1db954] rounded-full flex items-center justify-center shadow-[0_0_25px_rgba(37,211,102,0.45)] transition-all hover:scale-110 active:scale-95 touch-manipulation"
                 title="Contacter sur WhatsApp"
             >
-                <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-slate-900" />
             </a>
 
             {/* ═══ AMBIENT PARTICLES (desktop) ═══ */}
