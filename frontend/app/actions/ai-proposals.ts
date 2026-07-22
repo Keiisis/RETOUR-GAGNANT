@@ -10,11 +10,15 @@ export async function getProposalsList() {
     try {
         const { data, error } = await supabaseAdmin
             .from('ai_client_proposals')
-            .select('id, secret_key, client_name, destination, status, total_amount, created_at, currency')
+            .select('id, secret_key, client_name, destination, status, total_amount, created_at, currency, notes')
             .order('created_at', { ascending: false })
-            
+
         if (error) throw error
-        return { success: true, data }
+        // Exclure les LIENS DE PAIEMENT : ils partagent la table ai_client_proposals
+        // mais ne sont PAS des propositions/slides — ils appartiennent au gestionnaire
+        // de liens de paiement (facturation), pas à admin/proposals.
+        const filtered = (data || []).filter(p => !String((p as { notes?: string | null }).notes || '').startsWith('LIEN-PAIEMENT'))
+        return { success: true, data: filtered }
     } catch (err: unknown) {
         return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
