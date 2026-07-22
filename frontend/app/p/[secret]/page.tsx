@@ -354,7 +354,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         {currentItem.selling_price > 0 && (
                             <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-black"
                                 style={{ background: meta.accent + '20', borderColor: meta.accent + '50', color: meta.accent }}>
-                                <Price amount={currentItem.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                <Price amount={currentItem.selling_price} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                             </div>
                         )}
                     </motion.div>
@@ -469,7 +469,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     >
                                         <span className="text-[10px] text-slate-900/55 uppercase tracking-widest">Total</span>
                                         <span className="text-amber-600 font-black text-base md:text-lg">
-                                            <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                            <Price amount={proposal.total_amount} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                         </span>
                                     </motion.div>
 
@@ -553,7 +553,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 style={{ background: meta.accent + '12', borderColor: meta.accent + '35' }}>
                                                 <p className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] font-bold mb-1" style={{ color: meta.accent + '99' }}>Tarif inclus</p>
                                                 <p className="font-black text-xs md:text-sm whitespace-nowrap" style={{ color: meta.accent }}>
-                                                    <Price amount={currentItem.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                    <Price amount={currentItem.selling_price} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
                                         )}
@@ -600,11 +600,11 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 <p className="text-[9px] md:text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
                                                 {totalOriginal > proposal.total_amount && (
                                                     <p className="text-xs text-slate-900/50 line-through mb-0.5">
-                                                        <Price amount={totalOriginal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                        <Price amount={totalOriginal} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                     </p>
                                                 )}
                                                 <p className="text-2xl md:text-4xl font-black text-slate-900">
-                                                    <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                    <Price amount={proposal.total_amount} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
                                             <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-amber-600/25 hidden sm:block" />
@@ -623,7 +623,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                                 <span className="truncate">{item.title}</span>
                                                             </span>
                                                             <span className="text-slate-900 font-bold text-[11px] md:text-sm whitespace-nowrap">
-                                                                <Price amount={item.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                                <Price amount={item.selling_price} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                             </span>
                                                         </div>
                                                         {/* Progress bar */}
@@ -646,7 +646,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <div className="bg-[#008751]/12 border border-[#008751]/25 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between relative z-10">
                                                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Vous économisez</span>
                                                 <span className="text-emerald-700 font-black text-sm">
-                                                    <Price amount={savings} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} /> 
+                                                    <Price amount={savings} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} /> 
                                                 </span>
                                             </div>
                                         )}

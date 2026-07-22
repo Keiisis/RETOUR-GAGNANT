@@ -238,7 +238,7 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
                     <div>
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Facturé</p>
                         <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#E8112D]">
-                            <Price amount={calculateTotal()} currency="XOF" forceDisplayCurrency={currency as any} />
+                            <Price amount={calculateTotal()} currency={currency as any} forceDisplayCurrency={currency as any} />
                         </p>
                     </div>
                     <div>
@@ -311,7 +311,7 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
 
                                     {item.selling_price > 0 && (
                                         <span className="text-[#FCD116] font-bold text-sm">
-                                            <Price amount={item.selling_price} currency="XOF" forceDisplayCurrency={currency as any} />
+                                            <Price amount={item.selling_price} currency={currency as any} forceDisplayCurrency={currency as any} />
                                         </span>
                                     )}
 
@@ -451,7 +451,7 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
                     <div>
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Total</p>
                         <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#E8112D]">
-                            <Price amount={calculateTotal()} currency="XOF" forceDisplayCurrency={currency as any} />
+                            <Price amount={calculateTotal()} currency={currency as any} forceDisplayCurrency={currency as any} />
                         </p>
                     </div>
                     <button onClick={saveChanges} disabled={saving} className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] text-slate-900 rounded-xl font-black transition shadow-lg hover:scale-105 active:scale-95">

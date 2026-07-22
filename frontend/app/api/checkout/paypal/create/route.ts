@@ -20,6 +20,16 @@ function convertFromXOF(amountXof: number, targetCurrency: string): number {
     return Math.round((amountXof / rate) * 100) / 100
 }
 
+// Normalise un montant exprimé dans `fromCurrency` (devise du devis/commande)
+// vers le XOF de base, avant reconversion vers la devise PayPal.
+function toXofBase(amount: number, fromCurrency: string): number {
+    const cur = (fromCurrency || 'XOF').toUpperCase()
+    if (cur === 'XOF') return Math.round(amount)
+    const rate = XOF_TO[cur]
+    if (!rate) throw new Error(`Devise commande non supportée pour la conversion: ${cur}`)
+    return Math.round(amount * rate)
+}
+
 // Devises sans décimales pour PayPal
 const ZERO_DECIMAL = new Set([
     'JPY', 'KRW', 'VND', 'XOF', 'XAF', 'GNF', 'BIF', 'RWF', 'UGX', 'MGA', 'KMF',
@@ -124,10 +134,11 @@ export async function POST(request: Request) {
         }
 
         // Si display_amount fourni par le modal (déjà converti avec marge 3%) → utiliser directement
-        // Sinon → conversion auto depuis XOF
+        // Sinon → normaliser le montant de la commande (devise du devis, ex. EUR) en
+        // XOF de base, puis reconvertir vers la devise PayPal cible.
         const rawAmount = useDisplayParams
             ? parseFloat(String(display_amount))
-            : convertFromXOF(order.amount, currency)
+            : convertFromXOF(toXofBase(order.amount, order.currency), currency)
         const amountStr = ZERO_DECIMAL.has(currency)
             ? String(Math.round(rawAmount))
             : rawAmount.toFixed(2)

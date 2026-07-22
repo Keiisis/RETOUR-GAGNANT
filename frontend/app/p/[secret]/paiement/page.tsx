@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Price } from '@/components/ui/Price'
-import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin } from '@/lib/currency'
+import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin, convertCurrency, refreshRates } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
@@ -110,6 +110,9 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             setLoading(false)
         }
         fetchData()
+
+        // Charger les taux de change (table currencies) pour conversion EUR/USD → XOF
+        refreshRates()
 
         // Charger les settings de paiement
         fetch('/api/settings/payment')
@@ -273,6 +276,15 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
         ? billableAll.filter(i => selectedIds.has(i.id)).reduce((s, i) => s + i.selling_price, 0)
         : (proposal?.total_amount || 0)
 
+    // Devise du devis (celle saisie par l'agent). Les montants (selling_price /
+    // total_amount) sont exprimés DANS cette devise.
+    const proposalCurrency = ((proposal?.currency || 'XOF').toUpperCase()) as CurrencyCode
+    // Montant converti en XOF (FCFA) pour les passerelles qui n'encaissent QU'EN
+    // XOF (Kkiapay, FedaPay, Zeyow). 337 EUR -> ~221 057 XOF, dynamiquement.
+    const payableXof = proposalCurrency === 'XOF'
+        ? Math.round(payableTotal)
+        : convertCurrency(payableTotal, proposalCurrency, 'XOF')
+
     const toggleItem = (id: string) => {
         setSelectedIds(prev => {
             const next = new Set(prev)
@@ -397,7 +409,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             await ensureKkiapaySDK()
             // Pas de `paymentmethod` (tableau rejeté → « paramètres invalides »)
             // ni de `callback` (redirection qui contourne le listener de succès).
-            window.openKkiapayWidget({ amount: Math.round(payableTotal), position: 'center', key: publicKey, sandbox, phone: customerPhone || undefined, email: customerEmail || undefined, name: customerName || undefined, data: JSON.stringify({ order_id: oid }) })
+            // Kkiapay encaisse UNIQUEMENT en XOF -> on injecte le montant converti
+            window.openKkiapayWidget({ amount: payableXof, position: 'center', key: publicKey, sandbox, phone: customerPhone || undefined, email: customerEmail || undefined, name: customerName || undefined, data: JSON.stringify({ order_id: oid }) })
             window.addKkiapayListener('success', async (response) => { await verifyPayment(oid, response.transactionId as string) })
             window.addKkiapayListener('failed', () => { cancelOrder(oid); setErrorMessage('Paiement échoué'); setStep('error') })
         } catch (err) { cancelOrder(oid); setErrorMessage(err instanceof Error ? err.message : 'Erreur Kkiapay'); setStep('error') }
@@ -431,8 +444,9 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
         try { await ensureFedaPay() } catch (err) { cancelOrder(oid); setErrorMessage(err instanceof Error ? err.message : 'Erreur FedaPay'); setStep('error'); return }
 
-        // FedaPay et KKiapay traitent uniquement en XOF — sélecteur de devise = affichage uniquement
-        const fedaAmountXOF = Math.round(payableTotal)
+        // FedaPay et KKiapay traitent uniquement en XOF — le montant du devis
+        // (potentiellement en EUR/USD) est converti dynamiquement en XOF
+        const fedaAmountXOF = payableXof
 
         let fedapayTxId: number | null = null
         try {
@@ -480,7 +494,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
         if (!redirectUrl) { setErrorMessage('Zeyow non configuré'); setStep('error'); return }
         const returnUrl = `${window.location.origin}/boutique/payment/return`
         const cancelUrl = `${window.location.origin}/p/${secret}`
-        window.location.href = `${redirectUrl}?amount=${payableTotal}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(payLabel)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
+        // Zeyow encaisse en XOF -> montant converti
+        window.location.href = `${redirectUrl}?amount=${payableXof}&currency=XOF&order_id=${oid}&phone=${encodeURIComponent(customerPhone)}&description=${encodeURIComponent(payLabel)}&return_url=${encodeURIComponent(returnUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`
     }
 
     const handleStripe = async () => {
@@ -602,7 +617,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                                     <span className={checked ? 'text-slate-900' : 'text-slate-500 line-through'}>{i.title}</span>
                                                 </span>
                                                 <span className={`font-bold shrink-0 ${checked ? 'text-slate-900' : 'text-slate-500'}`}>
-                                                    <Price amount={i.selling_price} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                                    <Price amount={i.selling_price} currency={proposalCurrency} forceDisplayCurrency={proposalCurrency} />
                                                 </span>
                                             </label>
                                         )
@@ -616,19 +631,19 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                         <CurrencySelector
                                             value={selectedCurrency}
                                             onChange={setSelectedCurrency}
-                                            baseAmountXOF={payableTotal}
+                                            baseAmountXOF={payableXof}
                                         />
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-2xl font-black text-slate-900">
                                             {selectedCurrency === 'XOF'
-                                                ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
-                                                : formatPriceWithMargin(payableTotal, selectedCurrency)
+                                                ? <Price amount={payableXof} currency="XOF" forceDisplayCurrency="XOF" />
+                                                : formatPriceWithMargin(payableXof, selectedCurrency)
                                             }
                                         </span>
                                         {selectedCurrency !== 'XOF' && (
                                             <span className="text-[10px] text-gray-500">
-                                                <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" /> XOF
+                                                <Price amount={payableXof} currency="XOF" forceDisplayCurrency="XOF" /> XOF
                                             </span>
                                         )}
                                     </div>
@@ -699,14 +714,14 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <div className="flex items-center justify-center gap-3 mt-2">
                                     <p className="text-slate-500 text-sm">Montant : <span className="text-amber-600 font-bold">
                                         {selectedCurrency === 'XOF'
-                                            ? <Price amount={payableTotal} currency="XOF" forceDisplayCurrency="XOF" />
-                                            : formatPriceWithMargin(payableTotal, selectedCurrency)
+                                            ? <Price amount={payableXof} currency="XOF" forceDisplayCurrency="XOF" />
+                                            : formatPriceWithMargin(payableXof, selectedCurrency)
                                         }
                                     </span></p>
                                     <CurrencySelector
                                         value={selectedCurrency}
                                         onChange={setSelectedCurrency}
-                                        baseAmountXOF={payableTotal}
+                                        baseAmountXOF={payableXof}
                                     />
                                 </div>
                                 {selectedCurrency !== 'XOF' && (
@@ -758,7 +773,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 </div>
                                 {errorMessage && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm mb-4">{errorMessage}</div>}
                                 <button type="button" onClick={confirmStripePayment} disabled={!stripeReady || stripeSubmitting} className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-900 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2">
-                                    <Lock className="w-4 h-4" /> Payer <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                    <Lock className="w-4 h-4" /> Payer <Price amount={payableTotal} currency={proposalCurrency} forceDisplayCurrency={proposalCurrency} />
                                 </button>
                                 <button type="button" onClick={() => setStep('payment')} className="w-full text-slate-500 hover:text-slate-900 py-3 text-sm mt-2">← Autre moyen de paiement</button>
                             </div>
@@ -810,7 +825,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 w-full max-w-sm text-center">
                                 <p className="text-xs text-slate-500 mb-1">Montant payé</p>
                                 <p className="text-2xl font-black text-amber-600">
-                                    <Price amount={payableTotal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
+                                    <Price amount={payableTotal} currency={proposalCurrency} forceDisplayCurrency={proposalCurrency} />
                                 </p>
                             </div>
                             <Link href="/" className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-8 py-3 rounded-xl font-black transition-all">
