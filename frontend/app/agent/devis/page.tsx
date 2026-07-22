@@ -11,6 +11,12 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
+import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
+
+// Libellé de devise du DOCUMENT — ne JAMAIS forcer XOF sur un devis/facture EUR/USD
+const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'XOF' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c === 'GBP' ? '£' : c
+// Total converti en XOF pour agréger des documents multi-devises (KPIs)
+const toXof = (amount: number, c?: string) => convertCurrency(amount, ((c || 'XOF').toUpperCase()) as CurrencyCode, 'XOF')
 
 interface DevisItem {
     description: string
@@ -55,6 +61,8 @@ export default function AgentDevisPage() {
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
 
     const fetchDocuments = useCallback(async () => {
+        // Charger les taux de change (table currencies) pour agréger multi-devises
+        refreshRates()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
@@ -616,14 +624,16 @@ export default function AgentDevisPage() {
         return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
     }
 
-    const myCA = documents.filter(d => d.status === 'paye').reduce((s, d) => s + d.total, 0)
+    // KPIs agrégés en XOF (conversion des documents EUR/USD) — sinon on
+    // additionnerait des devises différentes (337 EUR + 164 000 XOF = faux)
+    const myCA = documents.filter(d => d.status === 'paye').reduce((s, d) => s + toXof(d.total, d.currency), 0)
     const activeDevis = documents.filter(d => d.type === 'devis' && d.status !== 'refuse').length
 
     // Alarmes factures impayées
     const unpaidDocs = documents.filter(d => computeOverdue(d, paidByDoc[d.id] || 0).isUnpaid)
     const overdueDocs = unpaidDocs.filter(d => computeOverdue(d, paidByDoc[d.id] || 0).isOverdue)
-    const unpaidAmount = unpaidDocs.reduce((s, d) => s + computeOverdue(d, paidByDoc[d.id] || 0).remaining, 0)
-    const overdueAmount = overdueDocs.reduce((s, d) => s + computeOverdue(d, paidByDoc[d.id] || 0).remaining, 0)
+    const unpaidAmount = unpaidDocs.reduce((s, d) => s + toXof(computeOverdue(d, paidByDoc[d.id] || 0).remaining, d.currency), 0)
+    const overdueAmount = overdueDocs.reduce((s, d) => s + toXof(computeOverdue(d, paidByDoc[d.id] || 0).remaining, d.currency), 0)
 
     return (
         <div className="space-y-6">
@@ -794,7 +804,7 @@ export default function AgentDevisPage() {
                                         <p className="text-gray-500 text-[10px]">{doc.client_email || doc.client_phone}</p>
                                     </td>
                                     <td className="py-3 px-5 text-right">
-                                        <p className="text-white font-mono text-sm font-bold">{doc.total.toLocaleString('fr-FR')} XOF</p>
+                                        <p className="text-white font-mono text-sm font-bold">{doc.total.toLocaleString('fr-FR')} {curLabel(doc.currency)}</p>
                                     </td>
                                     {(() => {
                                         const paid = paidByDoc[doc.id] || 0
@@ -804,12 +814,12 @@ export default function AgentDevisPage() {
                                             <>
                                                 <td className="py-3 px-5 text-right">
                                                     <p className={`font-mono text-sm font-bold ${paid > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>
-                                                        {paid.toLocaleString('fr-FR')} XOF
+                                                        {paid.toLocaleString('fr-FR')} {curLabel(doc.currency)}
                                                     </p>
                                                 </td>
                                                 <td className="py-3 px-5 text-right">
                                                     <p className={`font-mono text-sm font-bold ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
-                                                        {fullyPaid ? '—' : `${remaining.toLocaleString('fr-FR')} XOF`}
+                                                        {fullyPaid ? '—' : `${remaining.toLocaleString('fr-FR')} ${curLabel(doc.currency)}`}
                                                     </p>
                                                 </td>
                                             </>
@@ -916,16 +926,16 @@ export default function AgentDevisPage() {
                                                 <div className="space-y-1 mt-1">
                                                     <div className="flex items-baseline justify-between">
                                                         <span className="text-[10px] text-gray-500 font-bold uppercase">Total</span>
-                                                        <span className="text-xl text-white font-black font-mono">{showPreview.total.toLocaleString('fr-FR')} XOF</span>
+                                                        <span className="text-xl text-white font-black font-mono">{showPreview.total.toLocaleString('fr-FR')} {curLabel(showPreview.currency)}</span>
                                                     </div>
                                                     <div className="flex items-baseline justify-between">
                                                         <span className="text-[10px] text-gray-500 font-bold uppercase">Payé</span>
-                                                        <span className={`text-sm font-black font-mono ${paid > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{paid.toLocaleString('fr-FR')} XOF</span>
+                                                        <span className={`text-sm font-black font-mono ${paid > 0 ? 'text-emerald-400' : 'text-gray-600'}`}>{paid.toLocaleString('fr-FR')} {curLabel(showPreview.currency)}</span>
                                                     </div>
                                                     <div className="flex items-baseline justify-between pt-1 border-t border-white/5">
                                                         <span className="text-[10px] text-gray-500 font-bold uppercase">Reste</span>
                                                         <span className={`text-lg font-black font-mono ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
-                                                            {fullyPaid ? 'SOLDÉ ' : `${remaining.toLocaleString('fr-FR')} XOF`}
+                                                            {fullyPaid ? 'SOLDÉ ' : `${remaining.toLocaleString('fr-FR')} ${curLabel(showPreview.currency)}`}
                                                         </span>
                                                     </div>
                                                 </div>
