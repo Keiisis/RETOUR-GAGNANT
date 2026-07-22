@@ -662,8 +662,11 @@ export default function AdminComptabilitePage() {
             }
             const s = map.get(d.agent_id)!
             if (d.type === 'devis') { s.nbDevis++ } else {
-                s.nbFactures++; s.caEmis += d.total
-                if (['envoye', 'accepte'].includes(d.status)) s.enAttente += d.total
+                // Conversion dynamique en XOF (factures EUR/USD) — sinon on
+                // additionne des devises différentes (incohérence par agent)
+                s.nbFactures++; s.caEmis += toXOF(d.total, d.currency)
+                s.tvaCollectee += toXOF(Number(d.total_tva) || 0, d.currency)
+                if (['envoye', 'accepte'].includes(d.status)) s.enAttente += toXOF(d.total, d.currency)
             }
         }
         
@@ -690,7 +693,7 @@ export default function AdminComptabilitePage() {
                     const s = map.get(d.agent_id)!
                     s.encaisse += toXOF(d.total - (Number(d.remise) || 0), d.currency)
                     s.nbPayees++
-                    s.tvaCollectee += toXOF(Number(d.total_tva) || 0, d.currency)
+                    // (TVA collectée déjà comptée sur toutes les factures émises ci-dessus)
                 }
             }
         }
@@ -865,6 +868,14 @@ export default function AdminComptabilitePage() {
             const PAYMENT_LABELS: Record<string, string> = {
                 virement: 'Virement bancaire', especes: 'Espèces', cheque: 'Chèque',
                 mobile_money: 'Mobile Money', carte: 'Carte bancaire', autre: 'Autre'
+            }
+
+            // Formatage d'un montant dans sa devise d'origine (ex. « 337 € », « $120 »)
+            const fmtCur = (n: number, cur: string) => {
+                const sym: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
+                const s = sym[cur] || cur
+                const v = Math.round(Number(n) || 0).toLocaleString('fr-FR')
+                return (cur === 'USD' || cur === 'GBP') ? `${s}${v}` : `${v} ${s}`
             }
 
             // Enrichissement des docs (HT/TVA reconstitués depuis items si colonnes vides)
@@ -1049,47 +1060,74 @@ export default function AdminComptabilitePage() {
                     { header: 'Client', key: 'client', width: 28, group: 'Client' },
                     { header: 'Email', key: 'email', width: 26, group: 'Client' },
                     { header: 'Téléphone', key: 'phone', width: 16, group: 'Client' },
-                    { header: 'Sous-total HT', key: 'ht', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
-                    { header: 'TVA', key: 'tva', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
-                    { header: 'Remise', key: 'remise', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
-                    { header: 'Total TTC', key: 'ttc', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants HT / TVA / TTC' },
+                    { header: 'Devise', key: 'devise', width: 10, type: 'status' as const, group: "Devise d'origine" },
+                    { header: 'TTC d\'origine', key: 'ttc_origine', width: 16, group: "Devise d'origine" },
+                    { header: 'Sous-total HT', key: 'ht', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
+                    { header: 'TVA', key: 'tva', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
+                    { header: 'Remise', key: 'remise', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
+                    { header: 'Total TTC', key: 'ttc', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
                     { header: 'Statut', key: 'status', width: 14, type: 'status' as const, group: 'État' },
                     { header: 'Signé', key: 'signe', width: 10, group: 'État' },
                 ],
-                data: docsEnriched.map(d => ({
-                    numero: d.numero,
-                    type: d.type === 'facture' ? 'Facture' : d.type === 'avoir' ? 'Avoir' : 'Devis',
-                    date: new Date(d.created_at),
-                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
-                    client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
-                    email: d.client_email || '—',
-                    phone: d.client_phone || '—',
-                    ht: d._ht,
-                    tva: d._tva,
-                    remise: d._remise,
-                    ttc: d._ttc,
-                    status: DOC_STATUS[d.status]?.label || d.status,
-                    signe: d.signed_at ? 'Oui' : 'Non',
-                })),
+                data: docsEnriched.map(d => {
+                    const cur = (d.currency || 'XOF').toUpperCase()
+                    const isXof = cur === 'XOF' || cur === 'FCFA'
+                    return {
+                        numero: d.numero,
+                        type: d.type === 'facture' ? 'Facture' : d.type === 'avoir' ? 'Avoir' : 'Devis',
+                        date: new Date(d.created_at),
+                        agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
+                        client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                        email: d.client_email || '—',
+                        phone: d.client_phone || '—',
+                        devise: cur,
+                        // Montant d'origine (dans la devise de la facture) — ex. « 337 € »
+                        ttc_origine: isXof ? '—' : fmtCur(d._ttc, cur),
+                        // Montants TOUJOURS convertis en FCFA (conversion dynamique)
+                        ht: toXOF(d._ht, cur),
+                        tva: toXOF(d._tva, cur),
+                        remise: toXOF(d._remise, cur),
+                        ttc: toXOF(d._ttc, cur),
+                        status: DOC_STATUS[d.status]?.label || d.status,
+                        signe: d.signed_at ? 'Oui' : 'Non',
+                    }
+                }),
             }
 
             // ── 5. Lignes d'articles ──────────────────────────────
-            type LineRow = { numero: string; client: string; date: Date; description: string; qty: number; pu: number; tva: number; total_ht: number }
+            // Tous les montants sont CONVERTIS en FCFA (conversion dynamique
+            // depuis la devise de la facture) + colonne « Devise » d'origine +
+            // TVA correctement appliquée (montant TVA + Total TTC).
+            type LineRow = {
+                numero: string; client: string; date: Date; description: string; devise: string
+                pu_origine: string; qty: number; pu: number; tva_rate: number
+                ht: number; tva_montant: number; ttc: number
+            }
             const lignesRows: LineRow[] = []
             docsEnriched.forEach(d => {
                 if (!Array.isArray(d.items)) return
+                const cur = (d.currency || 'XOF').toUpperCase()
+                const isXof = cur === 'XOF' || cur === 'FCFA'
                 d.items.forEach(it => {
                     const q = Number(it.quantity) || 0
-                    const pu = Number(it.unit_price) || 0
+                    const puSrc = Number(it.unit_price) || 0
+                    const rate = Number(it.tva) || 0
+                    const puXof = toXOF(puSrc, cur)
+                    const htXof = q * puXof
+                    const tvaXof = Math.round(htXof * rate / 100)
                     lignesRows.push({
                         numero: d.numero || '—',
                         client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
                         date: new Date(d.created_at),
                         description: it.description || '—',
+                        devise: cur,
+                        pu_origine: isXof ? '—' : fmtCur(puSrc, cur),
                         qty: q,
-                        pu,
-                        tva: Number(it.tva) || 0,
-                        total_ht: q * pu,
+                        pu: puXof,
+                        tva_rate: rate,
+                        ht: htXof,
+                        tva_montant: tvaXof,
+                        ttc: htXof + tvaXof,
                     })
                 })
             })
@@ -1102,14 +1140,18 @@ export default function AdminComptabilitePage() {
                 columns: [
                     { header: 'N° Facture', key: 'numero', width: 18 },
                     { header: 'Date', key: 'date', width: 13, type: 'date' as const },
-                    { header: 'Client', key: 'client', width: 28 },
-                    { header: 'Description', key: 'description', width: 48 },
-                    { header: 'Qté', key: 'qty', width: 10, type: 'number' as const, totalFormula: 'sum' as const },
-                    { header: 'P.U. (FCFA)', key: 'pu', width: 16, type: 'currency' as const },
-                    { header: 'TVA %', key: 'tva', width: 10, type: 'number' as const },
-                    { header: 'Total HT', key: 'total_ht', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Client', key: 'client', width: 26 },
+                    { header: 'Description', key: 'description', width: 44 },
+                    { header: 'Devise', key: 'devise', width: 9, type: 'status' as const },
+                    { header: "P.U. d'origine", key: 'pu_origine', width: 14 },
+                    { header: 'Qté', key: 'qty', width: 8, type: 'number' as const, totalFormula: 'sum' as const },
+                    { header: 'P.U. (FCFA)', key: 'pu', width: 15, type: 'currency' as const },
+                    { header: 'HT (FCFA)', key: 'ht', width: 15, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'TVA %', key: 'tva_rate', width: 9, type: 'percent' as const },
+                    { header: 'TVA (FCFA)', key: 'tva_montant', width: 15, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Total TTC (FCFA)', key: 'ttc', width: 17, type: 'currency' as const, totalFormula: 'sum' as const },
                 ],
-                data: lignesRows,
+                data: lignesRows.map(r => ({ ...r, tva_rate: r.tva_rate / 100 })),
             }
 
             // ── 6. Paiements reçus ────────────────────────────────
