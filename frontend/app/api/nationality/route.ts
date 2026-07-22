@@ -5,6 +5,7 @@ import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
+import { recordNationalityIncome } from '@/lib/nationality-income'
 import { markClientConverted } from '@/lib/classement/track'
 import { verifyMyafroToken, decodeMyafroToken } from '@/lib/nationality-token'
 
@@ -504,6 +505,17 @@ export async function POST(request: NextRequest) {
             }
             void notifyStaffNationalityPayment(paymentInfo)
             void sendNationalityPaymentReceipt(paymentInfo)
+            // Traçabilité comptable : facture (payée) dans facturation + comptabilité.
+            // Le cas « facture manuelle sélectionnée » (isPrepaid) possède déjà sa
+            // propre facture réelle → on ne double pas.
+            if (!isPrepaid) {
+                void recordNationalityIncome(supabase, {
+                    ref, nom, prenom, email, phone: body.telephone || null,
+                    amount: secureAmount, currency: secureCurrency,
+                    paymentMethod: String(body.payment_method || 'en ligne'),
+                    txId: String(body.payment_ref), isMyafro,
+                })
+            }
             void markClientConverted({
                 email,
                 full_name: `${prenom} ${nom}`.trim(),

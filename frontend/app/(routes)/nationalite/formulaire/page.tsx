@@ -213,7 +213,9 @@ export default function NationaliteFormPage() {
                         telephone: parsed.telephone || p.telephone,
                         pays_residence: parsed.pays_residence || p.pays_residence,
                     }))
-                    setPreInscriptionDone(true)
+                    // On NE saute PAS l'étape : le client voit ses informations
+                    // pré-remplies (modifiables) et confirme avant de continuer —
+                    // évite de rester bloqué sur d'anciennes données (ex. un test).
                 }
             }
         } catch { /* ignore */ }
