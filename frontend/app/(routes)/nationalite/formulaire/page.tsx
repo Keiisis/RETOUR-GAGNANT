@@ -135,23 +135,27 @@ export default function NationaliteFormPage() {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [docWarnings, setDocWarnings] = useState<string[]>([])
 
-    // 13 slots structurés — chargés depuis l'admin ou valeurs par défaut
+    // ── DEMANDE DE NATIONALITÉ — pièces obligatoires à communiquer (valables
+    //    < 3 mois). Liste officielle, STRICTEMENT distincte de la liste de la
+    //    RECHERCHE ancestrale (voir page /nationalite/complement-ancestral).
+    //    Chargées depuis l'admin (page_sections) sinon valeurs par défaut.
     const DEFAULT_DOC_SLOTS: DocSlot[] = [
-        { key: 'identite',          label: "Pièce d'identité en cours de validité",                                  multi: false, required: true },
-        { key: 'domicile',          label: "Justificatif de domicile",                                                multi: false, required: true },
-        { key: 'profession',        label: "Preuve de profession",                                                    multi: false, required: true },
-        { key: 'afro_descendance',  label: "Preuve d'afro descendance",                                               multi: true,  required: true,  hint: "ADN, acte notarié, archives historiques, arbre généalogique…" },
-        { key: 'casier',            label: "Casier judiciaire ou Certificat d'antécédents criminels",                 multi: false, required: true },
-        { key: 'photo',             label: "Photo d'identité récente (moins de 6 mois)",                              multi: false, required: true },
-        { key: 'naissance_pere',    label: "Extrait de naissance du père",                                            multi: false, required: false, ancestral: true },
-        { key: 'naissance_mere',    label: "Extrait de naissance de la mère",                                         multi: false, required: false, ancestral: true },
-        { key: 'livret_parents',    label: "Livret de famille des parents",                                           multi: false, required: false },
-        { key: 'agp_paternel',      label: "Acte de naissance / décès — Arrière-grand-père paternel",                 multi: false, required: false, ancestral: true },
-        { key: 'agm_paternelle',    label: "Acte de naissance / décès — Arrière-grand-mère paternelle",               multi: false, required: false, ancestral: true },
-        { key: 'agp_maternel',      label: "Acte de naissance / décès — Arrière-grand-père maternel",                 multi: false, required: false, ancestral: true },
-        { key: 'agm_maternelle',    label: "Acte de naissance / décès — Arrière-grand-mère maternelle",               multi: false, required: false, ancestral: true },
-        { key: 'livret_mineur',     label: "Livret de famille (pour enfant mineur)",                                  multi: false, required: false, conditional: 'has_children' },
-        { key: 'autres',            label: "Autres documents complémentaires",                                        multi: true,  required: false, hint: "Tout document supplémentaire pouvant appuyer votre dossier" },
+        { key: 'identite',           label: "Pièce d'identité en cours de validité",                                   multi: false, required: true },
+        { key: 'naissance_demandeur', label: "Votre extrait de naissance",                                             multi: false, required: true },
+        { key: 'afro_descendance',   label: "Preuve d'afro-descendance",                                               multi: true,  required: true,  hint: "ADN, acte notarié, archives historiques, arbre généalogique…" },
+        { key: 'profession',         label: "Preuve de profession",                                                    multi: false, required: true },
+        { key: 'domicile',           label: "Justificatif de domicile",                                                multi: false, required: true },
+        { key: 'casier',             label: "Casier judiciaire (extrait récent)",                                      multi: false, required: true },
+        { key: 'naissance_pere',     label: "Extrait de naissance du père",                                            multi: false, required: true },
+        { key: 'naissance_mere',     label: "Extrait de naissance de la mère",                                         multi: false, required: true },
+        { key: 'livret_parents',     label: "Copie du livret de famille de vos parents",                               multi: false, required: true },
+        { key: 'agp_paternel',       label: "Extrait de naissance — arrière-grand-père (côté paternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agm_paternelle',     label: "Extrait de naissance — arrière-grand-mère (côté paternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agp_maternel',       label: "Extrait de naissance — arrière-grand-père (côté maternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agm_maternelle',     label: "Extrait de naissance — arrière-grand-mère (côté maternel)",               multi: false, required: false, ancestral: true },
+        { key: 'livret_mineur',      label: "Copie de votre livret de famille (si enfant mineur)",                     multi: false, required: false, conditional: 'has_children' },
+        { key: 'actes_ascendants',   label: "Autres actes des grands-parents et arrière-grands-parents",              multi: true,  required: false, hint: "Acte de mariage, notarial, militaire ou de décès — tout document disponible" },
+        { key: 'photo',              label: "Photo d'identité récente (moins de 6 mois)",                              multi: false, required: false },
     ]
     const [docSlots, setDocSlots] = useState<DocSlot[]>(DEFAULT_DOC_SLOTS)
     const [bgImageUrl, setBgImageUrl] = useState<string>('/images/bg-default-afro.jpg')
@@ -440,9 +444,17 @@ export default function NationaliteFormPage() {
         if (step === 4) {
             // Validation SOFT : on ne bloque que les 6 obligatoires, les autres sont des avertissements
             const uploadedKeys = rawDocs.map(d => d.key)
+            const hasChildren = form.nombre_enfants > 0
             const strictRequired = docSlots.filter(s => s.required)
             strictRequired.forEach(slot => {
                 if (!uploadedKeys.includes(slot.key)) {
+                    e.push(`${t('Document manquant :')} ${t(slot.label)}`)
+                }
+            })
+            // Documents conditionnels obligatoires quand la condition s'applique
+            // (ex. livret de famille obligatoire si enfant mineur)
+            docSlots.filter(s => s.conditional === 'has_children').forEach(slot => {
+                if (hasChildren && !uploadedKeys.includes(slot.key)) {
                     e.push(`${t('Document manquant :')} ${t(slot.label)}`)
                 }
             })

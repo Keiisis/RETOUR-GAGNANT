@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
     CheckCircle2, ChevronRight, Archive, Database, Users,
-    CreditCard, Loader2, AlertCircle, Shield, ArrowLeft, X
+    CreditCard, Loader2, AlertCircle, Shield, ArrowLeft, X, FileText
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
@@ -308,6 +308,33 @@ function ComplementAncestralContent() {
                         </p>
                     </motion.div>
                 )}
+
+                {/* Pièces à fournir pour la RECHERCHE (liste distincte de la
+                    demande de nationalité — ne pas confondre les deux) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 }}
+                    className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm"
+                >
+                    <div className="flex items-center gap-2 mb-1">
+                        <FileText size={16} className="text-[#008751]" />
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#008751]">Pièces à fournir pour la recherche</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4">Documents nécessaires au démarrage de la recherche généalogique (distincts de ceux de la demande de nationalité).</p>
+                    <div className="space-y-2">
+                        {[
+                            "Extrait de naissance de vos deux parents (père et mère)",
+                            "Extrait de naissance ou de décès de vos grands-parents (côté père et côté mère)",
+                            "Tout autre document (acte de mariage, notarial, militaire, de décès) de vos grands-parents et arrière-grands-parents",
+                        ].map((piece, i) => (
+                            <div key={i} className="flex items-start gap-3 bg-[#008751]/5 border border-[#008751]/15 rounded-xl p-3">
+                                <span className="w-5 h-5 rounded-full bg-[#008751] text-white text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                <span className="text-sm text-[#1a2332]">{piece}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
 
                 {/* Méthodes */}
                 <motion.div
