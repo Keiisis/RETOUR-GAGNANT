@@ -198,14 +198,14 @@ export const FinancialAnalytics = () => {
 
     return (
         <div style={{
-            // Fond thémable : suit le panneau clair/sombre (l'ancien gris-noir en
-            // dur créait un voile illisible en mode éclairé)
-            background: 'var(--panel-surface)',
+            // Conteneur en fond de panneau (gris clair) pour que les cartes
+            // BLANCHES ressortent nettement (fini l'aspect délavé crème/blanc).
+            background: 'var(--panel-bg)',
             borderRadius: '20px',
             padding: '28px',
             marginBottom: '24px',
             border: '1px solid var(--panel-border)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
         }}>
             {/* ── En-tête ── */}
             <div style={{
@@ -243,7 +243,7 @@ export const FinancialAnalytics = () => {
                         value={selectedReportMonth}
                         onChange={e => setSelectedReportMonth(e.target.value)}
                         style={{
-                            background: 'var(--panel-surface-alt)',
+                            background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                             border: '1px solid var(--panel-border)',
                             borderRadius: '8px',
                             color: 'var(--panel-text-heading)',
@@ -308,9 +308,9 @@ export const FinancialAnalytics = () => {
                 gap: '12px',
                 marginBottom: '24px',
             }}>
-                {/* CA Encaissé */}
+                {/* Chiffre d’affaires encaissé */}
                 <div style={{
-                    background: 'var(--panel-surface-alt)',
+                    background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                     border: '1px solid rgba(0,135,81,0.35)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -326,7 +326,7 @@ export const FinancialAnalytics = () => {
                         background: 'linear-gradient(90deg, #008751, #00c073)',
                     }} />
                     <p style={{ margin: 0, fontSize: '10px', color: 'var(--panel-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
-                        CA Encaissé
+                        Chiffre d’affaires encaissé
                     </p>
                     <p style={{ margin: '8px 0 0', fontSize: '22px', fontWeight: 900, color: '#059669' }}>
                         {formatPrice(currentMonth?.ca || 0)}
@@ -336,7 +336,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Impayés */}
                 <div style={{
-                    background: 'var(--panel-surface-alt)',
+                    background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                     border: '1px solid rgba(239,68,68,0.3)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -362,7 +362,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Documents */}
                 <div style={{
-                    background: 'var(--panel-surface-alt)',
+                    background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                     border: '1px solid rgba(59,130,246,0.3)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -388,7 +388,7 @@ export const FinancialAnalytics = () => {
 
                 {/* Conversion */}
                 <div style={{
-                    background: 'var(--panel-surface-alt)',
+                    background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                     border: '1px solid rgba(201,168,76,0.45)',
                     borderRadius: '14px',
                     padding: '16px',
@@ -415,7 +415,7 @@ export const FinancialAnalytics = () => {
 
             {/* ── Mini Graphique Tendance ── */}
             <div style={{
-                background: 'var(--panel-surface-alt)',
+                background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                 border: '1px solid var(--panel-border)',
                 borderRadius: '14px',
                 padding: '16px 20px',
@@ -506,7 +506,7 @@ export const FinancialAnalytics = () => {
                 }}>
                     <span style={{ fontSize: '9px', color: 'var(--panel-text-faint)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#008751', display: 'inline-block' }} />
-                        CA encaissé
+                        C.A. encaissé
                     </span>
                     <span style={{ fontSize: '9px', color: 'var(--panel-text-faint)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#ef4444', display: 'inline-block' }} />
@@ -543,7 +543,7 @@ export const FinancialAnalytics = () => {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '8px 12px',
-                                    background: 'var(--panel-surface-alt)',
+                                    background: 'var(--panel-surface)', boxShadow: '0 2px 10px rgba(15,23,42,0.06)',
                                     borderRadius: '8px',
                                     border: '1px solid var(--panel-border)',
                                 }}

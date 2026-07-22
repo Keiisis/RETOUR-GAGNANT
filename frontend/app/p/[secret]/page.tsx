@@ -99,7 +99,7 @@ const slideVariants = {
 // ─── Stat card ────────────────────────────────────────────────
 function StatCard({ label, value, accent }: { label: string; value: string; accent: string }) {
     return (
-        <div className="flex-1 min-w-0 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-2xl p-3 md:p-4">
+        <div className="flex-1 min-w-0 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-2xl p-3 md:p-4">
             <p className="text-[8px] md:text-[9px] uppercase tracking-[0.15em] font-bold mb-1" style={{ color: accent + 'aa' }}>{label}</p>
             <p className="text-slate-900 font-black text-xs md:text-sm truncate leading-tight">{value}</p>
         </div>
@@ -175,9 +175,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
             <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center gap-6">
                 <div className="relative">
                     <div className="absolute -inset-6 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full blur-3xl opacity-25 animate-pulse" />
-                    <Loader2 className="w-16 h-16 text-[#FCD116] animate-spin relative z-10" />
+                    <Loader2 className="w-16 h-16 text-amber-600 animate-spin relative z-10" />
                 </div>
-                <p className="text-[#FCD116] uppercase tracking-[0.3em] font-black text-xs">Retour Gagnant Bénin</p>
+                <p className="text-amber-600 uppercase tracking-[0.3em] font-black text-xs">Retour Gagnant Bénin</p>
             </div>
         )
     }
@@ -185,9 +185,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     if (!proposal || items.length === 0) {
         return (
             <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-slate-900 p-6 text-center">
-                <Shield size={44} className="mb-6 text-[#FCD116]" />
+                <Shield size={44} className="mb-6 text-amber-600" />
                 <h1 className="text-2xl font-black mb-3">Proposition introuvable</h1>
-                <p className="text-slate-500 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-[#FCD116] font-bold">Retour Gagnant</span>.</p>
+                <p className="text-slate-500 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-amber-600 font-bold">Retour Gagnant</span>.</p>
             </div>
         )
     }
@@ -269,7 +269,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full flex items-center justify-center font-black text-white text-[10px] md:text-xs shadow-xl">RG</div>
                     <div className="hidden sm:block">
                         <p className="text-[8px] font-black uppercase tracking-[0.25em] drop-shadow-md">
-                            <span className="text-[#008751]">Retour</span> <span className="text-[#FCD116]">Gagnant</span> <span className="text-[#E8112D]">Bénin</span>
+                            <span className="text-emerald-700">Retour</span> <span className="text-amber-600">Gagnant</span> <span className="text-[#E8112D]">Bénin</span>
                         </p>
                         <p className="font-bold text-slate-900/80 text-[11px] drop-shadow-md truncate max-w-[140px]">{proposal.client_name}</p>
                     </div>
@@ -277,7 +277,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
                 {/* Dots — mobile (centered) */}
                 <div className="flex sm:hidden fixed top-3.5 inset-x-0 justify-center pointer-events-auto z-50">
-                    <div className="flex items-center gap-1.5 bg-slate-1005 backdrop-blur-xl px-3 py-1.5 rounded-full border border-slate-200">
+                    <div className="flex items-center gap-1.5 bg-white/85 backdrop-blur-xl px-3 py-1.5 rounded-full border border-slate-200">
                         {items.map((_, i) => (
                             <button key={i} title={`Slide ${i + 1}`} onClick={() => goToSlide(i)}
                                 className={`rounded-full transition-all duration-300 ${i === currentSlide ? 'w-5 h-1.5 bg-gradient-to-r from-[#008751] to-[#FCD116]' : i < currentSlide ? 'w-1.5 h-1.5 bg-[#008751]/70' : 'w-1.5 h-1.5 bg-slate-300'}`}
@@ -297,7 +297,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
                 {/* Destination + date */}
                 <div className="text-right pointer-events-auto">
-                    <p className="text-[9px] font-black text-[#FCD116] tracking-[0.2em] uppercase drop-shadow-md truncate max-w-[110px] md:max-w-none">{proposal.destination}</p>
+                    <p className="text-[9px] font-black text-amber-600 tracking-[0.2em] uppercase drop-shadow-md truncate max-w-[110px] md:max-w-none">{proposal.destination}</p>
                     {proposal.start_date && (
                         <p className="text-[9px] md:text-[10px] text-slate-900/60 flex items-center justify-end gap-1 mt-0.5">
                             <Calendar className="w-2.5 h-2.5" />
@@ -320,7 +320,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {currentItem.images!.map((img, gi) => (
                                 <figure key={gi}
-                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-slate-1005 backdrop-blur-xl border border-slate-200"
+                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-white/85 backdrop-blur-xl border border-slate-200"
                                     style={{ boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 30px ${meta.accent}20` }}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" />
@@ -384,7 +384,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: -20 }}
                                 transition={{ repeat: Infinity, duration: 1.5, repeatType: 'reverse' }}
-                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-[#FCD116]/80 text-[10px] font-bold uppercase tracking-widest bg-slate-1005 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200"
+                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-amber-600/80 text-[10px] font-bold uppercase tracking-widest bg-white/85 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200"
                             >
                                 <HandIcon className="w-4 h-4" /> Balayez l&apos;écran
                             </motion.div>
@@ -406,7 +406,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             {clientInitials}
                                         </div>
                                         <div>
-                                            <p className="text-[9px] md:text-[10px] text-slate-900/40 uppercase tracking-widest">Préparé exclusivement pour</p>
+                                            <p className="text-[9px] md:text-[10px] text-slate-900/55 uppercase tracking-widest">Préparé exclusivement pour</p>
                                             <p className="text-sm md:text-base font-black text-slate-900">{proposal.client_name}</p>
                                         </div>
                                     </motion.div>
@@ -414,8 +414,8 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Title */}
                                     <motion.h1
                                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-4 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)]"
-                                        style={{ background: 'linear-gradient(135deg, #ffffff 30%, #FCD116 70%, #008751 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-4 drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]"
+                                        style={{ background: 'linear-gradient(120deg, #047857 0%, #B45309 55%, #065F46 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                     >
                                         {currentItem.title}
                                     </motion.h1>
@@ -437,26 +437,26 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             className="flex flex-wrap gap-2 mb-5"
                                         >
                                             {durationDays > 0 && (
-                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90 flex items-center gap-1.5">
-                                                    <Calendar className="w-3 h-3 text-[#FCD116]" /> {durationDays} jour{durationDays > 1 ? 's' : ''}
+                                                <span className="px-3 py-1.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90 flex items-center gap-1.5">
+                                                    <Calendar className="w-3 h-3 text-amber-600" /> {durationDays} jour{durationDays > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {hotelCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
+                                                <span className="px-3 py-1.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <Hotel size={12} className="inline-block mr-1 -mt-0.5" /> {hotelCount} hôtel{hotelCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {activityCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
+                                                <span className="px-3 py-1.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <Mountain size={12} className="inline-block mr-1 -mt-0.5" /> {activityCount} activité{activityCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {restaurantCount > 0 && (
-                                                <span className="px-3 py-1.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
+                                                <span className="px-3 py-1.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90">
                                                     <UtensilsCrossed size={12} className="inline-block mr-1 -mt-0.5" /> {restaurantCount} restaurant{restaurantCount > 1 ? 's' : ''}
                                                 </span>
                                             )}
-                                            <span className="px-3 py-1.5 bg-[#008751]/25 backdrop-blur-xl border border-[#008751]/40 rounded-full text-[10px] md:text-xs font-bold text-[#008751]">
+                                            <span className="px-3 py-1.5 bg-[#008751]/25 backdrop-blur-xl border border-[#008751]/40 rounded-full text-[10px] md:text-xs font-bold text-emerald-700">
                                                  Offre Exclusive
                                             </span>
                                         </motion.div>
@@ -465,10 +465,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Total price chip */}
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.32 }}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-1005 backdrop-blur-xl border border-[#FCD116]/20 rounded-full mb-6"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/85 backdrop-blur-xl border border-[#FCD116]/20 rounded-full mb-6"
                                     >
-                                        <span className="text-[10px] text-slate-900/40 uppercase tracking-widest">Total</span>
-                                        <span className="text-[#FCD116] font-black text-base md:text-lg">
+                                        <span className="text-[10px] text-slate-900/55 uppercase tracking-widest">Total</span>
+                                        <span className="text-amber-600 font-black text-base md:text-lg">
                                             <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                         </span>
                                     </motion.div>
@@ -505,7 +505,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <meta.Icon size={14} className="inline-block" /> {meta.label}
                                         </span>
                                         {currentItem.location && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-1005 backdrop-blur-xl border border-slate-200 text-[10px] md:text-xs font-bold text-slate-900/70">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/85 backdrop-blur-xl border border-slate-200 text-[10px] md:text-xs font-bold text-slate-900/70">
                                                 <MapPin className="w-3 h-3 text-[#E8112D]" /> {currentItem.location}
                                             </span>
                                         )}
@@ -525,7 +525,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Title */}
                                     <motion.h1
                                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                                        className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black leading-[1.1] mb-3 md:mb-4 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)]"
+                                        className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black leading-[1.1] mb-3 md:mb-4 drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]"
                                         style={{ background: `linear-gradient(120deg, #ffffff 50%, ${meta.accent} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                     >
                                         {currentItem.title}
@@ -567,7 +567,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         >
                                             {currentItem.highlights.map((h, i) => (
                                                 <div key={i}
-                                                    className="flex items-center gap-2 px-3 py-2.5 bg-slate-1005 backdrop-blur-xl border border-slate-200 rounded-xl"
+                                                    className="flex items-center gap-2 px-3 py-2.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-xl"
                                                     style={{ borderColor: meta.accent + '20' }}
                                                 >
                                                     <span style={{ color: meta.accent }}>
@@ -597,9 +597,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-5 relative z-10">
                                             <div>
-                                                <p className="text-[9px] md:text-[10px] font-black text-[#FCD116] uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
                                                 {totalOriginal > proposal.total_amount && (
-                                                    <p className="text-xs text-slate-900/25 line-through mb-0.5">
+                                                    <p className="text-xs text-slate-900/50 line-through mb-0.5">
                                                         <Price amount={totalOriginal} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                     </p>
                                                 )}
@@ -607,7 +607,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                     <Price amount={proposal.total_amount} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
-                                            <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-[#FCD116]/25 hidden sm:block" />
+                                            <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-amber-600/25 hidden sm:block" />
                                         </div>
 
                                         {/* Items with progress bars */}
@@ -644,8 +644,8 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         {/* Économies */}
                                         {savings > 0 && (
                                             <div className="bg-[#008751]/12 border border-[#008751]/25 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between relative z-10">
-                                                <span className="text-[10px] font-black text-[#008751] uppercase tracking-wider">Vous économisez</span>
-                                                <span className="text-[#008751] font-black text-sm">
+                                                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Vous économisez</span>
+                                                <span className="text-emerald-700 font-black text-sm">
                                                     <Price amount={savings} currency="XOF" forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} /> 
                                                 </span>
                                             </div>
@@ -663,7 +663,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 onClick={(e) => { e.stopPropagation(); router.push(`/p/${secret}/paiement`) }}
                                                 className="bg-slate-100 border border-slate-200 hover:bg-slate-100 text-slate-900 py-3.5 md:py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 touch-manipulation"
                                             >
-                                                <BookOpen className="w-4 h-4 text-[#FCD116]" /> Réserver
+                                                <BookOpen className="w-4 h-4 text-amber-600" /> Réserver
                                             </button>
                                         </div>
 
@@ -673,7 +673,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 href={`/api/proposals/${proposal.id}/devis`}
                                                 target="_blank" rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-white/60 hover:text-[#FCD116] py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
+                                                className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-slate-500 hover:text-amber-600 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
                                             >
                                                 <FileDown className="w-3.5 h-3.5" /> Devis PDF
                                             </a>
@@ -689,10 +689,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
                                         {/* Trust + validity */}
                                         <div className="flex flex-col items-center gap-1 relative z-10">
-                                            <p className="text-slate-900/35 text-[9px] md:text-[10px] flex items-center gap-1.5">
-                                                <CheckCircle className="w-3 h-3 text-[#008751]" /> Paiement 100% sécurisé — Retour Gagnant Bénin
+                                            <p className="text-slate-900/55 text-[9px] md:text-[10px] flex items-center gap-1.5">
+                                                <CheckCircle className="w-3 h-3 text-emerald-700" /> Paiement 100% sécurisé — Retour Gagnant Bénin
                                             </p>
-                                            <p className="text-[#FCD116]/35 text-[9px]">
+                                            <p className="text-amber-600/35 text-[9px]">
                                                 {(() => {
                                                     const validUntil = proposal?.valid_until 
                                                         ? new Date(proposal.valid_until) 
@@ -715,12 +715,12 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
             {/* ═══ NAVIGATION CONTROLS ═══ */}
             <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-5 md:px-10 z-40 flex items-center justify-between pointer-events-none">
-                <div className="text-slate-900/25 text-[10px] font-black font-mono tracking-widest">
-                    {String(currentSlide + 1).padStart(2, '0')}<span className="text-slate-900/10 mx-1">/</span>{String(items.length).padStart(2, '0')}
+                <div className="text-slate-900/50 text-[10px] font-black font-mono tracking-widest">
+                    {String(currentSlide + 1).padStart(2, '0')}<span className="text-slate-900/55 mx-1">/</span>{String(items.length).padStart(2, '0')}
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
                     <button onClick={() => goToSlide(currentSlide - 1)} title="Précédent"
-                        className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center backdrop-blur-2xl border transition-all active:scale-90 touch-manipulation ${currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'bg-slate-1005 border-slate-200 text-slate-900 hover:bg-white/88'}`}
+                        className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center backdrop-blur-2xl border transition-all active:scale-90 touch-manipulation ${currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'bg-white/85 border-slate-200 text-slate-900 hover:bg-white/88'}`}
                         disabled={currentSlide === 0}
                     >
                         <ChevronLeft className="w-5 h-5" />
@@ -742,7 +742,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 className="fixed bottom-[88px] left-4 md:bottom-20 md:left-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-white/90 hover:bg-[#FCD116]/20 backdrop-blur-xl border border-[#FCD116]/30 hover:border-[#FCD116]/70 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 touch-manipulation"
                 title="Télécharger le devis PDF"
             >
-                <FileDown className="w-5 h-5 md:w-6 md:h-6 text-[#FCD116]" />
+                <FileDown className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
             </a>
 
             {/* ═══ FLOATING WHATSAPP (bas droite) ═══ */}
