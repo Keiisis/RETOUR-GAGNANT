@@ -59,7 +59,6 @@ export default function ClientPortalPage() {
     const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [error, setError] = useState('')
-    const [factureNumero, setFactureNumero] = useState<string | null>(null)
 
     // Canvas Refs for Signature
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -215,9 +214,6 @@ export default function ClientPortalPage() {
             if (json.success) {
                 const signedAt = json.signed_at || new Date().toISOString()
                 setSignatureUrl(dataUrl)
-                if (json.numeroFacture) {
-                    setFactureNumero(json.numeroFacture)
-                }
                 setDoc(prev => prev ? {
                     ...prev,
                     status: 'accepte',
@@ -225,6 +221,10 @@ export default function ClientPortalPage() {
                     signed_at: signedAt,
                 } : null)
                 setSigning(false)
+                // Devis accepté : on invite immédiatement au paiement (le paiement
+                // justifie l'émission de la facture) — ouverture directe du choix
+                // de moyen de paiement.
+                setTimeout(() => processPayment(), 400)
             } else {
                 alert('Erreur lors de la sauvegarde : ' + (json.error || 'Erreur inconnue'))
             }
@@ -361,9 +361,17 @@ export default function ClientPortalPage() {
             })
             const data = await res.json()
             if (res.ok && data.success) {
-                setDoc(prev => prev ? { ...prev, status: 'paye' } : null)
                 setShowPaymentMethods(false)
-                alert('Paiement confirmé ! Un reçu vous a été envoyé par email. Merci de votre confiance.')
+                // Recharger le document : un devis payé a été converti en FACTURE
+                // (nouveau n° FAC, type='facture', statut='paye') côté serveur.
+                const { data: fresh } = await supabase
+                    .from('documents_financiers')
+                    .select('*')
+                    .eq('id', id)
+                    .single()
+                if (fresh) setDoc(fresh as DocumentFinancier)
+                else setDoc(prev => prev ? { ...prev, status: 'paye' } : null)
+                alert('Paiement confirmé ! Votre facture officielle a été émise et un reçu vous a été envoyé par email. Merci de votre confiance.')
             } else {
                 alert(data.error || 'Paiement reçu mais confirmation en attente. Notre équipe va régulariser cela.')
             }
@@ -1096,19 +1104,20 @@ export default function ClientPortalPage() {
                             </div>
                         )}
 
-                        {/* Extra Info (Auto Facture) */}
-                        {signatureUrl && doc.type === 'devis' && factureNumero && (
+                        {/* Devis accepté, en attente de paiement : le paiement justifie
+                            l'émission de la facture officielle. */}
+                        {signatureUrl && doc.type === 'devis' && !isPaid && (
                                     <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex items-center gap-3">
                                         <Receipt size={20} className="text-amber-600 flex-shrink-0" />
                                         <div>
-                                            <p className="text-sm font-bold text-amber-600">Facture générée automatiquement</p>
+                                            <p className="text-sm font-bold text-amber-600">Devis accepté et signé</p>
                                             <p className="text-xs text-slate-500 mt-0.5">
-                                                Numéro de facture : <span className="font-mono text-slate-900 font-bold">{factureNumero}</span>
+                                                Finalisez le paiement ci-dessous pour recevoir votre facture officielle acquittée.
                                             </p>
                                         </div>
                                     </div>
                                 )}
-                        
+
                     </div>
                 </motion.div>
 
@@ -1126,19 +1135,36 @@ export default function ClientPortalPage() {
                         </button>
                     )}
 
+                    {/* CASE 1b: Devis signé/accepté, non payé -> PAYER MAINTENANT.
+                        Le paiement déclenche l'émission de la facture officielle. */}
+                    {doc.type === 'devis' && isAccepted && !isPaid && (
+                        <button
+                            onClick={processPayment}
+                            disabled={isProcessing}
+                            className="w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                        >
+                            {isProcessing ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
+                            {isProcessing ? 'Connexion en cours...' : `Payer maintenant (${
+                                selectedCurrency === (doc.currency || 'XOF')
+                                    ? `${doc.total.toLocaleString('fr-FR')} ${doc.currency || 'XOF'}`
+                                    : formatPriceWithMargin(doc.total, selectedCurrency)
+                            })`}
+                        </button>
+                    )}
+
                     {/* CASE 2: Facture issue d'un devis signé, non payée -> paiement.
                         Les factures émises manuellement attestent d'un paiement déjà
                         reçu : jamais de bouton « Payer » dessus. */}
                     {doc.type === 'facture' && !isPaid && !isManualFacture && (
-                        <button 
+                        <button
                             onClick={processPayment}
                             disabled={isProcessing}
                             className="w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                         >
                             {isProcessing ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
                             {isProcessing ? 'Connexion en cours...' : `Payer de façon sécurisée (${
-                                selectedCurrency === 'XOF'
-                                    ? `${doc.total.toLocaleString('fr-FR')} XOF`
+                                selectedCurrency === (doc.currency || 'XOF')
+                                    ? `${doc.total.toLocaleString('fr-FR')} ${doc.currency || 'XOF'}`
                                     : formatPriceWithMargin(doc.total, selectedCurrency)
                             })`}
                         </button>
@@ -1289,13 +1315,13 @@ export default function ClientPortalPage() {
                                     <div>
                                         <p className="text-xs text-slate-500">Montant à payer</p>
                                         <p className="text-lg font-black text-emerald-600 font-mono">
-                                            {selectedCurrency === 'XOF'
-                                                ? `${doc.total.toLocaleString('fr-FR')} XOF`
+                                            {selectedCurrency === (doc.currency || 'XOF')
+                                                ? `${doc.total.toLocaleString('fr-FR')} ${doc.currency || 'XOF'}`
                                                 : formatPriceWithMargin(doc.total, selectedCurrency)
                                             }
                                         </p>
-                                        {selectedCurrency !== 'XOF' && (
-                                            <p className="text-[10px] text-gray-600">encaissé en {doc.total.toLocaleString('fr-FR')} XOF via KKiapay · converti via FedaPay</p>
+                                        {(doc.currency && doc.currency !== 'XOF' && doc.currency !== 'FCFA') && (
+                                            <p className="text-[10px] text-gray-600">encaissé en {Math.round(convertCurrency(doc.total, doc.currency as CurrencyCode, 'XOF')).toLocaleString('fr-FR')} XOF (Mobile Money)</p>
                                         )}
                                     </div>
                                     <CurrencySelector

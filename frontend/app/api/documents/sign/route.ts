@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { nextDocumentNumber } from '@/lib/document-numbering'
 
 // Service role key → bypass RLS (le client portail n'est pas authentifié)
 const supabase = createClient(
@@ -8,6 +7,11 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// POST /api/documents/sign — signature du devis par le client.
+// RÈGLE MÉTIER : la signature acte l'ACCORD du client (statut 'accepte') mais
+// NE crée PAS de facture. Une facture n'est émise QUE lorsque le paiement est
+// encaissé (le paiement justifie l'émission de la facture). La conversion
+// devis → facture est faite par confirmDocumentPayment() côté paiement.
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
@@ -17,10 +21,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'document_id et signature_url requis' }, { status: 400 })
         }
 
-        // 1. Récupérer le devis original (pour copier agent_id et données)
+        // 1. Récupérer le devis
         const { data: devis, error: fetchError } = await supabase
             .from('documents_financiers')
-            .select('*')
+            .select('id, status, signed_at')
             .eq('id', document_id)
             .eq('type', 'devis')
             .single()
@@ -29,27 +33,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Devis introuvable ou déjà traité' }, { status: 404 })
         }
 
-        // Guard: if devis is already signed, check for existing facture and return it
-        if (devis.status === 'accepte') {
-            const { data: existingFacture } = await supabase
-                .from('documents_financiers')
-                .select('id, numero')
-                .eq('parent_devis_id', document_id)
-                .eq('type', 'facture')
-                .maybeSingle()
-
+        // Idempotence : devis déjà signé → renvoyer succès (aucune facture émise
+        // tant que le paiement n'est pas encaissé)
+        if (devis.status === 'accepte' || devis.status === 'paye') {
             return NextResponse.json({
                 success: true,
                 signed_at: devis.signed_at || new Date().toISOString(),
-                numeroFacture: existingFacture?.numero || null,
-                factureId: existingFacture?.id || null,
                 alreadyExists: true,
             })
         }
 
         const signed_at = new Date().toISOString()
 
-        // 2. Mettre à jour le statut + signature du devis
+        // 2. Marquer le devis comme accepté + enregistrer la signature.
+        //    AUCUNE facture créée ici : elle le sera au paiement.
         const { error: updateError } = await supabase
             .from('documents_financiers')
             .update({
@@ -61,64 +58,7 @@ export async function POST(req: NextRequest) {
 
         if (updateError) throw new Error(updateError.message)
 
-        // 3. Vérifier si une facture existe déjà pour éviter les doublons
-        const { data: existingFacture } = await supabase
-            .from('documents_financiers')
-            .select('id, numero')
-            .eq('parent_devis_id', document_id)
-            .eq('type', 'facture')
-            .maybeSingle()
-
-        if (existingFacture) {
-            // Facture déjà créée (re-signature) — retourner la facture existante
-            return NextResponse.json({
-                success: true,
-                signed_at,
-                numeroFacture: existingFacture.numero,
-                factureId: existingFacture.id,
-                alreadyExists: true,
-            })
-        }
-
-        // 4. Générer la facture liée (avec agent_id pour visibilité côté agent/admin)
-        const numeroFacture = await nextDocumentNumber(supabase, 'facture')
-
-        const { data: newFacture, error: insertError } = await supabase
-            .from('documents_financiers')
-            .insert({
-                type: 'facture',
-                numero: numeroFacture,
-                parent_devis_id: document_id,
-                agent_id: devis.agent_id, // Copier l'agent_id pour que l'agent puisse la voir
-                client_nom: devis.client_nom,
-                client_prenom: devis.client_prenom,
-                client_email: devis.client_email,
-                client_phone: devis.client_phone,
-                client_adresse: devis.client_adresse,
-                items: devis.items,
-                currency: devis.currency || 'XOF',
-                sous_total: devis.sous_total,
-                total_tva: devis.total_tva,
-                remise: devis.remise,
-                total: devis.total,
-                signature_url: signature_url,
-                signed_at: signed_at,
-                status: 'envoye',
-                notes: `Facture générée automatiquement suite à la validation du devis N° ${devis.numero}.`,
-                conditions: devis.conditions,
-                validite: 'À réception',
-            })
-            .select('id')
-            .single()
-
-        if (insertError) throw new Error(`Erreur création facture: ${insertError.message} (code: ${insertError.code})`)
-
-        return NextResponse.json({
-            success: true,
-            signed_at,
-            numeroFacture,
-            factureId: newFacture?.id,
-        })
+        return NextResponse.json({ success: true, signed_at })
 
     } catch (err) {
         console.error('Erreur API sign document:', err)
