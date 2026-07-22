@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
             .limit(5000),
         supabase
             .from('depenses')
-            .select('id,titre,categorie,montant,date_depense,agent_id,notes')
+            // NB : PAS de colonne `notes` sur depenses (colonnes réelles :
+            // titre, categorie, montant, devise, date_depense, agent_id) — la
+            // demander faisait ECHOUER toute la requete → l'admin ne voyait
+            // AUCUNE depense (dont celles des agents), faussant Dépenses Totales.
+            .select('id,titre,categorie,montant,devise,date_depense,agent_id')
             .order('date_depense', { ascending: false })
             .limit(5000),
         // Source de vérité du taux de commission : system_settings/comptabilite_erp

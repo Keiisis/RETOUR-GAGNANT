@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import ExcelJS from 'exceljs'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { buildFec, serializeFec, fecBalance, type FecRow } from '@/lib/fec-syscohada'
+import { expenseCategoryLabel } from '@/lib/constants/compta'
+
+interface RawDoc { id: string; numero?: string | null; type: string; status: string; total: number; total_tva?: number | null; sous_total?: number | null; remise?: number | null; currency?: string | null; created_at: string; client_nom?: string | null; client_prenom?: string | null }
+interface RawPaie { id: string; document_id?: string | null; montant: number; date_paiement: string; type?: string | null; reference?: string | null }
+interface RawDep { id: string; titre?: string | null; categorie?: string | null; montant: number; date_depense: string }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -97,9 +102,15 @@ export async function GET(request: NextRequest) {
         })
     }
 
-    // ── Format Excel professionnel (défaut) : mise en page soignée, totaux,
-    //    contrôle d'équilibre, feuille de synthèse ────────────────────────────
-    const xlsxBuffer = await buildFecWorkbook(rows, balance, label)
+    // ── Format Excel professionnel (défaut) : feuilles LISIBLES (Factures,
+    //    Encaissements, Dépenses — une ligne par opération) + feuille partie
+    //    double (expert-comptable) + synthèse ──────────────────────────────────
+    const xlsxBuffer = await buildFecWorkbook(rows, balance, label, {
+        docs: docsRes.data || [],
+        paiements: paiemRes.data || [],
+        depenses: depRes.data || [],
+        toXof,
+    })
     return new NextResponse(xlsxBuffer as unknown as BodyInit, {
         status: 200,
         headers: {
@@ -126,14 +137,28 @@ async function buildFecWorkbook(
     rows: FecRow[],
     balance: { debit: number; credit: number; balanced: boolean },
     label: string,
+    raw: { docs: RawDoc[]; paiements: RawPaie[]; depenses: RawDep[]; toXof: (a: number, c?: string | null) => number },
 ): Promise<ArrayBuffer> {
     const wb = new ExcelJS.Workbook()
     wb.creator = 'Retour Gagnant Bénin'
     wb.created = new Date()
 
+    const { docs, paiements, depenses, toXof } = raw
+    const fmtIsoDate = (d: string) => { try { return new Date(d).toLocaleDateString('fr-FR') } catch { return d } }
+
+    // ── Totaux LISIBLES (une valeur = un sens, pas de partie double) ──
+    const factures = docs.filter(d => d.type === 'facture')
+    const totalVentesTTC = factures.reduce((a, d) => a + toXof(Number(d.total) || 0, d.currency), 0)
+    const totalTVA = factures.reduce((a, d) => a + toXof(Number(d.total_tva) || 0, d.currency), 0)
+    // Total encaissé = somme des encaissements réellement enregistrés
+    // (= total de la feuille « Encaissements », donc cohérent avec elle)
+    const totalEncaisse = paiements.reduce((a, p) => a + toXof(Number(p.montant) || 0, 'XOF'), 0)
+    const totalDepenses = depenses.reduce((a, d) => a + (Number(d.montant) || 0), 0)
+    const resultat = totalEncaisse - totalDepenses
+
     /* ── Feuille 1 : Synthèse ── */
     const syn = wb.addWorksheet('Synthèse', { properties: { defaultRowHeight: 18 } })
-    syn.columns = [{ width: 4 }, { width: 34 }, { width: 30 }, { width: 4 }]
+    syn.columns = [{ width: 4 }, { width: 36 }, { width: 26 }, { width: 4 }]
 
     syn.mergeCells('B2:C2')
     const title = syn.getCell('B2')
@@ -145,41 +170,112 @@ async function buildFecWorkbook(
 
     syn.mergeCells('B3:C3')
     const sub = syn.getCell('B3')
-    sub.value = `Export FEC / SYSCOHADA — Écritures en partie double — Période : ${label}`
+    sub.value = `Rapport comptable mensuel — Période : ${label}`
     sub.font = { size: 11, bold: true, color: { argb: EMERALD_DARK } }
     sub.alignment = { horizontal: 'center' }
     syn.getRow(3).height = 22
 
-    const synRows: Array<[string, string | number]> = [
+    const synRows: Array<[string, string | number, string?]> = [
         ['Période couverte', label],
         ['Généré le', new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' })],
-        ["Nombre d'écritures (lignes)", rows.length],
-        ['Total Débit (XOF)', balance.debit],
-        ['Total Crédit (XOF)', balance.credit],
-        ['Équilibre débit / crédit', balance.balanced ? 'ÉQUILIBRÉ ' : 'DÉSÉQUILIBRÉ — à vérifier'],
+        ['', ''],
+        ['Chiffre d’affaires facturé (TTC)', totalVentesTTC, 'num'],
+        ['dont TVA collectée (18%)', totalTVA, 'num'],
+        ['Total encaissé (entrées)', totalEncaisse, 'pos'],
+        ['Total dépenses (sorties)', totalDepenses, 'neg'],
+        ['Résultat (encaissé − dépenses)', resultat, resultat >= 0 ? 'pos' : 'neg'],
+        ['', ''],
+        ['Nombre de factures', factures.length],
+        ['Nombre d’encaissements', paiements.length],
+        ['Nombre de dépenses', depenses.length],
     ]
     let r = 5
-    for (const [k, v] of synRows) {
+    for (const [k, v, kind] of synRows) {
+        if (!k) { r++; continue }
         const kc = syn.getCell(`B${r}`); const vc = syn.getCell(`C${r}`)
         kc.value = k
         kc.font = { size: 11, bold: true, color: { argb: 'FF1B2A4A' } }
         kc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } }
         kc.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } }
         vc.value = v
-        vc.font = { size: 11, bold: typeof v === 'number' || String(v).includes('ÉQUILIBR'), color: { argb: String(v).includes('DÉSÉQUILIBR') ? 'FFDC2626' : 'FF1B2A4A' } }
-        if (typeof v === 'number') vc.numFmt = '#,##0'
+        const col = kind === 'pos' ? 'FF047857' : kind === 'neg' ? 'FFDC2626' : 'FF1B2A4A'
+        vc.font = { size: 11, bold: typeof v === 'number', color: { argb: col } }
+        if (typeof v === 'number') vc.numFmt = '#,##0 "FCFA"'
         vc.border = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } }
         r++
     }
 
     syn.mergeCells(`B${r + 1}:C${r + 3}`)
     const note = syn.getCell(`B${r + 1}`)
-    note.value = "Ce classeur reprend les écritures comptables en partie double (norme FEC, plan SYSCOHADA) : chaque opération apparaît au débit d'un compte et au crédit d'un autre. L'onglet « Écritures » contient le détail complet, filtrable par journal, compte et pièce. Un export .txt réglementaire (import direct dans un logiciel comptable) reste disponible depuis le panel."
+    note.value = "Ce classeur présente des feuilles LISIBLES (une ligne = une opération) : Factures, Encaissements et Dépenses. La feuille « Écritures (partie double) » reprend la comptabilité normée SYSCOHADA pour votre expert-comptable. Un export .txt réglementaire reste disponible depuis le panel."
     note.font = { size: 9.5, italic: true, color: { argb: 'FF5B6478' } }
     note.alignment = { wrapText: true, vertical: 'top' }
 
-    /* ── Feuille 2 : Écritures ── */
-    const ws = wb.addWorksheet('Écritures', { views: [{ state: 'frozen', ySplit: 1 }] })
+    // ── Générateur de feuille lisible (colonnes simples + total) ──
+    const simpleSheet = (name: string, cols: Array<{ h: string; w: number; num?: boolean }>, data: (string | number | null)[][], totalColIdx?: number) => {
+        const sh = wb.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] })
+        sh.columns = cols.map(c => ({ width: c.w }))
+        const h = sh.getRow(1)
+        h.values = cols.map(c => c.h); h.height = 24
+        h.eachCell(cell => {
+            cell.font = { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EMERALD } }
+            cell.alignment = { vertical: 'middle', horizontal: 'center' }
+            cell.border = { bottom: { style: 'medium', color: { argb: GOLD } } }
+        })
+        data.forEach((row, i) => {
+            const er = sh.addRow(row); er.height = 17
+            er.eachCell((cell, cn) => {
+                cell.font = { size: 10, color: { argb: 'FF1B2A4A' } }
+                if (i % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAF9' } }
+                cell.border = { bottom: { style: 'hair', color: { argb: 'FFE8ECEA' } } }
+                if (cols[cn - 1]?.num) { cell.numFmt = '#,##0 "FCFA"'; cell.alignment = { horizontal: 'right' } }
+            })
+        })
+        if (totalColIdx != null && data.length) {
+            // totalColIdx = index 0-based de la colonne numérique à sommer
+            const tot = data.reduce((a, row) => a + (Number(row[totalColIdx]) || 0), 0)
+            const valCol = totalColIdx + 1           // colonne 1-based du montant
+            const labelCol = Math.max(1, valCol - 1) // cellule à gauche pour « TOTAL »
+            const tr = sh.addRow([]); tr.height = 22
+            tr.getCell(labelCol).value = 'TOTAL'
+            tr.getCell(valCol).value = tot
+            for (const c of [labelCol, valCol]) {
+                const cell = tr.getCell(c)
+                cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EMERALD_DARK } }
+                if (c === valCol) { cell.numFmt = '#,##0 "FCFA"'; cell.alignment = { horizontal: 'right' } }
+            }
+        }
+        sh.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } }
+    }
+
+    /* ── Feuille 2 : Factures (ventes) ── */
+    simpleSheet('Factures',
+        [{ h: 'Date', w: 12 }, { h: 'N° Facture', w: 18 }, { h: 'Client', w: 26 }, { h: 'Statut', w: 12 }, { h: 'HT', w: 14, num: true }, { h: 'TVA', w: 14, num: true }, { h: 'TTC (FCFA)', w: 16, num: true }],
+        factures.map(d => {
+            const ht = toXof(Number(d.sous_total) || ((Number(d.total) || 0) - (Number(d.total_tva) || 0)), d.currency)
+            return [fmtIsoDate(d.created_at), d.numero || d.id.slice(0, 8), `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() || 'Client', d.status === 'paye' ? 'Payé' : d.status, ht, toXof(Number(d.total_tva) || 0, d.currency), toXof(Number(d.total) || 0, d.currency)]
+        }), 6)
+
+    /* ── Feuille 3 : Encaissements (entrées) ── */
+    const docNum: Record<string, string> = {}
+    for (const d of factures) docNum[d.id] = d.numero || d.id.slice(0, 8)
+    simpleSheet('Encaissements',
+        [{ h: 'Date', w: 12 }, { h: 'Facture / Réf.', w: 22 }, { h: 'Mode', w: 16 }, { h: 'Montant (FCFA)', w: 16, num: true }],
+        paiements.map(p => {
+            const ref = (p.document_id && docNum[p.document_id]) ? docNum[p.document_id]
+                : (p.reference || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() || 'Encaissement'
+            return [fmtIsoDate(p.date_paiement), ref, p.type || 'virement', toXof(Number(p.montant) || 0, 'XOF')]
+        }), 3)
+
+    /* ── Feuille 4 : Dépenses (sorties) ── */
+    simpleSheet('Dépenses',
+        [{ h: 'Date', w: 12 }, { h: 'Fournisseur / Libellé', w: 34 }, { h: 'Catégorie', w: 22 }, { h: 'Montant (FCFA)', w: 16, num: true }],
+        depenses.map(e => [fmtIsoDate(e.date_depense), e.titre || '—', expenseCategoryLabel(e.categorie || 'autre'), Number(e.montant) || 0]), 3)
+
+    /* ── Feuille 5 : Écritures (partie double — expert-comptable) ── */
+    const ws = wb.addWorksheet('Écritures (partie double)', { views: [{ state: 'frozen', ySplit: 1 }] })
     const COLS: Array<{ key: keyof FecRow; header: string; width: number }> = [
         { key: 'JournalCode', header: 'Journal', width: 9 },
         { key: 'JournalLib', header: 'Libellé journal', width: 18 },
