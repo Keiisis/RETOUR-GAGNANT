@@ -57,11 +57,11 @@ export default function AgentGrilleTarifaire() {
         setLoading(true)
         setError('')
         try {
-            const res = await fetch('/api/admin/settings?t=' + Date.now(), { cache: 'no-store' })
+            const res = await fetch('/api/agent/grille-tarifaire?t=' + Date.now(), { cache: 'no-store' })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Erreur lors du chargement des paramètres')
 
-            const rawValue = data.settings?.find((s: any) => s.key === 'grilles_tarifaires')?.value
+            const rawValue = data.value
             if (rawValue) {
                 try {
                     const parsed = JSON.parse(rawValue)
@@ -125,14 +125,10 @@ export default function AgentGrilleTarifaire() {
     const saveAllGrids = async (currentGrids = grids) => {
         setSaving(true)
         try {
-            const res = await fetch('/api/admin/settings', {
+            const res = await fetch('/api/agent/grille-tarifaire', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    key: 'grilles_tarifaires',
-                    value: JSON.stringify(currentGrids),
-                    category: 'frontend'
-                })
+                body: JSON.stringify({ value: JSON.stringify(currentGrids) })
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Erreur lors de la sauvegarde')
