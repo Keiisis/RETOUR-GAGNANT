@@ -891,39 +891,38 @@ export default function AdminComptabilitePage() {
                     { header: 'Détail', key: 'detail', width: 42 },
                 ],
                 data: [
-                    { label: "CA émis (factures)", value: kpis.caEmis, detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
-                    { label: "Encaissé - Facturation (net remises)", value: kpis.encaisseFactu, detail: `${kpis.nbFactPaye} factures payées` },
+                    { label: "Factures émises (montant total)", value: kpis.caEmis, detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
+                    { label: "Encaissé — Facturation (net remises)", value: kpis.encaisseFactu, detail: `${kpis.nbFactPaye} factures payées` },
                     { label: "Paiements manuels (virement/espèces)", value: pPaiements.reduce((a, p) => a + Number(p.montant || 0), 0), detail: `${pPaiements.length} paiements` },
                     { label: "Revenus boutique", value: kpis.boutique, detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes` },
-                    { label: "TOTAL ENCAISSÉ", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
+                    { label: "TOTAL ENCAISSÉ (Entrées)", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
                     { label: "TVA collectée", value: kpis.totalTVA, detail: 'Sur factures émises' },
                     { label: "Factures en attente", value: kpis.enAttente, detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours` },
                     { label: "Devis en attente de validation", value: kpis.devisEnAttente, detail: `${kpis.nbDevisAttente} devis — pipeline trésorerie` },
-                    { label: `Commission agents (${(commissionRate * 100).toFixed(0)}%)`, value: kpis.commission, detail: 'Sur encaissements nets' },
-                    { label: "Dépenses totales", value: kpis.totalDeps, detail: `${pDeps.length} dépenses` },
-                    { label: "BÉNÉFICE NET", value: kpis.benefice, detail: 'Encaissé - Commissions - Dépenses' },
+                    // Commission : on affiche le TAUX (0 % si aucune commission) —
+                    // et le montant calculé en détail, pour lever toute ambiguïté.
+                    { label: "Taux de commission agents", value: `${(commissionRate * 100).toFixed(commissionRate * 100 % 1 === 0 ? 0 : 1)} %`, detail: `Montant : ${fmt(kpis.commission)} (sur encaissements nets)` },
+                    { label: "Dépenses totales (Sorties)", value: kpis.totalDeps, detail: `${pDeps.length} dépenses` },
+                    { label: "BÉNÉFICE NET", value: kpis.benefice, detail: 'Encaissé − Commissions − Dépenses' },
                     { label: "Projection 30 jours", value: Math.round(kpis.proj30), detail: 'Basée sur rythme actuel' },
                     { label: "Score santé financière", value: scoreSante.score, detail: `${scoreSante.label} — ${scoreSante.recommandation}` },
                 ],
             }
 
-            // ── 2. Journal comptable consolidé ────────────────────
-            type JRow = { date: Date; piece: string; agent: string; libelle: string; mode: string; debit: number; credit: number }
+            // ── 2. Journal de trésorerie consolidé ────────────────
+            // CONVENTION MÉTIER (validée) : une ENTRÉE d'argent = CRÉDIT,
+            // une SORTIE (dépense) = DÉBIT. C'est un journal de CAISSE : on ne
+            // liste QUE les mouvements réels d'argent (encaissements + dépenses),
+            // jamais les factures émises non payées (elles figurent dans l'onglet
+            // « Documents ») — sinon double comptage et incohérences.
+            type JRow = { date: Date; piece: string; agent: string; libelle: string; mode: string; sens: string; debit: number; credit: number }
             const journalRows: JRow[] = []
 
-            pDocs.filter(d => d.type === 'facture').forEach(d => {
-                journalRows.push({
-                    date: new Date(d.created_at),
-                    piece: d.numero || '—',
-                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
-                    libelle: `Facturation — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
-                    mode: DOC_STATUS[d.status]?.label || d.status,
-                    debit: 0,
-                    credit: Number(d.total || 0),
-                })
-            })
+            // 2.a Encaissements enregistrés (paiements manuels + externes) = CRÉDIT
+            const paidDocIds = new Set<string>()
             pPaiements.forEach(p => {
                 const d = docs.find(x => x.id === p.document_id)
+                if (d) paidDocIds.add(d.id)
                 const isExterne = !d && /^\[EXTERNE\]/i.test(p.notes || '')
                 const libelleExterne = isExterne ? (p.notes || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() : ''
                 journalRows.push({
@@ -934,28 +933,47 @@ export default function AdminComptabilitePage() {
                         ? `Encaissement — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim()
                         : isExterne ? `Encaissement externe — ${libelleExterne}` : 'Encaissement',
                     mode: PAYMENT_LABELS[p.type] || p.type,
-                    debit: Number(p.montant || 0),
-                    credit: 0,
+                    sens: 'Entrée',
+                    debit: 0,
+                    credit: toXOF(Number(p.montant || 0), 'XOF'),
                 })
             })
+            // 2.b Factures payées SANS ligne de paiement (paiement en ligne
+            //     vérifié / conversion de devis) = CRÉDIT — pour ne rien oublier
+            pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !paidDocIds.has(d.id)).forEach(d => {
+                journalRows.push({
+                    date: new Date(d.created_at),
+                    piece: d.numero || '—',
+                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
+                    libelle: `Encaissement — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                    mode: 'Paiement en ligne',
+                    sens: 'Entrée',
+                    debit: 0,
+                    credit: toXOF(Number(d.total || 0), d.currency),
+                })
+            })
+            // 2.c Ventes boutique encaissées = CRÉDIT
             pOrders.filter(o => o.payment_status === 'completed').forEach(o => {
                 journalRows.push({
                     date: new Date(o.created_at),
                     piece: o.id.slice(0, 8).toUpperCase(),
                     agent: '—',
-                    libelle: `Commande boutique — ${o.product_title || ''}`.trim(),
+                    libelle: `Vente boutique — ${o.product_title || ''}`.trim(),
                     mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
-                    debit: Number(o.amount || 0),
-                    credit: 0,
+                    sens: 'Entrée',
+                    debit: 0,
+                    credit: toXOF(Number(o.amount || 0), o.currency),
                 })
             })
+            // 2.d Dépenses = DÉBIT (sorties)
             pDeps.forEach(e => {
                 journalRows.push({
                     date: new Date(e.date_depense),
                     piece: '—',
                     agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
-                    libelle: `Dépense — ${e.titre || ''} (${e.categorie || ''})`,
+                    libelle: `Dépense — ${e.titre || ''} (${expenseCategoryLabel(e.categorie)})`,
                     mode: '—',
+                    sens: 'Sortie',
                     debit: Number(e.montant || 0),
                     credit: 0,
                 })
@@ -963,19 +981,20 @@ export default function AdminComptabilitePage() {
             journalRows.sort((a, b) => a.date.getTime() - b.date.getTime())
 
             const journalSheet = {
-                sheetName: 'Journal',
-                title: 'JOURNAL COMPTABLE CONSOLIDÉ',
+                sheetName: 'Journal de trésorerie',
+                title: 'JOURNAL DE TRÉSORERIE CONSOLIDÉ',
                 subtitle,
                 legalHeader: true,
                 totalRow: true,
                 columns: [
                     { header: 'Date', key: 'date', width: 13, type: 'date' as const },
-                    { header: 'N° Pièce', key: 'piece', width: 18 },
+                    { header: 'N° Pièce', key: 'piece', width: 16 },
                     { header: 'Agent', key: 'agent', width: 22 },
-                    { header: 'Libellé', key: 'libelle', width: 44 },
-                    { header: 'Mode / Statut', key: 'mode', width: 20, type: 'status' as const },
-                    { header: 'Débit (FCFA)', key: 'debit', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
-                    { header: 'Crédit (FCFA)', key: 'credit', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Libellé', key: 'libelle', width: 46 },
+                    { header: 'Mode', key: 'mode', width: 18 },
+                    { header: 'Sens', key: 'sens', width: 12, type: 'status' as const },
+                    { header: 'Débit — Sorties (FCFA)', key: 'debit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Crédit — Entrées (FCFA)', key: 'credit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
                 ],
                 data: journalRows,
             }
@@ -990,7 +1009,7 @@ export default function AdminComptabilitePage() {
                 columns: [
                     { header: 'Agent', key: 'name', width: 26 },
                     { header: 'Email', key: 'email', width: 30 },
-                    { header: 'CA émis', key: 'caEmis', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Factures émises', key: 'caEmis', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
                     { header: 'Encaissé net', key: 'encaisse', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
                     { header: `Commission ${(commissionRate * 100).toFixed(0)}%`, key: 'commission', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
                     { header: 'TVA collectée', key: 'tva', width: 16, type: 'currency' as const, totalFormula: 'sum' as const },
@@ -1289,14 +1308,14 @@ export default function AdminComptabilitePage() {
                     title: 'DASHBOARD COMPTABLE MENSUEL',
                     subtitle,
                     kpis: [
-                        { label: 'CA émis (factures)', value: kpis.caEmis, type: 'currency', tone: 'accent', detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
+                        { label: 'Factures émises', value: kpis.caEmis, type: 'currency', tone: 'accent', detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
                         { label: 'Total encaissé', value: kpis.totalEncaisse, type: 'currency', tone: 'good', detail: 'Facturation + Boutique + Paiements manuels' },
                         { label: 'Paiements manuels', value: paiementsManuelsTotal, type: 'currency', tone: 'good', detail: `${pPaiements.length} paiements (virement / espèces / chèque)` },
                         { label: 'Revenus boutique', value: kpis.boutique, type: 'currency', tone: 'accent', detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées` },
                         { label: 'TVA collectée', value: kpis.totalTVA, type: 'currency', tone: 'neutral', detail: 'À déclarer à la DGI' },
                         { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours` },
                         { label: 'Devis en attente de validation', value: kpis.devisEnAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbDevisAttente} devis — pipeline introduit dans la trésorerie réelle` },
-                        { label: `Commission agents ${(commissionRate * 100).toFixed(0)}%`, value: kpis.commission, type: 'currency', tone: 'warn', detail: 'Sur encaissements nets' },
+                        { label: 'Taux de commission agents', value: commissionRate, type: 'percent', tone: 'warn', detail: `Montant : ${fmt(kpis.commission)} sur encaissements nets` },
                         { label: 'Dépenses totales', value: kpis.totalDeps, type: 'currency', tone: 'bad', detail: `${pDeps.length} dépenses enregistrées` },
                         { label: 'Bénéfice net', value: kpis.benefice, type: 'currency', tone: kpis.benefice >= 0 ? 'good' : 'bad', detail: 'Encaissé − Commissions − Dépenses' },
                         { label: 'Score santé financière', value: scoreSante.score, type: 'number', tone: scoreSante.score >= 60 ? 'good' : scoreSante.score >= 40 ? 'warn' : 'bad', detail: `${scoreSante.label} / 100 — ${scoreSante.recommandation}` },

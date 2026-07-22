@@ -69,9 +69,13 @@ export async function POST(req: Request) {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // Envoi d'email de confirmation (avec devise correcte)
+        // Email de confirmation VOYAGE — uniquement pour les vraies
+        // propositions de voyage. Pour un LIEN DE PAIEMENT (facturation /
+        // encaissement), classifyProposalPayment envoie déjà le reçu RGB
+        // officiel + PDF — on évite ici le doublon et le libellé « voyage ».
         // ═══════════════════════════════════════════════════════════
-        if (client_email && proposal) {
+        const isPaymentLink = String(proposal.notes || '').startsWith('LIEN-PAIEMENT')
+        if (client_email && proposal && !isPaymentLink) {
             try {
                 const displayAmount = formatAmount(proposal.total_amount || 0, proposalCurrency)
 

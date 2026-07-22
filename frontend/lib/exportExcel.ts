@@ -261,11 +261,11 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
         cell.alignment = { horizontal: 'center', vertical: 'middle' }
         const val = String(cell.value ?? '').toLowerCase()
         let bg = 'FFF3F4F6'; let fg = COLOR_TEXT
-        if (val.includes('termin') || val.includes('payé') || val.includes('paye') || val.includes('succès') || val.includes('accept') || val.includes('soldé') || val.includes('complet') || val === 'livré' || val === 'livre') {
+        if (val.includes('termin') || val.includes('payé') || val.includes('paye') || val.includes('succès') || val.includes('accept') || val.includes('soldé') || val.includes('complet') || val === 'livré' || val === 'livre' || val.includes('entrée') || val.includes('entree')) {
           bg = 'FFDCFCE7'; fg = 'FF15803D'
         } else if (val.includes('cours') || val.includes('attente') || val.includes('envoy') || val.includes('traitement') || val.includes('brouillon')) {
           bg = 'FFFEF3C7'; fg = 'FFB45309'
-        } else if (val.includes('annul') || val.includes('retard') || val.includes('refus') || val.includes('impay') || val.includes('échou') || val.includes('echou')) {
+        } else if (val.includes('annul') || val.includes('retard') || val.includes('refus') || val.includes('impay') || val.includes('échou') || val.includes('echou') || val.includes('sortie')) {
           bg = 'FFFEE2E2'; fg = COLOR_RED_BJ
         } else if (val.includes('virement') || val.includes('espèces') || val.includes('especes') || val.includes('mobile') || val.includes('carte') || val.includes('chèque') || val.includes('cheque')) {
           bg = 'FFDBEAFE'; fg = 'FF1E3A8A'

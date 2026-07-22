@@ -248,11 +248,19 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                                             <span className="font-bold" style={{ color: 'var(--panel-text, #E5E7EB)' }}>{fmtA(l.total_amount, l.currency)}</span>
                                             <span>{new Date(l.created_at).toLocaleDateString('fr-FR')}</span>
                                         </div>
-                                        {l.paid && (
-                                            <p className="text-[11px] mt-1.5 flex items-center gap-1.5 font-semibold" style={{ color: '#059669' }}>
-                                                <ShieldCheck size={12} /> <T>Payé — facture générée automatiquement et comptabilisée</T>
-                                            </p>
-                                        )}
+                                        {l.paid && (() => {
+                                            const cat = (String(l.notes || '').match(/\[CAT:(\w+)\]/)?.[1]) || 'factures'
+                                            const msg = cat === 'paiements'
+                                                ? 'Payé — encaissement enregistré en comptabilité, reçu envoyé au client'
+                                                : cat === 'boutique'
+                                                    ? 'Payé — commande enregistrée en comptabilité'
+                                                    : 'Payé — facture RGB générée, envoyée au client et comptabilisée'
+                                            return (
+                                                <p className="text-[11px] mt-1.5 flex items-center gap-1.5 font-semibold" style={{ color: '#059669' }}>
+                                                    <ShieldCheck size={12} /> <T>{msg}</T>
+                                                </p>
+                                            )
+                                        })()}
                                     </div>
                                     <span className="text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shrink-0"
                                         style={l.paid

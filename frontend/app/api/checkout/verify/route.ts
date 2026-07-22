@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         // ─── Récupérer la commande ───────────────────────────────────────────
         const { data: existingOrder, error: fetchError } = await supabase
             .from('orders')
-            .select('payment_status, transaction_id, amount, payment_method, product_id, quantity, currency, cart_items, customer_email')
+            .select('payment_status, transaction_id, amount, payment_method, product_id, quantity, currency, cart_items, customer_email, shipping_zone')
             .eq('id', order_id)
             .single()
 
@@ -472,7 +472,10 @@ export async function POST(request: Request) {
         // ── Envoi email facture (best-effort, fire-and-forget) ──
         // Le trigger SQL crée déjà la ligne `invoices` quand payment_status passe
         // à 'completed'. On déclenche l'envoi sans bloquer la réponse.
-        if (existingOrder.customer_email) {
+        // EXCEPTION : une commande « proposition / lien de paiement » reçoit son
+        // reçu RGB officiel (+ PDF) via classifyProposalPayment — on n'envoie
+        // donc PAS ici l'email facture boutique (doublon / mauvais libellé).
+        if (existingOrder.customer_email && existingOrder.shipping_zone !== 'proposal') {
             const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
             sendInvoiceEmail({
                 orderId: order_id,
