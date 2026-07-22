@@ -160,6 +160,7 @@ export default function AgentComptabilitePage() {
     const [showRelancesOnly, setShowRelancesOnly] = useState(false)
     const [showExpenseModal, setShowExpenseModal] = useState(false)
     const [newExpense, setNewExpense] = useState({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
+    const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
     const [savingExpense, setSavingExpense] = useState(false)
     // Salaires du personnel (espace salaire — impact comptable via depenses/categorie 'salaires')
     const [showSalaireModal, setShowSalaireModal] = useState(false)
@@ -401,21 +402,51 @@ export default function AgentComptabilitePage() {
     const handleAddExpense = async (e: React.FormEvent) => {
         e.preventDefault()
         setSavingExpense(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setSavingExpense(false); return }
 
-        // Date optionnelle (peut ne pas être connue pour le moment → date du jour)
         // IFU optionnel : tracé dans le titre (pas de colonne dédiée en base)
         const titre = newExpense.ifu.trim()
             ? `${newExpense.titre.trim()} · IFU: ${newExpense.ifu.trim()}`
             : newExpense.titre.trim()
+
+        // ── MODE ÉDITION : PATCH via route service-key (RLS bloque l'update client) ──
+        if (editingExpenseId) {
+            const { data: { session } } = await supabase.auth.getSession()
+            const res = await fetch('/api/agent/depenses', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+                body: JSON.stringify({
+                    id: editingExpenseId,
+                    titre,
+                    categorie: newExpense.categorie,
+                    montant: Number(newExpense.montant),
+                    // On envoie TOUJOURS la date choisie (respect exact de la date saisie)
+                    ...(newExpense.date ? { date_depense: newExpense.date } : {}),
+                }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (res.ok) {
+                setShowExpenseModal(false)
+                setEditingExpenseId(null)
+                setNewExpense({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
+                fetchAllData()
+            } else {
+                alert(data.error || 'Modification impossible')
+            }
+            setSavingExpense(false)
+            return
+        }
+
+        // ── MODE CRÉATION ──
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setSavingExpense(false); return }
 
         const { error } = await supabase.from('depenses').insert({
             agent_id: user.id,
             titre,
             categorie: newExpense.categorie,
             montant: Number(newExpense.montant),
-            date_depense: newExpense.date ? new Date(newExpense.date).toISOString() : new Date().toISOString(),
+            // Date fixée à midi UTC → jour stable quel que soit le fuseau
+            date_depense: newExpense.date ? new Date(`${newExpense.date}T12:00:00Z`).toISOString() : new Date().toISOString(),
         })
 
         if (!error) {
@@ -424,6 +455,32 @@ export default function AgentComptabilitePage() {
             fetchAllData()
         }
         setSavingExpense(false)
+    }
+
+    // Ouvre le modal en mode édition (pré-remplit + extrait l'IFU du titre)
+    const openEditExpense = (exp: { id: string; titre: string; categorie: string; montant: number; date_depense: string }) => {
+        let titre = exp.titre || ''
+        let ifu = ''
+        const m = titre.match(/^(.*?)\s*·\s*IFU:\s*(.+)$/)
+        if (m) { titre = m[1].trim(); ifu = m[2].trim() }
+        // date_depense ISO → YYYY-MM-DD pour l'input date
+        const d = new Date(exp.date_depense)
+        const dateStr = isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+        setNewExpense({ titre, categorie: exp.categorie || 'autre', montant: String(exp.montant ?? ''), date: dateStr, ifu })
+        setEditingExpenseId(exp.id)
+        setShowExpenseModal(true)
+    }
+
+    const deleteExpense = async (id: string, libelle: string) => {
+        if (!confirm(`Supprimer cette dépense ?\n${libelle}\n\nCette action est définitive.`)) return
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/agent/depenses?id=${id}`, {
+            method: 'DELETE',
+            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) fetchAllData()
+        else alert(data.error || 'Suppression impossible')
     }
 
     // ── Salaires : enregistrés dans `depenses` (categorie 'salaires') pour que
@@ -714,7 +771,7 @@ export default function AgentComptabilitePage() {
                     </button>
 
                     <button
-                        onClick={() => setShowExpenseModal(true)}
+                        onClick={() => { setEditingExpenseId(null); setNewExpense({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' }); setShowExpenseModal(true) }}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:bg-rose-500/30 transition-all font-bold"
                     >
                         <Plus size={18} />
@@ -969,17 +1026,18 @@ export default function AgentComptabilitePage() {
                                         <th className="py-4 px-6">Catégorie</th>
                                         <th className="py-4 px-6 text-right">Montant</th>
                                         <th className="py-4 px-6 text-right">Date</th>
+                                        <th className="py-4 px-6 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {paginatedExpenses.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="py-16 text-center text-gray-500 italic text-sm">
+                                            <td colSpan={5} className="py-16 text-center text-gray-500 italic text-sm">
                                                 Aucune dépense trouvée pour cette période.
                                             </td>
                                         </tr>
                                     ) : paginatedExpenses.map((exp) => (
-                                        <tr key={exp.id} className="hover:bg-white/[0.02] transition-colors">
+                                        <tr key={exp.id} className="group hover:bg-white/[0.02] transition-colors">
                                             <td className="py-4 px-6 text-sm font-bold text-white">{exp.titre}</td>
                                             <td className="py-4 px-6">
                                                 <span className="text-[9px] font-bold bg-white/5 text-gray-400 px-2.5 py-1 rounded-lg uppercase border border-white/10 capitalize">
@@ -991,6 +1049,16 @@ export default function AgentComptabilitePage() {
                                             </td>
                                             <td className="py-4 px-6 text-right font-mono text-xs text-gray-500">
                                                 {new Date(exp.date_depense).toLocaleDateString('fr-FR')}
+                                            </td>
+                                            <td className="py-4 px-6 text-right">
+                                                <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button type="button" title="Modifier cette dépense" onClick={() => openEditExpense(exp)} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all">
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button type="button" title="Supprimer cette dépense" onClick={() => deleteExpense(exp.id, exp.titre)} className="p-2 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -1156,11 +1224,11 @@ export default function AgentComptabilitePage() {
             {/* EXPENSE MODAL */}
             <AnimatePresence>
                 {showExpenseModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowExpenseModal(false)}>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { setShowExpenseModal(false); setEditingExpenseId(null) }}>
                         <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }} onClick={e => e.stopPropagation()} className="glass-nexus-card w-full max-w-md overflow-hidden bg-[#0c1420]">
                             <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-lg font-black text-white">Ajouter une Dépense</h3>
-                                <button title="Fermer" onClick={() => setShowExpenseModal(false)} className="text-gray-500 hover:text-white"><X size={20} /></button>
+                                <h3 className="text-lg font-black text-white">{editingExpenseId ? 'Modifier la Dépense' : 'Ajouter une Dépense'}</h3>
+                                <button title="Fermer" onClick={() => { setShowExpenseModal(false); setEditingExpenseId(null) }} className="text-gray-500 hover:text-white"><X size={20} /></button>
                             </div>
                             <form onSubmit={handleAddExpense} className="p-6 space-y-4">
                                 <div>
@@ -1192,7 +1260,7 @@ export default function AgentComptabilitePage() {
                                     </div>
                                 </div>
                                 <button disabled={savingExpense} type="submit" className="w-full py-4 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2 mt-4">
-                                    {savingExpense ? <RefreshCw size={18} className="animate-spin" /> : <Plus size={18} />} Enregistrer la dépense
+                                    {savingExpense ? <RefreshCw size={18} className="animate-spin" /> : (editingExpenseId ? <Pencil size={18} /> : <Plus size={18} />)} {editingExpenseId ? 'Enregistrer les modifications' : 'Enregistrer la dépense'}
                                 </button>
                             </form>
                         </motion.div>

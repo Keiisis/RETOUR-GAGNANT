@@ -9,10 +9,10 @@ import {
     Calculator, Landmark, Receipt, ChevronLeft, ChevronRight,
     Zap, PieChart, CheckCircle2, Clock, TrendingUp, X,
     Shield, Mail, Phone, MapPin, Hash, Package,
-    EyeOff, Eye, ExternalLink, Banknote, CreditCard, Bell
+    EyeOff, Eye, ExternalLink, Banknote, CreditCard, Bell, Pencil, Trash2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { expenseCategoryLabel } from '@/lib/constants/compta'
+import { expenseCategoryLabel, EXPENSE_CATEGORIES } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'
 import { toXOF, loadExchangeRates, rateOf } from '@/lib/currency-convert'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
@@ -378,6 +378,10 @@ export default function AdminComptabilitePage() {
     const [commissionRate, setCommissionRate] = useState(0.10)
     const [clotures, setClotures]   = useState<ClotureRow[]>([])
 
+    // Édition d'une dépense (admin) — mêmes droits que l'agent sur ses écritures
+    const [editDep, setEditDep] = useState<{ id: string; titre: string; categorie: string; montant: string; date: string; ifu: string } | null>(null)
+    const [savingDep, setSavingDep] = useState(false)
+
     const [journalTab, setJournalTab]   = useState<'docs' | 'boutique' | 'depenses' | 'paiements'>('docs')
     const [searchQ, setSearchQ]         = useState('')
     const [sortAgent, setSortAgent]     = useState<'encaisse' | 'commission' | 'docs'>('encaisse')
@@ -440,6 +444,47 @@ export default function AdminComptabilitePage() {
     }, [])
 
     useEffect(() => { fetchAll() }, [fetchAll])
+
+    // ── Édition / suppression d'une dépense (route /api/agent/depenses,
+    //    autorisée aux admins) — permet de corriger la DATE EXACTE saisie ──
+    const openEditDep = (d: DepRow) => {
+        let titre = d.titre || ''
+        let ifu = ''
+        const m = titre.match(/^(.*?)\s*·\s*IFU:\s*(.+)$/)
+        if (m) { titre = m[1].trim(); ifu = m[2].trim() }
+        const dt = new Date(d.date_depense)
+        const dateStr = isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0, 10)
+        setEditDep({ id: d.id, titre, categorie: d.categorie || 'autre', montant: String(d.montant ?? ''), date: dateStr, ifu })
+    }
+
+    const saveDep = async () => {
+        if (!editDep) return
+        setSavingDep(true)
+        const titre = editDep.ifu.trim() ? `${editDep.titre.trim()} · IFU: ${editDep.ifu.trim()}` : editDep.titre.trim()
+        const res = await fetch('/api/agent/depenses', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: editDep.id,
+                titre,
+                categorie: editDep.categorie,
+                montant: Number(editDep.montant),
+                ...(editDep.date ? { date_depense: editDep.date } : {}),
+            }),
+        })
+        const data = await res.json().catch(() => ({}))
+        setSavingDep(false)
+        if (res.ok) { setEditDep(null); fetchAll() }
+        else alert(data.error || 'Modification impossible')
+    }
+
+    const deleteDep = async (id: string, libelle: string) => {
+        if (!confirm(`Supprimer cette dépense ?\n${libelle}\n\nCette action est définitive.`)) return
+        const res = await fetch(`/api/agent/depenses?id=${id}`, { method: 'DELETE' })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok) fetchAll()
+        else alert(data.error || 'Suppression impossible')
+    }
 
     // ── Period ────────────────────────────────────────────────────
     const { start, end } = useMemo(() => getPeriodRange(period), [period])
@@ -1910,8 +1955,8 @@ export default function AdminComptabilitePage() {
                     {journalTab === 'depenses' && (
                         <table className="w-full min-w-[560px]">
                             <thead><tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-white/5">
-                                {['Titre', 'Catégorie', 'Agent', 'Montant', 'Date', 'Notes'].map((h, i) => (
-                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 4 ? 'text-right' : i === 3 ? 'text-right' : i === 5 ? 'text-left pr-5' : 'text-left')}>{h}</th>
+                                {['Titre', 'Catégorie', 'Agent', 'Montant', 'Date', 'Actions'].map((h, i) => (
+                                    <th key={h} className={cn('p-4 font-black', i === 0 ? 'pl-5 text-left' : i === 4 ? 'text-right' : i === 3 ? 'text-right' : i === 5 ? 'text-right pr-5' : 'text-left')}>{h}</th>
                                 ))}
                             </tr></thead>
                             <tbody className="divide-y divide-white/[0.03]">
@@ -1919,13 +1964,18 @@ export default function AdminComptabilitePage() {
                                 {pgDeps.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     return (
-                                        <tr key={d.id} className="hover:bg-white/[0.02] transition-colors">
+                                        <tr key={d.id} className="group hover:bg-white/[0.02] transition-colors">
                                             <td className="p-4 pl-5 text-xs text-white font-medium">{d.titre}</td>
                                             <td className="p-4"><span className="text-[9px] font-bold bg-white/5 text-gray-400 px-2 py-0.5 rounded-full capitalize">{d.categorie}</span></td>
                                             <td className="p-4 text-[10px] text-gray-500 truncate max-w-[120px]">{ag?.full_name || ag?.email || '—'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-red-400 font-bold">−{fmt(Number(d.montant))}</td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.date_depense)}</td>
-                                            <td className="p-4 pr-5 text-[10px] text-gray-600 truncate max-w-[160px]">{d.notes || '—'}</td>
+                                            <td className="p-4 pr-5 text-right">
+                                                <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button type="button" title="Modifier cette dépense" onClick={() => openEditDep(d)} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"><Pencil size={14} /></button>
+                                                    <button type="button" title="Supprimer cette dépense" onClick={() => deleteDep(d.id, d.titre)} className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={14} /></button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     )
                                 })}
@@ -2080,6 +2130,51 @@ export default function AdminComptabilitePage() {
                             <button disabled={savingPayment || !newPayment.montant} type="submit"
                                 className="w-full py-4 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
                                 {savingPayment ? <RefreshCw size={18} className="animate-spin" /> : <Banknote size={18} />} Confirmer l&apos;encaissement
+                            </button>
+                        </form>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* ── MODAL ÉDITION DÉPENSE (admin) ── */}
+        <AnimatePresence>
+            {editDep && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setEditDep(null)}>
+                    <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-[#0c1420] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                            <h3 className="text-lg font-black text-white">Modifier la Dépense</h3>
+                            <button title="Fermer" onClick={() => setEditDep(null)} className="text-gray-500 hover:text-white"><X size={20} /></button>
+                        </div>
+                        <form onSubmit={e => { e.preventDefault(); saveDep() }} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Libellé</label>
+                                <input required value={editDep.titre} onChange={e => setEditDep(v => v ? { ...v, titre: e.target.value } : v)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Montant (XOF)</label>
+                                    <input required type="number" value={editDep.montant} onChange={e => setEditDep(v => v ? { ...v, montant: e.target.value } : v)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Catégorie</label>
+                                    <select title="Catégorie" value={editDep.categorie} onChange={e => setEditDep(v => v ? { ...v, categorie: e.target.value } : v)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm appearance-none">
+                                        {EXPENSE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date exacte</label>
+                                    <input type="date" title="Date de la dépense" value={editDep.date} onChange={e => setEditDep(v => v ? { ...v, date: e.target.value } : v)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">IFU <span className="normal-case text-gray-600">(optionnel)</span></label>
+                                    <input value={editDep.ifu} onChange={e => setEditDep(v => v ? { ...v, ifu: e.target.value } : v)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" placeholder="N° IFU" />
+                                </div>
+                            </div>
+                            <button disabled={savingDep} type="submit" className="w-full py-4 bg-emerald-500 text-white font-black rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
+                                {savingDep ? <RefreshCw size={18} className="animate-spin" /> : <Pencil size={18} />} Enregistrer les modifications
                             </button>
                         </form>
                     </motion.div>
