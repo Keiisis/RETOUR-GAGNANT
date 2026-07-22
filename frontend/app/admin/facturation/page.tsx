@@ -584,36 +584,28 @@ export default function AdminFacturationPage() {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(6.5)
                 pdf.setTextColor(30, 40, 70)
-                pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 10.5)
-                pdf.setFont('helvetica', 'normal')
-                pdf.setFontSize(5.8)
-                pdf.setTextColor(90, 95, 130)
-                pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 15)
+                pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
 
                 // Signature manuscrite (script) — police times italique, encre bleue
                 pdf.setFont('times', 'italic')
                 pdf.setFontSize(15)
                 pdf.setTextColor(20, 40, 110)
-                pdf.text(safe(presidentName), sig2X + 5, y + 23)
-                // Trait de signature sous le paraphe
+                pdf.text(safe(presidentName), sig2X + 5, y + 22)
                 pdf.setDrawColor(20, 40, 110)
                 pdf.setLineWidth(0.3)
-                pdf.line(sig2X + 5, y + 24.5, sig2X + 5 + Math.min(sigW - 34, pdf.getTextWidth(safe(presidentName)) * 0.5), y + 24.5)
+                pdf.line(sig2X + 5, y + 24, sig2X + 5 + Math.min(sigW - 44, pdf.getTextWidth(safe(presidentName)) * 0.5), y + 24)
 
-                pdf.setFont('helvetica', 'bold')
-                pdf.setFontSize(7)
-                pdf.setTextColor(20, 30, 80)
-                pdf.text(safe(presidentName), sig2X + 4, y + 29)
                 pdf.setFont('helvetica', 'normal')
                 pdf.setFontSize(5.8)
                 pdf.setTextColor(90, 95, 130)
-                pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + 33.5)
+                pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + sigBoxH - 3)
 
-                // Cachet officiel (contenu dans la case, a droite)
+                // Cachet officiel — grande taille (place liberee), a droite
                 if (STAMP_BASE64) {
                     try {
                         const stampData = STAMP_BASE64.startsWith('data:') ? STAMP_BASE64 : `data:image/png;base64,${STAMP_BASE64}`
-                        pdf.addImage(stampData, 'PNG', sig2X + sigW - 30, y + 5, 28, 28)
+                        const cs = 40
+                        pdf.addImage(stampData, 'PNG', sig2X + sigW - cs - 1, y + (sigBoxH - cs) / 2, cs, cs)
                     } catch (e) {
                         console.error('Error adding stamp:', e)
                     }
@@ -655,17 +647,13 @@ export default function AdminFacturationPage() {
             }
 
             // ── WATERMARK ──────────────────────────────────────────
+            // Uniquement pour les brouillons. Le filigrane « PAYE » est retiré :
+            // le statut en en-tête suffit largement (pas de doublon).
             if (doc.status === 'brouillon') {
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(75)
                 pdf.setTextColor(210, 215, 222)
                 pdf.text('BROUILLON', pw / 2, ph / 2, { align: 'center', angle: 40 })
-            }
-            if (doc.status === 'paye') {
-                pdf.setFont('helvetica', 'bold')
-                pdf.setFontSize(80)
-                pdf.setTextColor(195, 240, 215)
-                pdf.text('PAYE', pw / 2, ph / 2, { align: 'center', angle: 40 })
             }
 
             // ── LEGAL FOOTER (police agrandie, toutes les lignes) ──

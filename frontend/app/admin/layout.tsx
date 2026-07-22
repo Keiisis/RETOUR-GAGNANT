@@ -403,11 +403,15 @@ function AdminLayoutContent({
                     {/* ═══ CONTENT ═══ */}
                     <div className="flex-1 overflow-y-auto relative z-10 scrollbar-premium">
                         <div className="p-4 lg:p-6 xl:p-8 max-w-[1600px] mx-auto pb-20">
+                            {/* Transition de page : léger glissement SANS fondu
+                                d'opacité — le fondu restait parfois bloqué à mi-
+                                course et donnait un voile « flou » sur tout le panel. */}
                             <motion.div
                                 key={pathname}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                initial={{ y: 8 }}
+                                animate={{ y: 0 }}
+                                style={{ opacity: 1 }}
+                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                             >
                                 {children}
                             </motion.div>

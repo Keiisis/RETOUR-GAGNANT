@@ -467,30 +467,22 @@ export default function AgentDevisPage() {
             pdf.setFontSize(6.5)
             pdf.setTextColor(30, 40, 70)
             pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
-            pdf.setFont('helvetica', 'normal')
-            pdf.setFontSize(6)
-            pdf.setTextColor(90, 95, 130)
-            pdf.text('La Presidente Directrice Generale :', sig2X + 4, y + 15)
             // Signature manuscrite (script) — times italique, encre bleue
             pdf.setFont('times', 'italic')
             pdf.setFontSize(15)
             pdf.setTextColor(20, 40, 110)
-            pdf.text(presidentName, sig2X + 5, y + 23)
+            pdf.text(presidentName, sig2X + 5, y + 22)
             pdf.setDrawColor(20, 40, 110)
             pdf.setLineWidth(0.3)
-            pdf.line(sig2X + 5, y + 24.5, sig2X + 5 + Math.min(sigW - 34, pdf.getTextWidth(presidentName) * 0.5), y + 24.5)
-            pdf.setFont('helvetica', 'bold')
-            pdf.setFontSize(7)
-            pdf.setTextColor(20, 30, 80)
-            pdf.text(presidentName, sig2X + 4, y + 29)
+            pdf.line(sig2X + 5, y + 24, sig2X + 5 + Math.min(sigW - 44, pdf.getTextWidth(presidentName) * 0.5), y + 24)
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(5.8)
             pdf.setTextColor(90, 95, 130)
-            pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + 33.5)
+            pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + sigH - 3)
 
             try {
-                const sSz = 32
-                pdf.addImage(STAMP_BASE64, 'PNG', sig2X + sigW - sSz - 3, y + 3, sSz, sSz)
+                const sSz = 40
+                pdf.addImage(STAMP_BASE64, 'PNG', sig2X + sigW - sSz - 1, y + (sigH - sSz) / 2, sSz, sSz)
             } catch {}
 
             // ── FOOTER ────────────────────────────────────────────
