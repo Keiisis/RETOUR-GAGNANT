@@ -130,6 +130,7 @@ function AdminLayoutContent({
         { title: 'Visiteurs Live', icon: Activity, href: '/admin/analytics-live' },
         { title: 'Frontend', icon: Palette, href: '/admin/frontend' },
         { title: 'Grille Tarifaire', icon: Layers, href: '/admin/grille-tarifaire' },
+        { title: 'Prêtres Fa', icon: Sparkles, href: '/admin/pretres-fa' },
         { title: 'Dossiers', icon: FileText, href: '/admin/dossiers' },
         { title: 'Leads Oracle', icon: Compass, href: '/admin/leads-oracle' },
         { title: 'Classement Client', icon: BarChart3, href: '/admin/classement-client', badge: relancesDue },
