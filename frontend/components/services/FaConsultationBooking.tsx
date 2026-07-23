@@ -2,8 +2,8 @@
 
 // ══════════════════════════════════════════════════════════════
 // Consultation Fa & Racines — réservation avec paiement réel.
-// Prix FIXÉS CÔTÉ SERVEUR (/api/services/fa-checkout) : Présentiel 550 €,
-// Visio 780 €. Pipeline standard : order → widget (order_id) → verify →
+// Prix FIXÉS CÔTÉ SERVEUR (/api/services/fa-checkout), pilotés depuis les
+// tarifs admin du service. Pipeline : order → widget (order_id) → verify →
 // webhook (filet) → facture + reçu automatiques.
 // La clause de mise en relation est bloquante et horodatée.
 // ══════════════════════════════════════════════════════════════
@@ -59,7 +59,26 @@ const MODES: Array<{
 
 const fmtXOF = (n: number) => `${Math.round(n).toLocaleString('fr-FR').replace(/ /g, '.')} FCFA`
 
-export default function FaConsultationBooking() {
+/** Extrait un montant EUR d'un libellé tarifaire (« 350 € », « 1 200 € »). */
+const parseEur = (s: string): number | null => {
+    const clean = String(s || '').replace(/[^\d,.]/g, '')
+    const m = clean.match(/(\d+(?:[.,]\d+)?)/)
+    if (!m) return null
+    const n = Number(m[1].replace(',', '.'))
+    return isFinite(n) && n > 0 ? n : null
+}
+
+/** Tarif d'un mode depuis les options tarifaires de l'admin (match sur libellé). */
+const priceFromOptions = (
+    options: Array<{ label: string; price: string }> | undefined,
+    needle: string,
+): number | null => {
+    if (!Array.isArray(options)) return null
+    const opt = options.find(o => (o.label || '').toLowerCase().includes(needle))
+    return opt ? parseEur(opt.price) : null
+}
+
+export default function FaConsultationBooking({ options }: { options?: Array<{ label: string; price: string }> }) {
     const { t } = useTranslation()
     const [mode, setMode] = useState<Mode>('presentiel')
     const [clauseAccepted, setClauseAccepted] = useState(false)
@@ -75,7 +94,15 @@ export default function FaConsultationBooking() {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setSettings(d)).catch(() => { })
     }, [])
 
-    const selected = MODES.find(m => m.id === mode)!
+    // Tarifs pilotés depuis l'admin (pricing_options du service) — même source
+    // que le calculateur. Repli sur les valeurs par défaut si non configuré.
+    const modes = MODES.map(m => ({
+        ...m,
+        priceEUR: priceFromOptions(options, m.id === 'presentiel' ? 'présentiel' : 'visio')
+            ?? priceFromOptions(options, m.id === 'presentiel' ? 'presentiel' : 'visio')
+            ?? m.priceEUR,
+    }))
+    const selected = modes.find(m => m.id === mode)!
     const amountXOF = Math.round(convertCurrency(selected.priceEUR, 'EUR', 'XOF'))
 
     const verifyAndFinish = useCallback(async (oid: string, txId: string, method: string) => {
@@ -198,7 +225,7 @@ export default function FaConsultationBooking() {
         <div className="space-y-6">
             {/* ── Choix de la formule ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MODES.map(m => {
+                {modes.map(m => {
                     const active = mode === m.id
                     const Icon = m.icon
                     return (

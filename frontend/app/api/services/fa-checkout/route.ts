@@ -11,7 +11,7 @@ const supabase = createClient(
 // ══════════════════════════════════════════════════════════════
 // POST /api/services/fa-checkout — Consultation Fa & Racines.
 // Crée la commande CÔTÉ SERVEUR avec le PRIX FIXÉ ICI (jamais celui du
-// client) : Présentiel 550 € / Visio 780 €, converti en XOF (taux BCEAO).
+// client), lu depuis les tarifs admin du service, converti en XOF (taux BCEAO).
 // La commande entre ensuite dans le pipeline standard : widget Kkiapay/
 // FedaPay avec { order_id } → /api/checkout/verify → webhook (filet) →
 // facture + reçu automatiques.
@@ -19,7 +19,41 @@ const supabase = createClient(
 // horodatée dans la commande.
 // ══════════════════════════════════════════════════════════════
 
-const PRICES_EUR = { presentiel: 550, visio: 780 } as const
+// Tarifs de REPLI si le service n'est pas configuré en base
+const FALLBACK_PRICES_EUR = { presentiel: 550, visio: 780 } as const
+
+/** Extrait un montant EUR d'un libellé tarifaire (« 350 € », « 1 200 € »). */
+function parseEur(s: string): number | null {
+    const clean = String(s || '').replace(/[^\d,.]/g, '')
+    const m = clean.match(/(\d+(?:[.,]\d+)?)/)
+    if (!m) return null
+    const n = Number(m[1].replace(',', '.'))
+    return isFinite(n) && n > 0 ? n : null
+}
+
+/**
+ * Tarifs pilotés depuis l'admin (services.pricing_options du service
+ * « consultation-fa-racines ») — MÊME source que la page et le calculateur.
+ * Le prix reste fixé CÔTÉ SERVEUR : le client ne l'envoie jamais.
+ */
+async function getPricesEUR(): Promise<{ presentiel: number; visio: number }> {
+    try {
+        const { data } = await supabase
+            .from('services').select('pricing_options').eq('slug', 'consultation-fa-racines').maybeSingle()
+        const opts = data?.pricing_options as Array<{ label: string; price: string }> | undefined
+        if (!Array.isArray(opts)) return { ...FALLBACK_PRICES_EUR }
+        const find = (needle: string) => {
+            const o = opts.find(x => (x.label || '').toLowerCase().includes(needle))
+            return o ? parseEur(o.price) : null
+        }
+        return {
+            presentiel: find('présentiel') ?? find('presentiel') ?? FALLBACK_PRICES_EUR.presentiel,
+            visio: find('visio') ?? FALLBACK_PRICES_EUR.visio,
+        }
+    } catch {
+        return { ...FALLBACK_PRICES_EUR }
+    }
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -43,7 +77,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Vous devez accepter la clause de mise en relation pour poursuivre.' }, { status: 400 })
         }
 
-        // Prix fixé serveur — jamais fourni par le client
+        // Prix fixé serveur (source admin) — jamais fourni par le client
+        const PRICES_EUR = await getPricesEUR()
         const amountEUR = PRICES_EUR[mode]
         const amountXOF = Math.round(convertCurrency(amountEUR, 'EUR', 'XOF'))
 

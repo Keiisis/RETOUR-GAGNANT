@@ -519,7 +519,9 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                 {slug === 'consultation-fa-racines' && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                                         <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Réserver votre consultation</T></h2>
-                                        <FaConsultationBooking />
+                                        {/* Tarifs pilotés depuis l'admin (pricing_options du
+                                            service) — même source que le calculateur */}
+                                        <FaConsultationBooking options={service.pricing_options} />
                                     </motion.div>
                                 )}
 
