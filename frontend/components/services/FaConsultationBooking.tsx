@@ -20,11 +20,12 @@ import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
 
 type Mode = 'presentiel' | 'visio'
 
+// AUCUN tarif codé en dur : les prix viennent uniquement des options
+// tarifaires du service (admin). Ici, seul le contenu éditorial.
 const MODES: Array<{
     id: Mode
     icon: typeof MapPin
     title: string
-    priceEUR: number
     tagline: string
     includes: string[]
 }> = [
@@ -32,7 +33,6 @@ const MODES: Array<{
         id: 'presentiel',
         icon: MapPin,
         title: 'En Présentiel',
-        priceEUR: 550,
         tagline: 'Vous venez au Bénin, nous organisons tout sur place.',
         includes: [
             'Accueil à votre arrivée',
@@ -46,7 +46,6 @@ const MODES: Array<{
         id: 'visio',
         icon: Video,
         title: 'En Visio',
-        priceEUR: 780,
         tagline: 'La consultation se tient à distance, nous veillons à tout.',
         includes: [
             'Organisation complète de la séance à distance',
@@ -89,21 +88,27 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
     const [submitting, setSubmitting] = useState(false)
     const orderIdRef = useRef('')
     const kkiapayBound = useRef(false)
+    // Montant XOF calculé par le SERVEUR (taux réels) — c'est lui qui est
+    // injecté dans Kkiapay/FedaPay, jamais un recalcul client divergent.
+    const serverAmountRef = useRef(0)
 
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setSettings(d)).catch(() => { })
     }, [])
 
-    // Tarifs pilotés depuis l'admin (pricing_options du service) — même source
-    // que le calculateur. Repli sur les valeurs par défaut si non configuré.
+    // Tarifs pilotés EXCLUSIVEMENT depuis l'admin (pricing_options du service) —
+    // même source que le calculateur et que le serveur. Aucun repli codé en dur :
+    // sans tarif configuré, la réservation est bloquée (jamais de prix obsolète).
     const modes = MODES.map(m => ({
         ...m,
         priceEUR: priceFromOptions(options, m.id === 'presentiel' ? 'présentiel' : 'visio')
-            ?? priceFromOptions(options, m.id === 'presentiel' ? 'presentiel' : 'visio')
-            ?? m.priceEUR,
+            ?? priceFromOptions(options, m.id === 'presentiel' ? 'presentiel' : 'visio'),
     }))
     const selected = modes.find(m => m.id === mode)!
-    const amountXOF = Math.round(convertCurrency(selected.priceEUR, 'EUR', 'XOF'))
+    const priceReady = typeof selected.priceEUR === 'number' && selected.priceEUR > 0
+    // Estimation d'affichage ; le montant RÉELLEMENT débité est celui renvoyé
+    // par le serveur (serverAmountRef) — source unique, zéro divergence.
+    const amountXOF = priceReady ? Math.round(convertCurrency(selected.priceEUR as number, 'EUR', 'XOF')) : 0
 
     const verifyAndFinish = useCallback(async (oid: string, txId: string, method: string) => {
         try {
@@ -138,7 +143,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
             })
         }
         w.openKkiapayWidget({
-            amount: amountXOF,
+            amount: serverAmountRef.current || amountXOF,
             position: 'center',
             key: isSandbox
                 ? (settings.kkiapay_sandbox_public_key || settings.kkiapay_public_key)
@@ -158,7 +163,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
         FP.init({
             public_key: settings.fedapay_public_key,
             environment: settings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-            transaction: { amount: amountXOF, description: `Consultation Fa & Racines (${selected.title})`, currency: { iso: 'XOF' } },
+            transaction: { amount: serverAmountRef.current || amountXOF, description: `Consultation Fa & Racines (${selected.title})`, currency: { iso: 'XOF' } },
             customer: { email: form.email || undefined, lastname: form.name || 'Client' },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onComplete: (resp: any) => {
@@ -192,6 +197,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
             const data = await res.json()
             if (!res.ok || !data.success) throw new Error(data.error || 'Erreur lors de la réservation.')
             orderIdRef.current = String(data.order_id)
+            serverAmountRef.current = Number(data.amount_xof) || 0
             setStep('paying')
             if (method === 'fedapay') await launchFedapay(orderIdRef.current)
             else await launchKkiapay(orderIdRef.current)
@@ -241,8 +247,14 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                                 {active && <span className="text-[10px] font-black uppercase tracking-widest text-[#7C5CCA] bg-[#7C5CCA]/10 px-3 py-1 rounded-full"><T>Sélectionné</T></span>}
                             </div>
                             <p className="font-black text-[#1a2332]">{t(m.title)}</p>
-                            <p className="text-2xl font-black text-[#7C5CCA] mt-1">{m.priceEUR} €
-                                <span className="text-xs font-bold text-gray-400 ml-2">≈ {fmtXOF(convertCurrency(m.priceEUR, 'EUR', 'XOF'))}</span>
+                            <p className="text-2xl font-black text-[#7C5CCA] mt-1">
+                                {m.priceEUR ? (
+                                    <>{m.priceEUR} €
+                                        <span className="text-xs font-bold text-gray-400 ml-2">≈ {fmtXOF(convertCurrency(m.priceEUR, 'EUR', 'XOF'))}</span>
+                                    </>
+                                ) : (
+                                    <span className="text-base text-gray-400 font-bold"><T>Tarif à confirmer</T></span>
+                                )}
                             </p>
                             <p className="text-xs text-gray-500 mt-2 mb-4">{t(m.tagline)}</p>
                             <ul className="space-y-1.5">
@@ -295,7 +307,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                     </div>
                     <div>
                         <p className="font-black text-[#1a2332] text-sm"><T>Réserver ma consultation</T></p>
-                        <p className="text-xs text-gray-400">{t(selected.title)} · {selected.priceEUR} € <span className="text-gray-300">(≈ {fmtXOF(amountXOF)})</span></p>
+                        <p className="text-xs text-gray-400">{t(selected.title)}{priceReady ? <> · {selected.priceEUR} € <span className="text-gray-300">(≈ {fmtXOF(amountXOF)})</span></> : null}</p>
                     </div>
                 </div>
 
@@ -325,13 +337,13 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                                 <p className="text-xs text-amber-800"><T>Aucune passerelle de paiement active. Contactez-nous pour finaliser votre réservation.</T></p>
                             </div>
                         ) : providers.map(p => (
-                            <button key={p.id} type="button" onClick={() => startPayment(p.id)} disabled={!clauseAccepted}
+                            <button key={p.id} type="button" onClick={() => startPayment(p.id)} disabled={!clauseAccepted || !priceReady}
                                 title={p.label}
-                                className={`w-full flex items-center justify-between gap-3 p-4 rounded-2xl border transition-all text-left ${clauseAccepted
+                                className={`w-full flex items-center justify-between gap-3 p-4 rounded-2xl border transition-all text-left ${clauseAccepted && priceReady
                                     ? 'bg-[#7C5CCA] border-[#7C5CCA] text-white hover:bg-[#6b4db8] shadow-[0_10px_30px_rgba(124,92,202,0.25)]'
                                     : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'}`}>
                                 <span className="flex items-center gap-3 text-sm font-black">
-                                    <CreditCard size={18} /> {t('Payer')} {selected.priceEUR} € — {p.id === 'kkiapay' ? 'Kkiapay' : 'FedaPay'}
+                                    <CreditCard size={18} /> {t('Payer')}{priceReady ? ` ${selected.priceEUR} €` : ''} — {p.id === 'kkiapay' ? 'Kkiapay' : 'FedaPay'}
                                 </span>
                                 <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t('Mobile Money / Carte')}</span>
                             </button>

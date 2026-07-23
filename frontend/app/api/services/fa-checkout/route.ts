@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
-import { convertCurrency } from '@/lib/currency'
+import { convertCurrency, refreshRates } from '@/lib/currency'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -19,9 +19,6 @@ const supabase = createClient(
 // horodatée dans la commande.
 // ══════════════════════════════════════════════════════════════
 
-// Tarifs de REPLI si le service n'est pas configuré en base
-const FALLBACK_PRICES_EUR = { presentiel: 550, visio: 780 } as const
-
 /** Extrait un montant EUR d'un libellé tarifaire (« 350 € », « 1 200 € »). */
 function parseEur(s: string): number | null {
     const clean = String(s || '').replace(/[^\d,.]/g, '')
@@ -32,27 +29,22 @@ function parseEur(s: string): number | null {
 }
 
 /**
- * Tarifs pilotés depuis l'admin (services.pricing_options du service
- * « consultation-fa-racines ») — MÊME source que la page et le calculateur.
+ * Tarifs pilotés EXCLUSIVEMENT depuis l'admin (services.pricing_options du
+ * service « consultation-fa-racines ») — MÊME source que la page et le
+ * calculateur. AUCUN prix codé en dur : si le tarif n'est pas configuré,
+ * la commande est refusée (jamais de montant de repli obsolète facturé).
  * Le prix reste fixé CÔTÉ SERVEUR : le client ne l'envoie jamais.
  */
-async function getPricesEUR(): Promise<{ presentiel: number; visio: number }> {
-    try {
-        const { data } = await supabase
-            .from('services').select('pricing_options').eq('slug', 'consultation-fa-racines').maybeSingle()
-        const opts = data?.pricing_options as Array<{ label: string; price: string }> | undefined
-        if (!Array.isArray(opts)) return { ...FALLBACK_PRICES_EUR }
-        const find = (needle: string) => {
-            const o = opts.find(x => (x.label || '').toLowerCase().includes(needle))
-            return o ? parseEur(o.price) : null
-        }
-        return {
-            presentiel: find('présentiel') ?? find('presentiel') ?? FALLBACK_PRICES_EUR.presentiel,
-            visio: find('visio') ?? FALLBACK_PRICES_EUR.visio,
-        }
-    } catch {
-        return { ...FALLBACK_PRICES_EUR }
+async function getPriceEUR(mode: 'presentiel' | 'visio'): Promise<number | null> {
+    const { data } = await supabase
+        .from('services').select('pricing_options').eq('slug', 'consultation-fa-racines').maybeSingle()
+    const opts = data?.pricing_options as Array<{ label: string; price: string }> | undefined
+    if (!Array.isArray(opts)) return null
+    const find = (needle: string) => {
+        const o = opts.find(x => (x.label || '').toLowerCase().includes(needle))
+        return o ? parseEur(o.price) : null
     }
+    return mode === 'presentiel' ? (find('présentiel') ?? find('presentiel')) : find('visio')
 }
 
 export async function POST(request: NextRequest) {
@@ -77,9 +69,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Vous devez accepter la clause de mise en relation pour poursuivre.' }, { status: 400 })
         }
 
-        // Prix fixé serveur (source admin) — jamais fourni par le client
-        const PRICES_EUR = await getPricesEUR()
-        const amountEUR = PRICES_EUR[mode]
+        // Prix fixé serveur (source admin uniquement) — jamais fourni par le client
+        const amountEUR = await getPriceEUR(mode)
+        if (!amountEUR) {
+            return NextResponse.json(
+                { error: 'Tarif non configuré pour cette formule. Contactez-nous — nous régularisons immédiatement.' },
+                { status: 503 },
+            )
+        }
+        // Taux de change réels (table currencies) AVANT conversion : sinon le
+        // montant Kkiapay pourrait diverger de celui affiché au client.
+        await refreshRates()
         const amountXOF = Math.round(convertCurrency(amountEUR, 'EUR', 'XOF'))
 
         const modeLabel = mode === 'presentiel' ? 'Présentiel' : 'Visio'
