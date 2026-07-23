@@ -27,6 +27,7 @@ import {
     extractFingerprint,
     registerFingerprint,
     detectHeadlessBrowser,
+    identifierRobot,
     evaluateRequestRPC,
     getDeceptionPayload,
     buildDeceptionResponse,
@@ -130,6 +131,10 @@ async function refreshWafConfig(): Promise<void> {
                     whitelistedIps:   map['whitelisted_ips']   ? JSON.parse(map['whitelisted_ips'])   : [],
                     whitelistedPaths: map['whitelisted_paths'] ? JSON.parse(map['whitelisted_paths']) : [],
                     enabled:          map['enabled'] !== 'false',
+                    // Plages des robots d'indexation, alimentées par le cron
+                    // waf-maintenance depuis les listes publiées par Google
+                    // et Bing (voir lib/waf/crawlers.ts).
+                    crawlerRanges:    map['crawler_ranges'] ? JSON.parse(map['crawler_ranges']) : [],
                 })
             }
         }
@@ -201,7 +206,23 @@ export async function middleware(request: NextRequest) {
     //   - Honeypot (accès à des chemins malveillants = toujours suspect)
     //   - WAF CRS (détection d'attaques dans les requêtes)
     const wafConfig = getWafConfig()
-    const isIpWhitelisted = !emergencyBypass && wafConfig.whitelistedIps && wafConfig.whitelistedIps.includes(ip)
+
+    // ── Robots d'indexation vérifiés ──────────────────────────
+    // Googlebot annonce « Chrome » sans envoyer accept-language ni
+    // sec-ch-ua : la détection de navigateur sans interface le classait
+    // comme bot malveillant, dégradant la confiance de son IP à chaque
+    // passage jusqu'au blocage — donc jusqu'à la désindexation.
+    //
+    // La preuve n'est PAS le User-Agent (n'importe qui peut l'écrire)
+    // mais l'appartenance de l'adresse aux plages publiées par le moteur.
+    // Un imposteur reste traité comme un visiteur suspect ordinaire.
+    const robot = identifierRobot(userAgent, ip, wafConfig.crawlerRanges || [])
+    const isVerifiedCrawler = !emergencyBypass && robot.verifie
+
+    const isIpWhitelisted = !emergencyBypass && (
+        isVerifiedCrawler
+        || (wafConfig.whitelistedIps && wafConfig.whitelistedIps.includes(ip))
+    )
 
     // ── Chemins publics protégés par un jeton/secret ou une vérification
     //    serveur propre — exemptés du SCAN DE CONTENU (CRS/RPC) uniquement.
@@ -275,18 +296,33 @@ export async function middleware(request: NextRequest) {
             // fil des requêtes via le RPC) ET on applique un tarpit léger immédiat.
             // On ne BLOQUE pas (faux positifs possibles : crawlers SEO légitimes,
             // monitoring) — on ralentit + on laisse le scoring comportemental décider.
+            // Un robot VÉRIFIÉ est exempté ici : c'est précisément lui que
+            // l'heuristique confondait avec un bot malveillant. Le tarpit de
+            // 1,2 s appliqué à chaque page ralentissait en prime l'exploration.
             const headless = detectHeadlessBrowser(request.headers)
-            if (headless.isHeadless && !isInternalPanelPath && !isIpWhitelisted) {
+            if (headless.isHeadless && !isInternalPanelPath && !isIpWhitelisted && !isVerifiedCrawler) {
                 if (SUPA_URL && SUPA_KEY) {
+                    // Se déclarer Googlebot depuis une adresse qui n'est pas la
+                    // sienne n'est pas une maladresse : on le nomme comme tel.
+                    const motif = robot.usurpation
+                        ? `USURPATION de ${robot.nom} depuis ${ip}`
+                        : `Navigateur headless détecté: IP ${ip} — ${headless.indicators.join(', ')}`
                     createAlert({
-                        level: 'warning',
- message: `Navigateur headless détecté: IP ${ip} — ${headless.indicators.join(', ')}`,
-                        context: { ip, indicators: headless.indicators, fingerprint: fp.hash },
+                        level: robot.usurpation ? 'critical' : 'warning',
+                        message: motif,
+                        context: {
+                            ip,
+                            indicators: headless.indicators,
+                            fingerprint: fp.hash,
+                            robotRevendique: robot.nom,
+                            usurpation: robot.usurpation,
+                        },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
                     // Trust decay : marque l'IP comme suspecte (escalade progressive)
                     updateIpMemory({
-                        ip, isAttack: true, attackType: 'headless_browser',
+                        ip, isAttack: true,
+                        attackType: robot.usurpation ? 'crawler_spoofing' : 'headless_browser',
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
                 }

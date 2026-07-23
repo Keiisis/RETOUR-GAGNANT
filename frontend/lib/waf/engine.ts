@@ -71,6 +71,13 @@ interface WafConfig {
     whitelistedIps:   string[]
     whitelistedPaths: string[]
     enabled:          boolean
+    /**
+     * Préfixes CIDR publiés par Google et Bing pour leurs robots.
+     * Rafraîchis par le cron waf-maintenance, jamais depuis une requête
+     * utilisateur. Liste vide = aucune exemption accordée (on refuse de
+     * croire un User-Agent sur parole).
+     */
+    crawlerRanges:    string[]
 }
 
 let wafConfigCache: WafConfig = {
@@ -79,6 +86,7 @@ let wafConfigCache: WafConfig = {
     whitelistedIps: [],
     whitelistedPaths: [],
     enabled: true,
+    crawlerRanges: [],
 }
 let wafConfigCacheTs = 0
 

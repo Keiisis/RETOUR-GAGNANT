@@ -28,6 +28,10 @@ export type { SmugglingResult, SmugglingPattern } from './waf/smuggling'
 export { checkCanaryInRequest, refreshCanaryCache, reportCanaryTriggered, registerHoneyAccess, generateCanaryToken } from './waf/canary'
 export type { CanaryCheckResult, CanaryToken, CanaryTokenType } from './waf/canary'
 
+// ── Robots d'indexation légitimes (anti-désindexation) ──
+export { identifierRobot, robotRevendique, ipDansCidr, recupererPlagesOfficielles, SOURCES_PLAGES } from './waf/crawlers'
+export type { VerdictRobot } from './waf/crawlers'
+
 // ── CORE PORTABLE (extractible — zéro dépendance framework) ──
 // Ces modules forment le cœur du WAF-SDK vendable. Ils ne dépendent
 // NI de Next.js NI de Supabase. Voir lib/waf/core/README.md.
