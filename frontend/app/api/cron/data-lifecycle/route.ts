@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createTransporter, getEmailConfig } from '@/lib/email'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -19,15 +20,6 @@ const WAF_LOG_RETENTION_DAYS       = 90    // Logs WAF → supprimés après 90j
 const BLOCKED_IP_EXPIRED_DAYS      = 30    // IPs bloquées expirées → purgées après 30j
 const PROSPECT_RETENTION_DAYS      = 1095  // Prospects/leads non convertis → 3 ans (reco CNIL)
 
-function verifyAuth(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    // Vércel Cron envoie le header avec CRON_SECRET
-    const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true
-    // Fallback: accepter depuis localhost en dev
-    if (process.env.NODE_ENV === 'development') return true
-    return false
-}
 
 async function runLifecycle() {
     const supabase = createClient(supabaseUrl, serviceKey)
@@ -194,9 +186,8 @@ async function runLifecycle() {
 }
 
 export async function GET(request: NextRequest) {
-    if (!verifyAuth(request)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     try {
         const result = await runLifecycle()
         return NextResponse.json({ success: true, ...result, timestamp: new Date().toISOString() })

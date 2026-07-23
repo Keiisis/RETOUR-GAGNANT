@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
+import { requireCron } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -20,13 +21,6 @@ const supabase = createClient(
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 const RECIPIENTS = ['contact@retourgagnantbenin.bj', 'pdg.retourgagnantbenin@gmail.com']
 
-function verifyAuth(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true
-    if (process.env.NODE_ENV === 'development') return true
-    return false
-}
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -290,7 +284,8 @@ async function buildReport() {
 }
 
 export async function GET(request: NextRequest) {
-    if (!verifyAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const refus = requireCron(request)
+    if (refus) return refus
     try {
         const { html, subject, stats } = await buildReport()
         const res = await sendEmail({

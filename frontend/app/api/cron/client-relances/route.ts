@@ -12,6 +12,7 @@ import { sendEmail, getEmailConfig } from '@/lib/email'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
 import { daysSince, dueMilestones, getCategory, getStatus, isRelanceEligible } from '@/lib/classement/categories'
 import { sendNationalityResumeEmail } from '@/lib/nationality-resume-email'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -29,13 +30,6 @@ const FIXED_RECIPIENTS = [
 // Décision 2026-07-02 : relances UNIQUEMENT pour les clients qui ont payé
 // (statut « Payé »). La règle vit dans isRelanceEligible (categories.ts).
 
-function verifyAuth(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true
-    if (process.env.NODE_ENV === 'development') return true
-    return false
-}
 
 interface ClientRow {
     id: string; email: string; full_name: string | null; phone: string | null
@@ -188,7 +182,8 @@ async function recoverNationalityStubs() {
 }
 
 export async function GET(request: NextRequest) {
-    if (!verifyAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const refus = requireCron(request)
+    if (refus) return refus
     try {
         const result = await run()
         const stubResumesSent = await recoverNationalityStubs().catch(e => {

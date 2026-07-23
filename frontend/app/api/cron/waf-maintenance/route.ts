@@ -16,17 +16,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-function verifyAuth(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true
-    if (process.env.NODE_ENV === 'development') return true
-    return false
-}
 
 async function runMaintenance() {
     if (!serviceKey) {
@@ -49,9 +43,8 @@ async function runMaintenance() {
 }
 
 export async function GET(request: NextRequest) {
-    if (!verifyAuth(request)) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     return runMaintenance()
 }
 

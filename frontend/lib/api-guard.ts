@@ -205,10 +205,22 @@ export async function requireStaff(
  */
 export function requireCron(request: Request): NextResponse | null {
     const secret = process.env.CRON_SECRET || ''
+
     if (!secret) {
         if (process.env.NODE_ENV === 'production') {
+            // 503 et non 401 : ce n'est pas un appel illégitime, c'est une
+            // variable d'environnement manquante. Un cron muet renvoyait le
+            // même 401 qu'une attaque — impossible à diagnostiquer dans les
+            // logs Vercel. Le message dit quoi faire.
+            console.error(
+                '[cron] CRON_SECRET absent — tâche planifiée non exécutée. ' +
+                'Définissez la variable dans Vercel › Settings › Environment Variables.',
+            )
             return NextResponse.json(
-                { error: 'CRON_SECRET non configuré — exécution refusée.' },
+                {
+                    error: 'CRON_SECRET non configuré — exécution refusée.',
+                    remede: 'Ajoutez CRON_SECRET aux variables d’environnement du projet.',
+                },
                 { status: 503 },
             )
         }

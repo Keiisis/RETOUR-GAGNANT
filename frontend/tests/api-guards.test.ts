@@ -16,9 +16,10 @@
 //  Exécution : npm run test
 // ══════════════════════════════════════════════════════════════
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
+import { requireCron } from '@/lib/api-guard'
 
 const RACINE = join(process.cwd(), 'app', 'api')
 
@@ -97,6 +98,18 @@ describe('gardes des routes API', () => {
         expect(sansSecret, `Crons sans CRON_SECRET : ${sansSecret.join(', ')}`).toEqual([])
     })
 
+    it('aucun cron ne garde une copie locale de verifyAuth', () => {
+        // Chaque cron portait sa propre fonction verifyAuth : 5 d'entre elles
+        // se désactivaient si CRON_SECRET manquait, 6 refusaient en silence.
+        // Une seule garde, un seul comportement.
+        const copies = routes()
+            .filter(p => nomRoute(p).startsWith('/api/cron/'))
+            .filter(p => /function verifyAuth/.test(readFileSync(p, 'utf-8')))
+            .map(nomRoute)
+
+        expect(copies, `Utilisez requireCron() : ${copies.join(', ')}`).toEqual([])
+    })
+
     it('aucun taux de change n’est codé en dur dans une route de paiement', () => {
         // La parité EUR/XOF (655.957) est fixée par la BCEAO : elle a sa place
         // dans lib/server-rates comme unique repli. Partout ailleurs — et pour
@@ -113,5 +126,65 @@ describe('gardes des routes API', () => {
             suspects,
             `Taux codés en dur (utilisez lib/server-rates) : ${suspects.join(', ')}`,
         ).toEqual([])
+    })
+})
+
+// ══════════════════════════════════════════════════════════════
+//  requireCron — comportement exact de la garde des tâches
+//
+//  C'est ici que se joue « tous les crons fonctionnent » : la garde
+//  doit laisser passer Vercel, refuser un inconnu, et surtout NE PAS
+//  se désactiver quand la variable manque — l'ancien code faisait
+//  exactement l'inverse.
+// ══════════════════════════════════════════════════════════════
+
+describe('requireCron', () => {
+    const envInitial = { ...process.env }
+
+    beforeEach(() => {
+        process.env = { ...envInitial }
+    })
+    afterEach(() => {
+        process.env = { ...envInitial }
+    })
+
+    const appel = (headers: Record<string, string> = {}) =>
+        requireCron(new Request('https://exemple.test/api/cron/cleanup', { headers }))
+
+    it('laisse passer Vercel Cron (Authorization: Bearer <secret>)', () => {
+        process.env.CRON_SECRET = 'secret-de-test'
+        expect(appel({ authorization: 'Bearer secret-de-test' })).toBeNull()
+    })
+
+    it('accepte aussi un déclenchement manuel via x-cron-secret', () => {
+        process.env.CRON_SECRET = 'secret-de-test'
+        expect(appel({ 'x-cron-secret': 'secret-de-test' })).toBeNull()
+    })
+
+    it('refuse un mauvais secret (401)', () => {
+        process.env.CRON_SECRET = 'secret-de-test'
+        expect(appel({ authorization: 'Bearer faux' })?.status).toBe(401)
+    })
+
+    it('refuse une requête sans aucun secret (401)', () => {
+        process.env.CRON_SECRET = 'secret-de-test'
+        expect(appel()?.status).toBe(401)
+    })
+
+    it('REFUSE en production si CRON_SECRET est absent (503, pas un passe-droit)', () => {
+        // La régression corrigée : `if (CRON_SECRET && ...)` sautait le
+        // contrôle quand la variable manquait, ouvrant la tâche à Internet.
+        delete process.env.CRON_SECRET
+        Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true })
+
+        const refus = appel()
+        expect(refus).not.toBeNull()
+        expect(refus?.status).toBe(503)
+    })
+
+    it('laisse passer en développement local sans secret', () => {
+        delete process.env.CRON_SECRET
+        Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', configurable: true })
+        expect(appel()).toBeNull()
     })
 })

@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -23,13 +24,6 @@ const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const FX_URL = 'https://open.er-api.com/v6/latest/XOF'
 const EUR_PEG = 655.957  // parité fixe FCFA ↔ EUR (exacte)
 
-function verifyAuth(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true
-    if (process.env.NODE_ENV === 'development') return true
-    return false
-}
 
 async function runRefresh() {
     if (!serviceKey) {
@@ -95,9 +89,8 @@ async function runRefresh() {
 }
 
 export async function GET(request: NextRequest) {
-    if (!verifyAuth(request)) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     try {
         return await runRefresh()
     } catch (err) {
