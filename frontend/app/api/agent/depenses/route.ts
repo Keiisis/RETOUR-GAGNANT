@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { logAudit } from '@/lib/audit-compta'
 import { isPeriodLocked } from '@/lib/comptaLock'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -83,8 +84,18 @@ export async function PATCH(request: NextRequest) {
     }
     if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Rien à modifier' }, { status: 400 })
 
+    // Etat AVANT (pour la trace d'audit)
+    const { data: avant } = await supabase.from('depenses').select('*').eq('id', id).maybeSingle()
+
     const { error } = await supabase.from('depenses').update(patch).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await logAudit(supabase, {
+        table: 'depenses', recordId: id, action: 'update',
+        acteur: { userId: auth.userId, role: auth.role },
+        avant: (avant || {}) as Record<string, unknown>,
+        apres: { ...(avant || {}), ...patch } as Record<string, unknown>,
+    })
     return NextResponse.json({ success: true })
 }
 
@@ -104,7 +115,16 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
     }
 
+    // Copie complete AVANT suppression (seule trace restante)
+    const { data: avantSuppr } = await supabase.from('depenses').select('*').eq('id', id).maybeSingle()
+
     const { error } = await supabase.from('depenses').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await logAudit(supabase, {
+        table: 'depenses', recordId: id, action: 'delete',
+        acteur: { userId: auth.userId, role: auth.role },
+        avant: (avantSuppr || {}) as Record<string, unknown>,
+    })
     return NextResponse.json({ success: true })
 }

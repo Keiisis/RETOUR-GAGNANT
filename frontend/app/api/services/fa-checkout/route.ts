@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
 import { toXOFStrict } from '@/lib/server-rates'
+import { isSlotBookable } from '@/lib/availability'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -56,6 +57,9 @@ export async function POST(request: NextRequest) {
 
         const mode = body.mode === 'visio' ? 'visio' as const : body.mode === 'presentiel' ? 'presentiel' as const : null
         const priestId = String(body.priest_id || '').trim() || null
+        // Creneau souhaite (facultatif tant qu'aucun horaire n'est configure)
+        const rdvDate = /^\d{4}-\d{2}-\d{2}$/.test(String(body.rdv_date || '')) ? String(body.rdv_date) : null
+        const rdvHeure = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.rdv_heure || '')) ? String(body.rdv_heure).slice(0, 5) : null
         const customerName = String(body.customer_name || '').trim()
         const customerEmail = String(body.customer_email || '').trim().toLowerCase()
         const customerPhone = String(body.customer_phone || '').trim()
@@ -102,6 +106,17 @@ export async function POST(request: NextRequest) {
             priestLabel = `${priest.prenom || ''} ${priest.nom || ''}`.trim()
         }
 
+        // Le creneau doit encore etre libre au moment de payer
+        if (rdvDate && rdvHeure) {
+            const { ok, reason } = await isSlotBookable(supabase, rdvDate, rdvHeure, 'fa')
+            if (!ok && reason !== 'Horaires non configurés') {
+                return NextResponse.json(
+                    { error: `Ce creneau n'est plus disponible : ${reason}. Choisissez-en un autre.` },
+                    { status: 409 },
+                )
+            }
+        }
+
         const modeLabel = mode === 'presentiel' ? 'Présentiel' : 'Visio'
         const title = `Consultation Fa & Racines — ${modeLabel} (${amountEUR} €)`
             + (priestLabel ? ` — ${priestLabel}` : '')
@@ -128,6 +143,8 @@ export async function POST(request: NextRequest) {
                     price_eur: amountEUR,
                     priest_id: priestRef,
                     priest_name: priestLabel || null,
+                    rdv_date: rdvDate,
+                    rdv_heure: rdvHeure,
                     clause_mise_en_relation_acceptee_le: new Date().toISOString(),
                 }],
             })

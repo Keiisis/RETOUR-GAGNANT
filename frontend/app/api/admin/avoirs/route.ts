@@ -17,6 +17,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { nextDocumentNumber } from '@/lib/document-numbering'
 import { isPeriodLocked } from '@/lib/comptaLock'
+import { logAudit } from '@/lib/audit-compta'
 
 export const dynamic = 'force-dynamic'
 
@@ -145,6 +146,13 @@ export async function POST(request: NextRequest) {
     }).select('id, numero').single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await logAudit(supabase, {
+        table: 'documents_financiers', recordId: created.id, action: 'create',
+        acteur: { userId: auth.userId, role: auth.role },
+        apres: { type: 'avoir', numero: created.numero, total: montant, facture: facture.numero },
+        motif,
+    })
 
     return NextResponse.json({
         success: true,

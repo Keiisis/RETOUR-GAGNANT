@@ -127,7 +127,7 @@ function mapContactMethod(contactMethod: string): 'presentiel' | 'visio' | 'tele
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { nom, prenom, email, telephone, service, message, date, timeSlot, contactMethod } = body;
+        const { nom, prenom, email, telephone, service, message, date, timeSlot, heure, contactMethod } = body;
 
         if (!nom || !email) {
             return NextResponse.json({ error: 'Nom et email sont requis.' }, { status: 400 });
@@ -145,7 +145,11 @@ export async function POST(req: NextRequest) {
         // ── CONTRÔLE DE DISPONIBILITÉ (anti-conflit) ──────────────────
         // Le créneau doit être ouvert ET non complet. Sans horaires
         // configurés en base, on n'impose rien (compatibilité ascendante).
-        const heureDemandee = mapTimeSlot(timeSlot)
+        // Créneau précis choisi dans le calendrier (« HH:MM ») ; sinon on
+        // retombe sur la plage large historique (Matin / Après-midi).
+        const heureDemandee = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(heure || ''))
+            ? String(heure).slice(0, 5)
+            : mapTimeSlot(timeSlot)
         if (date && heureDemandee) {
             const { ok, reason } = await isSlotBookable(supabase, String(date), String(heureDemandee), service || null)
             if (!ok && reason && reason !== 'Horaires non configurés') {

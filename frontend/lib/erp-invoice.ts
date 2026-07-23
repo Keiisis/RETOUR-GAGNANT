@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 // ══════════════════════════════════════════════════════════════
 //  FACTURE ERP AUTO — chemin webhook
 //  Même logique que /api/checkout/verify (chemin navigateur) :
@@ -33,6 +34,9 @@ export async function createErpInvoiceForOrder(opts: {
         const { data: fullOrder } = await supabase
             .from('orders').select('*').eq('id', orderId).single()
         if (!fullOrder) return
+
+        // Consultation Fa payee -> le rendez-vous entre dans le calendrier
+        await createFaAppointment(supabase, fullOrder)
 
         // Commande issue d'une proposition / lien de paiement : classification
         // UNIQUE et idempotente (jamais de facture « Boutique » ici → anti-doublon).
@@ -112,5 +116,49 @@ export async function createErpInvoiceForOrder(opts: {
     } catch (err) {
         // Non-bloquant : le webhook ne doit jamais échouer pour la facturation
         console.error('[ERP webhook] Erreur auto-génération facture:', err)
+    }
+}
+
+/**
+ * Consultation Fa payee : cree le RENDEZ-VOUS correspondant.
+ * Sans cela, le client payait sa seance sans qu'aucune date n'entre
+ * dans le systeme (« notre equipe vous rappelle »). Idempotent.
+ */
+export async function createFaAppointment(
+    supabase: SupabaseClient,
+    order: {
+        id: string
+        customer_name?: string | null
+        customer_email?: string | null
+        customer_phone?: string | null
+        cart_items?: unknown
+    },
+): Promise<void> {
+    try {
+        const items = Array.isArray(order.cart_items) ? order.cart_items as Array<Record<string, unknown>> : []
+        const fa = items.find(i => i && i.service === 'consultation-fa-racines')
+        if (!fa) return
+        const date = fa.rdv_date ? String(fa.rdv_date) : null
+        const heure = fa.rdv_heure ? String(fa.rdv_heure) : null
+        if (!date || !heure) return
+
+        const ref = `FA-${order.id.slice(0, 8).toUpperCase()}`
+        const { data: existing } = await supabase
+            .from('rdv_requests').select('id').ilike('notes', `%${ref}%`).maybeSingle()
+        if (existing) return
+
+        const priest = fa.priest_name ? String(fa.priest_name) : null
+        await supabase.from('rdv_requests').insert({
+            client_email: order.customer_email || null,
+            date,
+            heure,
+            type: 'consultation-fa',
+            motif: `Consultation Fa & Racines (${fa.mode === 'visio' ? 'Visio' : 'Présentiel'})`
+                + (priest ? ` — ${priest}` : ''),
+            notes: `${ref} — paiement confirmé. Client : ${order.customer_name || ''} ${order.customer_phone || ''}`.trim(),
+            statut: 'confirme',
+        })
+    } catch (e) {
+        console.error('[createFaAppointment]', e instanceof Error ? e.message : e)
     }
 }

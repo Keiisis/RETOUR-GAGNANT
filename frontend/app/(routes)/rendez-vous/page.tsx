@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,9 +34,32 @@ function RendezVousContent() {
     const [step, setStep] = useState(1);
     const [form, setForm] = useState({
         nom: '', prenom: '', email: '', telephone: '', service: preselectedService || DEFAULT_RDV_SERVICE, message: '',
-        date: '', timeSlot: '', contactMethod: 'Appel WhatsApp',
+        date: '', timeSlot: '', heure: '', contactMethod: 'Appel WhatsApp',
     });
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    // -- CRENEAUX REELS --
+    const [slots, setSlots] = useState<Array<{ heure: string; restant: number }>>([])
+    const [slotsLoading, setSlotsLoading] = useState(false)
+    const [jourFerme, setJourFerme] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!form.date) { setSlots([]); setJourFerme(null); return }
+        let annule = false
+        setSlotsLoading(true)
+        fetch(`/api/availability?from=${form.date}&days=1`)
+            .then(r => r.json())
+            .then(d => {
+                if (annule) return
+                const jour = (d.jours || [])[0]
+                setSlots(jour?.slots || [])
+                setJourFerme(jour?.ferme ? (jour.motif || 'Ferme ce jour-la') : null)
+            })
+            .catch(() => { if (!annule) { setSlots([]); setJourFerme(null) } })
+            .finally(() => { if (!annule) setSlotsLoading(false) })
+        return () => { annule = true }
+    }, [form.date])
+
     const [hoveredCity, setHoveredCity] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -285,21 +308,52 @@ function RendezVousContent() {
                                                             className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008751] outline-none"
                                                         />
 
-                                                        <div className="flex gap-3">
-                                                            {['Matin (09h-13h)', 'Après-midi (14h-17h)'].map(slot => (
-                                                                <button
-                                                                    key={slot}
-                                                                    type="button"
-                                                                    onClick={() => setForm(p => ({ ...p, timeSlot: slot }))}
-                                                                    className={`flex-1 py-2 px-3 rounded-lg text-sm border transition-all ${form.timeSlot === slot
-                                                                        ? 'bg-[#008751]/10 border-[#008751] text-[#008751] font-medium'
-                                                                        : 'border-gray-200 text-gray-500 hover:border-[#008751]/50'
-                                                                        }`}
-                                                                >
-                                                                    {t(slot)}
-                                                                </button>
-                                                            ))}
-                                                        </div>
+                                                        {!form.date ? (
+                                                            <p className="text-xs text-gray-400 italic"><T>Choisissez une date pour voir les creneaux disponibles.</T></p>
+                                                        ) : slotsLoading ? (
+                                                            <p className="text-xs text-gray-400 flex items-center gap-2">
+                                                                <span className="w-3 h-3 border-2 border-[#008751]/30 border-t-[#008751] rounded-full animate-spin" />
+                                                                <T>Recherche des creneaux…</T>
+                                                            </p>
+                                                        ) : slots.length > 0 ? (
+                                                            <>
+                                                                <p className="text-xs text-gray-500"><T>Creneaux disponibles</T></p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {slots.map(s => (
+                                                                        <button
+                                                                            key={s.heure}
+                                                                            type="button"
+                                                                            onClick={() => setForm(p => ({ ...p, heure: s.heure, timeSlot: s.heure }))}
+                                                                            className={`py-2 px-3.5 rounded-lg text-sm border transition-all ${form.heure === s.heure
+                                                                                ? 'bg-[#008751]/10 border-[#008751] text-[#008751] font-bold'
+                                                                                : 'border-gray-200 text-gray-600 hover:border-[#008751]/50'
+                                                                                }`}
+                                                                        >
+                                                                            {s.heure}
+                                                                            {s.restant > 1 && <span className="ml-1 text-[10px] opacity-60">({s.restant})</span>}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </>
+                                                        ) : jourFerme ? (
+                                                            <p className="text-xs text-amber-600 font-medium">{jourFerme} — <T>choisissez une autre date.</T></p>
+                                                        ) : (
+                                                            <div className="flex gap-3">
+                                                                {['Matin (09h-13h)', 'Après-midi (14h-17h)'].map(slot => (
+                                                                    <button
+                                                                        key={slot}
+                                                                        type="button"
+                                                                        onClick={() => setForm(p => ({ ...p, timeSlot: slot, heure: '' }))}
+                                                                        className={`flex-1 py-2 px-3 rounded-lg text-sm border transition-all ${form.timeSlot === slot
+                                                                            ? 'bg-[#008751]/10 border-[#008751] text-[#008751] font-medium'
+                                                                            : 'border-gray-200 text-gray-500 hover:border-[#008751]/50'
+                                                                            }`}
+                                                                    >
+                                                                        {t(slot)}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Mode de consultation */}
