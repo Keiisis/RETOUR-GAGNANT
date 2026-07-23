@@ -18,6 +18,7 @@ import { verifyApiAuth } from '@/lib/api-auth'
 import { nextDocumentNumber } from '@/lib/document-numbering'
 import { isPeriodLocked } from '@/lib/comptaLock'
 import { logAudit } from '@/lib/audit-compta'
+import { restoreStockForOrder } from '@/lib/stock-restore'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const { data: facture } = await supabase
         .from('documents_financiers')
-        .select('id, type, numero, client_nom, client_prenom, client_email, client_phone, client_adresse, client_ifu, total, total_tva, currency, exchange_rate_applied, agent_id, created_at')
+        .select('id, type, numero, client_nom, client_prenom, client_email, client_phone, client_adresse, client_ifu, total, total_tva, currency, exchange_rate_applied, agent_id, created_at, source_ref, notes')
         .eq('id', factureId)
         .maybeSingle()
 
@@ -146,6 +147,20 @@ export async function POST(request: NextRequest) {
     }).select('id, numero').single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // ── RETOUR EN STOCK ───────────────────────────────────────────
+    // Un avoir TOTAL sur une facture issue d'une commande boutique remet
+    // les articles en stock. Sans cela, l'inventaire derivait a la baisse
+    // a chaque remboursement. Avoir partiel : pas de retour automatique
+    // (la quantite reprise n'est pas deductible du montant).
+    const estTotal = Math.abs(montant - restant) < 0.01 && dejaAvoir === 0
+    if (estTotal) {
+        const ref = String(facture.source_ref || '')
+        const orderId = ref.startsWith('order:')
+            ? ref.slice('order:'.length)
+            : (String(facture.notes || '').match(/Commande:\s*([0-9a-f-]{8,})/i)?.[1] || '')
+        if (orderId) await restoreStockForOrder(supabase, orderId, 'remboursement')
+    }
 
     await logAudit(supabase, {
         table: 'documents_financiers', recordId: created.id, action: 'create',
