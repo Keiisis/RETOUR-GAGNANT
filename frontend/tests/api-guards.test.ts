@@ -40,7 +40,9 @@ const nomRoute = (p: string) =>
 // `auth.getUser()` compte : plusieurs routes client vérifient la session
 // directement via createServerClient, sans passer par un helper maison.
 const IDENTITE = /requireStaff|verifyApiAuth|getClientUser|getMobileUserId|requireAdmin|auth\.getUser\(/
-const SECRET = /requireCron|CRON_SECRET|constructEvent|verifySignature|createHmac|timingSafeEqual|verifyRgpdToken|verifyResumeToken|verifyMyafroToken|verifyWebhook/
+// `executerCron` porte la garde du secret ET journalise l'exécution :
+// c'est requireCron plus la trace, donc il compte comme secret.
+const SECRET = /requireCron|executerCron|CRON_SECRET|constructEvent|verifySignature|createHmac|timingSafeEqual|verifyRgpdToken|verifyResumeToken|verifyMyafroToken|verifyWebhook/
 const PLAFOND = /guardPublic|rateLimit\(|isApiRateLimited/
 const MUTATION = /export\s+async\s+function\s+(POST|PUT|PATCH|DELETE)/
 
@@ -96,6 +98,43 @@ describe('gardes des routes API', () => {
             .map(r => r.route)
 
         expect(sansSecret, `Crons sans CRON_SECRET : ${sansSecret.join(', ')}`).toEqual([])
+    })
+
+    it('chaque route cron est réellement planifiée dans vercel.json', () => {
+        // Une route cron que personne n'appelle est du code mort qui a l'air
+        // vivant : /api/cron/nationality-followup (relances à 3, 5 et 7
+        // semaines des dossiers nationalité) existait depuis des mois sans
+        // jamais avoir été déclarée — donc aucune relance n'est partie.
+        const vercel = JSON.parse(
+            readFileSync(join(process.cwd(), 'vercel.json'), 'utf-8'),
+        ) as { crons?: Array<{ path: string }> }
+        const planifies = new Set((vercel.crons || []).map(c => c.path))
+
+        const nonPlanifies = routes()
+            .map(nomRoute)
+            .filter(r => r.startsWith('/api/cron/'))
+            .filter(r => !planifies.has(r))
+
+        expect(
+            nonPlanifies,
+            `Routes cron jamais appelées — ajoutez-les à vercel.json ou ` +
+            `supprimez-les : ${nonPlanifies.join(', ')}`,
+        ).toEqual([])
+    })
+
+    it('chaque cron journalise son exécution', () => {
+        // Sans trace en base, « est-ce que les crons tournent ? » n'a pas de
+        // réponse consultable : un cron muet, un cron qui plante et un cron
+        // jamais appelé se ressemblent tous.
+        const sansJournal = routes()
+            .filter(p => nomRoute(p).startsWith('/api/cron/'))
+            .filter(p => !/executerCron\(/.test(readFileSync(p, 'utf-8')))
+            .map(nomRoute)
+
+        expect(
+            sansJournal,
+            `Utilisez executerCron() (lib/cron-journal.ts) : ${sansJournal.join(', ')}`,
+        ).toEqual([])
     })
 
     it('aucun cron ne garde une copie locale de verifyAuth', () => {

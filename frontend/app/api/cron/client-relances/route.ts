@@ -12,7 +12,7 @@ import { sendEmail, getEmailConfig } from '@/lib/email'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
 import { daysSince, dueMilestones, getCategory, getStatus, isRelanceEligible } from '@/lib/classement/categories'
 import { sendNationalityResumeEmail } from '@/lib/nationality-resume-email'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -182,19 +182,19 @@ async function recoverNationalityStubs() {
 }
 
 export async function GET(request: NextRequest) {
-    const refus = requireCron(request)
-    if (refus) return refus
-    try {
-        const result = await run()
-        const stubResumesSent = await recoverNationalityStubs().catch(e => {
-            console.error('[CRON client-relances] stubs nationalité:', e instanceof Error ? e.message : e)
-            return 0
-        })
-        return NextResponse.json({ success: true, ...result, stubResumesSent, timestamp: new Date().toISOString() })
-    } catch (err) {
-        console.error('[CRON client-relances]', err)
-        return NextResponse.json({ error: 'Relances failed' }, { status: 500 })
-    }
+    return executerCron('client-relances', request, async () => {
+        try {
+            const result = await run()
+            const stubResumesSent = await recoverNationalityStubs().catch(e => {
+                console.error('[CRON client-relances] stubs nationalité:', e instanceof Error ? e.message : e)
+                return 0
+            })
+            return NextResponse.json({ success: true, ...result, stubResumesSent, timestamp: new Date().toISOString() })
+        } catch (err) {
+            console.error('[CRON client-relances]', err)
+            return NextResponse.json({ error: 'Relances failed' }, { status: 500 })
+        }
+    })
 }
 
 export async function POST(request: NextRequest) { return GET(request) }

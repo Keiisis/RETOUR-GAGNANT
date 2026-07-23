@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { executerCron } from '@/lib/cron-journal'
 import { requireCron } from '@/lib/api-guard'
 
 const CRON_SECRET = process.env.CRON_SECRET || ''
@@ -36,9 +37,9 @@ async function runCheckExpired() {
 
 export async function GET(request: NextRequest) {
     // Vérifier que c'est bien Vercel cron qui appelle (présence du secret)
-    const refus = requireCron(request)
-    if (refus) return refus
-    return runCheckExpired()
+    return executerCron('genealogie-check-expired', request, async () => {
+        return runCheckExpired()
+    })
 }
 
 export async function POST(request: NextRequest) {

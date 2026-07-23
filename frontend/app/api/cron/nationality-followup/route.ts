@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
+import { executerCron } from '@/lib/cron-journal'
 import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -123,115 +124,115 @@ async function generateReminderBody(
 // ─── POST /api/cron/nationality-followup ──────────────────────────────────────
 export async function POST(request: NextRequest) {
     // Auth via CRON_SECRET
-    const refus = requireCron(request)
-    if (refus) return refus
+    return executerCron('nationality-followup', request, async () => {
 
-    const now = new Date()
-    const results: { ref: string; week: number; sent: boolean; reason?: string }[] = []
+        const now = new Date()
+        const results: { ref: string; week: number; sent: boolean; reason?: string }[] = []
 
-    try {
-        // Récupérer tous les dossiers avec des docs manquants et non clôturés
-        const { data: applications, error } = await supabase
-            .from('nationality_applications')
-            .select('application_ref, email, prenom, nom, submitted_at, docs_deadline, missing_docs, needs_recherche_ancestrale, last_reminder_week')
-            .not('missing_docs', 'is', null)
-            .not('docs_deadline', 'is', null)
-            .in('status', ['soumis', 'en_cours'])
-            .gt('docs_deadline', now.toISOString()) // pas encore expiré
+        try {
+            // Récupérer tous les dossiers avec des docs manquants et non clôturés
+            const { data: applications, error } = await supabase
+                .from('nationality_applications')
+                .select('application_ref, email, prenom, nom, submitted_at, docs_deadline, missing_docs, needs_recherche_ancestrale, last_reminder_week')
+                .not('missing_docs', 'is', null)
+                .not('docs_deadline', 'is', null)
+                .in('status', ['soumis', 'en_cours'])
+                .gt('docs_deadline', now.toISOString()) // pas encore expiré
 
-        if (error) {
-            console.error('[FOLLOWUP] Erreur DB:', error.message)
-            return NextResponse.json({ error: error.message }, { status: 500 })
-        }
-
-        const smtp = await getSmtp()
-
-        for (const app of applications || []) {
-            const submittedAt = new Date(app.submitted_at)
-            const daysSinceSubmission = Math.floor((now.getTime() - submittedAt.getTime()) / (1000 * 60 * 60 * 24))
-            const deadline = new Date(app.docs_deadline)
-            const deadlineStr = deadline.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-            const missingDocs: { label: string; ancestral: boolean }[] = app.missing_docs || []
-            const lastReminderWeek: number = app.last_reminder_week || 0
-
-            // Trouver le seuil applicable
-            const threshold = THRESHOLDS.find(t =>
-                daysSinceSubmission >= t.minDays &&
-                daysSinceSubmission <= t.maxDays &&
-                lastReminderWeek < t.week
-            )
-
-            if (!threshold) continue
-
-            // Générer et envoyer l'email
-            const body = await generateReminderBody(
-                app.prenom,
-                app.nom,
-                app.application_ref,
-                deadlineStr,
-                missingDocs,
-                threshold.tone as Tone,
-                app.needs_recherche_ancestrale || false
-            )
-
-            // Ajouter section Recherche Ancestrale pour les relances semaine 5 et 7
-            const ancestralSection = app.needs_recherche_ancestrale && threshold.week >= 5 ? `
-                <div style="margin:20px 0;padding:16px 22px;background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;">
-                    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#92400e;">Laissez-nous retrouver vos documents ancestraux</p>
-                    <p style="margin:0 0 12px;font-size:13px;color:#78350f;line-height:1.7;">Notre service Recherche Ancestrale mobilise archives officielles, bases de données spécialisées et associations expertes pour retrouver la trace de vos ancêtres.</p>
-                    <p style="margin:0 0 12px;font-size:13px;color:#78350f;"><strong>Investissement : 250 €</strong></p>
-                    <a href="${SITE_URL}/nationalite/complement-ancestral?ref=${app.application_ref}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:13px;">
-                        Déléguer ma Recherche Ancestrale →
-                    </a>
-                </div>` : ''
-
-            const fullBody = body + ancestralSection
-            const html = wrapHtml(smtp, app.application_ref, fullBody)
-
-            const subjectByTone = {
-                gentle: `Rappel — Documents manquants pour votre dossier ${app.application_ref}`,
-                firm: `URGENT — Complétez votre dossier avant le ${deadlineStr}`,
-                final: `DERNIER RAPPEL — Dossier ${app.application_ref} en danger de suspension`,
+            if (error) {
+                console.error('[FOLLOWUP] Erreur DB:', error.message)
+                return NextResponse.json({ error: error.message }, { status: 500 })
             }
 
-            const sent = await sendMail(smtp, app.email, subjectByTone[threshold.tone as Tone], html)
+            const smtp = await getSmtp()
 
-            // Mettre à jour le dernier rappel envoyé
-            if (sent) {
-                await supabase
-                    .from('nationality_applications')
-                    .update({ last_reminder_week: threshold.week })
-                    .eq('application_ref', app.application_ref)
+            for (const app of applications || []) {
+                const submittedAt = new Date(app.submitted_at)
+                const daysSinceSubmission = Math.floor((now.getTime() - submittedAt.getTime()) / (1000 * 60 * 60 * 24))
+                const deadline = new Date(app.docs_deadline)
+                const deadlineStr = deadline.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                const missingDocs: { label: string; ancestral: boolean }[] = app.missing_docs || []
+                const lastReminderWeek: number = app.last_reminder_week || 0
 
-                // Semaine 7 → escalade admin
-                if (threshold.week === 7) {
-                    const adminEmail = smtp.contact_email || smtp.smtp_from_email
-                    if (adminEmail) {
-                        await sendMail(smtp, adminEmail,
-                            `[ADMIN] Dossier ${app.application_ref} — Deadline atteinte`,
-                            wrapHtml(smtp, app.application_ref, `
-                                <p>Le dossier de <strong>${app.prenom} ${app.nom}</strong> (${app.email}) a atteint sa deadline de 7 semaines.</p>
-                                <p>Documents toujours manquants : ${missingDocs.map(d => d.label).join(', ')}</p>
-                                <p>Action recommandée : contacter le client directement ou suspendre le dossier.</p>
-                            `)
-                        )
+                // Trouver le seuil applicable
+                const threshold = THRESHOLDS.find(t =>
+                    daysSinceSubmission >= t.minDays &&
+                    daysSinceSubmission <= t.maxDays &&
+                    lastReminderWeek < t.week
+                )
+
+                if (!threshold) continue
+
+                // Générer et envoyer l'email
+                const body = await generateReminderBody(
+                    app.prenom,
+                    app.nom,
+                    app.application_ref,
+                    deadlineStr,
+                    missingDocs,
+                    threshold.tone as Tone,
+                    app.needs_recherche_ancestrale || false
+                )
+
+                // Ajouter section Recherche Ancestrale pour les relances semaine 5 et 7
+                const ancestralSection = app.needs_recherche_ancestrale && threshold.week >= 5 ? `
+                    <div style="margin:20px 0;padding:16px 22px;background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;">
+                        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#92400e;">Laissez-nous retrouver vos documents ancestraux</p>
+                        <p style="margin:0 0 12px;font-size:13px;color:#78350f;line-height:1.7;">Notre service Recherche Ancestrale mobilise archives officielles, bases de données spécialisées et associations expertes pour retrouver la trace de vos ancêtres.</p>
+                        <p style="margin:0 0 12px;font-size:13px;color:#78350f;"><strong>Investissement : 250 €</strong></p>
+                        <a href="${SITE_URL}/nationalite/complement-ancestral?ref=${app.application_ref}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:13px;">
+                            Déléguer ma Recherche Ancestrale →
+                        </a>
+                    </div>` : ''
+
+                const fullBody = body + ancestralSection
+                const html = wrapHtml(smtp, app.application_ref, fullBody)
+
+                const subjectByTone = {
+                    gentle: `Rappel — Documents manquants pour votre dossier ${app.application_ref}`,
+                    firm: `URGENT — Complétez votre dossier avant le ${deadlineStr}`,
+                    final: `DERNIER RAPPEL — Dossier ${app.application_ref} en danger de suspension`,
+                }
+
+                const sent = await sendMail(smtp, app.email, subjectByTone[threshold.tone as Tone], html)
+
+                // Mettre à jour le dernier rappel envoyé
+                if (sent) {
+                    await supabase
+                        .from('nationality_applications')
+                        .update({ last_reminder_week: threshold.week })
+                        .eq('application_ref', app.application_ref)
+
+                    // Semaine 7 → escalade admin
+                    if (threshold.week === 7) {
+                        const adminEmail = smtp.contact_email || smtp.smtp_from_email
+                        if (adminEmail) {
+                            await sendMail(smtp, adminEmail,
+                                `[ADMIN] Dossier ${app.application_ref} — Deadline atteinte`,
+                                wrapHtml(smtp, app.application_ref, `
+                                    <p>Le dossier de <strong>${app.prenom} ${app.nom}</strong> (${app.email}) a atteint sa deadline de 7 semaines.</p>
+                                    <p>Documents toujours manquants : ${missingDocs.map(d => d.label).join(', ')}</p>
+                                    <p>Action recommandée : contacter le client directement ou suspendre le dossier.</p>
+                                `)
+                            )
+                        }
                     }
                 }
+
+                results.push({ ref: app.application_ref, week: threshold.week, sent })
             }
 
-            results.push({ ref: app.application_ref, week: threshold.week, sent })
+            return NextResponse.json({
+                success: true,
+                processed: results.length,
+                results,
+                timestamp: now.toISOString(),
+            })
+        } catch (error) {
+            console.error('[FOLLOWUP] Erreur:', error)
+            return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
         }
-
-        return NextResponse.json({
-            success: true,
-            processed: results.length,
-            results,
-            timestamp: now.toISOString(),
-        })
-    } catch (error) {
-        console.error('[FOLLOWUP] Erreur:', error)
-        return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
-    }
+    })
 }
 
 // GET pour les pings de santé (Vercel Cron)

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -58,9 +58,8 @@ function progressionFromStatus(status: string): { progression: number; etapeInde
 }
 
 export async function POST(request: Request) {
+    return executerCron('sync-dossiers', request, async () => {
     try {
-        const refus = requireCron(request)
-        if (refus) return refus
 
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration manquante' }, { status: 503 })
@@ -144,6 +143,7 @@ export async function POST(request: Request) {
         console.error('[sync-dossiers] Erreur inattendue:', err)
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
     }
+    })
 }
 
 // Également accessible en GET pour les appels Vercel Cron

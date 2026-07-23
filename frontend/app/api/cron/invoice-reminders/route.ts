@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email'
 import { toXOFStrict } from '@/lib/server-rates'
+import { executerCron } from '@/lib/cron-journal'
 import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -259,9 +260,9 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
     // Vérification auth pour GET aussi
-    const refus = requireCron(request)
-    if (refus) return refus
+    return executerCron('invoice-reminders', request, async () => {
 
-    // Appeler la logique POST
-    return POST(request)
+        // Appeler la logique POST
+        return POST(request)
+    })
 }

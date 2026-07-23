@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -284,22 +284,22 @@ async function buildReport() {
 }
 
 export async function GET(request: NextRequest) {
-    const refus = requireCron(request)
-    if (refus) return refus
-    try {
-        const { html, subject, stats } = await buildReport()
-        const res = await sendEmail({
-            to: RECIPIENTS.join(', '),
-            subject,
-            html,
-            context: 'weekly_kpi_report',
-        })
-        if (!res.success) return NextResponse.json({ error: res.error || 'Envoi échoué' }, { status: 500 })
-        return NextResponse.json({ success: true, sentTo: RECIPIENTS, ...stats, timestamp: new Date().toISOString() })
-    } catch (err) {
-        console.error('[CRON weekly-kpi]', err)
-        return NextResponse.json({ error: 'Rapport KPI échoué' }, { status: 500 })
-    }
+    return executerCron('weekly-kpi', request, async () => {
+        try {
+            const { html, subject, stats } = await buildReport()
+            const res = await sendEmail({
+                to: RECIPIENTS.join(', '),
+                subject,
+                html,
+                context: 'weekly_kpi_report',
+            })
+            if (!res.success) return NextResponse.json({ error: res.error || 'Envoi échoué' }, { status: 500 })
+            return NextResponse.json({ success: true, sentTo: RECIPIENTS, ...stats, timestamp: new Date().toISOString() })
+        } catch (err) {
+            console.error('[CRON weekly-kpi]', err)
+            return NextResponse.json({ error: 'Rapport KPI échoué' }, { status: 500 })
+        }
+    })
 }
 
 export async function POST(request: NextRequest) { return GET(request) }

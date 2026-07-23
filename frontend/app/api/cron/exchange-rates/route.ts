@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -89,14 +89,14 @@ async function runRefresh() {
 }
 
 export async function GET(request: NextRequest) {
-    const refus = requireCron(request)
-    if (refus) return refus
-    try {
-        return await runRefresh()
-    } catch (err) {
-        console.error('[CRON/exchange-rates]', err)
-        return NextResponse.json({ error: 'Refresh failed' }, { status: 500 })
-    }
+    return executerCron('exchange-rates', request, async () => {
+        try {
+            return await runRefresh()
+        } catch (err) {
+            console.error('[CRON/exchange-rates]', err)
+            return NextResponse.json({ error: 'Refresh failed' }, { status: 500 })
+        }
+    })
 }
 
 export async function POST(request: NextRequest) {

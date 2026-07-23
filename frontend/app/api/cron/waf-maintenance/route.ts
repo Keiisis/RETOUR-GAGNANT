@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 import { recupererPlagesOfficielles, ipDansCidr } from '@/lib/waf'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -163,9 +163,9 @@ async function runMaintenance() {
 }
 
 export async function GET(request: NextRequest) {
-    const refus = requireCron(request)
-    if (refus) return refus
-    return runMaintenance()
+    return executerCron('waf-maintenance', request, async () => {
+        return runMaintenance()
+    })
 }
 
 export async function POST(request: NextRequest) {

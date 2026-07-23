@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createTransporter, getEmailConfig } from '@/lib/email'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -327,15 +327,15 @@ function buildPurgeReportEmail(
 // ══════════════════════════════════════════════════════════════
 
 export async function GET(request: NextRequest) {
-    const refus = requireCron(request)
-    if (refus) return refus
-    try {
-        const result = await runPurge()
-        return NextResponse.json({ success: true, ...result, timestamp: new Date().toISOString() })
-    } catch (err) {
-        console.error('[CRON/cleanup]', err)
-        return NextResponse.json({ error: 'Purge failed' }, { status: 500 })
-    }
+    return executerCron('cleanup', request, async () => {
+        try {
+            const result = await runPurge()
+            return NextResponse.json({ success: true, ...result, timestamp: new Date().toISOString() })
+        } catch (err) {
+            console.error('[CRON/cleanup]', err)
+            return NextResponse.json({ error: 'Purge failed' }, { status: 500 })
+        }
+    })
 }
 
 export async function POST(request: NextRequest) {

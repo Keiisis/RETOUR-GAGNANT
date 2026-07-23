@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
-import { requireCron } from '@/lib/api-guard'
+import { executerCron } from '@/lib/cron-journal'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -27,9 +27,8 @@ const ABANDON_DELAY_HOURS = 2       // Considérer abandonné après 2h sans pai
  *   Email 3 (J+10 à J+15) : dernière chance + offre de contact
  */
 export async function POST(request: Request) {
+    return executerCron('cart-recovery', request, async () => {
     try {
-        const refus = requireCron(request)
-        if (refus) return refus
 
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration manquante' }, { status: 503 })
@@ -133,6 +132,7 @@ export async function POST(request: Request) {
         console.error('[cart-recovery] Erreur inattendue:', err)
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
     }
+    })
 }
 
 export async function GET(request: Request) {
