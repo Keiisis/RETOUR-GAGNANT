@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 function sb() {
@@ -9,7 +10,10 @@ function sb() {
 }
 
 // GET /api/ceo/activity — flux d'activité des 72 dernières heures
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const supabase = sb()
     const h72 = new Date(Date.now() - 72 * 3600_000).toISOString()
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 function sb() {
@@ -9,7 +10,10 @@ function sb() {
 }
 
 // GET /api/ceo/messages — tous les messages (table 'messages', lu / contact_messages fallback)
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const supabase = sb()
 
     // Essai table 'messages' (champ lu)
@@ -42,6 +46,9 @@ export async function GET() {
 
 // PATCH /api/ceo/messages — marquer comme lu
 export async function PATCH(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const supabase = sb()
     const body = await request.json()
     const { id, table = 'messages' } = body

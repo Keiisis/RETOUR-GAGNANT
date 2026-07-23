@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 // Service Role → bypass RLS complet
@@ -9,7 +10,10 @@ function sb() {
     )
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const supabase = sb()
         const now   = new Date()

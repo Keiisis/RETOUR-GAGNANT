@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 function sb() {
@@ -9,7 +10,10 @@ function sb() {
 }
 
 // GET /api/ceo/settings
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const supabase = sb()
     const { data, error } = await supabase
         .from('settings')
@@ -22,6 +26,9 @@ export async function GET() {
 
 // PATCH /api/ceo/settings
 export async function PATCH(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const body = await request.json()
     const { key, value, category } = body
     if (!key) return NextResponse.json({ error: 'key requis' }, { status: 400 })

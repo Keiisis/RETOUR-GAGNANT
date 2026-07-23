@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 function sb() {
@@ -10,6 +11,9 @@ function sb() {
 
 // GET /api/ceo/securite?hours=24
 export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const { searchParams } = new URL(request.url)
     const hours = parseInt(searchParams.get('hours') || '24')
     const since = new Date(Date.now() - hours * 3_600_000).toISOString()
@@ -39,6 +43,9 @@ export async function GET(request: NextRequest) {
 
 // DELETE /api/ceo/securite — débloquer une IP
 export async function DELETE(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     const { id } = await request.json()
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
     const { error } = await sb()

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -8,6 +9,9 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 // GET /api/ceo/dossiers
 export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const supabase = sb()
         const { searchParams } = new URL(request.url)
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/ceo/dossiers — Update status
 export async function PATCH(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const supabase = sb()
         const body = await request.json()
@@ -53,6 +60,9 @@ export async function PATCH(request: NextRequest) {
 
 // POST /api/ceo/dossiers — Create dossier
 export async function POST(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const supabase = sb()
         const body = await request.json()
@@ -72,6 +82,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/ceo/dossiers?id=xxx
 export async function DELETE(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const supabase = sb()
         const { searchParams } = new URL(request.url)

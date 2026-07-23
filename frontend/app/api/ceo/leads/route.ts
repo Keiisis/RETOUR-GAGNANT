@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const { data, error } = await sb()
             .from('eligibility_results')
@@ -17,6 +21,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const { id, ...updates } = await request.json()
         if (!id) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
@@ -29,6 +36,9 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'admin')
+    if (!auth.authenticated) return auth.error!
+
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')
