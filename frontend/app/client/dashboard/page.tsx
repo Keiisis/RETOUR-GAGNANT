@@ -8,7 +8,7 @@ import {
     FileText, FolderOpen, MessageSquare, CalendarDays,
     ArrowRight, CheckCircle2, Clock, AlertCircle,
     CreditCard, Receipt, TrendingUp, Sparkles
-} from 'lucide-react'
+, ShoppingBag } from 'lucide-react'
 
 interface Stats {
     devisEnAttente: number
@@ -49,6 +49,7 @@ const formatDateSafe = (dateStr: string | null | undefined) => {
 
 export default function ClientDashboardPage() {
     const [stats, setStats] = useState<Stats>({ devisEnAttente: 0, facturesToPay: 0, dossierActif: false, messagesNonLus: 0, totalDépenses: 0 })
+    const [commandes, setCommandes] = useState<Array<{ id: string; product_title: string; amount: number; currency: string; created_at: string }>>([])
     const [recentDocs, setRecentDocs] = useState<RecentDoc[]>([])
     const [clientEmail, setClientEmail] = useState('')
     const [clientId, setClientId] = useState('')
@@ -90,6 +91,7 @@ export default function ClientDashboardPage() {
                 { data: dossier },
                 { data: msgIds },
                 { data: paidDocs },
+                { data: commandes },
             ] = await Promise.all([
                 supabase
                     .from('documents_financiers')
@@ -121,6 +123,15 @@ export default function ClientDashboardPage() {
                     .select('total')
                     .or(`client_id.eq.${uid},client_email.eq.${email}`)
                     .eq('status', 'paye'),
+                // ── ESPACE CLIENT UNIFIÉ ──────────────────────────────
+                // Les achats boutique n'apparaissaient nulle part : un client
+                // ayant commandé ne voyait aucune trace de son achat.
+                supabase
+                    .from('orders')
+                    .select('id, product_title, amount, currency, payment_status, created_at')
+                    .eq('customer_email', email)
+                    .eq('payment_status', 'completed')
+                    .order('created_at', { ascending: false }),
             ])
 
             // Réponses agent non lues = messages dans chat_messages (role=agent) pour ce client
@@ -135,7 +146,11 @@ export default function ClientDashboardPage() {
                 agentRepliesCount = count || 0
             }
 
-            const totalPayé = (paidDocs || []).reduce((s: number, d: { total: number }) => s + (d.total || 0), 0)
+            const totalDocs = (paidDocs || []).reduce((s: number, d: { total: number }) => s + (d.total || 0), 0)
+            // Les commandes boutique comptent dans le total dépensé
+            const totalBoutique = (commandes || []).reduce((s: number, o: { amount: number }) => s + (Number(o.amount) || 0), 0)
+            const totalPayé = totalDocs + totalBoutique
+            setCommandes(commandes || [])
 
             setStats({
                 devisEnAttente: devisCount || 0,
@@ -269,6 +284,38 @@ export default function ClientDashboardPage() {
                     )
                 })}
             </div>
+
+            {/* ── Mes achats boutique (espace client unifié) ── */}
+            {commandes.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-6">
+                    <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+                            <h2 className="font-black text-white text-sm flex items-center gap-2">
+                                <ShoppingBag size={16} className="text-amber-400" /> Mes achats boutique
+                            </h2>
+                            <span className="text-[11px] text-gray-500">{commandes.length} commande{commandes.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="divide-y divide-white/[0.04]">
+                            {commandes.slice(0, 5).map(c => (
+                                <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] text-white font-medium truncate">{c.product_title || 'Commande'}</p>
+                                        <p className="text-[11px] text-gray-500 font-mono">
+                                            {new Date(c.created_at).toLocaleDateString('fr-FR')} · {c.id.slice(0, 8).toUpperCase()}
+                                        </p>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-[13px] font-mono font-bold text-white">
+                                            {Number(c.amount || 0).toLocaleString('fr-FR')} {c.currency === 'XOF' ? 'FCFA' : c.currency}
+                                        </p>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Payée</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             <div className="grid lg:grid-cols-3 gap-6">
                 {/* Recent Documents */}
