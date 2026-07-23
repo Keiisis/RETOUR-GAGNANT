@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isSlotBookable } from '@/lib/availability'
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, getEmailTemplates } from '@/lib/email';
 import { getStaffToLine } from '@/lib/staff-recipients';
@@ -141,6 +142,20 @@ export async function POST(req: NextRequest) {
         if (message?.trim()) notesParts.push(`---\nMessage: ${message.trim()}`);
         const notesContent = notesParts.join('\n');
 
+        // ── CONTRÔLE DE DISPONIBILITÉ (anti-conflit) ──────────────────
+        // Le créneau doit être ouvert ET non complet. Sans horaires
+        // configurés en base, on n'impose rien (compatibilité ascendante).
+        const heureDemandee = mapTimeSlot(timeSlot)
+        if (date && heureDemandee) {
+            const { ok, reason } = await isSlotBookable(supabase, String(date), String(heureDemandee), service || null)
+            if (!ok && reason && reason !== 'Horaires non configurés') {
+                return NextResponse.json(
+                    { error: `Ce créneau n'est plus disponible : ${reason}. Merci d'en choisir un autre.` },
+                    { status: 409 },
+                )
+            }
+        }
+
         // Sauvegarder dans rdv_requests (table unifiée pour tous les RDV)
         const { data: insertedRdv, error: rdvError } = await supabase
             .from('rdv_requests')
@@ -148,7 +163,7 @@ export async function POST(req: NextRequest) {
                 client_id: null,
                 client_email: email,
                 date: date || null,
-                heure: mapTimeSlot(timeSlot),
+                heure: heureDemandee,
                 type: mapContactMethod(contactMethod),
                 motif: service || 'Consultation générale',
                 notes: notesContent,
