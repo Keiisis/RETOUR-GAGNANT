@@ -7,13 +7,13 @@
 //  tout vient de la table fa_priests / fa_priest_reviews.
 // ══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Sparkles, Plus, Search, X, Star, MapPin, Trash2, Pencil, Save,
     Image as ImageIcon, Award, Briefcase, MessageSquare, Loader2,
     Eye, EyeOff, RefreshCw, GripVertical, Languages, Phone, Mail,
-    CheckCircle2, AlertTriangle, UserRound,
+    CheckCircle2, AlertTriangle, UserRound, UploadCloud,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────
@@ -159,6 +159,107 @@ function TagEditor({ title, icon: Icon, values, onChange, placeholder }: {
                     </span>
                 ))}
             </div>
+        </div>
+    )
+}
+
+// ─── Upload d'images depuis l'appareil ────────────────────────
+async function uploadFiles(files: FileList | File[]): Promise<{ urls: string[]; error?: string }> {
+    const fd = new FormData()
+    Array.from(files).forEach(f => fd.append('file', f))
+    try {
+        const res = await fetch('/api/admin/fa-priests/upload', { method: 'POST', body: fd })
+        const data = await res.json()
+        if (!res.ok) return { urls: [], error: data.error || 'Envoi impossible' }
+        return { urls: data.urls || [] }
+    } catch {
+        return { urls: [], error: 'Erreur réseau pendant l’envoi' }
+    }
+}
+
+function ImageDrop({
+    title, icon: Icon, multiple, values, onChange, hint,
+}: {
+    title: string
+    icon: typeof ImageIcon
+    multiple: boolean
+    values: string[]
+    onChange: (v: string[]) => void
+    hint: string
+}) {
+    const [busy, setBusy] = useState(false)
+    const [drag, setDrag] = useState(false)
+    const [err, setErr] = useState('')
+    const inputId = useId()
+
+    const handle = async (files: FileList | File[] | null) => {
+        if (!files || files.length === 0) return
+        setBusy(true); setErr('')
+        const { urls, error } = await uploadFiles(files)
+        if (error) setErr(error)
+        if (urls.length) onChange(multiple ? [...values, ...urls] : [urls[0]])
+        setBusy(false)
+    }
+
+    const removeAt = async (i: number) => {
+        const url = values[i]
+        onChange(values.filter((_, k) => k !== i))
+        // Nettoyage du stockage (silencieux : l'UI est déjà à jour)
+        fetch(`/api/admin/fa-priests/upload?url=${encodeURIComponent(url)}`, { method: 'DELETE' }).catch(() => {})
+    }
+
+    return (
+        <div>
+            <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                <Icon size={13} style={{ color: ACCENT }} /> {title}
+            </label>
+
+            <label
+                htmlFor={inputId}
+                onDragOver={e => { e.preventDefault(); setDrag(true) }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files) }}
+                className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed py-6 px-4 cursor-pointer transition-all text-center"
+                style={{
+                    borderColor: drag ? ACCENT : 'var(--panel-border, rgba(255,255,255,0.15))',
+                    backgroundColor: drag ? 'rgba(124,92,202,0.08)' : 'var(--panel-surface-alt, rgba(255,255,255,0.02))',
+                }}
+            >
+                {busy
+                    ? <Loader2 size={20} className="animate-spin" style={{ color: ACCENT }} />
+                    : <UploadCloud size={20} style={{ color: ACCENT }} />}
+                <p className="text-[12px] font-bold" style={{ color: 'var(--panel-text, #E5E7EB)' }}>
+                    {busy ? 'Envoi en cours…' : 'Cliquez ou glissez vos images ici'}
+                </p>
+                <p className="text-[10px]" style={{ color: 'var(--panel-text-muted, #6B7280)' }}>{hint}</p>
+                <input
+                    id={inputId}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+                    multiple={multiple}
+                    className="hidden"
+                    title={title}
+                    onChange={e => { handle(e.target.files); e.target.value = '' }}
+                />
+            </label>
+
+            {err && <p className="text-[11px] mt-2 text-red-400">{err}</p>}
+
+            {values.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                    {values.map((u, i) => (
+                        <div key={`${u}-${i}`} className="relative group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={u} alt={`Image ${i + 1}`} className="w-20 h-20 rounded-xl object-cover border"
+                                style={{ borderColor: 'var(--panel-border, rgba(255,255,255,0.12))' }} />
+                            <button type="button" title="Retirer cette image" onClick={() => removeAt(i)}
+                                className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                <X size={12} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
@@ -483,11 +584,16 @@ export default function PretresFaPage() {
                                         onChange={e => setEditing({ ...editing, bio: e.target.value })} />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                                     <div className="sm:col-span-2">
-                                        <label className={lbl} style={lblStyle}>Photo principale (URL)</label>
-                                        <input className={field} style={fieldStyle} value={editing.photo_url || ''} title="Photo" placeholder="https://…"
-                                            onChange={e => setEditing({ ...editing, photo_url: e.target.value })} />
+                                        <ImageDrop
+                                            title="Photo principale (portrait)"
+                                            icon={UserRound}
+                                            multiple={false}
+                                            hint="JPG, PNG, WEBP ou AVIF — 8 Mo maximum"
+                                            values={editing.photo_url ? [editing.photo_url] : []}
+                                            onChange={v => setEditing({ ...editing, photo_url: v[0] || '' })}
+                                        />
                                     </div>
                                     <div>
                                         <label className={lbl} style={lblStyle}>Années d&apos;expérience</label>
@@ -522,17 +628,14 @@ export default function PretresFaPage() {
                                 />
 
                                 {/* Galerie + langues */}
-                                <TagEditor title="Galerie d'images (URLs)" icon={ImageIcon} placeholder="https://… puis Entrée"
-                                    values={editing.gallery || []} onChange={v => setEditing({ ...editing, gallery: v })} />
-                                {(editing.gallery?.length || 0) > 0 && (
-                                    <div className="flex flex-wrap gap-2">
-                                        {editing.gallery.map((u, i) => (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img key={i} src={u} alt={`Aperçu ${i + 1}`} className="w-16 h-16 rounded-xl object-cover border"
-                                                style={{ borderColor: 'var(--panel-border, rgba(255,255,255,0.1))' }} />
-                                        ))}
-                                    </div>
-                                )}
+                                <ImageDrop
+                                    title="Galerie d'images"
+                                    icon={ImageIcon}
+                                    multiple
+                                    hint="Plusieurs images à la fois — 8 Mo par fichier"
+                                    values={editing.gallery || []}
+                                    onChange={v => setEditing({ ...editing, gallery: v })}
+                                />
                                 <TagEditor title="Langues parlées" icon={Languages} placeholder="Fon, Yoruba… puis Entrée"
                                     values={editing.langues || []} onChange={v => setEditing({ ...editing, langues: v })} />
 

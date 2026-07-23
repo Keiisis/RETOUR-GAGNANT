@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'
 import PricingCalculator3D from '@/components/services/PricingCalculator3D'
 import FaConsultationBooking from '@/components/services/FaConsultationBooking'
+import FaPriestsDirectory from '@/components/services/FaPriestsDirectory'
 import LanguesRacinesChoice from '@/components/services/LanguesRacinesChoice'
 
 import { useTranslation, T } from '@/lib/translation'
@@ -516,6 +517,14 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                 )}
 
                                 {/* Section réservation — uniquement Consultation Fa & Racines */}
+                                {/* Annuaire des Prêtres Fa — alimenté par /api/fa-priests
+                                    (se masque automatiquement si aucun prêtre publié) */}
+                                {slug === 'consultation-fa-racines' && (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+                                        <FaPriestsDirectory />
+                                    </motion.div>
+                                )}
+
                                 {slug === 'consultation-fa-racines' && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                                         <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Réserver votre consultation</T></h2>
