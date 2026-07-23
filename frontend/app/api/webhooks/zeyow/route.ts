@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 
 // Webhook Zeyow — notification asynchrone de paiement (appel serveur-à-serveur uniquement)
 export async function POST(request: Request) {
@@ -115,6 +116,14 @@ export async function POST(request: Request) {
                     qty: order.quantity || 1,
                 })
             }
+
+            // Facture ERP + email facture au client (comme FedaPay / Stripe / PayPal).
+            // Absent jusqu'ici : les paiements Zeyow n'émettaient AUCUNE facture.
+            await createErpInvoiceForOrder({
+                orderId: String(order_id),
+                method: 'zeyow',
+                transactionId: String(transaction_id || `zeyow-${order_id}`),
+            })
 
             await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/notifications/order`, {
                 method: 'POST',

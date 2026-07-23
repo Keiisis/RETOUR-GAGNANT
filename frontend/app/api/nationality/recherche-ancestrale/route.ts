@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import { notifyStaffNationalityPayment } from '@/lib/nationality-payment-emails'
+import { recordNationalityIncome } from '@/lib/nationality-income'
 import { markClientConverted } from '@/lib/classement/track'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -85,6 +86,17 @@ export async function POST(request: NextRequest) {
             paymentMethod: String(payment_provider || 'en ligne'),
             paymentRef: payment_tx_id ? String(payment_tx_id) : null,
             service: 'Recherche Ancestrale',
+        })
+        // Traçabilité comptable + FACTURE (PDF) envoyée au client
+        void recordNationalityIncome(supabase, {
+            ref: searchRef,
+            nom: app.nom, prenom: app.prenom, email: app.email,
+            phone: app.telephone || null,
+            amount: Number(amount) || 250,
+            currency: 'EUR',
+            paymentMethod: String(payment_provider || 'en ligne'),
+            txId: payment_tx_id ? String(payment_tx_id) : null,
+            label: 'Recherche Ancestrale & Généalogique',
         })
         void markClientConverted({
             email: app.email,
