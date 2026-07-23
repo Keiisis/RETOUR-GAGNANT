@@ -65,6 +65,8 @@ export default function AdminFacturationPage() {
     // Avoir / note de crédit
     const [avoirTarget, setAvoirTarget] = useState<DocumentFinancier | null>(null)
     const [avoirMotif, setAvoirMotif] = useState('')
+    const [avoirMontant, setAvoirMontant] = useState('')
+    const [avoirRestant, setAvoirRestant] = useState<number | null>(null)
     const [avoirSaving, setAvoirSaving] = useState(false)
     const [avoirError, setAvoirError] = useState('')
 
@@ -106,15 +108,21 @@ export default function AdminFacturationPage() {
         setAvoirSaving(true)
         setAvoirError('')
         try {
-            const res = await fetch('/api/admin/facturation/avoir', {
+            const res = await fetch('/api/admin/avoirs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ facture_id: avoirTarget.id, motif: avoirMotif.trim() }),
+                body: JSON.stringify({
+                    facture_id: avoirTarget.id,
+                    motif: avoirMotif.trim(),
+                    ...(avoirMontant.trim() ? { montant: Number(avoirMontant) } : {}),
+                }),
             })
             const data = await res.json()
             if (data.success) {
                 setAvoirTarget(null)
                 setAvoirMotif('')
+                setAvoirMontant('')
+                setAvoirRestant(null)
                 fetchDocuments()
             } else setAvoirError(data.error || 'Création impossible')
         } catch {
@@ -806,7 +814,7 @@ export default function AdminFacturationPage() {
                                                 <button onClick={() => openMecef(doc)} className={`p-2 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all ${doc.mecef_code || doc.mecef_nim ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-400'}`} title="Certification fiscale e-MCF (DGI)"><ShieldCheck size={16} /></button>
                                             )}
                                             {doc.type === 'facture' && (
-                                                <button onClick={() => setAvoirTarget(doc)} className="p-2 text-gray-400 hover:text-orange-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Émettre un avoir (note de crédit)"><Undo2 size={16} /></button>
+                                                <button onClick={() => { setAvoirTarget(doc); setAvoirMontant(''); setAvoirMotif(''); setAvoirError(''); setAvoirRestant(null); fetch(`/api/admin/avoirs?facture_id=${doc.id}`).then(r => r.json()).then(d => { const deja = (d.avoirs || []).reduce((a: number, x: { total: number }) => a + Number(x.total || 0), 0); setAvoirRestant(Math.max(0, Number(doc.total || 0) - deja)) }).catch(() => setAvoirRestant(Number(doc.total || 0))) }} className="p-2 text-gray-400 hover:text-orange-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Émettre un avoir (note de crédit)"><Undo2 size={16} /></button>
                                             )}
                                             <button onClick={() => handleDelete(doc.id)} className="p-2 text-gray-400 hover:text-red-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" title="Supprimer"><Trash2 size={16} /></button>
                                         </div>
@@ -878,7 +886,7 @@ export default function AdminFacturationPage() {
                 {avoirTarget && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4"
-                        onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }}>
+                        onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirMontant(''); setAvoirRestant(null); setAvoirError('') }}>
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                             onClick={e => e.stopPropagation()}
                             className="border rounded-2xl p-6 max-w-md w-full"
@@ -888,10 +896,29 @@ export default function AdminFacturationPage() {
                                     <Undo2 className="text-orange-500" size={22} />
                                     <h3 className="text-base font-black" style={{ color: 'var(--panel-text-heading, #fff)' }}>Émettre un avoir</h3>
                                 </div>
-                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }} className="opacity-60 hover:opacity-100" style={{ color: 'var(--panel-text, #fff)' }}><X size={18} /></button>
+                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirMontant(''); setAvoirRestant(null); setAvoirError('') }} className="opacity-60 hover:opacity-100" style={{ color: 'var(--panel-text, #fff)' }}><X size={18} /></button>
                             </div>
                             <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
-                                En comptabilité normée, une facture émise ne se supprime pas : on émet un <strong>avoir</strong> (note de crédit) qui la crédite. L&apos;avoir <span className="font-mono font-bold">{avoirTarget.numero}</span> reprendra les montants de la facture et entrera en contre-passation dans la comptabilité.
+                                En comptabilité normée, une facture émise ne se supprime pas : on émet un <strong>avoir</strong> (note de crédit) qui la crédite. L&apos;avoir porte sur la facture <span className="font-mono font-bold">{avoirTarget.numero}</span>, reprend sa devise et son taux de change figés, et entre en contre-passation (CA et TVA) dans la comptabilité.
+                            </p>
+                            <label className="text-xs font-bold mb-1 block" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                                Montant à créditer ({avoirTarget.currency || 'XOF'})
+                            </label>
+                            <input
+                                type="number" min={0} step="0.01"
+                                value={avoirMontant}
+                                onChange={e => setAvoirMontant(e.target.value)}
+                                placeholder={avoirRestant !== null ? `${avoirRestant} (total restant)` : 'Total de la facture'}
+                                title="Montant a crediter"
+                                className="w-full border rounded-xl py-2.5 px-3 text-sm focus:outline-none mb-1 font-mono"
+                                style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }}
+                            />
+                            <p className="text-[11px] mb-3" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                                Laissez vide pour un avoir <strong>total</strong>.
+                                {avoirRestant !== null && (
+                                    <> Restant avoirable : <span className="font-mono font-bold">{avoirRestant.toLocaleString('fr-FR')} {avoirTarget.currency || 'XOF'}</span>.</>
+                                )}
+                                {' '}La TVA est créditée au prorata.
                             </p>
                             <label className="text-xs font-bold mb-1 block" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>Motif de l&apos;avoir *</label>
                             <textarea
@@ -911,7 +938,7 @@ export default function AdminFacturationPage() {
                                     {avoirSaving ? <Loader2 className="animate-spin" size={15} /> : <Undo2 size={15} />}
                                     Émettre l&apos;avoir
                                 </button>
-                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirError('') }}
+                                <button onClick={() => { setAvoirTarget(null); setAvoirMotif(''); setAvoirMontant(''); setAvoirRestant(null); setAvoirError('') }}
                                     className="flex-1 border font-bold text-sm py-2.5 rounded-xl transition-all"
                                     style={{ backgroundColor: 'var(--panel-surface-alt, rgba(255,255,255,0.05))', borderColor: 'var(--panel-border, rgba(255,255,255,0.1))', color: 'var(--panel-text, #fff)' }}>Annuler</button>
                             </div>
