@@ -6,18 +6,30 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
 
+const PROPOSAL_FIELDS = 'id, secret_key, client_name, destination, status, total_amount, created_at, currency, notes'
+
 export async function getProposalsList() {
     try {
-        const { data, error } = await supabaseAdmin
-            .from('ai_client_proposals')
-            .select('id, secret_key, client_name, destination, status, total_amount, created_at, currency, notes')
+        // Source de vérité : la vue `slide_proposals`, qui exclut par
+        // construction les liens de paiement (ils partagent la table mais
+        // relèvent d'un autre domaine). Repli sur un filtre applicatif tant
+        // que la migration de séparation n'est pas appliquée.
+        const view = await supabaseAdmin
+            .from('slide_proposals')
+            .select(PROPOSAL_FIELDS)
             .order('created_at', { ascending: false })
 
+        if (!view.error) return { success: true, data: view.data || [] }
+
+        const { data, error } = await supabaseAdmin
+            .from('ai_client_proposals')
+            .select(PROPOSAL_FIELDS)
+            .order('created_at', { ascending: false })
         if (error) throw error
-        // Exclure les LIENS DE PAIEMENT : ils partagent la table ai_client_proposals
-        // mais ne sont PAS des propositions/slides — ils appartiennent au gestionnaire
-        // de liens de paiement (facturation), pas à admin/proposals.
-        const filtered = (data || []).filter(p => !String((p as { notes?: string | null }).notes || '').startsWith('LIEN-PAIEMENT'))
+
+        const filtered = (data || []).filter(
+            p => !String((p as { notes?: string | null }).notes || '').startsWith('LIEN-PAIEMENT'),
+        )
         return { success: true, data: filtered }
     } catch (err: unknown) {
         return { success: false, error: err instanceof Error ? err.message : String(err) }

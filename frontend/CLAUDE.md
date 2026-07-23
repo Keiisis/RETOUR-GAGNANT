@@ -169,9 +169,18 @@ paypal_enabled, paypal_sandbox, paypal_client_id, paypal_client_secret, paypal_c
 
 ## ⚠️ RÈGLE DE SYNCHRONISATION
 
-**Quand tu modifies les services sur le web, tu DOIS aussi mettre à jour :**
-1. `mobile/src/screens/main/ServicesScreen.tsx` → `SERVICES_DATA`
-2. `mobile/src/screens/main/ServiceDetailsScreen.tsx` (si structure change)
+**Services — source de vérité UNIQUE : la table Supabase `services`.**
+
+Le mobile ne duplique PAS les services : `ServicesScreen.tsx` lit directement
+`services` (mêmes colonnes que le web) et n'utilise `SERVICES_DATA` que comme
+**repli hors-ligne** et pour l'enrichissement statique (icônes, textes longs).
+
+- Ajouter / modifier un service → **uniquement en base** (admin). Web et mobile
+  se mettent à jour seuls.
+- Ne recopier dans `SERVICES_DATA` que si tu veux un repli hors-ligne enrichi
+  pour un NOUVEAU service — jamais pour un changement de prix ou de libellé.
+- ⚠️ Les prix ne doivent JAMAIS être codés en dur : ils viennent de
+  `services.pricing_options` (voir `FaConsultationBooking` / `fa-checkout`).
 
 **Quand tu modifies la traduction :**
 1. Langues supportées : `lib/translation/constants.ts` (web) — source de vérité

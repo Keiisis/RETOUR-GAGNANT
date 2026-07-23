@@ -54,12 +54,21 @@ function buildLinkEmail(clientName: string, label: string, amount: number, curre
 export async function GET() {
     try {
         const supabase = createClient(supabaseUrl, serviceKey)
-        const { data, error } = await supabase
-            .from('ai_client_proposals')
-            .select('id, secret_key, client_name, client_email, client_phone, destination, total_amount, currency, status, notes, created_at')
-            .ilike('notes', 'LIEN-PAIEMENT%')
-            .order('created_at', { ascending: false })
-        if (error) throw error
+        const FIELDS = 'id, secret_key, client_name, client_email, client_phone, destination, total_amount, currency, status, notes, created_at'
+        // Vue dédiée aux liens de paiement ; repli sur le filtre historique
+        // tant que la migration de séparation n'est pas appliquée.
+        let data: Array<Record<string, unknown>> | null = null
+        const view = await supabase.from('payment_links').select(FIELDS).order('created_at', { ascending: false })
+        if (!view.error) {
+            data = view.data
+        } else {
+            const legacy = await supabase
+                .from('ai_client_proposals').select(FIELDS)
+                .ilike('notes', 'LIEN-PAIEMENT%')
+                .order('created_at', { ascending: false })
+            if (legacy.error) throw legacy.error
+            data = legacy.data
+        }
         const links = (data || []).map(p => ({
             ...p,
             url: `${SITE_URL}/p/${p.secret_key}/paiement`,
