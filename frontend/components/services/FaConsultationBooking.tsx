@@ -86,6 +86,8 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
     const [step, setStep] = useState<'form' | 'paying' | 'success'>('form')
     const [error, setError] = useState('')
     const [submitting, setSubmitting] = useState(false)
+    const [priests, setPriests] = useState<Array<{ id: string; nom: string; prenom: string; titre: string | null; localisation: string | null; photo_url: string | null; rating_avg: number; rating_count: number }>>([])
+    const [priestId, setPriestId] = useState('')
     const orderIdRef = useRef('')
     const kkiapayBound = useRef(false)
     // Montant XOF calculé par le SERVEUR (taux réels) — c'est lui qui est
@@ -94,6 +96,15 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
 
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setSettings(d)).catch(() => { })
+    }, [])
+
+    // Prêtres disponibles (annuaire public). Le choix est FACULTATIF :
+    // sans sélection, l'équipe attribue le Bokonon le plus adapté.
+    useEffect(() => {
+        fetch('/api/fa-priests')
+            .then(r => r.json())
+            .then(d => setPriests(d.priests || []))
+            .catch(() => { })
     }, [])
 
     // Tarifs pilotés EXCLUSIVEMENT depuis l'admin (pricing_options du service) —
@@ -191,6 +202,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                     customer_email: form.email.trim(),
                     customer_phone: form.phone.trim(),
                     payment_method: method,
+                    priest_id: priestId || undefined,
                     clause_accepted: true,
                 }),
             })
@@ -300,6 +312,53 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
             </div>
 
             {/* ── Coordonnées + paiement ── */}
+            {/* ── Choix du prêtre (facultatif) ── */}
+            {priests.length > 0 && (
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-4">
+                    <p className="font-black text-[#1a2332] text-sm mb-1"><T>Choisir votre Prêtre Fa</T></p>
+                    <p className="text-xs text-gray-500 mb-4">
+                        <T>Facultatif — sans choix, notre équipe vous attribue le Bokonon le plus adapté à votre lignée.</T>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button type="button" onClick={() => setPriestId('')}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${priestId === ''
+                                ? 'border-[#7C5CCA] bg-[#7C5CCA]/5'
+                                : 'border-gray-200 hover:border-gray-300'}`}>
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                                <Handshake size={16} className="text-gray-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[13px] font-bold text-[#1a2332]"><T>Laisser RGB choisir</T></p>
+                                <p className="text-[11px] text-gray-400"><T>Attribution par notre équipe</T></p>
+                            </div>
+                        </button>
+                        {priests.map(pr => {
+                            const on = priestId === pr.id
+                            return (
+                                <button key={pr.id} type="button" onClick={() => setPriestId(pr.id)}
+                                    className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${on
+                                        ? 'border-[#7C5CCA] bg-[#7C5CCA]/5'
+                                        : 'border-gray-200 hover:border-gray-300'}`}>
+                                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#7C5CCA]/10 flex items-center justify-center shrink-0">
+                                        {pr.photo_url
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            ? <img src={pr.photo_url} alt={`${pr.prenom} ${pr.nom}`} className="w-full h-full object-cover" />
+                                            : <Handshake size={16} className="text-[#7C5CCA]" />}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-bold text-[#1a2332] truncate">{pr.prenom} {pr.nom}</p>
+                                        <p className="text-[11px] text-gray-400 truncate">
+                                            {pr.titre || 'Bokonon'}
+                                            {pr.rating_count > 0 && <> · {pr.rating_avg.toFixed(1)}/5</>}
+                                        </p>
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-[#7C5CCA]/10 flex items-center justify-center">

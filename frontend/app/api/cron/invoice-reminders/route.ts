@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email'
+import { toXOFStrict } from '@/lib/server-rates'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -75,6 +76,23 @@ export async function POST(request: Request) {
             })
         }
 
+        // ── SOLDE RÉEL : déduire les encaissements déjà enregistrés ──────
+        // Sans cela, une facture partiellement (ou totalement) réglée par
+        // virement/espèces était relancée pour la TOTALITÉ du montant.
+        const invoiceIds = unpaidInvoices.map(i => i.id)
+        const encaisse: Record<string, number> = {}
+        if (invoiceIds.length > 0) {
+            const { data: pms } = await supabase
+                .from('paiements_manuels')
+                .select('document_id, montant')
+                .in('document_id', invoiceIds)
+            for (const pm of pms || []) {
+                if (pm.document_id) {
+                    encaisse[pm.document_id] = (encaisse[pm.document_id] || 0) + Number(pm.montant || 0)
+                }
+            }
+        }
+
         const now = new Date()
         const results: {
             invoiceId: string
@@ -102,6 +120,17 @@ export async function POST(request: Request) {
             // Pas encore éligible pour un rappel (< 7 jours)
             if (!targetLevel) continue
 
+            // Solde restant dû (les paiements sont stockés en XOF)
+            const totalXOF = await toXOFStrict(Number(invoice.total) || 0, invoice.currency)
+            if (totalXOF === null) {
+                console.warn(`[CRON/Reminders] taux ${invoice.currency} indisponible — ${invoice.numero} ignorée`)
+                continue
+            }
+            const soldeXOF = totalXOF - (encaisse[invoice.id] || 0)
+            // Facture déjà soldée : JAMAIS de relance (même si le statut
+            // n'a pas encore été basculé à « payé »).
+            if (soldeXOF <= 0) continue
+
             // Vérifier que ce rappel n'a pas déjà été envoyé (idempotence via notes)
             const currentNotes = invoice.notes || ''
             if (currentNotes.includes(`[${targetLevel}]`)) {
@@ -122,7 +151,8 @@ export async function POST(request: Request) {
 
             // ═══ ENVOYER LE RAPPEL ═══════════════════════════════════════
             try {
-                const montantFormatted = formatPrice(invoice.total)
+                // On relance sur le SOLDE restant dû (en XOF, devise des encaissements)
+                const montantFormatted = formatPrice(soldeXOF)
                 const currency = invoice.currency || 'XOF'
 
                 // Construire le lien portail (s'il existe un portail client)

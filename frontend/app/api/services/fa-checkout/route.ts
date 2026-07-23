@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         const body = (scanned ?? {}) as any
 
         const mode = body.mode === 'visio' ? 'visio' as const : body.mode === 'presentiel' ? 'presentiel' as const : null
+        const priestId = String(body.priest_id || '').trim() || null
         const customerName = String(body.customer_name || '').trim()
         const customerEmail = String(body.customer_email || '').trim().toLowerCase()
         const customerPhone = String(body.customer_phone || '').trim()
@@ -87,8 +88,23 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Prêtre choisi (facultatif) — validé en base : actif uniquement.
+        let priestLabel = ''
+        let priestRef: string | null = null
+        if (priestId) {
+            const { data: priest } = await supabase
+                .from('fa_priests').select('id, nom, prenom, titre')
+                .eq('id', priestId).eq('is_active', true).maybeSingle()
+            if (!priest) {
+                return NextResponse.json({ error: 'Prêtre indisponible. Actualisez la page.' }, { status: 400 })
+            }
+            priestRef = priest.id
+            priestLabel = `${priest.prenom || ''} ${priest.nom || ''}`.trim()
+        }
+
         const modeLabel = mode === 'presentiel' ? 'Présentiel' : 'Visio'
         const title = `Consultation Fa & Racines — ${modeLabel} (${amountEUR} €)`
+            + (priestLabel ? ` — ${priestLabel}` : '')
 
         const { data: order, error } = await supabase
             .from('orders')
@@ -110,6 +126,8 @@ export async function POST(request: NextRequest) {
                     service: 'consultation-fa-racines',
                     mode,
                     price_eur: amountEUR,
+                    priest_id: priestRef,
+                    priest_name: priestLabel || null,
                     clause_mise_en_relation_acceptee_le: new Date().toISOString(),
                 }],
             })
