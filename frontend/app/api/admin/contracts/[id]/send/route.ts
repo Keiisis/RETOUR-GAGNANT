@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
 import { auditEntry, esc, fmtAmount, fmtDate, generateSignToken, SITE_URL, type AuditEntry, type ContractRow } from '@/lib/contracts'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -83,6 +84,9 @@ function buildNoAccountEmail(c: ContractRow, signUrl: string): string {
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         const { id } = await params
         const body = await request.json().catch(() => ({}))

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
+import { guardPublic, AI_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -82,6 +83,9 @@ function wrapHtml(smtp: Record<string, string>, ref: string, body: string, baseU
 
 // ─── POST /api/nationality/analyze ───────────────────────────────────────────
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'nationality/analyze', AI_LIMIT)
+    if (trop) return trop
+
     try {
         const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
         const body = await request.json()

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, TELEMETRY_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'blog/views', TELEMETRY_LIMIT)
+    if (trop) return trop
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration Supabase manquante' }, { status: 500 })

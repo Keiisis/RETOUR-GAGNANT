@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -25,10 +26,11 @@ export async function GET(
     return NextResponse.json({ reviews: data || [] })
 }
 
-export async function POST(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }) {
+    const trop = guardPublic(req, 'products/[id]/reviews', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     const { id } = await params
     const body = await req.json()
     const { reviewer_name, rating, comment } = body

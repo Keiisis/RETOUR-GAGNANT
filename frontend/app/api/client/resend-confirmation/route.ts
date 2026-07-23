@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer'
 import fsNode from 'fs'
 import path from 'path'
 import { rateLimit, getClientIp, type RateLimitConfig } from '@/lib/rate-limit'
+import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 
 // Limite par IP (en plus de la limite par email) : empêche un attaquant de
 // faire tourner les emails pour épuiser le quota SMTP.
@@ -31,6 +32,9 @@ function isRateLimited(email: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'client/resend-confirmation', EMAIL_LIMIT)
+    if (trop) return trop
+
     try {
         // Limite par IP (anti-abus SMTP par rotation d'emails)
         const ipLimit = rateLimit(`resend:${getClientIp(req)}`, RESEND_IP_LIMIT)

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
 import { SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
+import { guardPublic, TRANSLATE_LIMIT } from '@/lib/api-guard'
 
 // ═══════════════════════════════════════════════════════
 // Translation API Endpoint
@@ -16,6 +17,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 
 export async function POST(req: Request) {
+    const trop = guardPublic(req, 'translate', TRANSLATE_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const { texts, lang }: { texts: string[], lang: LangCode } = body

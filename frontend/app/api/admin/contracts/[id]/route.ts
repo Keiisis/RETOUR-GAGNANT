@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { auditEntry, type AuditEntry } from '@/lib/contracts'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -21,6 +22,9 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         const { id } = await params
         const body = await request.json()
@@ -85,6 +89,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         const { id } = await params
         const supabase = createClient(supabaseUrl, serviceKey)

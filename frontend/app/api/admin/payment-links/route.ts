@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -51,7 +52,23 @@ function buildLinkEmail(clientName: string, label: string, amount: number, curre
     </div>`
 }
 
-export async function GET() {
+// ══════════════════════════════════════════════════════════════
+//  CLOISONNEMENT (implémentation unique, montée ici)
+//  ADMIN : voit / supprime TOUS les liens, y compris ceux des agents.
+//  AGENT : voit / supprime UNIQUEMENT les siens, repérés par le
+//          marqueur [BY:<userId>] posé CÔTÉ SERVEUR depuis la session.
+//  /api/agent/payment-links réexporte ces mêmes handlers : une seule
+//  logique, donc aucune divergence possible entre les deux chemins.
+// ══════════════════════════════════════════════════════════════
+
+/** true si le lien appartient à l'agent donné. */
+const appartientA = (notes: unknown, userId?: string) =>
+    !!userId && String(notes || '').includes(`[BY:${userId}]`)
+
+export async function GET(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const supabase = createClient(supabaseUrl, serviceKey)
         const FIELDS = 'id, secret_key, client_name, client_email, client_phone, destination, total_amount, currency, status, notes, created_at'
@@ -69,7 +86,13 @@ export async function GET() {
             if (legacy.error) throw legacy.error
             data = legacy.data
         }
-        const links = (data || []).map(p => ({
+        // Cloisonnement AVANT la mise en forme : un agent ne doit jamais
+        // recevoir l'URL secrète d'un lien qui n'est pas le sien.
+        const visibles = garde.isAdmin
+            ? (data || [])
+            : (data || []).filter(p => appartientA(p.notes, garde.userId))
+
+        const links = visibles.map(p => ({
             ...p,
             url: `${SITE_URL}/p/${p.secret_key}/paiement`,
             paid: p.status === 'paid',
@@ -82,13 +105,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json()
-        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category, by_user_id } = body
-        // Marqueur de créateur (posé SERVEUR par /api/agent/payment-links à partir
-        // de la session — jamais saisi par le client). Permet le cloisonnement :
-        // un agent ne voit que SES liens, l'admin les voit tous.
-        const byMarker = by_user_id ? ` [BY:${String(by_user_id).slice(0, 40)}]` : ''
+        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category } = body
+        // Marqueur de créateur pris SUR LA SESSION, jamais dans le corps de la
+        // requête : sinon un agent pourrait s'attribuer le lien d'un autre —
+        // ou s'en cacher — en forgeant `by_user_id`.
+        const byMarker = garde.userId ? ` [BY:${String(garde.userId).slice(0, 40)}]` : ''
         // Catégorie comptable de destination choisie à la création
         const cat = ['factures', 'boutique', 'paiements'].includes(category) ? category : 'factures'
 
@@ -167,6 +193,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const id = request.nextUrl.searchParams.get('id')
         if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
@@ -175,6 +204,10 @@ export async function DELETE(request: NextRequest) {
         const { data: link } = await supabase.from('ai_client_proposals').select('id, notes, status').eq('id', id).single()
         if (!link || !String(link.notes || '').startsWith('LIEN-PAIEMENT')) {
             return NextResponse.json({ error: 'Lien introuvable' }, { status: 404 })
+        }
+        // Un agent ne supprime que ses propres liens ; l'admin, tous.
+        if (!garde.isAdmin && !appartientA(link.notes, garde.userId)) {
+            return NextResponse.json({ error: 'Ce lien ne vous appartient pas.' }, { status: 403 })
         }
         if (link.status === 'paid') {
             return NextResponse.json({ error: 'Ce lien a été payé — suppression interdite (traçabilité comptable).' }, { status: 400 })

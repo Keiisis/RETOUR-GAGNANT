@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY manquant — impossible de bypasser RLS')
@@ -12,7 +13,10 @@ const supabaseAdmin = createClient(
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // GET /api/community-manager/library
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { data, error } = await supabaseAdmin
             .from('content_library')
@@ -28,6 +32,9 @@ export async function GET() {
 
 // POST /api/community-manager/library — Sauvegarder un contenu
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json()
         const { platform, content_type = 'post', text, hashtags, style_inspiration, viral_score = 0 } = body
@@ -55,6 +62,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/community-manager/library — Toggle favori
 export async function PATCH(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { id, is_favorite } = await request.json()
         if (!id) return NextResponse.json({ error: 'ID manquant.' }, { status: 400 })
@@ -73,6 +83,9 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/community-manager/library?id=xxx
 export async function DELETE(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')

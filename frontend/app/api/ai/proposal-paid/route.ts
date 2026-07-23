@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { classifyProposalPayment } from '@/lib/proposal-classify'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -16,12 +18,43 @@ const formatAmount = (amount: number, cur: string) => {
 
 export async function POST(req: Request) {
     try {
+        // Route publique (appelée depuis /p/[secret]/paiement) mais qui écrit
+        // en comptabilité : on plafonne le débit avant toute lecture de base.
+        const trop = guardPublic(req, 'proposal-paid', PAYMENT_ROUTE_LIMIT)
+        if (trop) return trop
+
         const supabase = createClient(supabaseUrl, supabaseKey)
         const body = await req.json()
         const { proposal_id, client_email, client_name } = body
 
         if (!proposal_id) {
             return NextResponse.json({ error: 'proposal_id requis' }, { status: 400 })
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  PREUVE DE PAIEMENT OBLIGATOIRE
+        //  Cette route est appelée par le NAVIGATEUR du client après le
+        //  widget. Sans contrôle, un simple POST { proposal_id } suffisait
+        //  à marquer « payé », émettre une facture et envoyer un reçu.
+        //  L'autorité reste la commande encaissée et vérifiée serveur
+        //  (checkout/verify ou webhook) : pas de commande completed,
+        //  pas d'écriture comptable.
+        // ═══════════════════════════════════════════════════════════
+        const { data: linkedOrder } = await supabase
+            .from('orders')
+            .select('id, amount, currency, payment_status')
+            .eq('shipping_address', proposal_id)
+            .eq('shipping_zone', 'proposal')
+            .eq('payment_status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (!linkedOrder) {
+            return NextResponse.json(
+                { error: 'Aucun paiement encaissé pour cette proposition.' },
+                { status: 402 },
+            )
         }
 
         // Marquer la proposition comme "paid"
@@ -55,14 +88,9 @@ export async function POST(req: Request) {
         //  enregistrement comptable par proposition.
         // ═══════════════════════════════════════════════════════════
         try {
-            const { data: linkedOrder } = await supabase
-                .from('orders')
-                .select('id, amount, currency')
-                .eq('shipping_address', proposal_id)
-                .eq('shipping_zone', 'proposal')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle()
+            // On réutilise la commande DÉJÀ vérifiée plus haut (payment_status
+            // = 'completed') : refaire la requête sans ce filtre rouvrirait
+            // exactement la brèche que le contrôle ferme.
             await classifyProposalPayment(supabase, proposal_id, linkedOrder)
         } catch (erpErr) {
             console.error('[ERP] classification proposition:', erpErr)

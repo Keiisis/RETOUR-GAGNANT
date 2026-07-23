@@ -88,6 +88,15 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
     const [submitting, setSubmitting] = useState(false)
     const [priests, setPriests] = useState<Array<{ id: string; nom: string; prenom: string; titre: string | null; localisation: string | null; photo_url: string | null; rating_avg: number; rating_count: number }>>([])
     const [priestId, setPriestId] = useState('')
+    // ── CRENEAU DE LA SEANCE ──────────────────────────────────────
+    // La consultation etait payee sans qu'aucune date n'entre dans le
+    // systeme. Le client choisit desormais son creneau, verifie en
+    // temps reel et transforme en rendez-vous des le paiement confirme.
+    const [rdvDate, setRdvDate] = useState('')
+    const [rdvHeure, setRdvHeure] = useState('')
+    const [faSlots, setFaSlots] = useState<Array<{ heure: string; restant: number }>>([])
+    const [faSlotsLoading, setFaSlotsLoading] = useState(false)
+    const [faFerme, setFaFerme] = useState<string | null>(null)
     const orderIdRef = useRef('')
     const kkiapayBound = useRef(false)
     // Montant XOF calculé par le SERVEUR (taux réels) — c'est lui qui est
@@ -97,6 +106,23 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setSettings(d)).catch(() => { })
     }, [])
+
+    useEffect(() => {
+        if (!rdvDate) { setFaSlots([]); setFaFerme(null); return }
+        let annule = false
+        setFaSlotsLoading(true)
+        fetch(`/api/availability?from=${rdvDate}&days=1&service=fa`)
+            .then(r => r.json())
+            .then(d => {
+                if (annule) return
+                const jour = (d.jours || [])[0]
+                setFaSlots(jour?.slots || [])
+                setFaFerme(jour?.ferme ? (jour.motif || 'Ferme ce jour-la') : null)
+            })
+            .catch(() => { if (!annule) { setFaSlots([]); setFaFerme(null) } })
+            .finally(() => { if (!annule) setFaSlotsLoading(false) })
+        return () => { annule = true }
+    }, [rdvDate])
 
     // Prêtres disponibles (annuaire public). Le choix est FACULTATIF :
     // sans sélection, l'équipe attribue le Bokonon le plus adapté.
@@ -203,6 +229,8 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                     customer_phone: form.phone.trim(),
                     payment_method: method,
                     priest_id: priestId || undefined,
+                    rdv_date: rdvDate || undefined,
+                    rdv_heure: rdvHeure || undefined,
                     clause_accepted: true,
                 }),
             })
@@ -358,6 +386,42 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                     </div>
                 </div>
             )}
+
+            {/* ── Creneau de la seance ── */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-4">
+                <p className="font-black text-[#1a2332] text-sm mb-1"><T>Choisir la date de votre seance</T></p>
+                <p className="text-xs text-gray-500 mb-4">
+                    <T>Le creneau est reserve des la confirmation du paiement. Laissez vide si vous preferez que notre equipe vous rappelle.</T>
+                </p>
+                <input
+                    type="date"
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={rdvDate}
+                    onChange={e => { setRdvDate(e.target.value); setRdvHeure('') }}
+                    title={t('Date de la seance')}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#7C5CCA]/60 mb-3"
+                />
+                {!rdvDate ? null : faSlotsLoading ? (
+                    <p className="text-xs text-gray-400 flex items-center gap-2">
+                        <Loader2 size={12} className="animate-spin" /> <T>Recherche des creneaux…</T>
+                    </p>
+                ) : faSlots.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {faSlots.map(sl => (
+                            <button key={sl.heure} type="button" onClick={() => setRdvHeure(sl.heure)}
+                                className={`py-2 px-3.5 rounded-xl text-sm border transition-all ${rdvHeure === sl.heure
+                                    ? 'border-[#7C5CCA] bg-[#7C5CCA]/5 text-[#7C5CCA] font-bold'
+                                    : 'border-gray-200 text-gray-600 hover:border-[#7C5CCA]/50'}`}>
+                                {sl.heure}
+                            </button>
+                        ))}
+                    </div>
+                ) : faFerme ? (
+                    <p className="text-xs text-amber-600 font-medium">{faFerme} — <T>choisissez une autre date.</T></p>
+                ) : (
+                    <p className="text-xs text-gray-400 italic"><T>Aucun creneau publie : notre equipe vous contactera pour convenir de la date.</T></p>
+                )}
+            </div>
 
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 // Service role — bypasse RLS (obligatoire)
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -13,7 +14,10 @@ const supabaseAdmin = createClient(
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // GET /api/community-manager/profiles
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { data, error } = await supabaseAdmin
             .from('social_profiles')
@@ -29,6 +33,9 @@ export async function GET() {
 
 // POST /api/community-manager/profiles — Créer un profil
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json()
         const { platform, profile_url, username, notes } = body
@@ -55,6 +62,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/community-manager/profiles — Mettre à jour last_analyzed_at
 export async function PATCH(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { id, last_analyzed_at } = await request.json()
         if (!id) return NextResponse.json({ error: 'ID manquant.' }, { status: 400 })
@@ -73,6 +83,9 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/community-manager/profiles?id=xxx
 export async function DELETE(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')

@@ -13,6 +13,7 @@ import crypto from 'crypto'
 import { auditEntry, type AuditEntry } from '@/lib/contracts'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -34,6 +35,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'contracts/sign', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const { token, contractId, clientEmail, signedName, consent } = body

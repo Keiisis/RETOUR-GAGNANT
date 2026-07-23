@@ -58,6 +58,31 @@ export async function toXOFStrict(amount: number, currency?: string | null): Pro
     return Math.round(n * rate)
 }
 
+/**
+ * Convertit un montant EN XOF vers une autre devise.
+ *
+ * Sens inverse de `toXOFStrict`, utile aux passerelles qui n'encaissent
+ * pas le franc CFA (PayPal). Renvoie `null` si le taux est inconnu : on
+ * préfère refuser le paiement plutôt que débiter un montant approximatif.
+ *
+ * Les devises à décimales sont arrondies au centime, les devises sans
+ * décimale (XOF) à l'unité.
+ */
+export async function fromXOFStrict(
+    amountXOF: number,
+    currency?: string | null,
+): Promise<number | null> {
+    const cur = String(currency || 'XOF').toUpperCase()
+    const n = Number(amountXOF)
+    if (!isFinite(n)) return null
+    if (cur === 'XOF' || cur === 'FCFA') return Math.round(n)
+
+    const rates = await getRatesXOF()
+    const rate = rates[cur]
+    if (!rate || !isFinite(rate) || rate <= 0) return null
+    return Math.round((n / rate) * 100) / 100
+}
+
 /** Variante non bloquante : renvoie le montant tel quel si le taux manque. */
 export async function toXOFLoose(amount: number, currency?: string | null): Promise<number> {
     const v = await toXOFStrict(amount, currency)

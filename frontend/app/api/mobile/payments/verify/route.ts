@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMobileUserId } from '@/lib/mobile-auth'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { toXOFStrict } from '@/lib/server-rates'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,9 +55,17 @@ async function verifyKkiapayTransaction(
 // l'ouverture du widget Kkiapay). Cette route confirme — ou marque comme échouée —
 // le paiement après le retour du widget natif.
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'mobile/payments/verify', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
+
+    // L'identité vient du jeton mobile. `client_id` transmis dans le corps
+    // n'est qu'une valeur choisie par l'appelant ; on ne l'accepte qu'en
+    // repli si le jeton est absent (anciennes versions de l'app).
+    const sessionClientId = await getMobileUserId(req)
+
     try {
         const body = await req.json()
-        const clientId = String(body.client_id || '')
+        const clientId = sessionClientId || String(body.client_id || '')
         const localTxId = String(body.local_tx_id || '')
         const kkTransactionId = body.kk_transaction_id ? String(body.kk_transaction_id) : null
         const clientStatus = body.status as 'failed' | undefined
@@ -108,12 +120,26 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // Sécurité : montant Kkiapay doit correspondre au montant DB (tolérance 1 unité)
-        if (verify.amount !== undefined && Math.abs(verify.amount - payment.amount) > 1) {
-            console.warn(
-                `[mobile/payments/verify] Montant divergent: kkiapay=${verify.amount} db=${payment.amount}`
-            )
-            return NextResponse.json({ error: 'Montant divergent' }, { status: 402 })
+        // Sécurité : le montant encaissé doit couvrir le montant dû.
+        // Kkiapay n'encaisse QU'EN XOF : si le paiement est libellé dans une
+        // autre devise, on le convertit avant de comparer — sinon 50 € étaient
+        // comparés à 32 798 XOF et tout paiement était accepté ou rejeté au
+        // hasard selon la devise.
+        if (verify.amount !== undefined) {
+            const attenduXOF = await toXOFStrict(payment.amount, payment.currency)
+            if (attenduXOF === null) {
+                return NextResponse.json(
+                    { error: `Taux de change ${payment.currency} indisponible — confirmation refusée.` },
+                    { status: 503 }
+                )
+            }
+            // 2 % de tolérance pour les arrondis ; le sur-paiement passe.
+            if (verify.amount < Math.floor(attenduXOF * 0.98)) {
+                console.warn(
+                    `[mobile/payments/verify] Montant divergent: kkiapay=${verify.amount} attendu=${attenduXOF} XOF`
+                )
+                return NextResponse.json({ error: 'Montant divergent' }, { status: 402 })
+            }
         }
 
         const { error: updErr } = await supabase

@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email'
 import { toXOFStrict } from '@/lib/server-rates'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const CRON_SECRET = process.env.CRON_SECRET || ''
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 // Seuils de rappel en jours
@@ -40,12 +40,8 @@ export async function POST(request: Request) {
         // ═══ AUTHENTICATION ════════════════════════════════════════════
         // Protéger cet endpoint — uniquement accessible via Vercel Cron
         // ou avec le secret correct dans le header.
-        const authHeader = request.headers.get('authorization') || ''
-        const querySecret = new URL(request.url).searchParams.get('secret') || ''
-
-        if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}` && querySecret !== CRON_SECRET) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const refus = requireCron(request)
+        if (refus) return refus
 
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration manquante' }, { status: 503 })
@@ -263,12 +259,8 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
     // Vérification auth pour GET aussi
-    const authHeader = request.headers.get('authorization') || ''
-    const querySecret = new URL(request.url).searchParams.get('secret') || ''
-
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}` && querySecret !== CRON_SECRET) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
 
     // Appeler la logique POST
     return POST(request)

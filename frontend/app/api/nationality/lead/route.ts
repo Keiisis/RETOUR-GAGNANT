@@ -3,11 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email'
 import { sendWhatsAppNotification } from '@/lib/whatsapp'
 import { trackClient } from '@/lib/classement/track'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'nationality/lead', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const { nom, prenom, email, telephone, pays_residence, lang } = body as {

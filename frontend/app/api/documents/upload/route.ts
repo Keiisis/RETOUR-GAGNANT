@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { guardPublic, UPLOAD_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -16,6 +17,9 @@ function sanitizeFileName(name: string): string {
 }
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'documents/upload', UPLOAD_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json();
         const { client_email, client_nom, file_name, file_type, file_size } = body;

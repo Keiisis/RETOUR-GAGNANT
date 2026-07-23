@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -56,6 +57,9 @@ export async function GET() {
 
 // POST /api/testimonials — public submission from frontend
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'testimonials', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const supabase = getSupabase();
         const data = await request.json();

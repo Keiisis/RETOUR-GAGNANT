@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { sendEmail, getEmailTemplates } from '@/lib/email';
 import { getStaffToLine } from '@/lib/staff-recipients';
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -37,6 +38,9 @@ async function generateAutoReply(clientName: string, service: string): Promise<s
 }
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'rdv/confirm-client', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const { rdvId, clientName, clientEmail, service, date, heure, type } = await req.json();
 

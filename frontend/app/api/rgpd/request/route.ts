@@ -4,6 +4,7 @@ import { collectByEmail } from '@/lib/rgpd/erase'
 import { makeRgpdToken } from '@/lib/rgpd/token'
 import { isEmail } from '@/lib/rgpd/tables'
 import { sendEmail } from '@/lib/email'
+import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -26,6 +27,9 @@ const lastSent = new Map<string, number>()
 const COOLDOWN_MS = 2 * 60 * 1000
 
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'rgpd/request', EMAIL_LIMIT)
+    if (trop) return trop
+
     const body = await request.json().catch(() => ({}))
     const email = String(body.email || '').toLowerCase().trim()
 

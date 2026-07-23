@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { signMyafroToken } from '@/lib/nationality-token'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -10,7 +11,10 @@ const supabase = createClient(
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 // GET /api/admin/documents — liste des dossiers MyAfroOrigins en attente de revue.
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     const { data, error } = await supabase
         .from('nationality_applications')
         .select('*')
@@ -25,6 +29,9 @@ export async function GET() {
 //   { action: 'link', paid: boolean, invoice_id?: string }                    → génère juste le lien (copier/coller)
 //   { action: 'approve', id }             → bascule le dossier vers la file Nationalité
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     const body = await request.json().catch(() => ({}))
     const action = String(body.action || '')
     const paid = !!body.paid

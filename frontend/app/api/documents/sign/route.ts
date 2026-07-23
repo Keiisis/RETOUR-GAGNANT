@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 // Service role key → bypass RLS (le client portail n'est pas authentifié)
 const supabase = createClient(
@@ -13,6 +14,9 @@ const supabase = createClient(
 // encaissé (le paiement justifie l'émission de la facture). La conversion
 // devis → facture est faite par confirmDocumentPayment() côté paiement.
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'documents/sign', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const { document_id, signature_url } = body

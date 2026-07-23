@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireCron } from '@/lib/api-guard'
 
 const CRON_SECRET = process.env.CRON_SECRET || ''
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
@@ -35,17 +36,13 @@ async function runCheckExpired() {
 
 export async function GET(request: NextRequest) {
     // Vérifier que c'est bien Vercel cron qui appelle (présence du secret)
-    const auth = request.headers.get('authorization') || ''
-    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     return runCheckExpired()
 }
 
 export async function POST(request: NextRequest) {
-    const auth = request.headers.get('authorization') || ''
-    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     return runCheckExpired()
 }

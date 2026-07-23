@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 import axios from 'axios'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 // ── Clés ─────────────────────────────────────────────────
 const GROQ_KEYS = [
@@ -631,6 +632,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // POST /api/community-manager/analyze-full
 // ═════════════════════════════════════════════════════════
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json()
         const { profile_id, profile_url, platform, username, notes } = body

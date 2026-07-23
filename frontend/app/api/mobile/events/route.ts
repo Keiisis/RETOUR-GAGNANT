@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMobileUserId } from '@/lib/mobile-auth'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -119,9 +122,18 @@ export async function GET(req: NextRequest) {
 //   Si `transaction_id` est fourni → vérifie le paiement Kkiapay côté serveur
 //   et marque la registration comme `confirmed/paid` directement.
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'mobile/events', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
+    // L'inscrit est celui qui présente le jeton, pas celui qu'annonce le
+    // corps de la requête : sinon on inscrit — et on facture — au nom d'un
+    // autre client. Repli sur body.client_id pour les anciennes versions.
+    const sessionClientId = await getMobileUserId(req)
+
     try {
         const body = await req.json()
-        const { event_id, client_id, ticket_type = 'standard', quantity = 1, transaction_id } = body
+        const { event_id, ticket_type = 'standard', quantity = 1, transaction_id } = body
+        const client_id = sessionClientId || body.client_id
 
         if (!event_id || !client_id) {
             return NextResponse.json({ error: 'event_id et client_id sont requis' }, { status: 400 })
@@ -252,6 +264,11 @@ export async function POST(req: NextRequest) {
 // ─── PATCH : confirmer le paiement d'une inscription existante ──────────────
 //   Body : { registration_id, transaction_id }
 export async function PATCH(req: NextRequest) {
+    const trop = guardPublic(req, 'mobile/events', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
+
+    const sessionClientId = await getMobileUserId(req)
+
     try {
         const body = await req.json()
         const { registration_id, transaction_id } = body
@@ -266,6 +283,11 @@ export async function PATCH(req: NextRequest) {
             .maybeSingle()
         if (regErr || !reg) {
             return NextResponse.json({ error: 'Inscription introuvable' }, { status: 404 })
+        }
+
+        // On ne confirme que SA propre inscription.
+        if (sessionClientId && reg.client_id !== sessionClientId) {
+            return NextResponse.json({ error: 'Inscription non autorisée' }, { status: 403 })
         }
 
         if (reg.payment_status === 'paid') {

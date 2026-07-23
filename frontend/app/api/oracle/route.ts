@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { fetchWithGroqRotation } from '@/lib/groq';
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email';
+import { guardPublic, AI_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -136,6 +137,9 @@ const ORACLE_FALLBACK_INSIGHTS: Record<string, string[]> = {
 }
 
 export async function POST(request: Request) {
+    const trop = guardPublic(request, 'oracle', AI_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await request.json()
         const { nom, prenom, email, whatsapp, answers, lang = 'fr' } = body as {

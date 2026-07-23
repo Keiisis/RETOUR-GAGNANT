@@ -8,7 +8,12 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export type AuditTable = 'depenses' | 'paiements_manuels' | 'documents_financiers'
+export type AuditTable =
+    | 'depenses'
+    | 'paiements_manuels'
+    | 'documents_financiers'
+    /** Taux de change : modifier une ligne modifie tous les encaissements. */
+    | 'currencies'
 export type AuditAction = 'create' | 'update' | 'delete'
 
 /** Ne conserve que les champs réellement modifiés (avant ≠ après). */

@@ -1,33 +1,28 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { toXOFStrict, fromXOFStrict } from '@/lib/server-rates'
 
-// Taux de conversion XOF → devises PayPal supportées
-// Le franc CFA (XOF) est arrimé à l'EUR à taux fixe officiel BCEAO depuis 1999
-const XOF_TO: Record<string, number> = {
-    EUR: 655.957, // Parité fixe inchangeable
-    USD: 600,     // Taux approximatif (Mars 2026)
-    GBP: 760,     // Taux approximatif
-    CAD: 440,     // Taux approximatif
-    CHF: 720,     // Taux approximatif
-    HTG: 4.2591,  // 80 000 XOF ≈ HTG 18 783 (vérifié Mai 2026)
-}
+// Les taux viennent de la table `currencies` (lib/server-rates), jamais du
+// code : les valeurs « approximatives » figées ici dérivaient du taux réel
+// et faussaient chaque montant présenté à PayPal.
 
-function convertFromXOF(amountXof: number, targetCurrency: string): number {
-    if (targetCurrency === 'XOF') return Math.round(amountXof)
-    const rate = XOF_TO[targetCurrency]
-    if (!rate) throw new Error(`Devise PayPal non supportée pour la conversion: ${targetCurrency}. Configurez EUR ou USD dans les paramètres PayPal.`)
-    return Math.round((amountXof / rate) * 100) / 100
-}
-
-// Normalise un montant exprimé dans `fromCurrency` (devise du devis/commande)
-// vers le XOF de base, avant reconversion vers la devise PayPal.
-function toXofBase(amount: number, fromCurrency: string): number {
-    const cur = (fromCurrency || 'XOF').toUpperCase()
-    if (cur === 'XOF') return Math.round(amount)
-    const rate = XOF_TO[cur]
-    if (!rate) throw new Error(`Devise commande non supportée pour la conversion: ${cur}`)
-    return Math.round(amount * rate)
+/**
+ * Montant à présenter à PayPal, dans la devise cible.
+ *
+ * La commande est libellée dans SA devise (un devis peut être en EUR) :
+ * on la ramène d'abord au XOF de tenue, puis vers la devise PayPal.
+ * Renvoie `null` si un des deux taux manque — mieux vaut refuser le
+ * paiement que débiter un montant inventé.
+ */
+async function montantPayPal(
+    amount: number,
+    fromCurrency: string,
+    targetCurrency: string,
+): Promise<number | null> {
+    const xof = await toXOFStrict(amount, fromCurrency)
+    if (xof === null) return null
+    return fromXOFStrict(xof, targetCurrency)
 }
 
 // Devises sans décimales pour PayPal
@@ -136,9 +131,19 @@ export async function POST(request: Request) {
         // Si display_amount fourni par le modal (déjà converti avec marge 3%) → utiliser directement
         // Sinon → normaliser le montant de la commande (devise du devis, ex. EUR) en
         // XOF de base, puis reconvertir vers la devise PayPal cible.
-        const rawAmount = useDisplayParams
-            ? parseFloat(String(display_amount))
-            : convertFromXOF(toXofBase(order.amount, order.currency), currency)
+        let rawAmount: number
+        if (useDisplayParams) {
+            rawAmount = parseFloat(String(display_amount))
+        } else {
+            const converti = await montantPayPal(order.amount, order.currency, currency)
+            if (converti === null || converti <= 0) {
+                return NextResponse.json(
+                    { error: `Taux de change ${currency} indisponible — commande PayPal non créée.` },
+                    { status: 503 }
+                )
+            }
+            rawAmount = converti
+        }
         const amountStr = ZERO_DECIMAL.has(currency)
             ? String(Math.round(rawAmount))
             : rawAmount.toFixed(2)

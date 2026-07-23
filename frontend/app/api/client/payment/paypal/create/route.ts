@@ -1,25 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getClientUser } from '@/lib/client-auth'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { fromXOFStrict } from '@/lib/server-rates'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const XOF_TO: Record<string, number> = {
-    EUR: 655.957,
-    USD: 600,
-    GBP: 760,
-    CAD: 440,
-    CHF: 720,
-}
-
-function convertFromXOF(amount: number, targetCurrency: string): number {
-    if (targetCurrency === 'XOF') return Math.round(amount)
-    const rate = XOF_TO[targetCurrency]
-    if (!rate) throw new Error(`Devise non supportée: ${targetCurrency}`)
-    return Math.round((amount / rate) * 100) / 100
-}
+// Les taux vivent dans la table `currencies` (lib/server-rates), jamais
+// dans le code : une table figée ici affichait 600 XOF pour 1 USD alors
+// que le taux réel enregistré était 574,71 — soit 4 % d'écart sur chaque
+// facture réglée en dollars.
 
 async function getPayPalToken(clientId: string, secret: string, sandbox: boolean) {
     const base = sandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
@@ -37,11 +31,17 @@ async function getPayPalToken(clientId: string, secret: string, sandbox: boolean
 }
 
 export async function POST(req: NextRequest) {
-    try {
-        const { doc_id, user_id, email } = await req.json()
+    const trop = guardPublic(req, 'client/payment/paypal', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
 
-        if (!doc_id || !user_id) {
-            return NextResponse.json({ error: 'doc_id et user_id requis' }, { status: 400 })
+    const user = await getClientUser(req)
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+    try {
+        const { doc_id } = await req.json()
+
+        if (!doc_id) {
+            return NextResponse.json({ error: 'doc_id requis' }, { status: 400 })
         }
 
         // Vérifier l'accès au document
@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
             .single()
 
         if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
-        if (doc.client_id !== user_id && doc.client_email !== email) {
+        const aLui = doc.client_id === user.id
+            || (!!doc.client_email && doc.client_email.toLowerCase() === user.email.toLowerCase())
+        if (!aLui) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
         }
         if (doc.type !== 'facture') return NextResponse.json({ error: 'Pas une facture' }, { status: 400 })
@@ -73,7 +75,13 @@ export async function POST(req: NextRequest) {
 
         const sandbox = sm.paypal_sandbox === 'true'
         const currency = (sm.paypal_currency || 'EUR').toUpperCase()
-        const convertedAmount = convertFromXOF(doc.total, currency)
+        const convertedAmount = await fromXOFStrict(doc.total, currency)
+        if (convertedAmount === null || convertedAmount <= 0) {
+            return NextResponse.json(
+                { error: `Taux de change ${currency} indisponible — paiement refusé.` },
+                { status: 503 },
+            )
+        }
         const amountStr = convertedAmount.toFixed(2)
 
         const { token, base } = await getPayPalToken(sm.paypal_client_id, sm.paypal_client_secret, sandbox)

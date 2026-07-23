@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, TELEMETRY_LIMIT } from '@/lib/api-guard'
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'proposals/track-view', TELEMETRY_LIMIT)
+    if (trop) return trop
+
   try {
     const { proposalId, secretKey, viewedAt, userAgent, referrer } = await req.json()
 

@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer'
 import { notifyStaffNationalityPayment } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
 import { markClientConverted } from '@/lib/classement/track'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -13,6 +14,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantb
 // POST /api/nationality/recherche-ancestrale
 // Enregistre le paiement Recherche Ancestrale lié à un dossier nationalité
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'nationality/recherche-ancestrale', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await request.json()
         const { ref, payment_provider, payment_tx_id, amount, amount_xof } = body

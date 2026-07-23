@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanUpload } from '@/lib/waf'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -9,6 +10,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'im
 const MAX_SIZE_MB = 8
 
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration Supabase manquante' }, { status: 500 })

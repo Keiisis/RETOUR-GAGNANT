@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getClientUser } from '@/lib/client-auth'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,10 +25,18 @@ async function getPayPalToken(clientId: string, secret: string, sandbox: boolean
 }
 
 export async function POST(req: NextRequest) {
-    try {
-        const { paypal_order_id, doc_id, user_id, email } = await req.json()
+    const trop = guardPublic(req, 'client/payment/paypal', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
 
-        if (!paypal_order_id || !doc_id || !user_id) {
+    // Identité prise sur la session : « user_id » et « email » envoyés par
+    // l'appelant ne prouvaient rien.
+    const user = await getClientUser(req)
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+    try {
+        const { paypal_order_id, doc_id } = await req.json()
+
+        if (!paypal_order_id || !doc_id) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
         }
 
@@ -37,7 +48,9 @@ export async function POST(req: NextRequest) {
             .single()
 
         if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
-        if (doc.client_id !== user_id && doc.client_email !== email) {
+        const aLui = doc.client_id === user.id
+            || (!!doc.client_email && doc.client_email.toLowerCase() === user.email.toLowerCase())
+        if (!aLui) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
         }
         if (doc.status === 'paye') return NextResponse.json({ success: true, already_paid: true })
@@ -72,6 +85,19 @@ export async function POST(req: NextRequest) {
         if (captureData.status !== 'COMPLETED') {
             console.error('PayPal capture error:', JSON.stringify(captureData))
             return NextResponse.json({ error: captureData.message || 'Capture PayPal échouée' }, { status: 500 })
+        }
+
+        // ── La commande PayPal doit désigner CETTE facture ────────
+        // /create pose reference_id ET custom_id = doc_id. Sans cette
+        // relecture, une commande PayPal payée pour un autre document
+        // (ou d'un autre montant) soldait celui-ci.
+        const unite = captureData.purchase_units?.[0]
+        const refPayPal = unite?.custom_id || unite?.reference_id
+        if (refPayPal !== doc_id) {
+            return NextResponse.json(
+                { error: 'Cette transaction ne correspond pas à la facture.' },
+                { status: 409 },
+            )
         }
 
         // Marquer le document comme payé

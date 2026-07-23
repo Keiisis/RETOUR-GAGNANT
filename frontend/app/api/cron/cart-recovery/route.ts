@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const CRON_SECRET = process.env.CRON_SECRET || ''
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 const RECOVERY_INTERVAL_DAYS = 5   // Relance toutes les 5 jours
@@ -28,11 +28,8 @@ const ABANDON_DELAY_HOURS = 2       // Considérer abandonné après 2h sans pai
  */
 export async function POST(request: Request) {
     try {
-        const authHeader = request.headers.get('authorization') || ''
-        const querySecret = new URL(request.url).searchParams.get('secret') || ''
-        if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}` && querySecret !== CRON_SECRET) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const refus = requireCron(request)
+        if (refus) return refus
 
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration manquante' }, { status: 503 })

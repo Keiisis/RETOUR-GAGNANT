@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 
 export async function POST(request: Request) {
+    const trop = guardPublic(request, 'newsletter', EMAIL_LIMIT)
+    if (trop) return trop
+
     try {
         const { email } = await request.json()
 

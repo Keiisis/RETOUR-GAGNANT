@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer'
 import fs from 'fs'
 import path from 'path'
 import { validateStrongPassword } from '@/lib/password'
+import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 
 // Service role — bypass RLS pour créer le profil, lier les documents
 const supabase = createClient(
@@ -12,6 +13,9 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'client/register', EMAIL_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const { email, password, nom, prenom, phone, pays, ville } = body

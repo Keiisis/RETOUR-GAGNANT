@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { getGroqApiKey } from '@/lib/groq'
+import { requireCron } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const CRON_SECRET = process.env.CRON_SECRET || ''
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -123,10 +123,8 @@ async function generateReminderBody(
 // ─── POST /api/cron/nationality-followup ──────────────────────────────────────
 export async function POST(request: NextRequest) {
     // Auth via CRON_SECRET
-    const authHeader = request.headers.get('authorization')
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
 
     const now = new Date()
     const results: { ref: string; week: number; sent: boolean; reason?: string }[] = []
@@ -238,9 +236,7 @@ export async function POST(request: NextRequest) {
 
 // GET pour les pings de santé (Vercel Cron)
 export async function GET(request: NextRequest) {
-    const authHeader = request.headers.get('authorization')
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
+    const refus = requireCron(request)
+    if (refus) return refus
     return POST(request)
 }

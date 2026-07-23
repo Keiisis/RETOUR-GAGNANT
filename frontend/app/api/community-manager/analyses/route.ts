@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY manquant')
@@ -13,6 +14,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 // GET /api/community-manager/analyses?profile_id=xxx
 export async function GET(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { searchParams } = new URL(request.url)
         const profileId = searchParams.get('profile_id')
@@ -40,6 +44,9 @@ export async function GET(request: NextRequest) {
 
 // DELETE /api/community-manager/analyses?id=xxx
 export async function DELETE(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')

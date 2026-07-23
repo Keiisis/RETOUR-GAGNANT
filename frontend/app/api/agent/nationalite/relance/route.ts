@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendNationalityResumeEmail } from '@/lib/nationality-resume-email'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -11,6 +12,9 @@ const supabase = createClient(
 // panels Admin + Agent. Envoie au client le lien signé de complément de dossier
 // (formulaire pré-rempli, sans repaiement). Protégé par le middleware /api/agent/*.
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json().catch(() => ({}))
         const id = String(body.id || '')

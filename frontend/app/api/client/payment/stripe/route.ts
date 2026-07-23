@@ -1,6 +1,21 @@
+// ══════════════════════════════════════════════════════════════
+//  PAIEMENT D'UNE FACTURE PAR LE CLIENT (Stripe Checkout)
+//
+//  Deux contrôles portent tout le poids de cette route :
+//   1. L'IDENTITÉ vient de la session client, jamais du corps de la
+//      requête — sinon « user_id » et « email » sont de simples champs
+//      que l'appelant choisit.
+//   2. La session Stripe doit désigner CETTE facture (metadata.doc_id)
+//      et en couvrir le montant. Sans ce lien, n'importe quelle session
+//      payée — y compris de 1 000 F — soldait n'importe quelle facture.
+// ══════════════════════════════════════════════════════════════
+
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { getClientUser } from '@/lib/client-auth'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,12 +27,25 @@ const ZERO_DECIMAL = new Set([
     'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
 ])
 
-export async function POST(req: NextRequest) {
-    try {
-        const { doc_id, user_id, email } = await req.json()
+/** Le document appartient-il bien au client connecté ? */
+const estSonDocument = (
+    doc: { client_id?: string | null; client_email?: string | null },
+    user: { id: string; email: string },
+) => doc.client_id === user.id
+    || (!!doc.client_email && doc.client_email.toLowerCase() === user.email.toLowerCase())
 
-        if (!doc_id || !user_id) {
-            return NextResponse.json({ error: 'doc_id et user_id requis' }, { status: 400 })
+export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'client/payment/stripe', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
+
+    const user = await getClientUser(req)
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+    try {
+        const { doc_id } = await req.json()
+
+        if (!doc_id) {
+            return NextResponse.json({ error: 'doc_id requis' }, { status: 400 })
         }
 
         // Récupérer le document et vérifier l'accès
@@ -28,7 +56,7 @@ export async function POST(req: NextRequest) {
             .single()
 
         if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
-        if (doc.client_id !== user_id && doc.client_email !== email) {
+        if (!estSonDocument(doc, user)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
         }
         if (doc.type !== 'facture') return NextResponse.json({ error: 'Pas une facture' }, { status: 400 })
@@ -67,8 +95,9 @@ export async function POST(req: NextRequest) {
             ],
             success_url: `${origin}/client/payer/${doc_id}?stripe_success=1&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/client/payer/${doc_id}?stripe_cancelled=1`,
-            metadata: { doc_id, user_id },
-            customer_email: email || undefined,
+            // metadata.doc_id : lien vérifié au retour (voir GET)
+            metadata: { doc_id, user_id: user.id },
+            customer_email: user.email || undefined,
         })
 
         return NextResponse.json({ session_id: session.id, url: session.url })
@@ -80,26 +109,30 @@ export async function POST(req: NextRequest) {
 
 // Vérification du paiement Stripe après redirection
 export async function GET(req: NextRequest) {
+    const trop = guardPublic(req, 'client/payment/stripe', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
+
+    const user = await getClientUser(req)
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
     try {
         const params = req.nextUrl.searchParams
         const session_id = params.get('session_id')
         const doc_id = params.get('doc_id')
-        const user_id = params.get('user_id')
-        const email = params.get('email') || ''
 
-        if (!session_id || !doc_id || !user_id) {
+        if (!session_id || !doc_id) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
         }
 
         // Vérifier l'accès au document
         const { data: doc } = await supabase
             .from('documents_financiers')
-            .select('id, client_id, client_email, status')
+            .select('id, client_id, client_email, status, total, currency')
             .eq('id', doc_id)
             .single()
 
         if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
-        if (doc.client_id !== user_id && doc.client_email !== email) {
+        if (!estSonDocument(doc, user)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
         }
         if (doc.status === 'paye') return NextResponse.json({ success: true, already_paid: true })
@@ -118,6 +151,35 @@ export async function GET(req: NextRequest) {
 
         if (session.payment_status !== 'paid') {
             return NextResponse.json({ error: 'Paiement non complété' }, { status: 400 })
+        }
+
+        // ── La session doit désigner CETTE facture ────────────────
+        // Sans ce contrôle, un session_id payé pour 1 000 F soldait une
+        // facture de 500 000 F : Stripe confirmait « payé », et la route
+        // ne regardait jamais POUR QUOI.
+        if (session.metadata?.doc_id !== doc_id) {
+            return NextResponse.json(
+                { error: 'Cette transaction ne correspond pas à la facture.' },
+                { status: 409 },
+            )
+        }
+
+        // ── Et en couvrir le montant ──────────────────────────────
+        // amount_total est exprimé dans la plus petite unité, sauf pour
+        // les devises sans décimale (XOF en fait partie) : même règle
+        // qu'à la création, dans l'autre sens.
+        const currency = (doc.currency || 'XOF').toUpperCase()
+        const attendu = ZERO_DECIMAL.has(currency)
+            ? Math.round(Number(doc.total) || 0)
+            : Math.round((Number(doc.total) || 0) * 100)
+        const encaisse = Number(session.amount_total) || 0
+
+        // 2 % de tolérance : arrondis de conversion, jamais un rabais.
+        if (encaisse < Math.floor(attendu * 0.98)) {
+            return NextResponse.json(
+                { error: 'Montant encaissé insuffisant pour cette facture.' },
+                { status: 409 },
+            )
         }
 
         // Marquer comme payé

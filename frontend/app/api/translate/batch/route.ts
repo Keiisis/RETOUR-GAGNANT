@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
 import { SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
+import { guardPublic, TRANSLATE_LIMIT } from '@/lib/api-guard'
 
 export const maxDuration = 60
 
@@ -166,6 +167,9 @@ async function translateBatch(
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(req: Request) {
+    const trop = guardPublic(req, 'translate/batch', TRANSLATE_LIMIT)
+    if (trop) return trop
+
     try {
         let body: Record<string, unknown> = {}
         try { body = await req.json() } catch { /* no body */ }

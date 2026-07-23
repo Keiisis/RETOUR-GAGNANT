@@ -7,9 +7,10 @@
 //  Fallback règles si l'IA est indisponible — jamais d'échec.
 // ══════════════════════════════════════════════════════════════
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -53,7 +54,10 @@ function urgencyLabel(months: number | null): string {
     return 'faible'
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         const { data, error } = await supabase
             .from('nationality_applications')

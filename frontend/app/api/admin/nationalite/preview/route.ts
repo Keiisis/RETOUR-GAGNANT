@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -10,6 +11,9 @@ const supabase = createClient(
 // Retourne des URLs signées (1h) vers les documents déposés par le client,
 // pour prévisualisation directe dans le panel admin (bucket privé).
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     const body = await request.json().catch(() => ({}))
     const id = String(body.id || '')
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })

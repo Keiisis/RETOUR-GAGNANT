@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, TELEMETRY_LIMIT } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -147,6 +148,9 @@ function getRealIP(req: NextRequest): string {
 // POST /api/analytics/track — Enregistrer une visite
 // ═══════════════════════════════════════════════════════
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'analytics/track', TELEMETRY_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json()
         const {

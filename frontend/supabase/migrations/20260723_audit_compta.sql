@@ -12,8 +12,10 @@ create extension if not exists "pgcrypto";
 create table if not exists public.audit_compta (
     id           uuid primary key default gen_random_uuid(),
     -- Quoi
-    table_cible  text not null,          -- depenses | paiements_manuels | documents_financiers
-    record_id    uuid not null,
+    table_cible  text not null,          -- depenses | paiements_manuels | documents_financiers | currencies
+    -- text et non uuid : certaines tables auditees ont une cle metier
+    -- (currencies.code = 'EUR'), pas un uuid.
+    record_id    text not null,
     action       text not null check (action in ('create', 'update', 'delete')),
     -- Qui
     acteur_id    uuid,

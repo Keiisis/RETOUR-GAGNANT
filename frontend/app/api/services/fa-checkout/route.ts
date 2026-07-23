@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
 import { toXOFStrict } from '@/lib/server-rates'
 import { isSlotBookable } from '@/lib/availability'
+import { guardPublic } from '@/lib/api-guard'
+import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -49,6 +51,9 @@ async function getPriceEUR(mode: 'presentiel' | 'visio'): Promise<number | null>
 }
 
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'services/fa-checkout', PAYMENT_ROUTE_LIMIT)
+    if (trop) return trop
+
     try {
         const { body: scanned, rejection } = await scanRequestBody(request)
         if (rejection) return rejection

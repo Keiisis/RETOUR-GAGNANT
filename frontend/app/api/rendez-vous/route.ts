@@ -6,6 +6,7 @@ import { getStaffToLine } from '@/lib/staff-recipients';
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { trackClient } from '@/lib/classement/track';
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -125,6 +126,9 @@ function mapContactMethod(contactMethod: string): 'presentiel' | 'visio' | 'tele
 }
 
 export async function POST(req: NextRequest) {
+    const trop = guardPublic(req, 'rendez-vous', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await req.json();
         const { nom, prenom, email, telephone, service, message, date, timeSlot, heure, contactMethod } = body;

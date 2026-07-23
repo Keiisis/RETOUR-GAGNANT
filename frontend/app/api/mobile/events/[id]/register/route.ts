@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,10 +8,11 @@ const supabase = createClient(
 )
 
 // ─── POST : inscription à un événement depuis l'app mobile ───────────────────
-export async function POST(
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }) {
+    const trop = guardPublic(req, 'mobile/events/[id]/register', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const { id: eventId } = await params
         const body = await req.json()

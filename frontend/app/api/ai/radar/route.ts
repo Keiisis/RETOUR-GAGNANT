@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
 import axios from 'axios'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -68,6 +69,9 @@ async function callSerperWithRetry(keys: string[], query: string): Promise<unkno
 // GET — Historique des recherches + Leads existants
 // ═══════════════════════════════════════════════════════
 export async function GET(req: Request) {
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseKey) {
             return NextResponse.json({ error: 'Config Supabase manquante' }, { status: 500 })
@@ -197,6 +201,9 @@ export async function GET(req: Request) {
 // POST — Lancer un scan (avec cache, dedup, retry, score IA)
 // ═══════════════════════════════════════════════════════
 export async function POST(req: Request) {
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseKey) {
             return NextResponse.json({ error: 'Config Supabase manquante' }, { status: 500 })
@@ -393,6 +400,9 @@ Format de Sortie JSON strict :
 // PATCH — Modifier un lead (favori, notes, statut, assignation)
 // ═══════════════════════════════════════════════════════
 export async function PATCH(req: Request) {
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseKey) {
             return NextResponse.json({ error: 'Config Supabase manquante' }, { status: 500 })

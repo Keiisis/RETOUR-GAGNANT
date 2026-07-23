@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -16,6 +17,9 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const str = (v: unknown) => (v == null ? null : String(v).trim() || null)
 
 export async function POST(request: NextRequest) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         const body = await request.json()
         const id = String(body.id || '')

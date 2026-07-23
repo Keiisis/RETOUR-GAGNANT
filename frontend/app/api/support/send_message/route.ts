@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { guardPublic, CHAT_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function POST(request: Request) {
+    const trop = guardPublic(request, 'support/send_message', CHAT_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await request.json();
         const { session_id, content, role } = body;

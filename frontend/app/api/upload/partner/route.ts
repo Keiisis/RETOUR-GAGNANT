@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
 import { scanUpload } from '@/lib/waf'
+import { guardPublic, UPLOAD_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -29,6 +30,9 @@ async function resizeImage(buffer: Buffer, type: string): Promise<Buffer> {
 }
 
 export async function POST(request: NextRequest) {
+    const trop = guardPublic(request, 'upload/partner', UPLOAD_LIMIT)
+    if (trop) return trop
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration Supabase manquante' }, { status: 500 })

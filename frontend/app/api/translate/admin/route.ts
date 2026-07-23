@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
+import { requireStaff } from '@/lib/api-guard'
 
 // ═══════════════════════════════════════════════════════
 // Admin Translation Management API
@@ -13,6 +14,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // ─── GET — Stats par langue + liste paginée ──────────
 export async function GET(request: Request) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 503 })
@@ -76,6 +80,9 @@ export async function GET(request: Request) {
 
 // ─── PUT — Modifier une traduction ──────────────────
 export async function PUT(request: Request) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 503 })
@@ -116,6 +123,9 @@ export async function PUT(request: Request) {
 
 // ─── DELETE — Supprimer une traduction ──────────────
 export async function DELETE(request: Request) {
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
+
     try {
         if (!supabaseUrl || !supabaseServiceKey) {
             return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 503 })

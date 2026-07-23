@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { toXOFStrict, fromXOFStrict } from '@/lib/server-rates'
 
-// Taux de conversion XOF → devises PayPal (même table que create/route.ts)
-const XOF_TO: Record<string, number> = {
-    EUR: 655.957,
-    USD: 600,
-    GBP: 760,
-    CAD: 440,
-    CHF: 720,
-}
-
-function convertFromXOF(amountXof: number, targetCurrency: string): number {
-    if (targetCurrency === 'XOF') return Math.round(amountXof)
-    const rate = XOF_TO[targetCurrency]
-    if (!rate) return amountXof // fallback sans conversion
-    return Math.round((amountXof / rate) * 100) / 100
-}
+// Les taux viennent de la table `currencies` via lib/server-rates.
+// L'ancienne table locale (USD à 600 au lieu de 574,71) faisait rejeter
+// des paiements légitimes — et acceptait des montants faux dans l'autre
+// sens dès que le taux réel s'en écartait.
 
 async function getPayPalAccessToken(
     clientId: string,
@@ -65,7 +55,9 @@ export async function POST(request: Request) {
         // Idempotence — vérifier si déjà traité
         const { data: existingOrder, error: fetchErr } = await supabase
             .from('orders')
-            .select('payment_status, amount, product_id, quantity, payment_method')
+            // `currency` est indispensable : sans elle, un montant en EUR
+            // était comparé comme s'il était en XOF.
+            .select('payment_status, amount, currency, product_id, quantity, payment_method')
             .eq('id', order_id)
             .single()
 
@@ -153,11 +145,28 @@ export async function POST(request: Request) {
         // peut choisir une devise différente via le modal (ex: USD au lieu de EUR)
         const capturedCurrency = (captureUnit?.amount?.currency_code || paypalCurrency).toUpperCase()
 
-        // Vérification stricte du montant capturé (tolérance ±0.02 pour arrondi de conversion)
-        // Ex: 15000 XOF → 22.87 EUR → on accepte entre 22.85 et 22.89 EUR uniquement
-        const expectedPaypalAmount = convertFromXOF(existingOrder.amount, capturedCurrency)
-        const ROUNDING_TOLERANCE = 0.02
-        if (capturedAmount <= 0 || Math.abs(capturedAmount - expectedPaypalAmount) > ROUNDING_TOLERANCE) {
+        // ── Montant attendu, calculé avec les taux réels ──────────
+        // Deux conversions successives : la commande est libellée dans SA
+        // devise (ex. un devis en EUR), on la ramène au XOF de tenue, puis
+        // vers la devise réellement capturée par PayPal.
+        const xofBase = await toXOFStrict(existingOrder.amount, existingOrder.currency)
+        const expectedPaypalAmount = xofBase === null
+            ? null
+            : await fromXOFStrict(xofBase, capturedCurrency)
+
+        if (expectedPaypalAmount === null || expectedPaypalAmount <= 0) {
+            return NextResponse.json(
+                { success: false, error: `Taux de change ${capturedCurrency} indisponible — capture non validée.` },
+                { status: 503 }
+            )
+        }
+
+        // On refuse le SOUS-paiement, pas le sur-paiement : le modal peut
+        // appliquer une marge de conversion de 3 %, et un client qui paie
+        // plus que dû ne doit pas voir sa commande rejetée.
+        // 2 % de tolérance basse couvre les arrondis de conversion.
+        const minimumAccepte = expectedPaypalAmount * 0.98 - 0.02
+        if (capturedAmount <= 0 || capturedAmount < minimumAccepte) {
             console.error('[PayPal Capture] Montant incorrect:', {
                 capturedAmount,
                 expectedPaypalAmount,
