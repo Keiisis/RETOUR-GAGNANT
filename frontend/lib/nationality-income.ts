@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { nextDocumentNumber } from './document-numbering'
 import { generateInvoicePdf } from './invoice-pdf-generator'
 import { sendEmail } from './email'
+import { insertOnce } from './payment-integrity'
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -34,14 +35,6 @@ export async function recordNationalityIncome(
     try {
         if (!p.ref || !p.amount || p.amount <= 0) return
 
-        // Idempotence : une seule facture par dossier (ref dans les notes)
-        const { data: existing } = await supabase
-            .from('documents_financiers')
-            .select('id')
-            .ilike('notes', `%${p.ref}%`)
-            .maybeSingle()
-        if (existing) return
-
         const currency = (p.currency || 'EUR').toUpperCase()
         let exchangeRate = 1
         if (currency !== 'XOF') {
@@ -55,7 +48,9 @@ export async function recordNationalityIncome(
             : 'Dossier de reconnaissance de nationalité béninoise')
         const numero = await nextDocumentNumber(supabase, 'facture')
 
-        const { data: created } = await supabase.from('documents_financiers').insert({
+        // Idempotence garantie par la BASE (index unique sur source_ref) :
+        // deux chemins simultanes ne peuvent plus creer deux factures.
+        const inserted = await insertOnce(supabase, 'documents_financiers', {
             type: 'facture',
             numero,
             client_nom: p.nom || 'Client',
@@ -75,10 +70,13 @@ export async function recordNationalityIncome(
             notes: `Facture auto-générée — Nationalité\nDossier: ${p.ref}\nMéthode: ${p.paymentMethod || 'en ligne'}${p.txId ? `\nTransaction: ${p.txId}` : ''}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',
-        }).select('id').single()
+        }, `nationality:${p.ref}`, { column: 'notes', pattern: `%${p.ref}%` })
+
+        if (inserted.status === 'duplicate') return
+        if (inserted.status === 'error') { console.error('[recordNationalityIncome]', inserted.message); return }
 
         // ── Envoi de la FACTURE officielle (PDF) au client ──────────────
-        if (created?.id && p.email) {
+        if (inserted.id && p.email) {
             await sendNationalityInvoiceEmail({
                 numero, label, amount: p.amount, currency,
                 nom: p.nom || '', prenom: p.prenom || '', email: p.email,

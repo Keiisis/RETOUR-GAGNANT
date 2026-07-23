@@ -36,9 +36,32 @@ export async function nextDocumentNumber(
         if (!Number.isFinite(seq) || seq <= 0) throw new Error('Séquence invalide')
         return formatDocNumber(type, year, seq)
     } catch (e) {
-        console.error('[numérotation] RPC next_document_number indisponible — numéro temporaire (appliquez la migration 20260720_facturation_conformite.sql) :', e instanceof Error ? e.message : e)
-        const mn = String(when.getMonth() + 1).padStart(2, '0')
-        const rand = String(when.getTime() % 10000).padStart(4, '0')
-        return `${docPrefix(type)}-${year}${mn}-${rand}`
+        // ── REPLI DÉTERMINISTE (jamais aléatoire) ─────────────────────
+        // Un numéro aléatoire brise la continuité exigée par l'OHADA/DGI
+        // (trous et ordre incohérent dans la séquence). On lit donc le
+        // dernier numéro de l'année et on incrémente. Ce repli n'est pas
+        // atomique : il ne doit servir QUE si la RPC est indisponible.
+        console.error(
+            '[numérotation] RPC next_document_number indisponible — repli séquentiel par lecture du dernier numéro. ' +
+            'Appliquez/rétablissez la migration 20260720_facturation_conformite.sql :',
+            e instanceof Error ? e.message : e,
+        )
+        const prefix = docPrefix(type)
+        try {
+            const { data } = await supabase
+                .from('documents_financiers')
+                .select('numero')
+                .like('numero', `${prefix}-${year}-%`)
+                .order('numero', { ascending: false })
+                .limit(1)
+            const last = data?.[0]?.numero as string | undefined
+            const lastSeq = last ? Number(last.split('-').pop()) : 0
+            const next = (isFinite(lastSeq) && lastSeq > 0 ? lastSeq : 0) + 1
+            return formatDocNumber(type, year, next)
+        } catch {
+            // Dernier recours : séquence 1 — un doublon éventuel sera visible
+            // et corrigeable, contrairement à un numéro aléatoire silencieux.
+            return formatDocNumber(type, year, 1)
+        }
     }
 }

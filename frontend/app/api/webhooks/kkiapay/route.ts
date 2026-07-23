@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
+import { logWebhookFailure } from '@/lib/payment-integrity'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import { markClientConverted } from '@/lib/classement/track'
 import { confirmDocumentPayment } from '@/lib/document-payment'
@@ -143,6 +144,12 @@ async function handleNationalityPayment(
     }])
     if (insErr) {
         console.error('[Kkiapay Webhook][nationality] insert error:', insErr.message)
+        // Argent encaisse mais fiche non creee -> trace exploitable pour rejeu
+        await logWebhookFailure(supabase, {
+            provider: 'kkiapay', eventType: 'nationality', reference: transactionId,
+            payload: { email, nom, prenom, amount, currency, ref, verifiedAmount: verify.amount },
+            error: insErr.message,
+        })
         return NextResponse.json({ error: 'Erreur enregistrement' }, { status: 500 })
     }
 

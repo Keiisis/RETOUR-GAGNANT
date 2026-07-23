@@ -6,6 +6,7 @@ import { sendInvoiceEmail } from '@/lib/send-invoice-email'
 import { markClientConverted } from '@/lib/classement/track'
 import { nextDocumentNumber } from '@/lib/document-numbering'
 import { classifyProposalPayment } from '@/lib/proposal-classify'
+import { toXOFStrict } from '@/lib/server-rates'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -73,6 +74,24 @@ export async function POST(request: Request) {
 
         // La méthode de paiement vient UNIQUEMENT de la DB — jamais du client
         const method = existingOrder.payment_method
+
+        // ═══ MONTANT ATTENDU EN XOF ═══════════════════════════════════
+        // Kkiapay / FedaPay / Zeyow encaissent en XOF. Comparer leur montant
+        // au `order.amount` brut était FAUX dès que la commande n'est pas en
+        // XOF : pour une commande de 337 EUR, on comparait 221 057 XOF à 337
+        // → un paiement de 400 XOF passait le contrôle. On convertit donc
+        // l'attendu en XOF avec les taux réels avant toute comparaison.
+        const orderCurrency = (existingOrder.currency || 'XOF').toUpperCase()
+        const expectedXOF = await toXOFStrict(Number(existingOrder.amount) || 0, orderCurrency)
+        if (expectedXOF === null) {
+            console.error(`[Verify] Taux ${orderCurrency} indisponible — vérification du montant impossible`)
+            return NextResponse.json(
+                { success: false, error: `Taux de change ${orderCurrency} indisponible — vérification impossible. Contactez le support.` },
+                { status: 503 },
+            )
+        }
+        // Tolérance 2% (arrondis de conversion et frais de la passerelle)
+        const minXOF = Math.floor(expectedXOF * 0.98)
 
         // ─── Vérifier que transaction_id n'a pas déjà été utilisé pour une AUTRE commande ──
         // Empêche la réutilisation d'une transaction valide pour payer plusieurs commandes
@@ -164,10 +183,10 @@ export async function POST(request: Request) {
                 }
 
                 // Vérification du montant Kkiapay
-                if (verifyData.amount !== undefined && verifyData.amount < existingOrder.amount) {
+                if (verifyData.amount !== undefined && Number(verifyData.amount) < minXOF) {
                     console.error('[Verify/Kkiapay] Montant insuffisant:', {
                         paid: verifyData.amount,
-                        expected: existingOrder.amount,
+                        expectedXOF, currency: orderCurrency,
                     })
                     return NextResponse.json(
                         { success: false, error: 'Montant Kkiapay insuffisant' },
@@ -224,10 +243,10 @@ export async function POST(request: Request) {
                                 const txAmount = txObject?.amount
                                 if (txAmount !== undefined && txAmount !== null) {
                                     const verifiedAmountXof = txAmount  // XOF direct, pas de /100
-                                    if (verifiedAmountXof < existingOrder.amount * 0.99) {
+                                    if (verifiedAmountXof < minXOF) {
                                         console.error('[Verify/FedaPay] Montant insuffisant:', {
                                             paid: verifiedAmountXof,
-                                            expected: existingOrder.amount,
+                                            expectedXOF, currency: orderCurrency,
                                         })
                                         return NextResponse.json(
                                             { success: false, error: 'Montant FedaPay insuffisant' },
@@ -394,11 +413,10 @@ export async function POST(request: Request) {
                             // Vérification du montant PayPal (XOF uniquement — pas de conversion temps réel)
                             const capturedCurrency = (captureData.amount?.currency_code || '').toUpperCase()
                             const capturedAmountValue = parseFloat(captureData.amount?.value || '0')
-                            if (capturedCurrency === 'XOF' && capturedAmountValue < existingOrder.amount * 0.99) {
+                            if (capturedCurrency === 'XOF' && capturedAmountValue < minXOF) {
                                 console.error('[Verify/PayPal] Montant insuffisant:', {
                                     paid: capturedAmountValue,
-                                    expected: existingOrder.amount,
-                                    currency: capturedCurrency,
+                                    expectedXOF, currency: capturedCurrency,
                                 })
                                 return NextResponse.json(
                                     { success: false, error: 'Montant PayPal insuffisant' },

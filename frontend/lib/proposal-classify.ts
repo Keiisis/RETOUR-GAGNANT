@@ -15,6 +15,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { nextDocumentNumber } from './document-numbering'
 import { sendDocumentPaymentEmails } from './document-payment'
 import { sendEmail } from './email'
+import { insertOnce } from './payment-integrity'
 
 type OrderLike = { id?: string; amount?: number; currency?: string } | null | undefined
 
@@ -82,14 +83,15 @@ export async function classifyProposalPayment(
                 .from('paiements_manuels').select('id').ilike('notes', `%[PROP:${shortId}]%`).maybeSingle()
             if (!exists) {
                 const montant = Math.round(Number(order?.amount) || Number(proposal.total_amount) || 0)
-                await supabase.from('paiements_manuels').insert({
+                const ins = await insertOnce(supabase, 'paiements_manuels', {
                     document_id: null,
                     type: 'virement',
                     montant,
                     date_paiement: new Date().toISOString().slice(0, 10),
                     reference: 'Lien de paiement',
                     notes: `[EXTERNE] ${proposal.destination || 'Paiement'} — ${proposal.client_name || ''} [PROP:${shortId}]`,
-                })
+                }, `proposal:${shortId}`, { column: 'notes', pattern: `%[PROP:${shortId}]%` })
+                if (ins.status !== 'created') { if (order?.id) await supabase.from('orders').delete().eq('id', order.id); return }
                 // Reçu de paiement au client (encaissement sans facture)
                 if (proposal.client_email) {
                     try {
@@ -143,7 +145,7 @@ export async function classifyProposalPayment(
                 if (cur) exchangeRate = Number(cur.exchange_rate_to_base)
             }
             const numero = await nextDocumentNumber(supabase, 'facture')
-            const { data: createdFacture } = await supabase.from('documents_financiers').insert({
+            const createdFacture = await insertOnce(supabase, 'documents_financiers', {
                 type: 'facture',
                 numero,
                 client_nom: proposal.client_name || 'Client',
@@ -163,12 +165,13 @@ export async function classifyProposalPayment(
                 notes: `Facture auto-générée — Lien de paiement / Proposition\nProposal: ${shortId.toUpperCase()}\nClient: ${proposal.client_name || 'N/A'}`,
                 conditions: 'Document généré automatiquement après paiement.',
                 validite: 'Acquittée',
-            }).select('id').single()
+            }, `proposal:${shortId}`, { column: 'notes', pattern: `%Proposal: ${shortId}%` })
+            if (createdFacture.status === 'error') console.error('[classifyProposalPayment]', createdFacture.message)
 
             // ── EMAIL : reçu RGB officiel + PDF de la facture au client, alerte
             //    équipe. Envoyé UNE seule fois (dans le bloc de création) — évite
             //    que le client ne reçoive que le reçu Kkiapay sans facture RGB.
-            if (createdFacture?.id && proposal.client_email) {
+            if (createdFacture.status === 'created' && createdFacture.id && proposal.client_email) {
                 try {
                     await sendDocumentPaymentEmails(createdFacture.id, 'Lien de paiement', `PROP-${shortId.toUpperCase()}`)
                 } catch (mailErr) {
