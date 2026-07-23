@@ -75,7 +75,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category } = body
+        const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category, by_user_id } = body
+        // Marqueur de créateur (posé SERVEUR par /api/agent/payment-links à partir
+        // de la session — jamais saisi par le client). Permet le cloisonnement :
+        // un agent ne voit que SES liens, l'admin les voit tous.
+        const byMarker = by_user_id ? ` [BY:${String(by_user_id).slice(0, 40)}]` : ''
         // Catégorie comptable de destination choisie à la création
         const cat = ['factures', 'boutique', 'paiements'].includes(category) ? category : 'factures'
 
@@ -112,7 +116,7 @@ export async function POST(request: NextRequest) {
             destination: String(label).trim(),
             status: 'ready',
             total_amount: xofAmount, // TOUJOURS en XOF
-            notes: `LIEN-PAIEMENT [CAT:${cat}] — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
+            notes: `LIEN-PAIEMENT [CAT:${cat}]${byMarker} — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
         }
 
         // currency TOUJOURS 'XOF' (cohérence page + Kkiapay + facture) ;

@@ -30,6 +30,34 @@ export async function POST(request: NextRequest) {
     const paid = !!body.paid
     const invoiceId = body.invoice_id ? String(body.invoice_id) : undefined
 
+    // ── COHÉRENCE STRICTE « 50 € déjà payés » ───────────────────────────
+    // Cocher « déjà payé » SANS rattacher une facture réelle marquerait le
+    // dossier comme réglé alors qu'aucun encaissement n'existe (ni argent,
+    // ni facture, ni trace en comptabilité). On l'interdit.
+    // Non coché  → le client paie les 50 € en ligne (montant imposé serveur).
+    if ((action === 'link' || action === 'invite') && paid) {
+        if (!invoiceId) {
+            return NextResponse.json(
+                { error: 'Sélectionnez la facture correspondante : « déjà payé » exige une facture réelle (sinon aucun encaissement ne serait tracé).' },
+                { status: 400 },
+            )
+        }
+        const { data: inv } = await supabase
+            .from('documents_financiers')
+            .select('id, type, status')
+            .eq('id', invoiceId)
+            .maybeSingle()
+        if (!inv || inv.type !== 'facture') {
+            return NextResponse.json({ error: 'Facture introuvable.' }, { status: 400 })
+        }
+        if (inv.status !== 'paye') {
+            return NextResponse.json(
+                { error: 'Cette facture n’est pas au statut « payé ». Encaissez-la d’abord, sinon les 50 € ne seraient pas réellement perçus.' },
+                { status: 400 },
+            )
+        }
+    }
+
     if (action === 'link') {
         const token = signMyafroToken(60, paid, invoiceId)
         return NextResponse.json({ success: true, link: `${SITE}/nationalite/formulaire?myafro=${encodeURIComponent(token)}` })

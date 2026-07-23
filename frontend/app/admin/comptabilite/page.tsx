@@ -743,8 +743,12 @@ export default function AdminComptabilitePage() {
     // ── Journal avec filtre alerte ────────────────────────────────
     const now = new Date()
     const jDocs = useMemo(() => {
-        let list = pDocs.filter(d => d.type === 'facture')
-        if (alertFilter === 'retard') list = list.filter(d => ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
+        // Journal des transactions : factures ET DEVIS (émis par les agents,
+        // ex. Ornel) + avoirs — le devis affiche un solde « — » et aucun
+        // bouton « Encaisser » (géré ligne par ligne selon d.type).
+        let list = pDocs.filter(d => ['facture', 'devis', 'avoir'].includes(d.type))
+        // Le retard de paiement ne concerne que les FACTURES
+        if (alertFilter === 'retard') list = list.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (agentFilter !== 'tous') list = list.filter(d => d.agent_id === agentFilter)
         if (searchQ) { const q = searchQ.toLowerCase(); list = list.filter(d => (`${d.client_nom} ${d.client_prenom || ''} ${d.numero}`).toLowerCase().includes(q)) }
         return list
@@ -1933,7 +1937,7 @@ export default function AdminComptabilitePage() {
                                 ))}
                             </tr></thead>
                             <tbody className="divide-y divide-white/[0.03]">
-                                {pgDocs.length === 0 && <tr><td colSpan={9} className="text-center py-12 text-gray-600 text-sm">Aucune facture</td></tr>}
+                                {pgDocs.length === 0 && <tr><td colSpan={9} className="text-center py-12 text-gray-600 text-sm">Aucun document</td></tr>}
                                 {pgDocs.map(d => {
                                     const ag = agents.find(a => a.id === d.agent_id)
                                     const st = DOC_STATUS[d.status] || { label: d.status, cls: 'bg-gray-500/20 text-gray-400' }

@@ -56,7 +56,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
 
     const fetchLinks = useCallback(async () => {
         try {
-            const res = await fetch('/api/admin/payment-links', { cache: 'no-store' })
+            const res = await fetch('/api/agent/payment-links', { cache: 'no-store' })
             const data = await res.json()
             setLinks(data.links || [])
         } catch { toast(t('Chargement impossible'), 'error') }
@@ -77,7 +77,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
         }
         setSaving(true)
         try {
-            const res = await fetch('/api/admin/payment-links', {
+            const res = await fetch('/api/agent/payment-links', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...form, actor }),
@@ -99,7 +99,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
     const handleDelete = async () => {
         if (!deleteTarget) return
         try {
-            const res = await fetch(`/api/admin/payment-links?id=${deleteTarget.id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/agent/payment-links?id=${deleteTarget.id}`, { method: 'DELETE' })
             const data = await res.json()
             if (data.success) { toast(t('Lien supprimé')); fetchLinks() }
             else toast(data.error || t('Suppression impossible'), 'error')
