@@ -123,6 +123,15 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
             setLoading(true)
             const result = await getProposalBySecret(secret)
             if (result.success && result.proposal) {
+                // ── LIEN DE PAIEMENT : ce n'est PAS une présentation ──────────
+                // Les liens de paiement partagent la table ai_client_proposals
+                // mais n'ont aucune slide (ai_proposal_items vide) : afficher le
+                // visualiseur donnerait un deck vide « impossible à ouvrir ».
+                // On redirige directement vers la page de paiement.
+                if (String(result.proposal.notes || '').startsWith('LIEN-PAIEMENT')) {
+                    router.replace(`/p/${secret}/paiement`)
+                    return
+                }
                 setProposal(result.proposal)
                 setItems(result.items || [])
 
