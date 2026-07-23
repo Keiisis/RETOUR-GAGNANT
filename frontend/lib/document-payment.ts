@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { toXOFStrict } from '@/lib/server-rates'
+import { insertOnce } from '@/lib/payment-integrity'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 import { nextDocumentNumber } from './document-numbering'
 
@@ -256,8 +257,14 @@ export async function confirmDocumentPayment(opts: {
     docId: string
     provider: 'kkiapay' | 'fedapay'
     transactionId: string
-}): Promise<{ success: boolean; alreadyPaid?: boolean; error?: string; status?: number }> {
-    const { docId, provider, transactionId } = opts
+    /** Acompte : montant XOF réellement demandé au client (< solde total). */
+    expectedXOF?: number
+}): Promise<{
+    success: boolean; alreadyPaid?: boolean; partial?: boolean
+    encaisseXOF?: number; soldeXOF?: number
+    error?: string; status?: number
+}> {
+    const { docId, provider, transactionId, expectedXOF } = opts
     if (!docId || !transactionId) return { success: false, error: 'Paramètres manquants', status: 400 }
 
     const { data: doc, error: docErr } = await supabase
@@ -271,8 +278,57 @@ export async function confirmDocumentPayment(opts: {
     // Vérification provider + montant (anti-fraude)
     const verify = provider === 'kkiapay' ? await verifyKkiapay(transactionId) : await verifyFedapay(transactionId)
     if (!verify.ok) return { success: false, error: `Paiement non confirmé (${verify.reason})`, status: 402 }
-    if (!(await amountOk(verify.amount, Number(doc.total), doc.currency))) {
+    // ── ACOMPTE ou SOLDE ? ────────────────────────────────────────
+    // Un acompte est valide s'il couvre le montant ANNONCÉ au client
+    // (expectedXOF), pas forcément la totalité du document.
+    const paidXOF = Number(verify.amount) || 0
+    if (expectedXOF && expectedXOF > 0) {
+        if (paidXOF < Math.floor(expectedXOF * 0.98)) {
+            return { success: false, error: 'Montant encaissé inférieur à l’acompte demandé', status: 402 }
+        }
+    } else if (!(await amountOk(verify.amount, Number(doc.total), doc.currency))) {
         return { success: false, error: 'Montant divergent', status: 402 }
+    }
+
+    // Encaissements déjà enregistrés sur ce document (en XOF)
+    const { data: dejaPaye } = await supabase
+        .from('paiements_manuels').select('montant').eq('document_id', docId)
+    const cumulAvant = (dejaPaye || []).reduce((a, p) => a + (Number(p.montant) || 0), 0)
+
+    const totalXOF = await toXOFStrict(Number(doc.total) || 0, doc.currency)
+    if (totalXOF === null) {
+        return { success: false, error: `Taux ${doc.currency} indisponible`, status: 503 }
+    }
+
+    // Enregistrement de l'encaissement (idempotent par transaction)
+    const encaissement = await insertOnce(supabase, 'paiements_manuels', {
+        document_id: docId,
+        type: provider,
+        montant: paidXOF,
+        date_paiement: new Date().toISOString().slice(0, 10),
+        reference: transactionId,
+        notes: `Encaissement en ligne (${provider}) — TX ${transactionId}`,
+    }, `payment:${provider}:${transactionId}`)
+    if (encaissement.status === 'duplicate') {
+        return { success: true, alreadyPaid: true }
+    }
+
+    const cumul = cumulAvant + paidXOF
+    const soldeXOF = Math.max(0, totalXOF - cumul)
+    // Document soldé si le cumul couvre le total (tolérance 2%)
+    const solde = cumul >= Math.floor(totalXOF * 0.98)
+
+    // ── ACOMPTE : le document reste ouvert, aucune conversion en facture ──
+    if (!solde) {
+        void supabase.from('messages').insert([{
+            nom: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || doc.client_email || 'Client',
+            email: doc.client_email || 'contact@retourgagnantbenin.bj',
+            sujet: `Acompte reçu — ${doc.numero || doc.id.slice(0, 8)}`,
+            message: `Acompte de ${paidXOF.toLocaleString('fr-FR')} XOF encaissé via ${provider} (TX ${transactionId}). Solde restant : ${soldeXOF.toLocaleString('fr-FR')} XOF.`,
+            type: 'paiement',
+            lu: false,
+        }]).then(() => {})
+        return { success: true, partial: true, encaisseXOF: paidXOF, soldeXOF }
     }
 
     // Garde atomique : seul le chemin qui gagne la transition envoie les emails.
@@ -320,7 +376,7 @@ export async function confirmDocumentPayment(opts: {
     }]).then(() => {})
     void sendDocPaymentEmails(doc as DocRow, provider, transactionId)
 
-    return { success: true }
+    return { success: true, encaisseXOF: paidXOF, soldeXOF: 0 }
 }
 
 /** Envoi des emails pour un document DÉJÀ marqué payé par un autre chemin

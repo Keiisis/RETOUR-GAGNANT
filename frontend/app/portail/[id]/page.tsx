@@ -67,6 +67,9 @@ export default function ClientPortalPage() {
     const [paymentSettings, setPaymentSettings] = useState<any>({})
     const [showPaymentMethods, setShowPaymentMethods] = useState(false)
     const [paymentError, setPaymentError] = useState('')
+    // ── ACOMPTE : montant choisi par le client (vide = solde total) ──
+    const [acompte, setAcompte] = useState('')
+    const [dejaPaye, setDejaPaye] = useState(0)
     const { lang } = useTranslation()
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
     useEffect(() => { setSelectedCurrency(getCurrencyForLang(lang)) }, [lang])
@@ -132,8 +135,16 @@ export default function ClientPortalPage() {
             }
             setLoading(false)
         }
+        // Encaissements déjà enregistrés (acomptes) → solde restant dû
+        const fetchPaiements = async () => {
+            if (!id) return
+            const { data } = await supabase
+                .from('paiements_manuels').select('montant').eq('document_id', id)
+            setDejaPaye((data || []).reduce((a, p) => a + (Number(p.montant) || 0), 0))
+        }
         fetchSettings()
         fetchDoc()
+        fetchPaiements()
     }, [id])
 
     // ─── Signature Logic ──────────────────────────────────────────
@@ -234,6 +245,17 @@ export default function ClientPortalPage() {
         setIsProcessing(false)
     }
 
+    // Montant réellement débité : acompte saisi, sinon SOLDE restant dû.
+    // Tout est ramené en XOF (devise d'encaissement des passerelles).
+    const totalXOF = doc
+        ? (doc.currency === 'XOF' || doc.currency === 'FCFA'
+            ? Number(doc.total) || 0
+            : convertCurrency(Number(doc.total) || 0, doc.currency as CurrencyCode, 'XOF'))
+        : 0
+    const soldeXOF = Math.max(0, Math.round(totalXOF - dejaPaye))
+    const acompteXOF = Math.round(Number(acompte) || 0)
+    const aPayerXOF = acompteXOF > 0 ? Math.min(acompteXOF, soldeXOF) : soldeXOF
+
     // ─── Paiement multi-provider Logic ────────────────────────────────────
     const activeProviders = [
         { 
@@ -266,7 +288,7 @@ export default function ClientPortalPage() {
 
         try {
             // Montant de base en XOF (FedaPay et KKiapay traitent uniquement en XOF)
-            const baseXOF = doc.currency === 'XOF' ? doc.total : convertCurrency(doc.total, doc.currency as CurrencyCode, 'XOF')
+            const baseXOF = aPayerXOF
 
             ;(window as any).FedaPay.init({
                 public_key: paymentSettings.fedapay_public_key || process.env.NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY,
@@ -304,7 +326,7 @@ export default function ClientPortalPage() {
 
         try {
             // KKiapay : toujours XOF (pas de paramètre devise)
-            const amountXOF = doc.currency === 'XOF' ? doc.total : convertCurrency(doc.total, doc.currency as any, 'XOF')
+            const amountXOF = aPayerXOF
             
             // Config minimale et conforme : pas de `paymentmethod` (tableau rejeté
             // par le widget → « paramètres invalides ») ni de `callback` (forcerait
@@ -340,7 +362,7 @@ export default function ClientPortalPage() {
         if (!doc) return
         const redirectUrl = paymentSettings.zeyow_redirect_url
         if (!redirectUrl) { setPaymentError('Zeyow non configuré.'); return }
-        const amountXOF = doc.currency === 'XOF' ? doc.total : convertCurrency(doc.total, doc.currency as any, 'XOF')
+        const amountXOF = aPayerXOF
         window.location.href = `${redirectUrl}?amount=${amountXOF}&email=${doc.client_email}&doc_id=${id}`
     }
 
@@ -357,6 +379,7 @@ export default function ClientPortalPage() {
                     doc_id: id,
                     provider: method.toLowerCase().includes('feda') ? 'fedapay' : 'kkiapay',
                     transaction_id: txId,
+                    expected_xof: aPayerXOF,
                 }),
             })
             const data = await res.json()
@@ -370,8 +393,16 @@ export default function ClientPortalPage() {
                     .eq('id', id)
                     .single()
                 if (fresh) setDoc(fresh as DocumentFinancier)
-                else setDoc(prev => prev ? { ...prev, status: 'paye' } : null)
-                alert('Paiement confirmé ! Votre facture officielle a été émise et un reçu vous a été envoyé par email. Merci de votre confiance.')
+                const { data: pms } = await supabase
+                    .from('paiements_manuels').select('montant').eq('document_id', id)
+                const cumul = (pms || []).reduce((a, p) => a + (Number(p.montant) || 0), 0)
+                setDejaPaye(cumul)
+                setAcompte('')
+                if (data.partial) {
+                    alert(`Acompte de ${Number(data.encaisse_xof || 0).toLocaleString('fr-FR')} FCFA bien reçu. Solde restant : ${Number(data.solde_xof || 0).toLocaleString('fr-FR')} FCFA.`)
+                } else {
+                    alert('Paiement confirmé ! Votre facture officielle a été émise et un reçu vous a été envoyé par email. Merci de votre confiance.')
+                }
             } else {
                 alert(data.error || 'Paiement reçu mais confirmation en attente. Notre équipe va régulariser cela.')
             }
@@ -1135,6 +1166,49 @@ export default function ClientPortalPage() {
                         </button>
                     )}
 
+                    {/* ── ACOMPTE : le client peut régler une partie ── */}
+                    {!isPaid && !isManualFacture && soldeXOF > 0 && (doc.type === 'facture' || (doc.type === 'devis' && isAccepted)) && (
+                        <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 mb-2">
+                            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                                <p className="text-sm font-black text-slate-900">Régler un acompte ou la totalité</p>
+                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700">
+                                    Solde dû : {soldeXOF.toLocaleString('fr-FR')} FCFA
+                                </span>
+                            </div>
+                            {dejaPaye > 0 && (
+                                <p className="text-[11px] text-slate-500 mb-3">
+                                    Déjà réglé : <span className="font-bold text-emerald-600">{dejaPaye.toLocaleString('fr-FR')} FCFA</span>
+                                    {' '}sur {Math.round(totalXOF).toLocaleString('fr-FR')} FCFA.
+                                </p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <input
+                                    type="number" min={0} max={soldeXOF} step="1"
+                                    value={acompte}
+                                    onChange={e => setAcompte(e.target.value)}
+                                    placeholder={`${soldeXOF} (solde total)`}
+                                    title="Montant de l'acompte en FCFA"
+                                    className="flex-1 min-w-[160px] bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-mono text-slate-900 focus:outline-none focus:border-amber-500"
+                                />
+                                {[25, 50].map(pct => (
+                                    <button key={pct} type="button"
+                                        onClick={() => setAcompte(String(Math.round(soldeXOF * pct / 100)))}
+                                        className="text-[11px] font-bold px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-amber-500 hover:text-amber-600 transition-all">
+                                        {pct}%
+                                    </button>
+                                ))}
+                                <button type="button" onClick={() => setAcompte('')}
+                                    className="text-[11px] font-bold px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 transition-all">
+                                    Totalité
+                                </button>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-2">
+                                Laissez vide pour régler l&apos;intégralité du solde. Chaque acompte est enregistré et la facture
+                                n&apos;est acquittée qu&apos;une fois le solde atteint.
+                            </p>
+                        </div>
+                    )}
+
                     {/* CASE 1b: Devis signé/accepté, non payé -> PAYER MAINTENANT.
                         Le paiement déclenche l'émission de la facture officielle. */}
                     {doc.type === 'devis' && isAccepted && !isPaid && (
@@ -1144,11 +1218,8 @@ export default function ClientPortalPage() {
                             className="w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                         >
                             {isProcessing ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
-                            {isProcessing ? 'Connexion en cours...' : `Payer maintenant (${
-                                selectedCurrency === (doc.currency || 'XOF')
-                                    ? `${doc.total.toLocaleString('fr-FR')} ${doc.currency || 'XOF'}`
-                                    : formatPriceWithMargin(doc.total, selectedCurrency)
-                            })`}
+                            {isProcessing ? 'Connexion en cours...'
+                                : `${acompteXOF > 0 && acompteXOF < soldeXOF ? 'Payer l’acompte' : 'Payer maintenant'} (${aPayerXOF.toLocaleString('fr-FR')} FCFA)`}
                         </button>
                     )}
 
