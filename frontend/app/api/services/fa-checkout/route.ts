@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
-import { convertCurrency, refreshRates } from '@/lib/currency'
+import { toXOFStrict } from '@/lib/server-rates'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -77,10 +77,15 @@ export async function POST(request: NextRequest) {
                 { status: 503 },
             )
         }
-        // Taux de change réels (table currencies) AVANT conversion : sinon le
-        // montant Kkiapay pourrait diverger de celui affiché au client.
-        await refreshRates()
-        const amountXOF = Math.round(convertCurrency(amountEUR, 'EUR', 'XOF'))
+        // Conversion par l'autorité unique serveur (taux réels de la table
+        // currencies). Si le taux manque, on refuse plutôt que de facturer faux.
+        const amountXOF = await toXOFStrict(amountEUR, 'EUR')
+        if (amountXOF === null || amountXOF <= 0) {
+            return NextResponse.json(
+                { error: 'Taux de change EUR indisponible. Réessayez dans un instant.' },
+                { status: 503 },
+            )
+        }
 
         const modeLabel = mode === 'presentiel' ? 'Présentiel' : 'Visio'
         const title = `Consultation Fa & Racines — ${modeLabel} (${amountEUR} €)`

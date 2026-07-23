@@ -7,12 +7,31 @@
 // ══════════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { isPeriodLocked } from '@/lib/comptaLock'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+const isAdminRole = (role?: string) => !!role && ADMIN_ROLES.includes(role)
+
+/** Un AGENT ne peut toucher QUE ses propres ecritures ; un ADMIN, toutes. */
+async function assertOwnership(
+    supabase: SupabaseClient,
+    table: string,
+    id: string,
+    auth: { userId?: string; role?: string },
+): Promise<string | null> {
+    if (isAdminRole(auth.role)) return null
+    const { data } = await supabase.from(table).select('agent_id').eq('id', id).maybeSingle()
+    const row = data as { agent_id?: string | null } | null
+    if (!row) return 'Introuvable'
+    if (!row.agent_id || row.agent_id !== auth.userId) return "Cette ecriture ne vous appartient pas."
+    return null
+}
+
 
 // Normalise une date (YYYY-MM-DD ou ISO) en ISO à midi UTC pour éviter
 // tout décalage de jour dû au fuseau horaire à l'affichage.
@@ -34,6 +53,8 @@ export async function PATCH(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
 
     const supabase = createClient(supabaseUrl, serviceKey)
+    const own = await assertOwnership(supabase, 'depenses', id, auth)
+    if (own) return NextResponse.json({ error: own }, { status: 403 })
 
     const { data: existing } = await supabase
         .from('depenses').select('date_depense').eq('id', id).single()
@@ -75,6 +96,8 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
 
     const supabase = createClient(supabaseUrl, serviceKey)
+    const own = await assertOwnership(supabase, 'depenses', id, auth)
+    if (own) return NextResponse.json({ error: own }, { status: 403 })
     const { data: existing } = await supabase
         .from('depenses').select('date_depense').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_depense)) {

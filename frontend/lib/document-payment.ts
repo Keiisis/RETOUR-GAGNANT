@@ -12,7 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
-import { convertCurrency, type CurrencyCode } from '@/lib/currency'
+import { toXOFStrict } from '@/lib/server-rates'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 import { nextDocumentNumber } from './document-numbering'
 
@@ -106,15 +106,13 @@ async function verifyFedapay(txId: string): Promise<{ ok: boolean; amount?: numb
 /** Le provider a-t-il encaissé (au moins) le montant du document ? (XOF, tolérance 2%) */
 async function amountOk(providerAmountXOF: number | undefined, docTotal: number, docCurrency: string): Promise<boolean> {
     if (providerAmountXOF === undefined || providerAmountXOF === null) return false
-    let expectedXOF = docTotal
-    if (docCurrency && docCurrency !== 'XOF' && docCurrency !== 'FCFA') {
-        // Taux RÉEL depuis la table currencies (serveur) — évite le taux de
-        // secours codé (USD=600) qui, face au taux réel ~574, dépassait la
-        // tolérance de 2% et faisait rejeter à tort un paiement USD légitime.
-        const { data } = await supabase
-            .from('currencies').select('exchange_rate_to_base').eq('code', docCurrency).single()
-        const rate = Number(data?.exchange_rate_to_base) || 0
-        expectedXOF = rate > 0 ? docTotal * rate : convertCurrency(docTotal, docCurrency as CurrencyCode, 'XOF')
+    // Conversion par l'autorité unique serveur (table currencies).
+    // Taux inconnu -> on REFUSE la validation plutot que de comparer a un
+    // montant approximatif (un sous-paiement passerait).
+    const expectedXOF = await toXOFStrict(docTotal, docCurrency)
+    if (expectedXOF === null) {
+        console.error('[amountOk] taux indisponible pour', docCurrency)
+        return false
     }
     return providerAmountXOF >= Math.floor(expectedXOF * 0.98)
 }
