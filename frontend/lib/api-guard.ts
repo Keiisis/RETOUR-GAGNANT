@@ -160,7 +160,7 @@ export interface StaffGuard {
     isAdmin: boolean
 }
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
 
 /**
  * Exige une session interne.

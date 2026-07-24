@@ -616,46 +616,6 @@
   --panel-overlay: rgba(255,255,255,0.8);
 }
 
-/* ── CEO : blanc premium (light défaut) ⇄ charbon executive ── */
-[data-panel="ceo"][data-theme="light"] {
-  --panel-bg: #FFFFFF;
-  --panel-surface: #F4FAF5;
-  --panel-surface-alt: #FAFAF7;
-  --panel-surface-hover: rgba(0,0,0,0.03);
-  --panel-surface-active: rgba(0,0,0,0.06);
-  --panel-text: #1B2A4A;
-  --panel-text-heading: #0F172A;
-  --panel-text-muted: #6B7280;
-  --panel-text-faint: #9CA3AF;
-  --panel-border: rgba(27,42,74,0.08);
-  --panel-border-strong: rgba(27,42,74,0.18);
-  --panel-accent: #008751;
-  --panel-icon-muted: #6B7280;
-  --panel-badge-bg: rgba(0,0,0,0.04);
-  --panel-divider: rgba(0,0,0,0.06);
-  --panel-glow-opacity: 0.4;
-  --panel-overlay: rgba(255,255,255,0.8);
-}
-[data-panel="ceo"][data-theme="dark"] {
-  --panel-bg: #0a0f18;
-  --panel-surface: #111827;
-  --panel-surface-alt: #1a2540;
-  --panel-surface-hover: rgba(255,255,255,0.05);
-  --panel-surface-active: rgba(255,255,255,0.08);
-  --panel-text: #F4F0E6;
-  --panel-text-heading: #FFFFFF;
-  --panel-text-muted: #9CA3AF;
-  --panel-text-faint: #6B7280;
-  --panel-border: rgba(212,175,55,0.18);
-  --panel-border-strong: rgba(212,175,55,0.30);
-  --panel-accent: #D4AF37;
-  --panel-icon-muted: #9CA3AF;
-  --panel-badge-bg: rgba(255,255,255,0.05);
-  --panel-divider: rgba(255,255,255,0.05);
-  --panel-glow-opacity: 1;
-  --panel-overlay: rgba(0,0,0,0.7);
-}
-
 /* ═══════════════════════════════════════════════════════
    🔄 LIGHT-MODE AUTOMATIC OVERRIDES
    Intercepts hardcoded dark-only Tailwind classes and

@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import {
     LayoutDashboard, FileText, FolderOpen, MessageSquare,
     CalendarDays, UserCircle, LogOut, Menu, X, Bell,
-    ChevronRight, CircleDot, Shield, Briefcase, FileSignature, GitFork, Receipt
+    ChevronRight, CircleDot, Shield, Briefcase, FileSignature, GitFork, Receipt, Download
 } from 'lucide-react'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
     { title: 'Mon Plan de composition de Famille', icon: GitFork, href: '/client/genealogie' },
     { title: 'Mes Services', icon: Briefcase, href: '/client/services' },
     { title: 'Factures & Commandes', icon: Receipt, href: '/client/factures' },
+    { title: 'Téléchargements', icon: Download, href: '/client/telechargements' },
     { title: 'Messages', icon: MessageSquare, href: '/client/messages' },
     { title: 'Notifications', icon: Bell, href: '/client/notifications' },
     { title: 'Rendez-vous', icon: CalendarDays, href: '/client/rendez-vous' },

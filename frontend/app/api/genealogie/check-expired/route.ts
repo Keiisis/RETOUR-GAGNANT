@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
             const supa = createClient(supabaseUrl, supabaseServiceKey)
             const { data: profile } = await supa
                 .from('user_profiles').select('role').eq('id', userId).single()
-            const isStaff = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent'].includes(profile?.role || '')
+            const isStaff = ['admin', 'super_admin', 'superadmin', 'agent'].includes(profile?.role || '')
             if (!isStaff) return NextResponse.json({ error: 'Réservé au staff' }, { status: 403 })
         }
 

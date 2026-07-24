@@ -13,7 +13,7 @@ import {
     Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
     BarChart3, FileSignature, FolderOpen, Palette, Calendar, Star,
     Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark,
-    ShieldAlert, KeyRound, GitFork, Send
+    ShieldAlert, KeyRound, GitFork, Send, Search
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -54,7 +54,7 @@ function AdminLayoutContent({
                 .eq('id', authUser.id)
                 .maybeSingle()
 
-            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
             if (!profile || !ADMIN_ROLES.includes(profile.role)) {
                 await supabase.auth.signOut()
                 router.push('/admin/login?error=unauthorized')
@@ -133,6 +133,7 @@ function AdminLayoutContent({
 
     const menuItems = [
         { title: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
+        { title: 'Recherche', icon: Search, href: '/admin/recherche' },
         { title: 'Radar IA', icon: Radar, href: '/admin/radar' },
         { title: 'Smart Slides', icon: Sparkles, href: '/admin/proposals' },
         { title: 'Événements', icon: Calendar, href: '/admin/evenements' },

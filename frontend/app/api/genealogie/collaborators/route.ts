@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
                 .select('role')
                 .eq('id', userId)
                 .single()
-            const isStaff = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent'].includes(profile?.role || '')
+            const isStaff = ['admin', 'super_admin', 'superadmin', 'agent'].includes(profile?.role || '')
             if (!isStaff) {
                 return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
             }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
                 .select('role')
                 .eq('id', userId)
                 .single()
-            const isStaff = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent'].includes(profile?.role || '')
+            const isStaff = ['admin', 'super_admin', 'superadmin', 'agent'].includes(profile?.role || '')
             if (!isStaff) {
                 return NextResponse.json({ error: 'Seul l\'owner peut inviter des collaborateurs' }, { status: 403 })
             }

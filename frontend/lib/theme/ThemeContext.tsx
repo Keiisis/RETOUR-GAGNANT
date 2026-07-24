@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 ══════════════════════════════════════════════════════════════ */
 
 export type Theme = 'light' | 'dark'
-export type Panel = 'admin' | 'agent' | 'client' | 'ceo'
+export type Panel = 'admin' | 'agent' | 'client'
 
 interface ThemeContextValue {
     theme: Theme

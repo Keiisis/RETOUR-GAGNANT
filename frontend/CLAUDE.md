@@ -48,7 +48,6 @@ Sous-applications privées (panels avec toggle thème clair/sombre par panel) :
 - `app/admin/` — Dashboard admin (compta LOT 1/2/3, ERP, settings, services)
 - `app/agent/` — Espace agent terrain (messagerie pro, registre comptable RGB officiel)
 - `app/client/` — Espace client web
-- `app/ceo/` — Dashboard CEO
 - `app/boutique/` — E-commerce + payment return
 
 ---

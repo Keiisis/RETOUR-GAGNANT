@@ -56,6 +56,8 @@ export default function AdminDossiersPage() {
     const [searchQuery, setSearchQuery] = useState('')
     const [expandedId, setExpandedId] = useState<string | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
+    // Agents assignables (chargés une fois)
+    const [agents, setAgents] = useState<Array<{ id: string; nom: string }>>([])
     const [syncing, setSyncing] = useState(false)
     const [syncResult, setSyncResult] = useState<string | null>(null)
 
@@ -65,6 +67,38 @@ export default function AdminDossiersPage() {
     const [chatSending, setChatSending] = useState<Record<string, boolean>>({})
     const [emailSending, setEmailSending] = useState<Record<string, boolean>>({})
     const chatBottomRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+    // Charge la liste des agents pour le sélecteur d'assignation.
+    useEffect(() => {
+        (async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                const res = await fetch('/api/admin/dossiers/assign', {
+                    headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+                })
+                if (res.ok) { const j = await res.json(); setAgents(j.agents || []) }
+            } catch { /* silencieux */ }
+        })()
+    }, [])
+
+    // Assigne (ou retire) l'agent responsable d'un dossier.
+    const assignerDossier = async (dossierId: string, agentId: string) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const res = await fetch('/api/admin/dossiers/assign', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                },
+                body: JSON.stringify({ dossier_id: dossierId, agent_id: agentId || null }),
+            })
+            if (!res.ok) { const j = await res.json().catch(() => ({})); alert(j.error || 'Assignation impossible'); return }
+            refetch()
+        } catch {
+            alert('Erreur réseau.')
+        }
+    }
 
     const loadChat = async (threadId: string) => {
         if (!threadId || chatMessages[threadId]) return
@@ -590,6 +624,20 @@ export default function AdminDossiersPage() {
                                                         >
                                                             {Object.entries(statutLabels).map(([val, lab]) => (
                                                                  <option key={val} value={val} className="bg-[#0a0f18]">{lab}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1"><T>Agent responsable</T></p>
+                                                        <select
+                                                            value={(dossier.agent_assigne as string) || ''}
+                                                            onChange={e => assignerDossier(dossier.id as string, e.target.value)}
+                                                            title={t("Assigner ce dossier à un agent")}
+                                                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#008751] w-full"
+                                                        >
+                                                            <option value="" className="bg-[#0a0f18]">— Non assigné —</option>
+                                                            {agents.map(a => (
+                                                                <option key={a.id} value={a.id} className="bg-[#0a0f18]">{a.nom}</option>
                                                             ))}
                                                         </select>
                                                     </div>

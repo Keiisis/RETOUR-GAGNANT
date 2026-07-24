@@ -13,7 +13,7 @@ export default function CreateUserPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
-    const [role, setRole] = useState<'agent' | 'admin' | 'ceo' | 'superadmin'>('agent')
+    const [role, setRole] = useState<'agent' | 'admin' | 'superadmin'>('agent')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
@@ -166,7 +166,6 @@ export default function CreateUserPage() {
                             {([
                                 { value: 'agent' as const, label: 'Agent', icon: User, desc: 'Leads, dossiers, messages, agenda', color: '#008751' },
                                 { value: 'admin' as const, label: 'Admin', icon: Shield, desc: 'Paramètres, boutique, services, contenu', color: '#FCD116' },
-                                { value: 'ceo' as const, label: 'CEO', icon: Shield, desc: 'Mêmes droits qu\'Admin — profil direction', color: '#F97316' },
                                 { value: 'superadmin' as const, label: 'Super Admin', icon: Shield, desc: 'Tous droits, gestion des admins incluse', color: '#E8112D' },
                             ]).map(r => (
                                 <button

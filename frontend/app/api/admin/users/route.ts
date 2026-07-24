@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Set des IDs clients pour exclusion stricte
     const clientIdSet = new Set((clientIdsRes.data || []).map((c: { id: string }) => c.id))
 
-    const VALID_ROLES = ['agent', 'admin', 'super_admin', 'superadmin', 'ceo']
+    const VALID_ROLES = ['agent', 'admin', 'super_admin', 'superadmin']
 
     const users = authRes.data.users
         .filter(u => {

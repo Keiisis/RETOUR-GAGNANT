@@ -60,7 +60,7 @@ export async function PATCH(
             if (tree?.user_id !== userId) {
                 const { data: profile } = await supabase
                     .from('user_profiles').select('role').eq('id', userId).single()
-                const isStaff = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent'].includes(profile?.role || '')
+                const isStaff = ['admin', 'super_admin', 'superadmin', 'agent'].includes(profile?.role || '')
                 if (!isStaff) {
                     return NextResponse.json(
                         { error: 'Seul l\'owner peut changer le rôle d\'un collaborateur' },
@@ -115,7 +115,7 @@ export async function DELETE(
         if (!isAuthorized) {
             const { data: profile } = await supabase
                 .from('user_profiles').select('role').eq('id', userId).single()
-            isAuthorized = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent'].includes(profile?.role || '')
+            isAuthorized = ['admin', 'super_admin', 'superadmin', 'agent'].includes(profile?.role || '')
         }
         if (!isAuthorized) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })

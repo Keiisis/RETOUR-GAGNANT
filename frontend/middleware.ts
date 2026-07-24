@@ -98,8 +98,6 @@ const ABSOLUTE_BYPASS = [
     '/client/register',
     '/client/reset-password',
     '/client/forgot-password',
-    '/ceo/login',
-    '/ceo/reset-password',
 ]
 
 function isAbsoluteBypass(pathname: string): boolean {
@@ -255,11 +253,9 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/admin') ||
         pathname.startsWith('/agent') ||
         pathname.startsWith('/client') ||
-        pathname.startsWith('/ceo') ||
         pathname.startsWith('/api/admin') ||
         pathname.startsWith('/api/agent') ||
         pathname.startsWith('/api/client') ||
-        pathname.startsWith('/api/ceo') ||
         isTokenAuthedPublic
     )
 
@@ -737,8 +733,7 @@ export async function middleware(request: NextRequest) {
         if (obsVerdict.blocked && obsVerdict.matches.length > 0) {
             const topMatch = obsVerdict.matches[0]
             const isInternalApi = pathname.startsWith('/api/analytics') ||
-                                  pathname.startsWith('/api/cron') ||
-                                  pathname.startsWith('/api/ceo')
+                                  pathname.startsWith('/api/cron')
             if (!isInternalApi) {
                 trackViolation(ip, SUPA_URL, SUPA_KEY, {
                     threatType: obsVerdict.topThreat || 'waf_observe',
@@ -861,8 +856,7 @@ export async function middleware(request: NextRequest) {
                             supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                         })
                         const isInternalApi = pathname.startsWith('/api/analytics') ||
-                                              pathname.startsWith('/api/cron') ||
-                                              pathname.startsWith('/api/ceo')
+                                              pathname.startsWith('/api/cron')
                         if (!isInternalApi) {
                             trackViolation(ip, SUPA_URL, SUPA_KEY, {
                                 threatType:  verdict.topThreat || 'waf_block',
@@ -886,17 +880,16 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // ─── 5bis. AUTH DES API DE PANELS (admin / ceo / agent) ───────
+    // ─── 5bis. AUTH DES API DE PANELS (admin / agent) ─────────────
     // Ces routes utilisent la service role key (bypass RLS) et n'étaient PAS
     // protégées par le bloc page-auth ci-dessous (qui ne cible que /admin, /agent…
     // et pas /api/admin…). Sans ce garde, n'importe qui pouvait lire/écrire des
-    // données sensibles (messages clients, dossiers, sécurité…) via /api/ceo/*.
+    // données sensibles (messages clients, dossiers, sécurité…) via /api/admin/*.
     // On exige une session valide + le bon rôle, sinon 401/403 JSON.
     // /api/client reste PUBLIC (register, resend-confirmation, etc.).
     const isAdminApi = pathname.startsWith('/api/admin')
-    const isCeoApi   = pathname.startsWith('/api/ceo')
     const isAgentApi = pathname.startsWith('/api/agent')
-    if ((isAdminApi || isCeoApi || isAgentApi) && SUPA_URL && SUPA_KEY) {
+    if ((isAdminApi || isAgentApi) && SUPA_URL && SUPA_KEY) {
         try {
             const supaApi = createServerClient(
                 SUPA_URL,
@@ -913,7 +906,7 @@ export async function middleware(request: NextRequest) {
             const { data: prof } = await adminApi
                 .from('user_profiles').select('role').eq('id', apiUser.id).maybeSingle()
             const apiRole = prof?.role || ''
-            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
             const apiOk = isAgentApi
                 ? (apiRole === 'agent' || ADMIN_ROLES.includes(apiRole))
                 : ADMIN_ROLES.includes(apiRole)
@@ -935,8 +928,7 @@ export async function middleware(request: NextRequest) {
     const isAgentRoute  = pathname.startsWith('/agent')
     const isAdminRoute  = pathname.startsWith('/admin')
     const isClientRoute = pathname.startsWith('/client')
-    const isCeoRoute    = pathname.startsWith('/ceo')
-    if (!isAgentRoute && !isAdminRoute && !isClientRoute && !isCeoRoute) return response
+    if (!isAgentRoute && !isAdminRoute && !isClientRoute) return response
 
     // Pages de login/register/reset : accès public, pas de check auth
     // Sans ça → boucle de redirection infinie (pas de session → redirect login → pas de session → ...)
@@ -980,7 +972,6 @@ export async function middleware(request: NextRequest) {
         if (userError || !user) {
             const loginUrl = isAdminRoute ? '/admin/login'
                 : isClientRoute ? '/client/login'
-                : isCeoRoute ? '/ceo/login'
                 : '/agent/login'
             return redirectTo(new URL(loginUrl, request.url))
         }
@@ -1035,24 +1026,19 @@ export async function middleware(request: NextRequest) {
 
         if (!agentProfile) {
             const loginUrl = isAdminRoute ? '/admin/login?error=unauthorized'
-                : isCeoRoute ? '/ceo/login?error=unauthorized'
                 : '/agent/login?error=unauthorized'
             return redirectTo(new URL(loginUrl, request.url))
         }
 
         // Isolation stricte des rôles
         const role = agentProfile.role
-        const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+        const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
 
         if (isAdminRoute && !ADMIN_ROLES.includes(role)) {
             return redirectTo(new URL('/admin/login?error=unauthorized', request.url))
         }
         if (isAgentRoute && role !== 'agent') {
             return redirectTo(new URL('/agent/login?error=unauthorized', request.url))
-        }
-        // CEO panel : uniquement le rôle 'ceo'
-        if (isCeoRoute && role !== 'ceo') {
-            return redirectTo(new URL('/ceo/login?error=unauthorized', request.url))
         }
 
         // ─── 2FA Check admins ────────────────────────────────

@@ -15,7 +15,7 @@ import { isPeriodLocked } from '@/lib/comptaLock'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin', 'ceo']
+const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
 const isAdminRole = (role?: string) => !!role && ADMIN_ROLES.includes(role)
 
 /** Un AGENT ne peut toucher QUE ses propres ecritures ; un ADMIN, toutes. */

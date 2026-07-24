@@ -33,6 +33,7 @@ interface Dossier {
     client_message?: string
     message_thread_id?: string
     dossier_ref_id?: string
+    agent_assigne?: string | null
 }
 
 interface DossierDoc {
@@ -66,6 +67,8 @@ export default function AgentDossiersPage() {
     const [dossiers, setDossiers] = useState<Dossier[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [currentUserId, setCurrentUserId] = useState('')
+    const [onlyMine, setOnlyMine] = useState(false)
     const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
     const [noteText, setNoteText] = useState('')
     const [docRequest, setDocRequest] = useState('')
@@ -294,6 +297,9 @@ export default function AgentDossiersPage() {
 
     useEffect(() => {
         const fetchDossiers = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) setCurrentUserId(user.id)
+
             const { data } = await supabase
                 .from('dossier_tracking')
                 .select('*')
@@ -399,14 +405,43 @@ export default function AgentDossiersPage() {
         updateStatus(draggableId, newStatus)
     }
 
-    const filtered = dossiers.filter(d =>
-        d.num_dossier?.toLowerCase().includes(search.toLowerCase()) ||
-        d.client_nom?.toLowerCase().includes(search.toLowerCase()) ||
-        d.client_email?.toLowerCase().includes(search.toLowerCase())
-    )
+    const filtered = dossiers.filter(d => {
+        // Filtre « Mes dossiers » : uniquement ceux dont je suis responsable.
+        if (onlyMine && d.agent_assigne !== currentUserId) return false
+        const q = search.toLowerCase()
+        return d.num_dossier?.toLowerCase().includes(q)
+            || d.client_nom?.toLowerCase().includes(q)
+            || d.client_email?.toLowerCase().includes(q)
+    })
+
+    const mineCount = dossiers.filter(d => d.agent_assigne === currentUserId).length
 
     const getDossiersByStatus = (status: DossierStatus) =>
         filtered.filter(d => d.statut === status)
+
+    // Prendre en charge (ou lâcher) un dossier à son propre nom.
+    const toggleMine = async (dossier: Dossier) => {
+        const prendre = dossier.agent_assigne !== currentUserId
+        const nouvel = prendre ? currentUserId : null
+        setDossiers(prev => prev.map(d => d.id === dossier.id ? { ...d, agent_assigne: nouvel } : d))
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const res = await fetch('/api/admin/dossiers/assign', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                },
+                body: JSON.stringify({ dossier_id: dossier.id, agent_id: nouvel }),
+            })
+            if (!res.ok) {
+                // Rollback visuel si le serveur refuse.
+                setDossiers(prev => prev.map(d => d.id === dossier.id ? { ...d, agent_assigne: dossier.agent_assigne } : d))
+            }
+        } catch {
+            setDossiers(prev => prev.map(d => d.id === dossier.id ? { ...d, agent_assigne: dossier.agent_assigne } : d))
+        }
+    }
 
     if (loading) {
         return (
@@ -426,6 +461,17 @@ export default function AgentDossiersPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Bascule « Mes dossiers » : ceux dont je suis responsable. */}
+                    <button
+                        type="button"
+                        onClick={() => setOnlyMine(v => !v)}
+                        className={`py-2.5 px-3.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${onlyMine
+                            ? 'bg-emerald-500 text-white border-emerald-500'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:border-emerald-500/40'}`}
+                        title="N'afficher que les dossiers dont je suis responsable"
+                    >
+                        Mes dossiers{mineCount > 0 ? ` (${mineCount})` : ''}
+                    </button>
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                         <input
@@ -493,6 +539,18 @@ export default function AgentDossiersPage() {
                                                             <div className="flex items-start justify-between mb-2">
                                                                 <span className="text-xs font-mono text-emerald-400 font-bold">{d.num_dossier}</span>
                                                                 <div className="flex items-center gap-2">
+                                                                    {/* Prise en charge : à moi (plein) ou libre (contour). */}
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); toggleMine(d) }}
+                                                                        title={d.agent_assigne === currentUserId ? 'Vous êtes responsable — cliquez pour lâcher' : d.agent_assigne ? 'Assigné à un autre agent — cliquez pour reprendre' : 'Prendre en charge'}
+                                                                        className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border transition-colors ${d.agent_assigne === currentUserId
+                                                                            ? 'bg-emerald-500 text-white border-emerald-500'
+                                                                            : d.agent_assigne
+                                                                                ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                                                                : 'bg-white/5 text-gray-500 border-white/15 hover:border-emerald-500/40'}`}
+                                                                    >
+                                                                        {d.agent_assigne === currentUserId ? 'MOI' : d.agent_assigne ? 'PRIS' : 'LIBRE'}
+                                                                    </button>
                                                                     {(d.documents_manquants?.length ?? 0) > 0 && (
                                                                         <span title="Vérification requise : Documents manquants">
                                                                             <FileWarning size={14} className="text-red-400 animate-pulse" />

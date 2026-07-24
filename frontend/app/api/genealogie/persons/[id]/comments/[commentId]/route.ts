@@ -51,7 +51,7 @@ export async function PATCH(
             // Sauf staff
             const { data: profile } = await supabase
                 .from('user_profiles').select('role').eq('id', userId).single()
-            const isStaff = ['admin','super_admin','superadmin','ceo','agent'].includes(profile?.role || '')
+            const isStaff = ['admin','super_admin','superadmin','agent'].includes(profile?.role || '')
             if (!isStaff) {
                 return NextResponse.json({ error: 'Seul l\'auteur peut modifier ce commentaire' }, { status: 403 })
             }
@@ -93,7 +93,7 @@ export async function DELETE(
         if (!authorized) {
             const { data: profile } = await supabase
                 .from('user_profiles').select('role').eq('id', userId).single()
-            authorized = ['admin','super_admin','superadmin','ceo','agent'].includes(profile?.role || '')
+            authorized = ['admin','super_admin','superadmin','agent'].includes(profile?.role || '')
         }
         if (!authorized) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
