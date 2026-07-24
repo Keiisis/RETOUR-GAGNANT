@@ -65,10 +65,17 @@ interface ProposalRow {
     client_email: string | null
     destination: string
     total_amount: number
+    currency?: string | null
     start_date?: string | null
     end_date?: string | null
     created_at: string
 }
+
+// Label monétaire du devis. La devise est celle saisie par l'agent
+// (XOF, EUR, USD, GBP) : afficher « FCFA » en dur pour un devis en euros
+// était faux. Correspond à formatPrice côté app.
+const LABEL_DEVISE: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
+const labelDevise = (c?: string | null) => LABEL_DEVISE[(c || 'XOF').toUpperCase()] || (c || 'FCFA')
 
 interface ItemRow {
     type: string
@@ -90,7 +97,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
         const { data: proposal, error: pe } = await supabase
             .from('ai_client_proposals')
-            .select('id, client_name, client_email, destination, total_amount, start_date, end_date, created_at')
+            .select('id, client_name, client_email, destination, total_amount, currency, start_date, end_date, created_at')
             .eq('id', id)
             .single()
 
@@ -106,6 +113,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             .order('order_index', { ascending: true })
 
         const p = proposal as ProposalRow
+        const cur = labelDevise(p.currency)   // « FCFA », « € », « $ »…
         const items: ItemRow[] = (rawItems || []) as ItemRow[]
         const contentItems = items.filter(i => i.type !== 'hero' && i.type !== 'pricing')
         const billable = contentItems.filter(i => i.selling_price > 0)
@@ -222,7 +230,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             // Total badge
             const totalY = statItems.length > 0 ? 6.9 : (p.start_date ? 6.05 : 5.75)
             slide.addShape('rect', { x: 4.5, y: totalY, w: 4.33, h: 0.5, fill: { color: C.green + '35' }, line: { color: C.green, width: 1 } })
-            slide.addText(`TOTAL ESTIMÉ : ${p.total_amount.toLocaleString('fr-FR')} FCFA`, {
+            slide.addText(`TOTAL ESTIMÉ : ${p.total_amount.toLocaleString('fr-FR')} ${cur}`, {
                 x: 4.5, y: totalY, w: 4.33, h: 0.5,
                 fontSize: 15, bold: true, color: C.yellow, align: 'center', fontFace: 'Calibri',
             })
@@ -278,7 +286,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             // ── Prix (badge haut droite côté texte) ──
             if (item.selling_price > 0) {
                 slide.addShape('rect', { x: 4.8, y: 0.22, w: 3.0, h: 0.42, fill: { color: cat.accent + '28' }, line: { color: cat.accent, width: 0.8 } })
-                slide.addText(` ${item.selling_price.toLocaleString('fr-FR')} FCFA`, {
+                slide.addText(` ${item.selling_price.toLocaleString('fr-FR')} ${cur}`, {
                     x: 4.8, y: 0.22, w: 3.0, h: 0.42,
                     fontSize: 11, bold: true, color: cat.accent,
                     align: 'center', fontFace: 'Calibri',
@@ -373,7 +381,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             // En-tête tableau
             slide.addShape('rect', { x: tX, y: rY, w: tW, h: rH, fill: { color: C.green + '45' }, line: { width: 0 } })
             slide.addText('Prestation', { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 11, bold: true, color: C.yellow, fontFace: 'Calibri', inset: 0.1 })
-            slide.addText('Prix (FCFA)', { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 11, bold: true, color: C.yellow, align: 'right', fontFace: 'Calibri', inset: 0.1 })
+            slide.addText(`Prix (${cur})`, { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 11, bold: true, color: C.yellow, align: 'right', fontFace: 'Calibri', inset: 0.1 })
             rY += rH
 
             // Lignes items (max 10)
@@ -397,7 +405,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             rY += 0.18
             slide.addShape('rect', { x: tX, y: rY, w: tW, h: 0.58, fill: { color: C.green + '38' }, line: { color: C.green, width: 1 } })
             slide.addText('TOTAL', { x: tX + 0.2, y: rY, w: 5, h: 0.58, fontSize: 16, bold: true, color: C.white, fontFace: 'Calibri', inset: 0.12 })
-            slide.addText(`${p.total_amount.toLocaleString('fr-FR')} FCFA`, {
+            slide.addText(`${p.total_amount.toLocaleString('fr-FR')} ${cur}`, {
                 x: cPri - 0.5, y: rY, w: cPriW + 0.5, h: 0.58,
                 fontSize: 17, bold: true, color: C.yellow, align: 'right', fontFace: 'Calibri', inset: 0.12,
             })
