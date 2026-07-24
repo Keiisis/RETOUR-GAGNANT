@@ -118,27 +118,49 @@ export async function classifyProposalPayment(
             const { data: proposalItems } = await supabase
                 .from('ai_proposal_items').select('*').eq('proposal_id', proposalId).order('order_index', { ascending: true })
 
-            const invoiceItems = (proposalItems || [])
+            // Devise d'abord : elle commande l'arrondi (XOF entier, EUR/USD
+            // au centime).
+            const currency = (proposal.currency || 'XOF').toUpperCase()
+            const rnd = (n: number) => currency === 'XOF' ? Math.round(n) : Math.round(n * 100) / 100
+
+            // TVA 18 % INCLUSE dans selling_price : le client a payé un prix
+            // TTC, et le devis lui présente « TVA 18 % ». On enregistre donc
+            // chaque prix en HT (÷ 1,18) avec tva = 18, exactement comme les
+            // factures créées par l'agent. Enregistrer tva = 0 sous-déclarait
+            // la TVA collectée en comptabilité.
+            const TVA = 18
+            const htDe = (ttc: number) => rnd((ttc || 0) / (1 + TVA / 100))
+
+            const facturables = (proposalItems || [])
                 .filter((it: { type?: string; selling_price?: number }) => it.type !== 'hero' && it.type !== 'pricing' && (it.selling_price || 0) > 0)
+
+            const invoiceItems = facturables
                 .map((it: { title?: string; location?: string; selling_price?: number; original_price?: number }) => ({
                     description: `${it.title || 'Prestation'}${it.location ? ` — ${it.location}` : ''}`,
                     quantity: 1,
-                    unit_price: it.selling_price || 0,
+                    unit_price: htDe(it.selling_price || 0),   // HT
                     unit_cost: it.original_price || 0,
-                    tva: 0,
+                    tva: TVA,
                 }))
             if (invoiceItems.length === 0) {
                 invoiceItems.push({
                     description: `${proposal.destination || 'Prestation'}`,
                     quantity: 1,
-                    unit_price: Number(proposal.total_amount) || 0,
+                    unit_price: htDe(Number(proposal.total_amount) || 0),
                     unit_cost: 0,
-                    tva: 0,
+                    tva: TVA,
                 })
             }
-            const sousTotal = invoiceItems.reduce((s: number, it: { quantity: number; unit_price: number }) => s + it.quantity * it.unit_price, 0)
 
-            const currency = (proposal.currency || 'XOF').toUpperCase()
+            // Totaux dérivés du TTC réellement payé (proposal.total_amount, ou
+            // à défaut la somme des prestations). On calcule HT et TVA À PARTIR
+            // du TTC pour garantir sous_total + total_tva = total, au centime.
+            const ttcItems = facturables.reduce(
+                (s: number, it: { selling_price?: number }) => s + (it.selling_price || 0), 0)
+            const totalTTC = rnd(Number(proposal.total_amount) || ttcItems)
+            const sousTotal = rnd(totalTTC / (1 + TVA / 100))
+            const totalTva = rnd(totalTTC - sousTotal)
+
             let exchangeRate = 1
             if (currency !== 'XOF') {
                 const { data: cur } = await supabase.from('currencies').select('exchange_rate_to_base').eq('code', currency).single()
@@ -157,9 +179,9 @@ export async function classifyProposalPayment(
                 exchange_rate_applied: exchangeRate,
                 items: invoiceItems,
                 sous_total: sousTotal,
-                total_tva: 0,
+                total_tva: totalTva,
                 remise: 0,
-                total: Number(proposal.total_amount) || sousTotal,
+                total: totalTTC,
                 status: 'paye',
                 paid_at: new Date().toISOString(),
                 notes: `Facture auto-générée — Lien de paiement / Proposition\nProposal: ${shortId.toUpperCase()}\nClient: ${proposal.client_name || 'N/A'}`,
