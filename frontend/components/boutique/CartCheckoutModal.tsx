@@ -13,6 +13,7 @@ import { Price } from '@/components/ui/Price'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
+import { fromHt } from '@/lib/tax'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
 
 // ─── Déclarations des SDK tiers ────────────────────────────────────────────────
@@ -189,7 +190,12 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const [shippingAddress, setShippingAddress] = useState('')
     const shippingFee = ZONE_FEES[shippingZone] ?? 0
 
-    const finalTotal = Math.max(0, totalAmount - (appliedCoupon?.discount_amount || 0) + shippingFee)
+    // TVA EN SUS : les prix produits sont HORS TAXE. La TVA 18 % s'ajoute sur
+    // les marchandises (après remise) ; la livraison reste hors TVA. Le client
+    // paie donc TTC marchandises + livraison — identique au calcul serveur.
+    const htMarchandises = Math.max(0, totalAmount - (appliedCoupon?.discount_amount || 0))
+    const { tva: tvaMarchandises, ttc: ttcMarchandises } = fromHt(htMarchandises, 'XOF')
+    const finalTotal = ttcMarchandises + shippingFee
     // Affichage honnête sans marge (la marge 6% est prélevée silencieusement par la passerelle)
     const displayAmount = convertCurrency(finalTotal, 'XOF', selectedCurrency)
 
@@ -951,6 +957,15 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 <span className="font-bold">-<Price amount={appliedCoupon.discount_amount} currency="XOF" noConvert /></span>
                             </div>
                         )}
+                        {/* TVA en sus : la TVA s'ajoute au prix des marchandises */}
+                        <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
+                            <span className="font-bold"><T>Sous-total HT</T></span>
+                            <span className="font-bold text-white"><Price amount={htMarchandises} currency="XOF" noConvert /></span>
+                        </div>
+                        <div className="flex justify-between items-center mt-1 text-xs text-gray-400">
+                            <span className="font-bold">TVA 18 %</span>
+                            <span className="font-bold text-white">+<Price amount={tvaMarchandises} currency="XOF" noConvert /></span>
+                        </div>
                         {shippingFee > 0 && (
                             <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
                                 <span className="flex items-center gap-1 font-bold">
@@ -960,7 +975,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                             </div>
                         )}
                         <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold"><T>Total</T></span>
+                            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold"><T>Total TTC</T></span>
                             <div className="flex flex-col items-end gap-1.5">
                                 <span className="text-xl font-black text-[#FCD116] font-heading">
                                     {selectedCurrency === 'XOF'

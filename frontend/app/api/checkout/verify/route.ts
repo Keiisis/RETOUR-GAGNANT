@@ -7,6 +7,7 @@ import { markClientConverted } from '@/lib/classement/track'
 import { nextDocumentNumber } from '@/lib/document-numbering'
 import { classifyProposalPayment } from '@/lib/proposal-classify'
 import { toXOFStrict } from '@/lib/server-rates'
+import { TVA_RATE } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -607,13 +608,14 @@ export async function POST(request: Request) {
                                 quantity: fullOrder.quantity || 1,
                             }]
 
+                    // TVA EN SUS : prix produits HORS TAXE, TVA 18 % sur les marchandises.
                     const invoiceItems = cartItems.map((item: CartItemRaw) => ({
                         description: item.title || item.name || 'Article',
                         quantity: item.quantity || 1,
                         unit_price: (item.sale_price && item.sale_price < (item.price || 0))
                             ? item.sale_price
                             : (item.price || 0),
-                        tva: 0,
+                        tva: TVA_RATE,
                     }))
 
                     const sousTotal = invoiceItems.reduce(
@@ -659,8 +661,10 @@ export async function POST(request: Request) {
                         currency: orderCurrency,
                         exchange_rate_applied: invoiceExchangeRate,
                         items: invoiceItems,
+                        // sous_total = HT marchandises + livraison ; total_tva = TVA
+                        // marchandises, dérivée du montant payé (sous_total + total_tva = total).
                         sous_total: sousTotal + shippingFee,
-                        total_tva: 0,
+                        total_tva: Math.max(0, Number(fullOrder.amount) - (sousTotal + shippingFee)),
                         remise: 0,
                         total: fullOrder.amount,
                         status: 'paye',

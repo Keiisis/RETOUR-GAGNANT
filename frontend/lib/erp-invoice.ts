@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@supabase/supabase-js'
 import { nextDocumentNumber } from './document-numbering'
 import { classifyProposalPayment } from './proposal-classify'
+import { TVA_RATE } from './tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -62,16 +63,18 @@ export async function createErpInvoiceForOrder(opts: {
                     quantity: fullOrder.quantity || 1,
                 }]
 
+        // TVA EN SUS : prix produits HORS TAXE, TVA 18 % sur les marchandises.
         const invoiceItems = cartItems.map((item) => ({
             description: item.title || item.name || 'Article',
             quantity: item.quantity || 1,
             unit_price: (item.sale_price && item.sale_price < (item.price || 0))
                 ? item.sale_price
                 : (item.price || 0),
-            tva: 0,
+            tva: TVA_RATE,
         }))
         const sousTotal = invoiceItems.reduce((sum, it) => sum + it.quantity * it.unit_price, 0)
 
+        // Livraison : frais à part, hors TVA (tva = 0).
         const shippingFee = fullOrder.shipping_fee || 0
         if (shippingFee > 0) {
             invoiceItems.push({
@@ -103,8 +106,11 @@ export async function createErpInvoiceForOrder(opts: {
             currency: orderCurrency,
             exchange_rate_applied: invoiceExchangeRate,
             items: invoiceItems,
+            // sous_total = HT marchandises + livraison ; total_tva = TVA sur les
+            // marchandises, dérivée du montant réellement payé pour garantir
+            // sous_total + total_tva = total (aucune dérive d'arrondi).
             sous_total: sousTotal + shippingFee,
-            total_tva: 0,
+            total_tva: Math.max(0, Number(fullOrder.amount) - (sousTotal + shippingFee)),
             remise: 0,
             total: fullOrder.amount,
             status: 'paye',

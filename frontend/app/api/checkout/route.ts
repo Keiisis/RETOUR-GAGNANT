@@ -294,13 +294,18 @@ export async function POST(request: Request) {
                     }
                 }
 
-                const expectedTotal = Math.max(0, expectedSubtotal - serverCouponDiscount + validatedShippingFee)
+                // TVA EN SUS : les prix produits sont HORS TAXE, la TVA s'ajoute
+                // sur les marchandises (après remise). La livraison est un frais
+                // à part, ajouté hors TVA.
+                const htGoods = Math.max(0, expectedSubtotal - serverCouponDiscount)
+                const ttcGoods = ttcFromHt(htGoods, currency)
+                const expectedTotal = ttcGoods + validatedShippingFee
 
                 // Tolérance de 1 XOF pour les arrondis
                 if (Math.abs(parsedAmount - expectedTotal) > 1) {
                     console.error(
-                        `[Checkout] Montant invalide — reçu: ${parsedAmount} XOF, attendu: ${expectedTotal} XOF` +
-                        ` (sous-total: ${expectedSubtotal}, coupon: ${serverCouponDiscount}, livraison: ${validatedShippingFee})`
+                        `[Checkout] Montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTotal}` +
+                        ` (HT marchandises: ${htGoods}, TVA incl., livraison: ${validatedShippingFee})`
                     )
                     return NextResponse.json(
                         { error: 'Montant invalide. Veuillez actualiser la page et réessayer.' },
