@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { sendEmail } from '@/lib/email'
+import { getStaffToLine } from '@/lib/staff-recipients'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -99,6 +101,38 @@ export async function POST(request: NextRequest) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // ── ALERTE STAFF ──────────────────────────────────────────────
+    // Tous les autres points d'entrée (paiement, RDV, contact) préviennent
+    // l'équipe. Une demande de service arrivait, elle, en silence dans le
+    // panel : si personne ne regardait, elle dormait. On envoie donc un
+    // e-mail à l'équipe. Fire-and-forget : la réponse au client ne doit pas
+    // attendre le SMTP, et un échec d'e-mail ne doit pas perdre la demande.
+    void (async () => {
+        try {
+            const to = await getStaffToLine()
+            await sendEmail({
+                to,
+                subject: `Nouvelle demande de service — ${service_title}`,
+                context: 'service_request',
+                relatedId: data.id,
+                html: `
+                    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">
+                        <h2 style="color:#0f172a">Nouvelle demande depuis l'espace client</h2>
+                        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#334155">
+                            <tr><td style="padding:6px 0;color:#64748b">Référence</td><td style="padding:6px 0"><strong>${ref}</strong></td></tr>
+                            <tr><td style="padding:6px 0;color:#64748b">Service</td><td style="padding:6px 0">${service_title}</td></tr>
+                            <tr><td style="padding:6px 0;color:#64748b">Client</td><td style="padding:6px 0">${userEmail}</td></tr>
+                            <tr><td style="padding:6px 0;color:#64748b">Téléphone</td><td style="padding:6px 0">${phone || 'Non fourni'}</td></tr>
+                        </table>
+                        <div style="margin:14px 0;padding:12px 14px;background:#f8fafc;border-left:3px solid #2563eb;border-radius:6px;color:#334155;font-size:14px">
+                            ${description.trim().replace(/</g, '&lt;')}
+                        </div>
+                        <p style="font-size:13px;color:#64748b">Traitez cette demande depuis <strong>Admin › Dossiers</strong> ou l'espace agent.</p>
+                    </div>`,
+            })
+        } catch { /* alerte non critique */ }
+    })()
 
     return NextResponse.json({ dossier: data })
 }

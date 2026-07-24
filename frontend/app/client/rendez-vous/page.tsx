@@ -81,6 +81,24 @@ export default function ClientRendezVousPage() {
         load()
     }, [])
 
+    // Annulation d'un RDV à venir. L'API vérifie côté serveur que le RDV
+    // appartient bien au client et qu'il est encore annulable.
+    const handleCancel = async (rdvId: string) => {
+        if (!confirm('Annuler ce rendez-vous ?')) return
+        try {
+            const res = await fetch(`/api/rdv/${rdvId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statut: 'annule' }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) { alert(data.error || 'Annulation impossible'); return }
+            setRdvs(prev => prev.map(r => r.id === rdvId ? { ...r, statut: 'annule' } : r))
+        } catch {
+            alert('Erreur réseau. Réessayez.')
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!form.date || !form.heure || !form.motif) return
@@ -190,7 +208,7 @@ export default function ClientRendezVousPage() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {upcoming.map(rdv => <RdvCard key={rdv.id} rdv={rdv} />)}
+                        {upcoming.map(rdv => <RdvCard key={rdv.id} rdv={rdv} onCancel={handleCancel} />)}
                     </div>
                 )}
             </div>
@@ -201,6 +219,7 @@ export default function ClientRendezVousPage() {
                     <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Historique ({past.length})</h2>
                     <div className="space-y-3">
                         {past.map(rdv => <RdvCard key={rdv.id} rdv={rdv} />)}
+                        {/* Les RDV passés/terminés ne sont plus annulables : pas de callback. */}
                     </div>
                 </div>
             )}
@@ -315,11 +334,14 @@ export default function ClientRendezVousPage() {
     )
 }
 
-function RdvCard({ rdv }: { rdv: Rdv }) {
+function RdvCard({ rdv, onCancel }: { rdv: Rdv; onCancel?: (id: string) => void }) {
     const type = TYPE_LABELS[rdv.type] || TYPE_LABELS.visio
     const statut = STATUT_LABELS[rdv.statut] || STATUT_LABELS.en_attente
     const dateObj = new Date(rdv.date)
     const isUpcoming = rdv.statut !== 'annule' && rdv.statut !== 'termine'
+    // Annulable seulement si à venir ET si le parent a fourni le callback
+    // (les RDV passés n'en reçoivent pas).
+    const annulable = isUpcoming && !!onCancel
 
     return (
         <div className={`bg-[#0a1221] border rounded-2xl p-4 transition-colors ${isUpcoming ? 'border-white/[0.08] hover:border-blue-500/20' : 'border-white/[0.04] opacity-60'}`}>
@@ -346,9 +368,20 @@ function RdvCard({ rdv }: { rdv: Rdv }) {
                         {rdv.notes && <p className="text-[11px] text-gray-600 mt-1">{rdv.notes}</p>}
                     </div>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${statut.color}`}>
-                    {statut.label}
-                </span>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statut.color}`}>
+                        {statut.label}
+                    </span>
+                    {annulable && (
+                        <button
+                            type="button"
+                            onClick={() => onCancel!(rdv.id)}
+                            className="text-[10px] font-bold text-red-400/80 hover:text-red-400 transition-colors"
+                        >
+                            Annuler
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

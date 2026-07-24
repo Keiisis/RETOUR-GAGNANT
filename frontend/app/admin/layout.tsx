@@ -81,6 +81,7 @@ function AdminLayoutContent({
     const [unreadMessages, setUnreadMessages] = useState(0)
     const [unreadNotifications, setUnreadNotifications] = useState(0)
     const [relancesDue, setRelancesDue] = useState(0)
+    const [rdvEnAttente, setRdvEnAttente] = useState(0)
 
     useEffect(() => {
         if (isLoginPage) return
@@ -93,6 +94,14 @@ function AdminLayoutContent({
             ])
             setUnreadMessages(msgRes.count || 0)
             setUnreadNotifications(notifRes.count || 0)
+        }
+
+        // RDV en attente de traitement (badge sur « Rendez-vous »)
+        const fetchRdv = async () => {
+            const { count } = await supabase
+                .from('rdv_requests').select('id', { count: 'exact', head: true })
+                .eq('statut', 'en_attente')
+            setRdvEnAttente(count || 0)
         }
 
         // Relances Classement Client à faire (badge)
@@ -109,10 +118,12 @@ function AdminLayoutContent({
 
         fetchUnread()
         fetchRelances()
+        fetchRdv()
 
         // Realtime Subscription
         const channel = supabase.channel('admin_layout_badges')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchUnread)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rdv_requests' }, fetchRdv)
             .subscribe()
 
         return () => {
@@ -131,6 +142,7 @@ function AdminLayoutContent({
         { title: 'Frontend', icon: Palette, href: '/admin/frontend' },
         { title: 'Grille Tarifaire', icon: Layers, href: '/admin/grille-tarifaire' },
         { title: 'Prêtres Fa', icon: Sparkles, href: '/admin/pretres-fa' },
+        { title: 'Rendez-vous', icon: Calendar, href: '/admin/rendez-vous', badge: rdvEnAttente },
         { title: 'Disponibilités', icon: Calendar, href: '/admin/disponibilites' },
         { title: 'Dossiers', icon: FileText, href: '/admin/dossiers' },
         { title: 'Leads Oracle', icon: Compass, href: '/admin/leads-oracle' },
