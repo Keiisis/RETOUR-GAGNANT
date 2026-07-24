@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { jsPDF } from 'jspdf'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
+import { getRatesXOF } from '@/lib/server-rates'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -99,7 +100,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
         const { data: proposal, error: pe } = await supabase
             .from('ai_client_proposals')
-            .select('id, client_name, client_email, destination, total_amount, created_at')
+            .select('id, client_name, client_email, destination, total_amount, currency, created_at')
             .eq('id', id)
             .single()
 
@@ -116,11 +117,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const p = proposal as ProposalRow
         const allItems: ItemRow[] = (rawItems || []) as ItemRow[]
 
+        // ── NORMALISATION EN XOF ──────────────────────────────────────
+        // Le devis est un document légal en FCFA (+ conversion EUR). Mais
+        // selling_price est libellé dans la devise SAISIE par l'agent
+        // (XOF, EUR, USD…). L'ancien code le traitait comme du XOF : un
+        // devis de 337 € affichait « 337 FCFA » et « 0,51 € ». On convertit
+        // donc chaque prix vers le XOF via le taux réel de la devise avant
+        // tout calcul. La parité EUR (655,957) étant fixe dans les deux
+        // sens, un devis en euros retombe exactement sur ses montants.
+        const rates = await getRatesXOF()
+        const devise = (p.currency || 'XOF').toUpperCase()
+        const versXOF = rates[devise] && rates[devise] > 0 ? rates[devise] : 1
+        const enXOF = (montant: number) => Math.round(montant * versXOF)
+
         // Éléments facturables uniquement
         const billable = allItems.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
 
-        // Calculs — selling_price est le prix TTC
-        const totalTTC_XOF = billable.reduce((s, i) => s + i.selling_price, 0)
+        // Calculs — selling_price (dans la devise du devis) ramené en XOF TTC
+        const totalTTC_XOF = billable.reduce((s, i) => s + enXOF(i.selling_price), 0)
         const totalHT_XOF = Math.round(totalTTC_XOF / 1.18)
         const tva_XOF = totalTTC_XOF - totalHT_XOF
 
@@ -324,9 +338,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             pdf.setLineWidth(0.2)
             pdf.line(ML, y + rowH, ML + CW, y + rowH)
 
-            const htFCFA = Math.round(item.selling_price / 1.18)
-            const ttcFCFA = item.selling_price
-            const ttcEUR = Math.round(item.selling_price / XOF_TO_EUR)
+            // Prix de la ligne ramené en XOF, comme les totaux.
+            const ttcFCFA = enXOF(item.selling_price)
+            const htFCFA = Math.round(ttcFCFA / 1.18)
+            const ttcEUR = Math.round(ttcFCFA / XOF_TO_EUR)
 
             // Draw title with word wrapping
             pdf.setFont('helvetica', 'normal')
