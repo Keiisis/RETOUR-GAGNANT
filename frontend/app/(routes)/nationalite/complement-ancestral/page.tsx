@@ -12,6 +12,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
+import { ttcFromHt, fromHt } from '@/lib/tax'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -82,7 +83,8 @@ function ComplementAncestralContent() {
         { id: 'zeyow' as PaymentProvider, name: 'Zeyow', subtitle: t('Carte Virtuelle'), color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', isReady: paymentSettings.zeyow_enabled === 'true' && !!paymentSettings.zeyow_redirect_url },
     ].filter(p => p.isReady)
 
-    const amountXOF = Math.round(RESEARCH_PRICE * EUR_TO_XOF)
+    // TVA EN SUS : RESEARCH_PRICE est HORS TAXE ; on charge le TTC (HT × 1,18).
+    const amountXOF = ttcFromHt(Math.round(RESEARCH_PRICE * EUR_TO_XOF), 'XOF')
 
     const bindKkiapayListeners = () => {
         if (kkiapayBound.current) return
@@ -370,9 +372,9 @@ function ComplementAncestralContent() {
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-1">Investissement</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-black text-[#1a2332]">{RESEARCH_PRICE} €</span>
+                                <span className="text-5xl font-black text-[#1a2332]">{fromHt(RESEARCH_PRICE, 'EUR').ttc} €</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Recherche complète — archives, bases de données & associations spécialisées</p>
+                            <p className="text-xs text-gray-500 mt-1">Recherche complète — archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({RESEARCH_PRICE} € HT)</span></p>
                         </div>
 
                         {paymentDone ? (

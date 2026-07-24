@@ -12,6 +12,7 @@ import {
 import Link from 'next/link'
 import { Price, useCurrency } from '@/components/ui/Price'
 import { CurrencyCode, convertCurrency } from '@/lib/currency'
+import { ttcFromHt, fromHt } from '@/lib/tax'
 import { useTranslation, T } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 
@@ -359,9 +360,10 @@ export default function NationaliteFormPage() {
         const kkiapayKey = isSandbox
             ? (paymentSettings.kkiapay_sandbox_public_key || paymentSettings.kkiapay_public_key)
             : paymentSettings.kkiapay_public_key
-        // Kkiapay exige un montant ENTIER positif en FCFA (XOF, sans décimales)
+        // Kkiapay exige un montant ENTIER positif en FCFA (XOF, sans décimales).
+        // TVA EN SUS : le tarif est HORS TAXE, on charge le TTC (HT × 1,18).
         const rawXOF = formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF')
-        const amountXOF = Math.round(Number(rawXOF))
+        const amountXOF = ttcFromHt(Math.round(Number(rawXOF)), 'XOF')
 
         // Garde-fous : éviter le « Paramètres manquants ou invalides » du widget
         if (!kkiapayKey) {
@@ -396,8 +398,8 @@ export default function NationaliteFormPage() {
 
     const handleFedapay = () => {
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('fedapay')
-        // Convertir le montant en FCFA pour FedaPay
-        const amountXOF = formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF')
+        // Convertir en FCFA + TVA en sus (on charge le TTC).
+        const amountXOF = ttcFromHt(formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF'), 'XOF')
         try {
             window.FedaPay.init('#fedapay-nat-btn', {
                 public_key: paymentSettings.fedapay_public_key,
@@ -419,8 +421,8 @@ export default function NationaliteFormPage() {
         setPaymentProvider('zeyow')
         const redirectUrl = paymentSettings.zeyow_redirect_url
         if (!redirectUrl) { setPaymentError(t('Zeyow non configuré.')); return }
-        // Convertir le montant en FCFA pour Zeyow
-        const amountXOF = formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF')
+        // Convertir en FCFA + TVA en sus (on charge le TTC).
+        const amountXOF = ttcFromHt(formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF'), 'XOF')
         window.location.href = `${redirectUrl}?amount=${amountXOF}&phone=${form.telephone}&email=${form.email}&context=nationality`
     }
 
@@ -1099,8 +1101,8 @@ export default function NationaliteFormPage() {
                                 <h2 className="text-lg font-black text-slate-900">{resumeMode ? <T>Finalisation de votre dossier</T> : <T>Paiement des frais de traitement</T>}</h2>
                                 {!resumeMode && (
                                     <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
-                                        <p className="text-3xl font-black text-[#008751]"><Price amount={formAmount} currency={formCurrency} showOriginal /></p>
-                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T></p>
+                                        <p className="text-3xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
+                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T> · <T>TVA 18% incluse</T></p>
                                     </div>
                                 )}
 
@@ -1185,8 +1187,8 @@ export default function NationaliteFormPage() {
                                 </div>
                                 {/* Montant à régler */}
                                 <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-5 text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1"><T>Montant à régler à l&apos;étape suivante</T></p>
-                                    <p className="text-2xl font-black text-[#008751]"><Price amount={formAmount} currency={formCurrency} showOriginal /></p>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1"><T>Montant à régler à l&apos;étape suivante</T> · <T>TVA 18% incluse</T></p>
+                                    <p className="text-2xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
                                 </div>
                             </div>}
                         </div>

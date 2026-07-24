@@ -12,6 +12,7 @@ import { nextDocumentNumber } from './document-numbering'
 import { generateInvoicePdf } from './invoice-pdf-generator'
 import { sendEmail } from './email'
 import { insertOnce } from './payment-integrity'
+import { fromHt, TVA_RATE } from './tax'
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -48,6 +49,11 @@ export async function recordNationalityIncome(
             : 'Dossier de reconnaissance de nationalité béninoise')
         const numero = await nextDocumentNumber(supabase, 'facture')
 
+        // TVA EN SUS : p.amount est le tarif HORS TAXE (frais de dossier). La
+        // TVA 18 % s'ajoute — c'est ce que le client a payé (le widget charge
+        // HT × 1,18). fromHt garantit HT + TVA = TTC.
+        const { ht, tva, ttc } = fromHt(p.amount, currency)
+
         // Idempotence garantie par la BASE (index unique sur source_ref) :
         // deux chemins simultanes ne peuvent plus creer deux factures.
         const inserted = await insertOnce(supabase, 'documents_financiers', {
@@ -60,11 +66,11 @@ export async function recordNationalityIncome(
             client_adresse: '',
             currency,
             exchange_rate_applied: exchangeRate,
-            items: [{ description: label, quantity: 1, unit_price: p.amount, tva: 0 }],
-            sous_total: p.amount,
-            total_tva: 0,
+            items: [{ description: label, quantity: 1, unit_price: ht, tva: TVA_RATE }],
+            sous_total: ht,
+            total_tva: tva,
             remise: 0,
-            total: p.amount,
+            total: ttc,
             status: 'paye',
             paid_at: new Date().toISOString(),
             notes: `Facture auto-générée — Nationalité\nDossier: ${p.ref}\nMéthode: ${p.paymentMethod || 'en ligne'}${p.txId ? `\nTransaction: ${p.txId}` : ''}`,
@@ -96,6 +102,8 @@ async function sendNationalityInvoiceEmail(f: {
     paymentMethod: string; txId: string
 }): Promise<void> {
     try {
+        // TVA EN SUS : f.amount est le tarif HORS TAXE ; la TVA s'ajoute.
+        const { ht, tva, ttc } = fromHt(f.amount, f.currency)
         let pdfBase64 = ''
         try {
             pdfBase64 = generateInvoicePdf({
@@ -106,12 +114,12 @@ async function sendNationalityInvoiceEmail(f: {
                 clientName: `${f.prenom} ${f.nom}`.trim() || 'Client',
                 clientEmail: f.email,
                 clientPhone: f.phone || undefined,
-                items: [{ description: f.label, quantity: 1, unit_price: f.amount, tva: 0 }],
+                items: [{ description: f.label, quantity: 1, unit_price: ht, tva: TVA_RATE }],
                 currency: f.currency,
-                sous_total: f.amount,
-                total_tva: 0,
+                sous_total: ht,
+                total_tva: tva,
                 remise: 0,
-                total: f.amount,
+                total: ttc,
                 notes: `Dossier ${f.ref}\nPaiement ${f.paymentMethod}${f.txId ? ` — Transaction ${f.txId}` : ''}`,
                 conditions: 'Paiement effectué en ligne.',
                 isManual: true,
@@ -120,7 +128,7 @@ async function sendNationalityInvoiceEmail(f: {
             console.error('[nationality-invoice] PDF échoué:', pdfErr)
         }
 
-        const montant = `${Math.round(f.amount).toLocaleString('fr-FR')} ${f.currency === 'XOF' ? 'FCFA' : f.currency === 'EUR' ? '€' : f.currency === 'USD' ? '$' : f.currency}`
+        const montant = `${Math.round(ttc).toLocaleString('fr-FR')} ${f.currency === 'XOF' ? 'FCFA' : f.currency === 'EUR' ? '€' : f.currency === 'USD' ? '$' : f.currency}`
         await sendEmail({
             to: f.email,
             subject: `Votre facture ${f.numero} — ${montant} — Dossier ${f.ref}`,
