@@ -133,14 +133,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         // Éléments facturables uniquement
         const billable = allItems.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
 
-        // Calculs — selling_price (dans la devise du devis) ramené en XOF TTC
-        const totalTTC_XOF = billable.reduce((s, i) => s + enXOF(i.selling_price), 0)
-        const totalHT_XOF = Math.round(totalTTC_XOF / 1.18)
-        const tva_XOF = totalTTC_XOF - totalHT_XOF
+        // TVA EN SUS : selling_price est le prix HORS TAXE. La TVA s'AJOUTE.
+        // On somme les HT (ramenés en XOF), puis la TVA et le TTC en découlent.
+        const totalHT_XOF = billable.reduce((s, i) => s + enXOF(i.selling_price), 0)
+        const tva_XOF = Math.round(totalHT_XOF * 0.18)
+        const totalTTC_XOF = totalHT_XOF + tva_XOF
 
-        const totalTTC_EUR = Math.round(totalTTC_XOF / XOF_TO_EUR)
         const totalHT_EUR = Math.round(totalHT_XOF / XOF_TO_EUR)
         const tva_EUR = Math.round(tva_XOF / XOF_TO_EUR)
+        const totalTTC_EUR = totalHT_EUR + tva_EUR
 
         const ref = generateRef(p.client_name, p.created_at)
 
@@ -338,9 +339,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             pdf.setLineWidth(0.2)
             pdf.line(ML, y + rowH, ML + CW, y + rowH)
 
-            // Prix de la ligne ramené en XOF, comme les totaux.
-            const ttcFCFA = enXOF(item.selling_price)
-            const htFCFA = Math.round(ttcFCFA / 1.18)
+            // selling_price = HT (ramené en XOF). La TVA s'ajoute pour le TTC.
+            const htFCFA = enXOF(item.selling_price)
+            const ttcFCFA = htFCFA + Math.round(htFCFA * 0.18)
             const ttcEUR = Math.round(ttcFCFA / XOF_TO_EUR)
 
             // Draw title with word wrapping

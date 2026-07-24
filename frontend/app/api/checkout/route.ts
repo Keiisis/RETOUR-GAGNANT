@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, CHECKOUT_LIMIT } from '@/lib/rate-limit'
 import { scanRequestBody } from '@/lib/waf'
+import { ttcFromHt } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
             const proposalUuid = product_id
             const { data: proposal, error: propErr } = await supabase
                 .from('ai_client_proposals')
-                .select('id, total_amount')
+                .select('id, total_amount, currency')
                 .eq('id', proposalUuid)
                 .maybeSingle()
 
@@ -184,26 +185,32 @@ export async function POST(request: Request) {
                         { status: 400 }
                     )
                 }
-                const expectedSelection = billable.reduce((s, it) => s + Number(it.selling_price), 0)
-                if (expectedSelection <= 0 || Math.abs(parsedAmount - expectedSelection) > 1) {
+                // TVA EN SUS : les selling_price sont HORS TAXE. Le client
+                // paie le TTC (HT × 1,18). On valide le montant reçu contre le
+                // TTC calculé serveur, et on stocke le TTC.
+                const expectedHT = billable.reduce((s, it) => s + Number(it.selling_price), 0)
+                const expectedTTC = ttcFromHt(expectedHT, proposal.currency)
+                if (expectedTTC <= 0 || Math.abs(parsedAmount - expectedTTC) > 1) {
                     console.error(
-                        `[Checkout/Proposal] Sélection — montant invalide — reçu: ${parsedAmount}, attendu: ${expectedSelection}`
+                        `[Checkout/Proposal] Sélection — montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
                     )
                     return NextResponse.json(
                         { error: 'Montant invalide pour cette sélection. Veuillez actualiser la page.' },
                         { status: 400 }
                     )
                 }
-                validatedAmount = expectedSelection
+                validatedAmount = expectedTTC
                 proposalSelection = billable.map(it => ({
                     proposal_item_id: it.id, title: it.title, price: Number(it.selling_price),
                 }))
             } else {
                 // ── Proposition complète (comportement historique) ──
-                // Validation stricte du montant : tolérance 1 XOF pour arrondis
-                if (Math.abs(parsedAmount - proposal.total_amount) > 1) {
+                // TVA EN SUS : total_amount est HORS TAXE ; le client paie le
+                // TTC (× 1,18). Validation stricte contre le TTC serveur.
+                const expectedTTC = ttcFromHt(Number(proposal.total_amount), proposal.currency)
+                if (Math.abs(parsedAmount - expectedTTC) > 1) {
                     console.error(
-                        `[Checkout/Proposal] Montant invalide — reçu: ${parsedAmount}, attendu: ${proposal.total_amount}`
+                        `[Checkout/Proposal] Montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
                     )
                     return NextResponse.json(
                         { error: 'Montant invalide pour cette proposition. Veuillez actualiser la page.' },
@@ -211,8 +218,8 @@ export async function POST(request: Request) {
                     )
                 }
 
-                // Utiliser le montant côté serveur, jamais celui du client
-                validatedAmount = proposal.total_amount
+                // Montant TTC calculé serveur, jamais celui du client
+                validatedAmount = expectedTTC
             }
 
             // Les coupons boutique ne s'appliquent pas aux propositions voyage

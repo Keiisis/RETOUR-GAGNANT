@@ -10,6 +10,7 @@ import {
 import Link from 'next/link'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin, convertCurrency, refreshRates } from '@/lib/currency'
+import { fromHt } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
@@ -279,11 +280,18 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     // Devise du devis (celle saisie par l'agent). Les montants (selling_price /
     // total_amount) sont exprimés DANS cette devise.
     const proposalCurrency = ((proposal?.currency || 'XOF').toUpperCase()) as CurrencyCode
-    // Montant converti en XOF (FCFA) pour les passerelles qui n'encaissent QU'EN
-    // XOF (Kkiapay, FedaPay, Zeyow). 337 EUR -> ~221 057 XOF, dynamiquement.
-    const payableXof = proposalCurrency === 'XOF'
-        ? Math.round(payableTotal)
-        : convertCurrency(payableTotal, proposalCurrency, 'XOF')
+
+    // TVA EN SUS : payableTotal est le prix HORS TAXE. La TVA s'ajoute dessus —
+    // le client paie le TTC. fromHt garantit HT + TVA = TTC.
+    const { tva: payableTVA, ttc: payableTTC } = fromHt(payableTotal, proposalCurrency)
+
+    // Conversion en XOF (FCFA) pour les passerelles qui n'encaissent QU'EN XOF
+    // (Kkiapay, FedaPay, Zeyow). On convertit le TTC — c'est ce qui est chargé.
+    const toXof = (m: number) => proposalCurrency === 'XOF'
+        ? Math.round(m) : convertCurrency(m, proposalCurrency, 'XOF')
+    const payableXof = toXof(payableTTC)   // TTC en XOF (montant réellement chargé)
+    const htXof = toXof(payableTotal)      // pour le détail affiché
+    const tvaXof = toXof(payableTVA)
 
     const toggleItem = (id: string) => {
         setSelectedIds(prev => {
@@ -316,7 +324,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                     product_title: `${payLabel} - ${proposal.client_name}`,
                     is_proposal: true,
                     quantity: 1,
-                    amount: payableTotal,
+                    amount: payableTTC,
                     selected_item_ids: hasItemSelection ? Array.from(selectedIds) : undefined,
                     currency: proposal.currency || 'XOF',
                     customer_name: customerName,
@@ -624,9 +632,20 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                     })}
                                 </div>
                                 <div className="border-t border-slate-200 pt-3">
+                                    {/* Détail HT + TVA (la TVA s'ajoute au prix) */}
+                                    <div className="space-y-1 mb-2 text-xs text-slate-500">
+                                        <div className="flex justify-between">
+                                            <span>Sous-total HT</span>
+                                            <span><Price amount={htXof} currency="XOF" forceDisplayCurrency="XOF" /> XOF</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>TVA 18 %</span>
+                                            <span><Price amount={tvaXof} currency="XOF" forceDisplayCurrency="XOF" /> XOF</span>
+                                        </div>
+                                    </div>
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-amber-500 font-bold text-sm">
-                                            Total{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
+                                            Total TTC{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
                                         </span>
                                         <CurrencySelector
                                             value={selectedCurrency}
