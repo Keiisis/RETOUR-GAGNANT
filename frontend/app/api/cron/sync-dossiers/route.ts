@@ -83,37 +83,58 @@ export async function POST(request: Request) {
             return NextResponse.json({ synced: 0, message: 'Aucun dossier boutique à synchroniser' })
         }
 
-        // 2. Extraire les IDs de commandes
-        const orderIds = dossiers
+        // 2. Extraire les FRAGMENTS d'identifiant de commande
+        //
+        // `num_dossier` vaut « RG-CMD-6EF058C6 » : les 8 premiers caractères
+        // de l'UUID de la commande, en majuscules — PAS l'UUID entier.
+        // L'ancien code les passait tels quels à `in('id', …)`, ce que
+        // PostgreSQL rejette (« invalid input syntax for type uuid ») : la
+        // requête échouait, la route renvoyait 500, et AUCUN dossier n'a
+        // jamais été synchronisé.
+        const fragments = dossiers
             .map(d => d.num_dossier?.match(/^RG-CMD-(.+)$/)?.[1])
-            .filter(Boolean) as string[]
+            .filter(Boolean)
+            .map(f => (f as string).toLowerCase())
 
-        if (orderIds.length === 0) {
+        if (fragments.length === 0) {
             return NextResponse.json({ synced: 0 })
         }
 
         // 3. Récupérer les commandes correspondantes
+        //
+        // Un préfixe d'UUID ne peut pas être filtré côté base sans transtypage
+        // (et un index sur uuid ne sert pas un LIKE). Le volume ici est celui
+        // des commandes boutique : on les lit et on apparie par préfixe.
         const { data: orders, error: oErr } = await supabase
             .from('orders')
             .select('id, payment_status')
-            .in('id', orderIds)
+            .order('created_at', { ascending: false })
+            .limit(5000)
 
         if (oErr) {
             console.error('[sync-dossiers] Erreur fetch orders:', oErr.message)
             return NextResponse.json({ error: oErr.message }, { status: 500 })
         }
 
-        const orderMap = new Map((orders || []).map(o => [o.id, o.payment_status]))
+        // Table de correspondance « 8 premiers caractères → statut »
+        const parFragment = new Map<string, string>()
+        for (const o of orders || []) {
+            const cle = String(o.id).slice(0, 8).toLowerCase()
+            // Collision de préfixe (2 sur 8 caractères hexadécimaux) :
+            // improbable, mais on garde la commande la plus récente, déjà
+            // en tête grâce au tri.
+            if (!parFragment.has(cle)) parFragment.set(cle, o.payment_status)
+        }
 
         // 4. Synchroniser
         let synced = 0
         const updates: Promise<unknown>[] = []
 
         for (const dossier of dossiers) {
-            const orderId = dossier.num_dossier?.match(/^RG-CMD-(.+)$/)?.[1]
-            if (!orderId) continue
+            const fragment = dossier.num_dossier?.match(/^RG-CMD-(.+)$/)?.[1]
+            if (!fragment) continue
 
-            const paymentStatus = orderMap.get(orderId)
+            const paymentStatus = parFragment.get(fragment.toLowerCase())
             if (!paymentStatus) continue
 
             const { progression, etapeIndex, statut } = progressionFromStatus(paymentStatus)

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executerCron } from '@/lib/cron-journal'
 import { requireCron } from '@/lib/api-guard'
+import { POST as checkExpiredHandler } from '@/app/api/genealogie/check-expired/route'
 
-const CRON_SECRET = process.env.CRON_SECRET || ''
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 /**
@@ -17,17 +17,29 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantb
  * Vercel cron envoie GET ; on accepte aussi POST pour test manuel.
  */
 async function runCheckExpired() {
-    const targetUrl = `${SITE_URL}/api/genealogie/check-expired`
-    const res = await fetch(targetUrl, {
+    // APPEL DIRECT, pas de requête HTTP vers notre propre domaine.
+    //
+    // La version précédente faisait un fetch sur ${SITE_URL}/api/genealogie/
+    // check-expired. Cette requête ressort de la fonction Vercel et rentre par
+    // le bord : elle traverse donc le WAF, qui la bloquait (403 « Requête
+    // bloquée par le pare-feu applicatif »). Le cron répondait 403 sans que
+    // personne ne le voie — aucune notification d'expiration n'est partie.
+    //
+    // Importer le handler supprime le réseau, le WAF et la latence d'un
+    // aller-retour. Le secret reste transmis : la route cible sert aussi aux
+    // appels du personnel et vérifie sa propre autorisation.
+    const requete = new NextRequest(`${SITE_URL}/api/genealogie/check-expired`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CRON_SECRET}`,
+            Authorization: `Bearer ${process.env.CRON_SECRET || ''}`,
         },
         body: JSON.stringify({}),
     })
 
+    const res = await checkExpiredHandler(requete)
     const data = await res.json().catch(() => ({}))
+
     return NextResponse.json({
         triggered_at: new Date().toISOString(),
         status: res.status,
