@@ -8,7 +8,7 @@ import {
     Globe2, CheckCircle2, Clock, Download,
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
-    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon
+    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -119,6 +119,25 @@ export default function AdminNationalitePage() {
             if (res.ok) setApps(prev => prev.filter(x => x.id !== a.id))
             else { const j = await res.json().catch(() => ({})); alert(j.error || 'Suppression impossible.') }
         } finally { setDeletingId(null) }
+    }
+
+    // ── Réinitialisation des pièces (efface les fichiers, garde le dossier) ──
+    const [resettingId, setResettingId] = useState<string | null>(null)
+    const resetDocs = async (a: Application) => {
+        if (!confirm(`Effacer TOUTES les pièces jointes de ${a.prenom} ${a.nom} (${a.application_ref}) ?\nLe dossier et le paiement sont conservés. Le client pourra re-déposer via une nouvelle relance. Action irréversible.`)) return
+        setResettingId(a.id)
+        try {
+            const res = await fetch(`/api/admin/nationalite/${a.id}/reset-documents`, { method: 'POST' })
+            const j = await res.json().catch(() => ({}))
+            if (res.ok && j.success) {
+                setApps(prev => prev.map(x => x.id === a.id ? { ...x, documents_uploaded: [] } : x))
+                alert(`Pièces effacées (${j.filesRemoved} fichier(s) supprimé(s)). Vous pouvez maintenant relancer le client.`)
+            } else {
+                alert(j.error || 'Réinitialisation impossible.')
+            }
+        } catch {
+            alert('Erreur réseau.')
+        } finally { setResettingId(null) }
     }
 
     // ── Prévisualisation des documents (URLs signées) ──
@@ -294,6 +313,11 @@ export default function AdminNationalitePage() {
                                             )}
                                             <button onClick={() => openEdit(a)} className="bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Pencil size={12} /> <T>Éditer</T></button>
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Download size={12} /> <T>Télécharger ZIP</T></button>
+                                            <button onClick={() => resetDocs(a)} disabled={resettingId === a.id}
+                                                title={t('Efface toutes les pièces jointes (garde le dossier + paiement) pour permettre un nouveau dépôt propre via relance')}
+                                                className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1">
+                                                {resettingId === a.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />} <T>Réinitialiser les pièces</T>
+                                            </button>
                                             <button
                                                 onClick={() => sendRelance(a.id, 'docs')}
                                                 disabled={relanceState[`${a.id}:docs`] === 'sending'}
