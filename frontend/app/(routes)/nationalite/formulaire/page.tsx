@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { compressImage } from '@/lib/compress-image'
 import Script from 'next/script'
 import {
     ArrowLeft, ArrowRight, CheckCircle2,
@@ -493,10 +494,17 @@ export default function NationaliteFormPage() {
 
         // Documents complémentaires nommés (mode MyAfroOrigins) fusionnés dans la
         // file d'upload avec une clé unique et le nom saisi par le client.
-        const allDocs = [
+        const baseDocs = [
             ...rawDocs,
             ...customDocs.map((d, k) => ({ key: `custom_${k}`, label: d.name || `Document ${k + 1}`, name: d.name, file: d.file })),
         ]
+
+        // Compression native des IMAGES avant envoi (photos de documents prises
+        // au téléphone : 5-15 Mo → < 1 Mo). PDF/scans laissés intacts. Le nom
+        // affiché reste l'original ; seul le fichier téléversé est allégé.
+        const allDocs = await Promise.all(
+            baseDocs.map(async d => ({ ...d, file: await compressImage(d.file) })),
+        )
 
         let lastUploadError = ''
 
