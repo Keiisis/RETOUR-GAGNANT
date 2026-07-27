@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Settings, Save, Loader2, CheckCircle2, AlertCircle,
     Palette, Share2, Globe, CreditCard, Mail, MonitorPlay,
-    Edit2, X, RefreshCw, Database
+    Edit2, X, RefreshCw, Database, ShieldCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -73,6 +73,7 @@ const SUB_PAGE_CATEGORIES: Record<string, string> = {
     email: '/admin/settings/email',
     payment: '/admin/settings/payment',
     frontend: '/admin/settings/frontend',
+    mecef: '/admin/settings/mecef',
 }
 
 interface Toast { id: number; type: 'success' | 'error'; msg: string }
@@ -367,6 +368,13 @@ export default function AdminSettingsPage() {
                             color: '#FCD116',
                             title: 'Passerelles de Paiement',
                             desc: 'Kkiapay, FedaPay, Zeyow, Stripe, PayPal — sandbox/production.',
+                        },
+                        {
+                            href: '/admin/settings/mecef',
+                            icon: ShieldCheck,
+                            color: '#008751',
+                            title: 'Normalisation e-MCF (DGI)',
+                            desc: 'Jeton API, sandbox/production, opérateur — factures normalisées automatiquement.',
                         },
                         {
                             href: '/admin/settings/frontend',

@@ -74,6 +74,28 @@ export async function getMecefConfig(supabase: SupabaseClient): Promise<MecefCon
     }
 }
 
+/**
+ * Teste la connexion à l'API e-MCF (GET /info) et renvoie les infos du
+ * contribuable. Sert à valider le jeton avant toute normalisation.
+ * @throws Error avec le message DGI si le jeton est invalide/injoignable.
+ */
+export async function getInfo(cfg: MecefConfig): Promise<{ sandbox: boolean; info: unknown }> {
+    if (!cfg.token) throw new Error('Jeton e-MCF manquant.')
+    const base = cfg.sandbox ? BASE.sandbox : BASE.prod
+    const res = await fetch(`${base}/info`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${cfg.token}` },
+    })
+    const txt = await res.text()
+    let info: unknown = txt
+    try { info = JSON.parse(txt) } catch { /* non-JSON */ }
+    if (!res.ok) {
+        const msg = (info && typeof info === 'object' && 'message' in info) ? String((info as Record<string, unknown>).message) : txt.slice(0, 200)
+        throw new Error(`DGI e-MCF (info) : ${res.status} — ${msg}`)
+    }
+    return { sandbox: cfg.sandbox, info }
+}
+
 /** Groupe de taxe e-MCF : B = 18 % (taux normal), D = exonéré. */
 function taxGroup(tva: number): string {
     return Number(tva) > 0 ? 'B' : 'D'
