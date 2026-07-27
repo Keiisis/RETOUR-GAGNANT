@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import path from 'node:path'
 import withPWAInit from '@ducanh2912/next-pwa'
 
 const withPWA = withPWAInit({
@@ -68,6 +69,10 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Trace de fichiers scopée au dossier frontend. Sans ça, les lockfiles à la
+  // racine du repo (skills-lock.json…) font remonter la racine du workspace et
+  // Next trace des fichiers hors-projet (build plus lourd, plus de RAM).
+  outputFileTracingRoot: path.join(__dirname),
   headers: async () => [
     {
       source: '/(.*)',
@@ -83,6 +88,22 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // Vercel build (2 cœurs / 8 Go) tombait en OOM (SIGKILL) depuis que
+    // l'app a grossi. Ce flag officiel Next.js libère le graphe de modules
+    // au fil de la compilation → pic mémoire fortement réduit.
+    webpackMemoryOptimizations: true,
+  },
+  // Compilation webpack (imposée par next-pwa). On bride la mémoire au lieu
+  // de passer aux Elastic Build Machines payantes :
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      // webpack parallélise jusqu'à 100 modules → pic RAM. Sur 2 cœurs c'est
+      // inutile : on limite pour lisser la mémoire (build un peu plus long).
+      config.parallelism = 1
+      // Pas de source maps serveur en prod (grosses allocations, inutiles).
+      config.devtool = false
+    }
+    return config
   },
   turbopack: {},
 }
