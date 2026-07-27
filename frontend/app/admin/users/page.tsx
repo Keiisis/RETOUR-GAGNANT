@@ -10,6 +10,7 @@ import {
     Users, Crown, UserCheck, Lock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { visibleInterval } from '@/lib/visible-interval'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AdminUser {
@@ -350,14 +351,14 @@ export default function AdminUsersPage() {
 
     useEffect(() => { fetchUsers() }, [fetchUsers])
 
-    // Auto-refresh online status every 30s
+    // Rafraîchit le statut en ligne toutes les 60s, en pause quand l'onglet est
+    // en arrière-plan (fetchUsers a déjà chargé au montage → pas de tir immédiat).
     useEffect(() => {
-        const interval = setInterval(() => {
+        return visibleInterval(() => {
             fetch('/api/admin/users').then(r => r.json()).then(d => {
                 if (d.users) setUsers(d.users)
             }).catch(() => { })
-        }, 30000)
-        return () => clearInterval(interval)
+        }, 60_000, { runImmediately: false })
     }, [])
 
     const isOnline = (last: string | null) =>

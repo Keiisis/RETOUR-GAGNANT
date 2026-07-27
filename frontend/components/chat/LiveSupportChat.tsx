@@ -4,6 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { visibleInterval } from "@/lib/visible-interval";
 import { Send, HeadphonesIcon, Loader2, User } from "lucide-react";
 
 interface LiveSupportChatProps {
@@ -28,7 +29,9 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
     const [isSubmitting, setIsSubmitting] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    // Contient la fonction de nettoyage du polling (visibleInterval) — le poll
+    // se met en pause quand l'onglet est en arrière-plan.
+    const pollingRef = useRef<(() => void) | null>(null);
     const lastCountRef = useRef(0);
 
     const scrollToBottom = () => {
@@ -56,9 +59,10 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
 
     // Start polling when session is active
     const startPolling = useCallback((sid: string) => {
-        if (pollingRef.current) clearInterval(pollingRef.current);
+        if (pollingRef.current) pollingRef.current();
         fetchMessages(sid);
-        pollingRef.current = setInterval(() => fetchMessages(sid), 3000);
+        // 5s pendant la conversation, en pause quand l'onglet est en arrière-plan.
+        pollingRef.current = visibleInterval(() => fetchMessages(sid), 5000, { runImmediately: false });
     }, [fetchMessages]);
 
     // Initial check for an active session
@@ -87,7 +91,7 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
         checkSession();
 
         return () => {
-            if (pollingRef.current) clearInterval(pollingRef.current);
+            if (pollingRef.current) { pollingRef.current(); pollingRef.current = null; }
         };
     }, [email]);
 
@@ -97,7 +101,7 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
         startPolling(sessionId);
 
         return () => {
-            if (pollingRef.current) clearInterval(pollingRef.current);
+            if (pollingRef.current) { pollingRef.current(); pollingRef.current = null; }
         };
     }, [sessionId, startPolling]);
 

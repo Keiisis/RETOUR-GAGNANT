@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import { visibleInterval } from '@/lib/visible-interval'
 import {
     Activity, Globe, Monitor, Smartphone, Tablet,
     TrendingUp, Users, Eye, MapPin, Clock,
@@ -162,7 +163,6 @@ export default function AnalyticsLivePage() {
     const [autoRefresh, setAutoRefresh] = useState(true)
     const [newVisitorIds, setNewVisitorIds] = useState<Set<string>>(new Set())
     const prevSessionIds = useRef<Set<string>>(new Set())
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     const fetchData = useCallback(async () => {
         try {
@@ -193,13 +193,11 @@ export default function AnalyticsLivePage() {
         fetchData()
     }, [fetchData])
 
+    // Rafraîchit toutes les 15s quand l'auto-refresh est actif, en PAUSE dès que
+    // l'onglet passe en arrière-plan (un dashboard laissé ouvert ne consomme plus).
     useEffect(() => {
-        if (autoRefresh) {
-            intervalRef.current = setInterval(fetchData, 10_000) // refresh toutes les 10s
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current)
-        }
-        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+        if (!autoRefresh) return
+        return visibleInterval(fetchData, 15_000, { runImmediately: false })
     }, [autoRefresh, fetchData])
 
     // Unique sessions actives (dedupliqué par session_id)

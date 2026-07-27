@@ -18,6 +18,7 @@ import { useTranslation, T } from '@/lib/translation'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { visibleInterval } from '@/lib/visible-interval'
 
 // ═══════════════════════════════════════════
 // Types
@@ -257,10 +258,11 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             }
         }
 
-        sendHeartbeat() // Send immediately on load
-        const interval = setInterval(sendHeartbeat, 30_000) // Every 30s (était 60s)
-
-        return () => clearInterval(interval)
+        // Présence : seuil « en ligne » = vu il y a < 5 min. Un heartbeat toutes
+        // les 90s suffit largement, et on met en PAUSE quand l'onglet est en
+        // arrière-plan (l'agent n'est pas actif) → économie majeure d'Edge Requests.
+        // Retour au premier plan → rejoue immédiatement (statut « en ligne » restauré).
+        return visibleInterval(sendHeartbeat, 90_000)
     }, [isLoginPage, agent?.id])
 
     // ─── Realtime Unread Counts ───
