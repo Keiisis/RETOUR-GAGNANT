@@ -498,29 +498,63 @@ export default function NationaliteFormPage() {
             ...customDocs.map((d, k) => ({ key: `custom_${k}`, label: d.name || `Document ${k + 1}`, name: d.name, file: d.file })),
         ]
 
-        // Upload documents to Supabase Storage (with 1 retry)
+        let lastUploadError = ''
+
+        // Chemins d'upload SIGNÉS côté serveur (service role → bypass RLS). Avant,
+        // l'upload navigateur utilisait la clé anon et dépendait des policies RLS
+        // du bucket : dès qu'elles refusaient l'INSERT anon, TOUS les fichiers
+        // échouaient (« upload échoué »). La signature serveur supprime cette
+        // dépendance. Le transfert du fichier reste direct navigateur → Storage.
+        let signed: { key: string; path: string; token: string }[] = []
+        try {
+            const r = await fetch('/api/nationality/upload-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    files: allDocs.map(d => ({ key: d.key, ext: d.file.name.split('.').pop() || 'bin' })),
+                }),
+            })
+            const j = await r.json().catch(() => ({}))
+            if (r.ok && Array.isArray(j.uploads)) signed = j.uploads
+            else lastUploadError = j?.error || `Préparation du dépôt refusée (HTTP ${r.status})`
+        } catch (e) {
+            lastUploadError = e instanceof Error ? e.message : 'Réseau indisponible'
+        }
+
+        // Upload (1 réessai). Voie signée si disponible, sinon repli anon direct.
         for (let i = 0; i < allDocs.length; i++) {
             const doc = allDocs[i]
-            const ext = doc.file.name.split('.').pop()
-            const folder = `nat-${Date.now()}`
-            const filename = `${folder}/${doc.key}_${i}.${ext}`
-
+            const sig = signed[i]
             let uploaded = false
-            for (let attempt = 0; attempt < 2; attempt++) {
+            for (let attempt = 0; attempt < 2 && !uploaded; attempt++) {
                 try {
-                    const { data, error } = await supabase.storage.from('nationality_documents').upload(filename, doc.file, {
-                        cacheControl: '3600',
-                        upsert: attempt > 0,
-                    })
-                    if (data && !error) {
-                        finalUploadedUrls.push(`${doc.key}:${doc.label}: ${filename}`)
-                        uploaded = true
-                        break
+                    if (sig) {
+                        const { data, error } = await supabase.storage.from('nationality_documents')
+                            .uploadToSignedUrl(sig.path, sig.token, doc.file)
+                        if (data && !error) {
+                            finalUploadedUrls.push(`${doc.key}:${doc.label}: ${sig.path}`)
+                            uploaded = true
+                        } else if (error) {
+                            lastUploadError = error.message
+                            console.error(`[UPLOAD] Echec signé tentative ${attempt + 1} "${t(doc.label)}":`, error.message)
+                        }
                     } else {
-                        console.error(`[UPLOAD] Echec tentative ${attempt + 1} pour "${t(doc.label)}":`, error?.message)
+                        // Repli si /upload-url a échoué : upload anon direct.
+                        const ext = doc.file.name.split('.').pop()
+                        const filename = `nat-${Date.now()}/${doc.key}_${i}.${ext}`
+                        const { data, error } = await supabase.storage.from('nationality_documents')
+                            .upload(filename, doc.file, { cacheControl: '3600', upsert: attempt > 0 })
+                        if (data && !error) {
+                            finalUploadedUrls.push(`${doc.key}:${doc.label}: ${filename}`)
+                            uploaded = true
+                        } else if (error) {
+                            lastUploadError = error.message
+                            console.error(`[UPLOAD] Echec anon tentative ${attempt + 1} "${t(doc.label)}":`, error.message)
+                        }
                     }
                 } catch (err) {
-                    console.error(`[UPLOAD] Erreur tentative ${attempt + 1} pour "${t(doc.label)}":`, err)
+                    lastUploadError = err instanceof Error ? err.message : String(err)
+                    console.error(`[UPLOAD] Erreur tentative ${attempt + 1} "${t(doc.label)}":`, err)
                 }
             }
             if (!uploaded) {
@@ -531,7 +565,7 @@ export default function NationaliteFormPage() {
         }
 
         if (uploadFailCount > 0) {
-            console.warn(`[UPLOAD] ${uploadFailCount}/${allDocs.length} fichier(s) n'ont pas pu être envoyés.`)
+            console.warn(`[UPLOAD] ${uploadFailCount}/${allDocs.length} fichier(s) non envoyés. Dernier motif : ${lastUploadError || 'inconnu'}`)
         }
 
         setUploadProgress(70)
