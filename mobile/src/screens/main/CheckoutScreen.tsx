@@ -26,6 +26,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { ttcFromHt, tvaFromHt } from '../../lib/tax'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 
@@ -192,6 +193,10 @@ function Field({
 export default function CheckoutScreen({ navigation, route }: { navigation: Nav; route: Route }) {
     const insets = useSafeAreaInsets()
     const { cart, total } = route.params
+    // TVA « en sus » : le total passé est HORS TAXE (prix produits). Le client
+    // paie le TTC (HT × 1,18), comme sur le web.
+    const totalTtc = ttcFromHt(total)
+    const totalTva = tvaFromHt(total)
     const { t } = useLang()
     const { profile } = useAuth()
 
@@ -331,7 +336,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     customer_phone: form.phone.trim(),
                     customer_email: form.email.trim() || profile.email || null,
                     cart_items: cartItemsPayload,
-                    amount: total,
+                    amount: totalTtc,
                     currency: 'XOF',
                     transaction_id: txId,
                     shipping: {
@@ -460,13 +465,21 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             )
                         })}
 
-                        {/* Total */}
+                        {/* Sous-total HT + TVA + Total TTC */}
+                        <View style={styles.taxRow}>
+                            <Text style={styles.taxLabel}>{t('Sous-total HT')}</Text>
+                            <Text style={styles.taxValue}>{formatPrice(total)}</Text>
+                        </View>
+                        <View style={styles.taxRow}>
+                            <Text style={styles.taxLabel}>{t('TVA 18%')}</Text>
+                            <Text style={styles.taxValue}>{formatPrice(totalTva)}</Text>
+                        </View>
                         <View style={styles.totalRow}>
                             <View>
                                 <Text style={styles.totalLabel}>{t('Total à payer')}</Text>
                                 <Text style={styles.totalSubLabel}>{t('TTC, livraison incluse')}</Text>
                             </View>
-                            <Text style={styles.totalValue}>{formatPrice(total)}</Text>
+                            <Text style={styles.totalValue}>{formatPrice(totalTtc)}</Text>
                         </View>
                     </View>
                 </AnimatedSection>
@@ -608,7 +621,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             <View style={styles.bottomBar}>
                 <View style={styles.bottomBarInfo}>
                     <Text style={styles.bottomBarLabel}>{t('Total')}</Text>
-                    <Text style={styles.bottomBarTotal}>{formatPrice(total)}</Text>
+                    <Text style={styles.bottomBarTotal}>{formatPrice(totalTtc)}</Text>
                 </View>
 
                 <View style={styles.payBtnWrap}>
@@ -635,7 +648,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
             <KkiapayModal
                 visible={showPayment}
-                amount={String(total)}
+                amount={String(totalTtc)}
                 serviceName={cart.map(c => c.product.title).join(', ')}
                 onClose={() => setShowPayment(false)}
                 onSuccess={handlePaymentSuccess}
@@ -858,12 +871,20 @@ const styles = StyleSheet.create({
     },
 
     /* ── Total ── */
+    taxRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 6,
+    },
+    taxLabel: { fontSize: 12.5, color: C.textMuted },
+    taxValue: { fontSize: 12.5, color: C.textSec, fontWeight: '600' },
     totalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        marginTop: 14,
-        paddingTop: 16,
+        marginTop: 12,
+        paddingTop: 14,
         borderTopWidth: 1,
         borderTopColor: C.border,
     },

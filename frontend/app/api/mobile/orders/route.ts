@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
+import { ttcFromHt } from '@/lib/tax'
 import { assertOwnership, createSupabaseOwnershipResolver } from '@/lib/waf'
 import { getMobileUserId } from '@/lib/mobile-auth'
 
@@ -258,9 +259,18 @@ export async function POST(req: NextRequest) {
             const unit = (p.sale_price && p.sale_price < p.price) ? p.sale_price : p.price
             serverTotal += unit * qty
         }
-        if (Math.abs(amount - serverTotal) > 1) {
+        // TVA « en sus » : les prix produits sont HORS TAXE. Le client paie le
+        // TTC (HT × 1,18), comme sur le web. On accepte l'ancien montant HT
+        // (app pas encore mise à jour) OU le TTC (nouvelle app) → non-bloquant.
+        const serverTotalHt = serverTotal
+        const serverTotalTtc = ttcFromHt(serverTotalHt)
+        const okHt = Math.abs(amount - serverTotalHt) <= 1
+        const okTtc = Math.abs(amount - serverTotalTtc) <= 1
+        if (!okHt && !okTtc) {
             return NextResponse.json({ error: 'Montant incohérent — actualisez votre panier' }, { status: 400 })
         }
+        // On enregistre le montant RÉELLEMENT payé (celui validé côté client).
+        const chargedAmount = okTtc ? serverTotalTtc : serverTotalHt
 
         // Create order with shipping if provided
         const shipping = body.shipping || {}
@@ -269,7 +279,7 @@ export async function POST(req: NextRequest) {
             customer_name: body.customer_name,
             customer_phone: body.customer_phone,
             customer_email: body.customer_email || null,
-            amount: serverTotal,
+            amount: chargedAmount,
             currency: body.currency || 'XOF',
             payment_method: 'kkiapay',
             payment_status: 'completed',
