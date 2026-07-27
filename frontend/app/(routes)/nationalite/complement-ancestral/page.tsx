@@ -236,11 +236,7 @@ function ComplementAncestralContent() {
                         className="max-w-4xl flex flex-col md:flex-row items-center gap-8"
                     >
                         <div className="shrink-0 drop-shadow-[0_0_30px_rgba(252,209,22,0.3)]">
-                            <motion.div
-                                className="w-28 h-28 md:w-36 md:h-36 relative"
-                                animate={{ y: [0, -12, 0] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                            >
+                            <div className="w-28 h-28 md:w-36 md:h-36 relative">
                                 <Image
                                     src="/assets/icones/Recherche Ancestrale.png"
                                     alt="Recherche Ancestrale"
@@ -248,7 +244,7 @@ function ComplementAncestralContent() {
                                     className="object-contain"
                                     sizes="144px"
                                 />
-                            </motion.div>
+                            </div>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-3">

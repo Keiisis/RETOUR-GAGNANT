@@ -120,11 +120,7 @@ export default function NationaliteVipPage() {
                         className="max-w-4xl flex flex-col md:flex-row items-center gap-8"
                     >
                         <div className="shrink-0 drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">
-                            <motion.div
-                                className="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center relative"
-                                animate={{ y: [0, -15, 0], rotate: [0, 4, -4, 0] }}
-                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                            >
+                            <div className="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center relative">
                                 <Image
                                     src="/assets/icones/Nationalité Béninoise VIP.png"
                                     alt="Nationalité Béninoise VIP"
@@ -132,7 +128,7 @@ export default function NationaliteVipPage() {
                                     className="object-contain bg-transparent drop-shadow-[0_15px_35px_rgba(0,0,0,0.4)]"
                                     sizes="160px"
                                 />
-                            </motion.div>
+                            </div>
                         </div>
                         <div>
                             <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4">

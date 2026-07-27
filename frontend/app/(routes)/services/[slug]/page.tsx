@@ -404,36 +404,20 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                         >
                             <div className="shrink-0 drop-shadow-[0_0_30px_rgba(252,209,22,0.4)]">
                                 {service.image_url ? (
-                                    <motion.div
-                                        className="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center origin-center"
-                                        animate={{
-                                            y: [0, -15, 0],
-                                            rotate: [0, 4, -4, 0]
-                                        }}
-                                        transition={{
-                                            duration: 6,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    >
+                                    <div className="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center origin-center">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={service.image_url}
                                             alt={service.title}
                                             className="w-full h-full object-contain bg-transparent drop-shadow-[0_15px_35px_rgba(0,0,0,0.4)]"
                                         />
-                                    </motion.div>
+                                    </div>
                                 ) : (
-                                    <motion.div
-                                        animate={{ y: [0, -10, 0] }}
-                                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                                    >
-                                        <GoldenIcon
-                                            // @ts-expect-error — icon_type is a valid prop but not typed
-                                            type={service.icon_type}
-                                            className="w-32 h-32 md:w-40 md:h-40"
-                                        />
-                                    </motion.div>
+                                    <GoldenIcon
+                                        // @ts-expect-error — icon_type is a valid prop but not typed
+                                        type={service.icon_type}
+                                        className="w-32 h-32 md:w-40 md:h-40"
+                                    />
                                 )}
                             </div>
                             <div>

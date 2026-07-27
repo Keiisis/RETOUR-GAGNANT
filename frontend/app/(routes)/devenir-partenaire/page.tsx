@@ -284,28 +284,17 @@ export default function DevenirPartenairePage() {
                         <div className="h-1 w-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#008751]" />
 
                         <div className="p-8 space-y-7 text-center">
-                            {/* Animated icon */}
+                            {/* Sceau tricolore (sobre, sans gimmick) */}
                             <motion.div
-                                initial={{ scale: 0, rotate: -20 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.2 }}
+                                initial={{ scale: 0.82, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.7, ease: [0.34, 1.4, 0.64, 1], delay: 0.15 }}
                                 className="flex justify-center"
                             >
-                                <div className="relative [perspective:300px]">
-                                    {/* Volumetric glow */}
-                                    <div className="absolute inset-x-[10%] bottom-[-25%] h-[50%] rounded-full blur-xl opacity-70 bg-[radial-gradient(ellipse,theme(colors.emerald.600)_rgba(0,135,81,0.5),transparent_70%)]" />
-                                    <div className="w-24 h-24 rounded-[28px] flex items-center justify-center relative overflow-hidden [transform:rotateX(5deg)_rotateY(-3deg)] shadow-[0_2px_0_rgba(255,255,255,0.35)_inset,0_2px_0_rgba(0,0,0,0.4)_inset,0_20px_60px_rgba(0,135,81,0.5),0_4px_16px_rgba(0,0,0,0.6),0_0_80px_rgba(0,135,81,0.2)] bg-gradient-to-br from-[#008751] via-emerald-600/90 to-[#008751]/80">
-                                        {/* Glass shine */}
-                                        <div className="absolute inset-0 rounded-[28px] pointer-events-none bg-gradient-to-br from-white/40 via-white/10 to-transparent" />
-                                        <CheckCircle2 size={44} className="relative z-10 text-white drop-shadow-lg" />
+                                <div className="w-24 h-24 rounded-full p-[2.5px] bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D]">
+                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center shadow-[0_12px_40px_-14px_rgba(0,135,81,0.45)]">
+                                        <CheckCircle2 size={42} strokeWidth={1.75} className="text-[#008751]" />
                                     </div>
-                                    {/* Orbit dot */}
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center bg-gradient-to-br from-[#FCD116] to-amber-500 shadow-[0_0_12px_rgba(252,209,22,0.5)]">
-                                        <Star size={10} fill="white" className="text-white" />
-                                    </motion.div>
                                 </div>
                             </motion.div>
 
@@ -314,7 +303,7 @@ export default function DevenirPartenairePage() {
                                     <T>Candidature envoyée !</T>
                                 </h1>
                                 <p className="text-gray-600 leading-relaxed text-[15px]">
-                                    {t("Merci")} <strong className="text-gray-900">{form.contact_name}</strong> ! {t("Notre équipe examine votre dossier sous 48–72h. Vous recevrez une réponse à")} <strong className="text-[#FCD116]">{form.email}</strong>.
+                                    {t("Merci")} <strong className="text-gray-900">{form.contact_name}</strong> ! {t("Notre équipe examine votre dossier sous 48–72h. Vous recevrez une réponse à")} <strong className="text-[#008751]">{form.email}</strong>.
                                 </p>
                             </div>
 
