@@ -709,6 +709,11 @@ export default function ServicesScreen({ navigation }: any) {
     }, [loading, services, lang, preloadTexts])
 
     const handlePress = (svc: ServiceFull) => {
+        // Consultation Fa & Racines → écran dédié (annuaire des prêtres + réservation).
+        if (svc.id === 'consultation-fa-racines') {
+            navigation.navigate('Fa')
+            return
+        }
         navigation.navigate('ServiceDetails', {
             serviceId: svc.id,
             title: svc.title,
