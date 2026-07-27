@@ -8,7 +8,7 @@ import Script from 'next/script'
 import {
     ArrowLeft, ArrowRight, CheckCircle2,
     FileText, Send, ChevronLeft, Loader2, AlertCircle,
-    CreditCard, Heart, Home, Shield, ChevronRight, X, User, Mail, Phone, MapPin, Globe2, Calendar
+    CreditCard, Heart, Shield, ChevronRight, X, User, Mail, Phone, MapPin, Globe2, Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 import { Price, useCurrency } from '@/components/ui/Price'
@@ -186,17 +186,6 @@ export default function NationaliteFormPage() {
         mere_nom: '', mere_prenom: '', mere_date_naissance: '',
         myafro_date: '',
     })
-
-    const [particles] = useState(() => Array.from({ length: 30 }).map((_, i) => ({
-        id: i,
-        width: Math.random() * 8 + 2,
-        height: Math.random() * 8 + 2,
-        bg: ['#008751', '#FCD116', '#E8112D'][i % 3],
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        duration: 3 + Math.random() * 4,
-        delay: Math.random() * 3
-    })))
 
     useEffect(() => {
         // Restaurer la pré-inscription si l'utilisateur revient sur la page
@@ -705,42 +694,67 @@ export default function NationaliteFormPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [paymentDone])
 
-    // ═══ WELCOME HOME ANIMATION ═══
+    // ═══ CONFIRMATION — « Bienvenue chez vous » ═══
+    // Moment émotionnel (retour vers la terre des ancêtres) traité avec sobriété :
+    // un sceau officiel tricolore + la référence présentée comme un numéro de
+    // document. Pas de particules ni de rotation infinie (anti-slop), contraste
+    // corrigé (fond ivoire chaud, texte sombre).
     if (showWelcome) return (
-        <div className="min-h-screen bg-white flex items-center justify-center px-4 overflow-hidden relative">
-            {particles.map((p) => (
-                <motion.div key={p.id} className="absolute rounded-full"
-                    style={{ width: p.width, height: p.height, background: p.bg, left: `${p.left}%`, top: `${p.top}%` }}
-                    animate={{ y: [0, -200, 0], opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
-                    transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }} />
-            ))}
-            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', duration: 1 }} className="relative z-10 text-center max-w-lg">
-                <motion.div className="absolute -inset-20 bg-gradient-to-r from-[#008751]/20 via-[#FCD116]/10 to-[#E8112D]/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
-                <motion.div initial={{ y: 30 }} animate={{ y: 0 }} transition={{ delay: 0.3 }} className="relative">
-                    <motion.div className="w-24 h-24 mx-auto mb-6 relative" animate={{ rotateY: [0, 360] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D] opacity-30 blur-xl" />
-                        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/30 border-2 border-[#FCD116]/30 flex items-center justify-center"><Home size={36} className="text-[#FCD116]" /></div>
-                    </motion.div>
-                    <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="text-4xl md:text-5xl font-black text-gray-900 leading-tight mb-4">
-                        Bienvenue<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]"><T>Chez Vous</T></span>
-                    </motion.h1>
-                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="text-gray-500 text-sm mb-2"><T>Votre demande a été enregistrée avec succès</T></motion.p>
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1, type: 'spring' }} className="inline-block bg-white/5 backdrop-blur-xl border border-[#FCD116]/20 rounded-2xl px-6 py-3 mb-6">
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold"><T>Référence</T></p>
-                        <p className="text-xl font-mono font-black text-[#FCD116]">{appRef}</p>
-                    </motion.div>
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="text-xs text-gray-500 mb-4"><T>Conservez votre référence</T> <span className="text-[#FCD116] font-bold">{appRef}</span> <T>pour suivre votre dossier</T></motion.p>
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.5 }} className="space-y-3">
-                        <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-                            <T>Nous avons conçu une gamme de services pour simplifier chaque étape de votre retour, de l&apos;administratif à l&apos;investissement.</T>
-                        </p>            <div className="flex items-center justify-center gap-1 text-[10px] text-gray-400"><Heart size={10} className="text-[#E8112D]" /> <T>Retour Gagnant Bénin</T></div>
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-                        <Link href="/suivi-dossier" className="bg-gradient-to-r from-[#008751] to-[#00b06a] hover:shadow-[0_8px_30px_rgba(0,135,81,0.4)] text-white font-black text-sm px-6 py-3 rounded-xl transition-all uppercase tracking-widest text-[11px]"> <T>Suivre mon dossier</T></Link>
-                        <Link href="/nationalite" className="bg-white/10 hover:bg-white/15 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all"><T>Retour à la page</T></Link>
-                        <Link href="/" className="text-xs text-gray-500 hover:text-gray-900 transition-colors"><T>Accueil</T></Link>
-                    </motion.div>
+        <div className="min-h-screen bg-[#fdfbf7] flex items-center justify-center px-5 py-12 relative overflow-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(0,135,81,0.07),transparent)]" />
+            <motion.div
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="relative z-10 w-full max-w-lg text-center"
+            >
+                {/* Sceau tricolore */}
+                <motion.div
+                    initial={{ scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.7, ease: [0.34, 1.4, 0.64, 1] }}
+                    className="mx-auto mb-8 w-24 h-24 rounded-full p-[2.5px] bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D]"
+                >
+                    <div className="w-full h-full rounded-full bg-[#fdfbf7] flex items-center justify-center shadow-[0_12px_40px_-14px_rgba(0,135,81,0.45)]">
+                        <CheckCircle2 size={40} className="text-[#008751]" strokeWidth={1.75} />
+                    </div>
                 </motion.div>
+
+                <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-[#008751] mb-3"><T>Demande enregistrée</T></p>
+                <h1 className="font-display text-4xl md:text-5xl text-[#1c1917] tracking-tight text-balance leading-[1.05]">
+                    <T>Bienvenue chez vous</T>
+                </h1>
+                <div className="mx-auto mt-5 mb-6 flex items-center justify-center gap-1.5" aria-hidden>
+                    <span className="h-[3px] w-9 rounded-full bg-[#008751]" />
+                    <span className="h-[3px] w-4 rounded-full bg-[#FCD116]" />
+                    <span className="h-[3px] w-4 rounded-full bg-[#E8112D]" />
+                </div>
+
+                <p className="text-[15px] leading-relaxed text-[#57534e] max-w-md mx-auto">
+                    <T>Votre demande de reconnaissance de nationalité est bien arrivée. Notre équipe juridique la prend en charge et vous tiendra informé(e) à chaque étape.</T>
+                </p>
+
+                {/* Référence — présentée comme un numéro officiel */}
+                <div className="mt-8 inline-flex items-stretch rounded-2xl border border-[#e7e1d8] bg-white overflow-hidden shadow-[0_2px_20px_rgba(28,25,23,0.05)]">
+                    <div className="w-1.5 bg-gradient-to-b from-[#008751] via-[#FCD116] to-[#E8112D]" aria-hidden />
+                    <div className="px-6 py-4 text-left">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a8a29e]"><T>Référence de dossier</T></p>
+                        <p className="font-mono text-xl font-bold text-[#1c1917] tabular-nums tracking-wide mt-0.5">{appRef}</p>
+                    </div>
+                </div>
+                <p className="text-xs text-[#78716c] mt-3"><T>Conservez cette référence pour suivre l&apos;avancement de votre dossier.</T></p>
+
+                <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Link href="/suivi-dossier" className="group inline-flex items-center gap-2 bg-[#008751] hover:bg-[#007445] text-white font-bold text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_28px_rgba(0,135,81,0.28)] hover:shadow-[0_12px_36px_rgba(0,135,81,0.36)] hover:-translate-y-0.5 active:translate-y-0 transition-all">
+                        <T>Suivre mon dossier</T> <ArrowRight size={17} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                    <Link href="/nationalite" className="inline-flex items-center bg-white border border-[#e7e1d8] text-[#44403c] hover:border-[#008751]/40 hover:text-[#008751] font-semibold text-sm px-6 py-3.5 rounded-2xl transition-all">
+                        <T>Retour à la page</T>
+                    </Link>
+                </div>
+                <Link href="/" className="inline-block mt-5 text-xs text-[#78716c] hover:text-[#1c1917] transition-colors underline underline-offset-4 decoration-[#e7e1d8]"><T>Retour à l&apos;accueil</T></Link>
+
+                <div className="mt-10 flex items-center justify-center gap-1.5 text-[11px] text-[#a8a29e]">
+                    <Heart size={11} className="text-[#E8112D]" fill="#E8112D" /> <T>Retour Gagnant Bénin</T>
+                </div>
             </motion.div>
         </div>
     )
