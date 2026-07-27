@@ -74,8 +74,44 @@ export default function AdminFacturationPage() {
     const [mecefTarget, setMecefTarget] = useState<DocumentFinancier | null>(null)
     const [mecefForm, setMecefForm] = useState({ mecef_nim: '', mecef_code: '', mecef_counters: '', mecef_datetime: '', mecef_qr: '', client_ifu: '' })
     const [mecefSaving, setMecefSaving] = useState(false)
+    const [mecefAuto, setMecefAuto] = useState(false)
+    const [mecefAutoError, setMecefAutoError] = useState('')
+
+    // Normalisation AUTOMATIQUE via l'API DGI (remplace la saisie manuelle).
+    const handleAutoMecef = async () => {
+        if (!mecefTarget) return
+        setMecefAuto(true)
+        setMecefAutoError('')
+        try {
+            const res = await fetch('/api/admin/facturation/mecef/normaliser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: mecefTarget.id }),
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                const d = data.document
+                setMecefForm({
+                    mecef_nim: d.mecef_nim || '',
+                    mecef_code: d.mecef_code || '',
+                    mecef_counters: d.mecef_counters || '',
+                    mecef_datetime: d.mecef_datetime ? d.mecef_datetime.slice(0, 16) : '',
+                    mecef_qr: d.mecef_qr || '',
+                    client_ifu: d.client_ifu || mecefForm.client_ifu,
+                })
+                fetchDocuments()
+            } else {
+                setMecefAutoError(data.error || 'Normalisation impossible.')
+            }
+        } catch {
+            setMecefAutoError('Erreur réseau lors de l\'appel à la DGI.')
+        }
+        setMecefAuto(false)
+    }
 
     const openMecef = (doc: DocumentFinancier) => {
+        setMecefAutoError('')
+        setMecefTarget(doc)
         setMecefTarget(doc)
         setMecefForm({
             mecef_nim: doc.mecef_nim || '',
@@ -846,6 +882,22 @@ export default function AdminFacturationPage() {
                             <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
                                 Reportez ici les données de certification de la facture normalisée délivrées par le système <strong>e-MCF/MECeF</strong> de la DGI (code de contrôle, NIM, compteurs, QR). Elles s&apos;affichent alors sur le PDF de la facture.
                             </p>
+
+                            {/* Normalisation AUTOMATIQUE via l'API DGI */}
+                            {!(mecefTarget?.mecef_nim || mecefTarget?.mecef_code) && (
+                                <div className="mb-4">
+                                    <button onClick={handleAutoMecef} disabled={mecefAuto}
+                                        className="w-full bg-[#008751] hover:bg-[#007445] disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                                        {mecefAuto ? <Loader2 className="animate-spin" size={15} /> : <ShieldCheck size={15} />}
+                                        Normaliser automatiquement (API DGI)
+                                    </button>
+                                    <p className="text-[10px] mt-1.5 text-center" style={{ color: 'var(--panel-text-muted, #9CA3AF)' }}>
+                                        Récupère NIM, code, compteurs et QR directement depuis la DGI. À défaut, saisissez-les manuellement ci-dessous.
+                                    </p>
+                                    {mecefAutoError && <p className="text-[11px] mt-2 text-red-500 flex items-center gap-1.5"><X size={12} /> {mecefAutoError}</p>}
+                                </div>
+                            )}
+
                             {([
                                 { k: 'client_ifu', l: 'IFU du client (si professionnel)', ph: '3200000000000' },
                                 { k: 'mecef_code', l: 'Code de contrôle MECeF', ph: 'XXXX-XXXX-XXXX' },
