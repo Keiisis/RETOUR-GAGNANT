@@ -413,25 +413,52 @@ export default function NationaliteFormScreen({ navigation }: any) {
         setLoading(true)
 
         try {
+            // Dépôt en 2 voies : 1) SERVEUR (service role, ≤ 4,4 Mo) — fiable, ne
+            // dépend ni des policies RLS ni du réseau direct vers Storage ;
+            // 2) repli anon direct (gros fichiers / échec serveur). Le motif
+            // d'échec est joint au marqueur (visible côté admin).
             const uploadedUrls: string[] = []
-            const folder = `nat-${Date.now()}`
+            const folder = `nat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
             for (let i = 0; i < rawDocs.length; i++) {
                 const doc = rawDocs[i]
+                const ext = doc.name.split('.').pop() || 'bin'
+                let done = false
+                let reason = ''
+
+                // 1) Voie serveur (multipart) — la plus fiable.
                 try {
-                    const base64 = await FileSystem.readAsStringAsync(doc.file.uri, { encoding: FileSystem.EncodingType.Base64 })
-                    const ext = doc.name.split('.').pop() || 'bin'
-                    const filename = `${folder}/${doc.key}_${i}.${ext}`
-                    const { data, error } = await supabase.storage
-                        .from('nationality_documents')
-                        .upload(filename, decode(base64), {
-                            contentType: doc.file.mimeType || 'application/octet-stream',
-                            upsert: false,
-                        })
-                    if (data && !error) uploadedUrls.push(`${doc.key}: ${filename}`)
-                    else uploadedUrls.push(`${doc.key}: ${doc.name} (upload échoué)`)
+                    const fd = new FormData()
+                    // React Native : fichier référencé par son uri.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    fd.append('file', { uri: doc.file.uri, name: doc.name, type: doc.file.mimeType || 'application/octet-stream' } as any)
+                    fd.append('key', doc.key)
+                    fd.append('ext', ext)
+                    const r = await fetch(`${API_BASE}/api/nationality/upload-file`, { method: 'POST', body: fd })
+                    const j = await r.json().catch(() => ({}))
+                    if (r.ok && j.path) { uploadedUrls.push(`${doc.key}: ${j.path}`); done = true }
+                    else reason = j?.error || `serveur ${r.status}`
                 } catch (e) {
-                    console.warn('[Nationalité] Upload échoué pour', doc.name, e)
-                    uploadedUrls.push(`${doc.key}: ${doc.name} (erreur lecture)`)
+                    reason = e instanceof Error ? e.message : 'réseau serveur'
+                }
+
+                // 2) Repli anon direct (gros fichier ou échec serveur).
+                if (!done) {
+                    try {
+                        const base64 = await FileSystem.readAsStringAsync(doc.file.uri, { encoding: FileSystem.EncodingType.Base64 })
+                        const filename = `${folder}/${doc.key}_${i}.${ext}`
+                        const { data, error } = await supabase.storage
+                            .from('nationality_documents')
+                            .upload(filename, decode(base64), { contentType: doc.file.mimeType || 'application/octet-stream', upsert: false })
+                        if (data && !error) { uploadedUrls.push(`${doc.key}: ${filename}`); done = true }
+                        else if (error) reason = error.message || reason
+                    } catch (e) {
+                        reason = e instanceof Error ? e.message : reason
+                    }
+                }
+
+                if (!done) {
+                    console.warn('[Nationalité] Upload échoué pour', doc.name, reason)
+                    uploadedUrls.push(`${doc.key}: ${doc.name} (upload échoué — ${(reason || 'inconnu').slice(0, 100)})`)
                 }
             }
 
