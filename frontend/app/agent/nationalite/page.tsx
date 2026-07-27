@@ -74,24 +74,25 @@ export default function AgentNationalitePage() {
 
     // Envoie au client un lien sécurisé pour compléter/redéposer ses documents
     // (dossier déjà payé — aucun paiement redemandé).
-    const sendRelance = async (id: string) => {
-        if (relanceState[id] === 'sending') return
-        setRelanceState(prev => ({ ...prev, [id]: 'sending' }))
+    const sendRelance = async (id: string, mode: 'docs' | 'full' = 'docs') => {
+        const stateKey = `${id}:${mode}`
+        if (relanceState[stateKey] === 'sending') return
+        setRelanceState(prev => ({ ...prev, [stateKey]: 'sending' }))
         try {
             const res = await fetch('/api/agent/nationalite/relance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
+                body: JSON.stringify({ id, mode }),
             })
             const data = await res.json()
             if (res.ok && data.success) {
-                setRelanceState(prev => ({ ...prev, [id]: 'sent' }))
+                setRelanceState(prev => ({ ...prev, [stateKey]: 'sent' }))
             } else {
-                setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+                setRelanceState(prev => ({ ...prev, [stateKey]: 'error' }))
                 alert(data.error || 'Échec de l\'envoi de la relance.')
             }
         } catch {
-            setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+            setRelanceState(prev => ({ ...prev, [stateKey]: 'error' }))
             alert('Erreur réseau lors de l\'envoi de la relance.')
         }
     }
@@ -318,16 +319,28 @@ export default function AgentNationalitePage() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Button
-                                        onClick={() => sendRelance(showDetail.id)}
-                                        disabled={relanceState[showDetail.id] === 'sending'}
-                                        title="Envoyer au client un lien sécurisé pour déposer ses documents (sans nouveau paiement)"
-                                        className={`font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9 ${relanceState[showDetail.id] === 'sent' ? 'bg-emerald-600 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
+                                        onClick={() => sendRelance(showDetail.id, 'docs')}
+                                        disabled={relanceState[`${showDetail.id}:docs`] === 'sending'}
+                                        title="Écran léger : le client re-dépose uniquement les pièces manquantes (sans nouveau paiement)"
+                                        className={`font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9 ${relanceState[`${showDetail.id}:docs`] === 'sent' ? 'bg-emerald-600 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
                                     >
-                                        {relanceState[showDetail.id] === 'sending'
+                                        {relanceState[`${showDetail.id}:docs`] === 'sending'
                                             ? <><Loader2 size={14} className="mr-2 animate-spin" /> Envoi…</>
-                                            : relanceState[showDetail.id] === 'sent'
+                                            : relanceState[`${showDetail.id}:docs`] === 'sent'
                                                 ? <><Check size={14} className="mr-2" /> Relance envoyée</>
                                                 : <><Mail size={14} className="mr-2" /> Relancer (documents)</>}
+                                    </Button>
+                                    <Button
+                                        onClick={() => sendRelance(showDetail.id, 'full')}
+                                        disabled={relanceState[`${showDetail.id}:full`] === 'sending'}
+                                        title="Formulaire complet pré-rempli : si des informations aussi doivent être corrigées (sans nouveau paiement)"
+                                        className={`font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9 ${relanceState[`${showDetail.id}:full`] === 'sent' ? 'bg-emerald-600 text-white' : 'bg-slate-600 hover:bg-slate-700 text-white'}`}
+                                    >
+                                        {relanceState[`${showDetail.id}:full`] === 'sending'
+                                            ? <><Loader2 size={14} className="mr-2 animate-spin" /> Envoi…</>
+                                            : relanceState[`${showDetail.id}:full`] === 'sent'
+                                                ? <><Check size={14} className="mr-2" /> Relance envoyée</>
+                                                : <><Mail size={14} className="mr-2" /> Relancer (dossier complet)</>}
                                     </Button>
                                     <Button onClick={() => downloadZip(showDetail.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9">
                                         <Download size={14} className="mr-2" /> ZIP

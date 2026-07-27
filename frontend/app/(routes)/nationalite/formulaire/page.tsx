@@ -116,6 +116,11 @@ export default function NationaliteFormPage() {
     // (relance depuis le panel). Aucun paiement redemandé, on met à jour la fiche.
     const [resumeMode, setResumeMode] = useState(false)
     const resumeTokenRef = useRef('')
+    // Reprise « documents seuls » (lien ?mode=docs) : écran léger, on n'affiche
+    // que les pièces encore manquantes et un seul bouton d'envoi (pas les 6 étapes).
+    const [docsOnly, setDocsOnly] = useState(false)
+    // Clés des pièces DÉJÀ reçues (Storage) → masquées en mode docs-only.
+    const [alreadyOkKeys, setAlreadyOkKeys] = useState<string[]>([])
     // Mode MyAfroOrigins : reprise d'un dossier bloqué, tarif réduit 50 €,
     // dépôt libre de documents nommés. Le jeton (dans l'URL) autorise le tarif.
     const [myafroMode, setMyafroMode] = useState(false)
@@ -276,8 +281,10 @@ export default function NationaliteFormPage() {
     // on saute la pré-inscription + le paiement, et la soumission mettra à jour la
     // fiche au lieu d'en créer une nouvelle.
     useEffect(() => {
-        const token = new URLSearchParams(window.location.search).get('resume')
+        const params = new URLSearchParams(window.location.search)
+        const token = params.get('resume')
         if (!token) return
+        const wantDocsOnly = params.get('mode') === 'docs'
         ;(async () => {
             try {
                 const res = await fetch(`/api/nationality/resume?token=${encodeURIComponent(token)}`)
@@ -290,7 +297,15 @@ export default function NationaliteFormPage() {
                     setLawAccepted(true)
                     setPaymentDone(true)
                     if (data.application_ref) setAppRef(data.application_ref)
-                    setStep(1)
+                    // Pièces déjà reçues (lignes succès) → clé = préfixe avant le 1er « : ».
+                    const prior: string[] = Array.isArray(data.documents_uploaded) ? data.documents_uploaded : []
+                    const okKeys = prior
+                        .filter(l => typeof l === 'string' && !l.includes('upload échoué'))
+                        .map(l => l.split(':')[0].trim())
+                        .filter(k => /^[a-z0-9_]+$/i.test(k))
+                    setAlreadyOkKeys(okKeys)
+                    if (wantDocsOnly) { setDocsOnly(true); setStep(4) }
+                    else setStep(1)
                 }
             } catch { /* lien invalide → formulaire normal */ }
         })()
@@ -596,6 +611,9 @@ export default function NationaliteFormPage() {
                         ...cleanedForm,
                         documents: finalUploadedUrls,
                         documents_uploaded: finalUploadedUrls,
+                        // Reprise « documents seuls » : fusionner avec les pièces déjà
+                        // reçues côté serveur (ne pas écraser les docs valides).
+                        merge: docsOnly,
                     })
                 })
                 : await fetch('/api/nationality', {
@@ -849,12 +867,24 @@ export default function NationaliteFormPage() {
             <div className="relative z-10 max-w-3xl mx-auto">
                 <div className="text-center mb-6">
                     <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 mb-3 transition-colors bg-white/80 px-3 py-1.5 rounded-full backdrop-blur-md border border-slate-200 shadow-sm"><ChevronLeft size={14} /> <T>Retour à l&apos;accueil</T></Link>
-                    <h1 className="text-3xl md:text-4xl font-black text-gray-900 drop-shadow-sm"><T>Reconnaissance de Nationalité</T></h1>
-                    <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Veuillez remplir le formulaire ci-dessous</T></p>
+                    {docsOnly ? (
+                        <>
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 drop-shadow-sm">
+                                {form.prenom ? `${t('Bonjour')} ${form.prenom},` : <T>Bonjour,</T>}
+                            </h1>
+                            <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Déposez vos pièces justificatives pour finaliser votre dossier</T>{appRef ? ` — ${appRef}` : ''}.</p>
+                            <p className="text-xs text-emerald-700 mt-1 font-bold"><T>Vos frais sont déjà réglés — aucun paiement ne vous sera redemandé.</T></p>
+                        </>
+                    ) : (
+                        <>
+                            <h1 className="text-3xl md:text-4xl font-black text-gray-900 drop-shadow-sm"><T>Reconnaissance de Nationalité</T></h1>
+                            <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Veuillez remplir le formulaire ci-dessous</T></p>
+                        </>
+                    )}
                 </div>
 
-                {/* Progress */}
-                <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
+                {/* Progress — masqué en reprise « documents seuls » */}
+                {!docsOnly && <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
                     {STEPS.map((s, i) => (
                         <div key={s.num} className="flex items-center">
                             <div className={`flex items-center gap-1.5 shrink-0 ${step >= s.num ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -864,7 +894,7 @@ export default function NationaliteFormPage() {
                             {i < 5 && <div className={`w-6 lg:w-12 h-px mx-1.5 ${step > s.num ? 'bg-emerald-500/30' : 'bg-slate-200'}`} />}
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 {errors.length > 0 && <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">{errors.map((e, i) => <p key={i} className="text-xs text-red-700 flex items-center gap-2"><AlertCircle size={12} /> {e}</p>)}</div>}
 
@@ -995,7 +1025,9 @@ export default function NationaliteFormPage() {
                                 const uploadedKeys = rawDocs.map(d => d.key)
                                 const hasChildren = form.nombre_enfants > 0
                                 const visibleSlots = docSlots.filter(s =>
-                                    s.conditional !== 'has_children' || hasChildren
+                                    (s.conditional !== 'has_children' || hasChildren) &&
+                                    // En reprise « documents seuls », on masque les pièces déjà reçues.
+                                    (!docsOnly || !alreadyOkKeys.includes(s.key))
                                 )
                                 const obligatoires = visibleSlots.filter(s => s.required)
                                 const facultatifs = visibleSlots.filter(s => !s.required)
@@ -1238,14 +1270,24 @@ export default function NationaliteFormPage() {
                 </AnimatePresence>
 
                 <div className="flex items-center justify-between mt-6">
-                    {step > 1 ? <button onClick={prev} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors font-bold"><ArrowLeft size={16} /> <T>Précédent</T></button> : <div />}
-                    {step < 6 ? (
-                        <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]"><T>Suivant</T> <ArrowRight size={16} /></button>
-                    ) : (
-                        <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                            {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
-                        </button>
-                    )}
+                    {docsOnly ? (
+                        // Reprise « documents seuls » : pas d'étapes, un seul bouton d'envoi.
+                        <>
+                            <div />
+                            <button onClick={submit} disabled={submitting} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : <><Send size={16} /> <T>Envoyer mes documents</T></>}
+                            </button>
+                        </>
+                    ) : (<>
+                        {step > 1 ? <button onClick={prev} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors font-bold"><ArrowLeft size={16} /> <T>Précédent</T></button> : <div />}
+                        {step < 6 ? (
+                            <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]"><T>Suivant</T> <ArrowRight size={16} /></button>
+                        ) : (
+                            <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
+                            </button>
+                        )}
+                    </>)}
                 </div>
             </div>
         </div>

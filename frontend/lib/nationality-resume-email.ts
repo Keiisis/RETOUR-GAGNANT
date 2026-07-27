@@ -62,11 +62,16 @@ function relanceHtml(prenom: string, nom: string, ref: string, link: string) {
     </div>`
 }
 
-export async function sendNationalityResumeEmail(app: ResumeEmailTarget): Promise<{ success: boolean; error?: string }> {
+export async function sendNationalityResumeEmail(
+    app: ResumeEmailTarget,
+    mode: 'docs' | 'full' = 'docs',
+): Promise<{ success: boolean; error?: string }> {
     if (!app.email) return { success: false, error: 'Aucune adresse email pour ce dossier' }
 
     const token = signResumeToken(app.id, 30)
-    const link = `${SITE}/nationalite/formulaire?resume=${encodeURIComponent(token)}`
+    // mode=docs → écran léger « pièces jointes seules » ; mode=full → formulaire
+    // complet pré-rempli (utile si des informations aussi sont à corriger).
+    const link = `${SITE}/nationalite/formulaire?resume=${encodeURIComponent(token)}${mode === 'docs' ? '&mode=docs' : ''}`
 
     const res = await sendEmail({
         to: app.email,

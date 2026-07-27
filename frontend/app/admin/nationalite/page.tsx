@@ -73,25 +73,27 @@ export default function AdminNationalitePage() {
 
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
 
-    // Envoie au client un lien sécurisé pour déposer ses documents (dossier déjà payé).
-    const sendRelance = async (id: string) => {
-        if (relanceState[id] === 'sending') return
-        setRelanceState(prev => ({ ...prev, [id]: 'sending' }))
+    // Envoie au client un lien sécurisé (dossier déjà payé). mode='docs' → écran
+    // léger pièces seules ; mode='full' → formulaire complet pré-rempli.
+    const sendRelance = async (id: string, mode: 'docs' | 'full' = 'docs') => {
+        const stateKey = `${id}:${mode}`
+        if (relanceState[stateKey] === 'sending') return
+        setRelanceState(prev => ({ ...prev, [stateKey]: 'sending' }))
         try {
             const res = await fetch('/api/agent/nationalite/relance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
+                body: JSON.stringify({ id, mode }),
             })
             const data = await res.json()
             if (res.ok && data.success) {
-                setRelanceState(prev => ({ ...prev, [id]: 'sent' }))
+                setRelanceState(prev => ({ ...prev, [stateKey]: 'sent' }))
             } else {
-                setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+                setRelanceState(prev => ({ ...prev, [stateKey]: 'error' }))
                 alert(data.error || 'Échec de l\'envoi de la relance.')
             }
         } catch {
-            setRelanceState(prev => ({ ...prev, [id]: 'error' }))
+            setRelanceState(prev => ({ ...prev, [stateKey]: 'error' }))
             alert('Erreur réseau lors de l\'envoi de la relance.')
         }
     }
@@ -293,16 +295,28 @@ export default function AdminNationalitePage() {
                                             <button onClick={() => openEdit(a)} className="bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Pencil size={12} /> <T>Éditer</T></button>
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Download size={12} /> <T>Télécharger ZIP</T></button>
                                             <button
-                                                onClick={() => sendRelance(a.id)}
-                                                disabled={relanceState[a.id] === 'sending'}
-                                                title={t('Envoyer au client un lien sécurisé pour déposer ses documents (sans nouveau paiement)')}
-                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[a.id] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
+                                                onClick={() => sendRelance(a.id, 'docs')}
+                                                disabled={relanceState[`${a.id}:docs`] === 'sending'}
+                                                title={t('Écran léger : le client re-dépose uniquement les pièces manquantes (sans nouveau paiement)')}
+                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[`${a.id}:docs`] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
                                             >
-                                                {relanceState[a.id] === 'sending'
+                                                {relanceState[`${a.id}:docs`] === 'sending'
                                                     ? <><Loader2 size={12} className="animate-spin" /> <T>Envoi…</T></>
-                                                    : relanceState[a.id] === 'sent'
+                                                    : relanceState[`${a.id}:docs`] === 'sent'
                                                         ? <><Check size={12} /> <T>Relance envoyée</T></>
                                                         : <><Mail size={12} /> <T>Relancer (documents)</T></>}
+                                            </button>
+                                            <button
+                                                onClick={() => sendRelance(a.id, 'full')}
+                                                disabled={relanceState[`${a.id}:full`] === 'sending'}
+                                                title={t('Formulaire complet pré-rempli : à utiliser si des informations aussi doivent être corrigées (sans nouveau paiement)')}
+                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[`${a.id}:full`] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-300 hover:bg-slate-500/30'}`}
+                                            >
+                                                {relanceState[`${a.id}:full`] === 'sending'
+                                                    ? <><Loader2 size={12} className="animate-spin" /> <T>Envoi…</T></>
+                                                    : relanceState[`${a.id}:full`] === 'sent'
+                                                        ? <><Check size={12} /> <T>Relance envoyée</T></>
+                                                        : <><Mail size={12} /> <T>Relancer (dossier complet)</T></>}
                                             </button>
                                             {['soumis', 'en_traitement', 'verification', 'approuve', 'rejete'].filter(s => s !== a.status).map(s => (
                                                 <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${statusMap[s]?.color}`}>{statusMap[s]?.label}</button>

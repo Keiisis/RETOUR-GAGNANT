@@ -51,5 +51,8 @@ export async function GET(request: NextRequest) {
         ok: true,
         application_ref: app.application_ref,
         prefill,
+        // Pièces déjà reçues : permet au mode « documents seuls » de n'afficher
+        // au client que les slots encore manquants.
+        documents_uploaded: Array.isArray(app.documents_uploaded) ? app.documents_uploaded : [],
     })
 }

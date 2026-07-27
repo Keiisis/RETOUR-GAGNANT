@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
         const body = await request.json().catch(() => ({}))
         const id = String(body.id || '')
         if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
+        // 'docs' (défaut) : écran léger pièces seules. 'full' : formulaire complet.
+        const mode: 'docs' | 'full' = body.mode === 'full' ? 'full' : 'docs'
 
         const { data: app, error } = await supabase
             .from('nationality_applications')
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
 
         if (error || !app) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
 
-        const res = await sendNationalityResumeEmail(app)
+        const res = await sendNationalityResumeEmail(app, mode)
         if (!res.success) {
             return NextResponse.json({ error: res.error || 'Échec de l\'envoi de l\'email' }, { status: 500 })
         }

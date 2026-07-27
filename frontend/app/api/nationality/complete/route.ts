@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
         const { data: app, error: fetchErr } = await supabase
             .from('nationality_applications')
-            .select('id, application_ref, email')
+            .select('id, application_ref, email, documents_uploaded')
             .eq('id', verified.id)
             .maybeSingle()
 
@@ -58,9 +58,30 @@ export async function POST(request: NextRequest) {
             update[key] = v
         }
 
-        const docs = Array.isArray(body.documents_uploaded)
+        let docs: string[] = Array.isArray(body.documents_uploaded)
             ? body.documents_uploaded
             : Array.isArray(body.documents) ? body.documents : []
+
+        // Reprise « documents seuls » (merge=true) : le client ne re-dépose QUE
+        // les pièces manquantes. On FUSIONNE avec les pièces déjà reçues au lieu
+        // d'écraser — sinon une reprise partielle effacerait les docs valides.
+        // Clé d'une ligne succès = préfixe avant le 1er « : » (les échecs et
+        // lignes sans clé ne sont pas conservés).
+        if (body.merge === true) {
+            const keyOf = (line: unknown): string | null => {
+                if (typeof line !== 'string' || line.includes('upload échoué')) return null
+                const first = line.split(':')[0].trim()
+                return /^[a-z0-9_]+$/i.test(first) ? first : null
+            }
+            const existing: string[] = Array.isArray(app.documents_uploaded) ? app.documents_uploaded : []
+            const newKeys = new Set(docs.map(keyOf).filter(Boolean) as string[])
+            const kept = existing.filter(line => {
+                const k = keyOf(line)
+                return k ? !newKeys.has(k) : false
+            })
+            docs = [...kept, ...docs]
+        }
+
         update.documents_uploaded = docs
         update.last_step_completed = 6
         update.status = 'soumis'
