@@ -21,6 +21,7 @@ const config = {
             fontFamily: {
                 sans: ['var(--font-inter)'],
                 heading: ['var(--font-poppins)'],
+                display: ['var(--font-playfair)', 'Georgia', 'serif'],
                 mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {

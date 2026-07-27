@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Inter, Montserrat } from "next/font/google";
+import { Poppins, Inter, Montserrat, Playfair_Display } from "next/font/google";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { TranslationProvider } from "@/lib/translation";
 import "./globals.css";
@@ -20,6 +20,13 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-montserrat",
+});
+
+// Serif éditorial premium — grands titres (pages vitrines : nationalité…).
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -159,7 +166,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className="scroll-smooth">
       <body
-        className={`${poppins.variable} ${inter.variable} ${montserrat.variable} font-sans bg-background text-foreground antialiased`}
+        className={`${poppins.variable} ${inter.variable} ${montserrat.variable} ${playfair.variable} font-sans bg-background text-foreground antialiased`}
         suppressHydrationWarning={true}
       >
         <script
