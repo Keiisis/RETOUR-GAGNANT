@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next'
-import path from 'node:path'
 import withPWAInit from '@ducanh2912/next-pwa'
 
 const withPWA = withPWAInit({
@@ -69,10 +68,6 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  // Trace de fichiers scopée au dossier frontend. Sans ça, les lockfiles à la
-  // racine du repo (skills-lock.json…) font remonter la racine du workspace et
-  // Next trace des fichiers hors-projet (build plus lourd, plus de RAM).
-  outputFileTracingRoot: path.join(__dirname),
   headers: async () => [
     {
       source: '/(.*)',
