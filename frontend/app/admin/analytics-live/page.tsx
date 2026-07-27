@@ -193,11 +193,11 @@ export default function AnalyticsLivePage() {
         fetchData()
     }, [fetchData])
 
-    // Rafraîchit toutes les 15s quand l'auto-refresh est actif, en PAUSE dès que
+    // Rafraîchit toutes les 120s quand l'auto-refresh est actif, en PAUSE dès que
     // l'onglet passe en arrière-plan (un dashboard laissé ouvert ne consomme plus).
     useEffect(() => {
         if (!autoRefresh) return
-        return visibleInterval(fetchData, 15_000, { runImmediately: false })
+        return visibleInterval(fetchData, 120_000, { runImmediately: false })
     }, [autoRefresh, fetchData])
 
     // Unique sessions actives (dedupliqué par session_id)

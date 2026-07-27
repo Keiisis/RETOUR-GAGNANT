@@ -61,8 +61,8 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
     const startPolling = useCallback((sid: string) => {
         if (pollingRef.current) pollingRef.current();
         fetchMessages(sid);
-        // 5s pendant la conversation, en pause quand l'onglet est en arrière-plan.
-        pollingRef.current = visibleInterval(() => fetchMessages(sid), 5000, { runImmediately: false });
+        // 90s pendant la conversation, en pause quand l'onglet est en arrière-plan.
+        pollingRef.current = visibleInterval(() => fetchMessages(sid), 90_000, { runImmediately: false });
     }, [fetchMessages]);
 
     // Initial check for an active session

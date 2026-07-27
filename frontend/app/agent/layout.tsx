@@ -259,10 +259,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         }
 
         // Présence : seuil « en ligne » = vu il y a < 5 min. Un heartbeat toutes
-        // les 90s suffit largement, et on met en PAUSE quand l'onglet est en
+        // les 120s reste dans la fenêtre, et on met en PAUSE quand l'onglet est en
         // arrière-plan (l'agent n'est pas actif) → économie majeure d'Edge Requests.
         // Retour au premier plan → rejoue immédiatement (statut « en ligne » restauré).
-        return visibleInterval(sendHeartbeat, 90_000)
+        return visibleInterval(sendHeartbeat, 120_000)
     }, [isLoginPage, agent?.id])
 
     // ─── Realtime Unread Counts ───

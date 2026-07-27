@@ -351,14 +351,14 @@ export default function AdminUsersPage() {
 
     useEffect(() => { fetchUsers() }, [fetchUsers])
 
-    // Rafraîchit le statut en ligne toutes les 60s, en pause quand l'onglet est
+    // Rafraîchit le statut en ligne toutes les 120s, en pause quand l'onglet est
     // en arrière-plan (fetchUsers a déjà chargé au montage → pas de tir immédiat).
     useEffect(() => {
         return visibleInterval(() => {
             fetch('/api/admin/users').then(r => r.json()).then(d => {
                 if (d.users) setUsers(d.users)
             }).catch(() => { })
-        }, 60_000, { runImmediately: false })
+        }, 120_000, { runImmediately: false })
     }, [])
 
     const isOnline = (last: string | null) =>
