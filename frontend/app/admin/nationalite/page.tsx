@@ -8,7 +8,7 @@ import {
     Globe2, CheckCircle2, Clock, Download,
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
-    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw
+    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -95,6 +95,34 @@ export default function AdminNationalitePage() {
         } catch {
             setRelanceState(prev => ({ ...prev, [stateKey]: 'error' }))
             alert('Erreur réseau lors de l\'envoi de la relance.')
+        }
+    }
+
+    // Copie le lien de reprise (docs) dans le presse-papier → à envoyer par
+    // WhatsApp si l'email ne passe pas.
+    const [copiedId, setCopiedId] = useState<string | null>(null)
+    const copyResumeLink = async (id: string) => {
+        try {
+            const res = await fetch('/api/agent/nationalite/resume-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, mode: 'docs' }),
+            })
+            const data = await res.json()
+            if (res.ok && data.link) {
+                try {
+                    await navigator.clipboard.writeText(data.link)
+                    setCopiedId(id)
+                    setTimeout(() => setCopiedId(null), 2500)
+                } catch {
+                    // clipboard bloqué → on montre le lien à copier manuellement
+                    prompt('Copiez le lien de reprise :', data.link)
+                }
+            } else {
+                alert(data.error || 'Impossible de générer le lien.')
+            }
+        } catch {
+            alert('Erreur réseau.')
         }
     }
 
@@ -329,6 +357,13 @@ export default function AdminNationalitePage() {
                                                     : relanceState[`${a.id}:docs`] === 'sent'
                                                         ? <><Check size={12} /> <T>Relance envoyée</T></>
                                                         : <><Mail size={12} /> <T>Relancer (documents)</T></>}
+                                            </button>
+                                            <button
+                                                onClick={() => copyResumeLink(a.id)}
+                                                title={t('Copie le lien de reprise (pièces) pour l\'envoyer par WhatsApp si l\'email ne passe pas')}
+                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${copiedId === a.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30'}`}
+                                            >
+                                                {copiedId === a.id ? <><Check size={12} /> <T>Lien copié</T></> : <><Copy size={12} /> <T>Copier le lien</T></>}
                                             </button>
                                             <button
                                                 onClick={() => sendRelance(a.id, 'full')}

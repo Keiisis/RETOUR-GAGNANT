@@ -102,8 +102,33 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
         }
 
-        // Identifier les slots manquants (non uploadés)
-        const missingSlots = all_slots.filter(s => !uploaded_keys.includes(s.key))
+        // ── Pièces réellement présentes : on lit la VÉRITÉ en base
+        //    (documents_uploaded), pas le tableau transitoire du client.
+        //    - une ligne « (upload échoué) » ne compte PAS comme présente ;
+        //    - la clé = préfixe avant le 1er « : » (ex. livret_parents).
+        //    Robuste pour tous les cas : fraîche, reprise complète, reprise
+        //    « documents seuls » (fusion serveur), upload partiellement échoué.
+        const { data: appRow } = await supabase
+            .from('nationality_applications')
+            .select('documents_uploaded')
+            .eq('application_ref', ref)
+            .maybeSingle()
+
+        const presentKeys = new Set<string>()
+        const dbDocs: string[] = Array.isArray(appRow?.documents_uploaded) ? appRow!.documents_uploaded : []
+        for (const line of dbDocs) {
+            if (typeof line !== 'string' || line.includes('upload échoué')) continue
+            const k = line.split(':')[0].trim()
+            if (/^[a-z0-9_]+$/i.test(k)) presentKeys.add(k)
+        }
+        // Filet : si la base n'a encore rien (race), on retombe sur les clés
+        // client — mais uniquement en dernier recours.
+        if (presentKeys.size === 0 && Array.isArray(uploaded_keys)) {
+            for (const k of uploaded_keys) if (typeof k === 'string') presentKeys.add(k)
+        }
+
+        // Identifier les slots manquants (réellement absents en base)
+        const missingSlots = all_slots.filter(s => !presentKeys.has(s.key))
         const missingRequired = missingSlots.filter(s => s.required)
         const missingOptional = missingSlots.filter(s => !s.required)
         const missingAncestral = missingSlots.filter(s => s.ancestral)
