@@ -495,6 +495,24 @@ export default function ProfilScreen() {
             ],
         },
         {
+            title: t('MON PARCOURS'),
+            items: [
+                {
+                    icon: 'git-network-outline' as const,
+                    label: t('Plan de composition de famille'),
+                    sub: t('Votre arbre généalogique'),
+                    onPress: () => navigation.navigate('Genealogie'),
+                    accent: true,
+                },
+                {
+                    icon: 'sparkles-outline' as const,
+                    label: t('Prêtres Fa & Racines'),
+                    sub: t('Consulter et réserver'),
+                    onPress: () => navigation.navigate('Fa'),
+                },
+            ],
+        },
+        {
             title: t('PRÉFÉRENCES'),
             items: [
                 {

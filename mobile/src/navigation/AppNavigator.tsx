@@ -34,6 +34,7 @@ import InvoicesScreen from '../screens/main/InvoicesScreen'
 import NationaliteFormScreen from '../screens/main/NationaliteFormScreen'
 import LegalScreen from '../screens/main/LegalScreen'
 import FaScreen from '../screens/main/FaScreen'
+import GenealogieScreen from '../screens/main/GenealogieScreen'
 
 /* ── Types de navigation ── */
 export interface BoutiqueProduct {
@@ -101,6 +102,7 @@ export type RootStackParamList = {
     NationaliteForm: undefined
     Legal: undefined
     Fa: undefined
+    Genealogie: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -314,6 +316,7 @@ export default function AppNavigator() {
                         <Stack.Screen name="EditProfil" component={EditProfilScreen} />
                         <Stack.Screen name="Signature" component={SignatureScreen} />
                         <Stack.Screen name="Fa" component={FaScreen} />
+                        <Stack.Screen name="Genealogie" component={GenealogieScreen} />
                     </Stack.Group>
 
                     {/* Sheet à détents (mi-hauteur → plein écran) */}
