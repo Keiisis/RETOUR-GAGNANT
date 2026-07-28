@@ -179,18 +179,26 @@ export const fonts = {
     bodyMedium: 'Outfit_500Medium',
     bodySemibold: 'Outfit_600SemiBold',
     bodyBold: 'Outfit_700Bold',
+
+    // Alias de rétrocompatibilité (redirection Inter -> Outfit)
+    Inter_400Regular: 'Outfit_400Regular',
+    Inter_500Medium: 'Outfit_500Medium',
+    Inter_600SemiBold: 'Outfit_600SemiBold',
+    Inter_700Bold: 'Outfit_700Bold',
+    PlayfairDisplay_700Bold: 'PlayfairDisplay_700Bold',
+    PlayfairDisplay_400Regular: 'PlayfairDisplay_400Regular',
 }
 
 export const typography = {
-    h1: { fontSize: 28, fontFamily: 'PlayfairDisplay_700Bold', letterSpacing: -0.3 },
-    h2: { fontSize: 22, fontFamily: 'PlayfairDisplay_700Bold', letterSpacing: -0.2 },
-    h3: { fontSize: 18, fontFamily: 'Outfit_600SemiBold', letterSpacing: -0.1 },
-    body: { fontSize: 16, fontFamily: 'Outfit_400Regular', lineHeight: 24 },
-    bodySmall: { fontSize: 14, fontFamily: 'Outfit_400Regular', lineHeight: 21 },
-    caption: { fontSize: 12, fontFamily: 'Outfit_500Medium', lineHeight: 16 },
-    overline: { fontSize: 11, fontFamily: 'Outfit_700Bold', letterSpacing: 1.5, textTransform: 'uppercase' as const },
-    label: { fontSize: 13, fontFamily: 'Outfit_600SemiBold' },
-    button: { fontSize: 15, fontFamily: 'Outfit_700Bold', letterSpacing: 0.3 },
+    h1: { fontSize: 28, fontFamily: fonts.heading, letterSpacing: -0.3 },
+    h2: { fontSize: 22, fontFamily: fonts.heading, letterSpacing: -0.2 },
+    h3: { fontSize: 18, fontFamily: fonts.bodySemibold, letterSpacing: -0.1 },
+    body: { fontSize: 16, fontFamily: fonts.body, lineHeight: 24 },
+    bodySmall: { fontSize: 14, fontFamily: fonts.body, lineHeight: 21 },
+    caption: { fontSize: 12, fontFamily: fonts.bodyMedium, lineHeight: 16 },
+    overline: { fontSize: 11, fontFamily: fonts.bodyBold, letterSpacing: 1.5, textTransform: 'uppercase' as const },
+    label: { fontSize: 13, fontFamily: fonts.bodySemibold },
+    button: { fontSize: 15, fontFamily: fonts.bodyBold, letterSpacing: 0.3 },
 }
 
 /* ── Royal — Tokens dorés/chic utilisés par les écrans premium ── */

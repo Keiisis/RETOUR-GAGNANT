@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft } from 'lucide-react-native'
 
-import { royal } from '../config/theme'
+import { royal, fonts } from '../config/theme'
 
 interface ScreenHeaderProps {
     title: string
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     },
     titleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: royal.gold, opacity: 0.8 },
     headerSub: {
-        fontFamily: 'Inter_500Medium', fontSize: 14,
+        fontFamily: fonts.bodyMedium, fontSize: 14,
         color: royal.goldSoft, textAlign: 'center', fontStyle: 'italic',
         marginTop: 4,
     },

@@ -296,7 +296,7 @@ export default function ClientPayerPage() {
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
-            <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            <div className="w-7 h-7 border-2 border-[var(--panel-accent)]/30 border-t-blue-500 rounded-full animate-spin" />
         </div>
     )
 
@@ -320,9 +320,9 @@ export default function ClientPayerPage() {
             label: 'FedaPay',
             sublabel: 'Mobile Money, Virement',
             icon: Smartphone,
-            color: 'text-blue-400',
-            bg: 'bg-blue-500/10 border-blue-500/20',
-            hoverBg: 'hover:bg-blue-500/15',
+            color: 'text-[var(--panel-accent)]',
+            bg: 'bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
+            hoverBg: 'hover:bg-[var(--panel-accent-soft)]',
             enabled: settings?.fedapay_enabled === 'true' && !!settings?.fedapay_public_key,
             action: payWithFedaPay,
             inline: false,
@@ -332,9 +332,9 @@ export default function ClientPayerPage() {
             label: 'Stripe',
             sublabel: 'Carte bancaire internationale',
             icon: CreditCard,
-            color: 'text-violet-400',
-            bg: 'bg-violet-500/10 border-violet-500/20',
-            hoverBg: 'hover:bg-violet-500/15',
+            color: 'text-[var(--panel-accent)]',
+            bg: 'bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
+            hoverBg: 'hover:bg-[var(--panel-accent-soft)]',
             enabled: settings?.stripe_enabled === 'true' && !!settings?.stripe_public_key,
             action: payWithStripe,
             inline: false,
@@ -344,9 +344,9 @@ export default function ClientPayerPage() {
             label: 'PayPal',
             sublabel: 'Compte PayPal, CB',
             icon: Globe,
-            color: 'text-sky-400',
-            bg: 'bg-sky-500/10 border-sky-500/20',
-            hoverBg: 'hover:bg-sky-500/15',
+            color: 'text-[var(--panel-accent)]',
+            bg: 'bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
+            hoverBg: 'hover:bg-[var(--panel-accent-soft)]',
             enabled: settings?.paypal_enabled === 'true' && !!settings?.paypal_client_id,
             action: () => { setSelectedProvider('paypal'); paypalRendered.current = false },
             inline: true,
@@ -427,7 +427,7 @@ export default function ClientPayerPage() {
                 ) : step === 'processing' ? (
                     <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-12 text-center">
-                        <Loader2 className="animate-spin text-blue-400 mx-auto mb-3" size={32} />
+                        <Loader2 className="animate-spin text-[var(--panel-accent)] mx-auto mb-3" size={32} />
                         <p className="text-white font-bold">Traitement en cours...</p>
                         <p className="text-gray-500 text-sm mt-1">Ne fermez pas cette page.</p>
                     </motion.div>
@@ -437,7 +437,7 @@ export default function ClientPayerPage() {
                         className="bg-[#0a1221] border border-white/[0.06] rounded-2xl overflow-hidden">
                         <div className="p-5 border-b border-white/[0.06]">
                             <div className="flex items-center gap-2">
-                                <Shield size={15} className="text-blue-400" />
+                                <Shield size={15} className="text-[var(--panel-accent)]" />
                                 <h2 className="font-black text-white text-sm">Choisissez votre moyen de paiement</h2>
                             </div>
                         </div>

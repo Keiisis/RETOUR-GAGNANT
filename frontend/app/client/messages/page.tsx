@@ -244,7 +244,7 @@ export default function ClientMessagesPage() {
                 <h1 className="text-2xl font-black text-white flex items-center gap-3">
                     Messages
                     {totalUnread > 0 && (
-                        <span className="text-sm font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full">
+                        <span className="text-sm font-bold bg-[var(--panel-accent)] text-white px-2 py-0.5 rounded-full">
                             {totalUnread} nouvelle{totalUnread > 1 ? 's' : ''} réponse{totalUnread > 1 ? 's' : ''}
                         </span>
                     )}
@@ -302,7 +302,7 @@ export default function ClientMessagesPage() {
                 <div className={`lg:col-span-3 bg-[#0a1221] border border-white/[0.06] rounded-2xl overflow-hidden flex flex-col ${selected ? 'h-[600px]' : 'min-h-[480px]'}`}>
                     {loading ? (
                         <div className="flex items-center justify-center flex-1 p-10">
-                            <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                            <div className="w-6 h-6 border-2 border-[var(--panel-accent)]/30 border-t-blue-500 rounded-full animate-spin" />
                         </div>
                     ) : threads.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
@@ -339,7 +339,7 @@ export default function ClientMessagesPage() {
                                 {/* Message initial du client */}
                                 <div className="flex justify-end">
                                     <div className="max-w-[78%]">
-                                        <div className="bg-blue-500/15 border border-blue-500/20 rounded-2xl rounded-tr-sm px-4 py-2.5">
+                                        <div className="bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 rounded-2xl rounded-tr-sm px-4 py-2.5">
                                             <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">{selected.msg.message}</p>
                                         </div>
                                         <p className="text-[10px] text-gray-600 mt-1 text-right pr-1">{fmtTime(selected.msg.created_at)}</p>
@@ -363,7 +363,7 @@ export default function ClientMessagesPage() {
                                         <div className={`max-w-[78%] ${reply.role === 'agent' ? '' : ''}`}>
                                             <div className={`rounded-2xl px-4 py-2.5 ${reply.role === 'agent'
                                                 ? 'bg-[#0f2a1e] border border-emerald-500/15 rounded-bl-sm'
-                                                : 'bg-blue-500/15 border border-blue-500/20 rounded-br-sm'}`}>
+                                                : 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 rounded-br-sm'}`}>
                                                 <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">{reply.content}</p>
                                             </div>
                                             <p className={`text-[10px] text-gray-600 mt-1 px-1 ${reply.role === 'agent' ? 'text-left' : 'text-right'}`}>
@@ -394,13 +394,13 @@ export default function ClientMessagesPage() {
                                         onKeyDown={handleReplyKeyDown}
                                         placeholder="Répondre à votre agent…"
                                         rows={1}
-                                        className="flex-1 bg-white/[0.05] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none resize-none transition-colors leading-relaxed"
+                                        className="flex-1 bg-white/[0.05] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none resize-none transition-colors leading-relaxed"
                                     />
                                     <motion.button
                                         type="submit"
                                         disabled={!replyText.trim() || sendingReply}
                                         whileTap={{ scale: 0.94 }}
-                                        className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center disabled:opacity-35 disabled:cursor-not-allowed transition-all hover:shadow-[0_4px_16px_rgba(59,130,246,0.4)]"
+                                        className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--panel-accent)] flex items-center justify-center disabled:opacity-35 disabled:cursor-not-allowed transition-all hover:shadow-[0_4px_16px_rgba(59,130,246,0.4)]"
                                     >
                                         {sendingReply
                                             ? <Loader2 size={15} className="animate-spin text-white" />
@@ -419,14 +419,14 @@ export default function ClientMessagesPage() {
                         <div className="flex flex-col flex-1">
                             <div className="p-4 border-b border-white/[0.06]">
                                 <p className="font-black text-white text-sm flex items-center gap-2">
-                                    <Clock size={14} className="text-blue-400" /> Conversations ({threads.length})
+                                    <Clock size={14} className="text-[var(--panel-accent)]" /> Conversations ({threads.length})
                                 </p>
                             </div>
                             <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
                                 {threads.map(thread => (
                                     <button type="button" key={thread.msg.id} onClick={() => openThread(thread)}
                                         className="w-full text-left p-4 hover:bg-white/[0.02] transition-colors flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-2 ${thread.hasUnread ? 'bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]' : 'bg-transparent'}`} />
+                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-2 ${thread.hasUnread ? 'bg-[var(--panel-accent)] shadow-[0_0_6px_rgba(59,130,246,0.6)]' : 'bg-transparent'}`} />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-2">
                                                 <p className={`text-sm truncate ${thread.hasUnread ? 'font-bold text-white' : 'font-semibold text-gray-300'}`}>

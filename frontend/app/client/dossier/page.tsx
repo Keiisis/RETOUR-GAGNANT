@@ -48,10 +48,10 @@ interface ClientDoc {
 // ── Helpers ───────────────────────────────────────────────────────
 
 const STATUT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-    reception:    { label: 'Réception',    color: 'text-blue-400',    bg: 'bg-blue-500/15' },
-    verification: { label: 'Vérification', color: 'text-indigo-400',  bg: 'bg-indigo-500/15' },
+    reception:    { label: 'Réception',    color: 'text-[var(--panel-accent)]',    bg: 'bg-[var(--panel-accent-soft)]' },
+    verification: { label: 'Vérification', color: 'text-[var(--panel-accent)]',  bg: 'bg-[var(--panel-accent-soft)]' },
     traitement:   { label: 'Traitement',   color: 'text-amber-400',   bg: 'bg-amber-500/15' },
-    validation:   { label: 'Validation',   color: 'text-purple-400',  bg: 'bg-purple-500/15' },
+    validation:   { label: 'Validation',   color: 'text-[var(--panel-accent)]',  bg: 'bg-[var(--panel-accent-soft)]' },
     finalisation: { label: 'Finalisation', color: 'text-teal-400',    bg: 'bg-teal-500/15' },
     termine:      { label: 'Terminé',      color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
     annule:       { label: 'Annulé',       color: 'text-gray-400',    bg: 'bg-gray-500/15' },
@@ -392,7 +392,7 @@ export default function ClientDossierPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-48">
-                <div className="w-7 h-7 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+                <div className="w-7 h-7 border-2 border-[var(--panel-accent)]/30 border-t-indigo-500 rounded-full animate-spin" />
             </div>
         )
     }
@@ -408,8 +408,8 @@ export default function ClientDossierPage() {
             {/* Header */}
             <div>
                 <div className="flex items-center gap-2 mb-1">
-                    <FolderOpen size={14} className="text-indigo-400" />
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.3em]">Suivi Dossier</span>
+                    <FolderOpen size={14} className="text-[var(--panel-accent)]" />
+                    <span className="text-[10px] font-bold text-[var(--panel-accent)] uppercase tracking-[0.3em]">Suivi Dossier</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
@@ -472,7 +472,7 @@ export default function ClientDossierPage() {
                     {dossiers.length > 0 && (
                         <div className="space-y-4">
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.25em] flex items-center gap-2">
-                                <FolderOpen size={10} className="text-indigo-400" />
+                                <FolderOpen size={10} className="text-[var(--panel-accent)]" />
                                 Dossiers de service ({dossiers.length})
                             </p>
                             {dossiers.map(dossier => {
@@ -523,7 +523,7 @@ export default function ClientDossierPage() {
                                                 </div>
                                                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                                                     <motion.div
-                                                        className={`h-full rounded-full ${prog >= 100 ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-500'}`}
+                                                        className={`h-full rounded-full ${prog >= 100 ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-[var(--panel-accent)]'}`}
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${prog}%` }}
                                                         transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
@@ -550,8 +550,8 @@ export default function ClientDossierPage() {
                                                             const done = etape.status === 'completed'
                                                             const inProgress = etape.status === 'in_progress'
                                                             return (
-                                                                <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${done ? 'bg-emerald-500/8' : inProgress ? 'bg-indigo-500/8 border border-indigo-500/20' : 'bg-white/[0.02]'}`}>
-                                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black ${done ? 'bg-emerald-500 text-white' : inProgress ? 'bg-indigo-500/30 text-indigo-400 border border-indigo-500/50' : 'bg-white/5 text-gray-600'}`}>
+                                                                <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${done ? 'bg-emerald-500/8' : inProgress ? 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20' : 'bg-white/[0.02]'}`}>
+                                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black ${done ? 'bg-emerald-500 text-white' : inProgress ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] border border-[var(--panel-accent)]/50' : 'bg-white/5 text-gray-600'}`}>
                                                                         {done ? <CheckCircle2 size={13} /> : inProgress ? <Clock size={12} className="animate-pulse" /> : i + 1}
                                                                     </div>
                                                                     <div className="flex-1">
@@ -560,7 +560,7 @@ export default function ClientDossierPage() {
                                                                         </p>
                                                                         {etape.date && <p className="text-[10px] text-gray-600 flex items-center gap-1 mt-0.5"><Calendar size={9} />{fmtDate(etape.date)}</p>}
                                                                     </div>
-                                                                    {inProgress && <span className="text-[9px] font-black bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">EN COURS</span>}
+                                                                    {inProgress && <span className="text-[9px] font-black bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] px-2 py-0.5 rounded-full">EN COURS</span>}
                                                                 </div>
                                                             )
                                                         })}
@@ -607,7 +607,7 @@ export default function ClientDossierPage() {
                                                 </button>
                                                 <button type="button" onClick={() => handleUploadClick(dossier.id)}
                                                     disabled={uploadingDossier === dossier.id}
-                                                    className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-400 border border-indigo-500/20 transition-all disabled:opacity-50">
+                                                    className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-[var(--panel-accent-soft)] hover:bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] border border-[var(--panel-accent)]/20 transition-all disabled:opacity-50">
                                                     {uploadingDossier === dossier.id ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
                                                     {uploadingDossier === dossier.id ? 'Upload...' : 'Ajouter'}
                                                 </button>
@@ -620,14 +620,14 @@ export default function ClientDossierPage() {
                                                             <div className="py-4 text-center">
                                                                 <FileUp size={20} className="text-gray-700 mx-auto mb-2" />
                                                                 <p className="text-[11px] text-gray-600">Aucun fichier pour ce dossier.</p>
-                                                                <p className="text-[10px] text-gray-700 mt-0.5">PDF, Word, JPEG, PNG — max {MAX_SIZE_MB} MB</p>
+                                                                <p className="text-[10px] text-gray-700 mt-0.5">PDF, Word, JPEG, PNG · max {MAX_SIZE_MB} MB</p>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-2">
                                                                 {(docsByDossier[dossier.id] || []).map(clientDoc => (
                                                                     <div key={clientDoc.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                                                                        <div className="p-1.5 rounded-lg bg-indigo-500/10 flex-shrink-0">
-                                                                            <Paperclip size={12} className="text-indigo-400" />
+                                                                        <div className="p-1.5 rounded-lg bg-[var(--panel-accent-soft)] flex-shrink-0">
+                                                                            <Paperclip size={12} className="text-[var(--panel-accent)]" />
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
                                                                             <p className="text-xs font-bold text-white truncate">{clientDoc.nom_fichier}</p>
@@ -635,7 +635,7 @@ export default function ClientDossierPage() {
                                                                         </div>
                                                                         <div className="flex items-center gap-1">
                                                                             <button type="button" onClick={async () => { const url = await refreshSignedUrl(clientDoc.storage_path); window.open(url, '_blank') }}
-                                                                                className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-indigo-400 transition-colors" title="Télécharger" aria-label="Télécharger le fichier">
+                                                                                className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-[var(--panel-accent)] transition-colors" title="Télécharger" aria-label="Télécharger le fichier">
                                                                                 <FileUp size={13} />
                                                                             </button>
                                                                             <button type="button" onClick={() => handleDeleteDoc(clientDoc.id, clientDoc.storage_path, dossier.id)}

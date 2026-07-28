@@ -46,12 +46,14 @@ const PAL = {
     white: '#FFFFFF',
 }
 
+import { colors, fonts, spacing, radius, shadows } from '../../config/theme'
+
 const FONT = {
-    heading: 'PlayfairDisplay_700Bold',
-    body: 'Inter_400Regular',
-    bodyM: 'Inter_500Medium',
-    bodySB: 'Inter_600SemiBold',
-    bodyB: 'Inter_700Bold',
+    heading: fonts.heading,
+    body: fonts.body,
+    bodyM: fonts.bodyMedium,
+    bodySB: fonts.bodySemibold,
+    bodyB: fonts.bodyBold,
 }
 
 interface DossierInfo { status: string; progress: number; service_type: string | null }
@@ -271,41 +273,41 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                                 <Animated.View style={[styles.shimmerBand, shimmerStyle]} />
                             </View>
 
-                            {/* Bordure or */}
-                            <View style={styles.heroBorder} pointerEvents="none" />
+                            {/* Bordure or & reflet luxury */}
+                            <View style={[styles.heroBorder, { borderColor: colors.gold, borderWidth: 1.5 }]} pointerEvents="none" />
 
                             <View style={styles.heroContent}>
                                 <View style={styles.heroTop}>
-                                    <View style={styles.heroBadge}>
-                                        <View style={styles.heroBadgeDot} />
-                                        <Text style={styles.heroBadgeText}>
-                                            {dossier ? t('VOTRE DOSSIER ACTIF') : t('DÉMARCHE CERTIFIÉE RGB')}
+                                    <View style={[styles.heroBadge, { backgroundColor: 'rgba(201,168,76,0.18)', borderColor: colors.gold, borderWidth: 1 }]}>
+                                        <View style={[styles.heroBadgeDot, { backgroundColor: colors.gold }]} />
+                                        <Text style={[styles.heroBadgeText, { color: colors.goldLight, fontFamily: fonts.bodyBold, letterSpacing: 1.2 }]}>
+                                            {dossier ? t('VOTRE DOSSIER ACTIF (VIP)') : t('DÉMARCHE CERTIFIÉE BENIN')}
                                         </Text>
                                     </View>
-                                    <View style={styles.heroChevron}>
-                                        <Ionicons name="arrow-forward" size={14} color={PAL.primaryDeep} />
+                                    <View style={[styles.heroChevron, { backgroundColor: colors.gold }]}>
+                                        <Ionicons name="arrow-forward" size={14} color="#000" />
                                     </View>
                                 </View>
 
-                                <Text style={styles.heroTitle} numberOfLines={2}>
+                                <Text style={[styles.heroTitle, { fontFamily: fonts.heading, fontSize: 22, color: '#FFFFFF', marginTop: 10 }]} numberOfLines={2}>
                                     {dossier
                                         ? (dossier.service_type || t('Dossier en cours'))
-                                        : t('Initier une démarche officielle')}
+                                        : t('Reconnaissance de la Nationalité Béninoise')}
                                 </Text>
 
                                 {dossier ? (
-                                    <View style={{ marginTop: 8 }}>
+                                    <View style={{ marginTop: 12 }}>
                                         <View style={styles.progressRow}>
                                             <Text style={styles.progressLabel}>{dossierStatusLabel}</Text>
-                                            <Text style={styles.progressPct}>{dossier.progress}%</Text>
+                                            <Text style={[styles.progressPct, { color: colors.gold }]}>{dossier.progress}%</Text>
                                         </View>
-                                        <View style={styles.progressBg}>
-                                            <Animated.View style={[styles.progressFill, progressBarStyle]} />
+                                        <View style={[styles.progressBg, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                                            <Animated.View style={[styles.progressFill, progressBarStyle, { backgroundColor: colors.gold }]} />
                                         </View>
                                     </View>
                                 ) : (
-                                    <Text style={styles.heroSub} numberOfLines={2}>
-                                        {t('Nationalité, état civil, légalisation — un accompagnement de bout en bout.')}
+                                    <Text style={[styles.heroSub, { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.bodyMedium, marginTop: 6 }]} numberOfLines={2}>
+                                        {t('Accompagnement juridique VIP, passeport & intégration ancestrale.')}
                                     </Text>
                                 )}
                             </View>

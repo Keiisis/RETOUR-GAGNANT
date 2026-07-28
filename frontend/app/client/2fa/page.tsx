@@ -29,17 +29,17 @@ function Challenge() {
     return (
         <div className="min-h-screen bg-nexus-deep flex items-center justify-center p-4 text-white">
             <form onSubmit={submit} className="w-full max-w-sm bg-white/[0.04] border border-white/10 rounded-2xl p-8 text-center">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center mb-4">
                     <ShieldCheck className="w-7 h-7 text-white" />
                 </div>
                 <h1 className="text-xl font-bold mb-1">Vérification en deux étapes</h1>
                 <p className="text-sm text-gray-400 mb-6">Entrez le code à 6 chiffres de votre application d&apos;authentification.</p>
                 <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     inputMode="numeric" autoFocus placeholder="123456"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-center text-lg tracking-[0.4em] outline-none focus:border-blue-500 mb-4" />
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-center text-lg tracking-[0.4em] outline-none focus:border-[var(--panel-accent)] mb-4" />
                 {error && <p className="mb-4 text-sm text-red-400 flex items-center justify-center gap-2"><AlertCircle className="w-4 h-4" /> {error}</p>}
                 <button type="submit" disabled={busy}
-                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold disabled:opacity-60">
+                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[var(--panel-accent)] hover:bg-[var(--panel-accent)] text-white font-semibold disabled:opacity-60">
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Vérifier
                 </button>
             </form>

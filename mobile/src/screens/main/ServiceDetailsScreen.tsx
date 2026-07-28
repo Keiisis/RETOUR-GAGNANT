@@ -819,7 +819,7 @@ const hero = StyleSheet.create({
         letterSpacing: 0.3,
     },
     subtitle: {
-        fontSize: 13, fontFamily: 'Inter_500Medium',
+        fontSize: 13, fontFamily: fonts.bodyMedium,
         color: 'rgba(255,255,255,0.85)', marginTop: 6,
         textAlign: 'center', lineHeight: 18,
         paddingHorizontal: spacing.lg,
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     },
     desc: {
         fontSize: 14, lineHeight: 22, color: C.textMuted,
-        fontFamily: 'Inter_400Regular',
+        fontFamily: fonts.body,
         textAlign: 'center',
     },
 

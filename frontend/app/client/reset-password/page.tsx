@@ -84,25 +84,25 @@ export default function ResetPasswordPage() {
             >
                 <div className="text-center mb-7">
                     <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                        className="inline-flex items-center justify-center w-[68px] h-[68px] rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-[2px] mb-4 shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+                        className="inline-flex items-center justify-center w-[68px] h-[68px] rounded-2xl bg-[var(--panel-accent)] p-[2px] mb-4 shadow-[0_0_40px_rgba(59,130,246,0.3)]">
                         <div className="w-full h-full bg-nexus-deep rounded-[14px] flex items-center justify-center">
-                            <KeyRound size={28} className="text-blue-400" />
+                            <KeyRound size={28} className="text-[var(--panel-accent)]" />
                         </div>
                     </motion.div>
-                    <h1 className="text-2xl font-black text-white">MOT DE PASSE <span className="text-blue-400">OUBLIÉ</span></h1>
-                    <p className="text-gray-500 mt-1.5 uppercase tracking-[0.3em] text-[9px] font-bold">Retour Gagnant Bénin — Espace Client</p>
+                    <h1 className="text-2xl font-black text-white">MOT DE PASSE <span className="text-[var(--panel-accent)]">OUBLIÉ</span></h1>
+                    <p className="text-gray-500 mt-1.5 uppercase tracking-[0.3em] text-[9px] font-bold">Retour Gagnant Bénin · Espace Client</p>
                 </div>
 
                 <AnimatePresence mode="wait">
                     {step === 'done' ? (
                         <motion.div key="done" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                             className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
-                            <div className="w-16 h-16 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
-                                <CheckCircle2 size={32} className="text-blue-400" />
+                            <div className="w-16 h-16 rounded-full bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/30 flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle2 size={32} className="text-[var(--panel-accent)]" />
                             </div>
                             <h2 className="text-xl font-black text-white mb-2">Mot de passe mis à jour !</h2>
                             <p className="text-gray-400 text-sm mb-4">Vous allez être redirigé vers la connexion...</p>
-                            <Loader2 className="animate-spin text-blue-400 mx-auto" size={20} />
+                            <Loader2 className="animate-spin text-[var(--panel-accent)] mx-auto" size={20} />
                         </motion.div>
 
                     ) : step === 'reset' ? (
@@ -126,8 +126,8 @@ export default function ResetPasswordPage() {
                                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600" size={15} />
                                         <input type={showPassword ? 'text' : 'password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)}
                                             placeholder="Min. 8 caractères"
-                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/50 rounded-xl py-3 pl-11 pr-10 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
-                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-400 transition-colors" tabIndex={-1}>
+                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/50 rounded-xl py-3 pl-11 pr-10 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-[var(--panel-accent)] transition-colors" tabIndex={-1}>
                                             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                                         </button>
                                     </div>
@@ -136,10 +136,10 @@ export default function ResetPasswordPage() {
                                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em]">Confirmer</label>
                                     <input type={showPassword ? 'text' : 'password'} required value={confirm} onChange={e => setConfirm(e.target.value)}
                                         placeholder="Répéter le mot de passe"
-                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/50 rounded-xl py-3 px-4 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
+                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/50 rounded-xl py-3 px-4 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
                                 </div>
                                 <motion.button type="submit" disabled={isLoading} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 group relative overflow-hidden shadow-[0_4px_20px_rgba(59,130,246,0.3)] mt-2">
+                                    className="w-full bg-[var(--panel-accent)] text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 group relative overflow-hidden shadow-[0_4px_20px_rgba(59,130,246,0.3)] mt-2">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                     {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
                                         <>
@@ -154,13 +154,13 @@ export default function ResetPasswordPage() {
                     ) : emailSent ? (
                         <motion.div key="sent" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                             className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
-                            <div className="w-16 h-16 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
-                                <Mail size={28} className="text-blue-400" />
+                            <div className="w-16 h-16 rounded-full bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/30 flex items-center justify-center mx-auto mb-4">
+                                <Mail size={28} className="text-[var(--panel-accent)]" />
                             </div>
                             <h2 className="text-xl font-black text-white mb-2">Email envoyé !</h2>
                             <p className="text-gray-400 text-sm mb-2">Vérifiez votre boîte mail.</p>
                             <p className="text-gray-500 text-xs mb-5">Cliquez sur le lien dans l'email pour définir votre nouveau mot de passe. Vérifiez aussi vos spams.</p>
-                            <Link href="/client/login" className="inline-flex items-center gap-1.5 text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors">
+                            <Link href="/client/login" className="inline-flex items-center gap-1.5 text-[var(--panel-accent)] text-sm font-bold hover:text-[var(--panel-accent)] transition-colors">
                                 <ArrowRight size={14} /> Retour à la connexion
                             </Link>
                         </motion.div>
@@ -186,11 +186,11 @@ export default function ResetPasswordPage() {
                                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600" size={15} />
                                         <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                                             placeholder="votre@email.com" autoComplete="email"
-                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/50 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
+                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/50 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none text-[13px] transition-colors" />
                                     </div>
                                 </div>
                                 <motion.button type="submit" disabled={isLoading} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 group relative overflow-hidden shadow-[0_4px_20px_rgba(59,130,246,0.3)] mt-2">
+                                    className="w-full bg-[var(--panel-accent)] text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 group relative overflow-hidden shadow-[0_4px_20px_rgba(59,130,246,0.3)] mt-2">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                                     {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
                                         <>
@@ -201,7 +201,7 @@ export default function ResetPasswordPage() {
                                 </motion.button>
                             </form>
                             <div className="mt-5 pt-5 border-t border-white/[0.06] text-center">
-                                <Link href="/client/login" className="text-[12px] text-gray-500 hover:text-blue-400 transition-colors">
+                                <Link href="/client/login" className="text-[12px] text-gray-500 hover:text-[var(--panel-accent)] transition-colors">
                                     ← Retour à la connexion
                                 </Link>
                             </div>
@@ -210,7 +210,7 @@ export default function ResetPasswordPage() {
                 </AnimatePresence>
 
                 <p className="text-center mt-5 text-gray-600 text-[10px]">
-                    © {new Date().getFullYear()} Retour Gagnant Bénin — Espace Client Sécurisé
+                    © {new Date().getFullYear()} Retour Gagnant Bénin · Espace Client Sécurisé
                 </p>
             </motion.div>
         </div>

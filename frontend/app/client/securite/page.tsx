@@ -68,7 +68,7 @@ export default function ClientSecuritePage() {
     return (
         <div className="p-5 md:p-8 max-w-2xl mx-auto text-white">
             <header className="flex items-center gap-3 mb-6">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center">
                     <ShieldCheck className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -99,7 +99,7 @@ export default function ClientSecuritePage() {
                     {/* Activation */}
                     {!enabled && step === 'idle' && (
                         <button type="button" onClick={startEnroll} disabled={busy}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60">
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--panel-accent)] hover:bg-[var(--panel-accent)] text-white text-sm font-semibold disabled:opacity-60">
                             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />} Activer la 2FA
                         </button>
                     )}
@@ -113,16 +113,16 @@ export default function ClientSecuritePage() {
                                     </div>
                                 )}
                                 <div className="text-sm text-gray-300 space-y-2">
-                                    <p className="flex items-center gap-2"><Smartphone className="w-4 h-4 text-blue-400" /> 1. Scannez ce QR code avec votre application d&apos;authentification.</p>
+                                    <p className="flex items-center gap-2"><Smartphone className="w-4 h-4 text-[var(--panel-accent)]" /> 1. Scannez ce QR code avec votre application d&apos;authentification.</p>
                                     <p>2. Ou saisissez la clé manuellement :</p>
-                                    <code className="block bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs break-all text-blue-300">{secret}</code>
+                                    <code className="block bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs break-all text-[var(--panel-accent)]">{secret}</code>
                                     <p>3. Entrez le code à 6 chiffres généré :</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                     inputMode="numeric" placeholder="123456"
-                                    className="w-40 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-center tracking-[0.3em] outline-none focus:border-blue-500" />
+                                    className="w-40 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-center tracking-[0.3em] outline-none focus:border-[var(--panel-accent)]" />
                                 <button type="button" onClick={confirmEnroll} disabled={busy}
                                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60">
                                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Confirmer

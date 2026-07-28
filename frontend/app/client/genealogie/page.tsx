@@ -120,7 +120,7 @@ export default function ClientGenealogyPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="animate-spin text-blue-500" size={36} />
+        <Loader2 className="animate-spin text-[var(--panel-accent)]" size={36} />
       </div>
     );
   }
@@ -144,12 +144,12 @@ export default function ClientGenealogyPage() {
       {/* Title Header with Zoom tools */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2 text-blue-400">
+          <div className="flex items-center gap-2 text-[var(--panel-accent)]">
             <GitFork size={16} />
             <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Mon Espace Plan de composition de Famille</span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-white font-heading mt-1">
-            MON <span className="text-blue-400">PLAN DE COMPOSITION DE FAMILLE</span>
+            MON <span className="text-[var(--panel-accent)]">PLAN DE COMPOSITION DE FAMILLE</span>
           </h2>
         </div>
 
@@ -162,7 +162,7 @@ export default function ClientGenealogyPage() {
               placeholder="Rechercher un parent..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-8 py-1.5 w-44 rounded-xl text-xs border bg-[#0c1322] text-white border-white/5 focus:outline-none focus:border-blue-500/60 focus:w-60 transition-all duration-300"
+              className="pl-9 pr-8 py-1.5 w-44 rounded-xl text-xs border bg-[#0c1322] text-white border-white/5 focus:outline-none focus:border-[var(--panel-accent)]/60 focus:w-60 transition-all duration-300"
             />
             {searchQuery && (
               <button
@@ -200,7 +200,7 @@ export default function ClientGenealogyPage() {
                         <img src={p.avatar_url} className="w-8 h-8 rounded-lg object-cover" />
                       ) : (
                         <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white bg-gradient-to-br from-blue-500 to-indigo-600"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white bg-[var(--panel-accent)]"
                         >
                           {((p.first_name?.[0] || '') + (p.last_name?.[0] || '')).toUpperCase() || '?'}
                         </div>
@@ -323,7 +323,7 @@ export default function ClientGenealogyPage() {
         <div className="bg-[#040810] border border-white/5 rounded-[2.5rem] min-h-[560px] h-[600px] relative overflow-hidden">
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center">
-              <Loader2 className="animate-spin text-blue-500" size={32} />
+              <Loader2 className="animate-spin text-[var(--panel-accent)]" size={32} />
             </div>
           }>
             <FamilyMap persons={persons} />
@@ -470,7 +470,7 @@ export default function ClientGenealogyPage() {
               <p className="text-xs text-gray-500">Histoire temporelle des événements de la famille</p>
             </div>
 
-            <div className="relative border-l border-blue-500/20 ml-4 pl-8 space-y-8">
+            <div className="relative border-l border-[var(--panel-accent)]/20 ml-4 pl-8 space-y-8">
               {buildFamilyTimeline(persons).map((event) => {
                 const p = event.person;
                 const isBirth = event.type === 'birth';
@@ -493,10 +493,10 @@ export default function ClientGenealogyPage() {
                     {/* Timeline Event Card */}
                     <div 
                       onClick={() => handleSelectPerson(p)}
-                      className="p-4 rounded-2xl border cursor-pointer bg-[#0a0f18] border-white/5 hover:border-blue-500/50 hover:shadow-lg transition-all duration-300"
+                      className="p-4 rounded-2xl border cursor-pointer bg-[#0a0f18] border-white/5 hover:border-[var(--panel-accent)]/50 hover:shadow-lg transition-all duration-300"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-sm font-black font-mono text-blue-400">
+                        <span className="text-sm font-black font-mono text-[var(--panel-accent)]">
                           {event.year}
                         </span>
                         <span className="text-[8px] font-mono font-black uppercase px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/10">
@@ -504,7 +504,7 @@ export default function ClientGenealogyPage() {
                         </span>
                       </div>
                       
-                      <h4 className="text-xs font-bold text-white group-hover/item:text-blue-400 transition-colors">
+                      <h4 className="text-xs font-bold text-white group-hover/item:text-[var(--panel-accent)] transition-colors">
                         {p.first_name} {p.last_name}
                       </h4>
 
@@ -559,7 +559,7 @@ export default function ClientGenealogyPage() {
                   <div 
                     key={`${p.id}-${anniv.type}-${i}`}
                     onClick={() => handleSelectPerson(p)}
-                    className="flex justify-between items-center p-4 rounded-2xl bg-[#0a0f18] border border-white/5 cursor-pointer hover:border-blue-500/40 transition-all duration-300"
+                    className="flex justify-between items-center p-4 rounded-2xl bg-[#0a0f18] border border-white/5 cursor-pointer hover:border-[var(--panel-accent)]/40 transition-all duration-300"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-white/5"
@@ -643,7 +643,7 @@ export default function ClientGenealogyPage() {
                 style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)' }}
               >
                 <div>
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
+                  <p className="text-[9px] font-black text-[var(--panel-accent)] uppercase tracking-widest">
                     Fiche Parent (Lecture seule)
                   </p>
                   <h3 className="text-base font-black text-white"
@@ -654,7 +654,7 @@ export default function ClientGenealogyPage() {
                 </div>
                 <button
                   onClick={handleCancelDetail}
-                  className="p-2 rounded-xl transition-all text-gray-500 hover:text-blue-400"
+                  className="p-2 rounded-xl transition-all text-gray-500 hover:text-[var(--panel-accent)]"
                 >
                   <X size={16} />
                 </button>
@@ -674,7 +674,7 @@ export default function ClientGenealogyPage() {
                     className="h-16 w-16 rounded-2xl object-cover border border-white/10 shadow-lg"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xl font-black text-white">
+                  <div className="h-16 w-16 rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center text-xl font-black text-white">
                     {((selectedPerson.first_name?.[0] || '') + (selectedPerson.last_name?.[0] || '')).toUpperCase() || '?'}
                   </div>
                 )}
@@ -747,12 +747,12 @@ export default function ClientGenealogyPage() {
                       }}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={12} className="text-blue-400 shrink-0" />
+                        <FileText size={12} className="text-[var(--panel-accent)] shrink-0" />
                         <a 
                           href={d.file_url ?? '#'} 
                           target="_blank" 
                           rel="noreferrer"
-                          className="text-[11px] font-bold truncate hover:text-blue-400 hover:underline transition-all"
+                          className="text-[11px] font-bold truncate hover:text-[var(--panel-accent)] hover:underline transition-all"
                           style={{ color: isDark ? '#d1d5db' : '#4b5563' }}
                         >
                           {d.title || 'Télécharger le document'}

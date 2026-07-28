@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useLogin, useForgotPassword } from '@refinedev/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import AuthBackdrop, { BrandSeal } from '@/components/auth/AuthBackdrop';
 
 type View = 'login' | 'forgot' | 'forgot-sent';
 
@@ -31,26 +32,35 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#05080a] flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background Decoration */}
-            <div className="absolute top-0 right-[-10%] w-[600px] h-[600px] bg-[#FCD116]/5 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#008751]/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+            {/* L'arbre-réseau vu d'en haut : la vue d'ensemble, propre à l'administration. */}
+            <AuthBackdrop
+                tone="charcoal"
+                image="/images/admin-login-bg.webp"
+                imageAlt=""
+                focus="center 45%"
+            />
 
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full max-w-md relative z-10"
             >
                 {/* Logo / Header */}
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-benin-gradient p-0.5 mb-6 shadow-2xl">
-                        <div className="w-full h-full bg-[#05080a] rounded-[14px] flex items-center justify-center">
-                            <ShieldCheck size={40} className="text-[#FCD116]" />
-                        </div>
-                    </div>
-                    <h1 className="text-3xl font-bold text-white font-heading"><T>KAGE ADMIN</T></h1>
-                    <p className="text-gray-500 mt-2 uppercase tracking-[0.3em] text-[10px] font-bold"><T>Système Sécurisé</T></p>
+                <div className="text-center mb-9">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.08, duration: 0.55, ease: [0.34, 1.4, 0.64, 1] }}
+                        className="mb-5"
+                    >
+                        <BrandSeal inner="#0D1524" size={80}>
+                            <ShieldCheck size={34} strokeWidth={1.6} className="text-[#E8BE2A]" />
+                        </BrandSeal>
+                    </motion.div>
+                    <h1 className="font-display text-[32px] leading-none text-[#F4F8FF] tracking-tight"><T>Administration</T></h1>
+                    <p className="text-[#A9B4C7] mt-2.5 uppercase tracking-[0.28em] text-[9px] font-semibold"><T>Accès réservé au système</T></p>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -61,44 +71,45 @@ export default function LoginPage() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="bg-[#0f141e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl"
+                            className="bg-[#0F1728]/88 backdrop-blur-xl border border-[rgba(226,236,255,0.12)] rounded-3xl p-8 shadow-[0_28px_70px_-30px_rgba(0,0,0,0.85)] relative overflow-hidden"
                         >
+                            <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1"><T>Email Personnel</T></label>
+                                    <label className="text-xs font-bold text-[#A9B4C7] uppercase tracking-widest ml-1"><T>Email Personnel</T></label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#FCD116] transition-colors" size={18} />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7C879E] group-focus-within:text-[#E8BE2A] transition-colors" size={18} />
                                         <input
                                             type="email"
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder={t("admin@retourgagnant.bj")}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#FCD116]/50 transition-all text-sm"
+                                            className="w-full bg-[#162034] border border-[rgba(226,236,255,0.12)] rounded-xl py-4 pl-12 pr-4 text-[#EAF0FA] placeholder:text-[#7C879E] focus:outline-none focus:border-[#E8BE2A] focus:ring-2 focus:ring-[#E8BE2A]/15 transition-all text-sm"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center ml-1">
-                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest"><T>Mot de Passe</T></label>
+                                        <label className="text-xs font-bold text-[#A9B4C7] uppercase tracking-widest"><T>Mot de Passe</T></label>
                                         <button
                                             type="button"
                                             onClick={() => { setForgotEmail(email); setView('forgot'); }}
-                                            className="text-[10px] text-[#FCD116]/60 hover:text-[#FCD116] transition-colors uppercase font-bold tracking-tighter"
+                                            className="text-[10px] text-[#E8BE2A] hover:text-[#F2CE55] transition-colors uppercase font-bold tracking-tighter"
                                         >
                                             Oublié ?
                                         </button>
                                     </div>
                                     <div className="relative group">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#FCD116] transition-colors" size={18} />
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7C879E] group-focus-within:text-[#E8BE2A] transition-colors" size={18} />
                                         <input
                                             type="password"
                                             required
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#FCD116]/50 transition-all text-sm"
+                                            className="w-full bg-[#162034] border border-[rgba(226,236,255,0.12)] rounded-xl py-4 pl-12 pr-4 text-[#EAF0FA] placeholder:text-[#7C879E] focus:outline-none focus:border-[#E8BE2A] focus:ring-2 focus:ring-[#E8BE2A]/15 transition-all text-sm"
                                         />
                                     </div>
                                 </div>
@@ -106,13 +117,13 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full bg-white text-black font-bold h-14 rounded-xl flex items-center justify-center gap-2 hover:bg-[#FCD116] transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    className="w-full bg-[#E8BE2A] hover:bg-[#F2CE55] text-[#0D1524] font-bold h-14 rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_26px_-12px_rgba(232,190,42,0.8)] hover:-translate-y-px active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
                                     {isLoading ? (
                                         <Loader2 className="animate-spin" size={20} />
                                     ) : (
                                         <>
-                                            <span><T>S&apos;AUTHENTIFIER</T></span>
+                                            <span className="tracking-[0.06em]"><T>S&apos;authentifier</T></span>
                                             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}
@@ -128,31 +139,32 @@ export default function LoginPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="bg-[#0f141e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl"
+                            className="bg-[#0F1728]/88 backdrop-blur-xl border border-[rgba(226,236,255,0.12)] rounded-3xl p-8 shadow-[0_28px_70px_-30px_rgba(0,0,0,0.85)] relative overflow-hidden"
                         >
+                            <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <button
                                 type="button"
                                 onClick={() => setView('login')}
-                                className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider mb-6"
+                                className="flex items-center gap-2 text-[#A9B4C7] hover:text-[#EAF0FA] transition-colors text-xs font-bold uppercase tracking-wider mb-6"
                             >
                                 <ArrowLeft size={14} /> Retour
                             </button>
 
                             <h2 className="text-xl font-black text-white mb-2"><T>Réinitialisation</T></h2>
-                            <p className="text-gray-500 text-xs mb-6"><T>Entrez votre adresse email pour recevoir un lien de réinitialisation.</T></p>
+                            <p className="text-[#A9B4C7] text-xs mb-6"><T>Entrez votre adresse email pour recevoir un lien de réinitialisation.</T></p>
 
                             <form onSubmit={handleForgot} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1"><T>Email Personnel</T></label>
+                                    <label className="text-xs font-bold text-[#A9B4C7] uppercase tracking-widest ml-1"><T>Email Personnel</T></label>
                                     <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#FCD116] transition-colors" size={18} />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7C879E] group-focus-within:text-[#E8BE2A] transition-colors" size={18} />
                                         <input
                                             type="email"
                                             required
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
                                             placeholder={t("admin@retourgagnant.bj")}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-[#FCD116]/50 transition-all text-sm"
+                                            className="w-full bg-[#162034] border border-[rgba(226,236,255,0.12)] rounded-xl py-4 pl-12 pr-4 text-[#EAF0FA] placeholder:text-[#7C879E] focus:outline-none focus:border-[#E8BE2A] focus:ring-2 focus:ring-[#E8BE2A]/15 transition-all text-sm"
                                         />
                                     </div>
                                 </div>
@@ -181,7 +193,7 @@ export default function LoginPage() {
                                 <CheckCircle2 size={32} className="text-[#008751]" />
                             </div>
                             <h2 className="text-xl font-black text-white mb-2"><T>Lien Envoyé !</T></h2>
-                            <p className="text-gray-500 text-sm mb-6">
+                            <p className="text-[#A9B4C7] text-sm mb-6">
                                 Un email de réinitialisation a été envoyé à <span className="text-white font-bold">{forgotEmail}</span>.
                                 Vérifiez votre boîte de réception (et les spams).
                             </p>
@@ -197,7 +209,7 @@ export default function LoginPage() {
                 </AnimatePresence>
 
                 {/* Footer Link */}
-                <p className="text-center mt-8 text-gray-600 text-xs">
+                <p className="text-center mt-8 text-[#8894A8] text-xs">
                     &copy; {new Date().getFullYear()} Retour Gagnant Bénin. <br /> Accès strictement réservé au personnel autorisé.
                 </p>
             </motion.div>

@@ -7,6 +7,7 @@ import {
     Bell, CheckCheck, FolderOpen, MessageSquare, CalendarDays,
     Receipt, Inbox, Loader2, Circle,
 } from 'lucide-react'
+import { EmptyState } from '@/components/panel/PanelStates'
 
 interface Notif {
     id: string
@@ -88,7 +89,7 @@ export default function ClientNotificationsPage() {
         <div className="p-5 md:p-8 max-w-3xl mx-auto text-white">
             <header className="flex items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <div className="w-11 h-11 rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center">
                         <Bell className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -107,10 +108,12 @@ export default function ClientNotificationsPage() {
             {loading ? (
                 <div className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="h-16 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />)}</div>
             ) : items.length === 0 ? (
-                <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-10 text-center">
-                    <Inbox className="w-9 h-9 mx-auto mb-3 text-gray-600" />
-                    <p className="font-semibold mb-1">Aucune notification</p>
-                    <p className="text-sm text-gray-400">Vous serez prévenu ici de l&apos;avancée de vos dossiers, des réponses de votre conseiller et de vos rendez-vous.</p>
+                <div className="rounded-2xl border" style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}>
+                    <EmptyState
+                        icon={Inbox}
+                        title="Aucune notification"
+                        body="Vous serez prévenu ici de l'avancée de vos dossiers, des réponses de votre conseiller et de vos rendez-vous."
+                    />
                 </div>
             ) : (
                 <div className="space-y-2.5">
@@ -121,7 +124,7 @@ export default function ClientNotificationsPage() {
                             return (
                                 <motion.button key={n.id} type="button" layout onClick={() => !n.is_read && markRead(n.id)}
                                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                                    className={`w-full text-left flex items-start gap-3 rounded-2xl border p-4 transition ${n.is_read ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-blue-500/[0.06] border-blue-500/20'}`}>
+                                    className={`w-full text-left flex items-start gap-3 rounded-2xl border p-4 transition ${n.is_read ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20'}`}>
                                     <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${m.color}22` }}>
                                         <Icon className="w-4.5 h-4.5" style={{ color: m.color }} />
                                     </div>
@@ -130,7 +133,7 @@ export default function ClientNotificationsPage() {
                                         {n.body && <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{n.body}</p>}
                                         <p className="text-[11px] text-gray-500 mt-1">{timeAgo(n.created_at)}</p>
                                     </div>
-                                    {!n.is_read && <Circle className="w-2.5 h-2.5 text-blue-400 fill-blue-400 shrink-0 mt-1.5" />}
+                                    {!n.is_read && <Circle className="w-2.5 h-2.5 text-[var(--panel-accent)] fill-blue-400 shrink-0 mt-1.5" />}
                                 </motion.button>
                             )
                         })}

@@ -3,7 +3,7 @@ import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native'
 import { colors, radius, shadows } from '../config/theme'
 
 interface NexusCardProps extends ViewProps {
-    variant?: 'glass' | 'solid' | 'elevated' | 'glow'
+    variant?: 'glass' | 'solid' | 'elevated' | 'glow' | 'luxuryGold'
     children: React.ReactNode
     style?: ViewStyle | ViewStyle[]
 }
@@ -36,6 +36,13 @@ export default function NexusCard({ variant = 'glass', children, style, ...props
                     borderColor: colors.primary + '30',
                     borderWidth: 1,
                     ...shadows.glow,
+                }
+            case 'luxuryGold':
+                return {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderGold,
+                    borderWidth: 1.5,
+                    ...shadows.gold,
                 }
             default:
                 return {}

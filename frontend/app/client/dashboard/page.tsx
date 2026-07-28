@@ -30,7 +30,7 @@ interface RecentDoc {
 
 const statusLabel: Record<string, { label: string; color: string }> = {
     brouillon: { label: 'Brouillon', color: 'text-gray-400 bg-gray-500/10' },
-    envoye: { label: 'En attente', color: 'text-blue-400 bg-blue-500/10' },
+    envoye: { label: 'En attente', color: 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)]' },
     accepte: { label: 'Accepté', color: 'text-emerald-400 bg-emerald-500/10' },
     refuse: { label: 'Refusé', color: 'text-red-400 bg-red-500/10' },
     paye: { label: 'Payé', color: 'text-green-400 bg-green-500/10' },
@@ -212,18 +212,24 @@ export default function ClientDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clientId, clientEmail])
 
+    // La couleur ENCODE un état, elle ne décore pas : une carte n'est colorée
+    // que si elle attend une action du client. Sinon elle reste neutre. Avant,
+    // chaque carte avait un dégradé différent (emerald / or / teal / indigo) —
+    // quatre accents sans signification, d'où l'impression de désordre.
     const cards = [
-        { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, color: 'from-emerald-500 to-emerald-600', href: '/client/documents', desc: 'À signer' },
-        { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, color: 'from-[#C9A84C] to-[#A68B3C]', href: '/client/documents', desc: 'En attente de paiement' },
- { title: 'Dossier actif', value: stats.dossierActif ? 'Actif' : '—', icon: FolderOpen, color: 'from-teal-500 to-emerald-700', href: '/client/dossier', desc: 'Suivi en cours'},
-        { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, color: 'from-emerald-500 to-teal-600', href: '/client/messages', desc: 'De votre agent' },
+        { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, tone: 'action' as const, href: '/client/documents', desc: 'À signer' },
+        { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, tone: 'money' as const, href: '/client/documents', desc: 'En attente de paiement' },
+        { title: 'Dossier actif', value: stats.dossierActif ? 'Actif' : '—', icon: FolderOpen, tone: 'neutral' as const, href: '/client/dossier', desc: 'Suivi en cours' },
+        { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, tone: 'action' as const, href: '/client/messages', desc: 'De votre agent' },
     ]
 
+    // Actions rapides : même poids, donc même accent. Quatre couleurs pour
+    // quatre liens équivalents, c'est du bruit visuel.
     const quickActions = [
-        { label: 'Mes documents', icon: FileText, href: '/client/documents', color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20' },
-        { label: 'Mon dossier', icon: FolderOpen, href: '/client/dossier', color: 'text-indigo-400', bg: 'bg-indigo-500/10 hover:bg-indigo-500/20' },
-        { label: 'Envoyer message', icon: MessageSquare, href: '/client/messages', color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20' },
-        { label: 'Prendre RDV', icon: CalendarDays, href: '/client/rendez-vous', color: 'text-amber-400', bg: 'bg-amber-500/10 hover:bg-amber-500/20' },
+        { label: 'Mes documents', icon: FileText, href: '/client/documents' },
+        { label: 'Mon dossier', icon: FolderOpen, href: '/client/dossier' },
+        { label: 'Envoyer message', icon: MessageSquare, href: '/client/messages' },
+        { label: 'Prendre RDV', icon: CalendarDays, href: '/client/rendez-vous' },
     ]
 
     if (loading) {
@@ -265,20 +271,32 @@ export default function ClientDashboardPage() {
                     const Icon = card.icon
                     const numVal = typeof card.value === 'number' ? card.value : null
                     const hasAlert = numVal !== null && numVal > 0
+                    // Accent porté par l'état : vert = à traiter, ambre = à régler.
+                    const accent = !hasAlert
+                        ? { fg: 'var(--panel-icon-muted)', bg: 'var(--panel-badge-bg)', ring: 'var(--panel-border)' }
+                        : card.tone === 'money'
+                            ? { fg: '#B08A18', bg: 'rgba(176,138,24,0.12)', ring: 'rgba(176,138,24,0.45)' }
+                            : { fg: 'var(--panel-accent)', bg: 'var(--panel-accent-soft)', ring: 'var(--panel-accent)' }
                     return (
-                        <motion.div key={card.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
-                            <Link href={card.href} className={`block bg-[#0a1221] border rounded-xl p-5 hover:border-white/[0.12] transition-all group ${hasAlert ? 'border-[#C9A84C]/40' : 'border-white/[0.06]'}`}>
+                        <motion.div key={card.title} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.35 }}>
+                            <Link
+                                href={card.href}
+                                className="block rounded-xl p-5 border transition-all duration-200 hover:-translate-y-0.5 group"
+                                style={{
+                                    background: 'var(--panel-surface)',
+                                    borderColor: hasAlert ? accent.ring : 'var(--panel-border)',
+                                }}
+                            >
                                 <div className="flex items-center justify-between mb-3">
-                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} p-[1px]`}>
-                                        <div className="w-full h-full bg-[#0a1221] rounded-[10px] flex items-center justify-center">
-                                            <Icon size={18} className="text-white/80" />
-                                        </div>
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                        style={{ background: accent.bg }}>
+                                        <Icon size={18} strokeWidth={1.75} style={{ color: accent.fg }} />
                                     </div>
-                                    {hasAlert && <span className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse" />}
+                                    {hasAlert && <span className="w-2 h-2 rounded-full" style={{ background: accent.fg }} />}
                                 </div>
-                                <p className="text-2xl font-black text-white">{card.value}</p>
-                                <p className="text-[11px] text-gray-500 font-semibold mt-1">{card.title}</p>
-                                <p className="text-[10px] text-gray-600 mt-0.5">{card.desc}</p>
+                                <p className="text-2xl font-black tabular-nums" style={{ color: 'var(--panel-text-heading)' }}>{card.value}</p>
+                                <p className="text-[11px] font-semibold mt-1" style={{ color: 'var(--panel-text)' }}>{card.title}</p>
+                                <p className="text-[10px] mt-0.5" style={{ color: 'var(--panel-text-muted)' }}>{card.desc}</p>
                             </Link>
                         </motion.div>
                     )
@@ -342,7 +360,7 @@ export default function ClientDashboardPage() {
                                     return (
                                         <Link key={doc.id} href={`/client/documents/${doc.id}`}
                                             className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors group">
-                                            <div className={`p-2 rounded-lg ${doc.type === 'devis' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                            <div className={`p-2 rounded-lg ${doc.type === 'devis' ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)]' : 'bg-emerald-500/10 text-emerald-400'}`}>
                                                 {doc.type === 'devis' ? <FileText size={14} /> : <Receipt size={14} />}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -399,10 +417,11 @@ export default function ClientDashboardPage() {
                                 const Icon = action.icon
                                 return (
                                     <Link key={action.href} href={action.href}
-                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${action.bg}`}>
-                                        <Icon size={15} className={action.color} />
-                                        <span className="text-[13px] text-white font-medium">{action.label}</span>
-                                        <ArrowRight size={12} className="text-gray-600 ml-auto" />
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-200 hover:translate-x-0.5 group/qa"
+                                        style={{ background: 'var(--panel-surface-alt)', borderColor: 'var(--panel-border)' }}>
+                                        <Icon size={15} strokeWidth={1.75} style={{ color: 'var(--panel-accent)' }} />
+                                        <span className="text-[13px] font-medium" style={{ color: 'var(--panel-text)' }}>{action.label}</span>
+                                        <ArrowRight size={12} className="ml-auto transition-transform group-hover/qa:translate-x-0.5" style={{ color: 'var(--panel-text-muted)' }} />
                                     </Link>
                                 )
                             })}
@@ -413,12 +432,12 @@ export default function ClientDashboardPage() {
                     <div className="bg-[#0a1221] border border-white/[0.06] rounded-xl p-4">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Mon dossier</p>
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stats.dossierActif ? 'bg-indigo-500/15' : 'bg-gray-500/10'}`}>
-                                {stats.dossierActif ? <CheckCircle2 size={20} className="text-indigo-400" /> : <FolderOpen size={20} className="text-gray-500" />}
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stats.dossierActif ? 'bg-[var(--panel-accent-soft)]' : 'bg-gray-500/10'}`}>
+                                {stats.dossierActif ? <CheckCircle2 size={20} className="text-[var(--panel-accent)]" /> : <FolderOpen size={20} className="text-gray-500" />}
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-white">{stats.dossierActif ? 'Dossier en cours' : 'Aucun dossier actif'}</p>
-                                <Link href="/client/dossier" className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors mt-0.5">
+                                <Link href="/client/dossier" className="text-[11px] text-[var(--panel-accent)] hover:text-[var(--panel-accent)] flex items-center gap-1 transition-colors mt-0.5">
                                     Voir le suivi <ArrowRight size={10} />
                                 </Link>
                             </div>

@@ -63,14 +63,14 @@ interface Order {
 
 // ── Helpers ───────────────────────────────────────────────────────
 const STATUT_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    reception:    { label: 'Reçu',        color: 'text-blue-400',    bg: 'bg-blue-500/15',    dot: 'bg-blue-400' },
-    verification: { label: 'Vérification',color: 'text-indigo-400',  bg: 'bg-indigo-500/15',  dot: 'bg-indigo-400' },
+    reception:    { label: 'Reçu',        color: 'text-[var(--panel-accent)]',    bg: 'bg-[var(--panel-accent-soft)]',    dot: 'bg-[var(--panel-accent)]' },
+    verification: { label: 'Vérification',color: 'text-[var(--panel-accent)]',  bg: 'bg-[var(--panel-accent-soft)]',  dot: 'bg-[var(--panel-accent)]' },
     traitement:   { label: 'Traitement',  color: 'text-amber-400',   bg: 'bg-amber-500/15',   dot: 'bg-amber-400' },
-    validation:   { label: 'Validation',  color: 'text-purple-400',  bg: 'bg-purple-500/15',  dot: 'bg-purple-400' },
+    validation:   { label: 'Validation',  color: 'text-[var(--panel-accent)]',  bg: 'bg-[var(--panel-accent-soft)]',  dot: 'bg-[var(--panel-accent)]' },
     finalisation: { label: 'Finalisation',color: 'text-teal-400',    bg: 'bg-teal-500/15',    dot: 'bg-teal-400' },
     termine:      { label: 'Terminé',     color: 'text-emerald-400', bg: 'bg-emerald-500/15', dot: 'bg-emerald-400' },
     annule:       { label: 'Annulé',      color: 'text-gray-400',    bg: 'bg-gray-500/15',    dot: 'bg-gray-400' },
-    soumis:       { label: 'Soumis',      color: 'text-blue-400',    bg: 'bg-blue-500/15',    dot: 'bg-blue-400' },
+    soumis:       { label: 'Soumis',      color: 'text-[var(--panel-accent)]',    bg: 'bg-[var(--panel-accent-soft)]',    dot: 'bg-[var(--panel-accent)]' },
     en_traitement:{ label: 'En cours',    color: 'text-amber-400',   bg: 'bg-amber-500/15',   dot: 'bg-amber-400' },
     approuve:     { label: 'Approuvé',    color: 'text-emerald-400', bg: 'bg-emerald-500/15', dot: 'bg-emerald-400' },
     rejete:       { label: 'Rejeté',      color: 'text-red-400',     bg: 'bg-red-500/15',     dot: 'bg-red-400' },
@@ -96,10 +96,10 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
 
 const SERVICE_TYPE_COLOR: Record<string, string> = {
     'nationalite': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-    'recherche-ancestrale': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-    'transport': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    'recherche-ancestrale': 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
+    'transport': 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
     'sante': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    'scolarite': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+    'scolarite': 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20',
     'administratif': 'text-teal-400 bg-teal-500/10 border-teal-500/20',
 }
 
@@ -121,7 +121,7 @@ const FEATURED_SERVICES = [
         title: 'Recherche Ancestrale',
         description: 'Retrouvez vos racines africaines. Recherche dans les archives et bases de données spécialisées.',
         icon: FileSearch,
-        color: 'from-purple-500 to-violet-600',
+        color: 'bg-[var(--panel-accent)]',
         glow: 'shadow-[0_4px_20px_rgba(168,85,247,0.25)]',
         badge: 'Expertise IA',
         href: '/services#recherche-ancestrale',
@@ -132,7 +132,7 @@ const FEATURED_SERVICES = [
         title: 'Autres Services',
         description: 'Transport, santé, scolarité, démarches administratives... Nous vous accompagnons sur tous vos projets.',
         icon: Globe,
-        color: 'from-blue-500 to-indigo-600',
+        color: 'from-[var(--panel-accent)] to-[var(--panel-accent-soft)]',
         glow: 'shadow-[0_4px_20px_rgba(59,130,246,0.25)]',
         badge: 'Multi-services',
         href: '/services',
@@ -201,7 +201,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
                 {/* Barre de progression */}
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-4">
                     <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--panel-accent)] to-[var(--panel-accent-soft)]"
                         initial={{ width: 0 }}
                         animate={{ width: `${dossier.progression}%` }}
                         transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
@@ -235,7 +235,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
 
                 {/* Toggle étapes */}
                 <button type="button" onClick={onToggle}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 hover:text-blue-400 transition-colors w-full">
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 hover:text-[var(--panel-accent)] transition-colors w-full">
                     {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                     {expanded ? 'Masquer les étapes' : `Voir les ${etapes.length || 'les'} étapes`}
                 </button>
@@ -253,8 +253,8 @@ function DossierCard({ dossier, expanded, onToggle }: {
                                 const done = etape.status === 'completed'
                                 const inProgress = etape.status === 'in_progress'
                                 return (
-                                    <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${done ? 'bg-emerald-500/8' : inProgress ? 'bg-indigo-500/8 border border-indigo-500/20' : 'bg-white/[0.02]'}`}>
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black ${done ? 'bg-emerald-500 text-white' : inProgress ? 'bg-indigo-500/30 text-indigo-400 border border-indigo-500/50' : 'bg-white/5 text-gray-600'}`}>
+                                    <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${done ? 'bg-emerald-500/8' : inProgress ? 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20' : 'bg-white/[0.02]'}`}>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-black ${done ? 'bg-emerald-500 text-white' : inProgress ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] border border-[var(--panel-accent)]/50' : 'bg-white/5 text-gray-600'}`}>
                                             {done ? <CheckCircle2 size={13} /> : inProgress ? <Clock size={12} className="animate-pulse" /> : i + 1}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -267,7 +267,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
                                                 </p>
                                             )}
                                         </div>
-                                        {inProgress && <span className="text-[9px] font-black bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex-shrink-0">EN COURS</span>}
+                                        {inProgress && <span className="text-[9px] font-black bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] px-2 py-0.5 rounded-full flex-shrink-0">EN COURS</span>}
                                     </div>
                                 )
                             })}
@@ -286,7 +286,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
             {/* Footer */}
             <div className="px-5 pb-4 flex items-center justify-between">
                 <Link href="/client/dossier"
-                    className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-bold transition-colors">
+                    className="flex items-center gap-1.5 text-[11px] text-[var(--panel-accent)] hover:text-[var(--panel-accent)] font-bold transition-colors">
                     Gérer ce dossier <ExternalLink size={10} />
                 </Link>
                 {dossier.updated_at && (
@@ -407,7 +407,7 @@ export default function ClientServicesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-80">
-                <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                <div className="w-7 h-7 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--panel-border)', borderTopColor: 'var(--panel-accent)' }} />
             </div>
         )
     }
@@ -417,8 +417,8 @@ export default function ClientServicesPage() {
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="flex items-center gap-2 mb-1">
-                    <Briefcase size={14} className="text-blue-400" />
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Espace Client</span>
+                    <Briefcase size={14} className="text-[var(--panel-accent)]" />
+                    <span className="text-[10px] font-bold text-[var(--panel-accent)] uppercase tracking-[0.3em]">Espace Client</span>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -439,13 +439,13 @@ export default function ClientServicesPage() {
                     <button key={section.id} type="button" onClick={() => setActiveSection(section.id)}
                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-bold transition-all ${
                             activeSection === section.id
-                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/20'
+                                ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] border border-[var(--panel-accent)]/20'
                                 : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                         }`}>
                         <span className="hidden sm:inline">{section.label}</span>
                         <span className="sm:hidden">{section.label.split(' ')[0]}</span>
                         {section.count > 0 && (
-                            <span className={`min-w-[18px] h-[18px] text-[10px] font-black rounded-full flex items-center justify-center px-1 ${activeSection === section.id ? 'bg-blue-500 text-white' : 'bg-white/10 text-gray-400'}`}>
+                            <span className={`min-w-[18px] h-[18px] text-[10px] font-black rounded-full flex items-center justify-center px-1 ${activeSection === section.id ? 'bg-[var(--panel-accent)] text-white' : 'bg-white/10 text-gray-400'}`}>
                                 {section.count}
                             </span>
                         )}
@@ -510,15 +510,15 @@ export default function ClientServicesPage() {
 
                                     {/* Recherche Ancestrale upsell / status */}
                                     {app.needs_recherche_ancestrale && !app.recherche_ancestrale_paid && (
-                                        <div className="mb-3 p-3 bg-purple-500/8 border border-purple-500/20 rounded-xl flex items-center justify-between gap-3">
+                                        <div className="mb-3 p-3 bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 rounded-xl flex items-center justify-between gap-3">
                                             <div>
-                                                <p className="text-purple-400 text-[11px] font-bold flex items-center gap-1.5 mb-0.5">
+                                                <p className="text-[var(--panel-accent)] text-[11px] font-bold flex items-center gap-1.5 mb-0.5">
                                                     <Star size={11} /> Recherche Ancestrale disponible
                                                 </p>
-                                                <p className="text-purple-300/60 text-[10px]">Complétez votre dossier avec une recherche dans les archives.</p>
+                                                <p className="text-[var(--panel-accent)] text-[10px]">Complétez votre dossier avec une recherche dans les archives.</p>
                                             </div>
                                             <Link href={withBack('/services#recherche-ancestrale')}
-                                                className="flex-shrink-0 flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 transition-all">
+                                                className="flex-shrink-0 flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-lg bg-[var(--panel-accent-soft)] hover:bg-[var(--panel-accent-soft)] text-[var(--panel-accent)] transition-all">
                                                 En savoir plus <ArrowRight size={10} />
                                             </Link>
                                         </div>
@@ -533,7 +533,7 @@ export default function ClientServicesPage() {
                                     )}
 
                                     <Link href="/client/dossier"
-                                        className="inline-flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-bold transition-colors">
+                                        className="inline-flex items-center gap-1.5 text-[11px] text-[var(--panel-accent)] hover:text-[var(--panel-accent)] font-bold transition-colors">
                                         Voir le suivi complet <ChevronRight size={11} />
                                     </Link>
                                 </motion.div>
@@ -554,13 +554,14 @@ export default function ClientServicesPage() {
                         {!hasActiveServices && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                 className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-12 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4">
-                                    <Briefcase size={28} className="text-blue-400" />
+                                <div className="w-16 h-16 rounded-2xl bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 flex items-center justify-center mx-auto mb-4">
+                                    <Briefcase size={28} className="text-[var(--panel-accent)]" />
                                 </div>
                                 <h2 className="text-white font-bold text-lg mb-2">Aucun service actif</h2>
                                 <p className="text-gray-500 text-sm mb-6">Vous n'avez pas encore de service en cours.<br />Découvrez ce que nous pouvons faire pour vous.</p>
                                 <button type="button" onClick={() => setActiveSection('catalogue')}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-sm font-bold transition-all border border-blue-500/20">
+                                    style={{ background: 'var(--panel-accent)' }}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:-translate-y-px active:translate-y-0">
                                     <Sparkles size={14} />
                                     Découvrir nos services
                                 </button>
@@ -576,7 +577,7 @@ export default function ClientServicesPage() {
                         {/* Services mis en avant */}
                         <div>
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                <Zap size={10} className="text-blue-400" /> Services phares
+                                <Zap size={10} className="text-[var(--panel-accent)]" /> Services phares
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {FEATURED_SERVICES.map((svc, i) => {
@@ -606,7 +607,7 @@ export default function ClientServicesPage() {
                                                                 <CheckCircle2 size={11} /> Service actif
                                                             </span>
                                                             <button type="button" onClick={() => setActiveSection('actifs')}
-                                                                className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 font-bold transition-colors">
+                                                                className="flex items-center gap-1 text-[10px] text-[var(--panel-accent)] hover:text-[var(--panel-accent)] font-bold transition-colors">
                                                                 Voir le suivi <ChevronRight size={10} />
                                                             </button>
                                                         </div>
@@ -667,11 +668,11 @@ export default function ClientServicesPage() {
                                                     id: svc.slug,
                                                     title: svc.title,
                                                     description: svc.description,
-                                                    color: 'from-blue-500 to-indigo-600',
+                                                    color: 'from-[var(--panel-accent)] to-[var(--panel-accent-soft)]',
                                                     badge: 'Commander',
                                                     features: ['Accompagnement personnalisé', 'Suivi en temps réel'],
                                                 })}
-                                                className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors">
+                                                className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--panel-accent)] hover:text-[var(--panel-accent)] transition-colors">
                                                 Commander ce service <ArrowRight size={10} />
                                             </button>
                                         </motion.div>
@@ -681,12 +682,12 @@ export default function ClientServicesPage() {
                         )}
 
                         {/* CTA contact */}
-                        <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-2xl p-6 text-center">
-                            <Users size={24} className="text-blue-400 mx-auto mb-3" />
+                        <div className="bg-gradient-to-br from-[var(--panel-accent-soft)] to-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 rounded-2xl p-6 text-center">
+                            <Users size={24} className="text-[var(--panel-accent)] mx-auto mb-3" />
                             <h3 className="text-white font-black text-lg mb-2">Besoin d'un conseil personnalisé ?</h3>
                             <p className="text-gray-400 text-sm mb-4">Notre équipe vous accompagne dans le choix du service adapté à votre situation.</p>
                             <Link href="/client/messages"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-sm font-bold transition-all border border-blue-500/20">
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:-translate-y-px active:translate-y-0">
                                 Contacter notre équipe
                                 <ArrowRight size={14} />
                             </Link>
@@ -703,7 +704,8 @@ export default function ClientServicesPage() {
                                 <h2 className="text-white font-bold text-lg mb-2">Aucune commande</h2>
                                 <p className="text-gray-500 text-sm mb-5">Vos achats depuis la boutique apparaîtront ici.</p>
                                 <Link href="/boutique?back=/client/services"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-sm font-bold transition-all border border-emerald-500/20">
+                                    style={{ background: 'var(--panel-accent)' }}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:-translate-y-px active:translate-y-0">
                                     <Package size={14} />
                                     Visiter la boutique
                                 </Link>

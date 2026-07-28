@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Download, FileText, ShoppingBag, Loader2, CheckCircle2, Clock } from 'lucide-react'
+import { EmptyState, RowSkeleton } from '@/components/panel/PanelStates'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 
 interface Doc {
@@ -142,23 +143,24 @@ export default function TelechargementsPage() {
             </header>
 
             {loading ? (
-                <div className="flex items-center justify-center py-20 text-gray-500">
-                    <Loader2 className="animate-spin" size={22} />
-                </div>
+                <RowSkeleton rows={4} />
             ) : docs.length === 0 ? (
-                <div className="text-center py-20 text-gray-500 text-sm">
-                    Aucun document à télécharger pour l'instant.
-                </div>
+                <EmptyState
+                    icon={Download}
+                    title="Rien à télécharger pour l'instant"
+                    body="Vos factures, devis signés et pièces de dossier seront disponibles ici dès leur émission."
+                    action={{ label: 'Voir mes documents', href: '/client/documents' }}
+                />
             ) : (
                 <div className="space-y-2.5">
                     {docs.map(doc => (
                         <div key={`${doc.type}-${doc.id}`}
                             className="flex items-center justify-between gap-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4">
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${doc.type === 'facture' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-purple-500/10 border border-purple-500/20'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${doc.type === 'facture' ? 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20' : 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20'}`}>
                                     {doc.type === 'facture'
-                                        ? <FileText className="w-5 h-5 text-blue-400" />
-                                        : <ShoppingBag className="w-5 h-5 text-purple-400" />}
+                                        ? <FileText className="w-5 h-5 text-[var(--panel-accent)]" />
+                                        : <ShoppingBag className="w-5 h-5 text-[var(--panel-accent)]" />}
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-bold text-sm truncate">{doc.libelle} · {doc.ref}</p>

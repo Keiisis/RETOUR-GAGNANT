@@ -195,9 +195,9 @@ export default function ClientSignaturePage() {
             </div>
 
             {/* ── Security notice ── */}
-            <div className="flex items-start gap-3 p-4 bg-blue-500/[0.06] border border-blue-500/15 rounded-2xl">
-                <Lock size={15} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                <p className="text-[12px] text-blue-300/80 leading-relaxed">
+            <div className="flex items-start gap-3 p-4 bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/15 rounded-2xl">
+                <Lock size={15} className="text-[var(--panel-accent)] flex-shrink-0 mt-0.5" />
+                <p className="text-[12px] text-[var(--panel-accent)] leading-relaxed">
                     Votre signature est <strong>chiffrée et stockée de façon sécurisée</strong>. Elle ne sera jamais partagée
                     et ne sera apposée que sur des documents dont vous avez explicitement confirmé l&apos;approbation.
                 </p>

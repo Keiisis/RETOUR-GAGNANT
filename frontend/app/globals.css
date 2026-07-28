@@ -491,30 +491,64 @@
 }
 
 /* ═══════════════════════════════════════════════════════
+   ⏳ SQUELETTES DE CHARGEMENT (panels)
+   Le balayage n'est pas décoratif : il signale « données en route ».
+   Coupé net si l'utilisateur a demandé moins d'animations.
+   ═══════════════════════════════════════════════════════ */
+.panel-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.panel-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--panel-surface-hover) 50%,
+    transparent 100%
+  );
+  animation: panel-shimmer-sweep 1.4s ease-in-out infinite;
+}
+@keyframes panel-shimmer-sweep {
+  to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-shimmer::after { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════
    🎨 THEME TOGGLE — Variables par panel x theme
    Utilisation : wrapper avec [data-panel="X"][data-theme="Y"]
    Composants lisent via var(--panel-bg), var(--panel-text), etc.
    ═══════════════════════════════════════════════════════ */
 
-/* ── ADMIN : noir bleuté (dark défaut) ⇄ ivoire institutionnel ── */
+/* ── ADMIN : anthracite chaud (dark défaut) ⇄ ivoire institutionnel ──
+   Outil de pilotage : on garde le sombre (confort sur longues sessions) mais
+   on QUITTE le quasi-noir #05080a — un fond décollé du noir pur fatigue moins
+   et évite le rendu « void + néon » des interfaces générées. */
 [data-panel="admin"][data-theme="dark"] {
-  --panel-bg: #05080a;
-  --panel-surface: #0a0f18;
-  --panel-surface-alt: #111827;
-  --panel-surface-hover: rgba(255,255,255,0.05);
-  --panel-surface-active: rgba(255,255,255,0.08);
-  --panel-text: #E5E7EB;
-  --panel-text-heading: #FFFFFF;
-  --panel-text-muted: #9CA3AF;
-  --panel-text-faint: #6B7280;
-  --panel-border: rgba(255,255,255,0.08);
-  --panel-border-strong: rgba(255,255,255,0.15);
-  --panel-accent: #FCD116;
-  --panel-icon-muted: #9CA3AF;
-  --panel-badge-bg: rgba(255,255,255,0.05);
-  --panel-divider: rgba(255,255,255,0.05);
-  --panel-glow-opacity: 1;
-  --panel-overlay: rgba(0,0,0,0.7);
+  --panel-bg: #13120F;
+  --panel-surface: #1B1915;
+  --panel-surface-alt: #24211B;
+  --panel-surface-hover: rgba(255,253,247,0.05);
+  --panel-surface-active: rgba(255,253,247,0.09);
+  --panel-text: #E9E4DA;
+  --panel-text-heading: #FFFDF7;
+  --panel-text-muted: #A69E90;
+  --panel-text-faint: #7C7466;
+  --panel-border: rgba(255,253,247,0.09);
+  --panel-border-strong: rgba(255,253,247,0.18);
+  --panel-accent: #E8BE2A;
+  --panel-accent-soft: rgba(232,190,42,0.12);
+  --panel-gold: #E8BE2A;
+  --panel-icon-muted: #A69E90;
+  --panel-badge-bg: rgba(255,253,247,0.055);
+  --panel-divider: rgba(255,253,247,0.06);
+  --panel-glow-opacity: 0.8;
+  --panel-overlay: rgba(19,18,15,0.72);
 }
 [data-panel="admin"][data-theme="light"] {
   --panel-bg: #FAF8F4;
@@ -528,12 +562,14 @@
   --panel-text-faint: #9CA3AF;
   --panel-border: rgba(27,42,74,0.10);
   --panel-border-strong: rgba(27,42,74,0.20);
-  --panel-accent: #C9A84C;
+  --panel-accent: #B08A18;
+  --panel-accent-soft: rgba(176,138,24,0.12);
+  --panel-gold: #B08A18;
   --panel-icon-muted: #6B7280;
   --panel-badge-bg: rgba(0,0,0,0.04);
   --panel-divider: rgba(0,0,0,0.06);
-  --panel-glow-opacity: 0.5;
-  --panel-overlay: rgba(255,255,255,0.8);
+  --panel-glow-opacity: 0.4;
+  --panel-overlay: rgba(255,255,255,0.85);
 }
 
 /* ── AGENT : ivoire chaud (light défaut) ⇄ bleu nuit institutionnel ── */
@@ -550,6 +586,8 @@
   --panel-border: rgba(27,42,74,0.08);
   --panel-border-strong: rgba(27,42,74,0.18);
   --panel-accent: #008751;
+  --panel-accent-soft: rgba(0,135,81,0.10);
+  --panel-gold: #B08A18;
   --panel-icon-muted: #6B7280;
   --panel-badge-bg: rgba(0,0,0,0.04);
   --panel-divider: rgba(0,0,0,0.06);
@@ -569,6 +607,8 @@
   --panel-border: rgba(255,255,255,0.10);
   --panel-border-strong: rgba(255,255,255,0.20);
   --panel-accent: #10B981;
+  --panel-accent-soft: rgba(16,185,129,0.14);
+  --panel-gold: #E0B44C;
   --panel-icon-muted: #9CA3AF;
   --panel-badge-bg: rgba(255,255,255,0.05);
   --panel-divider: rgba(255,255,255,0.05);
@@ -576,44 +616,53 @@
   --panel-overlay: rgba(0,0,0,0.7);
 }
 
-/* ── CLIENT : noir profond (dark défaut) ⇄ ivoire doux ── */
-[data-panel="client"][data-theme="dark"] {
-  --panel-bg: #060d16;
-  --panel-surface: #0f1827;
-  --panel-surface-alt: #1a2540;
-  --panel-surface-hover: rgba(255,255,255,0.05);
-  --panel-surface-active: rgba(255,255,255,0.08);
-  --panel-text: #E5E7EB;
-  --panel-text-heading: #FFFFFF;
-  --panel-text-muted: #9CA3AF;
-  --panel-text-faint: #6B7280;
-  --panel-border: rgba(255,255,255,0.10);
-  --panel-border-strong: rgba(255,255,255,0.20);
-  --panel-accent: #C9A84C;
-  --panel-icon-muted: #9CA3AF;
-  --panel-badge-bg: rgba(255,255,255,0.05);
-  --panel-divider: rgba(255,255,255,0.05);
-  --panel-glow-opacity: 1;
-  --panel-overlay: rgba(0,0,0,0.7);
-}
+/* ── CLIENT : parchemin chaud (light défaut) ⇄ terre profonde ──
+   Registre voulu : étude notariale / service d'état civil, pas dashboard SaaS.
+   Les neutres sont CHAUDS (biais terre/ocre), jamais bleu-noir : le bleu-noir
+   + un accent néon est la signature des interfaces générées en série.
+   Accent d'ACTION = vert Bénin (institutionnel) ; l'or reste la marque
+   premium (badges, filets), jamais la couleur d'un bouton. */
 [data-panel="client"][data-theme="light"] {
-  --panel-bg: #FAF8F4;
+  --panel-bg: #F8F5EE;            /* parchemin */
   --panel-surface: #FFFFFF;
-  --panel-surface-alt: #F5F0E8;
-  --panel-surface-hover: rgba(0,0,0,0.03);
-  --panel-surface-active: rgba(0,0,0,0.06);
-  --panel-text: #1B2A4A;
-  --panel-text-heading: #0F172A;
-  --panel-text-muted: #6B7280;
-  --panel-text-faint: #9CA3AF;
-  --panel-border: rgba(27,42,74,0.10);
-  --panel-border-strong: rgba(27,42,74,0.20);
-  --panel-accent: #C9A84C;
-  --panel-icon-muted: #6B7280;
-  --panel-badge-bg: rgba(0,0,0,0.04);
-  --panel-divider: rgba(0,0,0,0.06);
-  --panel-glow-opacity: 0.5;
-  --panel-overlay: rgba(255,255,255,0.8);
+  --panel-surface-alt: #F1EADC;
+  --panel-surface-hover: rgba(31,27,22,0.035);
+  --panel-surface-active: rgba(31,27,22,0.07);
+  --panel-text: #3A332B;
+  --panel-text-heading: #1F1B16;  /* brun-noir chaud, jamais #000 */
+  --panel-text-muted: #6B6155;
+  --panel-text-faint: #9A9083;
+  --panel-border: rgba(31,27,22,0.10);
+  --panel-border-strong: rgba(31,27,22,0.20);
+  --panel-accent: #008751;        /* vert Bénin — actions */
+  --panel-accent-soft: rgba(0,135,81,0.10);
+  --panel-gold: #B08A18;          /* or lisible sur clair */
+  --panel-icon-muted: #6B6155;
+  --panel-badge-bg: rgba(31,27,22,0.045);
+  --panel-divider: rgba(31,27,22,0.07);
+  --panel-glow-opacity: 0.35;
+  --panel-overlay: rgba(248,245,238,0.86);
+}
+[data-panel="client"][data-theme="dark"] {
+  --panel-bg: #17130E;            /* terre profonde (chaud), pas bleu-noir */
+  --panel-surface: #201A14;
+  --panel-surface-alt: #2B231A;
+  --panel-surface-hover: rgba(245,241,234,0.05);
+  --panel-surface-active: rgba(245,241,234,0.09);
+  --panel-text: #EDE6DA;
+  --panel-text-heading: #FFFCF6;
+  --panel-text-muted: #AFA495;
+  --panel-text-faint: #837868;
+  --panel-border: rgba(245,241,234,0.11);
+  --panel-border-strong: rgba(245,241,234,0.22);
+  --panel-accent: #2FAA77;        /* vert relevé pour rester lisible sur sombre */
+  --panel-accent-soft: rgba(47,170,119,0.14);
+  --panel-gold: #E0B44C;
+  --panel-icon-muted: #AFA495;
+  --panel-badge-bg: rgba(245,241,234,0.06);
+  --panel-divider: rgba(245,241,234,0.07);
+  --panel-glow-opacity: 0.8;
+  --panel-overlay: rgba(23,19,14,0.72);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -660,7 +709,11 @@
 
 /* --- BACKGROUND COLOR OVERRIDES --- */
 
-/* Main dark backgrounds → panel surface */
+/* Main dark backgrounds → panel surface
+   ⚠️ Toute nouvelle surface sombre codée en dur DOIT être ajoutée ici, sinon
+   elle reste noire en mode clair. Les valeurs #0a1221 / #040810 / #0c1322 /
+   #0d1220 / #060e1a / #1a2332 manquaient : c'est ce qui laissait le panel
+   client majoritairement sombre malgré le thème clair. */
 [data-theme="light"] .bg-\[\#0a0f18\],
 [data-theme="light"] .bg-\[\#0a0f14\],
 [data-theme="light"] .bg-\[\#05080a\],
@@ -669,8 +722,22 @@
 [data-theme="light"] .bg-\[\#0d1319\],
 [data-theme="light"] .bg-\[\#111827\],
 [data-theme="light"] .bg-\[\#0F1A30\],
-[data-theme="light"] .bg-\[\#1A2542\] {
+[data-theme="light"] .bg-\[\#1A2542\],
+[data-theme="light"] .bg-\[\#0a1221\],
+[data-theme="light"] .bg-\[\#0c1322\],
+[data-theme="light"] .bg-\[\#0d1220\],
+[data-theme="light"] .bg-\[\#060e1a\],
+[data-theme="light"] .bg-\[\#1a2332\],
+[data-theme="light"] .bg-\[\#13120F\],
+[data-theme="light"] .bg-\[\#1B1915\],
+[data-theme="light"] .bg-\[\#17130E\],
+[data-theme="light"] .bg-\[\#201A14\] {
   background-color: var(--panel-surface) !important;
+}
+/* Fonds « page » plus profonds que les cartes → fond de panel */
+[data-theme="light"] .bg-\[\#040810\],
+[data-theme="light"] .bg-\[\#0f2a1e\] {
+  background-color: var(--panel-bg) !important;
 }
 
 /* Semi-transparent white overlays → theme-aware */
@@ -703,16 +770,20 @@
 
 /* --- BORDER OVERRIDES --- */
 [data-theme="light"] .border-white\/5,
-[data-theme="light"] .border-white\/\[0\.05\] {
+[data-theme="light"] .border-white\/\[0\.05\],
+[data-theme="light"] .border-white\/\[0\.06\],
+[data-theme="light"] .border-white\/\[0\.04\] {
   border-color: var(--panel-border) !important;
 }
 [data-theme="light"] .border-white\/10,
 [data-theme="light"] .border-white\/\[0\.08\],
-[data-theme="light"] .border-white\/\[0\.10\] {
+[data-theme="light"] .border-white\/\[0\.10\],
+[data-theme="light"] .border-white\/\[0\.12\] {
   border-color: var(--panel-border-strong) !important;
 }
 [data-theme="light"] .hover\:border-white\/10:hover,
-[data-theme="light"] .hover\:border-white\/20:hover {
+[data-theme="light"] .hover\:border-white\/20:hover,
+[data-theme="light"] .hover\:border-white\/\[0\.12\]:hover {
   border-color: var(--panel-border-strong) !important;
 }
 

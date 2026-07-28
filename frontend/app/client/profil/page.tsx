@@ -123,7 +123,7 @@ export default function ClientProfilPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-[var(--panel-accent)]/30 border-t-blue-500 rounded-full animate-spin" />
             </div>
         )
     }
@@ -132,8 +132,8 @@ export default function ClientProfilPage() {
         <div className="space-y-6 max-w-2xl">
             <div>
                 <div className="flex items-center gap-2 mb-1">
-                    <User size={14} className="text-blue-400" />
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Mon compte</span>
+                    <User size={14} className="text-[var(--panel-accent)]" />
+                    <span className="text-[10px] font-bold text-[var(--panel-accent)] uppercase tracking-[0.3em]">Mon compte</span>
                 </div>
                 <h1 className="text-2xl font-black text-white">Mon Profil</h1>
                 <p className="text-gray-500 text-sm mt-1">Gérez vos informations personnelles et votre sécurité.</p>
@@ -141,7 +141,7 @@ export default function ClientProfilPage() {
 
             {/* Avatar & info résumée */}
             <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-2xl flex-shrink-0">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center text-white font-black text-2xl flex-shrink-0">
                     {(form.prenom?.[0] || profile?.email?.[0] || 'C').toUpperCase()}
                 </div>
                 <div className="min-w-0">
@@ -164,7 +164,7 @@ export default function ClientProfilPage() {
             {/* Formulaire profil */}
             <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-5">
                 <h2 className="font-black text-white text-sm mb-4 flex items-center gap-2">
-                    <User size={14} className="text-blue-400" /> Informations personnelles
+                    <User size={14} className="text-[var(--panel-accent)]" /> Informations personnelles
                 </h2>
 
                 <AnimatePresence>
@@ -192,13 +192,13 @@ export default function ClientProfilPage() {
                             <label htmlFor="clientPrenom" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Prénom</label>
                             <input id="clientPrenom" type="text" value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
                                 placeholder="Votre prénom"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                         <div>
                             <label htmlFor="clientNom" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Nom</label>
                             <input id="clientNom" type="text" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
                                 placeholder="Votre nom"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
@@ -218,7 +218,7 @@ export default function ClientProfilPage() {
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
                             <input id="clientPhone" type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                                 placeholder="+33 6 00 00 00 00"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
@@ -228,7 +228,7 @@ export default function ClientProfilPage() {
                             <MapPin className="absolute left-3 top-3 text-gray-600" size={14} />
                             <input id="clientAdresse" type="text" value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
                                 placeholder="Votre adresse"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 pl-9 pr-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
@@ -237,18 +237,18 @@ export default function ClientProfilPage() {
                             <label htmlFor="clientVille" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Ville</label>
                             <input id="clientVille" type="text" value={form.ville} onChange={e => setForm(f => ({ ...f, ville: e.target.value }))}
                                 placeholder="Paris"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                         <div>
                             <label htmlFor="clientPays" className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Pays</label>
                             <input id="clientPays" type="text" value={form.pays} onChange={e => setForm(f => ({ ...f, pays: e.target.value }))}
                                 placeholder="France"
-                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                         </div>
                     </div>
 
                     <motion.button type="submit" disabled={saving} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold h-11 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+                        className="w-full bg-[var(--panel-accent)] text-white font-bold h-11 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
                         {saving ? <Loader2 className="animate-spin" size={16} /> : <><Save size={14} /> Enregistrer les modifications</>}
                     </motion.button>
                 </form>
@@ -257,7 +257,7 @@ export default function ClientProfilPage() {
             {/* Sécurité */}
             <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-5">
                 <h2 className="font-black text-white text-sm mb-4 flex items-center gap-2">
-                    <Shield size={14} className="text-blue-400" /> Sécurité
+                    <Shield size={14} className="text-[var(--panel-accent)]" /> Sécurité
                 </h2>
 
                 <AnimatePresence>
@@ -295,12 +295,12 @@ export default function ClientProfilPage() {
                                     onChange={e => setPwdForm(f => ({ ...f, [field]: e.target.value }))}
                                     placeholder="••••••••"
                                     minLength={field === 'new' ? 8 : undefined}
-                                    className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 pl-9 pr-10 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors"
+                                    className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 pl-9 pr-10 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors"
                                 />
                                 <button type="button" onClick={() => setShowPwd(s => ({ ...s, [field]: !s[field] }))}
                                     title={showPwd[field] ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                                     aria-label={showPwd[field] ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-400 transition-colors" tabIndex={-1}>
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-[var(--panel-accent)] transition-colors" tabIndex={-1}>
                                     {showPwd[field] ? <EyeOff size={13} /> : <Eye size={13} />}
                                 </button>
                             </div>
@@ -308,7 +308,7 @@ export default function ClientProfilPage() {
                     ))}
 
                     <motion.button type="submit" disabled={savingPwd} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                        className="w-full bg-white/[0.05] border border-white/[0.08] hover:border-blue-500/30 text-white font-bold h-10 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all text-sm">
+                        className="w-full bg-white/[0.05] border border-white/[0.08] hover:border-[var(--panel-accent)]/30 text-white font-bold h-10 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 transition-all text-sm">
                         {savingPwd ? <Loader2 className="animate-spin" size={15} /> : <><Lock size={13} /> Modifier le mot de passe</>}
                     </motion.button>
                 </form>

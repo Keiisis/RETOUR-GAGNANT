@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Calendar, Clock, Plus, Loader2, CheckCircle2, AlertCircle, MapPin, Video, Phone, User, X } from 'lucide-react'
+import { RowSkeleton } from '@/components/panel/PanelStates'
 
 interface Rdv {
     id: string
@@ -17,8 +18,8 @@ interface Rdv {
 }
 
 const TYPE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-    presentiel: { label: 'Présentiel', icon: <MapPin size={12} />, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-    visio: { label: 'Visioconférence', icon: <Video size={12} />, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+    presentiel: { label: 'Présentiel', icon: <MapPin size={12} />, color: 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20' },
+    visio: { label: 'Visioconférence', icon: <Video size={12} />, color: 'text-[var(--panel-accent)] bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20' },
     telephone: { label: 'Téléphone', icon: <Phone size={12} />, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
 }
 
@@ -165,8 +166,8 @@ export default function ClientRendezVousPage() {
             <div className="flex items-start justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <Calendar size={14} className="text-blue-400" />
-                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Agenda</span>
+                        <Calendar size={14} className="text-[var(--panel-accent)]" />
+                        <span className="text-[10px] font-bold text-[var(--panel-accent)] uppercase tracking-[0.3em]">Agenda</span>
                     </div>
                     <h1 className="text-2xl font-black text-white">Rendez-vous</h1>
                     <p className="text-gray-500 text-sm mt-1">Planifiez un échange avec votre agent.</p>
@@ -174,7 +175,7 @@ export default function ClientRendezVousPage() {
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                     onClick={() => setShowForm(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold px-4 h-10 rounded-xl text-sm shadow-[0_4px_20px_rgba(59,130,246,0.3)]"
+                    className="flex items-center gap-2 bg-[var(--panel-accent)] text-white font-bold px-4 h-10 rounded-xl text-sm shadow-[0_4px_20px_rgba(59,130,246,0.3)]"
                 >
                     <Plus size={15} /> Demander un RDV
                 </motion.button>
@@ -195,15 +196,17 @@ export default function ClientRendezVousPage() {
             <div>
                 <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">À venir ({upcoming.length})</h2>
                 {loading ? (
-                    <div className="flex items-center justify-center p-10">
-                        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-                    </div>
+                    <RowSkeleton rows={3} />
                 ) : upcoming.length === 0 ? (
                     <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-8 text-center">
                         <Calendar size={28} className="text-gray-700 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">Aucun rendez-vous à venir.</p>
-                        <button onClick={() => setShowForm(true)} className="mt-3 text-blue-400 text-sm font-bold hover:text-blue-300 transition-colors">
-                            + Planifier un rendez-vous
+                        <p className="text-[13px]" style={{ color: 'var(--panel-text-muted)' }}>
+                            Aucun rendez-vous à venir. Votre conseiller peut vous recevoir en agence, en visio ou par téléphone.
+                        </p>
+                        <button onClick={() => setShowForm(true)}
+                            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:-translate-y-px active:translate-y-0"
+                            style={{ background: 'var(--panel-accent)' }}>
+                            <Plus size={14} /> Planifier un rendez-vous
                         </button>
                     </div>
                 ) : (
@@ -238,7 +241,7 @@ export default function ClientRendezVousPage() {
                         >
                             <div className="flex items-center justify-between mb-5">
                                 <h2 className="font-black text-white text-base flex items-center gap-2">
-                                    <Calendar size={16} className="text-blue-400" /> Demander un rendez-vous
+                                    <Calendar size={16} className="text-[var(--panel-accent)]" /> Demander un rendez-vous
                                 </h2>
                                 <button onClick={() => setShowForm(false)} className="text-gray-600 hover:text-white transition-colors">
                                     <X size={18} />
@@ -262,13 +265,13 @@ export default function ClientRendezVousPage() {
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Date *</label>
                                         <input type="date" required value={form.date} min={new Date().toISOString().split('T')[0]}
                                             onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors" />
+                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors" />
                                     </div>
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Heure *</label>
                                         <input type="time" required value={form.heure}
                                             onChange={e => setForm(f => ({ ...f, heure: e.target.value }))}
-                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors" />
+                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors" />
                                     </div>
                                 </div>
 
@@ -292,7 +295,7 @@ export default function ClientRendezVousPage() {
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Motif *</label>
                                     <select required value={form.motif} onChange={e => setForm(f => ({ ...f, motif: e.target.value }))}
-                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors">
+                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white focus:outline-none text-sm transition-colors">
                                         <option value="">Sélectionner...</option>
                                         {MOTIFS.map(m => <option key={m} value={m}>{m}</option>)}
                                     </select>
@@ -304,7 +307,7 @@ export default function ClientRendezVousPage() {
                                         <input type="text" required value={form.motifCustom}
                                             onChange={e => setForm(f => ({ ...f, motifCustom: e.target.value }))}
                                             placeholder="Décrivez votre motif..."
-                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
+                                            className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm transition-colors" />
                                     </div>
                                 )}
 
@@ -312,7 +315,7 @@ export default function ClientRendezVousPage() {
                                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] block mb-1.5">Notes (optionnel)</label>
                                     <textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                                         placeholder="Informations complémentaires..."
-                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm resize-none transition-colors" />
+                                        className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-[var(--panel-accent)]/40 rounded-xl py-2.5 px-3 text-white placeholder:text-gray-600 focus:outline-none text-sm resize-none transition-colors" />
                                 </div>
 
                                 <div className="flex gap-3 pt-1">
@@ -321,7 +324,7 @@ export default function ClientRendezVousPage() {
                                         Annuler
                                     </button>
                                     <motion.button type="submit" disabled={sending} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                                        className="flex-1 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                                        className="flex-1 h-10 rounded-xl bg-[var(--panel-accent)] text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                                         {sending ? <Loader2 className="animate-spin" size={15} /> : <><Calendar size={13} /> Envoyer la demande</>}
                                     </motion.button>
                                 </div>
@@ -344,14 +347,14 @@ function RdvCard({ rdv, onCancel }: { rdv: Rdv; onCancel?: (id: string) => void 
     const annulable = isUpcoming && !!onCancel
 
     return (
-        <div className={`bg-[#0a1221] border rounded-2xl p-4 transition-colors ${isUpcoming ? 'border-white/[0.08] hover:border-blue-500/20' : 'border-white/[0.04] opacity-60'}`}>
+        <div className={`bg-[#0a1221] border rounded-2xl p-4 transition-colors ${isUpcoming ? 'border-white/[0.08] hover:border-[var(--panel-accent)]/20' : 'border-white/[0.04] opacity-60'}`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${isUpcoming ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-white/[0.04] border border-white/[0.06]'}`}>
-                        <span className={`text-lg font-black leading-none ${isUpcoming ? 'text-blue-400' : 'text-gray-600'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${isUpcoming ? 'bg-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20' : 'bg-white/[0.04] border border-white/[0.06]'}`}>
+                        <span className={`text-lg font-black leading-none ${isUpcoming ? 'text-[var(--panel-accent)]' : 'text-gray-600'}`}>
                             {dateObj.getDate()}
                         </span>
-                        <span className={`text-[9px] font-bold uppercase ${isUpcoming ? 'text-blue-400/70' : 'text-gray-700'}`}>
+                        <span className={`text-[9px] font-bold uppercase ${isUpcoming ? 'text-[var(--panel-accent)]/70' : 'text-gray-700'}`}>
                             {dateObj.toLocaleDateString('fr-FR', { month: 'short' })}
                         </span>
                     </div>

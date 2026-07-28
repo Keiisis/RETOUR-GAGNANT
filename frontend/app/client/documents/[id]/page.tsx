@@ -46,7 +46,7 @@ interface ClientSignature {
 
 const STATUS = {
     brouillon: { label: 'Brouillon', cls: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/20' },
-    envoye: { label: 'En attente de signature', cls: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+    envoye: { label: 'En attente de signature', cls: 'text-[var(--panel-accent)]', bg: 'bg-[var(--panel-accent-soft)] border-[var(--panel-accent)]/20' },
     accepte: { label: 'Signé & Accepté', cls: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
     refuse: { label: 'Refusé', cls: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
     paye: { label: 'Payé', cls: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
@@ -169,7 +169,7 @@ function SignatureAuthModal({
                         <AlertTriangle size={12} className="text-amber-400 flex-shrink-0 mt-0.5" />
                         <p className="text-[10px] text-gray-600 leading-relaxed">
                             Vous pouvez modifier ce comportement dans{' '}
-                            <Link href="/client/signature" className="text-blue-400 hover:underline" onClick={onClose}>
+                            <Link href="/client/signature" className="text-[var(--panel-accent)] hover:underline" onClick={onClose}>
                                 Ma Signature → Préférences
                             </Link>
                             {' '}pour signer automatiquement ou ne jamais signer.
@@ -200,8 +200,8 @@ function NoSignatureModal({ docId, onClose }: { docId: string; onClose: () => vo
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 text-center space-y-4">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto">
-                        <Pen size={24} className="text-blue-400" />
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--panel-accent-soft)] flex items-center justify-center mx-auto">
+                        <Pen size={24} className="text-[var(--panel-accent)]" />
                     </div>
                     <div>
                         <h2 className="text-white font-black text-base">Aucune signature enregistrée</h2>
@@ -212,7 +212,7 @@ function NoSignatureModal({ docId, onClose }: { docId: string; onClose: () => vo
                     <div className="space-y-2">
                         <Link
                             href="/client/signature"
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-[13px] transition-all"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--panel-accent)] hover:bg-[var(--panel-accent)] text-white font-bold text-[13px] transition-all"
                         >
                             <Pen size={14} />
                             Créer ma signature
@@ -307,7 +307,7 @@ export default function ClientDocumentDetailPage() {
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
-            <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            <div className="w-7 h-7 border-2 border-[var(--panel-accent)]/30 border-t-blue-500 rounded-full animate-spin" />
         </div>
     )
 
@@ -315,7 +315,7 @@ export default function ClientDocumentDetailPage() {
         <div className="text-center py-20">
             <AlertCircle size={32} className="text-red-400 mx-auto mb-3" />
             <p className="text-white font-bold">Document introuvable</p>
-            <Link href="/client/documents" className="text-blue-400 text-sm mt-2 inline-flex items-center gap-1 hover:text-blue-300">
+            <Link href="/client/documents" className="text-[var(--panel-accent)] text-sm mt-2 inline-flex items-center gap-1 hover:text-[var(--panel-accent)]">
                 <ArrowLeft size={14} /> Retour aux documents
             </Link>
         </div>
@@ -369,7 +369,7 @@ export default function ClientDocumentDetailPage() {
                     className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-6">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${doc.type === 'devis' ? 'bg-blue-500/15 text-blue-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                            <div className={`p-3 rounded-xl ${doc.type === 'devis' ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)]' : 'bg-emerald-500/15 text-emerald-400'}`}>
                                 {doc.type === 'devis' ? <FileText size={24} /> : <Receipt size={24} />}
                             </div>
                             <div>
@@ -387,7 +387,7 @@ export default function ClientDocumentDetailPage() {
                     <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-white/[0.06]">
                         <Link href={`/portail/${doc.id}`} target="_blank"
                             className="flex items-center gap-2 px-4 py-2 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl text-sm text-white transition-all">
-                            <Download size={14} className="text-blue-400" /> Télécharger PDF
+                            <Download size={14} className="text-[var(--panel-accent)]" /> Télécharger PDF
                         </Link>
 
                         {canSign && (
@@ -431,7 +431,7 @@ export default function ClientDocumentDetailPage() {
                             </>
                         ) : canSign ? (
                             <>
-                                <Clock size={20} className="text-blue-400 flex-shrink-0" />
+                                <Clock size={20} className="text-[var(--panel-accent)] flex-shrink-0" />
                                 <div className="flex-1">
                                     <p className="text-sm font-bold text-white">En attente de votre signature</p>
                                     <p className="text-xs text-gray-500">
@@ -445,14 +445,14 @@ export default function ClientDocumentDetailPage() {
                                 </div>
                                 {!clientSignature && sigLoaded && (
                                     <Link href="/client/signature"
-                                        className="flex-shrink-0 text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                                        className="flex-shrink-0 text-[11px] font-bold text-[var(--panel-accent)] hover:text-[var(--panel-accent)] flex items-center gap-1 transition-colors">
                                         <Pen size={11} /> Créer
                                     </Link>
                                 )}
                             </>
                         ) : (
                             <>
-                                <Clock size={20} className="text-blue-400 flex-shrink-0" />
+                                <Clock size={20} className="text-[var(--panel-accent)] flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-bold text-white">En attente de signature</p>
                                     <p className="text-xs text-gray-500">Cliquez sur "Signer ce devis" pour procéder.</p>

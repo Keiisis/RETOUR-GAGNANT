@@ -139,19 +139,19 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-nexus-deep flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--panel-bg)' }}>
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-[2px]">
-                        <div className="w-full h-full bg-nexus-deep rounded-[14px] flex items-center justify-center">
-                            <Shield size={24} className="text-blue-400" />
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--panel-accent)] p-[2px]">
+                        <div className="w-full h-full rounded-[14px] flex items-center justify-center" style={{ background: 'var(--panel-bg)' }}>
+                            <Shield size={24} className="text-[var(--panel-accent)]" />
                         </div>
                     </div>
-                    <div className="h-1 w-28 rounded-full overflow-hidden bg-white/5">
-                        <motion.div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
+                    <div className="h-1 w-28 rounded-full overflow-hidden" style={{ background: 'var(--panel-badge-bg)' }}>
+                        <motion.div className="h-full bg-[var(--panel-accent)] rounded-full"
                             initial={{ width: '0%' }} animate={{ width: '100%' }}
                             transition={{ duration: 1.8, ease: 'easeInOut' }} />
                     </div>
-                    <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">Chargement...</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold" style={{ color: 'var(--panel-text-muted)' }}>Chargement</p>
                 </div>
             </div>
         )
@@ -165,13 +165,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             {/* Header */}
             <div className="p-5 border-b border-white/[0.06]">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(59,130,246,0.3)]">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--panel-accent)] flex items-center justify-center flex-shrink-0 shadow-[0_6px_16px_-6px_var(--panel-accent)]">
                         <Shield size={18} className="text-white" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-black text-white">MON <span className="text-blue-400">ESPACE</span></h1>
+                        <h1 className="text-sm font-black text-white">MON <span className="text-[var(--panel-accent)]">ESPACE</span></h1>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--panel-accent)] animate-pulse" />
                             <span className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em]">En ligne</span>
                         </div>
                     </div>
@@ -188,17 +188,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     return (
                         <Link key={item.href} href={item.href}
                             className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 ${
-                                isActive ? 'bg-blue-500/10 text-blue-400' : 'text-gray-500 hover:bg-white/[0.04] hover:text-gray-200'
+                                isActive ? 'bg-[var(--panel-accent-soft)] text-[var(--panel-accent)]' : 'text-gray-500 hover:bg-white/[0.04] hover:text-gray-200'
                             }`}>
                             {isActive && (
                                 <motion.div layoutId="client-sidebar-active"
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-[var(--panel-accent)] shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
                             )}
-                            <Icon size={17} className={`flex-shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'group-hover:text-blue-400/70'}`} />
+                            <Icon size={17} className={`flex-shrink-0 transition-colors ${isActive ? 'text-[var(--panel-accent)]' : 'group-hover:text-[var(--panel-accent)]'}`} />
                             <span className="text-[13px] font-semibold">{item.title}</span>
                             {badge > 0 && (
-                                <span className="ml-auto min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-blue-500 text-white flex items-center justify-center px-1">
+                                <span className="ml-auto min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-[var(--panel-accent)] text-white flex items-center justify-center px-1">
                                     {badge}
                                 </span>
                             )}
@@ -210,7 +210,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             {/* Profile Footer */}
             <div className="p-3 border-t border-white/[0.06]">
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] mb-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[var(--panel-accent)] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                         {initials}
                     </div>
                     <div className="flex-1 overflow-hidden">
@@ -228,11 +228,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     )
 
     return (
-        <ThemeProvider panel="client" defaultTheme="dark">
+        <ThemeProvider panel="client" defaultTheme="light">
         <div className="flex h-screen text-white overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
             {/* Desktop Sidebar */}
             <aside className="hidden lg:flex w-[240px] h-full flex-col border-r relative z-40" style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}>
-                <div className="absolute top-0 left-0 w-full h-[200px] bg-gradient-to-b from-blue-500/[0.05] to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-[200px] bg-gradient-to-b from-[var(--panel-accent-soft)]/[0.05] to-transparent pointer-events-none" />
                 <SidebarContent />
             </aside>
 
@@ -272,7 +272,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                             <Menu size={19} />
                         </button>
                         <div className="hidden md:flex items-center gap-1.5 text-xs">
-                            <CircleDot size={10} className="text-blue-500" />
+                            <CircleDot size={10} className="text-[var(--panel-accent)]" />
                             <span className="font-bold text-gray-500 uppercase tracking-[0.15em] text-[10px]">Espace Client</span>
                             <ChevronRight size={10} className="text-gray-600" />
                             <span className="text-gray-300 font-semibold text-[11px]">
@@ -284,9 +284,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                         <ThemeToggle />
                         <button className="relative p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all">
                             <Bell size={16} />
-                            {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />}
+                            {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--panel-accent)] rounded-full" />}
                         </button>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-[11px]">
+                        <div className="w-8 h-8 rounded-full bg-[var(--panel-accent)] flex items-center justify-center text-white font-bold text-[11px]">
                             {initials}
                         </div>
                     </div>

@@ -9,6 +9,7 @@ import {
     Receipt, ShoppingBag, CreditCard, CheckCircle2, Clock, Loader2,
     Package, ChevronRight, Inbox,
 } from 'lucide-react'
+import { EmptyState } from '@/components/panel/PanelStates'
 
 interface Facture {
     id: string
@@ -82,7 +83,7 @@ export default function ClientFacturesPage() {
     return (
         <div className="p-5 md:p-8 max-w-4xl mx-auto text-white">
             <header className="flex items-center gap-3 mb-6">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-2xl bg-[var(--panel-accent)] flex items-center justify-center">
                     <Receipt className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -94,12 +95,12 @@ export default function ClientFacturesPage() {
             {/* Onglets */}
             <div className="flex gap-2 mb-6">
                 <button type="button" onClick={() => setTab('factures')}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${tab === 'factures' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${tab === 'factures' ? 'bg-[var(--panel-accent)] text-white' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
                     <Receipt className="w-4 h-4" /> Factures
                     {unpaidCount > 0 && <span className="ml-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-500 text-black">{unpaidCount}</span>}
                 </button>
                 <button type="button" onClick={() => setTab('commandes')}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${tab === 'commandes' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${tab === 'commandes' ? 'bg-[var(--panel-accent)] text-white' : 'bg-white/5 text-gray-300 border border-white/10'}`}>
                     <ShoppingBag className="w-4 h-4" /> Commandes
                 </button>
             </div>
@@ -108,7 +109,7 @@ export default function ClientFacturesPage() {
                 <div className="space-y-3">{[0, 1, 2].map(i => <div key={i} className="h-20 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />)}</div>
             ) : tab === 'factures' ? (
                 factures.length === 0 ? (
-                    <Empty icon={Receipt} text="Aucune facture pour le moment." />
+                    <EmptyState icon={Receipt} title="Aucune facture" body="Vos factures acquittees et en attente de reglement seront rassemblees ici." />
                 ) : (
                     <div className="space-y-3">
                         {factures.map(f => {
@@ -127,7 +128,7 @@ export default function ClientFacturesPage() {
                                         <p className="font-black">{fmt(f.total, f.currency)}</p>
                                         {f.status !== 'paye' && (
                                             <Link href={`/client/payer/${f.id}`}
-                                                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300">
+                                                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--panel-accent)] hover:text-[var(--panel-accent)]">
                                                 <CreditCard className="w-3.5 h-3.5" /> Payer
                                             </Link>
                                         )}
@@ -139,15 +140,15 @@ export default function ClientFacturesPage() {
                 )
             ) : (
                 commandes.length === 0 ? (
-                    <Empty icon={ShoppingBag} text="Aucune commande pour le moment." />
+                    <EmptyState icon={ShoppingBag} title="Aucune commande" body="Vos achats en boutique apparaitront ici avec leur suivi de livraison." action={{ label: "Ouvrir la boutique", href: "/boutique" }} />
                 ) : (
                     <div className="space-y-3">
                         {commandes.map(c => {
                             const st = orderStatus(c.payment_status)
                             return (
                                 <div key={c.id} className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
-                                        <Package className="w-5 h-5 text-blue-400" />
+                                    <div className="w-10 h-10 rounded-xl bg-[var(--panel-accent-soft)] flex items-center justify-center shrink-0">
+                                        <Package className="w-5 h-5 text-[var(--panel-accent)]" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold truncate">{c.product_title || 'Commande boutique'}</p>
@@ -169,11 +170,3 @@ export default function ClientFacturesPage() {
     )
 }
 
-function Empty({ icon: Icon, text }: { icon: typeof Inbox; text: string }) {
-    return (
-        <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-10 text-center">
-            <Icon className="w-9 h-9 mx-auto mb-3 text-gray-600" />
-            <p className="text-gray-400 text-sm">{text}</p>
-        </div>
-    )
-}

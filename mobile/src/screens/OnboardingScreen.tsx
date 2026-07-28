@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path } from 'react-native-svg'
 import { useLang } from '../contexts/LangContext'
+import { fonts } from '../config/theme'
 
 const { width, height } = Dimensions.get('window')
 
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         letterSpacing: -1.5,
         lineHeight: 48,
-        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+        fontFamily: fonts.heading,
         marginBottom: 22,
         textShadowColor: 'rgba(0,0,0,0.4)',
         textShadowRadius: 12,
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.88)',
         lineHeight: 26,
         letterSpacing: -0.2,
-        fontWeight: '400',
+        fontFamily: fonts.body,
         textShadowColor: 'rgba(0,0,0,0.3)',
         textShadowRadius: 8,
     },
