@@ -7,7 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ArrowLeft, Calendar, Check, Clock, CreditCard, Star, Tag, Users,
-    Sparkles, ShieldCheck, Award, ChevronRight, Zap, FileText,
+    Sparkles, ShieldCheck, Award, ChevronRight, Zap, FileText, Send,
 } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -28,6 +28,7 @@ import Animated, {
 import { colors as themeColors, spacing, radius, shadows, typography, fonts, motion } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
+import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
@@ -256,6 +257,12 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     const { profile } = useAuth()
     const { t, lang, preloadTexts } = useLang()
+
+    // Comment ce service se commande-t-il ? Avant, le bouton affichait
+    // « Payer avec Kkiapay » sur TOUS les services, y compris ceux qui se
+    // reservent sur rendez-vous ou s'etablissent sur devis. Voir lib/service-mode.
+    const serviceMode = getServiceMode({ slug: serviceId })
+    const modeCopy = MODE_COPY[serviceMode]
     const [loading, setLoading] = useState(false)
     const [showKkiapay, setShowKkiapay] = useState(false)
 
@@ -331,7 +338,9 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             'Commandez le service', 'Déposez vos documents', 'Suivi en temps réel', 'Résultat final',
             'Documents requis', 'Prêt à démarrer ?',
             'Réservez un créneau avec nos experts pour concrétiser votre projet.',
-            'Payer avec Kkiapay', 'Premier appel de 15 min gratuit',
+            MODE_COPY.booking.cta, MODE_COPY.appointment.cta, MODE_COPY.form.cta, MODE_COPY.shop.cta,
+            MODE_COPY.booking.note, MODE_COPY.appointment.note, MODE_COPY.form.note, MODE_COPY.shop.note,
+            'Premier appel de 15 min gratuit',
             'Paiement 100% sécurisé via Mobile Money ou Carte Bancaire.',
             'Non connecté', 'Veuillez vous connecter pour commander ce service.',
             'Garantie', 'Sécurisé', 'Confidentiel',
@@ -348,14 +357,12 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             Alert.alert(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
             return
         }
-        const isSurDevis = !price || price.toString().toLowerCase().includes('devis')
-        const numericPrice = price ? parseFloat(price.toString().replace(/[^0-9.-]+/g, '')) : 0
-        if (isSurDevis || numericPrice === 0) {
-            createDossierViaApi(null, 0)
-        } else {
-            setShowKkiapay(true)
-        }
-    }, [profile, price])
+        // Sur le site public, AUCUNE fiche service ne fait payer directement :
+        // toutes proposent un rendez-vous. Seule la Consultation Fa encaisse,
+        // via son ecran dedie (FaScreen), et la Nationalite via son formulaire.
+        // On enregistre donc la demande, sans widget de paiement.
+        createDossierViaApi(null, 0)
+    }, [profile, price, serviceMode])
 
     const createDossierViaApi = async (transactionId: string | null, numericPrice: number) => {
         if (!profile?.id) {
@@ -661,13 +668,13 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 <Text style={styles.ctaTitle}>{t('Prêt à démarrer ?')}</Text>
                             </View>
                             <Text style={styles.ctaSubtitle}>
-                                {t('Réservez un créneau avec nos experts pour concrétiser votre projet.')}
+                                {t(modeCopy.note)}
                             </Text>
 
                             <InteractiveButton
                                 disabled={loading}
                                 onPress={initiateCheckout}
-                                accessibilityLabel={t('Payer avec Kkiapay')}
+                                accessibilityLabel={t(modeCopy.cta)}
                                 style={[styles.payBtn, loading && { opacity: 0.7 }]}
                             >
                                 <LinearGradient
@@ -680,8 +687,10 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                         <ActivityIndicator color={C.primary} size="small" />
                                     ) : (
                                         <>
-                                            <CreditCard size={20} color={C.primary} strokeWidth={2.4} />
-                                            <Text style={styles.payBtnText}>{t('Payer avec Kkiapay')}</Text>
+                                            {serviceMode === 'booking'
+                                                ? <CreditCard size={20} color={C.primary} strokeWidth={2.4} />
+                                                : <Send size={20} color={C.primary} strokeWidth={2.4} />}
+                                            <Text style={styles.payBtnText}>{t(modeCopy.cta)}</Text>
                                         </>
                                     )}
                                 </LinearGradient>

@@ -683,6 +683,17 @@
 [data-theme="light"] .text-white:not(.bg-slate-900):not(.bg-slate-800):not(.bg-slate-950) {
   color: var(--panel-text-heading) !important;
 }
+/* Variantes OPACIFIÉES de text-white : elles échappaient à la règle ci-dessus
+   (ce sont des classes distinctes). Résultat : une icône `text-white/80` posée
+   dans une pastille dont le fond sombre passait au blanc devenait blanche sur
+   blanc, donc invisible. */
+[data-theme="light"] .text-white\/90,
+[data-theme="light"] .text-white\/80,
+[data-theme="light"] .text-white\/70,
+[data-theme="light"] .text-white\/60,
+[data-theme="light"] .text-white\/50 {
+  color: var(--panel-text) !important;
+}
 [data-theme="light"] .bg-slate-900 .text-white,
 [data-theme="light"] .bg-slate-950 .text-white,
 [data-theme="light"] .bg-slate-800 .text-white {
@@ -728,6 +739,11 @@
 [data-theme="light"] .bg-\[\#0d1220\],
 [data-theme="light"] .bg-\[\#060e1a\],
 [data-theme="light"] .bg-\[\#1a2332\],
+[data-theme="light"] .bg-\[\#060d1a\],
+[data-theme="light"] .bg-\[\#050a12\],
+[data-theme="light"] .bg-\[\#070d16\],
+[data-theme="light"] .bg-\[\#0f141e\],
+[data-theme="light"] .bg-\[\#0d1520\],
 [data-theme="light"] .bg-\[\#13120F\],
 [data-theme="light"] .bg-\[\#1B1915\],
 [data-theme="light"] .bg-\[\#17130E\],

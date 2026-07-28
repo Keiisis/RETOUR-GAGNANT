@@ -22,6 +22,10 @@ export interface OrderableService {
     features?: string[]
 }
 
+import { getServiceMode, MODE_COPY } from '@/lib/service-mode'
+import FaPriestsDirectory from '@/components/services/FaPriestsDirectory'
+import FaConsultationBooking from '@/components/services/FaConsultationBooking'
+
 interface DBService {
     id: string
     title: string
@@ -33,6 +37,7 @@ interface DBService {
     color?: string       // hex CSS color (ex: '#a855f7')
     price_display?: string
     icon_type?: string
+    delivery_mode?: string
 }
 
 interface ServiceOrderDrawerProps {
@@ -153,6 +158,15 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
 
     // Determine the hex color for PricingCalculator3D
     const baseColor = dbService?.color || twToHex(service?.color || '')
+
+    // Comment ce service se commande-t-il ? Un service sur rendez-vous ne doit
+    // jamais afficher un libellé de paiement, et un tarif « À partir de » n'est
+    // pas un montant ferme. Voir lib/service-mode.ts.
+    const mode = getServiceMode({
+        slug: dbService?.slug || service?.id,
+        delivery_mode: dbService?.delivery_mode,
+    })
+    const modeCopy = MODE_COPY[mode]
 
     return (
         <AnimatePresence>
@@ -307,7 +321,21 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                         </motion.div>
                                     )}
 
-                                    {/* ── Formulaire de commande ── */}
+                                    {/* ── Parcours réel « Consultation Fa & Racines » ──
+                                        On réutilise EXACTEMENT les composants du site public
+                                        (annuaire des prêtres + réservation avec paiement
+                                        Kkiapay/FedaPay). Rien n'est réécrit ni simulé : même
+                                        code, mêmes tarifs admin, même pipeline
+                                        fa-checkout → widget → /api/checkout/verify. */}
+                                    {mode === 'booking' && (
+                                        <div className="space-y-6">
+                                            <FaPriestsDirectory />
+                                            <FaConsultationBooking options={dbService?.pricing_options} />
+                                        </div>
+                                    )}
+
+                                    {/* ── Formulaire de demande (services sur rendez-vous) ── */}
+                                    {mode !== 'booking' && (
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div>
                                             {!dbService && (
@@ -371,13 +399,22 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             Notre équipe traitera votre demande sous <span className="text-gray-300 font-bold">24 à 48h</span> ouvrables. Vous recevrez une confirmation par email et un suivi dans votre espace client.
                                         </div>
                                     </form>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* ── Footer ── */}
-                        {!success && (
+                        {/* ── Footer ──
+                            Masqué en mode « booking » : la réservation Fa a son propre
+                            bouton de paiement, en afficher un second créerait deux
+                            actions concurrentes pour un même geste. */}
+                        {!success && mode !== 'booking' && (
                             <div className="flex-shrink-0 p-4 border-t border-white/[0.06] bg-[#060d1a]">
+                                {/* Ce qui se passe après l'envoi : dit explicitement s'il y aura
+                                    paiement, devis ou prise de rendez-vous. */}
+                                <p className="text-[11px] leading-relaxed mb-3" style={{ color: 'var(--panel-text-muted)' }}>
+                                    {modeCopy.note}
+                                </p>
                                 <button type="button" onClick={handleSubmit} disabled={submitting || !description.trim()}
                                     className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-black transition-all ${
                                         submitting || !description.trim()
@@ -387,7 +424,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                     {submitting ? (
                                         <><Loader2 size={15} className="animate-spin" /> Envoi en cours...</>
                                     ) : (
-                                        <><Send size={15} /> Envoyer ma demande</>
+                                        <><Send size={15} /> {modeCopy.cta}</>
                                     )}
                                 </button>
                             </div>
