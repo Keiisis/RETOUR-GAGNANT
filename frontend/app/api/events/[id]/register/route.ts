@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { ttcFromHt } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -72,10 +73,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         }
 
-        // 3. Calculate amount
-        const amount = ticket_type === 'vip'
+        // 3. Calculate amount — TVA « en sus » : le prix du billet est HORS TAXE ;
+        // la TVA 18 % s'ajoute (le client paie le TTC), comme boutique/prestations.
+        // Un billet gratuit (0) reste gratuit.
+        const priceHt = ticket_type === 'vip'
             ? (event.price_vip || 0)
             : (event.price_standard || 0)
+        const amount = priceHt > 0 ? ttcFromHt(priceHt, event.currency || 'XOF') : 0
 
         // 4. Create order in orders table (reuse existing payment flow)
         const { data: order, error: orderErr } = await supabase

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { ttcFromHt } from '@/lib/tax'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,7 +74,9 @@ export async function POST(req: NextRequest,
             return NextResponse.json({ error: 'Vous êtes déjà inscrit à cet événement' }, { status: 409 })
         }
 
-        const amount = ticket_type === 'vip' ? (event.price_vip || 0) : (event.price_standard || 0)
+        // TVA « en sus » : prix billet HORS TAXE, la TVA 18 % s'ajoute (TTC).
+        const priceHt = ticket_type === 'vip' ? (event.price_vip || 0) : (event.price_standard || 0)
+        const amount = priceHt > 0 ? ttcFromHt(priceHt, event.currency || 'XOF') : 0
 
         // Créer l'inscription
         const { data: registration, error: regErr } = await supabase

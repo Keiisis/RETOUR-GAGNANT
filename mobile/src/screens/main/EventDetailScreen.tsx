@@ -23,6 +23,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
+import { ttcFromHt } from '../../lib/tax'
 import type { AppEvent } from './EventsScreen'
 
 /* ═══════════════════════════════════════════════════════════
@@ -392,6 +393,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
     const isRegistered = !!registration
 
     const selectedPrice = selectedTicket === 'vip' ? (event.price_vip || 0) : event.price_standard
+    // TVA « en sus » : prix billet HORS TAXE ; le client paie le TTC (HT × 1,18).
+    const selectedPriceTtc = ttcFromHt(selectedPrice)
     const isFreeTicket = selectedPrice === 0
 
     const handleRegister = async () => {
@@ -441,7 +444,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
             }
 
             if (reg?.id) {
-                setPendingRegistration({ id: reg.id, amount: selectedPrice })
+                setPendingRegistration({ id: reg.id, amount: (json.amount as number) ?? selectedPriceTtc })
                 setShowKkiapay(true)
             }
         } catch (e: unknown) {
@@ -641,7 +644,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             onSelect={() => setSelectedTicket('standard')}
                             label={t('Billet Standard')}
                             description={t("Accès à l'événement, networking")}
-                            price={formatPrice(event.price_standard, event.currency, t)}
+                            price={formatPrice(ttcFromHt(event.price_standard), event.currency, t)}
                             isFree={isFree}
                             perks={[
                                 t('Accès à toutes les conférences'),
@@ -656,7 +659,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 onSelect={() => setSelectedTicket('vip')}
                                 label={t('Billet VIP')}
                                 description={t('Accès prioritaire, places réservées, cocktail')}
-                                price={formatPrice(event.price_vip || 0, event.currency, t)}
+                                price={formatPrice(ttcFromHt(event.price_vip || 0), event.currency, t)}
                                 isVip
                                 perks={[
                                     t('Accès prioritaire à toutes les sessions'),
@@ -706,7 +709,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 {selectedTicket === 'vip' ? t('Billet VIP') : t('Billet Standard')}
                             </Text>
                             <Text style={styles.bottomBarValue}>
-                                {formatPrice(selectedPrice, event.currency, t)}
+                                {formatPrice(selectedPriceTtc, event.currency, t)}
                             </Text>
                         </View>
 
@@ -803,7 +806,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                         styles.recapPrice,
                                         isFreeTicket && { color: C.success },
                                     ]}>
-                                        {formatPrice(selectedPrice, event.currency, t)}
+                                        {formatPrice(selectedPriceTtc, event.currency, t)}
                                     </Text>
                                 </View>
                             </View>

@@ -22,6 +22,7 @@ import Animated, {
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { ttcFromHt } from '../../lib/tax'
 
 /* ═══════════════════════════════════════════════════════════
    EventsScreen — THEME "CORPORATE PREMIUM 2026"
@@ -99,9 +100,11 @@ function formatTime(iso: string) {
     return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
+// TVA « en sus » : le prix billet est HORS TAXE en base ; on affiche le TTC
+// (HT × 1,18), identique au montant réellement payé. Gratuit (0) reste gratuit.
 function formatPrice(price: number, currency: string, t: any) {
     if (price === 0) return t('Gratuit')
-    return `${price.toLocaleString('fr-FR')} ${currency}`
+    return `${ttcFromHt(price).toLocaleString('fr-FR')} ${currency}`
 }
 
 function getDaysUntil(iso: string): number {
@@ -257,7 +260,7 @@ function FeaturedEventCard({
                         <Text style={featuredStyles.priceValue}>
                             {event.price_standard === 0
                                 ? t('Gratuite')
-                                : `${event.price_standard.toLocaleString('fr-FR')} ${event.currency}`}
+                                : `${ttcFromHt(event.price_standard).toLocaleString('fr-FR')} ${event.currency}`}
                         </Text>
                     </View>
 

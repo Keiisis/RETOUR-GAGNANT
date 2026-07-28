@@ -14,6 +14,7 @@ import {
 import { useTranslation, T } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, formatPrice as fmtCurrency } from '@/lib/currency'
+import { ttcFromHt } from '@/lib/tax'
 
 interface EventData {
     id: string; title: string; slug: string; description: string; short_description: string
@@ -90,7 +91,8 @@ export default function EventDetailPage() {
         const isSandbox = paymentSettings.kkiapay_sandbox === 'true'
         // Montant recalculé ici (jamais capturé) : pas de closure périmée si le
         // type de ticket change entre deux rendus.
-        const price = ticketType === 'vip' ? (event?.price_vip || 0) : (event?.price_standard || 0)
+        const priceHt = ticketType === 'vip' ? (event?.price_vip || 0) : (event?.price_standard || 0)
+        const price = ttcFromHt(priceHt, 'XOF') // TVA en sus : on charge le TTC
         try {
             if (form.payment_method === 'fedapay') {
                 await ensureFedaPaySDK()
@@ -218,7 +220,8 @@ export default function EventDetailPage() {
 
     const price = ticketType === 'vip' ? event.price_vip : event.price_standard
     const isFree = price === 0
-    const showPrice = (amountXOF: number) => fmtCurrency(convertWithMargin(amountXOF, selectedCurrency), selectedCurrency)
+    // TVA « en sus » : le prix billet est HORS TAXE ; on affiche le TTC (HT × 1,18).
+    const showPrice = (amountXOF: number) => fmtCurrency(convertWithMargin(ttcFromHt(amountXOF, 'XOF'), selectedCurrency), selectedCurrency)
     const displayPrice = showPrice(price)
 
     return (
@@ -397,7 +400,7 @@ export default function EventDetailPage() {
                                         <CurrencySelector
                                             value={selectedCurrency}
                                             onChange={setSelectedCurrency}
-                                            baseAmountXOF={event.price_standard || event.price_vip}
+                                            baseAmountXOF={ttcFromHt(event.price_standard || event.price_vip, 'XOF')}
                                             theme="light"
                                         />
                                     </div>
@@ -617,7 +620,7 @@ export default function EventDetailPage() {
                                                         <CurrencySelector
                                                             value={selectedCurrency}
                                                             onChange={setSelectedCurrency}
-                                                            baseAmountXOF={price}
+                                                            baseAmountXOF={ttcFromHt(price, 'XOF')}
                                                             theme="light"
                                                         />
                                                     </div>

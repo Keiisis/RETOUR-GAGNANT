@@ -9,6 +9,7 @@ import {
     ArrowRight, Star, Search,
 } from 'lucide-react'
 import { useTranslation, T } from '@/lib/translation'
+import { ttcFromHt } from '@/lib/tax'
 
 interface EventData {
     id: string
@@ -49,7 +50,10 @@ const CAT_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
 }
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-const formatPrice = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+// TVA « en sus » : les prix billets sont HORS TAXE en base ; on affiche le TTC
+// (HT × 1,18), cohérent avec la page événement et le montant réellement payé.
+// Un billet gratuit (0) reste affiché à 0.
+const formatPrice = (n: number) => new Intl.NumberFormat('fr-FR').format(ttcFromHt(n, 'XOF'))
 
 export default function EvenementsPage() {
     const { t } = useTranslation()
