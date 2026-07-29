@@ -39,17 +39,30 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "www.retourgagnantbenin.bj", "pathPrefix": "/mobile-payment" },
-            { "scheme": "https", "host": "retourgagnantbenin.bj", "pathPrefix": "/mobile-payment" }
+            {
+              "scheme": "https",
+              "host": "www.retourgagnantbenin.bj",
+              "pathPrefix": "/mobile-payment"
+            },
+            {
+              "scheme": "https",
+              "host": "retourgagnantbenin.bj",
+              "pathPrefix": "/mobile-payment"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -86,6 +99,13 @@
           "color": "#C9A84C",
           "defaultChannel": "default",
           "sounds": []
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": false,
+          "microphonePermission": "L'application utilise votre micro pour vous permettre d'appeler un conseiller."
         }
       ]
     ],

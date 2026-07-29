@@ -690,8 +690,6 @@ export default function DossierScreen({ navigation }: any) {
                         })()}
                     </>
                 )}
-
-                <View style={{ height: 60 }} />
             </ScrollView>
 
             {/* ═══════════════════════════════════════════════════════════

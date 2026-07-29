@@ -203,7 +203,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                 <FlatList
                     data={priests}
                     keyExtractor={p => p.id}
-                    contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 120 }}
+                    contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 24 }}
                     showsVerticalScrollIndicator={false}
                     ListHeaderComponent={
                         <View style={styles.intro}>

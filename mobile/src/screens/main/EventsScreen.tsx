@@ -1022,8 +1022,6 @@ export default function EventsScreen({ navigation }: any) {
                         </AnimatedSection>
                     </>
                 )}
-
-                <View style={{ height: 60 }} />
             </ScrollView>
         </View>
     )

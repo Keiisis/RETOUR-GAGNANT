@@ -317,8 +317,6 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                         </Text>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 60 }} />
             </ScrollView>
         </View>
     )

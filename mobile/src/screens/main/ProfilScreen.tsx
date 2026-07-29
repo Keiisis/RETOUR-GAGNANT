@@ -654,8 +654,6 @@ export default function ProfilScreen() {
                         <Text style={styles.versionSub}>v1.0.0 · {t('Fait avec excellence à Cotonou')}</Text>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 100 }} />
             </ScrollView>
 
             <LanguagePicker

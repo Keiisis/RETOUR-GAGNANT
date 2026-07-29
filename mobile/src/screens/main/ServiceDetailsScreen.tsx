@@ -250,57 +250,21 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
        (rdv_requests), donc visible par les agents dans leur agenda.
        Avant, ce bouton creait un DOSSIER a 0 franc, ce que l'API refusait :
        le client voyait une erreur alors qu'il demandait juste un entretien. */
-    const requestAppointment = useCallback(async () => {
+    /* On ouvre le formulaire de rendez-vous avec la prestation pre-remplie :
+       le client y choisit un creneau REELLEMENT libre (/api/availability).
+       Creer la demande ici, sans date ni heure, violait la contrainte
+       NOT NULL de rdv_requests — d'ou l'erreur « La demande n'a pas pu etre
+       envoyee » au clic sur « Prendre rendez-vous ». */
+    const requestAppointment = useCallback(() => {
         if (!profile?.id) {
             toast(t('Non connecté'), t('Veuillez vous connecter pour demander un rendez-vous.'))
             return
         }
-        setLoading(true)
-        try {
-            const clientName = `${profile.prenom || ''} ${profile.nom || ''}`.trim() || (profile.email || '')
-            const { data: inserted, error } = await supabase.from('rdv_requests').insert({
-                client_id: profile.id,
-                client_email: profile.email,
-                date: null,
-                heure: null,
-                type: 'telephone',
-                motif: title || serviceId || 'Prestation',
-                notes: `Demande depuis la fiche « ${title || serviceId} » dans l'application mobile.`,
-                statut: 'en_attente',
-            }).select('id').single()
-            if (error) throw error
-
-            // Alerte de l'equipe — meme chemin que le panel web.
-            fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                timeoutMs: 12000,
-                body: JSON.stringify({
-                    rdvId: inserted?.id,
-                    clientName,
-                    clientEmail: profile.email,
-                    service: title || serviceId,
-                    date: null, heure: null, type: 'telephone',
-                }),
-            }).catch(() => { /* non bloquant */ })
-
-            await supabase.from('notifications').insert({
-                user_id: profile.id,
-                title: 'Demande de rendez-vous envoyée',
-                body: `Votre demande concernant « ${title || serviceId} » a bien été reçue. Notre équipe vous contactera sous 24h.`,
-                type: 'appointment',
-                is_read: false,
-                created_at: new Date().toISOString(),
-            })
-
-            toast(t('Demande envoyée'), t("Notre équipe vous contactera sous 24h pour convenir d'un créneau."), 'success')
-            navigation.navigate('Appointments')
-        } catch (e: unknown) {
-            toast(t('Erreur'), e instanceof Error ? e.message : t("La demande n'a pas pu être envoyée."))
-        } finally {
-            setLoading(false)
-        }
-    }, [profile, title, serviceId, t, navigation])
+        navigation.navigate('Appointments', {
+            openRequest: true,
+            serviceLabel: title || serviceId || '',
+        })
+    }, [profile, title, serviceId, navigation, t])
 
     const initiateCheckout = useCallback(() => {
         if (!profile) {
@@ -609,8 +573,6 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                         </View>
                     </AnimatedSection>
                 </View>
-
-                <View style={{ height: 80 }} />
             </Animated.ScrollView>
 
             <KkiapayModal

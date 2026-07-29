@@ -142,7 +142,7 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                 </ScrollView>
             ) : (
                 <ScrollView
-                    contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 100 }}
+                    contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 24 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
                 >

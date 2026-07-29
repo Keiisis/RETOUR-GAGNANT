@@ -434,8 +434,6 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                         </View>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 40 }} />
             </ScrollView>
         </View>
     )

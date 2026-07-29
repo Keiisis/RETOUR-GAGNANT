@@ -862,8 +862,6 @@ export default function ServicesScreen({ navigation }: any) {
                         </View>
                     ))
                 )}
-
-                <View style={{ height: 60 }} />
             </ScrollView>
         </View>
     )

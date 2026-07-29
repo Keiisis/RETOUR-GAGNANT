@@ -184,6 +184,23 @@ export default function MessagesScreen({ navigation }: any) {
         init()
     }, [findOrCreateConversation, fetchChatHistory, profile?.id])
 
+    /* Marque la conversation comme lue : au montage, a chaque nouveau
+       message affiche, et en quittant l'ecran. */
+    const markSeen = useCallback(() => {
+        if (!profile?.id) return
+        AsyncStorage.setItem(
+            `@rg_chat_last_seen_${profile.id}`,
+            new Date().toISOString(),
+        ).catch(() => { })
+    }, [profile?.id])
+
+    useEffect(() => { markSeen() }, [markSeen, chatMessages.length])
+
+    useEffect(() => {
+        const unsub = navigation?.addListener?.('blur', markSeen)
+        return () => { if (typeof unsub === 'function') unsub() }
+    }, [navigation, markSeen])
+
     /* ── 3. Realtime ── */
     useEffect(() => {
         if (!conversationId) return

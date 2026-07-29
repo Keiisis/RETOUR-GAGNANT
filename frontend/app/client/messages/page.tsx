@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { ClientCallButton } from '@/components/client/ClientCallButton'
 import { MessageSquare, Send, Loader2, CheckCircle2, AlertCircle, Clock, ChevronRight, User } from 'lucide-react'
 
 interface Message {
@@ -250,6 +251,15 @@ export default function ClientMessagesPage() {
                     )}
                 </h1>
                 <p className="text-gray-500 text-sm mt-1">Échangez avec votre agent en temps réel.</p>
+            </div>
+
+            {/* Appel vocal direct — la voix passe en pair-à-pair, sans serveur intermédiaire. */}
+            <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-5">
+                <h2 className="font-black text-white text-sm mb-1">Parler à un conseiller</h2>
+                <p className="text-gray-500 text-xs mb-4">
+                    Un agent disponible décroche directement depuis son poste.
+                </p>
+                <ClientCallButton sujet="Appel depuis l'espace client" />
             </div>
 
             <div className="grid lg:grid-cols-5 gap-5">

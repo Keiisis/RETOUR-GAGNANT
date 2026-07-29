@@ -553,8 +553,6 @@ export default function LegalScreen({ navigation }: any) {
                         </Text>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 60 }} />
             </ScrollView>
         </View>
     )

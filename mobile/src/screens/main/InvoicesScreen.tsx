@@ -418,7 +418,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}

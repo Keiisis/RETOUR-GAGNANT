@@ -973,7 +973,6 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 keyboardShouldPersistTaps="handled"
             >
                 {renderStepContent()}
-                <View style={{ height: 120 }} />
             </ScrollView>
 
             {/* FOOTER ACTIONS */}

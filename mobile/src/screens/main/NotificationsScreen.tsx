@@ -423,7 +423,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                     />
                 )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
                 ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
                 refreshControl={
                     <RefreshControl

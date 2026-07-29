@@ -30,6 +30,7 @@ import OrdersScreen from '../screens/main/OrdersScreen'
 import OrderDetailScreen from '../screens/main/OrderDetailScreen'
 import OrderConfirmationScreen from '../screens/main/OrderConfirmationScreen'
 import SignatureScreen from '../screens/main/SignatureScreen'
+import CallScreen from '../screens/main/CallScreen'
 import InvoicesScreen from '../screens/main/InvoicesScreen'
 import NationaliteFormScreen from '../screens/main/NationaliteFormScreen'
 import LegalScreen from '../screens/main/LegalScreen'
@@ -76,7 +77,8 @@ export type RootStackParamList = {
     Security: undefined
     Notifications: undefined
     Payments: undefined
-    Appointments: undefined
+    Appointments: { openRequest?: boolean; serviceLabel?: string } | undefined
+    Call: { sujet?: string } | undefined
     FAQ: undefined
     About: undefined
     Boutique: undefined
@@ -315,6 +317,7 @@ export default function AppNavigator() {
                     <Stack.Group screenOptions={formSheetIOS}>
                         <Stack.Screen name="EditProfil" component={EditProfilScreen} />
                         <Stack.Screen name="Signature" component={SignatureScreen} />
+                        <Stack.Screen name="Call" component={CallScreen} />
                         <Stack.Screen name="Fa" component={FaScreen} />
                         <Stack.Screen name="Genealogie" component={GenealogieScreen} />
                     </Stack.Group>

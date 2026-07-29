@@ -674,8 +674,6 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         </Text>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 40 }} />
             </ScrollView>
         </View>
     )

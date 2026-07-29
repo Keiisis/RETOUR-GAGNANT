@@ -436,7 +436,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     />
                 )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}

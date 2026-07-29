@@ -461,8 +461,6 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                         </View>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 120 }} />
             </ScrollView>
 
             {/* ═══ CTA FIXE EN BAS ═══ */}

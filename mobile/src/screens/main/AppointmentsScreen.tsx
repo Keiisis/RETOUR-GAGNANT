@@ -54,6 +54,9 @@ const C = screenColors
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Appointments'>
 
 /* ── Types ── */
+interface AvailabilitySlot { heure: string; restant: number }
+interface AvailabilityDay { date: string; ferme?: boolean; motif?: string; slots: AvailabilitySlot[] }
+
 interface Appointment {
     id: string
     scheduled_at: string | null
@@ -196,7 +199,11 @@ function AppointmentCard({
    ÉCRAN PRINCIPAL : APPOINTMENTS
 ═══════════════════════════════════════════════════════════ */
 
-export default function AppointmentsScreen({ navigation }: { navigation: Nav }) {
+export default function AppointmentsScreen({ navigation, route }: { navigation: Nav; route?: any }) {
+    /* Arrivee depuis une fiche service : on ouvre le formulaire et on
+       pre-remplit l'objet avec le nom de la prestation. */
+    const openRequest = route?.params?.openRequest
+    const serviceLabel = route?.params?.serviceLabel
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
@@ -211,6 +218,37 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
     const [formType, setFormType] = useState<'video' | 'phone' | 'in_person'>('video')
     const [formNotes, setFormNotes] = useState('')
     const [notesFocused, setNotesFocused] = useState(false)
+
+    /* Creneaux REELS. La table rdv_requests impose date et heure NOT NULL :
+       l'ancien formulaire envoyait null, donc toute demande echouait avec
+       « La demande n'a pas pu etre envoyee ». On lit desormais les
+       disponibilites calculees par /api/availability, la meme source que le
+       site public — le client ne peut choisir qu'un creneau reellement libre. */
+    const [days, setDays] = useState<AvailabilityDay[]>([])
+    const [slotsLoading, setSlotsLoading] = useState(false)
+    const [formDate, setFormDate] = useState<string | null>(null)
+    const [formHeure, setFormHeure] = useState<string | null>(null)
+
+    const openDays = days.filter(d => !d.ferme && (d.slots?.length || 0) > 0)
+    const selectedDay = openDays.find(d => d.date === formDate) || null
+
+    useEffect(() => {
+        if (!showModal || days.length > 0) return
+        let alive = true
+        setSlotsLoading(true)
+        fetchWithTimeout(`${API_BASE}/api/availability?days=21`, { timeoutMs: 10000 })
+            .then(r => r.json())
+            .then((json) => {
+                if (!alive) return
+                const list: AvailabilityDay[] = Array.isArray(json?.jours) ? json.jours : []
+                setDays(list)
+                const first = list.find(d => !d.ferme && (d.slots?.length || 0) > 0)
+                if (first) { setFormDate(first.date); setFormHeure(first.slots[0].heure) }
+            })
+            .catch(() => { if (alive) setDays([]) })
+            .finally(() => { if (alive) setSlotsLoading(false) })
+        return () => { alive = false }
+    }, [showModal, days.length])
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -231,6 +269,13 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
     useEffect(() => {
         sheetAnim.value = withSpring(showModal ? 1 : 0, { damping: 20, stiffness: 180 })
     }, [showModal])
+
+    useEffect(() => {
+        if (!openRequest) return
+        setShowModal(true)
+        if (serviceLabel) setFormNotes(`Demande concernant : ${serviceLabel}.
+`)
+    }, [openRequest, serviceLabel])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
@@ -299,6 +344,10 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
     /* ── Demander un RDV ── */
     const handleRequestAppointment = async () => {
+        if (!formDate || !formHeure) {
+            toast(t('Créneau requis'), t('Choisissez une date et une heure disponibles.'))
+            return
+        }
         if (!formNotes.trim()) {
             toast(t('Champ requis'), t("Décrivez brièvement l'objet de votre rendez-vous."))
             return
@@ -313,8 +362,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
             const { data: inserted, error } = await supabase.from('rdv_requests').insert({
                 client_id: profile!.id,
                 client_email: profile!.email,
-                date: null,
-                heure: null,
+                date: formDate,
+                heure: formHeure,
                 type: rdvType,
                 motif: 'Consultation',
                 notes: formNotes.trim(),
@@ -333,8 +382,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                     clientName,
                     clientEmail: profile!.email,
                     service: 'Consultation',
-                    date: null,
-                    heure: null,
+                    date: formDate,
+                    heure: formHeure,
                     type: rdvType,
                 }),
             }).catch(() => { /* non bloquant */ })
@@ -441,7 +490,7 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                     </View>
                 )}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
                 }
@@ -649,6 +698,74 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                     )
                                 })}
                             </View>
+
+                            {/* Créneau — jours réellement ouverts */}
+                            <View style={styles.labelRow}>
+                                <Text style={styles.modalLabel}>{t('Date souhaitée')}</Text>
+                                <Text style={styles.required}>{t('Requis')}</Text>
+                            </View>
+
+                            {slotsLoading ? (
+                                <View style={styles.slotsLoading}>
+                                    <ActivityIndicator size="small" color={C.primary} />
+                                </View>
+                            ) : openDays.length === 0 ? (
+                                <Text style={styles.slotsEmpty}>
+                                    {t('Aucun créneau ouvert sur les 3 prochaines semaines. Contactez-nous par téléphone.')}
+                                </Text>
+                            ) : (
+                                <>
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        contentContainerStyle={styles.dayRow}
+                                    >
+                                        {openDays.map((d) => {
+                                            const active = formDate === d.date
+                                            const dt = new Date(`${d.date}T12:00:00`)
+                                            return (
+                                                <Pressable
+                                                    key={d.date}
+                                                    onPress={() => { setFormDate(d.date); setFormHeure(d.slots[0]?.heure || null) }}
+                                                    accessibilityRole="button"
+                                                    accessibilityState={{ selected: active }}
+                                                    style={[styles.dayChip, active && styles.dayChipActive]}
+                                                >
+                                                    <Text style={[styles.dayChipWeek, active && styles.dayChipTextActive]}>
+                                                        {dt.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                                                    </Text>
+                                                    <Text style={[styles.dayChipNum, active && styles.dayChipTextActive]}>
+                                                        {dt.getDate()}
+                                                    </Text>
+                                                    <Text style={[styles.dayChipMonth, active && styles.dayChipTextActive]}>
+                                                        {dt.toLocaleDateString('fr-FR', { month: 'short' })}
+                                                    </Text>
+                                                </Pressable>
+                                            )
+                                        })}
+                                    </ScrollView>
+
+                                    <Text style={styles.modalLabel}>{t('Heure')}</Text>
+                                    <View style={styles.slotGrid}>
+                                        {(selectedDay?.slots || []).map((sl) => {
+                                            const active = formHeure === sl.heure
+                                            return (
+                                                <Pressable
+                                                    key={sl.heure}
+                                                    onPress={() => setFormHeure(sl.heure)}
+                                                    accessibilityRole="button"
+                                                    accessibilityState={{ selected: active }}
+                                                    style={[styles.slotChip, active && styles.slotChipActive]}
+                                                >
+                                                    <Text style={[styles.slotChipText, active && styles.slotChipTextActive]}>
+                                                        {sl.heure}
+                                                    </Text>
+                                                </Pressable>
+                                            )
+                                        })}
+                                    </View>
+                                </>
+                            )}
 
                             {/* Notes */}
                             <View style={styles.labelRow}>
@@ -1113,6 +1230,28 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         marginBottom: 4,
     },
+    slotsLoading: { paddingVertical: 24, alignItems: 'center' },
+    slotsEmpty: { ...typography.bodySmall, color: C.textMuted, paddingVertical: spacing.md },
+    dayRow: { gap: spacing.sm, paddingBottom: spacing.md },
+    dayChip: {
+        width: 62, paddingVertical: spacing.sm, borderRadius: radius.lg,
+        alignItems: 'center', backgroundColor: C.surface,
+        borderWidth: 1, borderColor: C.border,
+    },
+    dayChipActive: { backgroundColor: C.primary, borderColor: C.primary },
+    dayChipWeek: { ...typography.caption, fontSize: 12, color: C.textMuted, textTransform: 'capitalize' },
+    dayChipNum: { ...typography.h3, color: C.text },
+    dayChipMonth: { ...typography.caption, fontSize: 12, color: C.textMuted, textTransform: 'capitalize' },
+    dayChipTextActive: { color: C.primaryText },
+    slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+    slotChip: {
+        paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.pill,
+        backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
+    },
+    slotChipActive: { backgroundColor: C.primary, borderColor: C.primary },
+    slotChipText: { ...typography.label, color: C.text },
+    slotChipTextActive: { color: C.primaryText },
+
     modalTitle: {
         fontSize: 22,
         fontWeight: '800',

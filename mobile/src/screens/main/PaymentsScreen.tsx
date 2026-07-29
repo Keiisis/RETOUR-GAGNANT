@@ -170,7 +170,7 @@ export default function PaymentsScreen({ navigation }: any) {
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
                 }

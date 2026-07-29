@@ -704,8 +704,6 @@ export default function FAQScreen() {
                         </Pressable>
                     </View>
                 </AnimatedSection>
-
-                <View style={{ height: 60 }} />
             </ScrollView>
         </View>
     )

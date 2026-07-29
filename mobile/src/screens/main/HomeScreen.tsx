@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
     View, Text, StyleSheet, ScrollView, Image, Linking,
     StatusBar, Pressable,
@@ -14,6 +14,7 @@ import Animated, {
     useSharedValue, useAnimatedStyle,
     withSpring, withTiming, withDelay, Easing,
 } from 'react-native-reanimated'
+import { useFocusEffect } from '@react-navigation/native'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
@@ -53,7 +54,7 @@ const AnimatedSection = ({ delay = 0, children, style }: any) => {
     return <Animated.View style={[s, style]}>{children}</Animated.View>
 }
 
-export default function HomeScreen({ navigation }: { navigation: { navigate: (route: string) => void } }) {
+export default function HomeScreen({ navigation }: { navigation: { navigate: (route: string, params?: object) => void } }) {
     const insets = useSafeAreaInsets()
     const { profile } = useAuth()
     const { t } = useLang()
@@ -100,7 +101,10 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
             } else { setUnreadMessages(0) }
         } catch { /* silencieux */ }
     }
+    /* Sans cela, revenir de la messagerie laissait le compteur de messages
+       non lus fige : `profile` n'ayant pas change, fetchData ne rejouait pas. */
     useEffect(() => { fetchData() }, [profile])
+    useFocusEffect(useCallback(() => { fetchData() }, [profile]))
 
     /* Conseiller reellement assigne (dossier_tracking.agent_assigne, expose par
        /api/mobile/dossiers). Sans assignation, on garde « Equipe RGB » : on
@@ -161,7 +165,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 72 }}
             >
                 {/* ── Liseré tricolore : signature de marque ── */}
                 <View style={styles.topFlag}><FlagBar height={6} radiusTop={false} /></View>
@@ -366,9 +370,9 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                     <MessageSquare size={19} color={colors.floatingText} strokeWidth={2} />
                 </Pressable>
                 <Pressable
-                    onPress={() => Linking.openURL('tel:+2290160322121').catch(() => { })}
+                    onPress={() => navigation.navigate("Call", { sujet: "Appel depuis l'accueil" })}
                     accessibilityRole="button"
-                    accessibilityLabel={t('Appeler l\'agence')}
+                    accessibilityLabel={t('Appeler un conseiller')}
                     style={styles.advisorBtnCall}
                     hitSlop={6}
                 >

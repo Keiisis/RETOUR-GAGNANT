@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { AgentCallCenter } from '@/components/agent/AgentCallCenter'
 import {
     LayoutDashboard, FileText, MessageSquare, Users as UsersIcon,
     Compass, CalendarDays, FolderOpen, Send, LogOut,
@@ -601,6 +602,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
     return (
         <ThemeProvider panel="agent" defaultTheme="dark">
+        <AgentCallCenter />
         <div className="flex h-screen text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
             {/* ═══════════ DESKTOP SIDEBAR ═══════════ */}
             <motion.aside
