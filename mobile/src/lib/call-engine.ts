@@ -109,6 +109,14 @@ export class MobileCallEngine {
     private channel: any = null
     private closed = false
 
+    /* Meme correctif que cote web : les signaux arrivent sans garantie
+       d'ordre et leur traitement est asynchrone. Sans serialisation, un
+       candidat ICE traite pendant setRemoteDescription levait une exception
+       et etait perdu — la connexion n'aboutissait jamais. */
+    private queue: Promise<void> = Promise.resolve()
+    private pendingIce: any[] = []
+    private remoteReady = false
+
     constructor(private readonly opts: MobileCallOptions) {}
 
     private async prepare() {
@@ -142,7 +150,7 @@ export class MobileCallEngine {
             }, (payload: any) => {
                 const row = payload.new as { emetteur: CallRole; type: string; payload: unknown }
                 if (row.emetteur !== 'agent') return
-                void this.receive(row.type, row.payload)
+                this.enqueue(row.type, row.payload)
             })
             .subscribe()
 
@@ -159,16 +167,40 @@ export class MobileCallEngine {
         })
     }
 
+    /** Traite les signaux un par un, dans leur ordre d'arrivée. */
+    private enqueue(type: string, payload: unknown) {
+        this.queue = this.queue
+            .then(() => this.receive(type, payload))
+            .catch(() => { /* un signal invalide ne bloque pas les suivants */ })
+    }
+
+    /** Vide le tampon une fois la description distante posée. */
+    private async flushIce() {
+        const rtc = loadWebRTC()
+        if (!rtc || !this.pc || !this.remoteReady) return
+        const attente = this.pendingIce
+        this.pendingIce = []
+        for (const c of attente) {
+            try { await this.pc.addIceCandidate(new rtc.RTCIceCandidate(c)) } catch { /* obsolète */ }
+        }
+    }
+
     private async receive(type: string, payload: unknown) {
         const rtc = loadWebRTC()
         if (!rtc || !this.pc || this.closed) return
         try {
             if (type === 'answer') {
+                if (this.remoteReady) return
                 await this.pc.setRemoteDescription(new rtc.RTCSessionDescription(payload))
+                this.remoteReady = true
+                await this.flushIce()
             } else if (type === 'ice') {
+                // Un candidat reçu avant la description distante ne peut pas
+                // être ajouté : on le garde au lieu de le perdre.
+                if (!this.remoteReady) { this.pendingIce.push(payload); return }
                 await this.pc.addIceCandidate(new rtc.RTCIceCandidate(payload))
             }
-        } catch { /* candidat tardif : sans conséquence */ }
+        } catch { /* candidat obsolète : sans conséquence */ }
     }
 
     /** Ouvre le micro et publie l'offre. */

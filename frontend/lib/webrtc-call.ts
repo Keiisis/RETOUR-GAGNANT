@@ -94,6 +94,18 @@ export class CallEngine {
     private localStream: MediaStream | null = null
     private channel: ReturnType<SupabaseClient['channel']> | null = null
     private closed = false
+
+    /* Les signaux arrivent par le temps réel, sans garantie d'ordre, et
+       chaque traitement est asynchrone. Sans sérialisation, un candidat ICE
+       pouvait etre traité pendant que setRemoteDescription était encore en
+       cours : addIceCandidate levait alors une exception et le candidat
+       était perdu. La connexion n'aboutissait jamais. */
+    private queue: Promise<void> = Promise.resolve()
+
+    /* Un candidat reçu avant la description distante ne peut pas être
+       ajouté. On le garde de côté au lieu de le jeter. */
+    private pendingIce: RTCIceCandidateInit[] = []
+    private remoteReady = false
     private readonly opts: CallEngineOptions
     private readonly other: CallRole
 
@@ -132,7 +144,15 @@ export class CallEngine {
             void this.send('ice', event.candidate.toJSON())
         }
 
+        pc.oniceconnectionstatechange = () => {
+            console.log(`[appel:${this.opts.role}] ICE → ${pc.iceConnectionState}`)
+        }
+        pc.onicegatheringstatechange = () => {
+            console.log(`[appel:${this.opts.role}] collecte ICE → ${pc.iceGatheringState}`)
+        }
+
         pc.onconnectionstatechange = () => {
+            console.log(`[appel:${this.opts.role}] connexion → ${pc.connectionState}`)
             this.opts.onStateChange?.(pc.connectionState)
             if (pc.connectionState === 'failed') {
                 this.opts.onEnded?.('La connexion audio n’a pas pu s’établir.')
@@ -156,7 +176,7 @@ export class CallEngine {
                 (payload) => {
                     const row = payload.new as { emetteur: CallRole; type: string; payload: unknown }
                     if (row.emetteur !== this.other) return
-                    void this.receive(row.type, row.payload)
+                    this.enqueue(row.type, row.payload)
                 },
             )
             .subscribe()
@@ -174,24 +194,52 @@ export class CallEngine {
         })
     }
 
+    /** Traite les signaux un par un, dans leur ordre d'arrivée. */
+    private enqueue(type: string, payload: unknown) {
+        this.queue = this.queue
+            .then(() => this.receive(type, payload))
+            .catch(() => { /* un signal invalide ne doit pas bloquer les suivants */ })
+    }
+
+    /** Vide le tampon une fois la description distante posée. */
+    private async flushIce() {
+        const pc = this.pc
+        if (!pc || !this.remoteReady) return
+        const attente = this.pendingIce
+        this.pendingIce = []
+        if (attente.length > 0) {
+            console.log(`[appel:${this.opts.role}] ${attente.length} candidat(s) ICE en attente appliqué(s)`)
+        }
+        for (const c of attente) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch { /* candidat obsolète */ }
+        }
+    }
+
     private async receive(type: string, payload: unknown) {
         const pc = this.pc
         if (!pc || this.closed) return
+        console.log(`[appel:${this.opts.role}] reçu « ${type} »`)
         try {
             if (type === 'offer') {
+                if (this.remoteReady) return // offre déjà traitée
                 await pc.setRemoteDescription(new RTCSessionDescription(payload as RTCSessionDescriptionInit))
+                this.remoteReady = true
                 const answer = await pc.createAnswer()
                 await pc.setLocalDescription(answer)
                 await this.send('answer', { type: answer.type, sdp: answer.sdp })
+                await this.flushIce()
             } else if (type === 'answer') {
-                if (pc.signalingState === 'have-local-offer') {
-                    await pc.setRemoteDescription(new RTCSessionDescription(payload as RTCSessionDescriptionInit))
-                }
+                if (pc.signalingState !== 'have-local-offer') return
+                await pc.setRemoteDescription(new RTCSessionDescription(payload as RTCSessionDescriptionInit))
+                this.remoteReady = true
+                await this.flushIce()
             } else if (type === 'ice') {
-                await pc.addIceCandidate(new RTCIceCandidate(payload as RTCIceCandidateInit))
+                const candidat = payload as RTCIceCandidateInit
+                if (!this.remoteReady) { this.pendingIce.push(candidat); return }
+                await pc.addIceCandidate(new RTCIceCandidate(candidat))
             }
         } catch {
-            // Un candidat ICE tardif peut être rejeté : sans conséquence.
+            // Un candidat obsolète peut être rejeté : sans conséquence.
         }
     }
 
@@ -217,6 +265,7 @@ export class CallEngine {
         for (const row of data || []) {
             await this.receive(row.type as string, row.payload)
         }
+        await this.flushIce()
     }
 
     /** Coupe le micro et ferme tout. Idempotent. */
