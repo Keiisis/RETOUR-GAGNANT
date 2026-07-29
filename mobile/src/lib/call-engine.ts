@@ -56,6 +56,64 @@ export function isCallSupported(): boolean {
     return loadWebRTC() !== null
 }
 
+/* ── Session audio du téléphone ────────────────────────────────
+   Sans elle, Android traite l'appel comme une lecture multimédia :
+   le son sort sur le haut-parleur, l'annulation d'écho matérielle
+   reste inactive, et l'écran ne s'éteint pas quand on porte le
+   téléphone à l'oreille. InCallManager bascule le système en mode
+   « communication vocale », ce qui règle les trois d'un coup.
+
+   Chargement paresseux et tolérant : ce module est natif lui aussi,
+   son absence ne doit jamais empêcher un appel d'aboutir. */
+type InCall = {
+    start: (o: { media: string; auto: boolean; ringback: string }) => void
+    stop: () => void
+    setForceSpeakerphoneOn: (on: boolean | null) => void
+    setKeepScreenOn: (on: boolean) => void
+}
+
+let inCall: InCall | null = null
+let inCallCharge = false
+
+function loadInCall(): InCall | null {
+    if (inCallCharge) return inCall
+    inCallCharge = true
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mod = require('react-native-incall-manager')
+        inCall = (mod?.default || mod) as InCall
+    } catch {
+        inCall = null
+    }
+    return inCall
+}
+
+/** Bascule le téléphone en mode conversation. Sans effet si indisponible. */
+export function ouvrirSessionAudio(hautParleur = false): void {
+    try {
+        const m = loadInCall()
+        if (!m) return
+        m.start({ media: 'audio', auto: false, ringback: '' })
+        m.setForceSpeakerphoneOn(hautParleur)
+        m.setKeepScreenOn(true)
+    } catch { /* le mode par défaut reste utilisable */ }
+}
+
+/** Rend la main au système. Idempotent. */
+export function fermerSessionAudio(): void {
+    try {
+        const m = loadInCall()
+        if (!m) return
+        m.setKeepScreenOn(false)
+        m.stop()
+    } catch { /* déjà fermée */ }
+}
+
+/** Écouteur ou haut-parleur, pendant l'appel. */
+export function basculerHautParleur(actif: boolean): void {
+    try { loadInCall()?.setForceSpeakerphoneOn(actif) } catch { /* sans effet */ }
+}
+
 export type CallRole = 'client' | 'agent'
 
 interface IceServer { urls: string | string[]; username?: string; credential?: string }
@@ -96,6 +154,42 @@ async function getIceServers(supabase: SupabaseClient): Promise<IceServer[]> {
     }
 }
 
+/**
+ * Ajuste la description SDP pour la conversation — même réglage que le web.
+ *
+ * Opus est négocié par défaut pour la qualité musicale : trames longues,
+ * débit élevé, stéréo. En conversation cela se paie en latence sans rien
+ * apporter. On demande donc l'arrêt d'émission pendant les silences, la
+ * correction d'erreur (précieuse sur réseau mobile), la monophonie, un
+ * débit de 24 kbit/s et des trames de 20 ms au lieu de 60.
+ */
+function reglerOpusPourLaVoix(sdp: string): string {
+    if (!sdp) return sdp
+
+    const rtpmap = sdp.match(/a=rtpmap:(\d+)\s+opus\/\d+/i)
+    if (!rtpmap) return sdp
+    const pt = rtpmap[1]
+
+    const OPTIONS = 'usedtx=1;useinbandfec=1;stereo=0;maxaveragebitrate=24000'
+    const fmtp = new RegExp(`a=fmtp:${pt} ([^\\r\\n]*)`)
+
+    let sortie = fmtp.test(sdp)
+        ? sdp.replace(fmtp, (_m: string, params: string) => {
+            const presentes = new Set(
+                params.split(';').map(p => p.split('=')[0].trim()).filter(Boolean),
+            )
+            const ajouts = OPTIONS.split(';').filter(o => !presentes.has(o.split('=')[0]))
+            return `a=fmtp:${pt} ${[params, ...ajouts].filter(Boolean).join(';')}`
+        })
+        : sdp.replace(rtpmap[0], `${rtpmap[0]}\r\na=fmtp:${pt} ${OPTIONS}`)
+
+    if (!/a=ptime:/.test(sortie)) {
+        sortie = sortie.replace(/(a=rtpmap:\d+\s+opus\/\d+[^\r\n]*)/i, '$1\r\na=ptime:20')
+    }
+
+    return sortie
+}
+
 export interface MobileCallOptions {
     supabase: SupabaseClient
     callId: string
@@ -125,7 +219,17 @@ export class MobileCallEngine {
 
         const { supabase, callId } = this.opts
 
-        this.local = await rtc.mediaDevices.getUserMedia({ audio: true, video: false })
+        ouvrirSessionAudio(false)
+
+        this.local = await rtc.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                channelCount: 1,
+            },
+            video: false,
+        })
 
         const pc = new rtc.RTCPeerConnection({ iceServers: await getIceServers(supabase) })
         this.pc = pc
@@ -207,8 +311,9 @@ export class MobileCallEngine {
     async start(): Promise<void> {
         const pc = await this.prepare()
         const offer = await pc.createOffer({ offerToReceiveAudio: true })
-        await pc.setLocalDescription(offer)
-        await this.send('offer', { type: offer.type, sdp: offer.sdp })
+        const sdp = reglerOpusPourLaVoix(offer.sdp || '')
+        await pc.setLocalDescription({ type: offer.type, sdp })
+        await this.send('offer', { type: offer.type, sdp })
     }
 
     setMuted(muted: boolean): void {
@@ -218,6 +323,7 @@ export class MobileCallEngine {
     hangup(): void {
         if (this.closed) return
         this.closed = true
+        fermerSessionAudio()
         try { this.local?.getTracks?.().forEach((t: any) => t.stop()) } catch { /* déjà arrêté */ }
         try { this.pc?.close?.() } catch { /* déjà fermée */ }
         if (this.channel) { void this.opts.supabase.removeChannel(this.channel) }

@@ -10,13 +10,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, Image, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Phone, PhoneOff, Mic, MicOff } from 'lucide-react-native'
+import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { toast } from '../../lib/feedback'
-import { MobileCallEngine, isCallSupported, formatDuree } from '../../lib/call-engine'
+import { MobileCallEngine, isCallSupported, formatDuree, basculerHautParleur } from '../../lib/call-engine'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const C = screenColors
@@ -32,6 +32,7 @@ export default function CallScreen({ navigation, route }: any) {
 
     const [etat, setEtat] = useState<Etat>('connexion')
     const [muet, setMuet] = useState(false)
+    const [hautParleur, setHautParleur] = useState(false)
     const [secondes, setSecondes] = useState(0)
     const [agentNom, setAgentNom] = useState<string | null>(null)
     const [message, setMessage] = useState<string | null>(null)
@@ -164,6 +165,14 @@ export default function CallScreen({ navigation, route }: any) {
         engine.current?.setMuted(suivant)
     }
 
+    /* Ecouteur par defaut : c'est ce qui limite le plus l'echo. Le
+       haut-parleur reste a portee d'un appui pour les mains libres. */
+    const basculerSortie = () => {
+        const suivant = !hautParleur
+        setHautParleur(suivant)
+        basculerHautParleur(suivant)
+    }
+
     const titre =
         etat === 'actif' ? (agentNom || t('Conseiller RGB'))
         : etat === 'sonne' ? t('Nous cherchons un conseiller…')
@@ -195,6 +204,18 @@ export default function CallScreen({ navigation, route }: any) {
             </View>
 
             <View style={[styles.actions, { paddingBottom: insets.bottom + spacing.lg }]}>
+                {etat === 'actif' && (
+                    <Pressable
+                        onPress={basculerSortie}
+                        accessibilityRole="button"
+                        accessibilityLabel={hautParleur ? t("Revenir à l'écouteur") : t('Activer le haut-parleur')}
+                        accessibilityState={{ selected: hautParleur }}
+                        style={[styles.roundBtn, hautParleur && styles.roundBtnActif]}
+                    >
+                        <Volume2 size={22} color={hautParleur ? C.primary : C.text} strokeWidth={2} />
+                    </Pressable>
+                )}
+
                 {etat === 'actif' && (
                     <Pressable
                         onPress={basculerMicro}
@@ -253,6 +274,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center', ...shadows.card,
     },
     roundBtnMuted: { backgroundColor: C.surfaceAlt },
+    roundBtnActif: { backgroundColor: C.surfaceSoft, borderColor: C.primary },
     hangupBtn: {
         width: 68, height: 68, borderRadius: 34,
         backgroundColor: C.error,

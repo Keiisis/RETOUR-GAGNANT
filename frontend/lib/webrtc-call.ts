@@ -73,6 +73,49 @@ export async function getIceServers(supabase: SupabaseClient): Promise<IceServer
     }
 }
 
+/**
+ * Ajuste la description SDP pour la conversation.
+ *
+ * Opus est négocié par défaut avec des réglages orientés qualité musicale :
+ * trames longues, débit élevé, stéréo. En conversation, cela se paie en
+ * latence sans rien apporter à l'intelligibilité. On demande donc :
+ *   • usedtx        — on cesse d'émettre pendant les silences ;
+ *   • useinbandfec  — correction d'erreur, précieuse sur réseau mobile ;
+ *   • stereo=0      — la voix est monophonique ;
+ *   • maxaveragebitrate — 24 kbit/s suffisent et allègent le réseau ;
+ *   • ptime=20      — trames de 20 ms au lieu de 60, soit 40 ms gagnées.
+ */
+function reglerOpusPourLaVoix(sdp: string): string {
+    if (!sdp) return sdp
+
+    // Numéro de charge utile d'Opus, lu dans la table des codecs.
+    const rtpmap = sdp.match(/a=rtpmap:(\d+)\s+opus\/\d+/i)
+    if (!rtpmap) return sdp
+    const pt = rtpmap[1]
+
+    const OPTIONS = 'usedtx=1;useinbandfec=1;stereo=0;maxaveragebitrate=24000'
+    const fmtp = new RegExp(`a=fmtp:${pt} ([^\\r\\n]*)`)
+
+    let sortie = fmtp.test(sdp)
+        // Ligne existante : on ajoute ce qui manque, sans écraser le reste.
+        ? sdp.replace(fmtp, (_m, params: string) => {
+            const presentes = new Set(
+                params.split(';').map(p => p.split('=')[0].trim()).filter(Boolean),
+            )
+            const ajouts = OPTIONS.split(';').filter(o => !presentes.has(o.split('=')[0]))
+            return `a=fmtp:${pt} ${[params, ...ajouts].filter(Boolean).join(';')}`
+        })
+        // Aucune ligne fmtp : on la crée juste après la déclaration du codec.
+        : sdp.replace(rtpmap[0], `${rtpmap[0]}\r\na=fmtp:${pt} ${OPTIONS}`)
+
+    // Durée de trame : 20 ms, la valeur usuelle en téléphonie.
+    if (!/a=ptime:/.test(sortie)) {
+        sortie = sortie.replace(/(a=rtpmap:\d+\s+opus\/\d+[^\r\n]*)/i, '$1\r\na=ptime:20')
+    }
+
+    return sortie
+}
+
 export interface CallEngineOptions {
     supabase: SupabaseClient
     callId: string
@@ -118,11 +161,23 @@ export class CallEngine {
     private async prepare(): Promise<RTCPeerConnection> {
         const { supabase, callId } = this.opts
 
+        /* Traitement du signal : l'annulation d'echo est indispensable des
+           qu'un interlocuteur ecoute au haut-parleur. `channelCount: 1` et
+           un echantillonnage a 16 kHz suffisent a la voix et reduisent le
+           travail de codage, donc la latence. */
         this.localStream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true,
+                channelCount: 1,
+                sampleRate: 16000,
+                // Variantes historiques, encore lues par certains navigateurs.
+                // @ts-expect-error contraintes non standard mais supportees
+                googEchoCancellation: true,
+                googAutoGainControl: true,
+                googNoiseSuppression: true,
+                googHighpassFilter: true,
             },
             video: false,
         })
@@ -135,6 +190,15 @@ export class CallEngine {
         }
 
         pc.ontrack = (event) => {
+            /* Par defaut le navigateur constitue un tampon genereux pour
+               lisser la gigue, au prix d'un retard audible. En conversation,
+               mieux vaut un tampon court : on demande le minimum, le
+               navigateur l'ajuste si le reseau l'exige. */
+            try {
+                const r = event.receiver as RTCRtpReceiver & { playoutDelayHint?: number }
+                r.playoutDelayHint = 0
+            } catch { /* propriete non supportee : sans consequence */ }
+
             const [stream] = event.streams
             if (stream) this.opts.onRemoteStream?.(stream)
         }
@@ -255,8 +319,9 @@ export class CallEngine {
                 await pc.setRemoteDescription(new RTCSessionDescription(payload as RTCSessionDescriptionInit))
                 this.remoteReady = true
                 const answer = await pc.createAnswer()
-                await pc.setLocalDescription(answer)
-                await this.send('answer', { type: answer.type, sdp: answer.sdp })
+                const sdpReponse = reglerOpusPourLaVoix(answer.sdp || '')
+                await pc.setLocalDescription({ type: answer.type, sdp: sdpReponse })
+                await this.send('answer', { type: answer.type, sdp: sdpReponse })
                 await this.flushIce()
             } else if (type === 'answer') {
                 if (pc.signalingState !== 'have-local-offer') return
@@ -277,8 +342,9 @@ export class CallEngine {
     async start(): Promise<void> {
         const pc = await this.prepare()
         const offer = await pc.createOffer({ offerToReceiveAudio: true })
-        await pc.setLocalDescription(offer)
-        await this.send('offer', { type: offer.type, sdp: offer.sdp })
+        const sdp = reglerOpusPourLaVoix(offer.sdp || '')
+        await pc.setLocalDescription({ type: offer.type, sdp })
+        await this.send('offer', { type: offer.type, sdp })
     }
 
     /** Côté appelé : ouvre le micro et attend l'offre déjà publiée. */
