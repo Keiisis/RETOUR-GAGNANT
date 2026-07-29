@@ -1,0 +1,62 @@
+# ══════════════════════════════════════════════════════════════
+#  Ce qui ne part pas chez EAS Build
+#
+#  EAS archive depuis la RACINE DU DÉPÔT, pas depuis mobile/ : le projet
+#  mobile étant versionné dans ce monorepo, l'archive embarquait tout —
+#  le site Next.js, les maquettes, et 333 Mo de fichiers sources Sketch,
+#  Figma et Adobe. 525 Mo au total, soit près de six minutes de
+#  téléversement à chaque build, pour un projet mobile qui ne pèse que
+#  29 Mo une fois l'inutile retiré.
+#
+#  Un premier .easignore avait été placé dans mobile/ : sans effet,
+#  puisque ce n'est pas la racine de l'archive.
+#
+#  ⚠️ .easignore REMPLACE .gitignore côté EAS : tout ce qui doit être
+#  exclu doit figurer ici, y compris ce que git ignore déjà.
+# ══════════════════════════════════════════════════════════════
+
+# ── Dépendances et sorties de compilation ─────────────────────
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.expo/
+**/.expo/
+dist/
+build/
+web-build/
+mobile/android/
+mobile/ios/
+
+# ── Le site web et ses ressources : hors sujet pour un build mobile ─
+frontend/
+backend/
+Aura-Link/
+
+# ── Sources de design et maquettes ────────────────────────────
+Assets/
+design/
+mobile/assets/Ajouts/
+
+# ── Sorties d'outils d'analyse ────────────────────────────────
+strix_runs/
+
+# ── Secrets et signatures : ne doivent jamais quitter le poste ─
+*.jks
+*.p8
+*.p12
+*.keystore
+*.mobileprovision
+.env
+.env.*
+!.env.example
+
+# ── Divers ────────────────────────────────────────────────────
+.git/
+.claude/
+.vscode/
+.DS_Store
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*

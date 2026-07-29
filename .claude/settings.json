@@ -326,7 +326,9 @@
       "Bash(grep -E \"title|Vocaux|description|//\")",
       "Bash(git commit *)",
       "Bash(xargs -0 du -h)",
-      "Bash(sed -n '/Build sans le module natif/,/navigation.goBack\\(\\)/p' src/screens/main/CallScreen.tsx)"
+      "Bash(sed -n '/Build sans le module natif/,/navigation.goBack\\(\\)/p' src/screens/main/CallScreen.tsx)",
+      "Bash(timeout 540 npx eas-cli@latest build --profile development --platform android --non-interactive --no-wait)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('cli:', d.get\\('cli'\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",

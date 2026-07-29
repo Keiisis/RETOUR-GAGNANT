@@ -155,7 +155,23 @@ export default function CallScreen({ navigation, route }: any) {
         }
 
         lancer()
-        return () => { vivant = false; fermer() }
+        return () => {
+            vivant = false
+            const id = callIdRef.current
+            callIdRef.current = null
+            fermer()
+            /* Quitter l'écran sans raccrocher — geste de retour, application
+               fermée — laissait l'appel ouvert en base : l'agent voyait une
+               communication qui n'existait plus. On clôt aussi côté serveur.
+               La requête part sans être attendue : le composant disparaît. */
+            if (id) {
+                void supabase
+                    .from('calls')
+                    .update({ statut: 'ended', termine_par: 'client', ended_at: new Date().toISOString() })
+                    .eq('id', id)
+                    .in('statut', ['ringing', 'active'])
+            }
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profile?.id])
 
