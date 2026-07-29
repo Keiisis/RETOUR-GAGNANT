@@ -118,7 +118,7 @@ function LinkItem({
 
     const animStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolate(pressAnim.value, [0, 1], [0, 0.04]) > 0.02
-            ? 'rgba(13, 43, 78, 0.04)'
+            ? 'rgba(0, 135, 81, 0.04)'
             : 'transparent',
     }))
 
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 18,
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
@@ -528,12 +528,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 7,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.1)',
+        borderColor: 'rgba(0, 135, 81, 0.1)',
     },
     versionDot: {
         width: 6,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     quoteBox: {
         marginTop: 18,
         padding: 16,
-        backgroundColor: 'rgba(212, 160, 23, 0.06)',
+        backgroundColor: 'rgba(252, 209, 22, 0.06)',
         borderRadius: 12,
         borderLeftWidth: 3,
         borderLeftColor: C.accent,
@@ -713,12 +713,12 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 14,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.20)',
+        borderColor: 'rgba(252, 209, 22, 0.20)',
     },
     valueTitle: {
         fontSize: 14,
@@ -764,11 +764,11 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     teamName: {
         fontSize: 14,
@@ -812,11 +812,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 10,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     linkLabel: {
         flex: 1,
@@ -851,11 +851,11 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 14,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.10)',
+        borderColor: 'rgba(0, 135, 81, 0.10)',
     },
     socialLabel: {
         fontSize: 12,

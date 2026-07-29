@@ -177,18 +177,18 @@ function FaqItem({
     const iconBgStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(13, 43, 78, 0.06)', 'rgba(212, 160, 23, 0.15)']
+            ['rgba(0, 135, 81, 0.06)', 'rgba(252, 209, 22, 0.15)']
         ),
         borderColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(13, 43, 78, 0.08)', 'rgba(212, 160, 23, 0.35)']
+            ['rgba(0, 135, 81, 0.08)', 'rgba(252, 209, 22, 0.35)']
         ),
     }))
 
     const pressStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             pressAnim.value, [0, 1],
-            ['rgba(13, 43, 78, 0)', 'rgba(13, 43, 78, 0.03)']
+            ['rgba(0, 135, 81, 0)', 'rgba(0, 135, 81, 0.03)']
         ),
     }))
 
@@ -258,7 +258,7 @@ const faqStyles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     itemActive: {
-        backgroundColor: 'rgba(212, 160, 23, 0.04)',
+        backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     question: {
         flexDirection: 'row',
@@ -734,12 +734,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     navCounterText: {
         fontSize: 12,
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
         height: 16,
         paddingHorizontal: 5,
         borderRadius: 8,
-        backgroundColor: 'rgba(13, 43, 78, 0.08)',
+        backgroundColor: 'rgba(0, 135, 81, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -861,12 +861,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.08)',
+        backgroundColor: 'rgba(252, 209, 22, 0.08)',
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.2)',
+        borderColor: 'rgba(252, 209, 22, 0.2)',
         marginBottom: 16,
         alignSelf: 'flex-start',
     },
@@ -897,12 +897,12 @@ const styles = StyleSheet.create({
         width: 76,
         height: 76,
         borderRadius: 22,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.2)',
+        borderColor: 'rgba(252, 209, 22, 0.2)',
     },
     noResultTitle: {
         fontSize: 17,
@@ -928,12 +928,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         paddingHorizontal: 14,
         paddingVertical: 9,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
     },
     noResultBtnText: {
         color: C.accentDark,
@@ -955,11 +955,11 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 10,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     catTitle: {
         flex: 1,
@@ -973,9 +973,9 @@ const styles = StyleSheet.create({
         height: 18,
         paddingHorizontal: 6,
         borderRadius: 9,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
         marginTop: 24,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
@@ -1031,9 +1031,9 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 16,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1060,9 +1060,9 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1109,12 +1109,12 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     channelLabel: {
         fontSize: 12,

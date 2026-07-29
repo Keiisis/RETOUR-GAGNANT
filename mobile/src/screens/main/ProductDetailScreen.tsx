@@ -350,7 +350,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                             <View style={styles.priceShineWrap} pointerEvents="none">
                                 <Animated.View style={[styles.priceShine, shineStyle]}>
                                     <LinearGradient
-                                        colors={['transparent', 'rgba(212,160,23,0.5)', 'transparent']}
+                                        colors={['transparent', 'rgba(252,209,22,0.5)', 'transparent']}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 0 }}
                                         style={StyleSheet.absoluteFill}
@@ -381,14 +381,14 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                         <Text style={styles.trustValue}>{t('24-48h')}</Text>
                     </View>
                     <View style={styles.trustItem}>
-                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(212,160,23,0.14)' }]}>
+                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(252,209,22,0.14)' }]}>
                             <ShieldCheck size={16} color={C.goldDeep} strokeWidth={1.8} />
                         </View>
                         <Text style={styles.trustLabel}>{t('Garantie')}</Text>
                         <Text style={styles.trustValue}>{t('Authentique')}</Text>
                     </View>
                     <View style={styles.trustItem}>
-                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(13,43,78,0.10)' }]}>
+                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(0,135,81,0.10)' }]}>
                             <Check size={16} color={C.primary} strokeWidth={2} />
                         </View>
                         <Text style={styles.trustLabel}>{t('Retours')}</Text>
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 999,
-        backgroundColor: 'rgba(212,160,23,0.10)',
+        backgroundColor: 'rgba(252,209,22,0.10)',
         marginBottom: 10,
     },
     categoryDot: {
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: C.surfaceSoft,
         borderWidth: 1,
-        borderColor: 'rgba(212,160,23,0.18)',
+        borderColor: 'rgba(252,209,22,0.18)',
         marginBottom: 14,
     },
     priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: 'rgba(212,160,23,0.12)',
+        backgroundColor: 'rgba(252,209,22,0.12)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -958,11 +958,11 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(212,160,23,0.18)',
+        backgroundColor: 'rgba(252,209,22,0.18)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212,160,23,0.35)',
+        borderColor: 'rgba(252,209,22,0.35)',
     },
     addBtnText: {
         color: C.surface,

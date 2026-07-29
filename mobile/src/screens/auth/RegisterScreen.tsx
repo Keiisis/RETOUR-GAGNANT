@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         shadowOpacity: 0,
         elevation: 0,
     },

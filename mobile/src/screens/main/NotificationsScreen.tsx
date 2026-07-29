@@ -64,43 +64,43 @@ const TYPE_CONFIG: Record<string, {
     dossier: {
         icon: 'folder-open',
         color: C.primary,
-        bgRgba: 'rgba(13, 43, 78, 0.08)',
-        borderRgba: 'rgba(13, 43, 78, 0.18)',
+        bgRgba: 'rgba(0, 135, 81, 0.08)',
+        borderRgba: 'rgba(0, 135, 81, 0.18)',
         label: 'DOSSIER',
     },
     message: {
         icon: 'chatbubble-ellipses',
         color: C.info,
-        bgRgba: 'rgba(59, 130, 196, 0.10)',
-        borderRgba: 'rgba(59, 130, 196, 0.25)',
+        bgRgba: 'rgba(0, 100, 60, 0.10)',
+        borderRgba: 'rgba(0, 100, 60, 0.25)',
         label: 'MESSAGE',
     },
     payment: {
         icon: 'card',
         color: C.success,
-        bgRgba: 'rgba(10, 107, 59, 0.10)',
-        borderRgba: 'rgba(10, 107, 59, 0.25)',
+        bgRgba: 'rgba(0, 135, 81, 0.10)',
+        borderRgba: 'rgba(0, 135, 81, 0.25)',
         label: 'PAIEMENT',
     },
     appointment: {
         icon: 'calendar',
         color: C.purple,
-        bgRgba: 'rgba(124, 92, 202, 0.10)',
-        borderRgba: 'rgba(124, 92, 202, 0.25)',
+        bgRgba: 'rgba(138, 109, 8, 0.10)',
+        borderRgba: 'rgba(138, 109, 8, 0.25)',
         label: 'RENDEZ-VOUS',
     },
     event: {
         icon: 'sparkles',
         color: C.accent,
-        bgRgba: 'rgba(212, 160, 23, 0.10)',
-        borderRgba: 'rgba(212, 160, 23, 0.25)',
+        bgRgba: 'rgba(252, 209, 22, 0.10)',
+        borderRgba: 'rgba(252, 209, 22, 0.25)',
         label: 'ÉVÉNEMENT',
     },
     system: {
         icon: 'information-circle',
         color: C.textSec,
-        bgRgba: 'rgba(100, 116, 139, 0.08)',
-        borderRgba: 'rgba(100, 116, 139, 0.18)',
+        bgRgba: 'rgba(138, 138, 138, 0.08)',
+        borderRgba: 'rgba(138, 138, 138, 0.18)',
         label: 'SYSTÈME',
     },
 }
@@ -502,8 +502,8 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                     <View style={[styles.pushCard, pushEnabled && styles.pushCardActive]}>
                         <View style={[
                             styles.pushIconWrap,
-                            { backgroundColor: pushEnabled ? 'rgba(10, 107, 59, 0.10)' : 'rgba(100, 116, 139, 0.08)' },
-                            { borderColor: pushEnabled ? 'rgba(10, 107, 59, 0.25)' : 'rgba(100, 116, 139, 0.18)' },
+                            { backgroundColor: pushEnabled ? 'rgba(0, 135, 81, 0.10)' : 'rgba(138, 138, 138, 0.08)' },
+                            { borderColor: pushEnabled ? 'rgba(0, 135, 81, 0.25)' : 'rgba(138, 138, 138, 0.18)' },
                         ]}>
                             <Ionicons
                                 name={pushEnabled ? 'notifications' : 'notifications-off-outline'}
@@ -535,9 +535,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                             <Switch
                                 value={pushEnabled}
                                 onValueChange={handleTogglePush}
-                                trackColor={{ false: '#CBD5E1', true: C.accent }}
+                                trackColor={{ false: '#E4E4E4', true: C.accent }}
                                 thumbColor={C.surfaceSolid}
-                                ios_backgroundColor="#CBD5E1"
+                                ios_backgroundColor="#E4E4E4"
                             />
                         )}
                     </View>
@@ -552,21 +552,21 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                         </View>
                         <View style={styles.statsGrid}>
                             <View style={styles.statCard}>
-                                <View style={[styles.statIcon, { backgroundColor: 'rgba(212, 160, 23, 0.10)', borderColor: 'rgba(212, 160, 23, 0.25)' }]}>
+                                <View style={[styles.statIcon, { backgroundColor: 'rgba(252, 209, 22, 0.10)', borderColor: 'rgba(252, 209, 22, 0.25)' }]}>
                                     <Ionicons name="notifications-outline" size={14} color={C.accent} />
                                 </View>
                                 <Text style={styles.statValue}>{notifications.length}</Text>
                                 <Text style={styles.statLabel}>{t('TOTAL')}</Text>
                             </View>
                             <View style={styles.statCard}>
-                                <View style={[styles.statIcon, { backgroundColor: 'rgba(13, 43, 78, 0.08)', borderColor: 'rgba(13, 43, 78, 0.18)' }]}>
+                                <View style={[styles.statIcon, { backgroundColor: 'rgba(0, 135, 81, 0.08)', borderColor: 'rgba(0, 135, 81, 0.18)' }]}>
                                     <Ionicons name="mail-unread-outline" size={14} color={C.primary} />
                                 </View>
                                 <Text style={styles.statValue}>{unreadCount}</Text>
                                 <Text style={styles.statLabel}>{t('NON LUES')}</Text>
                             </View>
                             <View style={styles.statCard}>
-                                <View style={[styles.statIcon, { backgroundColor: 'rgba(10, 107, 59, 0.10)', borderColor: 'rgba(10, 107, 59, 0.25)' }]}>
+                                <View style={[styles.statIcon, { backgroundColor: 'rgba(0, 135, 81, 0.10)', borderColor: 'rgba(0, 135, 81, 0.25)' }]}>
                                     <Ionicons name="checkmark-done" size={14} color={C.success} />
                                 </View>
                                 <Text style={styles.statValue}>{notifications.length - unreadCount}</Text>
@@ -654,12 +654,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     navCounterText: {
         fontSize: 12,
@@ -707,8 +707,8 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     pushCardActive: {
-        borderColor: 'rgba(10, 107, 59, 0.3)',
-        backgroundColor: 'rgba(10, 107, 59, 0.03)',
+        borderColor: 'rgba(0, 135, 81, 0.3)',
+        backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     pushIconWrap: {
         width: 44,
@@ -734,12 +734,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: 'rgba(10, 107, 59, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderWidth: 1,
-        borderColor: 'rgba(10, 107, 59, 0.25)',
+        borderColor: 'rgba(0, 135, 81, 0.25)',
     },
     pushStatusDot: {
         width: 6,
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
         color: C.primaryText,
     },
     filterCount: {
-        backgroundColor: 'rgba(13, 43, 78, 0.08)',
+        backgroundColor: 'rgba(0, 135, 81, 0.08)',
         borderRadius: 8,
         paddingHorizontal: 6,
         paddingVertical: 1,
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     filterCountActive: {
-        backgroundColor: 'rgba(212, 160, 23, 0.25)',
+        backgroundColor: 'rgba(252, 209, 22, 0.25)',
     },
     filterCountText: {
         fontSize: 12,
@@ -880,12 +880,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 12,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
     },
     markAllText: {
         fontSize: 12,
@@ -957,7 +957,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
@@ -1014,11 +1014,11 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 20,
-        backgroundColor: 'rgba(10, 107, 59, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(10, 107, 59, 0.25)',
+        borderColor: 'rgba(0, 135, 81, 0.25)',
         marginBottom: 14,
     },
     emptyFilterTitle: {
@@ -1059,7 +1059,7 @@ const styles = StyleSheet.create({
     },
     notifCardUnread: {
         backgroundColor: C.surfaceSolid,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         shadowOpacity: 0.08,
     },
     unreadBar: {

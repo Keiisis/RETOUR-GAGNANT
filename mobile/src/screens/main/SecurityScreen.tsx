@@ -100,7 +100,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
                 {/* shine doré */}
                 <Animated.View style={[hero.shine, shineStyle]}>
                     <LinearGradient
-                        colors={['transparent', 'rgba(212,160,23,0.35)', 'transparent']}
+                        colors={['transparent', 'rgba(252,209,22,0.35)', 'transparent']}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                         style={{ flex: 1 }}
                     />
@@ -108,7 +108,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
 
                 {/* watermark */}
                 <View style={hero.watermark}>
-                    <ShieldCheck size={180} color="rgba(212,160,23,0.08)" strokeWidth={1} />
+                    <ShieldCheck size={180} color="rgba(252,209,22,0.08)" strokeWidth={1} />
                 </View>
 
                 {/* chip top */}
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     twofaHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     twofaIconBox: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(4,120,87,0.10)', alignItems: 'center', justifyContent: 'center' },
     twofaStatus: { fontSize: 12, color: C.textMuted, marginTop: 2 },
-    twofaDesc: { fontSize: 13, color: '#475569', lineHeight: 19 },
+    twofaDesc: { fontSize: 13, color: '#505050', lineHeight: 19 },
     twofaHint: { fontSize: 12.5, color: C.textMuted },
     twofaSecret: { fontSize: 13, color: '#3C3C3C', fontWeight: '700', backgroundColor: '#F5F5F5', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, letterSpacing: 1 },
     twofaQrWrap: { alignSelf: 'center', backgroundColor: '#fff', padding: 8, borderRadius: 14, borderWidth: 1, borderColor: C.border },
@@ -767,9 +767,9 @@ const styles = StyleSheet.create({
     },
     saveBtnIcon: {
         width: 26, height: 26, borderRadius: 8,
-        backgroundColor: 'rgba(212,160,23,0.15)',
+        backgroundColor: 'rgba(252,209,22,0.15)',
         alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: 'rgba(212,160,23,0.4)',
+        borderWidth: 1, borderColor: 'rgba(252,209,22,0.4)',
     },
     saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF', letterSpacing: 0.6, textTransform: 'uppercase' },
 
@@ -820,8 +820,8 @@ const hero = StyleSheet.create({
     },
     chip: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: 'rgba(212,160,23,0.15)',
-        borderWidth: 1, borderColor: 'rgba(212,160,23,0.35)',
+        backgroundColor: 'rgba(252,209,22,0.15)',
+        borderWidth: 1, borderColor: 'rgba(252,209,22,0.35)',
         paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     },
     chipText: { fontSize: 12, fontWeight: '700', color: C.accent, letterSpacing: 1.2 },
@@ -845,8 +845,8 @@ const hero = StyleSheet.create({
     },
     shieldInner: {
         width: 80, height: 80, borderRadius: 40,
-        backgroundColor: 'rgba(212,160,23,0.10)',
-        borderWidth: 1.5, borderColor: 'rgba(212,160,23,0.4)',
+        backgroundColor: 'rgba(252,209,22,0.10)',
+        borderWidth: 1.5, borderColor: 'rgba(252,209,22,0.4)',
         alignItems: 'center', justifyContent: 'center',
     },
 

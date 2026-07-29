@@ -94,11 +94,11 @@ function ClauseItem({
     const numberStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(13, 43, 78, 0.06)', C.primary]
+            ['rgba(0, 135, 81, 0.06)', C.primary]
         ),
         borderColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(13, 43, 78, 0.08)', C.accent]
+            ['rgba(0, 135, 81, 0.08)', C.accent]
         ),
     }))
 
@@ -109,7 +109,7 @@ function ClauseItem({
     const pressStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             pressAnim.value, [0, 1],
-            ['rgba(13, 43, 78, 0)', 'rgba(13, 43, 78, 0.03)']
+            ['rgba(0, 135, 81, 0)', 'rgba(0, 135, 81, 0.03)']
         ),
     }))
 
@@ -177,7 +177,7 @@ const clauseStyles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     itemActive: {
-        backgroundColor: 'rgba(212, 160, 23, 0.04)',
+        backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     header: {
         flexDirection: 'row',
@@ -611,12 +611,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     navCounterText: {
         fontSize: 12,
@@ -666,11 +666,11 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     docBadgeTitle: {
         fontSize: 13,
@@ -688,11 +688,11 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: 'rgba(10, 107, 59, 0.12)',
+        backgroundColor: 'rgba(0, 135, 81, 0.12)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(10, 107, 59, 0.3)',
+        borderColor: 'rgba(0, 135, 81, 0.3)',
     },
 
     /* ── TOC ── */
@@ -748,11 +748,11 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 14,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     sectionBadge: {
         fontSize: 12,
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.3,
@@ -824,13 +824,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
+        backgroundColor: 'rgba(252, 209, 22, 0.18)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
         marginBottom: 14,
     },
     contactBadgeText: {
@@ -899,12 +899,12 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     securityLabel: {
         fontSize: 12,

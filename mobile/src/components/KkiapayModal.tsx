@@ -137,7 +137,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                     <Text style={styles.sectionTitle}>{t('Moyens de paiement acceptés')}</Text>
                     <View style={styles.methodsRow}>
                         <View style={styles.methodChip}>
-                            <Smartphone size={16} color="#F59E0B" strokeWidth={1.75} />
+                            <Smartphone size={16} color="#FCD116" strokeWidth={1.75} />
                             <Text style={styles.methodText}>MTN MoMo</Text>
                         </View>
                         <View style={styles.methodChip}>
@@ -145,7 +145,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                             <Text style={styles.methodText}>Moov Money</Text>
                         </View>
                         <View style={styles.methodChip}>
-                            <CreditCard size={16} color="#8B5CF6" strokeWidth={1.75} />
+                            <CreditCard size={16} color="#8A6D08" strokeWidth={1.75} />
                             <Text style={styles.methodText}>Visa / MC</Text>
                         </View>
                     </View>

@@ -224,13 +224,13 @@ const styles = StyleSheet.create({
         fontSize: 30,
     },
     brandGreen: {
-        color: '#009639',  // Vert Bénin
+        color: '#008751',  // Vert Bénin
     },
     brandYellow: {
         color: '#FCD116',  // Jaune Bénin
     },
     brandRed: {
-        color: '#EF2B2D',  // Rouge Bénin
+        color: '#E8112D',  // Rouge Bénin
         marginTop: 2,
         letterSpacing: 8,
     },

@@ -94,7 +94,7 @@ function MenuItem({
     const animStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             pressAnim.value, [0, 1],
-            ['rgba(13, 43, 78, 0)', 'rgba(13, 43, 78, 0.04)']
+            ['rgba(0, 135, 81, 0)', 'rgba(0, 135, 81, 0.04)']
         ),
     }))
 
@@ -136,15 +136,15 @@ const menuStyles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     iconWrapAccent: {
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     textWrap: {
         flex: 1,
@@ -174,20 +174,15 @@ export default function ProfilScreen() {
     const { langConfig, t } = useLang()
     const [langPickerVisible, setLangPickerVisible] = useState(false)
     const [uploadingAvatar, setUploadingAvatar] = useState(false)
-    const [showAvatarGallery, setShowAvatarGallery] = useState(false)
     const [stats, setStats] = useState({ dossiers: 0, appointments: 0, payments: 0 })
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const sheetAnim = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
     }, [])
 
-    useEffect(() => {
-        sheetAnim.value = withSpring(showAvatarGallery ? 1 : 0, { damping: 20, stiffness: 180 })
-    }, [showAvatarGallery])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
@@ -195,42 +190,7 @@ export default function ProfilScreen() {
     }))
 
 
-    const sheetStyle = useAnimatedStyle(() => ({
-        opacity: sheetAnim.value,
-        transform: [{ translateY: interpolate(sheetAnim.value, [0, 1], [500, 0]) }],
-    }))
-
-    const overlayStyle = useAnimatedStyle(() => ({
-        opacity: sheetAnim.value,
-    }))
-
     /* ── Avatars animés prédéfinis par genre ── */
-    const AVATAR_PRESETS = {
-        homme: [
-            { key: 'h1', label: 'Guerrier Shōnen', emoji: '🦸🏾‍♂️', color: '#E74C3C', bg: '#FDEDEC' },
-            { key: 'h2', label: 'Business King', emoji: '👑', color: '#F39C12', bg: '#FEF9E7' },
-            { key: 'h3', label: 'Tech Genius', emoji: '💻', color: '#3498DB', bg: '#EBF5FB' },
-            { key: 'h4', label: 'Artiste Cool', emoji: '🎨', color: '#9B59B6', bg: '#F5EEF8' },
-            { key: 'h5', label: 'Champion', emoji: '🏆', color: '#27AE60', bg: '#EAFAF1' },
-            { key: 'h6', label: 'Voyageur', emoji: '✈️', color: '#1ABC9C', bg: '#E8F8F5' },
-        ],
-        femme: [
-            { key: 'f1', label: 'Reine Afro', emoji: '👸🏾', color: '#E74C3C', bg: '#FDEDEC' },
-            { key: 'f2', label: 'Business Queen', emoji: '💎', color: '#F39C12', bg: '#FEF9E7' },
-            { key: 'f3', label: 'Créatrice', emoji: '🌟', color: '#E91E63', bg: '#FCE4EC' },
-            { key: 'f4', label: 'Fashionista', emoji: '👗', color: '#9B59B6', bg: '#F5EEF8' },
-            { key: 'f5', label: 'Scientifique', emoji: '🔬', color: '#3498DB', bg: '#EBF5FB' },
-            { key: 'f6', label: 'Aventurière', emoji: '🌍', color: '#27AE60', bg: '#EAFAF1' },
-        ],
-        neutre: [
-            { key: 'n1', label: 'Phoenix', emoji: '🔥', color: '#E74C3C', bg: '#FDEDEC' },
-            { key: 'n2', label: 'Étoile', emoji: '⭐', color: '#F39C12', bg: '#FEF9E7' },
-            { key: 'n3', label: 'Ninja', emoji: '🥷', color: '#2C3E50', bg: '#EBEDEF' },
-            { key: 'n4', label: 'Astronaute', emoji: '🚀', color: '#3498DB', bg: '#EBF5FB' },
-            { key: 'n5', label: 'Lion', emoji: '🦁', color: '#E67E22', bg: '#FDF2E9' },
-            { key: 'n6', label: 'Diamant', emoji: '💠', color: '#1ABC9C', bg: '#E8F8F5' },
-        ],
-    }
 
     useEffect(() => {
         if (!profile) return
@@ -365,29 +325,6 @@ export default function ProfilScreen() {
         }
     }
 
-    const handleSelectPresetAvatar = async (preset: { key: string; emoji: string; label: string }) => {
-        if (!profile?.id) return
-        setUploadingAvatar(true)
-        setShowAvatarGallery(false)
-        try {
-            const { error } = await supabase
-                .from('client_profiles')
-                .update({
-                    avatar_type: 'preset',
-                    avatar_preset: preset.key,
-                    avatar_url: null,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', profile.id)
-            if (error) throw error
-            await refreshProfile()
-            toast(t('Avatar mis à jour'), `${preset.emoji} ${preset.label}`)
-        } catch (e: unknown) {
-            toast(t('Erreur'), e instanceof Error ? e.message : t('Erreur'))
-        } finally {
-            setUploadingAvatar(false)
-        }
-    }
 
     const showAvatarOptions = () => {
         choose({
@@ -395,7 +332,6 @@ export default function ProfilScreen() {
             message: t('Choisissez une option'),
             cancelLabel: t('Annuler'),
             options: [
-                { label: t('Choisir un avatar'), onPress: () => setShowAvatarGallery(true) },
                 { label: t('Prendre une photo'), onPress: handleTakePhoto },
                 { label: t('Choisir dans la galerie'), onPress: handlePickAvatar },
             ],
@@ -534,18 +470,6 @@ export default function ProfilScreen() {
         }
         if (profile?.avatar_url) {
             return <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
-        }
-        const presetKey = profile?.avatar_preset
-        if (presetKey && profile?.avatar_type === 'preset') {
-            const allPresets = [...AVATAR_PRESETS.homme, ...AVATAR_PRESETS.femme, ...AVATAR_PRESETS.neutre]
-            const found = allPresets.find(p => p.key === presetKey)
-            if (found) {
-                return (
-                    <View style={[styles.avatarEmoji, { backgroundColor: found.bg }]}>
-                        <Text style={{ fontSize: 40 }}>{found.emoji}</Text>
-                    </View>
-                )
-            }
         }
         return (
             <View style={styles.avatarInitialsWrap}>
@@ -739,95 +663,6 @@ export default function ProfilScreen() {
                 onClose={() => setLangPickerVisible(false)}
             />
 
-            {/* ═══ AVATAR GALLERY MODAL ═══ */}
-            {showAvatarGallery && (
-                <Modal
-                    visible={showAvatarGallery}
-                    transparent
-                    animationType="none"
-                    onRequestClose={() => setShowAvatarGallery(false)}
-                >
-                    <View style={galStyles.overlayContainer}>
-                        <Animated.View style={[galStyles.overlay, overlayStyle]}>
-                            <Pressable
-                                style={StyleSheet.absoluteFillObject}
-                                onPress={() => setShowAvatarGallery(false)}
-                                accessibilityRole="button"
-                                hitSlop={6}
-                            />
-                        </Animated.View>
-
-                        <Animated.View style={[galStyles.sheet, sheetStyle]}>
-                            <View style={galStyles.handle} />
-
-                            <View style={galStyles.header}>
-                                <View>
-                                    <Text style={galStyles.subtitle}>{t('Personnalisation')}</Text>
-                                    <Text style={galStyles.title}>{t('Choisir un avatar')}</Text>
-                                </View>
-                                <Pressable
-                                    onPress={() => setShowAvatarGallery(false)}
-                                    style={galStyles.closeBtn}
-                                    accessibilityRole="button"
-                                    hitSlop={6}
-                                    accessibilityLabel={t('Fermer')}
-                                >
-                                    <Ionicons name="close" size={20} color={C.primary} />
-                                </Pressable>
-                            </View>
-
-                            <Text style={galStyles.intro}>
-                                {t('Sélectionnez un personnage qui vous représente')}
-                            </Text>
-
-                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
-                                {(['homme', 'femme', 'neutre'] as const).map((genre) => (
-                                    <View key={genre} style={galStyles.genreSection}>
-                                        <View style={galStyles.genreLabelWrap}>
-                                            <Text style={galStyles.genreEmoji}>
-                                                {genre === 'homme' ? '👨🏾' : genre === 'femme' ? '👩🏾' : '🌈'}
-                                            </Text>
-                                            <Text style={galStyles.genreLabel}>
-                                                {genre === 'homme' ? t('Homme') : genre === 'femme' ? t('Femme') : t('Neutre')}
-                                            </Text>
-                                            <View style={galStyles.genreLine} />
-                                        </View>
-
-                                        <View style={galStyles.grid}>
-                                            {AVATAR_PRESETS[genre].map((av) => (
-                                                <Pressable
-                                                    key={av.key}
-                                                    style={galStyles.avatarCard}
-                                                    onPress={() => handleSelectPresetAvatar(av)}
-                                                    accessibilityRole="button"
-                                                    hitSlop={6}
-                                                >
-                                                    <View style={[galStyles.avatarCircle, { backgroundColor: av.bg }]}>
-                                                        <Text style={galStyles.avatarEmojiBig}>{av.emoji}</Text>
-                                                    </View>
-                                                    <Text style={galStyles.avatarName} numberOfLines={1}>
-                                                        {av.label}
-                                                    </Text>
-                                                </Pressable>
-                                            ))}
-                                        </View>
-                                    </View>
-                                ))}
-                            </ScrollView>
-
-                            <TouchableOpacity
-                                style={galStyles.cancelBtn}
-                                onPress={() => setShowAvatarGallery(false)}
-                                activeOpacity={0.85}
-                                accessibilityRole="button"
-                                hitSlop={6}
-                            >
-                                <Text style={galStyles.cancelText}>{t('Annuler')}</Text>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </View>
-                </Modal>
-            )}
         </View>
     )
 }
@@ -865,7 +700,7 @@ const styles = StyleSheet.create({
         width: 94,
         height: 94,
         borderRadius: 47,
-        backgroundColor: 'rgba(13, 43, 78, 0.3)',
+        backgroundColor: 'rgba(0, 135, 81, 0.3)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -967,17 +802,17 @@ const styles = StyleSheet.create({
         gap: 12,
         marginHorizontal: 20,
         marginTop: 10,
-        backgroundColor: 'rgba(163, 34, 0, 0.06)',
+        backgroundColor: 'rgba(232, 17, 45, 0.06)',
         borderRadius: 16,
         paddingVertical: 16,
         borderWidth: 1.2,
-        borderColor: 'rgba(163, 34, 0, 0.2)',
+        borderColor: 'rgba(232, 17, 45, 0.2)',
     },
     logoutIconWrap: {
         width: 32,
         height: 32,
         borderRadius: 10,
-        backgroundColor: 'rgba(163, 34, 0, 0.12)',
+        backgroundColor: 'rgba(232, 17, 45, 0.12)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1032,148 +867,3 @@ const styles = StyleSheet.create({
    STYLES MODAL GALERIE
 ═══════════════════════════════════════════════════════════ */
 
-const galStyles = StyleSheet.create({
-    overlayContainer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 43, 78, 0.55)',
-    },
-    sheet: {
-        backgroundColor: C.bg,
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingHorizontal: 24,
-        paddingTop: 12,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-        shadowColor: C.primary,
-        shadowOpacity: 0.3,
-        shadowRadius: 30,
-        shadowOffset: { width: 0, height: -15 },
-        elevation: 20,
-        borderTopWidth: 1,
-        borderColor: C.border,
-    },
-    handle: {
-        width: 44,
-        height: 4,
-        backgroundColor: C.border,
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginBottom: 18,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accentDark,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
-        marginBottom: 4,
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: C.primary,
-        letterSpacing: -0.4,
-    },
-    closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    intro: {
-        fontSize: 13,
-        color: C.textSec,
-        marginBottom: 20,
-        lineHeight: 18,
-        fontWeight: '400',
-    },
-    genreSection: {
-        marginBottom: 22,
-    },
-    genreLabelWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 14,
-        paddingHorizontal: 4,
-    },
-    genreEmoji: {
-        fontSize: 16,
-    },
-    genreLabel: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.primary,
-        letterSpacing: 0.5,
-    },
-    genreLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: C.border,
-        marginLeft: 4,
-    },
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-    },
-    avatarCard: {
-        width: '31%',
-        alignItems: 'center',
-        padding: 12,
-        borderRadius: 14,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        backgroundColor: C.surface,
-    },
-    avatarCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-        borderWidth: 2,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
-    },
-    avatarEmojiBig: {
-        fontSize: 30,
-    },
-    avatarName: {
-        fontSize: 12,
-        fontWeight: '700',
-        textAlign: 'center',
-        color: C.primary,
-        letterSpacing: 0.2,
-    },
-    cancelBtn: {
-        marginTop: 16,
-        height: 50,
-        backgroundColor: C.surface,
-        borderRadius: 14,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cancelText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.textSec,
-        letterSpacing: 0.2,
-    },
-})

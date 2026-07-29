@@ -28,6 +28,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { colors as themeColors, spacing, radius, shadows, typography, fonts, motion, screenColors } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
 import KkiapayModal from '../../components/KkiapayModal'
@@ -88,94 +89,41 @@ const InteractiveButton = ({ children, onPress, style, disabled, accessibilityLa
 }
 
 /* ═══════════════════════════════════════════════════════════
-   HERO SERVICE — gradient bleu nuit + shimmer or + icône premium
+   EN-TETE DE PRESTATION
+
+   Ancienne version : degrade vert plein, shimmer dore balayant en boucle,
+   badge « Service Premium » pulsant, anneau dore et diviseur a etoile.
+   Rien de tout cela ne disait quoi que ce soit sur la prestation.
+   Nouvelle version : le blanc porte la page, le lisere tricolore signe,
+   la pastille d'icone situe le service, le titre parle.
 ═══════════════════════════════════════════════════════════ */
-const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
+const ServiceHero = ({ icon, title, subtitle, onBack, t }: any) => {
     const insets = useSafeAreaInsets()
-    const shine = useSharedValue(-1)
-    const iconScale = useSharedValue(0.6)
-    const iconRotate = useSharedValue(-12)
-    const badgePulse = useSharedValue(1)
-
-    useEffect(() => {
-        shine.value = withTiming(1, { duration: 600 })
-        iconScale.value = withSpring(1, { damping: 10, stiffness: 110 })
-        iconRotate.value = withSpring(0, { damping: 12, stiffness: 90 })
-        badgePulse.value = withTiming(1, { duration: 600 })
-    }, [shine, iconScale, iconRotate, badgePulse])
-
-    const shineStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: interpolate(shine.value, [-1, 1], [-SCREEN_W, SCREEN_W]) }],
-        opacity: interpolate(shine.value, [-1, 0, 1], [0, 0.7, 0]),
-    }))
-
-    const iconStyle = useAnimatedStyle(() => ({
-        transform: [
-            { scale: iconScale.value },
-            { rotate: `${iconRotate.value}deg` },
-        ],
-    }))
-
-    const badgeStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: badgePulse.value }],
-    }))
 
     return (
-        <View style={[hero.wrap, { paddingTop: insets.top + 20 }]}>
-            <LinearGradient
-                colors={[C.primary, C.primaryLight, C.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-            />
+        <View style={[hero.wrap, { paddingTop: insets.top + 8 }]}>
+            <View style={hero.flagWrap}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
 
-
-            {/* Shimmer doré qui balaye */}
-            <Animated.View style={[hero.shine, shineStyle]} pointerEvents="none">
-                <LinearGradient
-                    colors={['transparent', 'rgba(212,160,23,0.35)', 'transparent']}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={StyleSheet.absoluteFillObject}
-                />
-            </Animated.View>
-
-            {/* Back */}
-            <InteractiveButton onPress={onBack} accessibilityLabel={t('Retour')} style={hero.backBtn}>
-                <View style={hero.backCircle}>
-                    <ArrowLeft size={20} color="#FFF" strokeWidth={2.2} />
-                </View>
-            </InteractiveButton>
-
-            {/* Badge premium */}
-            <Animated.View style={[hero.premiumBadge, badgeStyle]}>
-                <Sparkles size={11} color={C.gold} fill={C.gold} strokeWidth={0} />
-                <Text style={hero.premiumBadgeText}>{t('Service Premium')}</Text>
-            </Animated.View>
-
-            {/* Cercle d'icône doré */}
-            <Animated.View style={[hero.iconRing, iconStyle]}>
-                <LinearGradient
-                    colors={[C.gold, C.goldSoft]}
-                    style={hero.iconRingGradient}
-                >
-                    <View style={hero.iconInner}>
-                        <Ionicons name={icon || 'briefcase-outline'} size={42} color={C.primary} />
+            <View style={hero.topRow}>
+                <InteractiveButton onPress={onBack} accessibilityLabel={t('Retour')} style={hero.backBtn}>
+                    <View style={hero.backCircle}>
+                        <ArrowLeft size={20} color={C.textPrimary} strokeWidth={2} />
                     </View>
-                </LinearGradient>
-            </Animated.View>
+                </InteractiveButton>
+            </View>
 
-            {/* Titre + sous-titre */}
-            <Text style={hero.title} numberOfLines={2}>{t(title || 'Détails du Service')}</Text>
-            {subtitle ? (
-                <Text style={hero.subtitle} numberOfLines={2}>{t(subtitle)}</Text>
-            ) : null}
-
-            {/* Diviseur doré */}
-            <View style={hero.divider}>
-                <View style={hero.dividerLine} />
-                <Star size={10} color={C.gold} fill={C.gold} strokeWidth={0} />
-                <View style={hero.dividerLine} />
+            <View style={hero.identity}>
+                <View style={hero.iconTile}>
+                    <Ionicons name={icon || 'briefcase-outline'} size={30} color={C.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={hero.title}>{t(title || 'Detail de la prestation')}</Text>
+                    {subtitle ? (
+                        <Text style={hero.subtitle}>{t(subtitle)}</Text>
+                    ) : null}
+                </View>
             </View>
         </View>
     )
@@ -377,17 +325,8 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={[C.bg, C.bgDeep, C.bg]}
-                style={StyleSheet.absoluteFillObject}
-            />
-
             {/* Sticky header (apparait au scroll) */}
             <Animated.View style={[styles.stickyHeader, { paddingTop: insets.top + 8 }, stickyHeaderStyle]} pointerEvents="box-none">
-                <LinearGradient
-                    colors={['rgba(255,255,255,0.96)', 'rgba(255,255,255,0.86)']}
-                    style={StyleSheet.absoluteFillObject}
-                />
                 <View style={styles.stickyRow}>
                     <InteractiveButton onPress={() => navigation.goBack()} style={styles.stickyBack}>
                         <ArrowLeft size={20} color={C.primary} strokeWidth={2.2} />
@@ -408,7 +347,6 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     icon={icon}
                     title={title}
                     subtitle={subtitle}
-                    accent={C.gold}
                     onBack={() => navigation.goBack()}
                     t={t}
                 />
@@ -429,44 +367,27 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     <AnimatedSection delay={140}>
                         <View style={styles.infoGrid}>
                             <InfoPill
-                                icon={<Clock size={18} color={C.gold} strokeWidth={2} />}
+                                icon={<Clock size={18} color={C.primary} strokeWidth={2} />}
                                 label={t('Délai moyen')}
                                 value={t(duration || '4–8 semaines')}
                             />
                             <InfoPill
-                                icon={<Tag size={18} color={C.gold} strokeWidth={2} />}
+                                icon={<Tag size={18} color={C.primary} strokeWidth={2} />}
                                 label={t('Tarif')}
                                 value={t(price || 'Sur devis')}
                             />
-                            <InfoPill
-                                icon={<Users size={18} color={C.gold} strokeWidth={2} />}
-                                label={t('Support')}
-                                value={t('Dédié')}
-                            />
-                        </View>
-                    </AnimatedSection>
-
-                    {/* TRUST ROW — garanties */}
-                    <AnimatedSection delay={200}>
-                        <View style={styles.trustRow}>
-                            <TrustChip icon={<ShieldCheck size={14} color={C.emerald} strokeWidth={2.2} />} label={t('Sécurisé')} />
-                            <TrustChip icon={<Award size={14} color={C.gold} strokeWidth={2.2} />} label={t('Garantie')} />
-                            <TrustChip icon={<Zap size={14} color={C.primary} strokeWidth={2.2} />} label={t('Confidentiel')} />
                         </View>
                     </AnimatedSection>
 
                     {/* FEATURES / PIÈCES */}
                     <AnimatedSection delay={260}>
-                        <SectionHeader icon={<Check size={16} color={C.gold} strokeWidth={2.4} />} title={featuresTitle} />
+                        <SectionHeader icon={<Check size={16} color={C.primary} strokeWidth={2.4} />} title={featuresTitle} />
                         <View style={styles.featuresList}>
                             {features.map((feature, i) => (
                                 <View key={i} style={styles.featureRow}>
-                                    <LinearGradient
-                                        colors={[C.gold, C.goldSoft]}
-                                        style={styles.featureCheck}
-                                    >
-                                        <Check size={13} color="#FFF" strokeWidth={3} />
-                                    </LinearGradient>
+                                    <View style={styles.featureCheck}>
+                                        <Check size={13} color={C.primaryText} strokeWidth={3} />
+                                    </View>
                                     <Text style={styles.featureText}>{t(feature)}</Text>
                                 </View>
                             ))}
@@ -477,18 +398,10 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     {serviceId === 'passeport' && (
                         <AnimatedSection delay={320}>
                             <View style={styles.vipCard}>
-                                <LinearGradient
-                                    colors={[C.primary, C.primaryLight]}
-                                    style={StyleSheet.absoluteFillObject}
-                                />
-
                                 <View style={styles.vipHeader}>
-                                    <LinearGradient
-                                        colors={[C.gold, C.goldSoft]}
-                                        style={styles.vipBadgeIcon}
-                                    >
-                                        <Sparkles size={14} color={C.primary} strokeWidth={2.4} />
-                                    </LinearGradient>
+                                    <View style={styles.vipBadgeIcon}>
+                                        <Sparkles size={14} color={C.primaryText} strokeWidth={2.4} />
+                                    </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.vipTitle}>{t('Pack VIP Retour Gagnant')}</Text>
                                         <Text style={styles.vipSubtitle}>
@@ -517,7 +430,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     {/* TARIFICATION */}
                     {pricingOptions.length > 0 && (
                         <AnimatedSection delay={380}>
-                            <SectionHeader icon={<Tag size={16} color={C.gold} strokeWidth={2.4} />} title={t('Tarification')} />
+                            <SectionHeader icon={<Tag size={16} color={C.primary} strokeWidth={2.4} />} title={t('Tarification')} />
                             <View style={styles.pricingList}>
                                 {pricingOptions.map((opt, i) => (
                                     <PressableCardLite key={i}>
@@ -526,12 +439,9 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                             <View style={{ flex: 1 }}>
                                                 <Text style={styles.pricingLabel}>{t(opt.label)}</Text>
                                             </View>
-                                            <LinearGradient
-                                                colors={[C.gold, C.goldSoft]}
-                                                style={styles.pricingChip}
-                                            >
+                                            <View style={styles.pricingChip}>
                                                 <Text style={styles.pricingPrice}>{t(opt.price)}</Text>
-                                            </LinearGradient>
+                                            </View>
                                         </View>
                                     </PressableCardLite>
                                 ))}
@@ -541,7 +451,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
                     {/* PROCESSUS */}
                     <AnimatedSection delay={440}>
-                        <SectionHeader icon={<ChevronRight size={16} color={C.gold} strokeWidth={2.4} />} title={t('Comment ça marche ?')} />
+                        <SectionHeader icon={<ChevronRight size={16} color={C.primary} strokeWidth={2.4} />} title={t('Comment ça marche ?')} />
                         <View style={styles.timeline}>
                             <View style={styles.timelineLine} />
                             {[
@@ -551,12 +461,15 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 { step: '4', label: t('Résultat final'), icon: 'ribbon-outline' as const },
                             ].map((item, idx) => (
                                 <View key={item.step} style={styles.processRow}>
-                                    <LinearGradient
-                                        colors={idx === 0 ? [C.gold, C.goldSoft] : [C.primary, C.primaryLight]}
-                                        style={styles.processStep}
-                                    >
-                                        <Text style={styles.processStepNum}>{item.step}</Text>
-                                    </LinearGradient>
+                                    <View style={[
+                                        styles.processStep,
+                                        { backgroundColor: idx === 0 ? C.accent : C.primary },
+                                    ]}>
+                                        <Text style={[
+                                            styles.processStepNum,
+                                            { color: idx === 0 ? C.accentDark : C.primaryText },
+                                        ]}>{item.step}</Text>
+                                    </View>
                                     <View style={styles.processCard}>
                                         <Ionicons name={item.icon} size={18} color={C.primary} />
                                         <Text style={styles.processLabel}>{item.label}</Text>
@@ -568,7 +481,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
                     {/* DOCUMENTS REQUIS */}
                     <AnimatedSection delay={500}>
-                        <SectionHeader icon={<FileText size={16} color={C.gold} strokeWidth={2.4} />} title={t('Documents requis')} />
+                        <SectionHeader icon={<FileText size={16} color={C.primary} strokeWidth={2.4} />} title={t('Documents requis')} />
                         <View style={styles.docsList}>
                             {requiredDocs.map((doc, i) => (
                                 <View key={i} style={styles.docRow}>
@@ -584,17 +497,11 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     {/* CTA PRÊT À DÉMARRER */}
                     <AnimatedSection delay={560}>
                         <View style={styles.ctaCard}>
-                            <LinearGradient
-                                colors={[C.primary, C.primaryLight, C.primary]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={StyleSheet.absoluteFillObject}
-                            />
 
                             <View style={styles.ctaHeader}>
-                                <LinearGradient colors={[C.gold, C.goldSoft]} style={styles.ctaIcon}>
-                                    <Calendar size={18} color={C.primary} strokeWidth={2.4} />
-                                </LinearGradient>
+                                <View style={styles.ctaIcon}>
+                                    <Calendar size={18} color={C.primaryText} strokeWidth={2.4} />
+                                </View>
                                 <Text style={styles.ctaTitle}>{t('Prêt à démarrer ?')}</Text>
                             </View>
                             <Text style={styles.ctaSubtitle}>
@@ -607,27 +514,22 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 accessibilityLabel={t(modeCopy.cta)}
                                 style={[styles.payBtn, loading && { opacity: 0.7 }]}
                             >
-                                <LinearGradient
-                                    colors={[C.gold, C.goldSoft]}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.payBtnGradient}
-                                >
+                                <View style={styles.payBtnGradient}>
                                     {loading ? (
                                         <ActivityIndicator color={C.primary} size="small" />
                                     ) : (
                                         <>
                                             {serviceMode === 'booking'
                                                 ? <CreditCard size={20} color={C.primary} strokeWidth={2.4} />
-                                                : <Send size={20} color={C.primary} strokeWidth={2.4} />}
+                                                : <Send size={20} color={C.primaryText} strokeWidth={2.4} />}
                                             <Text style={styles.payBtnText}>{t(modeCopy.cta)}</Text>
                                         </>
                                     )}
-                                </LinearGradient>
+                                </View>
                             </InteractiveButton>
 
                             <View style={styles.ctaFreeRow}>
-                                <Sparkles size={11} color={C.gold} fill={C.gold} strokeWidth={0} />
+                                <Sparkles size={11} color={C.primary} fill={C.primary} strokeWidth={0} />
                                 <Text style={styles.ctaFreeNote}>{t('Premier appel de 15 min gratuit')}</Text>
                             </View>
                         </View>
@@ -669,12 +571,6 @@ const InfoPill = ({ icon, label, value }: any) => (
     </View>
 )
 
-const TrustChip = ({ icon, label }: any) => (
-    <View style={styles.trustChip}>
-        {icon}
-        <Text style={styles.trustText}>{label}</Text>
-    </View>
-)
 
 const SectionHeader = ({ icon, title }: any) => (
     <View style={styles.sectionHeader}>
@@ -705,74 +601,31 @@ const PressableCardLite = ({ children }: any) => {
    STYLES — HERO
 ═══════════════════════════════════════════════════════════ */
 const hero = StyleSheet.create({
-    wrap: {
-        paddingBottom: 56,
-        paddingHorizontal: spacing.lg,
-        alignItems: 'center',
-        borderBottomLeftRadius: 40,
-        borderBottomRightRadius: 40,
-        position: 'relative',
+    wrap: { paddingBottom: spacing.lg, backgroundColor: C.surface },
+    flagWrap: {
+        marginHorizontal: spacing.lg,
+        borderRadius: radius.pill,
         overflow: 'hidden',
     },
-    shine: {
-        position: 'absolute', top: 0, bottom: 0,
-        width: SCREEN_W * 0.6,
-    },
-    backBtn: {
-        position: 'absolute', top: Platform.OS === 'ios' ? 56 : 40, left: spacing.lg, zIndex: 10,
-    },
+    topRow: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+    backBtn: { alignSelf: 'flex-start' },
     backCircle: {
-        width: 42, height: 42, borderRadius: 21,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+        width: 44, height: 44, borderRadius: radius.pill,
+        backgroundColor: C.surface,
+        borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    premiumBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: 'rgba(255,255,255,0.95)',
-        paddingHorizontal: 14, paddingVertical: 6,
-        borderRadius: 999, marginTop: 8,
-        borderWidth: 1, borderColor: C.goldGlow,
+    identity: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        paddingHorizontal: spacing.lg, paddingTop: spacing.lg,
     },
-    premiumBadgeText: {
-        fontSize: 12, fontFamily: fonts.bodyBold,
-        color: C.primary, letterSpacing: 1.4,
-    },
-    iconRing: {
-        marginTop: 22,
-        shadowColor: '#000', shadowOpacity: 0.35,
-        shadowRadius: 18, shadowOffset: { width: 0, height: 10 },
-        elevation: 12,
-    },
-    iconRingGradient: {
-        width: 96, height: 96, borderRadius: 48,
-        padding: 3,
+    iconTile: {
+        width: 64, height: 64, borderRadius: radius.lg,
+        backgroundColor: C.primarySoft,
         alignItems: 'center', justifyContent: 'center',
     },
-    iconInner: {
-        width: '100%', height: '100%', borderRadius: 45,
-        backgroundColor: '#FFF',
-        alignItems: 'center', justifyContent: 'center',
-    },
-    title: {
-        fontSize: 24, fontFamily: fonts.heading || fonts.bodyBold,
-        color: '#FFF', marginTop: 18, textAlign: 'center',
-        letterSpacing: 0.3,
-    },
-    subtitle: {
-        fontSize: 13, fontFamily: fonts.bodyMedium,
-        color: 'rgba(255,255,255,0.85)', marginTop: 6,
-        textAlign: 'center', lineHeight: 18,
-        paddingHorizontal: spacing.lg,
-    },
-    divider: {
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        marginTop: 16,
-    },
-    dividerLine: {
-        width: 32, height: 1,
-        backgroundColor: C.gold,
-    },
+    title: { ...typography.h1, fontSize: 26, lineHeight: 32, color: C.textPrimary },
+    subtitle: { ...typography.bodySmall, color: C.textMuted, marginTop: spacing.xs },
 })
 
 /* ═══════════════════════════════════════════════════════════
@@ -900,11 +753,9 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: C.border,
     },
     featureCheck: {
-        width: 28, height: 28, borderRadius: 8,
+        width: 24, height: 24, borderRadius: 12,
+        backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
-        shadowColor: C.gold, shadowOpacity: 0.3,
-        shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
     },
     featureText: {
         flex: 1, fontSize: 13, lineHeight: 20,
@@ -916,9 +767,8 @@ const styles = StyleSheet.create({
         borderRadius: radius.xl,
         padding: spacing.lg,
         overflow: 'hidden',
-        shadowColor: C.primary, shadowOpacity: 0.25,
-        shadowRadius: 18, shadowOffset: { width: 0, height: 10 },
-        elevation: 8,
+        backgroundColor: C.surfaceSoft,
+        borderWidth: 1, borderColor: C.border,
     },
     vipHeader: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
@@ -926,34 +776,35 @@ const styles = StyleSheet.create({
     },
     vipBadgeIcon: {
         width: 36, height: 36, borderRadius: 10,
+        backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
     },
     vipTitle: {
         fontSize: 16, fontFamily: fonts.bodyBold,
-        color: '#FFF', marginBottom: 4,
+        color: C.textPrimary, marginBottom: 4,
     },
     vipSubtitle: {
         fontSize: 12, lineHeight: 17,
-        color: 'rgba(255,255,255,0.78)',
+        color: C.textMuted,
         fontFamily: 'Inter_400Regular',
     },
     vipStep: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: C.surface,
         borderRadius: radius.md, padding: 12, marginBottom: 10,
-        borderWidth: 1, borderColor: 'rgba(212,160,23,0.25)',
+        borderWidth: 1, borderColor: C.border,
     },
     vipStepNum: {
         fontSize: 24, fontFamily: 'Inter_800ExtraBold',
-        color: C.gold, lineHeight: 26, width: 36,
+        color: C.primary, lineHeight: 26, width: 36,
     },
     vipStepTitle: {
         fontSize: 13, fontFamily: 'Inter_700Bold',
-        color: '#FFF', marginBottom: 3,
+        color: C.textPrimary, marginBottom: 3,
     },
     vipStepDesc: {
         fontSize: 12, lineHeight: 16,
-        color: 'rgba(255,255,255,0.7)',
+        color: C.textMuted,
         fontFamily: 'Inter_400Regular',
     },
 
@@ -975,12 +826,11 @@ const styles = StyleSheet.create({
         color: C.primary, marginLeft: 8,
     },
     pricingChip: {
-        paddingHorizontal: 12, paddingVertical: 6,
-        borderRadius: 8,
+        paddingHorizontal: spacing.md, paddingVertical: 7,
+        borderRadius: radius.pill, backgroundColor: C.accent,
     },
     pricingPrice: {
-        fontSize: 13, fontFamily: 'Inter_800ExtraBold',
-        color: C.primary,
+        fontSize: 13, fontFamily: fonts.bodyBold, color: C.accentDark,
     },
 
     /* Timeline / Processus */
@@ -994,14 +844,11 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     processStep: {
-        width: 36, height: 36, borderRadius: 18,
+        width: 40, height: 40, borderRadius: radius.md,
         alignItems: 'center', justifyContent: 'center',
-        shadowColor: C.primary, shadowOpacity: 0.2,
-        shadowRadius: 6, shadowOffset: { width: 0, height: 3 },
-        elevation: 3,
     },
     processStepNum: {
-        fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFF',
+        fontSize: 16, fontFamily: fonts.bodyBold,
     },
     processCard: {
         flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -1052,6 +899,7 @@ const styles = StyleSheet.create({
     },
     ctaIcon: {
         width: 38, height: 38, borderRadius: 12,
+        backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
     },
     ctaTitle: {
@@ -1073,12 +921,12 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     payBtnGradient: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-        paddingVertical: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm, height: 54, borderRadius: radius.pill,
+        backgroundColor: C.primary,
     },
     payBtnText: {
-        fontSize: 15, fontFamily: 'Inter_800ExtraBold',
-        color: C.primary, letterSpacing: 0.4,
+        fontSize: 15, fontFamily: fonts.bodyBold, color: C.primaryText,
     },
     ctaFreeRow: {
         flexDirection: 'row', alignItems: 'center', gap: 6,

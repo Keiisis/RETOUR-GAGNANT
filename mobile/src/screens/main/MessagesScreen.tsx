@@ -66,7 +66,7 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
     const pressStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             pressAnim.value, [0, 1],
-            [C.surface, 'rgba(212, 160, 23, 0.08)']
+            [C.surface, 'rgba(252, 209, 22, 0.08)']
         ),
         borderColor: interpolateColor(
             pressAnim.value, [0, 1],
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
@@ -662,11 +662,11 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 10,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     suggestionText: {
         flex: 1,
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
         width: 14,
         height: 14,
         borderRadius: 7,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderBottomRightRadius: 4,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.18,
@@ -855,10 +855,10 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 6,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
     },
     sendBtnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         shadowOpacity: 0,
         elevation: 0,
         borderColor: 'transparent',

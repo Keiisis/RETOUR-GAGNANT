@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslation, T } from '@/lib/translation';
+import { compressImage } from '@/lib/compress-image'
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, Loader2, ImageIcon, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
@@ -42,13 +43,23 @@ export function ImageUpload({
         setError('')
 
         try {
-            const ext = file.name.split('.').pop() || 'jpg'
+            // Les visuels étaient envoyés bruts : des PNG de 3 Mo se retrouvaient
+            // en boutique, invisibles pendant plusieurs secondes sur réseau mobile.
+            // On redimensionne et ré-encode AVANT l'envoi. Le helper renvoie le
+            // fichier d'origine intact s'il ne peut pas faire mieux.
+            const optimise = await compressImage(file, {
+                maxDim: 1600,
+                quality: 0.8,
+                skipBelowBytes: 200 * 1024,
+            })
+
+            const ext = optimise.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'jpg')
             const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
             const { error: uploadErr } = await supabase.storage
                 .from(bucket)
-                .upload(fileName, file, {
-                    cacheControl: '3600',
+                .upload(fileName, optimise, {
+                    cacheControl: '31536000',
                     upsert: false,
                 })
 

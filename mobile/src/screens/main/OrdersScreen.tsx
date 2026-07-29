@@ -69,13 +69,13 @@ const SHIPPING_CONFIG: Record<string, {
     bgRgba: string
     borderRgba: string
 }> = {
-    pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: 'rgba(100, 116, 139, 0.08)', borderRgba: 'rgba(100, 116, 139, 0.18)' },
+    pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: 'rgba(138, 138, 138, 0.08)', borderRgba: 'rgba(138, 138, 138, 0.18)' },
     preparing: { label: 'En préparation', icon: 'cube-outline', color: C.warning, bgRgba: 'rgba(217, 119, 6, 0.10)', borderRgba: 'rgba(217, 119, 6, 0.25)' },
-    shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: 'rgba(59, 130, 196, 0.10)', borderRgba: 'rgba(59, 130, 196, 0.25)' },
-    in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: 'rgba(13, 43, 78, 0.08)', borderRgba: 'rgba(13, 43, 78, 0.18)' },
-    delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: 'rgba(10, 107, 59, 0.10)', borderRgba: 'rgba(10, 107, 59, 0.25)' },
-    failed: { label: 'Échec', icon: 'close-circle-outline', color: C.error, bgRgba: 'rgba(163, 34, 0, 0.08)', borderRgba: 'rgba(163, 34, 0, 0.25)' },
-    returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: 'rgba(163, 34, 0, 0.08)', borderRgba: 'rgba(163, 34, 0, 0.25)' },
+    shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: 'rgba(0, 100, 60, 0.10)', borderRgba: 'rgba(0, 100, 60, 0.25)' },
+    in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: 'rgba(0, 135, 81, 0.08)', borderRgba: 'rgba(0, 135, 81, 0.18)' },
+    delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: 'rgba(0, 135, 81, 0.10)', borderRgba: 'rgba(0, 135, 81, 0.25)' },
+    failed: { label: 'Échec', icon: 'close-circle-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
+    returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
 }
 
 type FilterKey = 'all' | 'active' | 'delivered'
@@ -667,7 +667,7 @@ function FilterPill({
                 </Text>
                 <View style={[
                     styles.filterPillCount,
-                    active && { backgroundColor: 'rgba(212, 160, 23, 0.25)' },
+                    active && { backgroundColor: 'rgba(252, 209, 22, 0.25)' },
                 ]}>
                     <Text style={[
                         styles.filterPillCountText,
@@ -699,12 +699,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     navCounterText: {
         fontSize: 12,
@@ -751,11 +751,11 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 43, 78, 0.35)',
+        backgroundColor: 'rgba(0, 135, 81, 0.35)',
     },
     heroOverlayBottom: {
         position: 'absolute',
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 80,
-        backgroundColor: 'rgba(13, 43, 78, 0.6)',
+        backgroundColor: 'rgba(0, 135, 81, 0.6)',
     },
     heroContent: {
         ...StyleSheet.absoluteFillObject,
@@ -775,12 +775,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 6,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(212, 160, 23, 0.20)',
+        backgroundColor: 'rgba(252, 209, 22, 0.20)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.5)',
+        borderColor: 'rgba(252, 209, 22, 0.5)',
     },
     heroBadgeDot: {
         width: 7,
@@ -849,11 +849,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     searchHeaderBadge: {
         fontSize: 12,
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     searchBtnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         borderColor: 'transparent',
     },
 
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     filterPillCount: {
-        backgroundColor: 'rgba(13, 43, 78, 0.08)',
+        backgroundColor: 'rgba(0, 135, 81, 0.08)',
         borderRadius: 8,
         paddingHorizontal: 7,
         paddingVertical: 1,
@@ -1065,19 +1065,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: 'rgba(212, 160, 23, 0.06)',
+        backgroundColor: 'rgba(252, 209, 22, 0.06)',
         borderRadius: 10,
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.18)',
+        borderColor: 'rgba(252, 209, 22, 0.18)',
         marginBottom: 10,
     },
     orderTrackingIcon: {
         width: 20,
         height: 20,
         borderRadius: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
+        backgroundColor: 'rgba(252, 209, 22, 0.18)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1130,7 +1130,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
     },
 
     /* ── Loading ── */
@@ -1207,7 +1207,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
@@ -1258,7 +1258,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderRadius: 14,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.2,
@@ -1287,11 +1287,11 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 20,
-        backgroundColor: 'rgba(100, 116, 139, 0.08)',
+        backgroundColor: 'rgba(138, 138, 138, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(100, 116, 139, 0.20)',
+        borderColor: 'rgba(138, 138, 138, 0.20)',
         marginBottom: 14,
     },
     emptyFilterTitle: {

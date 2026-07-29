@@ -304,7 +304,13 @@
       "Bash(python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/scan_alerts.py\")",
       "Bash(python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/dump_confirms.py\")",
       "Bash(PYTHONIOENCODING=utf-8 python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/dump_confirms.py\")",
-      "Bash(rtk du *)"
+      "Bash(rtk du *)",
+      "Bash(curl -s -o /dev/null -w \"image produit: HTTP %{http_code}  %{size_download} octets  type=%{content_type}\\\\n\" \"https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/products/images/1776958326482-76hetd.png\" --max-time 25)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} %{size_download}' https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/products/images/1776958326482-76hetd.png --max-time 30)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} %{size_download}' 'https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/render/image/public/products/images/1776958326482-76hetd.png?width=400&quality=70' --max-time 30)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} %{size_download}' 'https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/render/image/public/products/images/1776958326482-76hetd.png?width=800&quality=75' --max-time 30)",
+      "Bash(cd \"c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/mobile/src\" && sed -n '/const AVATAR_PRESETS/,/^    }$/p' screens/main/ProfilScreen.tsx | head -30)",
+      "Bash(python /tmp/pal.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",
@@ -313,7 +319,8 @@
       "C:\\Users\\HP\\bin",
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend\\app\\p\\[secret]\\paiement",
       "c:\\Users\\HP\\.claude\\projects\\c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE\\memory",
-      "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\mobile\\frontend\\app\\(routes)\\evenements\\[slug]"
+      "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\mobile\\frontend\\app\\(routes)\\evenements\\[slug]",
+      "c:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\mobile\\src\\screens\\main"
     ]
   }
 }

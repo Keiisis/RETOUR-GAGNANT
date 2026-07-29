@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.2)',
+        borderColor: 'rgba(252, 209, 22, 0.2)',
     },
     notesLabel: {
         fontSize: 12,
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     },
     cardHeaderBadge: {
         width: 30, height: 30, borderRadius: 15,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center', justifyContent: 'center',
     },
     cardTitle: {
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
         width: 34, height: 34, borderRadius: 17,
         backgroundColor: C.accentSoft,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         alignItems: 'center', justifyContent: 'center',
     },
     uploadingBanner: {
@@ -1095,7 +1095,7 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     uploadingText: {
         fontSize: 12,
@@ -1115,9 +1115,9 @@ const styles = StyleSheet.create({
     },
     docIconWrap: {
         width: 42, height: 42, borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.1)',
+        borderColor: 'rgba(0, 135, 81, 0.1)',
         alignItems: 'center', justifyContent: 'center',
         marginRight: 12,
     },
@@ -1159,7 +1159,7 @@ const styles = StyleSheet.create({
         width: 64, height: 64, borderRadius: 20,
         backgroundColor: C.accentSoft,
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 4,
     },
@@ -1207,14 +1207,14 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         padding: 14,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.18)',
+        borderColor: 'rgba(252, 209, 22, 0.18)',
     },
     tipIconWrap: {
         width: 32, height: 32, borderRadius: 10,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     tipTitle: {
         fontSize: 12.5,
@@ -1250,7 +1250,7 @@ const styles = StyleSheet.create({
         width: 88, height: 88, borderRadius: 28,
         backgroundColor: C.surfaceSolid,
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 18,
         shadowColor: C.accent,
@@ -1299,7 +1299,7 @@ const styles = StyleSheet.create({
     /* ═══ MODAL ═══ */
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(13, 43, 78, 0.5)',
+        backgroundColor: 'rgba(0, 135, 81, 0.5)',
         justifyContent: 'flex-end',
     },
     modalSheet: {
@@ -1330,7 +1330,7 @@ const styles = StyleSheet.create({
         width: 44, height: 44, borderRadius: 14,
         backgroundColor: C.accentSoft,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
         alignItems: 'center', justifyContent: 'center',
     },
     modalTitle: {
@@ -1430,7 +1430,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         paddingVertical: 14,
         alignItems: 'center',
-        backgroundColor: 'rgba(100, 116, 139, 0.08)',
+        backgroundColor: 'rgba(138, 138, 138, 0.08)',
         borderRadius: 14,
         borderWidth: 1,
         borderColor: C.border,

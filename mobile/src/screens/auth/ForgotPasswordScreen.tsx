@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: 'rgba(212, 160, 23, 0.1)',
+        backgroundColor: 'rgba(252, 209, 22, 0.1)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         shadowOpacity: 0,
         elevation: 0,
     },

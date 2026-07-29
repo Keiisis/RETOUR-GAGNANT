@@ -16,7 +16,7 @@
 
    ⚠️ RÈGLE : aucun écran ne redéfinit sa propre palette. Avant cette
    refonte, 29 écrans sur 33 déclaraient un `const C = {…}` local dont le
-   vert (#047857) CONTREDISAIT ce fichier, et 7 des 9 composants partagés
+   vert (#008751) CONTREDISAIT ce fichier, et 7 des 9 composants partagés
    n'étaient importés nulle part. Tout doit désormais passer par ici.
 
    La section « COMPATIBILITÉ » plus bas conserve les anciens noms de
@@ -90,7 +90,7 @@ export const colors = {
     /* ── Sémantique (distincte de l'accent décoratif) ── */
     success: v2.green,
     successSoft: v2.greenSoft,
-    warning: '#B8860B',
+    warning: '#8A6D08',
     warningSoft: v2.yellowSoft,
     danger: v2.red,
     dangerSoft: v2.redSoft,
@@ -281,8 +281,8 @@ export const royal = {
    PALETTE D'ÉCRAN — remplace les `const C = {…}` locaux
 
    29 écrans sur 33 déclaraient leur propre palette, copiée-collée, avec un
-   vert #047857 qui contredisait le thème, un or #C9A84C hors charte et un
-   bleu d'information #3B82F6 absent du drapeau. Ce bloc expose EXACTEMENT
+   vert #008751 qui contredisait le thème, un or #C9A84C hors charte et un
+   bleu d'information #00643C absent du drapeau. Ce bloc expose EXACTEMENT
    les mêmes noms de clés, mappés sur la palette v2 : un écran remplace son
    bloc local par `const C = screenColors` et bascule d'un coup, sans qu'une
    seule référence ne casse.
@@ -333,7 +333,7 @@ export const screenColors = {
     goldDeep: v2.yellowInk,
     goldGlow: 'rgba(252,209,22,0.18)',
 
-    /* Sémantique. `info` était bleu #3B82F6 : hors drapeau, ramené au vert
+    /* Sémantique. `info` était bleu #00643C : hors drapeau, ramené au vert
        foncé. `purple` idem. */
     error: v2.red,
     danger: v2.red,
@@ -342,7 +342,7 @@ export const screenColors = {
     success: v2.green,
     successBg: v2.greenSoft,
     info: v2.greenDark,
-    warning: '#B8860B',
+    warning: '#8A6D08',
     purple: v2.yellowInk,
 
     /* Textes */

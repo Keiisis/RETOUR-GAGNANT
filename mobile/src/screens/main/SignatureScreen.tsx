@@ -431,7 +431,7 @@ function PrefOption({
     }, [active])
 
     const rowStyle = useAnimatedStyle(() => ({
-        backgroundColor: active ? 'rgba(212, 160, 23, 0.06)' : 'transparent',
+        backgroundColor: active ? 'rgba(252, 209, 22, 0.06)' : 'transparent',
     }))
 
     const radioStyle = useAnimatedStyle(() => ({
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: 'rgba(10, 107, 59, 0.12)',
+        backgroundColor: 'rgba(0, 135, 81, 0.12)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     btnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         shadowOpacity: 0,
         elevation: 0,
     },
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: C.border,
-        backgroundColor: 'rgba(212, 160, 23, 0.04)',
+        backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     canvasGuideText: {
         fontSize: 12,

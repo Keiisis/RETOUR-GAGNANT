@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
         title: 'Retrouvez\nvotre terre\nd\'origine',
         body: 'Vous êtes Afro-descendant et le Bénin vous appelle. Retour Gagnant vous accompagne pour reconnecter avec vos racines.',
         image: require('../../assets/onboarding/slide_1_roots.png'),
-        accent: '#009639',  // Vert Bénin
+        accent: '#008751',  // Vert Bénin
     },
     {
         key: 'process',
@@ -52,7 +52,7 @@ const SLIDES: Slide[] = [
         title: 'Bienvenue\nchez vous,\nau Bénin',
         body: 'Au-delà des papiers, c\'est une nouvelle vie qui commence. Installation, communauté, héritage — votre retour gagnant.',
         image: require('../../assets/onboarding/slide_3_home.png'),
-        accent: '#EF2B2D',  // Rouge Bénin
+        accent: '#E8112D',  // Rouge Bénin
     },
 ]
 

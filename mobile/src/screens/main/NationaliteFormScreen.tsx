@@ -211,9 +211,9 @@ function SwitchRow({ label, value, onValueChange, icon, highlight }: any) {
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: '#CBD5E1', true: C.accent }}
+                trackColor={{ false: '#E4E4E4', true: C.accent }}
                 thumbColor={C.surfaceSolid}
-                ios_backgroundColor="#CBD5E1"
+                ios_backgroundColor="#E4E4E4"
             />
         </View>
     )
@@ -745,12 +745,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                 </Text>
                                                 <View style={styles.docSlotTags}>
                                                     {slot.ancestral && (
-                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(212, 160, 23, 0.12)', borderColor: 'rgba(212, 160, 23, 0.3)' }]}>
+                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(252, 209, 22, 0.12)', borderColor: 'rgba(252, 209, 22, 0.3)' }]}>
                                                             <Text style={[styles.miniTagText, { color: C.accentDark }]}>{t('ANCESTRAL')}</Text>
                                                         </View>
                                                     )}
                                                     {slot.multi && (
-                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(13, 43, 78, 0.06)', borderColor: 'rgba(13, 43, 78, 0.15)' }]}>
+                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(0, 135, 81, 0.06)', borderColor: 'rgba(0, 135, 81, 0.15)' }]}>
                                                             <Text style={[styles.miniTagText, { color: C.primary }]}>{t('MULTIPLE')}</Text>
                                                         </View>
                                                     )}
@@ -1049,12 +1049,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     navCounterText: {
         fontSize: 12,
@@ -1085,12 +1085,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     stepperBadgeText: {
         fontSize: 12,
@@ -1168,11 +1168,11 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 14,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     stepHeaderBadge: {
         fontSize: 12,
@@ -1220,7 +1220,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         marginBottom: 18,
         position: 'relative',
     },
@@ -1336,18 +1336,18 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     switchRowHighlight: {
-        borderColor: 'rgba(212, 160, 23, 0.35)',
-        backgroundColor: 'rgba(212, 160, 23, 0.04)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
+        backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     switchIconWrap: {
         width: 32,
         height: 32,
         borderRadius: 10,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     switchLabel: {
         fontSize: 13,
@@ -1420,7 +1420,7 @@ const styles = StyleSheet.create({
         padding: 14,
         marginBottom: 16,
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.18,
@@ -1431,11 +1431,11 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 12,
-        backgroundColor: 'rgba(212, 160, 23, 0.20)',
+        backgroundColor: 'rgba(252, 209, 22, 0.20)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
     },
     docCounterLabel: {
         fontSize: 12,
@@ -1473,8 +1473,8 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     docSlotActive: {
-        borderColor: 'rgba(10, 107, 59, 0.3)',
-        backgroundColor: 'rgba(10, 107, 59, 0.03)',
+        borderColor: 'rgba(0, 135, 81, 0.3)',
+        backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     docSlotHeader: {
         flexDirection: 'row',
@@ -1485,15 +1485,15 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
+        borderColor: 'rgba(0, 135, 81, 0.08)',
     },
     docSlotIconActive: {
-        backgroundColor: 'rgba(10, 107, 59, 0.10)',
-        borderColor: 'rgba(10, 107, 59, 0.25)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
+        borderColor: 'rgba(0, 135, 81, 0.25)',
     },
     docSlotTitle: {
         fontSize: 12.5,
@@ -1529,7 +1529,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
+        borderColor: 'rgba(252, 209, 22, 0.3)',
     },
     uploadBtnSecondary: {
         backgroundColor: C.surfaceSolid,
@@ -1567,7 +1567,7 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 8,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1638,7 +1638,7 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         padding: 22,
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         marginTop: 6,
         marginBottom: 10,
         position: 'relative',
@@ -1663,13 +1663,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
+        backgroundColor: 'rgba(252, 209, 22, 0.18)',
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
         marginBottom: 14,
     },
     paymentBadgeText: {
@@ -1740,7 +1740,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
@@ -1748,7 +1748,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     primaryBtnDisabled: {
-        backgroundColor: '#CBD5E1',
+        backgroundColor: '#E4E4E4',
         shadowOpacity: 0,
         elevation: 0,
         borderColor: 'transparent',
@@ -1848,7 +1848,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 18,
         borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         alignItems: 'center',
         marginBottom: 24,
     },
@@ -1879,7 +1879,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2,

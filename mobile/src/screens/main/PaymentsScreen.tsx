@@ -326,7 +326,7 @@ function BrandLogo({ brand }: { brand?: CardBrand }) {
     if (brand === 'mastercard') return (
         <View style={styles.mcWrap}>
             <View style={[styles.mcDot, { backgroundColor: '#EB001B', marginRight: -8 }]} />
-            <View style={[styles.mcDot, { backgroundColor: '#F79E1B', opacity: 0.9 }]} />
+            <View style={[styles.mcDot, { backgroundColor: '#FCD116', opacity: 0.9 }]} />
         </View>
     )
     if (brand === 'amex') return <Text style={styles.brandText}>AMEX</Text>
@@ -426,7 +426,7 @@ function TransactionRow({ tx, t, delay }: { tx: Transaction; t: (s: string) => s
     return (
         <AnimatedSection delay={delay}>
             <View style={styles.txRow}>
-                <View style={[styles.txIconWrap, { backgroundColor: isCredit ? '#E8F3EE' : '#F5F5F5' }]}>
+                <View style={[styles.txIconWrap, { backgroundColor: isCredit ? '#E6F3ED' : '#F5F5F5' }]}>
                     <Ionicons name={tx.icon} size={20} color={isCredit ? C.success : C.primary} />
                 </View>
 
@@ -550,9 +550,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         paddingHorizontal: 10, paddingVertical: 6,
         borderRadius: 12,
     },
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
     /* ── Tabs ── */
     tabsContainer: {
         flexDirection: 'row',
-        backgroundColor: '#EEF1F5',
+        backgroundColor: '#F5F5F5',
         borderRadius: 14,
         padding: 4,
     },
@@ -639,9 +639,9 @@ const styles = StyleSheet.create({
     },
     defaultBadge: {
         marginLeft: 8,
-        backgroundColor: 'rgba(212, 160, 23, 0.12)',
+        backgroundColor: 'rgba(252, 209, 22, 0.12)',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
+        borderColor: 'rgba(252, 209, 22, 0.35)',
         paddingHorizontal: 8, paddingVertical: 2,
         borderRadius: 8,
     },
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     },
     emptyIcon: {
         width: 56, height: 56, borderRadius: 28,
-        backgroundColor: 'rgba(212, 160, 23, 0.12)',
+        backgroundColor: 'rgba(252, 209, 22, 0.12)',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 12,
     },
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
         elevation: 8,
     },
-    btnDisabled: { backgroundColor: '#CBD5E1', shadowOpacity: 0, elevation: 0 },
+    btnDisabled: { backgroundColor: '#E4E4E4', shadowOpacity: 0, elevation: 0 },
     btnText: { color: C.primaryText, fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
 
     /* ── Security ── */
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     },
     securityIconWrap: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(212, 160, 23, 0.12)',
+        backgroundColor: 'rgba(252, 209, 22, 0.12)',
         alignItems: 'center', justifyContent: 'center',
         marginRight: 12,
     },

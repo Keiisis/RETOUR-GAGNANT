@@ -137,7 +137,7 @@ const videoStyles = StyleSheet.create({
     },
     tintOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 43, 78, 0.15)', // Bleu agence
+        backgroundColor: 'rgba(0, 135, 81, 0.15)', // Bleu agence
     },
     vignette: {
         ...StyleSheet.absoluteFillObject,
@@ -152,7 +152,7 @@ const videoStyles = StyleSheet.create({
         top: -20,
         bottom: -20,
         width: 80,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
+        backgroundColor: 'rgba(252, 209, 22, 0.18)',
         transform: [{ skewX: '-20deg' }],
     },
     innerBorder: {
@@ -163,7 +163,7 @@ const videoStyles = StyleSheet.create({
         bottom: 6,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
     },
     cornerBadge: {
         position: 'absolute',
@@ -175,9 +175,9 @@ const videoStyles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 999,
-        backgroundColor: 'rgba(13, 43, 78, 0.75)',
+        backgroundColor: 'rgba(0, 135, 81, 0.75)',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
     },
     cornerDot: {
         width: 5,
@@ -204,6 +204,7 @@ const ProductCard = ({
     const enterAnim = useSharedValue(0)
     const pressAnim = useSharedValue(0)
     const inCartAnim = useSharedValue(inCart ? 1 : 0)
+    const [imgLoading, setImgLoading] = useState(false)
 
     useEffect(() => {
         const delay = index * 80
@@ -251,7 +252,20 @@ const ProductCard = ({
                     {/* Image / placeholder */}
                     <View style={cardStyles.imageContainer}>
                         {item.images && item.images.length > 0 ? (
-                            <Image source={{ uri: item.images[0] }} style={cardStyles.image} resizeMode="cover" />
+                            <>
+                                <Image
+                                    source={{ uri: item.images[0] }}
+                                    style={cardStyles.image}
+                                    resizeMode="cover"
+                                    onLoadStart={() => setImgLoading(true)}
+                                    onLoadEnd={() => setImgLoading(false)}
+                                />
+                                {imgLoading && (
+                                    <View style={cardStyles.imageLoading}>
+                                        <ActivityIndicator size="small" color={C.primary} />
+                                    </View>
+                                )}
+                            </>
                         ) : (
                             <View style={cardStyles.placeholder}>
                                 <Ionicons name="sparkles-outline" size={28} color={C.accent} />
@@ -370,16 +384,21 @@ const cardStyles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
+    imageLoading: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: C.surfaceAlt,
+    },
     imageOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 43, 78, 0.03)',
+        backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     placeholder: {
         width: '100%',
         height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(212, 160, 23, 0.08)',
+        backgroundColor: 'rgba(252, 209, 22, 0.08)',
     },
     tagWrap: {
         position: 'absolute',
@@ -397,7 +416,7 @@ const cardStyles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.5)',
+        borderColor: 'rgba(252, 209, 22, 0.5)',
     },
     vipTagText: {
         fontSize: 12,
@@ -488,13 +507,13 @@ const cardStyles = StyleSheet.create({
         alignItems: 'center',
         gap: 4,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(10, 107, 59, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 6,
         marginTop: 6,
         borderWidth: 1,
-        borderColor: 'rgba(10, 107, 59, 0.2)',
+        borderColor: 'rgba(0, 135, 81, 0.2)',
     },
     inCartText: {
         fontSize: 12,
@@ -985,12 +1004,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 7,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
+        backgroundColor: 'rgba(252, 209, 22, 0.10)',
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
+        borderColor: 'rgba(252, 209, 22, 0.25)',
         marginTop: 16,
     },
     countDot: {
@@ -1042,11 +1061,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(212, 160, 23, 0.15)',
+        backgroundColor: 'rgba(252, 209, 22, 0.15)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
+        borderColor: 'rgba(252, 209, 22, 0.4)',
     },
     cartBadge: {
         position: 'absolute',
@@ -1098,7 +1117,7 @@ const styles = StyleSheet.create({
     },
     modalBg: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 43, 78, 0.55)',
+        backgroundColor: 'rgba(0, 135, 81, 0.55)',
     },
     bottomSheet: {
         backgroundColor: C.bg,
