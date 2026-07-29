@@ -12,22 +12,16 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext';
+import { screenColors } from '../config/theme'
 
 const { width } = Dimensions.get('window');
 
 /* ═══════════════════════════════════════
    Couleurs — Silent Luxury
 ═══════════════════════════════════════ */
-const C = {
-    bg: '#FAF8F5',       // ivoire très doux
-    bgDeep: '#F2EEE7',   // pour subtle depth
-    ink: '#1A1613',       // texte principal (presque noir chaud)
-    inkSoft: '#6B6259',   // texte secondaire
-    inkMuted: '#A39B91',  // texte tertiaire
-    accent: '#8B6F3F',    // or mat (pas brillant)
-    line: '#E8E2D6',      // bordures subtiles
-    surface: '#FFFFFF',   // cartes
-};
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 /* ═══════════════════════════════════════
    Props — Contrat avec AppNavigator
@@ -154,6 +148,8 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
                                 !isLast && styles.langRowBorder,
                                 pressed && { backgroundColor: C.bgDeep },
                             ]}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             <Text style={styles.langFlag}>{item.flag}</Text>
                             <View style={styles.langRowText}>
@@ -177,6 +173,8 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
                 disabled={!selected}
                 activeOpacity={0.85}
                 onPress={handleContinue}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <Text style={[styles.ctaText, !selected && styles.ctaTextDisabled]}>
                     Continuer

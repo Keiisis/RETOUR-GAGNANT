@@ -96,6 +96,7 @@ export default function PressableCard({
             accessibilityHint={accessibilityHint}
             accessibilityState={{ disabled }}
             testID={testID}
+            hitSlop={6}
         >
             <Animated.View style={[style, animatedStyle, disabled && { opacity: 0.5 }]}>
                 {children}

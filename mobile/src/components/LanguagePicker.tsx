@@ -55,7 +55,10 @@ export default function LanguagePicker({ visible, onClose }: LanguagePickerProps
         <Modal transparent visible={visible} animationType="none" statusBarTranslucent onRequestClose={onClose}>
             {/* Backdrop */}
             <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }, backdropStyle]}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}/>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Fermer"
+                    hitSlop={6}/>
             </Animated.View>
 
             {/* Bottom sheet */}
@@ -75,7 +78,10 @@ export default function LanguagePicker({ visible, onClose }: LanguagePickerProps
                                 {t('Choisissez votre langue préférée')}
                             </Text>
                         </View>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Fermer"
+                            hitSlop={6}>
                             <X size={18} color={colors.gold} strokeWidth={1.75} />
                         </TouchableOpacity>
                     </View>
@@ -108,6 +114,8 @@ export default function LanguagePicker({ visible, onClose }: LanguagePickerProps
                                 ]}
                                 onPress={() => handleSelect(item.code)}
                                 activeOpacity={0.65}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 {/* Flag */}
                                 <View style={[styles.flagWrap, isSelected && styles.flagWrapActive]}>
@@ -280,7 +288,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.sm,
     },
     footerText: {
-        ...typography.caption, fontSize: 11,
+        ...typography.caption, fontSize: 12,
         color: colors.textMuted, flex: 1,
     },
 })

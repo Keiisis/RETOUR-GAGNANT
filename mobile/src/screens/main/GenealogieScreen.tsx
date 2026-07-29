@@ -16,8 +16,9 @@ import { LinearGradient } from 'expo-linear-gradient'
 import {
     ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, Sparkles,
 } from 'lucide-react-native'
-import { colors as C, spacing, radius, shadows, fonts } from '../../config/theme'
+import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { supabase } from '../../config/supabase'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 
 // Libellés de rôle (non genrés) — miroir de lib/genealogy/requirements (web).
@@ -108,19 +109,25 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={[C.primaryDark, C.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back}>
-                    <ArrowLeft size={22} color="#fff" />
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.header}>
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Retour')}
+                    hitSlop={12}
+                    style={styles.back}
+                >
+                    <ArrowLeft size={20} color={C.textPrimary} />
                 </Pressable>
-                <View style={styles.flagRow}>
-                    <View style={[styles.flagDot, { backgroundColor: C.flagGreen }]} />
-                    <View style={[styles.flagDot, { backgroundColor: C.flagYellow }]} />
-                    <View style={[styles.flagDot, { backgroundColor: C.flagRed }]} />
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.hTitle}>{t('Plan de composition de famille')}</Text>
+                    <Text style={styles.hSub}>{t('Votre lignée, génération après génération')}</Text>
                 </View>
-                <Text style={styles.hTitle}>{t('Plan de composition de famille')}</Text>
-                <Text style={styles.hSub}>{t('Votre lignée, génération après génération')}</Text>
-            </LinearGradient>
+            </View>
 
             {loading ? (
                 <View style={styles.center}><ActivityIndicator size="large" color={C.primary} /></View>
@@ -154,7 +161,9 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                                 <Text style={styles.tierCount}>{members.length}</Text>
                             </View>
                             {members.map(p => (
-                                <Pressable key={p.id} style={styles.person} onPress={() => setSelected(p)}>
+                                <Pressable key={p.id} style={styles.person} onPress={() => setSelected(p)}
+                                    accessibilityRole="button"
+                                    hitSlop={6}>
                                     <PersonAvatar uri={p.avatar_url} self={!!p.is_self} />
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.personName}>{displayName(p)}</Text>
@@ -182,7 +191,9 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
             {/* DÉTAIL PERSONNE */}
             <Modal visible={selected !== null} animationType="slide" transparent onRequestClose={() => setSelected(null)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setSelected(null)} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setSelected(null)}
+                        accessibilityRole="button"
+                        hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         {selected && (
                             <ScrollView showsVerticalScrollIndicator={false}>
@@ -193,7 +204,9 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                                         <Text style={styles.detailName}>{displayName(selected)}</Text>
                                         <Text style={styles.detailRole}>{t(roleLabel(selected.relation_role))}</Text>
                                     </View>
-                                    <Pressable onPress={() => setSelected(null)} hitSlop={10}><X size={22} color={C.textMuted} /></Pressable>
+                                    <Pressable onPress={() => setSelected(null)} hitSlop={10}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={t('Fermer la fiche')}><X size={22} color={C.textMuted} /></Pressable>
                                 </View>
                                 <DetailRow icon={<Calendar size={15} color={C.primary} />} label={t('Naissance')}
                                     value={selected.birth_date ? fmtDate(selected.birth_date) : t('Inconnue')} />
@@ -252,12 +265,11 @@ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: strin
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-    back: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)' },
-    flagRow: { flexDirection: 'row', gap: 5, marginTop: spacing.md },
-    flagDot: { width: 22, height: 4, borderRadius: 2 },
-    hTitle: { fontFamily: fonts.heading, fontSize: 24, color: '#fff', marginTop: spacing.sm },
-    hSub: { fontFamily: fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 4 },
+    topFlag: { marginHorizontal: spacing.lg, borderRadius: radius.pill, overflow: 'hidden' },
+    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
+    back: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+    hTitle: { ...typography.h2, color: C.textPrimary },
+    hSub: { ...typography.bodySmall, color: C.textMuted, marginTop: 2 },
 
     emptyWrap: { padding: spacing.xl, alignItems: 'center', paddingTop: spacing.xxl },
     emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
@@ -276,10 +288,10 @@ const styles = StyleSheet.create({
     person: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: C.border, ...shadows.xs },
     personName: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.textPrimary },
     personRole: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: C.primary, marginTop: 1 },
-    personDates: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted, marginTop: 2 },
+    personDates: { fontFamily: fonts.body, fontSize: 12, color: C.textMuted, marginTop: 2 },
 
     note: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: spacing.sm, paddingHorizontal: 4 },
-    noteText: { flex: 1, fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted, lineHeight: 17 },
+    noteText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: C.textMuted, lineHeight: 17 },
 
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },
     sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: C.overlay },
@@ -290,7 +302,7 @@ const styles = StyleSheet.create({
     detailRole: { fontFamily: fonts.bodyMedium, fontSize: 13, color: C.primary, marginTop: 2 },
     detailRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.borderLight },
     detailIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.surfaceWarm, alignItems: 'center', justifyContent: 'center' },
-    detailLabel: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.4 },
+    detailLabel: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.4 },
     detailValue: { fontFamily: fonts.bodySemibold, fontSize: 14.5, color: C.textPrimary, marginTop: 1 },
     notes: { marginTop: spacing.md, backgroundColor: C.surfaceWarm, borderRadius: radius.lg, padding: spacing.md },
     notesLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textPrimary, marginBottom: 4 },

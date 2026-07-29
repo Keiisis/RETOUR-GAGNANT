@@ -61,6 +61,12 @@ export async function GET(req: NextRequest) {
             `)
             .eq('status', 'published')
             .order('start_date', { ascending: true })
+            // Sans borne, l'app téléchargeait TOUT l'historique d'événements à
+            // chaque ouverture de l'onglet : payload qui grossit sans fin,
+            // bande passante Vercel consommée et liste non virtualisée côté
+            // mobile. On ne renvoie que ce qui est encore pertinent.
+            .gte('start_date', new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString())
+            .limit(60)
 
         if (featured === 'true') query = query.eq('is_featured', true)
 

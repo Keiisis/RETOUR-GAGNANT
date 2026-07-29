@@ -1,8 +1,9 @@
 'use strict'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, Pressable,
-    Platform, Alert, ActivityIndicator, Dimensions,
+    Platform, ActivityIndicator, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -25,7 +26,7 @@ import Animated, {
     useAnimatedScrollHandler,
     interpolateColor,
 } from 'react-native-reanimated'
-import { colors as themeColors, spacing, radius, shadows, typography, fonts, motion } from '../../config/theme'
+import { colors as themeColors, spacing, radius, shadows, typography, fonts, motion, screenColors } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
@@ -39,65 +40,11 @@ const { width: SCREEN_W } = Dimensions.get('window')
 /* ═══════════════════════════════════════════════════════════
    CORPORATE PREMIUM 2026 — Palette signature
 ═══════════════════════════════════════════════════════════ */
-const C = {
-    bg: '#FFFFFF',           // Ivoire
-    bgDeep: '#EDE6D8',
-    surface: '#FFFFFF',
-    surfaceWarm: '#FBF7EF',
-    primary: '#047857',      // Bleu nuit
-    primaryLight: '#1B4480',
-    primaryGlow: 'rgba(13,43,78,0.10)',
-    gold: '#C9A84C',         // Or signature
-    goldSoft: '#E8C760',
-    goldGlow: 'rgba(212,160,23,0.18)',
-    emerald: '#10B981',      // Aura verte
-    ruby: '#9B2226',
-    text: '#0A1A2E',
-    textMuted: '#6B7280',
-    textSubtle: '#9AA3B2',
-    border: 'rgba(13,43,78,0.10)',
-    borderStrong: 'rgba(13,43,78,0.18)',
-    overlay: 'rgba(13,43,78,0.55)',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 interface PricingOption { label: string; price: string }
-
-/* ═══════════════════════════════════════════════════════════
-   AURAS FLOTTANTES — décor de fond
-═══════════════════════════════════════════════════════════ */
-const FloatingAura = ({
-    size, color, top, left, right, bottom, delay = 0, duration = 8000,
-}: any) => {
-    const t = useSharedValue(0)
-    useEffect(() => {
-        t.value = withDelay(delay, withRepeat(
-            withTiming(1, { duration, easing: Easing.inOut(Easing.quad) }),
-            -1, true,
-        ))
-    }, [t, delay, duration])
-
-    const style = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: interpolate(t.value, [0, 1], [0, -24]) },
-            { translateX: interpolate(t.value, [0, 1], [0, 16]) },
-            { scale: interpolate(t.value, [0, 1], [1, 1.08]) },
-        ],
-        opacity: interpolate(t.value, [0, 1], [0.55, 0.85]),
-    }))
-
-    return (
-        <Animated.View
-            pointerEvents="none"
-            style={[
-                {
-                    position: 'absolute', width: size, height: size, borderRadius: size / 2,
-                    backgroundColor: color, top, left, right, bottom,
-                },
-                style,
-            ]}
-        />
-    )
-}
 
 /* ═══════════════════════════════════════════════════════════
    ANIMATED SECTION — fade + slide staggered
@@ -131,6 +78,8 @@ const InteractiveButton = ({ children, onPress, style, disabled, accessibilityLa
                 onPress={onPress}
                 accessibilityLabel={accessibilityLabel}
                 style={style}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 {children}
             </Pressable>
@@ -149,18 +98,10 @@ const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
     const badgePulse = useSharedValue(1)
 
     useEffect(() => {
-        shine.value = withRepeat(
-            withTiming(1, { duration: 3500, easing: Easing.inOut(Easing.quad) }),
-            -1, false,
-        )
+        shine.value = withTiming(1, { duration: 600 })
         iconScale.value = withSpring(1, { damping: 10, stiffness: 110 })
         iconRotate.value = withSpring(0, { damping: 12, stiffness: 90 })
-        badgePulse.value = withRepeat(
-            withSequence(
-                withTiming(1.06, { duration: 1400 }),
-                withTiming(1, { duration: 1400 }),
-            ), -1, true,
-        )
+        badgePulse.value = withTiming(1, { duration: 600 })
     }, [shine, iconScale, iconRotate, badgePulse])
 
     const shineStyle = useAnimatedStyle(() => ({
@@ -188,9 +129,6 @@ const ServiceHero = ({ icon, title, subtitle, accent, onBack, t }: any) => {
                 style={StyleSheet.absoluteFillObject}
             />
 
-            {/* Auras décoratives dans le hero */}
-            <FloatingAura size={260} color={C.goldGlow} top={-90} right={-70} duration={9000} />
-            <FloatingAura size={180} color="rgba(255,255,255,0.06)" bottom={-60} left={-40} duration={11000} delay={1200} />
 
             {/* Shimmer doré qui balaye */}
             <Animated.View style={[hero.shine, shineStyle]} pointerEvents="none">
@@ -354,7 +292,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     const initiateCheckout = useCallback(() => {
         if (!profile) {
-            Alert.alert(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
+            toast(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
             return
         }
         // Sur le site public, AUCUNE fiche service ne fait payer directement :
@@ -366,7 +304,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     const createDossierViaApi = async (transactionId: string | null, numericPrice: number) => {
         if (!profile?.id) {
-            Alert.alert(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
+            toast(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
             return
         }
         setLoading(true)
@@ -388,34 +326,33 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             const json = await res.json().catch(() => ({}))
 
             if (json.exists) {
-                Alert.alert(
-                    t('Dossier existant'),
-                    t('Vous avez déjà un dossier en cours pour ce service. Consultez la section "Mon Dossier" pour suivre son avancement.'),
-                    [{ text: t('Voir mon dossier'), onPress: () => navigation.goBack() }]
-                )
+                toast(
+                        t('Dossier existant'),
+                        t('Vous avez déjà un dossier en cours pour ce service. Consultez la section "Mon Dossier" pour suivre son avancement.'),
+                        'warning',
+                    )
+                    navigation.goBack()
                 return
             }
 
             if (!res.ok) {
                 const msg = (json.error as string) || `Erreur ${res.status}`
                 if (res.status === 402) {
-                    Alert.alert(
-                        t('Paiement non confirmé'),
-                        t('Le paiement n\'a pas pu être vérifié auprès de Kkiapay. Si vous avez bien été débité, contactez le support avec la référence : ') + (transactionId || ''),
-                    )
+                    toast(t('Paiement non confirmé'), t('Le paiement n\'a pas pu être vérifié auprès de Kkiapay. Si vous avez bien été débité, contactez le support avec la référence : ') + (transactionId || ''),)
                     return
                 }
                 throw new Error(msg)
             }
 
-            Alert.alert(
-                t('Demande Enregistrée !'),
+            toast(
+                t('Demande enregistrée'),
                 t(`Votre dossier pour "{title}" a été créé avec succès.\n\nNotre équipe vous contactera dans les 24 heures pour la suite.`, { title }),
-                [{ text: t('Voir mon espace'), onPress: () => navigation.navigate('Dossier') }]
+                'success',
             )
+            navigation.navigate('Dossier')
         } catch (e: any) {
             const msg = e.message || t('Erreur lors de la création du dossier')
-            Alert.alert(t('Erreur'), msg)
+            toast(t('Erreur'), msg)
         } finally {
             setLoading(false)
         }
@@ -440,14 +377,10 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     return (
         <View style={styles.container}>
-            {/* Fond ivoire + auras globales */}
             <LinearGradient
                 colors={[C.bg, C.bgDeep, C.bg]}
                 style={StyleSheet.absoluteFillObject}
             />
-            <FloatingAura size={320} color={C.goldGlow} top={140} right={-120} duration={12000} />
-            <FloatingAura size={260} color="rgba(10,107,59,0.10)" bottom={120} left={-100} duration={14000} delay={2000} />
-            <FloatingAura size={200} color={C.primaryGlow} top={500} left={-60} duration={10000} delay={3500} />
 
             {/* Sticky header (apparait au scroll) */}
             <Animated.View style={[styles.stickyHeader, { paddingTop: insets.top + 8 }, stickyHeaderStyle]} pointerEvents="box-none">
@@ -548,7 +481,6 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                     colors={[C.primary, C.primaryLight]}
                                     style={StyleSheet.absoluteFillObject}
                                 />
-                                <FloatingAura size={140} color={C.goldGlow} top={-40} right={-30} duration={8000} />
 
                                 <View style={styles.vipHeader}>
                                     <LinearGradient
@@ -658,8 +590,6 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 end={{ x: 1, y: 1 }}
                                 style={StyleSheet.absoluteFillObject}
                             />
-                            <FloatingAura size={180} color={C.goldGlow} top={-50} right={-40} duration={9000} />
-                            <FloatingAura size={120} color="rgba(255,255,255,0.06)" bottom={-30} left={-30} duration={11000} delay={1500} />
 
                             <View style={styles.ctaHeader}>
                                 <LinearGradient colors={[C.gold, C.goldSoft]} style={styles.ctaIcon}>
@@ -762,6 +692,8 @@ const PressableCardLite = ({ children }: any) => {
             <Pressable
                 onPressIn={() => { scale.value = withSpring(0.98, { damping: 18, stiffness: 280 }) }}
                 onPressOut={() => { scale.value = withSpring(1, { damping: 14, stiffness: 220 }) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 {children}
             </Pressable>
@@ -803,7 +735,7 @@ const hero = StyleSheet.create({
         borderWidth: 1, borderColor: C.goldGlow,
     },
     premiumBadgeText: {
-        fontSize: 10, fontFamily: fonts.bodyBold,
+        fontSize: 12, fontFamily: fonts.bodyBold,
         color: C.primary, letterSpacing: 1.4,
     },
     iconRing: {
@@ -915,7 +847,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     infoLabel: {
-        fontSize: 10, fontFamily: 'Inter_600SemiBold',
+        fontSize: 12, fontFamily: 'Inter_600SemiBold',
         color: C.textSubtle, letterSpacing: 0.8,
         textTransform: 'uppercase', marginBottom: 4,
     },
@@ -937,7 +869,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: C.border,
     },
     trustText: {
-        fontSize: 11, fontFamily: 'Inter_600SemiBold',
+        fontSize: 12, fontFamily: 'Inter_600SemiBold',
         color: C.primary,
     },
 
@@ -1020,7 +952,7 @@ const styles = StyleSheet.create({
         color: '#FFF', marginBottom: 3,
     },
     vipStepDesc: {
-        fontSize: 11, lineHeight: 16,
+        fontSize: 12, lineHeight: 16,
         color: 'rgba(255,255,255,0.7)',
         fontFamily: 'Inter_400Regular',
     },
@@ -1097,7 +1029,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     docNum: {
-        fontSize: 11, fontFamily: 'Inter_800ExtraBold', color: C.gold,
+        fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: C.gold,
     },
     docText: {
         flex: 1, fontSize: 13, lineHeight: 20,
@@ -1153,7 +1085,7 @@ const styles = StyleSheet.create({
         marginTop: 14,
     },
     ctaFreeNote: {
-        fontSize: 11, fontFamily: 'Inter_600SemiBold',
+        fontSize: 12, fontFamily: 'Inter_600SemiBold',
         color: 'rgba(255,255,255,0.78)',
     },
 

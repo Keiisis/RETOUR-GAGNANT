@@ -1,9 +1,9 @@
 'use strict'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, ActivityIndicator, TextInput, Alert,
-    Dimensions, Pressable,
+    RefreshControl, Platform, ActivityIndicator, TextInput, Dimensions, Pressable,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
@@ -23,10 +23,12 @@ import Animated, {
 import { Video, ResizeMode } from 'expo-av'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -37,28 +39,9 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (cohérente avec tous les écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-    warning: '#D97706',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Orders'>
 
@@ -120,19 +103,8 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
     const dotPulse = useSharedValue(0)
 
     useEffect(() => {
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1.08, { duration: 12000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 12000, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1, false,
-        )
-        dotPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-                withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
+        scale.value = withTiming(1, { duration: 600 })
+        dotPulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const videoStyle = useAnimatedStyle(() => ({
@@ -229,6 +201,8 @@ function OrderCard({
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1) }}
                 onPressOut={() => { pressAnim.value = withSpring(0) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <Animated.View style={[styles.orderCard, pressStyle]}>
                     {/* Bordure colorée gauche */}
@@ -327,31 +301,15 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
     const [filter, setFilter] = useState<FilterKey>('all')
 
     /* ── Animations Corporate ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const searchFocusAnim = useSharedValue(0)
 
     useEffect(() => {
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     useEffect(() => {
         searchFocusAnim.value = withSpring(searchFocused ? 1 : 0, { damping: 15, stiffness: 150 })
     }, [searchFocused])
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
     const searchInputStyle = useAnimatedStyle(() => ({
         borderColor: interpolateColor(searchFocusAnim.value, [0, 1], [C.border, C.accent]),
         backgroundColor: searchFocused ? C.surfaceSolid : C.surface,
@@ -384,7 +342,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
     const handleTrackingSearch = async () => {
         const code = searchCode.trim().toUpperCase()
         if (!code) {
-            Alert.alert(t('Code requis'), t('Veuillez entrer un code de suivi.'))
+            toast(t('Code requis'), t('Veuillez entrer un code de suivi.'))
             return
         }
         setSearching(true)
@@ -398,10 +356,10 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 setSearchCode('')
                 navigation.navigate('OrderDetail', { orderId: data.order.id, trackingCode: code })
             } else {
-                Alert.alert(t('Aucune commande'), t('Aucune commande trouvée avec ce code de suivi.'))
+                toast(t('Aucune commande'), t('Aucune commande trouvée avec ce code de suivi.'))
             }
         } catch {
-            Alert.alert(t('Erreur'), t('Impossible de rechercher pour le moment.'))
+            toast(t('Erreur'), t('Impossible de rechercher pour le moment.'))
         } finally {
             setSearching(false)
         }
@@ -430,13 +388,17 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -450,6 +412,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 <Pressable
                     onPress={() => navigation.navigate('Boutique' as any)}
                     style={styles.navBack}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Ouvrir la boutique')}
+                    hitSlop={6}
                 >
                     <View style={styles.iconContainer}>
                         <Ionicons name="storefront-outline" size={20} color={C.primary} />
@@ -509,6 +474,8 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 style={styles.shopBtn}
                                 onPress={() => navigation.navigate('Boutique' as any)}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Ionicons name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
                                 <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
@@ -546,8 +513,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 {/* HEADER TITRE */}
                 <AnimatedSection delay={0}>
                     <View style={styles.headerContainer}>
-                        <Text style={styles.title}>{t('Vos')}</Text>
-                        <Text style={styles.titleHighlight}>{t('commandes.')}</Text>
+                        <Text style={styles.title}>{t('Mes commandes')}</Text>
                         <Text style={styles.subtitle}>
                             {t('Suivez vos colis en temps réel et consultez votre historique.')}
                         </Text>
@@ -600,6 +566,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 onPress={handleTrackingSearch}
                                 disabled={searching}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
+                                hitSlop={6}
+                                accessibilityLabel={t('Rechercher')}
                             >
                                 {searching ? (
                                     <ActivityIndicator color={C.primaryText} size="small" />
@@ -684,7 +653,9 @@ function FilterPill({
     const useColor = color || C.accent
 
     return (
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress}
+            accessibilityRole="button"
+            hitSlop={6}>
             <Animated.View style={[styles.filterPill, pillStyle]}>
                 <Ionicons
                     name={icon}
@@ -719,33 +690,11 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: { top: -100, right: -100, backgroundColor: C.primary },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.auraGreen },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-    iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: 'center', alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -758,7 +707,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -775,19 +724,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         paddingHorizontal: 24,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 14,
         color: C.textSec,
@@ -852,7 +789,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     heroBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.3,
@@ -874,7 +811,7 @@ const styles = StyleSheet.create({
         lineHeight: 34,
     },
     heroStatLabel: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: 'rgba(255, 255, 255, 0.7)',
         letterSpacing: 1.5,
@@ -919,7 +856,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     searchHeaderBadge: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.3,
@@ -985,7 +922,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     filtersTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -1023,7 +960,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     filterPillCountText: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '800',
     },
 
@@ -1062,7 +999,7 @@ const styles = StyleSheet.create({
     },
     orderRefBlock: {},
     orderRefLabel: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.3,
@@ -1084,7 +1021,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     orderStatusText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 0.3,
     },
@@ -1112,7 +1049,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     orderMetaText: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
     },
@@ -1145,7 +1082,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     orderTrackingText: {
-        fontSize: 11.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
         letterSpacing: 0.5,
@@ -1157,7 +1094,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accentLight,
     },
     orderTrackingCarrier: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.accentDark,
         fontWeight: '600',
         flex: 1,
@@ -1173,7 +1110,7 @@ const styles = StyleSheet.create({
         borderTopColor: 'rgba(226, 232, 240, 0.6)',
     },
     orderAmountLabel: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.textMuted,
         letterSpacing: 1.2,
@@ -1291,7 +1228,7 @@ const styles = StyleSheet.create({
         borderColor: C.accent,
     },
     emptyHeroBadgeText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.2,
@@ -1397,7 +1334,7 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '45deg' }],
     },
     footerText: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         letterSpacing: 0.2,

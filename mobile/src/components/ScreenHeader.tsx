@@ -28,7 +28,10 @@ export default function ScreenHeader({ title, subtitle, onBack, rightAction }: S
             </View>
             <View style={styles.headerTopRow}>
                 {onBack ? (
-                    <TouchableOpacity style={styles.iconBtn} onPress={onBack} activeOpacity={0.7}>
+                    <TouchableOpacity style={styles.iconBtn} onPress={onBack} activeOpacity={0.7}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        accessibilityLabel="Retour">
                         <ArrowLeft size={24} color="#FFF" strokeWidth={2} />
                     </TouchableOpacity>
                 ) : (

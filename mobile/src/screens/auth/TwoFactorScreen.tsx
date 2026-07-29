@@ -6,17 +6,11 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
+import { screenColors } from '../../config/theme'
 
-const C = {
-    bg: '#F8F9FA',
-    surface: '#FFFFFF',
-    border: '#E2E8F0',
-    primary: '#047857',
-    accent: '#C9A84C',
-    text: '#1a2332',
-    textSec: '#64748B',
-    danger: '#EF4444',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 export default function TwoFactorScreen() {
     const { verifyTwoFactor, signOut } = useAuth()
@@ -60,11 +54,14 @@ export default function TwoFactorScreen() {
                     </View>
                 ) : null}
 
-                <Pressable onPress={submit} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]}>
+                <Pressable onPress={submit} disabled={loading} style={[styles.btn, loading && { opacity: 0.6 }]}
+                    accessibilityRole="button"
+                    hitSlop={6}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t('Vérifier')}</Text>}
                 </Pressable>
 
-                <TouchableOpacity onPress={signOut} style={styles.logout} hitSlop={10}>
+                <TouchableOpacity onPress={signOut} style={styles.logout} hitSlop={10}
+                    accessibilityRole="button">
                     <Text style={styles.logoutText}>{t('Se déconnecter')}</Text>
                 </TouchableOpacity>
             </View>
@@ -78,7 +75,7 @@ const styles = StyleSheet.create({
     iconWrap: { width: 60, height: 60, borderRadius: 20, backgroundColor: 'rgba(4,120,87,0.10)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     title: { fontSize: 20, fontWeight: '800', color: C.text, textAlign: 'center' },
     subtitle: { fontSize: 13.5, color: C.textSec, textAlign: 'center', marginTop: 8, marginBottom: 22, lineHeight: 20 },
-    input: { width: '100%', borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 14, textAlign: 'center', fontSize: 22, letterSpacing: 8, color: C.text, backgroundColor: '#FBFCFD' },
+    input: { width: '100%', borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 14, textAlign: 'center', fontSize: 22, letterSpacing: 8, color: C.text, backgroundColor: '#FFFFFF' },
     errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
     errorText: { color: C.danger, fontSize: 13 },
     btn: { width: '100%', backgroundColor: C.primary, borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 18 },

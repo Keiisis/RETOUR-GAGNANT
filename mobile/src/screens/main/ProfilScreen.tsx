@@ -1,8 +1,9 @@
 'use strict'
 import React, { useState, useEffect, useCallback } from 'react'
+import { choose, confirm, toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
-    Image, Alert, Platform, ActivityIndicator, Dimensions,
+    Image, Platform, ActivityIndicator, Dimensions,
     Pressable, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -27,8 +28,10 @@ import { supabase } from '../../config/supabase'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import LanguagePicker from '../../components/LanguagePicker'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    ProfilScreen — THEME "CORPORATE PREMIUM 2026"
@@ -38,27 +41,9 @@ import LanguagePicker from '../../components/LanguagePicker'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList>
 
@@ -118,6 +103,8 @@ function MenuItem({
             onPress={onPress}
             onPressIn={() => { pressAnim.value = withSpring(1) }}
             onPressOut={() => { pressAnim.value = withSpring(0) }}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             <Animated.View style={[menuStyles.item, !isLast && menuStyles.itemBorder, animStyle]}>
                 <View style={[menuStyles.iconWrap, accent && menuStyles.iconWrapAccent]}>
@@ -169,7 +156,7 @@ const menuStyles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     sub: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         marginTop: 2,
@@ -192,34 +179,10 @@ export default function ProfilScreen() {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-    const avatarHalo = useSharedValue(0)
     const sheetAnim = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-
-        // Halo doré pulsant autour de l'avatar
-        avatarHalo.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
     }, [])
 
     useEffect(() => {
@@ -230,13 +193,7 @@ export default function ProfilScreen() {
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
-    const avatarHaloStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(avatarHalo.value, [0, 1], [0.18, 0.5]),
-        transform: [{ scale: interpolate(avatarHalo.value, [0, 1], [1, 1.12]) }],
-    }))
 
     const sheetStyle = useAnimatedStyle(() => ({
         opacity: sheetAnim.value,
@@ -306,10 +263,7 @@ export default function ProfilScreen() {
     const handlePickAvatar = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
         if (status !== 'granted') {
-            Alert.alert(
-                t('Permission requise'),
-                t("Veuillez autoriser l'accès à votre galerie dans les paramètres de l'application."),
-            )
+            toast(t('Permission requise'), t("Veuillez autoriser l'accès à votre galerie dans les paramètres de l'application."))
             return
         }
 
@@ -354,10 +308,10 @@ export default function ProfilScreen() {
             }).eq('id', userId)
             await refreshProfile()
 
-            Alert.alert(t('Photo mise à jour'), t('Votre photo de profil a été modifiée avec succès.'))
+            toast(t('Photo mise à jour'), t('Votre photo de profil a été modifiée avec succès.'))
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : t('Erreur lors du téléchargement')
-            Alert.alert(t('Erreur'), msg)
+            toast(t('Erreur'), msg)
         } finally {
             setUploadingAvatar(false)
         }
@@ -366,7 +320,7 @@ export default function ProfilScreen() {
     const handleTakePhoto = async () => {
         const { status } = await ImagePicker.requestCameraPermissionsAsync()
         if (status !== 'granted') {
-            Alert.alert(t('Permission requise'), t('Accès à la caméra refusé.'))
+            toast(t('Permission requise'), t('Accès à la caméra refusé.'))
             return
         }
 
@@ -402,10 +356,10 @@ export default function ProfilScreen() {
             }).eq('id', userId)
             await refreshProfile()
 
-            Alert.alert(t('Photo mise à jour'), t('Photo de profil modifiée avec succès.'))
+            toast(t('Photo mise à jour'), t('Photo de profil modifiée avec succès.'))
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : t('Erreur lors du téléchargement')
-            Alert.alert(t('Erreur'), msg)
+            toast(t('Erreur'), msg)
         } finally {
             setUploadingAvatar(false)
         }
@@ -427,28 +381,36 @@ export default function ProfilScreen() {
                 .eq('id', profile.id)
             if (error) throw error
             await refreshProfile()
-            Alert.alert(t('Avatar mis à jour'), `${preset.emoji} ${preset.label}`)
+            toast(t('Avatar mis à jour'), `${preset.emoji} ${preset.label}`)
         } catch (e: unknown) {
-            Alert.alert(t('Erreur'), e instanceof Error ? e.message : t('Erreur'))
+            toast(t('Erreur'), e instanceof Error ? e.message : t('Erreur'))
         } finally {
             setUploadingAvatar(false)
         }
     }
 
     const showAvatarOptions = () => {
-        Alert.alert(t('Photo de profil'), t('Choisissez une option'), [
-            { text: t('🎭 Choisir un avatar'), onPress: () => setShowAvatarGallery(true) },
-            { text: t('📷 Prendre une photo'), onPress: handleTakePhoto },
-            { text: t('🖼️ Choisir dans la galerie'), onPress: handlePickAvatar },
-            { text: t('Annuler'), style: 'cancel' },
-        ])
+        choose({
+            title: t('Photo de profil'),
+            message: t('Choisissez une option'),
+            cancelLabel: t('Annuler'),
+            options: [
+                { label: t('Choisir un avatar'), onPress: () => setShowAvatarGallery(true) },
+                { label: t('Prendre une photo'), onPress: handleTakePhoto },
+                { label: t('Choisir dans la galerie'), onPress: handlePickAvatar },
+            ],
+        })
     }
 
     const handleLogout = () => {
-        Alert.alert(t('Déconnexion'), t('Êtes-vous sûr de vouloir vous déconnecter ?'), [
-            { text: t('Annuler'), style: 'cancel' },
-            { text: t('Se déconnecter'), style: 'destructive', onPress: signOut },
-        ])
+        confirm({
+            title: t('Déconnexion'),
+            message: t('Êtes-vous sûr de vouloir vous déconnecter ?'),
+            confirmLabel: t('Se déconnecter'),
+            cancelLabel: t('Annuler'),
+            destructive: true,
+            onConfirm: signOut,
+        })
     }
 
     const menuSections = [
@@ -594,141 +556,125 @@ export default function ProfilScreen() {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             <ScrollView
                 style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scroll}
             >
-                {/* NAV BAR */}
-                <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                    <View style={{ width: 44 }} />
-                    <Text style={styles.navTitle}>{t('Mon Profil')}</Text>
+                {/* LISERÉ TRICOLORE */}
+                <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                    <FlagBar height={6} radiusTop={false} />
+                </View>
+
+                {/* EN-TÊTE */}
+                <View style={styles.navBar}>
+                    <Text style={styles.navTitle}>{t('Mon profil')}</Text>
                     <Pressable
                         onPress={() => navigation.navigate('EditProfil')}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Modifier mon profil')}
+                        hitSlop={8}
                         style={styles.navEditBtn}
                     >
-                        <Ionicons name="create-outline" size={18} color={C.accent} />
+                        <Ionicons name="create-outline" size={19} color={C.primary} />
                     </Pressable>
                 </View>
 
-                {/* HEADER TITRE */}
-                <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Votre')}</Text>
-                    <Text style={styles.titleHighlight}>{t('espace.')}</Text>
-                </Animated.View>
-
-                {/* ═══ PROFILE CARD (Hero Bleu massif premium) ═══ */}
+                {/* ═══ CARTE IDENTITÉ ═══ */}
                 <AnimatedSection delay={100}>
                     <View style={styles.profileCard}>
-                        {/* Halo doré derrière l'avatar */}
-                        <Animated.View style={[styles.profileGlow, avatarHaloStyle]} />
+                        <FlagBar height={5} radiusTop={false} />
 
-                        {/* Pattern décoratif */}
-                        <View style={styles.patternDot1} />
-                        <View style={styles.patternDot2} />
-
-                        {/* Avatar */}
-                        <Pressable
-                            style={styles.avatarOuter}
-                            onPress={showAvatarOptions}
-                            disabled={uploadingAvatar}
-                        >
-                            <View style={styles.avatarBorder}>
-                                {renderAvatarContent()}
-                            </View>
-
-                            {/* Camera badge */}
-                            <View style={styles.cameraBadge}>
-                                <Ionicons name="camera" size={13} color={C.primary} />
-                            </View>
-                        </Pressable>
-
-                        <Text style={styles.userName}>
-                            {profile?.prenom} {profile?.nom}
-                        </Text>
-                        <Text style={styles.userEmail} numberOfLines={1}>
-                            {profile?.email}
-                        </Text>
-
-                        {/* Badges info */}
-                        <View style={styles.badgesRow}>
-                            <View style={styles.roleBadge}>
-                                <Ionicons name="shield-checkmark" size={11} color={C.accent} />
-                                <Text style={styles.roleText}>{t('CLIENT VÉRIFIÉ')}</Text>
-                            </View>
-                            {profile?.ville ? (
-                                <View style={styles.villeBadge}>
-                                    <Ionicons name="location-outline" size={11} color={C.accent} />
-                                    <Text style={styles.villeText}>{profile.ville}</Text>
+                        <View style={styles.profileBody}>
+                            <Pressable
+                                style={styles.avatarOuter}
+                                onPress={showAvatarOptions}
+                                disabled={uploadingAvatar}
+                                accessibilityRole="button"
+                                accessibilityLabel={t('Changer ma photo de profil')}
+                                hitSlop={6}
+                            >
+                                <View style={styles.avatarBorder}>
+                                    {renderAvatarContent()}
                                 </View>
-                            ) : null}
-                        </View>
+                                <View style={styles.cameraBadge}>
+                                    <Ionicons name="camera" size={14} color={C.primaryText} />
+                                </View>
+                            </Pressable>
 
-                        {/* Barre de complétion */}
-                        <View style={styles.completionWrap}>
-                            <View style={styles.completionHeader}>
-                                <Text style={styles.completionLabel}>
-                                    {t('Profil complété')}
-                                </Text>
-                                <Text style={styles.completionPercent}>
-                                    {completionPercent}%
-                                </Text>
+                            <Text style={styles.userName}>
+                                {profile?.prenom} {profile?.nom}
+                            </Text>
+                            <Text style={styles.userEmail} numberOfLines={1}>
+                                {profile?.email}
+                            </Text>
+
+                            <View style={styles.badgesRow}>
+                                <View style={styles.roleBadge}>
+                                    <Ionicons name="shield-checkmark" size={13} color={C.primary} />
+                                    <Text style={styles.roleText}>{t('Client vérifié')}</Text>
+                                </View>
+                                {profile?.ville ? (
+                                    <View style={styles.villeBadge}>
+                                        <Ionicons name="location-outline" size={13} color={C.accentInk} />
+                                        <Text style={styles.villeText}>{profile.ville}</Text>
+                                    </View>
+                                ) : null}
                             </View>
-                            <View style={styles.completionBar}>
+
+                            <View style={styles.completionWrap}>
+                                <View style={styles.completionHeader}>
+                                    <Text style={styles.completionLabel}>
+                                        {t('Profil complété')}
+                                    </Text>
+                                    <Text style={styles.completionPercent}>
+                                        {completionPercent}%
+                                    </Text>
+                                </View>
                                 <View
-                                    style={[
-                                        styles.completionFill,
-                                        { width: `${completionPercent}%` },
-                                    ]}
-                                />
+                                    accessible
+                                    accessibilityRole="progressbar"
+                                    accessibilityLabel={`${t('Profil complété')} ${completionPercent}%`}
+                                    style={styles.completionBar}
+                                >
+                                    <View
+                                        style={[
+                                            styles.completionFill,
+                                            { width: `${completionPercent}%` },
+                                        ]}
+                                    />
+                                </View>
                             </View>
                         </View>
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ STATS ROW ═══ */}
+                {/* ═══ CHIFFRES CLÉS ═══ */}
                 <AnimatedSection delay={200}>
                     <View style={styles.statsRow}>
-                        <Pressable
-                            style={styles.statCard}
-                            onPress={() => navigation.navigate('MyServices' as never)}
-                        >
-                            <View style={[styles.statIconWrap, { backgroundColor: 'rgba(13, 43, 78, 0.10)' }]}>
-                                <Ionicons name="folder-open" size={18} color={C.primary} />
-                            </View>
-                            <Text style={styles.statValue}>{stats.dossiers}</Text>
-                            <Text style={styles.statLabel}>{t('Dossiers')}</Text>
-                        </Pressable>
-
-                        <View style={styles.statDivider} />
-
-                        <Pressable
-                            style={styles.statCard}
-                            onPress={() => navigation.navigate('Appointments')}
-                        >
-                            <View style={[styles.statIconWrap, { backgroundColor: 'rgba(212, 160, 23, 0.10)' }]}>
-                                <Ionicons name="calendar" size={18} color={C.accent} />
-                            </View>
-                            <Text style={styles.statValue}>{stats.appointments}</Text>
-                            <Text style={styles.statLabel}>RDV</Text>
-                        </Pressable>
-
-                        <View style={styles.statDivider} />
-
-                        <Pressable
-                            style={styles.statCard}
-                            onPress={() => navigation.navigate('Payments')}
-                        >
-                            <View style={[styles.statIconWrap, { backgroundColor: 'rgba(10, 107, 59, 0.10)' }]}>
-                                <Ionicons name="card" size={18} color={C.success} />
-                            </View>
-                            <Text style={styles.statValue}>{stats.payments}</Text>
-                            <Text style={styles.statLabel}>{t('Paiements')}</Text>
-                        </Pressable>
+                        {[
+                            /* 'Dossier' est l'onglet réel ; 'MyServices' n'existe
+                               dans aucun navigateur — l'ancien lien était mort. */
+                            { icon: 'folder-open' as const, value: stats.dossiers, label: t('Dossiers'), dest: 'Dossier' },
+                            { icon: 'calendar' as const, value: stats.appointments, label: t('Rendez-vous'), dest: 'Appointments' },
+                            { icon: 'card' as const, value: stats.payments, label: t('Paiements'), dest: 'Payments' },
+                        ].map((s) => (
+                            <Pressable
+                                key={s.dest}
+                                style={styles.statCard}
+                                onPress={() => navigation.navigate(s.dest as never)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${s.value} ${s.label}`}
+                                hitSlop={6}
+                            >
+                                <View style={styles.statIconWrap}>
+                                    <Ionicons name={s.icon} size={20} color={C.primary} />
+                                </View>
+                                <Text style={styles.statValue}>{s.value}</Text>
+                                <Text style={styles.statLabel} numberOfLines={1}>{s.label}</Text>
+                            </Pressable>
+                        ))}
                     </View>
                 </AnimatedSection>
 
@@ -762,6 +708,8 @@ export default function ProfilScreen() {
                         style={styles.logoutBtn}
                         onPress={handleLogout}
                         activeOpacity={0.85}
+                        accessibilityRole="button"
+                        hitSlop={6}
                     >
                         <View style={styles.logoutIconWrap}>
                             <Ionicons name="log-out-outline" size={18} color={C.error} />
@@ -804,6 +752,8 @@ export default function ProfilScreen() {
                             <Pressable
                                 style={StyleSheet.absoluteFillObject}
                                 onPress={() => setShowAvatarGallery(false)}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             />
                         </Animated.View>
 
@@ -818,6 +768,9 @@ export default function ProfilScreen() {
                                 <Pressable
                                     onPress={() => setShowAvatarGallery(false)}
                                     style={galStyles.closeBtn}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
+                                    accessibilityLabel={t('Fermer')}
                                 >
                                     <Ionicons name="close" size={20} color={C.primary} />
                                 </Pressable>
@@ -846,6 +799,8 @@ export default function ProfilScreen() {
                                                     key={av.key}
                                                     style={galStyles.avatarCard}
                                                     onPress={() => handleSelectPresetAvatar(av)}
+                                                    accessibilityRole="button"
+                                                    hitSlop={6}
                                                 >
                                                     <View style={[galStyles.avatarCircle, { backgroundColor: av.bg }]}>
                                                         <Text style={galStyles.avatarEmojiBig}>{av.emoji}</Text>
@@ -864,6 +819,8 @@ export default function ProfilScreen() {
                                 style={galStyles.cancelBtn}
                                 onPress={() => setShowAvatarGallery(false)}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={galStyles.cancelText}>{t('Annuler')}</Text>
                             </TouchableOpacity>
@@ -885,138 +842,25 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: -50,
-        left: -150,
-        backgroundColor: C.auraGreen,
-    },
-
     scroll: {
         paddingBottom: 20,
     },
 
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-    },
-    navTitle: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: 0.2,
-    },
-    navEditBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
-        borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.3)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
+    navTitle: { ...typography.h1, color: C.text, flex: 1 },
+    navEditBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
 
     /* ── Header ── */
-    headerContainer: {
-        marginTop: 8,
-        marginBottom: 20,
-        paddingHorizontal: 28,
-    },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
 
     /* ── Profile Card (Hero bleu massif) ── */
-    profileCard: {
-        marginHorizontal: 20,
-        backgroundColor: C.primary,
-        borderRadius: 24,
-        padding: 24,
-        alignItems: 'center',
-        marginBottom: 20,
-        overflow: 'hidden',
-        borderWidth: 1.5,
-        borderColor: 'rgba(212, 160, 23, 0.35)',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
-        position: 'relative',
-    },
-    profileGlow: {
-        position: 'absolute',
-        top: -80,
-        width: 260,
-        height: 260,
-        borderRadius: 130,
-        backgroundColor: C.accent,
-    },
-    patternDot1: {
-        position: 'absolute',
-        top: 60,
-        right: 30,
-        width: 5,
-        height: 5,
-        borderRadius: 2.5,
-        backgroundColor: C.accent,
-        opacity: 0.4,
-    },
-    patternDot2: {
-        position: 'absolute',
-        bottom: 80,
-        left: 25,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: C.accent,
-        opacity: 0.4,
-    },
+    profileBody: { padding: spacing.lg },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    profileCard: { backgroundColor: C.surface, borderRadius: radius.xl, marginHorizontal: 20, marginBottom: spacing.md, overflow: 'hidden', ...shadows.cardRaised },
 
     /* ── Avatar ── */
-    avatarOuter: {
-        position: 'relative',
-        marginBottom: 14,
-    },
-    avatarBorder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        padding: 3,
-        backgroundColor: C.accent,
-        shadowColor: C.accent,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 8,
-    },
+    avatarOuter: { width: 96, height: 96, alignSelf: 'center', marginBottom: spacing.md },
+    avatarBorder: { width: 96, height: 96, borderRadius: 48, overflow: 'hidden', backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
     avatarLoading: {
         width: 94,
         height: 94,
@@ -1051,169 +895,32 @@ const styles = StyleSheet.create({
         color: C.accent,
         letterSpacing: 1,
     },
-    cameraBadge: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: C.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2.5,
-        borderColor: C.primary,
-        shadowColor: C.accent,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-    },
+    cameraBadge: { position: 'absolute', right: -2, bottom: -2, width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.surface },
 
-    userName: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: C.primaryText,
-        letterSpacing: -0.4,
-    },
-    userEmail: {
-        fontSize: 12.5,
-        color: 'rgba(255, 255, 255, 0.7)',
-        marginTop: 4,
-        fontWeight: '500',
-        maxWidth: width - 80,
-    },
+    userName: { ...typography.h2, color: C.text, textAlign: 'center' },
+    userEmail: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: spacing.xs },
 
     /* ── Badges ── */
-    badgesRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginTop: 16,
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-    },
-    roleBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
-        borderRadius: 999,
-        paddingHorizontal: 11,
-        paddingVertical: 5,
-        borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
-    },
-    roleText: {
-        fontSize: 9.5,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: 1,
-    },
-    villeBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: 'rgba(255, 255, 255, 0.10)',
-        borderRadius: 999,
-        paddingHorizontal: 11,
-        paddingVertical: 5,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
-    },
-    villeText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: 'rgba(255, 255, 255, 0.9)',
-    },
+    badgesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.md },
+    roleBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.primarySoft, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radius.pill },
+    roleText: { ...typography.label, fontSize: 12, color: C.primary },
+    villeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.accentSoft, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radius.pill },
+    villeText: { ...typography.label, fontSize: 12, color: C.accentInk },
 
     /* ── Completion ── */
-    completionWrap: {
-        width: '100%',
-        marginTop: 18,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    completionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    completionLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: 'rgba(255, 255, 255, 0.7)',
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-    },
-    completionPercent: {
-        fontSize: 14,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.2,
-    },
-    completionBar: {
-        height: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 3,
-        overflow: 'hidden',
-    },
-    completionFill: {
-        height: '100%',
-        backgroundColor: C.accent,
-        borderRadius: 3,
-    },
+    completionWrap: { marginTop: spacing.lg },
+    completionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+    completionLabel: { ...typography.label, color: C.textMuted },
+    completionPercent: { ...typography.label, color: C.primary },
+    completionBar: { height: 8, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, overflow: 'hidden' },
+    completionFill: { height: '100%', borderRadius: radius.pill, backgroundColor: C.primary },
 
     /* ── Stats Row ── */
-    statsRow: {
-        flexDirection: 'row',
-        marginHorizontal: 20,
-        marginBottom: 24,
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-    },
-    statCard: {
-        flex: 1,
-        alignItems: 'center',
-        gap: 6,
-    },
-    statIconWrap: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 4,
-    },
-    statValue: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: C.primary,
-        letterSpacing: -0.3,
-    },
-    statLabel: {
-        fontSize: 10.5,
-        fontWeight: '600',
-        color: C.textSec,
-        letterSpacing: 0.3,
-    },
-    statDivider: {
-        width: 1,
-        height: 50,
-        backgroundColor: C.border,
-        alignSelf: 'center',
-    },
+    statsRow: { flexDirection: 'row', gap: spacing.md, marginHorizontal: 20, marginBottom: spacing.lg },
+    statCard: { flex: 1, alignItems: 'center', backgroundColor: C.surface, borderRadius: radius.xl, paddingVertical: spacing.md, gap: spacing.xs, ...shadows.card },
+    statIconWrap: { width: 44, height: 44, borderRadius: radius.lg, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
+    statValue: { ...typography.h2, color: C.text },
+    statLabel: { ...typography.caption, color: C.textMuted },
 
     /* ── Section Titles ── */
     sectionTitleWrap: {
@@ -1225,7 +932,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     sectionLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -1312,7 +1019,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     versionSub: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         textAlign: 'center',
         marginTop: 4,
@@ -1364,7 +1071,7 @@ const galStyles = StyleSheet.create({
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.2,
@@ -1447,7 +1154,7 @@ const galStyles = StyleSheet.create({
         fontSize: 30,
     },
     avatarName: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         textAlign: 'center',
         color: C.primary,

@@ -1,8 +1,9 @@
 'use strict'
 import React, { useState, useEffect } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
-    Platform, Alert, ActivityIndicator, Modal,
+    Platform, ActivityIndicator, Modal,
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -25,6 +26,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
 import { ttcFromHt } from '../../lib/tax'
 import type { AppEvent } from './EventsScreen'
+import { screenColors } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    EventDetailScreen — THEME "CORPORATE PREMIUM 2026"
@@ -34,27 +36,9 @@ import type { AppEvent } from './EventsScreen'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -147,7 +131,9 @@ function TicketCard({
     }))
 
     return (
-        <Pressable onPress={onSelect}>
+        <Pressable onPress={onSelect}
+            accessibilityRole="button"
+            hitSlop={6}>
             <Animated.View style={[ticketStyles.card, wrapStyle]}>
                 {/* Bandeau VIP doré */}
                 {isVip && (
@@ -228,7 +214,7 @@ const ticketStyles = StyleSheet.create({
     },
     vipBannerText: {
         color: C.primary,
-        fontSize: 8,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 0.6,
     },
@@ -280,12 +266,12 @@ const ticketStyles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.3)',
     },
     vipMiniText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
     },
     desc: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '400',
         lineHeight: 16,
@@ -300,7 +286,7 @@ const ticketStyles = StyleSheet.create({
         gap: 5,
     },
     perkText: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
     },
@@ -334,33 +320,14 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const datePulse = useSharedValue(0)
     const sheetAnim = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
-        datePulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
+        datePulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     useEffect(() => {
@@ -371,8 +338,6 @@ export default function EventDetailScreen({ route, navigation }: any) {
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const dateGlowStyle = useAnimatedStyle(() => ({
         opacity: interpolate(datePulse.value, [0, 1], [0.15, 0.45]),
@@ -399,7 +364,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
     const handleRegister = async () => {
         if (!profile) {
-            Alert.alert(t('Non connecté'), t('Veuillez vous connecter pour vous inscrire.'))
+            toast(t('Non connecté'), t('Veuillez vous connecter pour vous inscrire.'))
             return
         }
         setLoading(true)
@@ -430,15 +395,15 @@ export default function EventDetailScreen({ route, navigation }: any) {
             setShowModal(false)
 
             if (json.exists) {
-                Alert.alert(t('Déjà inscrit'), t('Vous êtes déjà inscrit à cet événement.'), [{ text: 'OK' }])
+                toast(t('Déjà inscrit'), t('Vous êtes déjà inscrit à cet événement.'), 'warning')
                 return
             }
 
             if (isFreeTicket) {
-                Alert.alert(
-                    t('✅ Inscription confirmée !'),
+                toast(
+                    t('Inscription confirmée'),
                     t('Votre place est réservée pour "{eventTitle}".\n\nUn email de confirmation vous sera envoyé.').replace('{eventTitle}', event.title),
-                    [{ text: t('Parfait !') }]
+                    'success',
                 )
                 return
             }
@@ -448,7 +413,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 setShowKkiapay(true)
             }
         } catch (e: unknown) {
-            Alert.alert(t('Erreur'), e instanceof Error ? e.message : t('Impossible de s\'inscrire'))
+            toast(t('Erreur'), e instanceof Error ? e.message : t('Impossible de s\'inscrire'))
         } finally {
             setLoading(false)
         }
@@ -471,26 +436,20 @@ export default function EventDetailScreen({ route, navigation }: any) {
             const data = await res.json().catch(() => ({}))
 
             if (!res.ok || !data.ok) {
-                Alert.alert(
-                    t('Paiement reçu — confirmation manuelle requise'),
-                    t('Votre paiement a été reçu (réf : {tx}) mais la confirmation automatique a échoué. Notre équipe vérifiera votre billet sous 24h.').replace('{tx}', txId),
-                )
+                toast(t('Paiement reçu — confirmation manuelle requise'), t('Votre paiement a été reçu (réf : {tx}) mais la confirmation automatique a échoué. Notre équipe vérifiera votre billet sous 24h.').replace('{tx}', txId))
                 return
             }
 
             setRegistration({ id: pendingRegistration.id, status: 'confirmed', ticket_type: selectedTicket })
             setPendingRegistration(null)
 
-            Alert.alert(
-                t('✅ Paiement confirmé !'),
+            toast(
+                t('Paiement confirmé'),
                 t('Votre place pour "{eventTitle}" est réservée. Un email de confirmation vous sera envoyé.').replace('{eventTitle}', event.title),
-                [{ text: t('Parfait !') }]
+                'success',
             )
         } catch (e: unknown) {
-            Alert.alert(
-                t('Erreur'),
-                t('Paiement reçu (réf : {tx}) mais confirmation impossible. Contactez le support.').replace('{tx}', txId),
-            )
+            toast(t('Erreur'), t('Paiement reçu (réf : {tx}) mais confirmation impossible. Contactez le support.').replace('{tx}', txId))
         } finally {
             setLoading(false)
         }
@@ -521,13 +480,13 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
             <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -718,6 +677,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             activeOpacity={0.85}
                             onPress={() => setShowModal(true)}
                             disabled={loading}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             {loading ? (
                                 <ActivityIndicator color={C.primaryText} size="small" />
@@ -746,6 +707,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             <Pressable
                                 style={StyleSheet.absoluteFillObject}
                                 onPress={() => setShowModal(false)}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             />
                         </Animated.View>
 
@@ -760,6 +723,9 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 <Pressable
                                     onPress={() => setShowModal(false)}
                                     style={styles.sheetCloseBtn}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
+                                    accessibilityLabel={t('Fermer')}
                                 >
                                     <Ionicons name="close" size={20} color={C.primary} />
                                 </Pressable>
@@ -825,6 +791,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 onPress={handleRegister}
                                 disabled={loading}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 {loading ? (
                                     <ActivityIndicator color={C.primaryText} size="small" />
@@ -847,6 +815,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             <Pressable
                                 style={styles.cancelBtn}
                                 onPress={() => setShowModal(false)}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={styles.cancelText}>{t('Annuler')}</Text>
                             </Pressable>
@@ -875,25 +845,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: C.bg,
-    },
-
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
     },
 
     /* ── Nav Bar ── */
@@ -931,7 +882,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.3)',
     },
     featuredNavText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -993,7 +944,7 @@ const styles = StyleSheet.create({
         letterSpacing: 3,
     },
     dateYear: {
-        fontSize: 11,
+        fontSize: 12,
         color: 'rgba(255,255,255,0.6)',
         fontWeight: '600',
         marginTop: 2,
@@ -1024,7 +975,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     catText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
         letterSpacing: 1,
@@ -1041,7 +992,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.3)',
     },
     registeredText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
         letterSpacing: 0.5,
@@ -1098,7 +1049,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.2)',
     },
     metaLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textMuted,
         letterSpacing: 0.5,
@@ -1157,7 +1108,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.3)',
     },
     freeBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
         letterSpacing: 0.5,
@@ -1196,7 +1147,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     infoText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 16,
@@ -1227,7 +1178,7 @@ const styles = StyleSheet.create({
         flex: 0.85,
     },
     bottomBarLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '600',
         letterSpacing: 0.3,
@@ -1294,7 +1245,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     registeredBtnSub: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         marginTop: 2,
@@ -1339,7 +1290,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     sheetSubtitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.2,
@@ -1414,7 +1365,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     recapBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1,
@@ -1445,7 +1396,7 @@ const styles = StyleSheet.create({
     },
     payNoticeText: {
         flex: 1,
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.info,
         fontWeight: '500',
         lineHeight: 16,

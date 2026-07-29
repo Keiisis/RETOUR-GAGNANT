@@ -1,5 +1,6 @@
 'use strict';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { confirm, toast } from '../../lib/feedback'
 import {
     View,
     Text,
@@ -9,7 +10,6 @@ import {
     Image,
     Dimensions,
     Platform,
-    Alert,
     Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,6 +45,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { useLang } from '../../contexts/LangContext';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { screenColors } from '../../config/theme'
 
 const { width } = Dimensions.get('window');
 const HERO_HEIGHT = width * 1.05;
@@ -53,29 +54,9 @@ const HERO_HEIGHT = width * 1.05;
    Corporate Premium 2026 — Palette locale
    (aligné avec PaymentsScreen / RegisterScreen)
    ───────────────────────────────────────── */
-const C = {
-    bg: '#FFFFFF',          // crème ivoire
-    bgDeep: '#EDE6DA',      // crème profond
-    surface: '#FFFFFF',
-    surfaceSoft: '#F0FDF4',
-    primary: '#047857',     // bleu nuit corporate
-    primarySoft: '#1A3D66',
-    primaryDeep: '#022C22',
-    gold: '#C9A84C',        // or signature
-    goldSoft: '#E8C45C',
-    goldDeep: '#A87D08',
-    green: '#10B981',       // vert aura
-    greenSoft: '#1A8A52',
-    danger: '#B83227',
-    dangerSoft: '#F4DAD6',
-    successBg: '#E1F0E6',
-    text: '#0E1B2C',
-    textSoft: '#3C4A5E',
-    textMuted: '#7A8696',
-    border: 'rgba(13,43,78,0.10)',
-    borderStrong: 'rgba(13,43,78,0.18)',
-    overlay: 'rgba(8,27,51,0.55)',
-};
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const AnimatedScroll = Animated.createAnimatedComponent(ScrollView);
 
@@ -85,62 +66,6 @@ type Route = RouteProp<RootStackParamList, 'ProductDetail'>;
 interface Props {
     navigation: Nav;
     route: Route;
-}
-
-/* ─────────────────────────────────────────
-   Aura flottante (orbe d'ambiance)
-   ───────────────────────────────────────── */
-function FloatingAura({
-    size,
-    color,
-    top,
-    left,
-    right,
-    delay = 0,
-    opacity = 0.18,
-}: {
-    size: number;
-    color: string;
-    top?: number;
-    left?: number;
-    right?: number;
-    delay?: number;
-    opacity?: number;
-}) {
-    const t = useSharedValue(0);
-    useEffect(() => {
-        t.value = withDelay(
-            delay,
-            withRepeat(withTiming(1, { duration: 6500, easing: Easing.inOut(Easing.quad) }), -1, true),
-        );
-    }, [delay, t]);
-
-    const style = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: interpolate(t.value, [0, 1], [-14, 14]) },
-            { scale: interpolate(t.value, [0, 1], [0.95, 1.08]) },
-        ],
-        opacity: interpolate(t.value, [0, 1], [opacity * 0.7, opacity]),
-    }));
-
-    return (
-        <Animated.View
-            pointerEvents="none"
-            style={[
-                {
-                    position: 'absolute',
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: color,
-                    top,
-                    left,
-                    right,
-                },
-                style,
-            ]}
-        />
-    );
 }
 
 /* ─────────────────────────────────────────
@@ -166,6 +91,8 @@ function InteractiveButton({
             disabled={disabled}
             onPressIn={() => (s.value = withTiming(0.96, { duration: 120 }))}
             onPressOut={() => (s.value = withTiming(1, { duration: 160 }))}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             <Animated.View style={[aStyle, style]}>{children}</Animated.View>
         </Pressable>
@@ -237,13 +164,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     /* Shine animé sur le prix */
     const shine = useSharedValue(0);
     useEffect(() => {
-        shine.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.cubic) }),
-                withTiming(0, { duration: 0 }),
-            ),
-            -1,
-        );
+        shine.value = withTiming(1, { duration: 600 });
     }, [shine]);
     const shineStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: interpolate(shine.value, [0, 1], [-160, 220]) }],
@@ -264,18 +185,18 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     const handleAddToCart = () => {
         if (outOfStock) return;
         if (quantity > product.stock) {
-            Alert.alert(t('Stock insuffisant'), t('Quantité demandée supérieure au stock disponible.'));
+            toast(t('Stock insuffisant'), t('Quantité demandée supérieure au stock disponible.'));
             return;
         }
         onAddToCart(quantity);
-        Alert.alert(
-            t('Ajouté au panier'),
-            t('{qty} × {title} ajouté à votre panier.', { qty: quantity, title: product.title }),
-            [
-                { text: t('Continuer mes achats'), style: 'cancel', onPress: () => navigation.goBack() },
-                { text: t('Voir le panier'), onPress: () => navigation.goBack() },
-            ],
-        );
+        confirm({
+            title: t('Ajouté au panier'),
+            message: t('{qty} × {title} ajouté à votre panier.', { qty: quantity, title: product.title }),
+            confirmLabel: t('Voir le panier'),
+            cancelLabel: t('Continuer mes achats'),
+            onConfirm: () => navigation.goBack(),
+            onCancel: () => navigation.goBack(),
+        });
     };
 
     const onImageScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -290,10 +211,6 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
 
     return (
         <View style={styles.container}>
-            {/* Auras flottantes globales */}
-            <FloatingAura size={320} color={C.gold} top={-80} right={-100} opacity={0.10} />
-            <FloatingAura size={260} color={C.green} top={HERO_HEIGHT - 40} left={-90} delay={1200} opacity={0.09} />
-            <FloatingAura size={200} color={C.primary} top={HERO_HEIGHT + 240} right={-70} delay={2400} opacity={0.07} />
 
             {/* Header flottant (apparait au scroll) */}
             <Animated.View style={[styles.floatingHeader, headerStyle]} pointerEvents="box-none">
@@ -673,7 +590,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     featuredText: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.primaryDeep,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 0.6,
@@ -692,7 +609,7 @@ const styles = StyleSheet.create({
     },
     discountText: {
         color: C.surface,
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 0.4,
     },
@@ -750,7 +667,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.gold,
     },
     category: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.goldDeep,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 1.4,
@@ -829,7 +746,7 @@ const styles = StyleSheet.create({
     stockDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.green },
     stockDotOut: { backgroundColor: C.danger },
     stockText: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.green,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 0.4,
@@ -862,7 +779,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     trustLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.textMuted,
         fontFamily: 'Outfit_500Medium',
         letterSpacing: 0.4,
@@ -938,14 +855,14 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     qtyLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.primary,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 1.2,
         textTransform: 'uppercase',
     },
     qtyHint: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontFamily: 'Outfit_500Medium',
     },
@@ -991,7 +908,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     totalLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.textMuted,
         fontFamily: 'Outfit_500Medium',
         letterSpacing: 0.8,

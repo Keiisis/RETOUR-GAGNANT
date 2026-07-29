@@ -1,8 +1,9 @@
 'use strict'
 import React, { useEffect, useRef, useState } from 'react'
+import { confirm, toast } from '../../lib/feedback'
 import {
     View, Text, StyleSheet, TouchableOpacity, Platform,
-    ActivityIndicator, Alert, ScrollView, Image, Pressable,
+    ActivityIndicator, ScrollView, Image, Pressable,
     Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,10 +22,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    SignatureScreen — THEME "CORPORATE PREMIUM 2026"
@@ -34,24 +37,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',      // Bleu Profond (Agence)
-    accent: '#C9A84C',       // Or (Agence)
-    accentDark: '#A68B3C',
-    auraGreen: '#10B981',    // Vert (Agence)
-    error: '#EF4444',        // Rouge (Agence)
-    success: '#10B981',      // Vert succès = vert agence
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -95,10 +83,6 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
     const card2Anim = useSharedValue(0)
     const btnAnim = useSharedValue(0)
 
-    /* ── Animation Corporate : Auras très subtiles et lentes ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-
     useEffect(() => {
         // Apparition élégante (stagger identique à RegisterScreen)
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
@@ -107,18 +91,6 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
         btnAnim.value = withDelay(450, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
 
         // Mouvement très lent en fond (effet papier glacé)
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
@@ -138,8 +110,6 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
         transform: [{ translateY: 50 * (1 - btnAnim.value) }],
     }))
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     /* ── Charger la signature existante ── */
     useEffect(() => {
@@ -166,7 +136,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
     const handleOK = async (signature: string) => {
         if (!profile) return
         if (!signature || signature.length < 200) {
-            Alert.alert(t('Signature trop courte'), t('Dessinez une signature plus complète.'))
+            toast(t('Signature trop courte'), t('Dessinez une signature plus complète.'))
             return
         }
         setSaving(true)
@@ -182,14 +152,14 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.signature) {
-                Alert.alert(t('Erreur'), data.error || t('Impossible d\'enregistrer la signature.'))
+                toast(t('Erreur'), data.error || t('Impossible d\'enregistrer la signature.'))
                 return
             }
             setSavedSig(data.signature)
             setEditing(false)
-            Alert.alert(t('Signature enregistrée'), t('Votre signature est désormais associée à votre compte.'))
+            toast(t('Signature enregistrée'), t('Votre signature est désormais associée à votre compte.'))
         } catch {
-            Alert.alert(t('Erreur'), t('Impossible d\'enregistrer la signature.'))
+            toast(t('Erreur'), t('Impossible d\'enregistrer la signature.'))
         } finally {
             setSaving(false)
         }
@@ -220,28 +190,27 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
 
     /* ── Supprimer ── */
     const handleDelete = () => {
-        Alert.alert(
-            t('Supprimer la signature'),
-            t('Voulez-vous vraiment supprimer votre signature enregistrée ?'),
-            [
-                { text: t('Annuler'), style: 'cancel' },
-                {
-                    text: t('Supprimer'), style: 'destructive', onPress: async () => {
-                        if (!profile) return
-                        try {
-                            const res = await fetchWithTimeout(
-                                `${API_BASE}/api/mobile/signature`,
-                                { method: 'DELETE', timeoutMs: 8000, headers: { ...(await authHeaders()) } }
-                            )
-                            if (res.ok) {
-                                setSavedSig(null)
-                                setEditing(true)
-                            }
-                        } catch { /* ignore */ }
-                    },
-                },
-            ]
-        )
+        confirm({
+            title: t('Supprimer la signature'),
+            message: t('Voulez-vous vraiment supprimer votre signature enregistrée ?'),
+            confirmLabel: t('Supprimer'),
+            cancelLabel: t('Annuler'),
+            destructive: true,
+            onConfirm: async () => {
+                if (!profile) return
+                try {
+                    const res = await fetchWithTimeout(
+                        `${API_BASE}/api/mobile/signature`,
+                        { method: 'DELETE', timeoutMs: 8000, headers: { ...(await authHeaders()) } }
+                    )
+                    if (res.ok) {
+                        setSavedSig(null)
+                        setEditing(true)
+                        toast(t('Signature supprimée'), undefined, 'success')
+                    }
+                } catch { /* ignore */ }
+            },
+        })
     }
 
     /* ── Webview style (canvas signature) ── */
@@ -254,13 +223,17 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras diffuses aux couleurs de l'agence */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -281,8 +254,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                 >
                     {/* HEADER TITRE */}
                     <Animated.View style={[styles.headerContainer, styleHeader]}>
-                        <Text style={styles.title}>{t('Votre')}</Text>
-                        <Text style={styles.titleHighlight}>{t('signature.')}</Text>
+                        <Text style={styles.title}>{t('Mes documents')}</Text>
                         <Text style={styles.subtitle}>
                             {t('Utilisée pour signer factures, devis et documents officiels.')}
                         </Text>
@@ -346,7 +318,9 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             icon="create-outline"
                         />
 
-                        <Pressable onPress={handleDelete} style={styles.deleteLink}>
+                        <Pressable onPress={handleDelete} style={styles.deleteLink}
+                            accessibilityRole="button"
+                            hitSlop={6}>
                             <Ionicons name="trash-outline" size={15} color={C.error} />
                             <Text style={styles.deleteText}>{t('Supprimer la signature')}</Text>
                         </Pressable>
@@ -357,8 +331,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                 <View style={styles.editorContainer}>
                     {/* HEADER TITRE */}
                     <Animated.View style={[styles.headerContainer, styleHeader, { marginBottom: 24 }]}>
-                        <Text style={styles.title}>{t('Dessinez')}</Text>
-                        <Text style={styles.titleHighlight}>{t('votre signature.')}</Text>
+                        <Text style={styles.title}>{t('Dessinez votre signature')}</Text>
                         <Text style={styles.subtitle}>
                             {t('Tracez votre paraphe dans le cadre ci-dessous, comme sur un document papier.')}
                         </Text>
@@ -375,7 +348,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             <SignatureScreenLib
                                 ref={sigRef}
                                 onOK={handleOK}
-                                onEmpty={() => Alert.alert(t('Vide'), t('Veuillez dessiner votre signature.'))}
+                                onEmpty={() => toast(t('Vide'), t('Veuillez dessiner votre signature.'))}
                                 descriptionText=""
                                 webStyle={webStyle}
                                 penColor={C.primary}
@@ -395,6 +368,8 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             style={styles.btnSecondary}
                             onPress={handleClear}
                             activeOpacity={0.8}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             <Ionicons name="refresh-outline" size={16} color={C.textSec} />
                             <Text style={styles.btnSecondaryText}>{t('Effacer')}</Text>
@@ -405,6 +380,8 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                                 style={styles.btnSecondary}
                                 onPress={() => setEditing(false)}
                                 activeOpacity={0.8}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={styles.btnSecondaryText}>{t('Annuler')}</Text>
                             </TouchableOpacity>
@@ -415,6 +392,8 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             disabled={saving}
                             activeOpacity={0.8}
                             style={[styles.btn, saving && styles.btnDisabled, { flex: 1 }]}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             {saving ? (
                                 <ActivityIndicator color={C.primaryText} size="small" />
@@ -466,7 +445,9 @@ function PrefOption({
     }))
 
     return (
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress}
+            accessibilityRole="button"
+            hitSlop={6}>
             <Animated.View style={[styles.prefRow, rowStyle, !isLast && styles.prefRowBorder]}>
                 <Animated.View style={[styles.radio, radioStyle]}>
                     <Animated.View style={[styles.radioInner, innerStyle]} />
@@ -504,6 +485,8 @@ function InteractiveButton({
             disabled={disabled}
             activeOpacity={0.8}
             style={[styles.btn, disabled && styles.btnDisabled]}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             {loading ? (
                 <ActivityIndicator color={C.primaryText} size="small" />
@@ -533,46 +516,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    /* ── Auras extrêmement discrètes (Corporate) ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
     /* ── Scroll ── */
     scroll: {
@@ -585,19 +537,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
         marginBottom: 32,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -670,7 +610,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sigWatermarkText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
     },
@@ -682,7 +622,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     savedDate: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
     },
@@ -735,7 +675,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     prefDescription: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '400',
         lineHeight: 15,
@@ -772,7 +712,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F1F5F9',
+        color: '#F5F5F5',
     },
     btnSecondary: {
         flexDirection: 'row',
@@ -838,7 +778,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(212, 160, 23, 0.04)',
     },
     canvasGuideText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.5,

@@ -7,9 +7,10 @@
 ═══════════════════════════════════════════════════════════ */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image, FlatList,
-    ActivityIndicator, TextInput, Alert, Platform, Modal,
+    ActivityIndicator, TextInput, Platform, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -17,8 +18,9 @@ import {
     ArrowLeft, Star, MapPin, Video, Users, Check, X, Award,
     Languages, ShieldCheck, Sparkles, ChevronRight, Quote,
 } from 'lucide-react-native'
-import { colors as C, spacing, radius, shadows, fonts } from '../../config/theme'
+import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
@@ -106,15 +108,15 @@ export default function FaScreen({ navigation }: { navigation: any }) {
 
     const submitBooking = useCallback(async () => {
         if (!form.name.trim() || !form.phone.trim()) {
-            Alert.alert(t('Champs requis'), t('Votre nom et votre téléphone sont nécessaires.'))
+            toast(t('Champs requis'), t('Votre nom et votre téléphone sont nécessaires.'))
             return
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-            Alert.alert(t('Email invalide'), t('Veuillez saisir un email valide.'))
+            toast(t('Email invalide'), t('Veuillez saisir un email valide.'))
             return
         }
         if (!clause) {
-            Alert.alert(t('Clause requise'), t('Vous devez accepter la clause de mise en relation.'))
+            toast(t('Clause requise'), t('Vous devez accepter la clause de mise en relation.'))
             return
         }
         setSubmitting(true)
@@ -135,7 +137,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.success) {
-                Alert.alert(t('Réservation impossible'), data.error || t('Réessayez dans un instant.'))
+                toast(t('Réservation impossible'), data.error || t('Réessayez dans un instant.'))
                 return
             }
             setPendingOrder(String(data.order_id))
@@ -143,7 +145,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             setBooking(null)
             setShowPay(true)
         } catch {
-            Alert.alert(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
+            toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
         } finally {
             setSubmitting(false)
         }
@@ -161,18 +163,12 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             })
             const data = await res.json().catch(() => ({}))
             if (res.ok && data.success) {
-                Alert.alert(
-                    t('Consultation réservée'),
-                    t('Votre paiement est confirmé. Notre équipe vous contactera pour fixer le rendez-vous. Une facture vous a été envoyée par email.'),
-                )
+                toast(t('Consultation réservée'), t('Votre paiement est confirmé. Notre équipe vous contactera pour fixer le rendez-vous. Une facture vous a été envoyée par email.'))
             } else {
-                Alert.alert(
-                    t('Paiement reçu'),
-                    t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId,
-                )
+                toast(t('Paiement reçu'), t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId)
             }
         } catch {
-            Alert.alert(t('Paiement reçu'), t('Confirmation réseau échouée. Référence : ') + txId)
+            toast(t('Paiement reçu'), t('Confirmation réseau échouée. Référence : ') + txId)
         } finally {
             setPendingOrder(null)
         }
@@ -181,19 +177,25 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     return (
         <View style={styles.container}>
             {/* HEADER */}
-            <LinearGradient colors={[C.primaryDark, C.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.back}>
-                    <ArrowLeft size={22} color="#fff" />
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.header}>
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Retour')}
+                    hitSlop={12}
+                    style={styles.back}
+                >
+                    <ArrowLeft size={20} color={C.textPrimary} />
                 </Pressable>
-                <View style={styles.flagRow}>
-                    <View style={[styles.flagDot, { backgroundColor: C.flagGreen }]} />
-                    <View style={[styles.flagDot, { backgroundColor: C.flagYellow }]} />
-                    <View style={[styles.flagDot, { backgroundColor: C.flagRed }]} />
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.hTitle}>{t('Prêtres Fa & Racines')}</Text>
+                    <Text style={styles.hSub}>{t('Consultez un maître du Fa pour renouer avec vos ancêtres')}</Text>
                 </View>
-                <Text style={styles.hTitle}>{t('Prêtres Fa & Racines')}</Text>
-                <Text style={styles.hSub}>{t('Consultez un maître du Fa pour renouer avec vos ancêtres')}</Text>
-            </LinearGradient>
+            </View>
 
             {loading ? (
                 <View style={styles.center}><ActivityIndicator size="large" color={C.primary} /></View>
@@ -221,7 +223,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     )}
                     ListFooterComponent={
                         priests.length > 0 ? (
-                            <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}>
+                            <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 <Text style={styles.anyBtnText}>{t('Réserver sans choisir de prêtre')}</Text>
                                 <ChevronRight size={16} color={C.primary} />
                             </Pressable>
@@ -233,7 +237,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             {/* DÉTAIL PRÊTRE */}
             <Modal visible={!!detail} animationType="slide" transparent onRequestClose={() => setDetail(null)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setDetail(null)} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setDetail(null)}
+                        accessibilityRole="button"
+                        hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         {detail && (
                             <ScrollView showsVerticalScrollIndicator={false}>
@@ -291,7 +297,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                     </Section>
                                 )}
 
-                                <Pressable style={styles.cta} onPress={() => { const p = detail; setDetail(null); openBooking(p) }}>
+                                <Pressable style={styles.cta} onPress={() => { const p = detail; setDetail(null); openBooking(p) }}
+                                    accessibilityRole="button"
+                                    hitSlop={6}>
                                     <Text style={styles.ctaText}>{t('Réserver une consultation')}</Text>
                                 </Pressable>
                             </ScrollView>
@@ -303,7 +311,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             {/* RÉSERVATION */}
             <Modal visible={booking !== null} animationType="slide" transparent onRequestClose={() => setBooking(null)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setBooking(null)} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setBooking(null)}
+                        accessibilityRole="button"
+                        hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <View style={styles.sheetHandle} />
@@ -330,7 +340,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                 keyboardType="phone-pad"
                                 value={form.phone} onChangeText={v => setForm(f => ({ ...f, phone: v }))} />
 
-                            <Pressable style={styles.clauseRow} onPress={() => setClause(c => !c)}>
+                            <Pressable style={styles.clauseRow} onPress={() => setClause(c => !c)}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 <View style={[styles.checkbox, clause && styles.checkboxOn]}>
                                     {clause && <Check size={13} color="#fff" />}
                                 </View>
@@ -339,7 +351,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                 </Text>
                             </Pressable>
 
-                            <Pressable style={[styles.cta, submitting && { opacity: 0.6 }]} disabled={submitting} onPress={submitBooking}>
+                            <Pressable style={[styles.cta, submitting && { opacity: 0.6 }]} disabled={submitting} onPress={submitBooking}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 {submitting
                                     ? <ActivityIndicator color="#fff" />
                                     : <Text style={styles.ctaText}>{t('Réserver et payer')}</Text>}
@@ -409,7 +423,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ModeCard({ active, onPress, icon, label, price }: { active: boolean; onPress: () => void; icon: React.ReactNode; label: string; price?: string }) {
     return (
-        <Pressable style={[styles.modeCard, active && styles.modeCardActive]} onPress={onPress}>
+        <Pressable style={[styles.modeCard, active && styles.modeCardActive]} onPress={onPress}
+            accessibilityRole="button"
+            hitSlop={6}>
             <View style={[styles.modeIcon, active && { backgroundColor: 'rgba(255,255,255,0.2)' }]}>{icon}</View>
             <Text style={[styles.modeLabel, active && { color: '#fff' }]}>{label}</Text>
             {!!price && <Text style={[styles.modePrice, active && { color: 'rgba(255,255,255,0.9)' }]}>{price}</Text>}
@@ -422,7 +438,9 @@ const PriestCard = React.memo(function PriestCard(
 ) {
     const first = useMemo(() => (priest.prestations || []).slice(0, 3), [priest.prestations])
     return (
-        <Pressable style={styles.card} onPress={onOpen}>
+        <Pressable style={styles.card} onPress={onOpen}
+            accessibilityRole="button"
+            hitSlop={6}>
             <View style={styles.cardTop}>
                 <PriestAvatar uri={priest.photo_url} size={64} />
                 <View style={{ flex: 1 }}>
@@ -439,7 +457,9 @@ const PriestCard = React.memo(function PriestCard(
                     {first.map((p, i) => <View key={i} style={styles.chipSm}><Text style={styles.chipSmText}>{p}</Text></View>)}
                 </View>
             )}
-            <Pressable style={styles.cardBtn} onPress={onBook}>
+            <Pressable style={styles.cardBtn} onPress={onBook}
+                accessibilityRole="button"
+                hitSlop={6}>
                 <Text style={styles.cardBtnText}>{t('Réserver')}</Text>
                 <ChevronRight size={15} color="#fff" />
             </Pressable>
@@ -451,12 +471,11 @@ const PriestCard = React.memo(function PriestCard(
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-    back: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)' },
-    flagRow: { flexDirection: 'row', gap: 5, marginTop: spacing.md },
-    flagDot: { width: 22, height: 4, borderRadius: 2 },
-    hTitle: { fontFamily: fonts.heading, fontSize: 26, color: '#fff', marginTop: spacing.sm },
-    hSub: { fontFamily: fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 4, lineHeight: 19 },
+    topFlag: { marginHorizontal: spacing.lg, borderRadius: radius.pill, overflow: 'hidden' },
+    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
+    back: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+    hTitle: { ...typography.h2, color: C.textPrimary },
+    hSub: { ...typography.bodySmall, color: C.textMuted, marginTop: 2 },
 
     intro: { flexDirection: 'row', gap: 12, backgroundColor: C.surfaceWarm, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: C.borderGold },
     introIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.goldMuted, alignItems: 'center', justifyContent: 'center' },
@@ -481,10 +500,10 @@ const styles = StyleSheet.create({
     chip: { backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
     chipText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primaryDark },
     chipSm: { backgroundColor: C.surfaceWarm, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
-    chipSmText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: C.textSecondary },
+    chipSmText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
 
     ratingText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
-    noRating: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: C.gold, marginTop: 3 },
+    noRating: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.gold, marginTop: 3 },
 
     // Sheets
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },
@@ -526,5 +545,5 @@ const styles = StyleSheet.create({
     checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: C.borderPrimary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
     checkboxOn: { backgroundColor: C.primary, borderColor: C.primary },
     clauseText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: C.textMuted, lineHeight: 18 },
-    secure: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted, textAlign: 'center', marginTop: spacing.sm },
+    secure: { fontFamily: fonts.body, fontSize: 12, color: C.textMuted, textAlign: 'center', marginTop: spacing.sm },
 })

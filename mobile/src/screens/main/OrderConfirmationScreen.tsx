@@ -19,8 +19,10 @@ import Animated, {
 } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    OrderConfirmationScreen — THEME "CORPORATE PREMIUM 2026"
@@ -29,27 +31,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (cohérente avec tous les écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>
 type Route = RouteProp<RootStackParamList, 'OrderConfirmation'>
@@ -83,11 +67,9 @@ function ConfettiDot({ delay, x, y, color, size = 6 }: {
 
     useEffect(() => {
         anim.value = withDelay(delay,
-            withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad) }),
-                    withTiming(0, { duration: 1800, easing: Easing.in(Easing.quad) })
-                ), -1, false
+            withSequence(
+                withTiming(1, { duration: 1800, easing: Easing.out(Easing.quad) }),
+                withTiming(0, { duration: 1800, easing: Easing.in(Easing.quad) })
             )
         )
     }, [])
@@ -127,27 +109,12 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
     const { t } = useLang()
 
     /* ── Animations Corporate ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const sealAnim = useSharedValue(0)
     const sealPulse = useSharedValue(0)
     const checkAnim = useSharedValue(0)
     const ringAnim = useSharedValue(0)
 
     useEffect(() => {
-        // Auras
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
         // Seal entry (bounce premium)
         sealAnim.value = withDelay(100,
@@ -157,26 +124,19 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
         checkAnim.value = withDelay(500,
             withSpring(1, { damping: 12, stiffness: 120 })
         )
-        // Pulse continu après l'entrée
+        // Un seul battement a l'entree, puis repos.
         sealPulse.value = withDelay(1200,
-            withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-                    withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) })
-                ), -1, true
+            withSequence(
+                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+                withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) })
             )
         )
-        // Ring expansion
+        // Une seule expansion de l'anneau.
         ringAnim.value = withDelay(300,
-            withRepeat(
-                withTiming(1, { duration: 2200, easing: Easing.out(Easing.quad) }),
-                -1, false
-            )
+            withTiming(1, { duration: 2200, easing: Easing.out(Easing.quad) })
         )
     }, [])
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const sealStyle = useAnimatedStyle(() => ({
         opacity: sealAnim.value,
@@ -219,13 +179,17 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={backToBoutique} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={backToBoutique} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Fermer')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="close" size={22} color={C.primary} />
                     </View>
@@ -236,7 +200,10 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                     <Text style={styles.navCounterText}>{t('Confirmée')}</Text>
                 </View>
 
-                <Pressable onPress={handleShare} style={styles.navBack}>
+                <Pressable onPress={handleShare} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Partager')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="share-outline" size={20} color={C.primary} />
                     </View>
@@ -279,8 +246,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                 {/* ═══ TITRE & SOUS-TITRE ═══ */}
                 <AnimatedSection delay={400}>
                     <Text style={styles.successBadgeText}>{t('PAIEMENT RÉUSSI')}</Text>
-                    <Text style={styles.title}>{t('Commande')}</Text>
-                    <Text style={styles.titleHighlight}>{t('confirmée.')}</Text>
+                    <Text style={styles.title}>{t('Commande confirmée')}</Text>
                     <Text style={styles.subtitle}>
                         {t('Votre paiement a été reçu avec succès. Votre commande est désormais en préparation par notre équipe.')}
                     </Text>
@@ -425,6 +391,8 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             style={styles.primaryBtn}
                             onPress={goToOrder}
                             activeOpacity={0.85}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             <Ionicons name="cube" size={18} color={C.accent} style={{ marginRight: 10 }} />
                             <Text style={styles.primaryBtnText}>{t('Suivre ma commande')}</Text>
@@ -435,6 +403,8 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             style={styles.secondaryBtn}
                             onPress={backToBoutique}
                             activeOpacity={0.85}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             <Ionicons name="storefront-outline" size={18} color={C.primary} style={{ marginRight: 10 }} />
                             <Text style={styles.secondaryBtnText}>{t('Retour à la boutique')}</Text>
@@ -480,33 +450,11 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: { top: -100, right: -100, backgroundColor: C.success },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.accent },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-    iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: 'center', alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -519,7 +467,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.25)',
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.success,
         letterSpacing: 0.3,
@@ -597,28 +545,14 @@ const styles = StyleSheet.create({
 
     /* ── Titre ── */
     successBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
         letterSpacing: 1.8,
         textAlign: 'center',
         marginBottom: 8,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-        textAlign: 'center',
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-        textAlign: 'center',
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 14,
         color: C.textSec,
@@ -658,7 +592,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     ticketHeaderText: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.3,
@@ -681,7 +615,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     ticketStatusText: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
         letterSpacing: 1,
@@ -692,7 +626,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
     },
     ticketRefLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.textSec,
         letterSpacing: 1.5,
@@ -778,7 +712,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     ticketRowValueSmall: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.primary,
         fontWeight: '700',
         letterSpacing: 0.2,
@@ -798,7 +732,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     timelineTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -867,7 +801,7 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     timelineItemDesc: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textMuted,
         lineHeight: 16,
         fontWeight: '400',
@@ -973,7 +907,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     supportText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
     },

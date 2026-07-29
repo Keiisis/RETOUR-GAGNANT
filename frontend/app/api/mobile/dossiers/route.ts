@@ -46,7 +46,38 @@ export async function GET(req: NextRequest) {
             return { ...d, documents: finalDocs }
         }))
 
-        return NextResponse.json({ dossiers: dossiersWithDocs })
+        // ─── Conseiller assigné ───────────────────────────────────────────
+        // L'assignation vit dans dossier_tracking.agent_assigne (voir
+        // /api/admin/dossiers/assign). On remonte le dossier suivi le plus
+        // récent qui possède un agent, puis son nom d'affichage.
+        // On n'expose QUE le nom : ni l'e-mail, ni l'identifiant de l'agent.
+        let advisor: { name: string } | null = null
+        try {
+            const { data: tracking } = await supabase
+                .from('dossier_tracking')
+                .select('agent_assigne, updated_at')
+                .eq('client_id', clientId)
+                .not('agent_assigne', 'is', null)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+            if (tracking?.agent_assigne) {
+                const { data: agent } = await supabase
+                    .from('user_profiles')
+                    .select('full_name, role')
+                    .eq('id', tracking.agent_assigne)
+                    .eq('role', 'agent')
+                    .maybeSingle()
+
+                const name = (agent?.full_name || '').trim()
+                if (name) advisor = { name }
+            }
+        } catch {
+            // Pas de conseiller remonté : l'app retombe sur « Équipe RGB ».
+        }
+
+        return NextResponse.json({ dossiers: dossiersWithDocs, advisor })
     } catch (e) {
         return NextResponse.json({ error: e instanceof Error ? e.message : 'Erreur serveur' }, { status: 500 })
     }

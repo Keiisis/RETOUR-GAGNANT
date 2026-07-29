@@ -20,7 +20,7 @@ import {
     User,
     LucideIcon,
 } from 'lucide-react-native'
-import { colors, fonts } from '../config/theme'
+import { colors, fonts, spacing, radius, shadows } from '../config/theme'
 import { useLang } from '../contexts/LangContext'
 
 import HomeScreen from '../screens/main/HomeScreen'
@@ -105,10 +105,6 @@ function TabButton({
         transform: [{ scale: 0.4 + progress.value * 0.6 }],
     }))
 
-    const labelStyle = useAnimatedStyle(() => ({
-        opacity: 0.65 + progress.value * 0.35,
-    }))
-
     const handlePressIn = () => {
         press.value = withTiming(0.94, { duration: 80, easing: Easing.out(Easing.quad) })
     }
@@ -127,7 +123,8 @@ function TabButton({
         onPress()
     }
 
-    const tint = focused ? colors.primary : colors.textMuted
+    // Sur la pilule sombre : vert pour l'onglet actif, gris clair sinon.
+    const tint = focused ? colors.primary : colors.floatingMuted
     const strokeWidth = focused ? 2.4 : 1.8
 
     return (
@@ -156,20 +153,9 @@ function TabButton({
                     )}
                 </Animated.View>
 
-                <Animated.Text
-                    numberOfLines={1}
-                    allowFontScaling={false}
-                    style={[
-                        styles.label,
-                        {
-                            color: tint,
-                            fontFamily: focused ? fonts.bodyBold : fonts.bodyMedium,
-                        },
-                        labelStyle,
-                    ]}
-                >
-                    {label}
-                </Animated.Text>
+                {/* Design v2 : pilule d'icônes, sans libellé visible.
+                    Le nom de l'onglet reste annoncé aux lecteurs d'écran
+                    via accessibilityLabel sur le bouton. */}
 
                 <Animated.View style={[styles.activeDot, dotStyle]} />
             </View>
@@ -189,18 +175,9 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 8 : 6)
 
     return (
-        <View style={[styles.barOuter, { paddingBottom: bottomPadding }]}>
-            {/* Blur de fond — iOS only, sinon couleur pleine */}
-            {Platform.OS === 'ios' && (
-                <BlurView
-                    intensity={70}
-                    tint="light"
-                    style={StyleSheet.absoluteFill}
-                />
-            )}
-            <View style={styles.barTint} pointerEvents="none" />
-            <View style={styles.hairline} pointerEvents="none" />
-
+        // Design v2 : pilule flottante posée sur le contenu, à la manière iOS.
+        // Le sombre est réservé à cette barre — les fonds d'écran restent blancs.
+        <View style={[styles.barOuter, { paddingBottom: bottomPadding }]} pointerEvents="box-none">
             <View style={styles.barInner}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key]
@@ -274,19 +251,8 @@ export default function MainTabNavigator() {
 
 const styles = StyleSheet.create({
     barOuter: {
-        backgroundColor:
-            Platform.OS === 'ios' ? 'transparent' : colors.surface,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: -2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 12,
-            },
-        }),
+        backgroundColor: 'transparent',
+        paddingHorizontal: spacing.md,
     },
     barTint: {
         ...StyleSheet.absoluteFillObject,
@@ -306,6 +272,11 @@ const styles = StyleSheet.create({
     barInner: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-around',
+        backgroundColor: colors.floating,
+        borderRadius: radius.pill,
+        paddingHorizontal: spacing.sm,
+        ...shadows.floating,
         height: BAR_HEIGHT,
         paddingTop: TOP_PADDING,
     },
@@ -329,20 +300,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    label: {
-        fontSize: 10.5,
-        letterSpacing: 0.1,
-        marginTop: 3,
-        maxWidth: '100%',
-        textAlign: 'center',
-    },
     activeDot: {
         position: 'absolute',
         bottom: -5,
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: colors.gold,
+        backgroundColor: colors.primary,
     },
     badge: {
         position: 'absolute',
@@ -351,7 +315,7 @@ const styles = StyleSheet.create({
         minWidth: 15,
         height: 15,
         borderRadius: 8,
-        backgroundColor: '#EF4444',
+        backgroundColor: '#E8112D',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 3,

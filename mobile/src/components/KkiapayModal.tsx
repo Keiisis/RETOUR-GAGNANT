@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { toast } from '../lib/feedback'
 import {
     View, Text, StyleSheet, Modal, TouchableOpacity,
-    ActivityIndicator, Alert, Platform
+    ActivityIndicator, Platform
 } from 'react-native'
 import { Briefcase, CreditCard, Info, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native'
 import { useKkiapay } from '@kkiapay-org/react-native-sdk'
@@ -51,11 +52,8 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         })
 
         addFailedListener(() => {
-            Alert.alert(
-                t('Paiement échoué'),
-                t("Le paiement n'a pas pu être finalisé. Veuillez réessayer."),
-                [{ text: 'OK', onPress: () => onCloseRef.current() }]
-            )
+            toast(t('Paiement échoué'), t("Le paiement n'a pas pu être finalisé. Veuillez réessayer."), 'danger')
+            onCloseRef.current()
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -75,7 +73,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     // ── Ouvrir le widget Kkiapay natif ──
     const handlePayNow = useCallback(() => {
         if (!kkiapayKey) {
-            Alert.alert(t('Configuration manquante'), t("La clé de paiement Kkiapay n'est pas configurée."))
+            toast(t('Configuration manquante'), t("La clé de paiement Kkiapay n'est pas configurée."))
             return
         }
 
@@ -92,7 +90,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
             })
         } catch (e) {
             console.error('Erreur ouverture widget Kkiapay:', e)
-            Alert.alert(t('Erreur'), t("Impossible d'ouvrir le paiement. Veuillez réessayer."))
+            toast(t('Erreur'), t("Impossible d'ouvrir le paiement. Veuillez réessayer."))
         } finally {
             setLoading(false)
         }
@@ -113,7 +111,9 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                                 <Text style={styles.securedLabel}>{t('Paiement sécurisé in-app')}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            accessibilityRole="button"
+                            accessibilityLabel="Fermer le paiement">
                             <X size={24} color={colors.textSecondary} strokeWidth={1.75} />
                         </TouchableOpacity>
                     </View>
@@ -141,7 +141,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                             <Text style={styles.methodText}>MTN MoMo</Text>
                         </View>
                         <View style={styles.methodChip}>
-                            <Smartphone size={16} color="#3B82F6" strokeWidth={1.75} />
+                            <Smartphone size={16} color="#00643C" strokeWidth={1.75} />
                             <Text style={styles.methodText}>Moov Money</Text>
                         </View>
                         <View style={styles.methodChip}>
@@ -156,6 +156,8 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                         onPress={handlePayNow}
                         disabled={loading || !kkiapayKey}
                         activeOpacity={0.85}
+                        accessibilityRole="button"
+                        hitSlop={6}
                     >
                         {loading ? (
                             <ActivityIndicator color="#FFF" size="small" />
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     securedLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Outfit_500Medium',
         color: colors.primary,
     },
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     serviceLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontFamily: 'Outfit_600SemiBold',
         color: colors.textMuted,
         textTransform: 'uppercase',
@@ -269,7 +271,7 @@ const styles = StyleSheet.create({
         ...shadows.glow,
     },
     amountLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Outfit_600SemiBold',
         color: 'rgba(255,255,255,0.6)',
         letterSpacing: 0.5,
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
         borderColor: colors.borderLight,
     },
     methodText: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Outfit_600SemiBold',
         color: colors.textPrimary,
     },
@@ -338,7 +340,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     footerText: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'Outfit_400Regular',
         color: colors.textMuted,
         flex: 1,

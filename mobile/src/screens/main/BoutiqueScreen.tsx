@@ -23,10 +23,12 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons'
 import { Video, ResizeMode } from 'expo-av'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useCart } from '../../contexts/CartContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    BoutiqueScreen — THEME "CORPORATE PREMIUM 2026"
@@ -36,26 +38,9 @@ import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigat
 const { width, height } = Dimensions.get('window')
 
 // Palette de l'agence (strictement identique aux autres écrans)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-
-    primary: '#047857',      // Émeraude Profond (Identité App)
-    primaryDark: '#022C22',
-    accent: '#C9A84C',       // Or (Agence)
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',    // Émeraude vif
-    error: '#EF4444',        // Rouge
-    success: '#10B981',
-
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const CARD_GAP = 14
 const H_PADDING = 20
@@ -80,15 +65,7 @@ const StorefrontVideo = () => {
         scale.value = withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) })
         opacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) })
 
-        shineX.value = withRepeat(
-            withSequence(
-                withTiming(1.2, { duration: 4500, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-1, { duration: 0 }),
-                withTiming(-1, { duration: 2500 }),
-            ),
-            -1,
-            false
-        )
+        shineX.value = withTiming(1, { duration: 600 })
     }, [])
 
     const animStyle = useAnimatedStyle(() => ({
@@ -210,7 +187,7 @@ const videoStyles = StyleSheet.create({
     },
     cornerText: {
         color: C.primaryText,
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '700',
         letterSpacing: 1.2,
     },
@@ -317,6 +294,9 @@ const ProductCard = ({
                                     e.stopPropagation()
                                     inCart ? removeFromCart(item.id) : addToCart(item, 1)
                                 }}
+                                accessibilityLabel={inCart ? t('Retirer du panier') : t('Ajouter au panier')}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Animated.View style={[cardStyles.quickBtn, quickBtnStyle]}>
                                     <Ionicons
@@ -384,7 +364,7 @@ const cardStyles = StyleSheet.create({
         width: '100%',
         aspectRatio: 0.85,
         position: 'relative',
-        backgroundColor: '#F1F5F9',
+        backgroundColor: '#F5F5F5',
     },
     image: {
         width: '100%',
@@ -420,7 +400,7 @@ const cardStyles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.5)',
     },
     vipTagText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 0.5,
@@ -432,7 +412,7 @@ const cardStyles = StyleSheet.create({
         borderRadius: 6,
     },
     discountText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primaryText,
         letterSpacing: 0.3,
@@ -479,19 +459,12 @@ const cardStyles = StyleSheet.create({
         gap: 5,
     },
     category: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 1.4,
     },
-    title: {
-        fontSize: 13.5,
-        fontWeight: '700',
-        color: C.primary,
-        lineHeight: 18,
-        letterSpacing: -0.2,
-        minHeight: 36,
-    },
+    title: { ...typography.h1, color: C.text },
     priceRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
@@ -505,7 +478,7 @@ const cardStyles = StyleSheet.create({
         letterSpacing: -0.3,
     },
     priceOld: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         textDecorationLine: 'line-through',
         fontWeight: '500',
@@ -524,7 +497,7 @@ const cardStyles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.2)',
     },
     inCartText: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.success,
         letterSpacing: 0.2,
@@ -547,10 +520,6 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     /* ── Animations d'entrée (Stagger) ── */
     const headerAnim = useSharedValue(0)
 
-    /* ── Animation Corporate : Auras très subtiles et lentes ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-
     /* ── Cart FAB pulse ── */
     const pulseScale = useSharedValue(1)
 
@@ -563,29 +532,9 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        // Auras lentes en fond
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
         // Pulse léger sur le panier FAB
-        pulseScale.value = withRepeat(
-            withSequence(
-                withTiming(1.04, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-            ),
-            -1,
-            false,
-        )
+        pulseScale.value = withTiming(1, { duration: 600 })
     }, [])
 
     useEffect(() => {
@@ -640,8 +589,6 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const pulseStyle = useAnimatedStyle(() => ({
         transform: [{ scale: pulseScale.value }],
@@ -673,8 +620,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
 
             {/* Titre dual-line (style RegisterScreen) */}
             <View style={styles.titleWrap}>
-                <Text style={styles.title}>{t('Joyaux &')}</Text>
-                <Text style={styles.titleHighlight}>{t('Créations.')}</Text>
+                <Text style={styles.title}>{t('Boutique')}</Text>
                 <Text style={styles.subtitle}>
                     {t("L'essence de l'élégance béninoise, sélectionnée avec exigence.")}
                 </Text>
@@ -709,13 +655,17 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras diffuses */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR (fixe, style RegisterScreen avec ajout panier) */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconCircle}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -726,7 +676,10 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     <Text style={styles.navTitle}>{t('La Boutique')}</Text>
                 </Animated.View>
 
-                <Pressable onPress={() => navigation.navigate('Orders')} style={styles.navBtn}>
+                <Pressable onPress={() => navigation.navigate('Orders')} style={styles.navBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Mes commandes')}
+                    hitSlop={6}>
                     <View style={styles.iconCircle}>
                         <Ionicons name="cube-outline" size={20} color={C.primary} />
                     </View>
@@ -757,8 +710,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     <Animated.View style={styleHeader}>
                         <StorefrontVideo />
                     </Animated.View>
-                    <Text style={styles.title}>{t('Collection')}</Text>
-                    <Text style={styles.titleHighlight}>{t('Secrète.')}</Text>
+                    <Text style={styles.title}>{t('Collection secrète')}</Text>
                     <Text style={[styles.subtitle, { textAlign: 'center', paddingHorizontal: 20 }]}>
                         {t('Les artisans sculptent les prochaines merveilles. Revenez bientôt.')}
                     </Text>
@@ -793,6 +745,8 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         style={styles.cartFab}
                         activeOpacity={0.85}
                         onPress={() => setShowCart(true)}
+                        accessibilityRole="button"
+                        hitSlop={6}
                     >
                         <View style={styles.cartFabIconWrap}>
                             <Ionicons name="bag-handle" size={22} color={C.accent} />
@@ -817,6 +771,8 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                             style={styles.modalBg}
                             onPress={() => setShowCart(false)}
                             activeOpacity={1}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         />
                     </Animated.View>
 
@@ -828,7 +784,10 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.sheetSubtitle}>{t('Votre panier')}</Text>
                                 <Text style={styles.sheetTitle}>{t('Vos Merveilles')}</Text>
                             </View>
-                            <Pressable onPress={() => setShowCart(false)} style={styles.closeBtn}>
+                            <Pressable onPress={() => setShowCart(false)} style={styles.closeBtn}
+                                accessibilityRole="button"
+                                hitSlop={6}
+                                accessibilityLabel={t('Fermer')}>
                                 <Ionicons name="close" size={20} color={C.primary} />
                             </Pressable>
                         </View>
@@ -867,6 +826,9 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             onPress={() => removeFromCart(item.product.id)}
                                             style={styles.qtyBtn}
                                             activeOpacity={0.7}
+                                            accessibilityRole="button"
+                                            hitSlop={6}
+                                            accessibilityLabel={t('Retirer')}
                                         >
                                             <Ionicons name="remove" size={14} color={C.primary} />
                                         </TouchableOpacity>
@@ -875,6 +837,9 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             onPress={() => addToCart(item.product, 1)}
                                             style={styles.qtyBtn}
                                             activeOpacity={0.7}
+                                            accessibilityRole="button"
+                                            hitSlop={6}
+                                            accessibilityLabel={t('Ajouter')}
                                         >
                                             <Ionicons name="add" size={14} color={C.primary} />
                                         </TouchableOpacity>
@@ -896,6 +861,8 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                     setShowCart(false)
                                     navigation.navigate('Checkout', { cart, total: cartTotal })
                                 }}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={styles.checkoutBtnText}>
                                     {t('Sceller la commande')}
@@ -920,34 +887,9 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 20,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBtn: {
         width: 44,
         height: 44,
@@ -1031,13 +973,6 @@ const styles = StyleSheet.create({
         color: C.primary,
         letterSpacing: -0.5,
     },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -1065,7 +1000,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     countText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -1128,7 +1063,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     cartBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
     },
@@ -1136,7 +1071,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cartFabLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '600',
         color: 'rgba(255,255,255,0.7)',
         letterSpacing: 0.3,
@@ -1250,7 +1185,7 @@ const styles = StyleSheet.create({
         marginLeft: 14,
     },
     cartItemCategory: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 1.2,

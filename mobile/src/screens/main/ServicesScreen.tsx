@@ -1,9 +1,10 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
 import {
-    View, Text, ScrollView, StyleSheet,
+    View, Text, ScrollView, StyleSheet, Image,
     Dimensions, Platform, RefreshControl, ActivityIndicator,
     Pressable, TouchableOpacity,
+    TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -18,8 +19,11 @@ import Animated, {
     Easing,
     interpolate,
 } from 'react-native-reanimated'
+import { FlagBar } from '../../components/ui'
+import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    ServicesScreen — THEME "CORPORATE PREMIUM 2026"
@@ -29,27 +33,11 @@ import { supabase } from '../../config/supabase'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique à RegisterScreen)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
-    primary: '#047857',      // Émeraude Profond (Identité App)
-    accent: '#C9A84C',       // Or (Agence)
-    accentDark: '#A68B3C',   // Or sombre
-    accentLight: '#E2C97E',  // Or clair
-    auraGreen: '#10B981',    // Émeraude vif
-    error: '#EF4444',        // Rouge
-
-    textSec: '#4A5568',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
-
-const CARD_GAP = 14
 const H_PADDING = 20
-const CARD_W = (width - H_PADDING * 2 - CARD_GAP) / 2
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,7 +141,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Nous facilitons l'implantation économique des entrepreneurs de la diaspora au Bénin. De la création juridique de votre structure à l'ouverture de votre compte bancaire, en passant par les démarches fiscales, notre équipe vous accompagne à chaque étape.",
         duration: '3 à 6 semaines',
         price: 'À partir de 150 000 FCFA',
-        color: C.auraGreen,
+        color: C.success,
         features: [
             "Création SARL / SA / SASU clé en main",
             "Immatriculation RCCM et formalités fiscales",
@@ -248,7 +236,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Le Bénin connaît une dynamique économique réelle, portée par des réformes structurelles et des investissements publics soutenus. Les opportunités existent — dans l'immobilier, l'agriculture, le commerce et les services — mais elles demandent une lecture fine du terrain. Nous vous aidons à identifier des projets sérieux, à évaluer les risques réels et à structurer vos investissements dans le respect du cadre juridique local.",
         duration: 'Accompagnement continu',
         price: 'À partir de 50 000 FCFA',
-        color: C.auraGreen,
+        color: C.success,
         features: [
             'Vente exclusive de particuliers à particuliers (terrain, immeuble, maison)',
             'Projets agricoles rentables et autres secteurs porteurs',
@@ -338,7 +326,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un Bokonon (prêtre du Fa) reconnu, pour une consultation traditionnelle menée dans les règles de l'art. Retour Gagnant Bénin intervient exclusivement comme intermédiaire de mise en relation : un accord est signé dès l'enclenchement de la procédure.",
         duration: 'Selon disponibilité du Bokonon',
         price: 'Présentiel 550 € · Visio 780 €',
-        color: '#7C5CCA',
+        color: C.accent,
         features: [
             'Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté',
             "Présentiel — accueil, prise de rendez-vous avec le prêtre Fa, aide sur place",
@@ -366,7 +354,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Le fon, le yoruba, le goun ou le mina portent la mémoire et la vision du monde de vos ancêtres : les apprendre, c'est renouer le fil que l'histoire a interrompu. Parcours animés par des locuteurs natifs, pensés pour la diaspora, en présentiel ou en visio.",
         duration: 'Parcours personnalisé',
         price: 'Sur devis — premier rendez-vous gratuit',
-        color: '#0EA5E9',
+        color: C.primary,
         features: [
             'Cours animés par des locuteurs natifs qualifiés',
             "Fon, Yoruba, Goun, Mina — selon votre lignée et votre région d'origine",
@@ -466,35 +454,44 @@ function ServiceCard({ svc, index, onPress, t }: ServiceCardProps) {
         ],
     }))
 
+    /* Le libellé du bouton reflète le parcours RÉEL de la prestation
+       (rendez-vous / formulaire dédié / réservation payante / boutique).
+       Source unique partagée avec le web et le panel client : lib/service-mode. */
+    const mode = getServiceMode({ slug: svc.id })
+    const cta = MODE_COPY[mode].cta
+
     return (
-        <Animated.View style={[{ width: CARD_W }, enterStyle]}>
+        <Animated.View style={enterStyle}>
             <Pressable
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1, { damping: 15, stiffness: 200 }) }}
                 onPressOut={() => { pressAnim.value = withSpring(0, { damping: 15, stiffness: 200 }) }}
+                accessibilityRole="button"
+                accessibilityLabel={`${t(svc.title)} — ${t(cta)}`}
                 style={styles.card}
+                hitSlop={6}
             >
-                {/* Barre supérieure colorée — accent de service */}
-                <View style={[styles.cardTopBar, { backgroundColor: svc.color }]} />
-
                 <View style={styles.cardInner}>
-                    {/* Icône dans cercle subtil */}
-                    <View style={styles.cardIconWrap}>
-                        <Ionicons name={svc.icon} size={24} color={C.primary} />
+                    <View style={styles.cardHead}>
+                        <View style={styles.cardIconWrap}>
+                            <Ionicons name={svc.icon} size={26} color={C.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.cardTitle}>{t(svc.title)}</Text>
+                            <Text style={styles.cardDesc} numberOfLines={3}>{t(svc.desc)}</Text>
+                        </View>
                     </View>
 
-                    <Text style={styles.cardTitle} numberOfLines={2}>{t(svc.title)}</Text>
-                    <Text style={styles.cardDesc} numberOfLines={3}>{t(svc.desc)}</Text>
+                    <View style={styles.cardDivider} />
 
-                    {/* Prix en badge minimaliste */}
-                    <View style={styles.cardPriceWrap}>
-                        <Text style={styles.cardPriceText} numberOfLines={1}>{t(svc.price)}</Text>
-                    </View>
-
-                    {/* CTA footer */}
                     <View style={styles.cardFooter}>
-                        <Text style={styles.cardActionText}>{t('En savoir plus')}</Text>
-                        <Ionicons name="arrow-forward" size={13} color={C.accent} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.cardMetaLabel}>{t('Tarif')}</Text>
+                            <Text style={styles.cardMetaValue} numberOfLines={1}>{t(svc.price)}</Text>
+                        </View>
+                        <View style={styles.cardCta}>
+                            <Text style={styles.cardCtaText} numberOfLines={1}>{t(cta)}</Text>
+                        </View>
                     </View>
                 </View>
             </Pressable>
@@ -502,47 +499,44 @@ function ServiceCard({ svc, index, onPress, t }: ServiceCardProps) {
     )
 }
 
+
 /* ═══════════════════════════════════════════════════════════
-   COMPOSANT : VIP BANNER (Bleu agence massif, accent Or)
+   FAMILLES DE PRESTATIONS
+   Regroupement editorial des 11 services, aligne sur la lecture
+   du site public. Aucun service n'est invente : chaque slug
+   ci-dessous existe dans SERVICES_DATA.
 ═══════════════════════════════════════════════════════════ */
+type Family = 'all' | 'etat-civil' | 'installation' | 'entreprise' | 'racines'
 
-function VipBanner({ onPress, t }: { onPress: () => void; t: (s: string) => string }) {
-    const pressAnim = useSharedValue(0)
+const FAMILY_ORDER: Family[] = ['all', 'etat-civil', 'installation', 'entreprise', 'racines']
 
-    const animStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: interpolate(pressAnim.value, [0, 1], [1, 0.98]) }],
-    }))
+const FAMILY_LABEL: Record<Family, string> = {
+    'all': 'Tout',
+    'etat-civil': 'Etat civil & nationalite',
+    'installation': 'Installation & logement',
+    'entreprise': 'Entreprise & investissement',
+    'racines': 'Racines & culture',
+}
 
-    return (
-        <Animated.View style={animStyle}>
-            <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={onPress}
-                onPressIn={() => { pressAnim.value = withSpring(1) }}
-                onPressOut={() => { pressAnim.value = withSpring(0) }}
-                style={styles.vipBanner}
-            >
-                {/* Halo Or en arrière-plan */}
-                <View style={styles.vipGlow} />
+const FAMILY_COVER: Record<Exclude<Family, 'all'>, number> = {
+    'etat-civil': require('../../../assets/images/famille-etat-civil.webp'),
+    'installation': require('../../../assets/images/famille-immobilier.webp'),
+    'entreprise': require('../../../assets/images/famille-entreprise.webp'),
+    'racines': require('../../../assets/images/famille-racines.webp'),
+}
 
-                <View style={styles.vipContent}>
-                    <View style={styles.vipBadge}>
-                        <Ionicons name="star" size={10} color={C.accent} />
-                        <Text style={styles.vipBadgeText}>{t('LE PLUS POPULAIRE')}</Text>
-                    </View>
-
-                    <Text style={styles.vipTitle}>{t('Nationalité Béninoise VIP')}</Text>
-                    <Text style={styles.vipDesc}>
-                        {t('Accompagnement complet de A à Z · À partir de 150 000 FCFA')}
-                    </Text>
-                </View>
-
-                <View style={styles.vipArrow}>
-                    <Ionicons name="arrow-forward" size={18} color={C.primary} />
-                </View>
-            </TouchableOpacity>
-        </Animated.View>
-    )
+const FAMILY_OF: Record<string, Family> = {
+    'nationalite-vip': 'etat-civil',
+    'passeport': 'etat-civil',
+    'logement': 'installation',
+    'construction': 'installation',
+    'business': 'entreprise',
+    'investissement': 'entreprise',
+    'culture': 'racines',
+    'recherche-ancestrale': 'racines',
+    'consultation-fa-racines': 'racines',
+    'langues-racines': 'racines',
+    'autres': 'installation',
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -566,7 +560,6 @@ function SkeletonServiceCard() {
 
     return (
         <Animated.View style={[styles.skeletonCard, shimmerStyle]}>
-            <View style={styles.skeletonTopBar} />
             <View style={styles.cardInner}>
                 <View style={styles.skeletonIcon} />
                 <View style={[styles.skeletonLine, { width: '80%' }]} />
@@ -586,47 +579,41 @@ export default function ServicesScreen({ navigation }: any) {
     const [services, setServices] = useState<ServiceFull[]>(SERVICES_DATA)
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
+    const [query, setQuery] = useState('')
+    const [family, setFamily] = useState<Family>('all')
+
+    /* Recherche + filtre famille, puis regroupement en sections.
+       Filtre sur le contenu réel de la fiche (titre, sous-titre, description). */
+    const visibleSections = React.useMemo(() => {
+        const q = query.trim().toLowerCase()
+        const matches = services.filter((svc) => {
+            if (family !== 'all' && FAMILY_OF[svc.id] !== family) return false
+            if (!q) return true
+            return [svc.title, svc.subtitle, svc.desc]
+                .some((f) => String(f || '').toLowerCase().includes(q))
+        })
+        return FAMILY_ORDER
+            .filter((f) => f !== 'all')
+            .map((fam) => ({ fam, items: matches.filter((s) => FAMILY_OF[s.id] === fam) }))
+            .filter((sec) => sec.items.length > 0)
+    }, [services, query, family])
     const { t, lang, isTranslating, preloadTexts } = useLang()
 
     /* ── Animations d'entrée (Stagger) ── */
     const headerAnim = useSharedValue(0)
-    const vipAnim = useSharedValue(0)
-
-    /* ── Animation Corporate : Auras très subtiles et lentes ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
 
     useEffect(() => {
         // Apparition élégante
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-        vipAnim.value = withDelay(400, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
 
         // Mouvement lent et imperceptible — donne vie au fond
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const styleVip = useAnimatedStyle(() => ({
-        opacity: vipAnim.value,
-        transform: [{ translateY: 40 * (1 - vipAnim.value) }],
-    }))
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const fetchServices = useCallback(async () => {
         try {
@@ -732,22 +719,16 @@ export default function ServicesScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras diffuses aux couleurs de l'agence */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
-            {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
-                    </View>
-                </Pressable>
+            {/* LISERÉ TRICOLORE */}
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
             </View>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
                 bounces={true}
                 refreshControl={
                     <RefreshControl
@@ -757,14 +738,57 @@ export default function ServicesScreen({ navigation }: any) {
                     />
                 }
             >
-                {/* HEADER TITRE */}
-                <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Nos')}</Text>
-                    <Text style={styles.titleHighlight}>{t('Services.')}</Text>
-                    <Text style={styles.subtitle}>
-                        {t('Des solutions sur-mesure pour votre retour au Bénin.')}
-                    </Text>
-                </Animated.View>
+                {/* TITRE */}
+                <Text style={styles.title}>{t('Nos prestations')}</Text>
+
+                {/* FILTRES PAR FAMILLE */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsRow}
+                >
+                    {FAMILY_ORDER.map((fam) => {
+                        const active = family === fam
+                        return (
+                            <Pressable
+                                key={fam}
+                                onPress={() => setFamily(fam)}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: active }}
+                                style={[styles.chip, active && styles.chipActive]}
+                                hitSlop={6}
+                            >
+                                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                                    {t(FAMILY_LABEL[fam])}
+                                </Text>
+                            </Pressable>
+                        )
+                    })}
+                </ScrollView>
+
+                {/* RECHERCHE */}
+                <View style={styles.searchBar}>
+                    <Ionicons name="search" size={19} color={C.textMuted} />
+                    <TextInput
+                        value={query}
+                        onChangeText={setQuery}
+                        placeholder={t('Quel accompagnement cherchez-vous ?')}
+                        placeholderTextColor={C.textMuted}
+                        accessibilityLabel={t('Rechercher une prestation')}
+                        returnKeyType="search"
+                        style={styles.searchInput}
+                    />
+                    {query.length > 0 && (
+                        <Pressable
+                            onPress={() => setQuery('')}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Effacer la recherche')}
+                            hitSlop={8}
+                        >
+                            <Ionicons name="close-circle" size={19} color={C.textMuted} />
+                        </Pressable>
+                    )}
+                </View>
 
                 {/* Indicateur de traduction */}
                 {isTranslating && lang !== 'fr' && (
@@ -774,37 +798,49 @@ export default function ServicesScreen({ navigation }: any) {
                     </View>
                 )}
 
-                {/* BANDEAU VIP */}
-                {!loading && (
-                    <Animated.View style={styleVip}>
-                        <VipBanner
-                            onPress={() => handlePress(services.find(s => s.id === 'nationalite-vip') || services[0])}
-                            t={t}
-                        />
-                    </Animated.View>
-                )}
-
-                {/* GRILLE DE SERVICES */}
+                {/* LISTE PAR SECTION */}
                 {loading ? (
-                    <View style={styles.grid}>
-                        {Array.from({ length: 6 }).map((_, i) => (
+                    <View style={{ gap: 14 }}>
+                        {Array.from({ length: 4 }).map((_, i) => (
                             <SkeletonServiceCard key={i} />
                         ))}
                     </View>
-                ) : (
-                    <View style={styles.grid}>
-                        {services
-                            .filter(s => s.id !== 'nationalite-vip') // VIP affiché dans le bandeau
-                            .map((svc, idx) => (
-                                <ServiceCard
-                                    key={svc.id}
-                                    svc={svc}
-                                    index={idx}
-                                    onPress={() => handlePress(svc)}
-                                    t={t}
-                                />
-                            ))}
+                ) : visibleSections.length === 0 ? (
+                    <View style={styles.noResult}>
+                        <Ionicons name="search-outline" size={34} color={C.textMuted} />
+                        <Text style={styles.noResultTitle}>{t('Aucune prestation trouvée')}</Text>
+                        <Text style={styles.noResultText}>
+                            {t('Essayez un autre mot-clé ou changez de catégorie.')}
+                        </Text>
                     </View>
+                ) : (
+                    visibleSections.map(({ fam, items }) => (
+                        <View key={fam} style={styles.section}>
+                            <View style={styles.familyBanner}>
+                                <Image
+                                    source={FAMILY_COVER[fam as Exclude<Family, 'all'>]}
+                                    style={styles.familyImage}
+                                    resizeMode="cover"
+                                    accessible={false}
+                                />
+                                <View style={styles.familyScrim} />
+                                <Text style={styles.familyBannerText} numberOfLines={2}>
+                                    {t(FAMILY_LABEL[fam])}
+                                </Text>
+                            </View>
+                            <View style={{ gap: 14 }}>
+                                {items.map((svc, idx) => (
+                                    <ServiceCard
+                                        key={svc.id}
+                                        svc={svc}
+                                        index={idx}
+                                        onPress={() => handlePress(svc)}
+                                        t={t}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    ))
                 )}
 
                 <View style={{ height: 60 }} />
@@ -818,83 +854,94 @@ export default function ServicesScreen({ navigation }: any) {
 ═══════════════════════════════════════════════════════════ */
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: C.bg,
+    container: { flex: 1, backgroundColor: C.bg },
+
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+
+    scrollContent: { paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: 20 },
+
+    title: { ...typography.h1, color: C.text, marginBottom: spacing.lg },
+
+    /* ── Filtres par famille ── */
+    chipsRow: { gap: spacing.sm, paddingRight: spacing.lg, paddingBottom: spacing.lg },
+    chip: {
+        paddingHorizontal: spacing.md, paddingVertical: 10,
+        borderRadius: radius.pill,
+        backgroundColor: C.surface,
+        borderWidth: 1, borderColor: C.border,
+    },
+    chipActive: { backgroundColor: C.floating, borderColor: C.floating },
+    chipText: { ...typography.label, color: C.textMuted },
+    chipTextActive: { color: C.primaryText },
+
+    /* ── Recherche ── */
+    searchBar: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        backgroundColor: C.surface, borderRadius: radius.pill,
+        paddingHorizontal: spacing.md, height: 54,
+        borderWidth: 1, borderColor: C.border,
+        marginBottom: spacing.lg,
+        ...shadows.card,
+    },
+    searchInput: { flex: 1, ...typography.body, color: C.text, paddingVertical: 0 },
+
+    /* ── Sections ── */
+    section: { marginBottom: spacing.lg },
+    sectionTitle: { ...typography.overline, color: C.primary, marginBottom: spacing.md },
+    familyBanner: {
+        height: 104, borderRadius: radius.xl, overflow: 'hidden',
+        justifyContent: 'flex-end', marginBottom: spacing.md,
+        backgroundColor: C.surfaceAlt,
+    },
+    familyImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+    /* Voile sombre uniquement SOUS le texte : garantit le contraste AA
+       quelle que soit la photo, sans assombrir l'ecran. */
+    familyScrim: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.34)',
+    },
+    familyBannerText: {
+        ...typography.overline, fontSize: 13, color: '#FFFFFF',
+        paddingHorizontal: spacing.md, paddingBottom: spacing.md,
     },
 
-    /* ── Auras extrêmement discrètes (Corporate) ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
+    /* ── Carte prestation ── */
+    card: {
+        backgroundColor: C.surface,
+        borderRadius: radius.xl,
+        overflow: 'hidden',
+        ...shadows.card,
     },
-    aura1: {
-        top: -100,
-        right: -100,
+    cardInner: { padding: spacing.md },
+    cardHead: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+    cardIconWrap: {
+        width: 56, height: 56, borderRadius: radius.lg,
+        backgroundColor: C.surfaceSoft,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    cardTitle: { ...typography.h3, color: C.text, marginBottom: spacing.xs },
+    cardDesc: { ...typography.bodySmall, color: C.textMuted },
+    cardDivider: { height: 1, backgroundColor: C.border, marginVertical: spacing.md },
+    cardFooter: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    cardMetaLabel: { ...typography.overline, fontSize: 12, color: C.textMuted },
+    cardMetaValue: { ...typography.label, color: C.text, marginTop: 2 },
+    cardCta: {
         backgroundColor: C.primary,
+        borderRadius: radius.pill,
+        paddingHorizontal: spacing.lg, paddingVertical: 13,
+        maxWidth: '58%',
     },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
+    cardCtaText: { ...typography.button, fontSize: 14, color: C.primaryText },
+
+    /* ── Aucun resultat ── */
+    noResult: { alignItems: 'center', paddingVertical: 48, gap: spacing.sm },
+    noResultTitle: { ...typography.h3, color: C.text },
+    noResultText: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center' },
 
     /* ── Nav Bar (identique RegisterScreen) ── */
-    navBar: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
-    navBack: {
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
 
-    scrollContent: {
-        paddingHorizontal: H_PADDING,
-        paddingBottom: 40,
-    },
 
     /* ── Header (identique RegisterScreen) ── */
-    headerContainer: {
-        marginTop: 15,
-        marginBottom: 32,
-        paddingHorizontal: 8,
-    },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
-    subtitle: {
-        fontSize: 15,
-        color: C.textSec,
-        marginTop: 14,
-        lineHeight: 22,
-        fontWeight: '400',
-    },
 
     /* ── Bandeau Traduction ── */
     translatingBanner: {
@@ -916,178 +963,19 @@ const styles = StyleSheet.create({
     },
 
     /* ── Grille ── */
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: CARD_GAP,
-        marginTop: 24,
-    },
 
     /* ── Service Card ── */
-    card: {
-        width: CARD_W,
-        backgroundColor: C.surface,
-        borderRadius: 16, // Cohérent avec inputs/boutons RegisterScreen
-        overflow: 'hidden',
-        borderWidth: 1.2,
-        borderColor: C.border,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-    },
-    cardTopBar: {
-        height: 3,
-        width: '100%',
-    },
-    cardInner: {
-        padding: 16,
-        gap: 8,
-    },
-    cardIconWrap: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)', // Bleu agence très diffus
-        borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.08)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 4,
-    },
-    cardTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.primary,
-        lineHeight: 19,
-        letterSpacing: -0.2,
-    },
-    cardDesc: {
-        fontSize: 11.5,
-        color: C.textSec,
-        lineHeight: 16,
-        fontWeight: '400',
-    },
-    cardPriceWrap: {
-        alignSelf: 'flex-start',
-        backgroundColor: 'rgba(212, 160, 23, 0.10)', // Or très diffus
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        marginTop: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
-    },
-    cardPriceText: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: C.accentDark,
-        letterSpacing: 0.2,
-    },
-    cardFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 10,
-        paddingTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: C.border,
-    },
-    cardActionText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: 0.2,
-    },
 
     /* ── VIP Banner (Bleu massif, accent Or — comme bouton RegisterScreen) ── */
-    vipBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.primary,
-        borderRadius: 16,
-        padding: 20,
-        overflow: 'hidden',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
-    },
-    vipGlow: {
-        position: 'absolute',
-        top: -60,
-        right: -60,
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        backgroundColor: C.accent,
-        opacity: 0.15,
-    },
-    vipContent: {
-        flex: 1,
-        gap: 6,
-    },
-    vipBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: 'rgba(212, 160, 23, 0.18)',
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        alignSelf: 'flex-start',
-        borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.4)',
-    },
-    vipBadgeText: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: C.accent,
-        letterSpacing: 1.2,
-    },
-    vipTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: C.primaryText,
-        letterSpacing: 0.2,
-        marginTop: 4,
-    },
-    vipDesc: {
-        fontSize: 12,
-        color: 'rgba(255, 255, 255, 0.75)',
-        lineHeight: 17,
-        fontWeight: '400',
-    },
-    vipArrow: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: C.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 12,
-        shadowColor: C.accent,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 4,
-    },
 
     /* ── Skeleton ── */
     skeletonCard: {
-        width: CARD_W,
         height: 200,
         backgroundColor: C.surface,
         borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: C.border,
-    },
-    skeletonTopBar: {
-        height: 3,
-        backgroundColor: C.border,
     },
     skeletonIcon: {
         width: 44,

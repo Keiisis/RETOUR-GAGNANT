@@ -1,8 +1,9 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
+import { toast } from '../../lib/feedback'
 import {
-    View, Text, ScrollView, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, Alert, ActivityIndicator, Modal, Dimensions,
+    View, Text, ScrollView, StyleSheet, TouchableOpacity, Image,
+    RefreshControl, Platform, ActivityIndicator, Modal, Dimensions,
     Pressable,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -27,6 +28,8 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { FlagBar } from '../../components/ui'
 
 /* ═══════════════════════════════════════════════════════════
    DossierScreen — THEME "CORPORATE PREMIUM 2026"
@@ -35,28 +38,9 @@ import { fetchWithTimeout } from '../../lib/fetch'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans premium)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-    primary: '#047857',       // Émeraude Profond
-    primaryDark: '#022C22',
-    accent: '#C9A84C',        // Or
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    accentSoft: 'rgba(201, 168, 76, 0.10)',
-    auraGreen: '#10B981',
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444',
-    info: '#3B82F6',
-    purple: '#8B5CF6',
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const ALLOWED_TYPES = [
@@ -90,7 +74,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 const STATUS_COLOR: Record<string, string> = {
     soumis: C.info, en_attente: C.warning, verifie: C.purple,
-    en_cours: C.primary, traitement: C.primary, validation: '#E07B54',
+    en_cours: C.primary, traitement: C.primary, validation: C.accent,
     termine: C.success, annule: C.error,
 }
 
@@ -160,41 +144,14 @@ export default function DossierScreen({ navigation }: any) {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-    const haloPulse = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-            ), -1, true,
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-            ), -1, true,
-        )
-        haloPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false,
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
-    }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
-    const haloStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(haloPulse.value, [0, 1], [0.15, 0.38]),
-        transform: [{ scale: interpolate(haloPulse.value, [0, 1], [1, 1.12]) }],
     }))
 
     /* ═══ DATA : Fetch + Realtime (LOGIQUE INCHANGÉE) ═══ */
@@ -245,7 +202,7 @@ export default function DossierScreen({ navigation }: any) {
     const uploadFile = async (uri: string, fileName: string, mimeType: string) => {
         const target = uploadTargetDossier || selected
         if (!target || !profile) {
-            Alert.alert(t('Erreur'), t('Veuillez d\'abord sélectionner un dossier.')); return
+            toast(t('Erreur'), t('Veuillez d\'abord sélectionner un dossier.')); return
         }
         setUploading(true); setShowUploadModal(false)
         try {
@@ -273,10 +230,10 @@ export default function DossierScreen({ navigation }: any) {
                     file_name: safeName, file_url: secureUrl, file_type: mimeType, status: 'pending',
                 })
             }
-            Alert.alert(t('Document envoyé'), t('Notre équipe le vérifiera sous 24–48h.'))
+            toast(t('Document envoyé'), t('Notre équipe le vérifiera sous 24–48h.'))
             await fetchDossiers()
         } catch (e: unknown) {
-            Alert.alert(t('Erreur'), e instanceof Error ? e.message : t('Erreur lors de l\'envoi'))
+            toast(t('Erreur'), e instanceof Error ? e.message : t('Erreur lors de l\'envoi'))
         } finally { setUploading(false) }
     }
 
@@ -288,10 +245,7 @@ export default function DossierScreen({ navigation }: any) {
         if (result.canceled || !result.assets?.[0]) return
         const asset = result.assets[0]
         if (asset.size && asset.size > MAX_SIZE_MB * 1024 * 1024) {
-            Alert.alert(
-                t('Fichier trop volumineux'),
-                t('Maximum {size} Mo.').replace('{size}', MAX_SIZE_MB.toString()),
-            ); return
+            toast(t('Fichier trop volumineux'), t('Maximum {size} Mo.').replace('{size}', MAX_SIZE_MB.toString())); return
         }
         await uploadFile(asset.uri, asset.name, asset.mimeType || 'application/octet-stream')
     }
@@ -300,7 +254,7 @@ export default function DossierScreen({ navigation }: any) {
         setShowUploadModal(false)
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
         if (status !== 'granted') {
-            Alert.alert(t('Permission refusée'), t('Accès à la galerie requis.')); return
+            toast(t('Permission refusée'), t('Accès à la galerie requis.')); return
         }
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'], quality: 0.85,
@@ -314,7 +268,7 @@ export default function DossierScreen({ navigation }: any) {
         setShowUploadModal(false)
         const { status } = await ImagePicker.requestCameraPermissionsAsync()
         if (status !== 'granted') {
-            Alert.alert(t('Permission refusée'), t('Accès caméra requis.')); return
+            toast(t('Permission refusée'), t('Accès caméra requis.')); return
         }
         const result = await ImagePicker.launchCameraAsync({
             allowsEditing: false, quality: 0.85,
@@ -341,43 +295,45 @@ export default function DossierScreen({ navigation }: any) {
     ═══════════════════════════════════════════════════════════ */
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND : Auras Corporate */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
-            {/* ═══ NAV BAR ═══ */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
+            {/* ═══ LISERÉ TRICOLORE ═══ */}
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            {/* ═══ EN-TÊTE ═══ */}
+            <View style={styles.navBar}>
                 {navigation?.canGoBack?.() ? (
-                    <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
-                        <View style={styles.iconContainer}>
-                            <Ionicons name="arrow-back" size={22} color={C.primary} />
-                        </View>
+                    <Pressable
+                        onPress={() => navigation.goBack()}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Retour')}
+                        hitSlop={8}
+                        style={styles.iconContainer}
+                    >
+                        <Ionicons name="arrow-back" size={20} color={C.text} />
                     </Pressable>
-                ) : <View style={{ width: 44 }} />}
+                ) : null}
 
-                {dossiers.length > 0 && (
-                    <View style={styles.navCountBadge}>
-                        <View style={styles.navCountDot} />
-                        <Text style={styles.navCountText}>
-                            {dossiers.length} {t('actif')}{dossiers.length > 1 ? 's' : ''}
-                        </Text>
-                    </View>
-                )}
+                <Text style={styles.navTitle} numberOfLines={1}>{t('Mon dossier')}</Text>
 
                 <TouchableOpacity
                     activeOpacity={0.8}
                     disabled={uploading || dossiers.length === 0}
                     onPress={() => { setUploadTargetDossier(null); setShowUploadModal(true) }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Ajouter une pièce')}
                     style={[
                         styles.uploadHeaderBtn,
                         (uploading || dossiers.length === 0) && styles.uploadHeaderBtnDisabled,
                     ]}
+                    hitSlop={6}
                 >
                     {uploading ? (
-                        <ActivityIndicator color={C.accent} size="small" />
+                        <ActivityIndicator color={C.primary} size="small" />
                     ) : (
                         <>
-                            <Ionicons name="add" size={18} color={C.accent} />
+                            <Ionicons name="add" size={17} color={C.primary} />
                             <Text style={styles.uploadHeaderBtnText}>{t('Ajouter')}</Text>
                         </>
                     )}
@@ -396,10 +352,9 @@ export default function DossierScreen({ navigation }: any) {
                     />
                 }
             >
-                {/* ═══ HEADER TITRE ═══ */}
+                {/* Le titre est porté par l'en-tête ; on ne garde ici que
+                    la ligne d'état, seule information non redondante. */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Mes')}</Text>
-                    <Text style={styles.titleHighlight}>{t('dossiers.')}</Text>
                     <Text style={styles.subtitle}>
                         {loading
                             ? t('Récupération de vos dossiers en cours…')
@@ -420,7 +375,6 @@ export default function DossierScreen({ navigation }: any) {
                     /* ═══ EMPTY STATE PREMIUM ═══ */
                     <AnimatedSection delay={150}>
                         <View style={styles.emptyCard}>
-                            <Animated.View style={[styles.emptyHalo, haloStyle]} />
                             <View style={styles.emptyIconWrap}>
                                 <Ionicons name="folder-open-outline" size={36} color={C.accent} />
                             </View>
@@ -432,6 +386,8 @@ export default function DossierScreen({ navigation }: any) {
                                 activeOpacity={0.85}
                                 onPress={() => navigation?.navigate?.('Services')}
                                 style={styles.emptyBtn}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={styles.emptyBtnText}>{t('Découvrir les services')}</Text>
                                 <Ionicons name="arrow-forward" size={16} color={C.accent} />
@@ -463,6 +419,8 @@ export default function DossierScreen({ navigation }: any) {
                                                 activeOpacity={0.85}
                                                 onPress={() => setSelected(d)}
                                                 style={[styles.tab, isActive && styles.tabActive]}
+                                                accessibilityRole="button"
+                                                hitSlop={6}
                                             >
                                                 <View style={[
                                                     styles.tabDot,
@@ -491,51 +449,42 @@ export default function DossierScreen({ navigation }: any) {
 
                             return (
                                 <>
-                                    {/* ═══ CARTE PROGRESSION PREMIUM ═══ */}
+                                    {/* ═══ CARTE DOSSIER — timeline verticale ═══ */}
                                     <AnimatedSection delay={150}>
                                         <View style={styles.progressCard}>
-                                            {/* Halo doré pulsant en fond du % */}
-                                            <Animated.View style={[styles.progressHalo, haloStyle]} />
+                                            <FlagBar height={5} radiusTop={false} />
 
-                                            <View style={styles.progressTop}>
-                                                <View style={{ flex: 1, paddingRight: 12 }}>
-                                                    <View style={styles.progressLabelRow}>
-                                                        <Ionicons name="briefcase-outline" size={12} color={C.textSec} />
-                                                        <Text style={styles.progressLabel}>
-                                                            {t('Service')}
-                                                        </Text>
-                                                    </View>
-                                                    <Text style={styles.progressService} numberOfLines={2}>
-                                                        {selected.service_type}
+                                            {/* Visuel d'en-tête + statut en incrustation */}
+                                            <View style={styles.heroWrap}>
+                                                <Image
+                                                    source={require('../../../assets/images/dossier-hero.webp')}
+                                                    style={styles.heroImage}
+                                                    resizeMode="cover"
+                                                    accessible={false}
+                                                />
+                                                <View style={[styles.statusPill, styles.statusPillOnHero, { backgroundColor: color }]}>
+                                                    <Text style={styles.statusPillText}>
+                                                        {t(STATUS_LABEL[selected.status] || selected.status)}
                                                     </Text>
-                                                    <View style={styles.statusRow}>
-                                                        <View style={[styles.statusDot, { backgroundColor: color }]} />
-                                                        <Text style={[styles.progressStatus, { color }]}>
-                                                            {t(STATUS_LABEL[selected.status] || selected.status)}
-                                                        </Text>
-                                                    </View>
-                                                    <Text style={styles.progressDate}>
-                                                        <Ionicons name="calendar-outline" size={11} color={C.textMuted} />
-                                                        {'  '}{t('Créé le')}{' '}
-                                                        {new Date(selected.created_at).toLocaleDateString('fr-FR', {
-                                                            day: '2-digit', month: 'long', year: 'numeric',
-                                                        })}
-                                                    </Text>
-                                                </View>
-
-                                                {/* Cercle de pourcentage premium */}
-                                                <View style={styles.percentWrap}>
-                                                    <View style={[styles.percentCircle, { borderColor: color }]}>
-                                                        <Text style={[styles.percentText, { color: C.primary }]}>
-                                                            {progress}
-                                                        </Text>
-                                                        <Text style={styles.percentSign}>%</Text>
-                                                    </View>
                                                 </View>
                                             </View>
 
-                                            {/* Barre de progression élégante */}
-                                            <View style={styles.progressBarWrap}>
+                                            <View style={styles.progressBody}>
+                                                <View style={styles.statusHeadRow}>
+                                                    <Text style={styles.progressStepHint}>
+                                                        {t('Avancement du dossier')}
+                                                    </Text>
+                                                    <Text style={styles.percentInline}>{progress}%</Text>
+                                                </View>
+
+                                                <Text style={styles.progressService}>
+                                                    {selected.service_type}
+                                                </Text>
+
+                                                <Text style={styles.dossierRef}>
+                                                    {t('Numéro de dossier')} : #RG-{String(selected.id).slice(0, 8).toUpperCase()}
+                                                </Text>
+
                                                 <View style={styles.progressBg}>
                                                     <View
                                                         style={[
@@ -544,76 +493,75 @@ export default function DossierScreen({ navigation }: any) {
                                                         ]}
                                                     />
                                                 </View>
-                                                <View style={styles.progressBarLegend}>
-                                                    <Text style={styles.progressBarLegendText}>0%</Text>
-                                                    <Text style={styles.progressBarLegendText}>100%</Text>
-                                                </View>
-                                            </View>
 
-                                            {/* Stepper corporate */}
-                                            <View style={styles.stepperWrap}>
-                                                <View style={styles.stepperLineBg} />
-                                                {stepIdx > 0 && (
-                                                    <View
-                                                        style={[
-                                                            styles.stepperLineFill,
-                                                            {
-                                                                backgroundColor: color,
-                                                                width: `${(stepIdx / (STEPS.length - 1)) * 80}%` as any,
-                                                            },
-                                                        ]}
-                                                    />
-                                                )}
-                                                <View style={styles.stepsRow}>
+                                                {/* Timeline verticale des étapes réelles */}
+                                                <View style={styles.timeline}>
                                                     {STEPS.map((step, i) => {
-                                                        const active = stepIdx >= i
+                                                        const done = stepIdx > i
                                                         const current = stepIdx === i
+                                                        const last = i === STEPS.length - 1
                                                         return (
-                                                            <View key={i} style={styles.step}>
-                                                                <View style={[
-                                                                    styles.stepDot,
-                                                                    active && { backgroundColor: color, borderColor: color },
-                                                                    current && {
-                                                                        borderWidth: 3,
-                                                                        borderColor: C.accent,
-                                                                        transform: [{ scale: 1.2 }],
-                                                                    },
-                                                                ]}>
-                                                                    {active && (
-                                                                        <Ionicons
-                                                                            name="checkmark"
-                                                                            size={10}
-                                                                            color={C.primaryText}
-                                                                        />
+                                                            <View key={step.key} style={styles.tlRow}>
+                                                                <View style={styles.tlGutter}>
+                                                                    <View style={[
+                                                                        styles.tlDot,
+                                                                        done && styles.tlDotDone,
+                                                                        current && styles.tlDotCurrent,
+                                                                    ]}>
+                                                                        {done && (
+                                                                            <Ionicons name="checkmark" size={13} color={C.primaryText} />
+                                                                        )}
+                                                                        {current && <View style={styles.tlDotPulse} />}
+                                                                    </View>
+                                                                    {!last && (
+                                                                        <View style={[
+                                                                            styles.tlLine,
+                                                                            done && { backgroundColor: C.primary },
+                                                                        ]} />
                                                                     )}
                                                                 </View>
-                                                                <Text style={[
-                                                                    styles.stepLabel,
-                                                                    active && { color: C.primary, fontWeight: '700' },
-                                                                    current && { color: C.accent, fontWeight: '800' },
-                                                                ]}>
-                                                                    {t(step.label)}
-                                                                </Text>
+
+                                                                <View style={styles.tlContent}>
+                                                                    <Text style={[
+                                                                        styles.tlLabel,
+                                                                        (done || current) && { color: C.text },
+                                                                        current && { color: C.primary },
+                                                                    ]}>
+                                                                        {t(step.label)}
+                                                                    </Text>
+                                                                    <Text style={styles.tlSub}>
+                                                                        {done
+                                                                            ? t('Étape terminée')
+                                                                            : current
+                                                                                ? t('En cours')
+                                                                                : t('À venir')}
+                                                                    </Text>
+                                                                </View>
                                                             </View>
                                                         )
                                                     })}
                                                 </View>
-                                            </View>
 
-                                            {/* Notes éventuelles */}
-                                            {selected.notes ? (
-                                                <View style={styles.notesRow}>
-                                                    <View style={styles.notesIconWrap}>
-                                                        <Ionicons name="chatbubble-ellipses-outline" size={14} color={C.accent} />
+                                                <Text style={styles.progressDate}>
+                                                    {t('Ouvert le')}{' '}
+                                                    {new Date(selected.created_at).toLocaleDateString('fr-FR', {
+                                                        day: '2-digit', month: 'long', year: 'numeric',
+                                                    })}
+                                                </Text>
+
+                                                {/* Note de l'équipe */}
+                                                {selected.notes ? (
+                                                    <View style={styles.notesRow}>
+                                                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={C.primary} />
+                                                        <View style={{ flex: 1 }}>
+                                                            <Text style={styles.notesLabel}>
+                                                                {t('Note de l\'équipe')}
+                                                            </Text>
+                                                            <Text style={styles.notesText}>{selected.notes}</Text>
+                                                        </View>
                                                     </View>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={styles.notesLabel}>
-                                                            {t('Note de l\'équipe')}
-                                                        </Text>
-                                                        <Text style={styles.notesText}>{selected.notes}</Text>
-                                                    </View>
-                                                </View>
-                                            ) : null}
+                                                ) : null}
+                                            </View>
                                         </View>
                                     </AnimatedSection>
 
@@ -635,6 +583,9 @@ export default function DossierScreen({ navigation }: any) {
                                                     disabled={uploading}
                                                     onPress={() => setShowUploadModal(true)}
                                                     style={styles.addDocBtn}
+                                                    accessibilityRole="button"
+                                                    hitSlop={6}
+                                                    accessibilityLabel={t('Ajouter')}
                                                 >
                                                     {uploading ? (
                                                         <ActivityIndicator color={C.accent} size="small" />
@@ -704,6 +655,8 @@ export default function DossierScreen({ navigation }: any) {
                                                         activeOpacity={0.85}
                                                         onPress={() => setShowUploadModal(true)}
                                                         style={styles.uploadNowBtn}
+                                                        accessibilityRole="button"
+                                                        hitSlop={6}
                                                     >
                                                         <Ionicons name="add" size={16} color={C.accent} />
                                                         <Text style={styles.uploadNowText}>
@@ -754,6 +707,8 @@ export default function DossierScreen({ navigation }: any) {
                     style={styles.modalOverlay}
                     activeOpacity={1}
                     onPress={() => setShowUploadModal(false)}
+                    accessibilityRole="button"
+                    hitSlop={6}
                 >
                     <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
                         <View style={styles.modalHandle} />
@@ -793,6 +748,8 @@ export default function DossierScreen({ navigation }: any) {
                                                     styles.dossierChip,
                                                     isTarget && styles.dossierChipActive,
                                                 ]}
+                                                accessibilityRole="button"
+                                                hitSlop={6}
                                             >
                                                 <Ionicons
                                                     name="folder-outline"
@@ -848,6 +805,8 @@ export default function DossierScreen({ navigation }: any) {
                                     activeOpacity={0.85}
                                     onPress={opt.action}
                                     style={styles.modalOption}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
                                 >
                                     <View style={[
                                         styles.modalOptionIcon,
@@ -876,6 +835,8 @@ export default function DossierScreen({ navigation }: any) {
                             activeOpacity={0.85}
                             onPress={() => setShowUploadModal(false)}
                             style={styles.modalCancel}
+                            accessibilityRole="button"
+                            hitSlop={6}
                         >
                             <Text style={styles.modalCancelText}>{t('Annuler')}</Text>
                         </TouchableOpacity>
@@ -892,98 +853,43 @@ export default function DossierScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
+    /* ── Liseré + en-tête ── */
+    topFlag: {
+        marginHorizontal: 20,
+        borderRadius: radius.pill,
+        overflow: 'hidden',
     },
-    aura1: { top: -100, right: -100, backgroundColor: C.primary },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.auraGreen },
-
-    /* ── Nav Bar ── */
     navBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-        gap: 10,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.md,
+        gap: spacing.md,
     },
-    navBack: { width: 44, height: 44, justifyContent: 'center' },
     iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
+        width: 44, height: 44, borderRadius: radius.pill,
         backgroundColor: C.surface,
         borderWidth: 1, borderColor: C.border,
         justifyContent: 'center', alignItems: 'center',
     },
-    navCountBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(13, 43, 78, 0.06)',
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderWidth: 1,
-        borderColor: 'rgba(13, 43, 78, 0.12)',
-    },
-    navCountDot: {
-        width: 6, height: 6, borderRadius: 3,
-        backgroundColor: C.success,
-    },
-    navCountText: {
-        fontSize: 10.5,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: 0.3,
-    },
+    navTitle: { ...typography.h2, color: C.text, flex: 1 },
     uploadHeaderBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
-        backgroundColor: C.primary,
-        borderRadius: 999,
-        paddingHorizontal: 14,
+        gap: spacing.xs,
+        backgroundColor: C.primarySoft,
+        borderRadius: radius.pill,
+        paddingHorizontal: spacing.md,
         paddingVertical: 9,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 5,
     },
-    uploadHeaderBtnDisabled: {
-        backgroundColor: '#CBD5E1',
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    uploadHeaderBtnText: {
-        color: C.primaryText,
-        fontSize: 13,
-        fontWeight: '700',
-        letterSpacing: 0.2,
-    },
+    uploadHeaderBtnDisabled: { opacity: 0.45 },
+    uploadHeaderBtnText: { ...typography.label, color: C.primary },
 
     scroll: { paddingHorizontal: 20, paddingBottom: 20 },
 
     /* ── Header ── */
     headerContainer: { marginTop: 8, marginBottom: 24, paddingHorizontal: 4 },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -1001,7 +907,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     tabsHeaderText: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.5,
@@ -1044,165 +950,63 @@ const styles = StyleSheet.create({
     /* ── Progress Card ── */
     progressCard: {
         backgroundColor: C.surface,
-        borderRadius: 20,
-        padding: 22,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        marginBottom: 16,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 18,
-        elevation: 4,
+        borderRadius: radius.xl,
+        marginBottom: spacing.md,
         overflow: 'hidden',
-        position: 'relative',
+        ...shadows.cardRaised,
     },
-    progressHalo: {
-        position: 'absolute',
-        top: -40,
-        right: -40,
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: C.accent,
+    progressBody: { padding: spacing.lg },
+
+    /* ── Statut ── */
+    statusHeadRow: {
+        flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'space-between', marginBottom: spacing.md,
     },
-    progressTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 18,
+    heroWrap: { position: 'relative' },
+    heroImage: { width: '100%', height: 168, backgroundColor: C.surfaceAlt },
+    statusPill: {
+        paddingHorizontal: spacing.md, paddingVertical: 7,
+        borderRadius: radius.pill, alignSelf: 'flex-start',
     },
-    progressLabelRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        marginBottom: 4,
+    statusPillOnHero: {
+        position: 'absolute', left: spacing.md, bottom: spacing.md,
     },
-    progressLabel: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: C.textSec,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
+    progressStepHint: { ...typography.overline, fontSize: 12, color: C.textMuted },
+    statusPillText: {
+        ...typography.label, fontSize: 12,
+        color: C.primaryText, textTransform: 'uppercase', letterSpacing: 0.8,
     },
-    progressService: {
-        fontSize: 19,
-        fontWeight: '800',
-        color: C.primary,
-        letterSpacing: -0.3,
-        marginBottom: 8,
-        lineHeight: 24,
+    percentInline: { ...typography.h3, color: C.primary },
+    dossierRef: { ...typography.bodySmall, color: C.textMuted, marginBottom: spacing.md },
+
+    /* ── Timeline verticale ── */
+    timeline: { marginTop: spacing.lg },
+    tlRow: { flexDirection: 'row', gap: spacing.md },
+    tlGutter: { alignItems: 'center', width: 26 },
+    tlDot: {
+        width: 26, height: 26, borderRadius: 13,
+        borderWidth: 2, borderColor: C.border,
+        backgroundColor: C.surface,
+        alignItems: 'center', justifyContent: 'center',
     },
-    statusRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 7,
-        marginBottom: 6,
-    },
-    statusDot: { width: 7, height: 7, borderRadius: 3.5 },
-    progressStatus: {
-        fontSize: 12.5,
-        fontWeight: '700',
-        letterSpacing: -0.1,
-    },
-    progressDate: {
-        fontSize: 11,
-        color: C.textMuted,
-        fontWeight: '500',
-        marginTop: 2,
-    },
-    percentWrap: { alignItems: 'center' },
-    percentCircle: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: C.surfaceSolid,
-        borderWidth: 2.5,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    percentText: {
-        fontSize: 22,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-    },
-    percentSign: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.accent,
-        marginLeft: 1,
-        marginTop: 4,
-    },
+    tlDotDone: { backgroundColor: C.primary, borderColor: C.primary },
+    tlDotCurrent: { borderColor: C.primary, backgroundColor: C.surface },
+    tlDotPulse: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.primary },
+    tlLine: { flex: 1, width: 2, backgroundColor: C.border, minHeight: 22 },
+    tlContent: { flex: 1, paddingBottom: spacing.lg },
+    tlLabel: { ...typography.label, fontSize: 15, color: C.textMuted },
+    tlSub: { ...typography.caption, color: C.textMuted, marginTop: 2 },
+    progressService: { ...typography.h2, color: C.text, marginBottom: spacing.xs },
+    progressDate: { ...typography.caption, color: C.textMuted, marginTop: spacing.sm },
 
     /* ── Progress Bar ── */
-    progressBarWrap: { marginBottom: 22 },
     progressBg: {
-        height: 8,
-        backgroundColor: 'rgba(13, 43, 78, 0.08)',
-        borderRadius: 4,
-        overflow: 'hidden',
+        height: 8, backgroundColor: C.surfaceAlt,
+        borderRadius: radius.pill, overflow: 'hidden',
     },
-    progressFill: { height: '100%', borderRadius: 4 },
-    progressBarLegend: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 6,
-    },
-    progressBarLegendText: {
-        fontSize: 9.5,
-        fontWeight: '600',
-        color: C.textMuted,
-        letterSpacing: 0.3,
-    },
+    progressFill: { height: '100%', borderRadius: radius.pill },
 
     /* ── Stepper ── */
-    stepperWrap: { position: 'relative', paddingTop: 4 },
-    stepperLineBg: {
-        position: 'absolute',
-        top: 12,
-        left: '10%',
-        right: '10%',
-        height: 2,
-        backgroundColor: C.border,
-        borderRadius: 1,
-    },
-    stepperLineFill: {
-        position: 'absolute',
-        top: 12,
-        left: '10%',
-        height: 2,
-        borderRadius: 1,
-        maxWidth: '80%',
-    },
-    stepsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        position: 'relative',
-    },
-    step: { alignItems: 'center', flex: 1 },
-    stepDot: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: C.border,
-        marginBottom: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: C.surfaceSolid,
-    },
-    stepLabel: {
-        fontSize: 9.5,
-        color: C.textMuted,
-        textAlign: 'center',
-        fontWeight: '600',
-    },
 
     /* ── Notes ── */
     notesRow: {
@@ -1224,7 +1028,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.2)',
     },
     notesLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.4,
@@ -1270,7 +1074,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     cardSubtitle: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         marginTop: 1,
@@ -1325,7 +1129,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     docDate: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         marginTop: 2,
@@ -1340,7 +1144,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     docStatusLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 0.2,
     },
@@ -1420,7 +1224,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     tipText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 16,
@@ -1441,14 +1245,6 @@ const styles = StyleSheet.create({
         elevation: 4,
         overflow: 'hidden',
         position: 'relative',
-    },
-    emptyHalo: {
-        position: 'absolute',
-        top: -50,
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: C.accent,
     },
     emptyIconWrap: {
         width: 88, height: 88, borderRadius: 28,
@@ -1556,7 +1352,7 @@ const styles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     dossierSelectorLabel: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.5,
@@ -1611,7 +1407,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     modalOptionSub: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         marginTop: 2,
@@ -1625,7 +1421,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     modalSecurityText: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '600',
         letterSpacing: 0.3,

@@ -1,9 +1,10 @@
 // src/screens/payments/PaymentsScreen.tsx
 'use strict'
 import React, { useState, useEffect, useCallback } from 'react'
+import { confirm } from '../../lib/feedback'
 import {
     View, Text, StyleSheet, ScrollView, KeyboardAvoidingView,
-    Platform, ActivityIndicator, Alert, Pressable, Dimensions,
+    Platform, ActivityIndicator, Pressable, Dimensions,
     TouchableOpacity, RefreshControl,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,7 +22,9 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    PaymentsScreen — THEME "CORPORATE PREMIUM 2026"
@@ -30,23 +33,9 @@ import { useLang } from '../../contexts/LangContext'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-    primary: '#047857',      // Émeraude Profond
-    primaryDark: '#022C22',
-    accent: '#C9A84C',       // Or
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',    // Émeraude vif
-    error: '#EF4444',
-    success: '#10B981',
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -114,26 +103,8 @@ export default function PaymentsScreen({ navigation }: any) {
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
     const [tab, setTab] = useState<'methods' | 'history'>('methods')
-
-    /* ── Auras corporate (fond) ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     useEffect(() => {
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     /* ── Actions ── */
     const onRefresh = useCallback(async () => {
@@ -147,17 +118,14 @@ export default function PaymentsScreen({ navigation }: any) {
     }
 
     const removeMethod = (id: string) => {
-        Alert.alert(
-            t('Supprimer cette carte ?'),
-            t('Cette action est définitive.'),
-            [
-                { text: t('Annuler'), style: 'cancel' },
-                {
-                    text: t('Supprimer'), style: 'destructive',
-                    onPress: () => setMethods(prev => prev.filter(m => m.id !== id)),
-                },
-            ]
-        )
+        confirm({
+            title: t('Supprimer cette carte ?'),
+            message: t('Cette action est définitive.'),
+            confirmLabel: t('Supprimer'),
+            cancelLabel: t('Annuler'),
+            destructive: true,
+            onConfirm: () => setMethods(prev => prev.filter(m => m.id !== id)),
+        })
     }
 
     const addMethod = () => {
@@ -170,19 +138,26 @@ export default function PaymentsScreen({ navigation }: any) {
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-            {/* 🎨 Auras premium */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation?.goBack?.()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation?.goBack?.()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
                 <Text style={styles.navTitle}>{t('Paiements')}</Text>
-                <Pressable onPress={addMethod} style={styles.navBack}>
+                <Pressable onPress={addMethod} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Ajouter')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="add" size={24} color={C.primary} />
                     </View>
@@ -200,8 +175,7 @@ export default function PaymentsScreen({ navigation }: any) {
                 {/* HEADER TITRE */}
                 <AnimatedSection delay={0}>
                     <View style={styles.headerContainer}>
-                        <Text style={styles.title}>{t('Votre')}</Text>
-                        <Text style={styles.titleHighlight}>{t('portefeuille.')}</Text>
+                        <Text style={styles.title}>{t('Mes paiements')}</Text>
                         <Text style={styles.subtitle}>
                             {t('Gérez vos moyens de paiement et suivez vos transactions en toute sécurité.')}
                         </Text>
@@ -291,12 +265,7 @@ export default function PaymentsScreen({ navigation }: any) {
 function HeroCard({ method, balance, t }: { method?: PaymentMethod; balance: number; t: (s: string) => string }) {
     const shine = useSharedValue(0)
     useEffect(() => {
-        shine.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 3500, easing: Easing.inOut(Easing.quad) }),
-                withTiming(0, { duration: 3500, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
+        shine.value = withTiming(1, { duration: 600 })
     }, [])
     const shineStyle = useAnimatedStyle(() => ({
         opacity: interpolate(shine.value, [0, 1], [0.05, 0.18]),
@@ -380,7 +349,10 @@ function TabButton({ label, active, onPress }: { label: string; active: boolean;
         color: interpolateColor(anim.value, [0, 1], [C.textSec, C.primary]),
     }))
     return (
-        <Pressable onPress={onPress} style={{ flex: 1 }}>
+        <Pressable onPress={onPress} style={{ flex: 1 }}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            hitSlop={6}>
             <Animated.View style={[styles.tabBtn, rStyle]}>
                 <Animated.Text style={[styles.tabText, textStyle]}>{label}</Animated.Text>
             </Animated.View>
@@ -425,11 +397,15 @@ function MethodRow({
 
                 <View style={styles.methodActions}>
                     {!method.isDefault && (
-                        <TouchableOpacity onPress={onSetDefault} hitSlop={10} style={styles.methodAction}>
+                        <TouchableOpacity onPress={onSetDefault} hitSlop={10} style={styles.methodAction}
+                            accessibilityRole="button"
+                            accessibilityLabel="Définir comme moyen de paiement par défaut">
                             <Ionicons name="star-outline" size={18} color={C.primary} />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity onPress={onRemove} hitSlop={10} style={styles.methodAction}>
+                    <TouchableOpacity onPress={onRemove} hitSlop={10} style={styles.methodAction}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Supprimer')}>
                         <Ionicons name="trash-outline" size={18} color={C.error} />
                     </TouchableOpacity>
                 </View>
@@ -450,7 +426,7 @@ function TransactionRow({ tx, t, delay }: { tx: Transaction; t: (s: string) => s
     return (
         <AnimatedSection delay={delay}>
             <View style={styles.txRow}>
-                <View style={[styles.txIconWrap, { backgroundColor: isCredit ? '#E8F3EE' : '#F1F5F9' }]}>
+                <View style={[styles.txIconWrap, { backgroundColor: isCredit ? '#E8F3EE' : '#F5F5F5' }]}>
                     <Ionicons name={tx.icon} size={20} color={isCredit ? C.success : C.primary} />
                 </View>
 
@@ -499,6 +475,8 @@ function InteractiveButton({ title, onPress, disabled, loading, icon }: any) {
             disabled={disabled || loading}
             activeOpacity={0.85}
             style={[styles.btn, (disabled || loading) && styles.btnDisabled, { marginTop: 20 }]}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             {loading ? (
                 <ActivityIndicator color={C.primaryText} size="small" />
@@ -531,41 +509,18 @@ function formatDate(iso: string) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
 
-    /* ── Auras ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: { top: -100, right: -100, backgroundColor: C.primary },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.auraGreen },
-
     /* ── Nav ── */
-    navBar: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
     navTitle: { fontSize: 16, fontWeight: '700', color: C.primary, letterSpacing: 0.3 },
-    iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: 'center', alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
     scroll: { paddingHorizontal: 24, paddingBottom: 80 },
 
     /* ── Header ── */
     headerContainer: { marginTop: 8, marginBottom: 28 },
-    title: { fontSize: 36, fontWeight: '700', color: C.primary, letterSpacing: -0.5 },
-    titleHighlight: { fontSize: 36, fontWeight: '800', color: C.accent, letterSpacing: -0.5, marginTop: -4 },
+    title: { ...typography.h1, color: C.text },
     subtitle: { fontSize: 15, color: C.textSec, marginTop: 12, lineHeight: 22 },
 
     /* ── HERO CARD ── */
@@ -601,7 +556,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10, paddingVertical: 6,
         borderRadius: 12,
     },
-    heroBrandText: { color: C.accent, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+    heroBrandText: { color: C.accent, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
     heroChip: {
         width: 38, height: 28,
         backgroundColor: C.accentLight,
@@ -623,7 +578,7 @@ const styles = StyleSheet.create({
     },
     heroNumber: { color: C.primaryText, fontSize: 17, fontWeight: '600', letterSpacing: 2 },
     heroMetaRow: { flexDirection: 'row', marginTop: 10 },
-    heroMetaLabel: { color: C.accentLight, fontSize: 9, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
+    heroMetaLabel: { color: C.accentLight, fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
     heroMetaValue: { color: C.primaryText, fontSize: 12, fontWeight: '600', marginTop: 2 },
 
     brandText: { color: C.primaryText, fontSize: 20, fontWeight: '800', letterSpacing: 1 },
@@ -690,7 +645,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8, paddingVertical: 2,
         borderRadius: 8,
     },
-    defaultBadgeText: { color: C.accent, fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+    defaultBadgeText: { color: C.accent, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 },
 
     /* ── Transaction ── */
     txRow: {
@@ -715,7 +670,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8, paddingVertical: 2,
         borderRadius: 8,
     },
-    txStatusText: { color: C.primaryText, fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
+    txStatusText: { color: C.primaryText, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
 
     /* ── Empty ── */
     empty: {

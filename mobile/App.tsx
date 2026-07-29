@@ -15,6 +15,13 @@ import {
     Inter_700Bold,
 } from '@expo-google-fonts/inter'
 import {
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans'
+import {
     Outfit_400Regular,
     Outfit_500Medium,
     Outfit_600SemiBold,
@@ -24,6 +31,7 @@ import * as Notifications from 'expo-notifications'
 
 import { AuthProvider } from './src/contexts/AuthContext'
 import { LangProvider } from './src/contexts/LangContext'
+import { FeedbackProvider } from './src/components/FeedbackProvider'
 import { PaymentSettingsProvider } from './src/contexts/PaymentSettingsContext'
 import { CartProvider } from './src/contexts/CartContext'
 import AppNavigator from './src/navigation/AppNavigator'
@@ -59,6 +67,12 @@ const linking = {
 
 export default function App() {
     const [fontsLoaded] = useFonts({
+        // Design v2 : Plus Jakarta Sans porte toute l'interface.
+        PlusJakartaSans_400Regular,
+        PlusJakartaSans_500Medium,
+        PlusJakartaSans_600SemiBold,
+        PlusJakartaSans_700Bold,
+        PlusJakartaSans_800ExtraBold,
         PlayfairDisplay_700Bold,
         PlayfairDisplay_400Regular,
         Inter_400Regular,
@@ -132,11 +146,13 @@ export default function App() {
                     <LangProvider>
                         <AuthProvider>
                             <CartProvider>
-                                <NavigationContainer ref={navigationRef} linking={linking}>
-                                    <StatusBar style="dark" />
-                                    <AppNavigator />
-                                    <OfflineBanner />
-                                </NavigationContainer>
+                                <FeedbackProvider>
+                                    <NavigationContainer ref={navigationRef} linking={linking}>
+                                        <StatusBar style="dark" />
+                                        <AppNavigator />
+                                        <OfflineBanner />
+                                    </NavigationContainer>
+                                </FeedbackProvider>
                             </CartProvider>
                         </AuthProvider>
                     </LangProvider>

@@ -1,9 +1,10 @@
 'use strict'
 import React, { useState, useEffect, useCallback } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Alert, Pressable, Dimensions,
+    ActivityIndicator, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -21,8 +22,10 @@ import Animated, {
 } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    EditProfilScreen — THEME "CORPORATE PREMIUM 2026"
@@ -32,26 +35,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',      // Bleu Profond
-    primaryDark: '#022C22',
-    accent: '#C9A84C',       // Or
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',    // Vert
-    error: '#EF4444',        // Rouge
-    success: '#10B981',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EditProfil'>
 
@@ -149,6 +135,8 @@ const Field = React.memo(function Field({
                         onPress={() => onChange('')}
                         style={fieldStyles.clearBtn}
                         hitSlop={10}
+                        accessibilityRole="button"
+                        accessibilityLabel="Effacer le champ"
                     >
                         <Ionicons name="close-circle" size={18} color={C.textMuted} />
                     </Pressable>
@@ -175,7 +163,7 @@ const fieldStyles = StyleSheet.create({
         marginBottom: 8,
     },
     label: {
-        fontSize: 11.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.5,
@@ -214,7 +202,7 @@ const fieldStyles = StyleSheet.create({
         marginLeft: 6,
     },
     helper: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textMuted,
         marginTop: 6,
         marginLeft: 4,
@@ -239,41 +227,20 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const avatarPulse = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
         // Halo doré pulsant autour de l'avatar
-        avatarPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
+        avatarPulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const avatarHaloStyle = useAnimatedStyle(() => ({
         opacity: interpolate(avatarPulse.value, [0, 1], [0.18, 0.42]),
@@ -294,7 +261,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
 
     const handleSave = async () => {
         if (!prenom.trim() || !nom.trim()) {
-            Alert.alert(t('Champs requis'), t('Le prénom et le nom sont obligatoires.'))
+            toast(t('Champs requis'), t('Le prénom et le nom sont obligatoires.'))
             return
         }
         setLoading(true)
@@ -307,11 +274,10 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
         setLoading(false)
 
         if (error) {
-            Alert.alert(t('Erreur'), error.message)
+            toast(t('Erreur'), error.message)
         } else {
-            Alert.alert(t('Succès'), t('Profil mis à jour avec succès.'), [
-                { text: 'OK', onPress: () => navigation.goBack() },
-            ])
+            toast(t('Succès'), t('Profil mis à jour avec succès.'), 'success')
+            navigation.goBack()
         }
     }
 
@@ -326,13 +292,17 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -354,8 +324,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
             >
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Votre')}</Text>
-                    <Text style={styles.titleHighlight}>{t('profil.')}</Text>
+                    <Text style={styles.title}>{t('Modifier mon profil')}</Text>
                     <Text style={styles.subtitle}>
                         {t('Tenez vos informations à jour pour un accompagnement optimal.')}
                     </Text>
@@ -503,6 +472,8 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                     style={styles.cancelBtn}
                     activeOpacity={0.8}
                     disabled={loading}
+                    accessibilityRole="button"
+                    hitSlop={6}
                 >
                     <Text style={styles.cancelBtnText}>{t('Annuler')}</Text>
                 </TouchableOpacity>
@@ -515,6 +486,8 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                     onPress={handleSave}
                     disabled={loading || !hasChanges}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    hitSlop={6}
                 >
                     {loading ? (
                         <ActivityIndicator color={C.primaryText} size="small" />
@@ -555,49 +528,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     changesBadge: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -616,7 +555,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     changesBadgeText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -633,19 +572,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         paddingHorizontal: 8,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -731,7 +658,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     completionLabel: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.3,
@@ -756,7 +683,7 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
     completionHint: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 15,
@@ -785,7 +712,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(13, 43, 78, 0.08)',
     },
     emailLabel: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.5,
@@ -810,7 +737,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     lockedText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.3,
@@ -884,7 +811,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     tipText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 16,
@@ -953,6 +880,6 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     saveBtnTextDisabled: {
-        color: '#F1F5F9',
+        color: '#F5F5F5',
     },
 })

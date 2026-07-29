@@ -1,9 +1,10 @@
 'use strict'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, FlatList, TextInput, TouchableOpacity,
     StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator,
-    Alert, Pressable, Dimensions,
+    Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -22,7 +23,9 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    MessagesScreen — THEME "CORPORATE PREMIUM 2026"
@@ -31,26 +34,9 @@ import { useLang } from '../../contexts/LangContext'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (cohérente avec Register & Legal)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 /* ── Types ── */
 interface ChatMessage {
@@ -95,6 +81,8 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1) }}
                 onPressOut={() => { pressAnim.value = withSpring(0) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <Animated.View style={[styles.suggestion, pressStyle]}>
                     <View style={styles.suggestionIconWrap}>
@@ -126,33 +114,14 @@ export default function MessagesScreen({ navigation }: any) {
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
     const contentAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const onlineDot = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
         contentAnim.value = withDelay(200, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
         // Pulsation du dot "en ligne"
-        onlineDot.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
-                withTiming(0.3, { duration: 1200, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
+        onlineDot.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
@@ -163,8 +132,6 @@ export default function MessagesScreen({ navigation }: any) {
         opacity: contentAnim.value,
         transform: [{ translateY: 40 * (1 - contentAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
     const onlineDotStyle = useAnimatedStyle(() => ({
         opacity: interpolate(onlineDot.value, [0, 1], [0.4, 1]),
         transform: [{ scale: interpolate(onlineDot.value, [0, 1], [0.8, 1.2]) }],
@@ -279,7 +246,7 @@ export default function MessagesScreen({ navigation }: any) {
             if (convErr || !convData) {
                 console.warn('[Messages] Create conversation error:', convErr?.message)
                 setSending(false)
-                Alert.alert(t('Erreur'), t('Impossible de démarrer la conversation.'))
+                toast(t('Erreur'), t('Impossible de démarrer la conversation.'))
                 return
             }
             activeConvId = convData.id
@@ -308,7 +275,7 @@ export default function MessagesScreen({ navigation }: any) {
         if (error) {
             console.warn('[Messages] Send error:', error.message, error.code)
             setChatMessages(prev => prev.filter(m => m.id !== tempId))
-            Alert.alert(t('Erreur'), t('Impossible d\'envoyer le message. Vérifiez votre connexion.'))
+            toast(t('Erreur'), t('Impossible d\'envoyer le message. Vérifiez votre connexion.'))
         } else if (data) {
             setChatMessages(prev => prev.map(m => m.id === tempId ? data as ChatMessage : m))
         }
@@ -379,37 +346,34 @@ export default function MessagesScreen({ navigation }: any) {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation?.goBack()} style={styles.navBack}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
-                    </View>
-                </Pressable>
-
-                <View style={styles.navStatus}>
-                    <Animated.View style={[styles.statusDot, onlineDotStyle]} />
-                    <Text style={styles.navStatusText}>{t('En ligne')}</Text>
-                </View>
+            {/* LISERÉ TRICOLORE */}
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
             </View>
 
-            {/* HEADER TITRE */}
-            <Animated.View style={[styles.headerContainer, styleHeader]}>
-                <Text style={styles.title}>{t('Votre')}</Text>
-                <Text style={styles.titleHighlight}>{t('messagerie.')}</Text>
-                <View style={styles.subtitleRow}>
-                    <View style={styles.subtitleBadge}>
-                        <Ionicons name="flash" size={11} color={C.accent} />
-                        <Text style={styles.subtitleBadgeText}>{t('Réponse sous 2h')}</Text>
-                    </View>
-                    <Text style={styles.subtitleSep}>·</Text>
-                    <Text style={styles.subtitle}>{t('Équipe RGB Officielle')}</Text>
+            {/* EN-TÊTE */}
+            <View style={styles.navBar}>
+                {navigation?.canGoBack?.() ? (
+                    <Pressable
+                        onPress={() => navigation?.goBack()}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Retour')}
+                        hitSlop={8}
+                        style={styles.iconContainer}
+                    >
+                        <Ionicons name="arrow-back" size={20} color={C.text} />
+                    </Pressable>
+                ) : null}
+
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.navTitle} numberOfLines={1}>{t('Messagerie')}</Text>
+                    {/* Aucun délai de réponse annoncé : l'app n'a pas de SLA réel
+                        à afficher. On nomme l'interlocuteur, c'est vérifiable. */}
+                    <Text style={styles.navSubtitle} numberOfLines={1}>{t('Équipe RGB')}</Text>
                 </View>
-            </Animated.View>
+            </View>
 
             {/* ZONE MESSAGES */}
             <Animated.View style={[{ flex: 1 }, styleContent]}>
@@ -506,6 +470,10 @@ export default function MessagesScreen({ navigation }: any) {
                     onPress={sendMessage}
                     disabled={!newMessage.trim() || sending}
                     activeOpacity={0.85}
+                    accessibilityLabel={t('Envoyer le message')}
+                    accessibilityState={{ disabled: !newMessage.trim() || sending }}
+                    accessibilityRole="button"
+                    hitSlop={6}
                 >
                     {sending ? (
                         <ActivityIndicator color={C.primaryText} size="small" />
@@ -527,125 +495,20 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
-    navBack: {
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    navStatus: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        backgroundColor: 'rgba(10, 107, 59, 0.10)',
-        borderRadius: 999,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderWidth: 1,
-        borderColor: 'rgba(10, 107, 59, 0.25)',
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navTitle: { ...typography.h1, color: C.text },
+    navSubtitle: { ...typography.bodySmall, color: C.textMuted, marginTop: 2 },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     statusDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
         backgroundColor: C.success,
     },
-    navStatusText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.success,
-        letterSpacing: 0.3,
-    },
 
     /* ── Header ── */
-    headerContainer: {
-        paddingHorizontal: 28,
-        marginTop: 8,
-        marginBottom: 20,
-    },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
-    subtitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginTop: 14,
-        flexWrap: 'wrap',
-    },
-    subtitleBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: 'rgba(212, 160, 23, 0.10)',
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(212, 160, 23, 0.25)',
-    },
-    subtitleBadgeText: {
-        fontSize: 10.5,
-        fontWeight: '700',
-        color: C.accentDark,
-        letterSpacing: 0.3,
-    },
-    subtitleSep: {
-        color: C.textMuted,
-        fontSize: 14,
-    },
-    subtitle: {
-        fontSize: 13,
-        color: C.textSec,
-        fontWeight: '500',
-    },
 
     /* ── Loading ── */
     loadingState: {
@@ -734,7 +597,7 @@ const styles = StyleSheet.create({
         borderColor: C.accent,
     },
     emptyHeroBadgeText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.2,
@@ -771,7 +634,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.border,
     },
     suggestionsTitle: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -841,7 +704,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     dateText: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '700',
         letterSpacing: 0.3,
@@ -874,7 +737,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     agentName: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 0.4,
@@ -933,7 +796,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     bubbleTime: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '600',
         letterSpacing: 0.2,
     },

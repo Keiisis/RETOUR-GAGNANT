@@ -64,3 +64,6 @@ Thumbs.db
 
 # Reglages Claude Code locaux (contiennent des cles API) — jamais versionnes
 .claude/settings.local.json
+
+# Sorties d'outils d'analyse (Strix) — pas du code source
+strix_runs/

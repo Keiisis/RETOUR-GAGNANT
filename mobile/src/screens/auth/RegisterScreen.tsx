@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, TextInput, StyleSheet, KeyboardAvoidingView,
-    Platform, ScrollView, ActivityIndicator, Alert,
-    Pressable, Dimensions, TouchableOpacity
+    Platform, ScrollView, ActivityIndicator, Pressable, Dimensions, TouchableOpacity
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -18,8 +18,10 @@ import Animated, {
     interpolateColor,
     interpolate,
 } from 'react-native-reanimated'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    RegisterScreen — THEME "CORPORATE PREMIUM 2026"
@@ -39,21 +41,9 @@ const PWD_CRITERIA: { id: string; label: string; test: (p: string) => boolean }[
 ]
 
 // Palette de l'agence (0% noir, 100% premium)
-const C = {
-    bg: '#F8F9FA',           // Blanc cassé très pur
-    surface: 'rgba(255, 255, 255, 0.85)', // Verre translucide
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',       // Gris perle pour les bordures
-
-    primary: '#047857',      // Bleu Profond (Agence) - Textes & Boutons
-    accent: '#C9A84C',       // Or (Agence) - Highlights & Focus
-    auraGreen: '#10B981',    // Vert (Agence) - Aura subtile fond
-    error: '#EF4444',        // Rouge (Agence) - Erreurs
-
-    textSec: '#64748B',      // Gris ardoise (textes secondaires)
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',  // Texte sur fond primaire
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 export default function RegisterScreen({ navigation }: any) {
     const insets = useSafeAreaInsets()
@@ -77,10 +67,6 @@ export default function RegisterScreen({ navigation }: any) {
     const formAnim = useSharedValue(0)
     const btnAnim = useSharedValue(0)
 
-    /* ── Animation Corporate : Auras très subtiles et lentes ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-
     useEffect(() => {
         // Apparition élégante
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
@@ -88,18 +74,6 @@ export default function RegisterScreen({ navigation }: any) {
         btnAnim.value = withDelay(300, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
 
         // Mouvement très lent et imperceptible pour donner vie au fond (effet texture)
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
@@ -115,18 +89,16 @@ export default function RegisterScreen({ navigation }: any) {
         transform: [{ translateY: 50 * (1 - btnAnim.value) }],
     }))
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const handleRegister = async () => {
         if (!email.trim() || !password.trim() || !prenom.trim() || !nom.trim()) {
-            Alert.alert(t('Champs requis'), t('Veuillez remplir tous les champs obligatoires.'))
+            toast(t('Champs requis'), t('Veuillez remplir tous les champs obligatoires.'))
             return
         }
         // Mot de passe fort obligatoire (revérifié côté serveur par l'API)
         if (!passwordStrong) {
             const missing = pwdChecks.filter(c => !c.ok).map(c => t(c.label)).join(', ')
-            Alert.alert(t('Mot de passe trop faible'), `${t('Il manque')} : ${missing}.`)
+            toast(t('Mot de passe trop faible'), `${t('Il manque')} : ${missing}.`)
             return
         }
         setLoading(true)
@@ -146,13 +118,14 @@ export default function RegisterScreen({ navigation }: any) {
             const json = await res.json().catch(() => ({}))
             setLoading(false)
             if (!res.ok) {
-                Alert.alert(t('Erreur'), json.error || t('Inscription impossible. Réessayez.'))
+                toast(t('Erreur'), json.error || t('Inscription impossible. Réessayez.'))
                 return
             }
-            Alert.alert(t('Bienvenue'), t('Veuillez vérifier votre email pour activer votre compte.'), [{ text: t('Continuer'), onPress: () => navigation.navigate('Login') }])
+            toast(t('Bienvenue'), t('Veuillez vérifier votre email pour activer votre compte.'), 'success')
+            navigation.navigate('Login')
         } catch {
             setLoading(false)
-            Alert.alert(t('Erreur'), t('Erreur de connexion. Réessayez.'))
+            toast(t('Erreur'), t('Erreur de connexion. Réessayez.'))
         }
     }
 
@@ -161,13 +134,17 @@ export default function RegisterScreen({ navigation }: any) {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
 
-            {/* 🎨 BACKGROUND PREMIUM : Auras diffuses aux couleurs de l'agence (très basse opacité) */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -185,8 +162,7 @@ export default function RegisterScreen({ navigation }: any) {
 
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Prêt à')}</Text>
-                    <Text style={styles.titleHighlight}>{t('vous lancer.')}</Text>
+                    <Text style={styles.title}>{t('Creer mon compte')}</Text>
                     <Text style={styles.subtitle}>{t('Créez votre profil professionnel et rejoignez notre écosystème.')}</Text>
                 </Animated.View>
 
@@ -215,7 +191,9 @@ export default function RegisterScreen({ navigation }: any) {
                         onBlur={() => setFocused(null)}
                         secureTextEntry={!showPassword}
                         rightSlot={
-                            <TouchableOpacity onPress={() => setShowPassword(p => !p)} hitSlop={15} style={[styles.eyeBtn, { zIndex: 10 }]}>
+                            <TouchableOpacity onPress={() => setShowPassword(p => !p)} hitSlop={15} style={[styles.eyeBtn, { zIndex: 10 }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
                                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={focused ? C.primary : C.placeholder} />
                             </TouchableOpacity>
                         }
@@ -229,7 +207,7 @@ export default function RegisterScreen({ navigation }: any) {
                                     <Ionicons
                                         name={c.ok ? 'checkmark-circle' : 'ellipse-outline'}
                                         size={15}
-                                        color={c.ok ? C.auraGreen : C.placeholder}
+                                        color={c.ok ? C.success : C.placeholder}
                                     />
                                     <Text style={{ fontSize: 12, color: c.ok ? C.primary : C.textSec }}>{t(c.label)}</Text>
                                 </View>
@@ -242,7 +220,9 @@ export default function RegisterScreen({ navigation }: any) {
                 <Animated.View style={[styles.bottomContainer, styleBtn]}>
                     <InteractiveButton title={t('Créer mon compte')} onPress={handleRegister} disabled={!isValid || loading} loading={loading} />
 
-                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
+                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.loginLink}
+                        accessibilityRole="button"
+                        hitSlop={6}>
                         <Text style={styles.loginText}>{t('Déjà membre ?')} <Text style={styles.loginBold}>{t('Se connecter')}</Text></Text>
                     </Pressable>
                 </Animated.View>
@@ -297,7 +277,9 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
 ═══════════════════════════════════════════════════════════ */
 function InteractiveButton({ title, onPress, disabled, loading }: any) {
     return (
-        <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.btn, disabled && styles.btnDisabled]}>
+        <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.btn, disabled && styles.btnDisabled]}
+            accessibilityRole="button"
+            hitSlop={6}>
             {loading ? (
                 <ActivityIndicator color={C.primaryText} size="small" />
             ) : (
@@ -319,45 +301,14 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras extrêmement discrètes (Corporate) ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05, // À peine perceptible, donne un aspect "papier glacé"
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary, // Bleu agence
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen, // Vert agence
-    },
-
-    navBar: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     scroll: {
         paddingHorizontal: 28,
         paddingBottom: 80,
@@ -366,19 +317,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
         marginBottom: 40,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent, // Or agence
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -444,7 +383,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F1F5F9',
+        color: '#F5F5F5',
     },
     loginLink: {
         marginTop: 24,

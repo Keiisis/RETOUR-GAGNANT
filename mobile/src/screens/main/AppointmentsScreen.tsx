@@ -1,8 +1,9 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
+import { confirm, toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, Alert, ActivityIndicator, Modal,
+    RefreshControl, Platform, ActivityIndicator, Modal,
     TextInput, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -23,9 +24,11 @@ import Animated, {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -44,27 +47,9 @@ const RDV_STATUT_TO_APPT: Record<string, 'confirmed' | 'pending' | 'cancelled' |
 const { width, height } = Dimensions.get('window')
 
 // Palette de l'agence (strictement identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',      // Bleu Profond (Agence)
-    primaryDark: '#022C22',
-    accent: '#C9A84C',       // Or (Agence)
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',    // Vert (Agence)
-    error: '#EF4444',        // Rouge (Agence)
-    success: '#10B981',
-    warning: '#C9A84C',      // = accent
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Appointments'>
 
@@ -196,6 +181,8 @@ function AppointmentCard({
                         onPress={() => onCancel(appt.id)}
                         style={styles.cancelBtn}
                         hitSlop={10}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Annuler ce rendez-vous')}
                     >
                         <Ionicons name="close-circle-outline" size={22} color={C.error} />
                     </Pressable>
@@ -227,8 +214,6 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const tabIndicator = useSharedValue(0)
 
     /* ── Modal sheet animation ── */
@@ -237,18 +222,6 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     useEffect(() => {
@@ -263,8 +236,6 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const indicatorStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: interpolate(tabIndicator.value, [0, 1], [0, 1]) * (((width - 40 - 8) / 2)) }],
@@ -329,7 +300,7 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
     /* ── Demander un RDV ── */
     const handleRequestAppointment = async () => {
         if (!formNotes.trim()) {
-            Alert.alert(t('Champ requis'), t("Décrivez brièvement l'objet de votre rendez-vous."))
+            toast(t('Champ requis'), t("Décrivez brièvement l'objet de votre rendez-vous."))
             return
         }
 
@@ -380,14 +351,11 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
             setShowModal(false)
             setFormNotes('')
-            Alert.alert(
-                t('Demande envoyée'),
-                t("Notre équipe vous contactera sous 24h pour confirmer la date et l'heure de votre rendez-vous."),
-            )
+            toast(t('Demande envoyée'), t("Notre équipe vous contactera sous 24h pour confirmer la date et l'heure de votre rendez-vous."))
             await fetchAppointments()
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : t('Erreur')
-            Alert.alert(t('Erreur'), msg)
+            toast(t('Erreur'), msg)
         } finally {
             setSubmitting(false)
         }
@@ -395,23 +363,22 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
     /* ── Annuler un RDV ── */
     const handleCancel = (id: string) => {
-        Alert.alert(
-            t('Annuler le rendez-vous'),
-            t('Êtes-vous sûr de vouloir annuler ce rendez-vous ?'),
-            [
-                { text: t('Non'), style: 'cancel' },
-                {
-                    text: t('Oui, annuler'), style: 'destructive', onPress: async () => {
-                        const { error } = await supabase.from('rdv_requests').update({ statut: 'annule' }).eq('id', id)
-                        if (error) {
-                            Alert.alert(t('Erreur'), t("L'annulation a échoué. Réessayez."))
-                            return
-                        }
-                        setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
-                    },
-                },
-            ]
-        )
+        confirm({
+            title: t('Annuler le rendez-vous'),
+            message: t('Êtes-vous sûr de vouloir annuler ce rendez-vous ?'),
+            confirmLabel: t('Oui, annuler'),
+            cancelLabel: t('Non'),
+            destructive: true,
+            onConfirm: async () => {
+                const { error } = await supabase.from('rdv_requests').update({ statut: 'annule' }).eq('id', id)
+                if (error) {
+                    toast(t('Erreur'), t("L'annulation a échoué. Réessayez."))
+                    return
+                }
+                setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
+                toast(t('Rendez-vous annulé'), undefined, 'success')
+            },
+        })
     }
 
     const formatDateTime = (iso: string | null) => {
@@ -435,19 +402,25 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras diffuses */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
-                <Pressable onPress={() => setShowModal(true)} style={styles.navAddBtn}>
+                <Pressable onPress={() => setShowModal(true)} style={styles.navAddBtn}
+                    accessibilityRole="button"
+                    hitSlop={6}>
                     <Ionicons name="add" size={18} color={C.accent} />
                     <Text style={styles.navAddText}>{t('Demander')}</Text>
                 </Pressable>
@@ -498,6 +471,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                     style={styles.emptyBtn}
                                     onPress={() => { Haptics.selectionAsync(); setShowModal(true) }}
                                     activeOpacity={0.85}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
                                 >
                                     <Ionicons name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
                                     <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
@@ -511,8 +486,7 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                     <>
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Vos')}</Text>
-                    <Text style={styles.titleHighlight}>{t('rendez-vous.')}</Text>
+                    <Text style={styles.title}>{t('Mes rendez-vous')}</Text>
                     <Text style={styles.subtitle}>
                         {upcoming.length > 0
                             ? `${upcoming.length} ${upcoming.length > 1 ? t('rendez-vous à venir avec votre équipe.') : t('rendez-vous à venir avec votre équipe.')}`
@@ -585,6 +559,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                 key={tabKey}
                                 style={styles.tab}
                                 onPress={() => setTab(tabKey)}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
                                     {tabKey === 'upcoming' ? t('À venir') : t('Passés')}
@@ -615,6 +591,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                             <Pressable
                                 style={StyleSheet.absoluteFillObject}
                                 onPress={() => setShowModal(false)}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             />
                         </Animated.View>
 
@@ -626,7 +604,10 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                     <Text style={styles.modalSubtitle}>{t('Nouvelle demande')}</Text>
                                     <Text style={styles.modalTitle}>{t('Demander un rendez-vous')}</Text>
                                 </View>
-                                <Pressable onPress={() => setShowModal(false)} style={styles.modalCloseBtn}>
+                                <Pressable onPress={() => setShowModal(false)} style={styles.modalCloseBtn}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
+                                    accessibilityLabel={t('Fermer')}>
                                     <Ionicons name="close" size={20} color={C.primary} />
                                 </Pressable>
                             </View>
@@ -646,6 +627,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                             style={[styles.typeBtn, active && styles.typeBtnActive]}
                                             onPress={() => setFormType(key)}
                                             activeOpacity={0.8}
+                                            accessibilityRole="button"
+                                            hitSlop={6}
                                         >
                                             <View style={[styles.typeIconWrap, active && styles.typeIconWrapActive]}>
                                                 <Ionicons
@@ -693,6 +676,8 @@ export default function AppointmentsScreen({ navigation }: { navigation: Nav }) 
                                 onPress={handleRequestAppointment}
                                 disabled={submitting}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 {submitting ? (
                                     <ActivityIndicator color={C.primaryText} size="small" />
@@ -722,49 +707,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navAddBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -797,19 +748,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         paddingHorizontal: 8,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -861,7 +800,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     nextRdvBadgeText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.2,
@@ -954,7 +893,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     tabBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.textSec,
     },
@@ -1070,7 +1009,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
     },
     rdvMonth: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 1,
@@ -1103,13 +1042,13 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     rdvMetaText: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         flexShrink: 1,
     },
     rdvMetaDot: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
     },
     rdvStatus: {
@@ -1128,7 +1067,7 @@ const styles = StyleSheet.create({
         borderRadius: 2.5,
     },
     rdvStatusText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 0.3,
     },
@@ -1176,7 +1115,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     modalSubtitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.2,
@@ -1219,7 +1158,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     required: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.error,
         letterSpacing: 0.5,
@@ -1262,7 +1201,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.4)',
     },
     typeBtnText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         textAlign: 'center',

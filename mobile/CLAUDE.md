@@ -32,17 +32,38 @@
 
 ---
 
-## 🎨 DESIGN SYSTEM = NEXUS EMERALD (Mode CLAIR)
+## 🎨 DESIGN SYSTEM v2 — DRAPEAU DU BÉNIN SUR BLANC
 
-**Charte mobile = identique au site web après migration thème sombre→clair.**
-- Fond : `#FFFFFF` (blanc), surfaces `#F8FAF9` (légèrement teintée)
-- Primary : `#10B981` (émeraude) — accent principal
-- Accent : `#C9A84C` (or premium)
-- Texte : `#1a2332` (jamais `#000`)
-- Header : `#10B981` (primary, pour ressortir sur fond blanc)
+**Direction artistique validée le 2026-07-28** (3 maquettes de référence dans `design/mobile-v2/`).
+Le blanc porte la mise en page ; les 3 couleurs du drapeau servent d'accents, jamais de fond plein.
+Aucun fond sombre nulle part — règle absolue.
 
-Fichier de référence : `mobile/src/config/theme.ts`.
-Polices : Outfit (body) + Playfair Display (titres) — chargées dans `App.tsx`.
+| Rôle | Valeur | Usage |
+|---|---|---|
+| Vert Bénin | `#008751` | Accent principal, CTA, onglet actif |
+| Vert foncé | `#00643C` | Titres sur vert, états pressés secondaires |
+| Vert doux | `#E6F3ED` | Fonds de badge / tuiles d'icône |
+| Jaune Bénin | `#FCD116` | Accent secondaire, barre drapeau |
+| Jaune doux / encre | `#FEF7DC` / `#8A6D08` | Fond de badge / texte lisible dessus |
+| Rouge Bénin | `#E8112D` | Alertes, barre drapeau |
+| Rouge doux | `#FDECEA` | Fond d'alerte |
+| Blanc / neutre | `#FFFFFF` / `#F5F5F5` | Fond d'écran / surface alternée |
+| Encre | `#3C3C3C` / `#505050` / `#8A8A8A` | Texte principal / secondaire / discret |
+| Lignes | `#F0F0F0` / `#E4E4E4` | Séparateurs / bordures marquées |
+| Flottant | `#3C3C3C` | Pilule de tab bar uniquement |
+
+- Fichier de référence unique : `mobile/src/config/theme.ts` — les tokens `v2` sont la vérité,
+  `screenColors` expose les 52 clés historiques mappées dessus (rétrocompatibilité).
+- **Aucune palette locale dans les écrans.** Interdit de réintroduire un `const C = { ... }` :
+  importer `screenColors` depuis le thème.
+- Polices : **Plus Jakarta Sans** (400/500/600/700/800, body + UI) + Playfair Display Bold (titres éditoriaux).
+- Rayons : 8 / 12 / 14 / 16 / 20 / 24 / pill. Ombres teintées (`shadows.card`, `cardRaised`, `floating`).
+- Primitives partagées : `mobile/src/components/ui.tsx` — `FlagBar`, `ScreenHeader`, `Card`,
+  `Button`, `Badge`, `IconTile`, `EmptyState`, `SectionTitle`.
+- Tab bar : pilule flottante anthracite, icônes seules + point vert d'état actif.
+
+> Exceptions tolérées (couleurs de marque tierces, pas de la charte) : `#EB001B` (logo Mastercard),
+> `#2C3E50` (couleur d'avatar). Ne pas les étendre.
 
 ---
 
@@ -193,14 +214,16 @@ soumis → verifie → traitement → validation → termine
                                             ↘ annule
 ```
 
-| Status | Label | Couleur |
+| Status | Label | Couleur (token thème) |
 |--------|-------|---------|
-| `soumis` | Dossier soumis | `info` (#3B82F6) |
+| `soumis` | Dossier soumis | `info` (#00643C) |
 | `verifie` | En cours de vérification | Violet (#7C5CCA) |
-| `traitement` | En traitement | `gold` (#C9A84C) |
+| `traitement` | En traitement | `gold` / jaune Bénin (#FCD116) |
 | `validation` | En validation | Orange (#E07B54) |
-| `termine` | Terminé | `success` (#10B981) |
-| `annule` | Annulé | `danger` (#EF4444) |
+| `termine` | Terminé | `success` / vert Bénin (#008751) |
+| `annule` | Annulé | `danger` / rouge Bénin (#E8112D) |
+
+> Toujours lire ces couleurs via `screenColors` / `colors` du thème, jamais en dur dans l'écran.
 
 ---
 
@@ -228,7 +251,9 @@ soumis → verifie → traitement → validation → termine
 - [ ] `<KkiapayProvider>` wrap App dans `App.tsx`
 - [ ] Les types dans `RootStackParamList` matchent les params passés
 - [ ] Pas d'import du composant `<T>` (supprimé) — utiliser `useLang().t()` direct
+- [ ] Aucune palette locale (`const C = {`) dans un écran — importer `screenColors` du thème
+- [ ] Aucun fond sombre ni couleur hors charte v2 (hors exceptions marque documentées)
 
 ---
 
-*Dernière mise à jour : 2026-04-27*
+*Dernière mise à jour : 2026-07-28 — refonte design system v2 (drapeau du Bénin sur blanc)*

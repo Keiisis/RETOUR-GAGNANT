@@ -1,8 +1,9 @@
 'use strict'
 import React, { useEffect, useState } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
-    Platform, ActivityIndicator, Alert, Linking,
+    Platform, ActivityIndicator, Linking,
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,11 +22,13 @@ import Animated, {
 import * as Clipboard from 'expo-clipboard'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -36,29 +39,9 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (cohérente avec tous les écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-    warning: '#D97706',
-    purple: '#8B5CF6',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OrderDetail'>
 type Route = RouteProp<RootStackParamList, 'OrderDetail'>
@@ -232,38 +215,17 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const truckPulse = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        truckPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-                withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
+        truckPulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
     const truckPulseStyle = useAnimatedStyle(() => ({
         opacity: interpolate(truckPulse.value, [0, 1], [0.4, 1]),
         transform: [{ scale: interpolate(truckPulse.value, [0, 1], [0.95, 1.05]) }],
@@ -303,7 +265,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     const copyTracking = async () => {
         if (!order?.tracking_code) return
         await Clipboard.setStringAsync(order.tracking_code)
-        Alert.alert(t('Copié'), t('Le code de suivi a été copié.'))
+        toast(t('Copié'), t('Le code de suivi a été copié.'))
     }
 
     const openCarrierUrl = () => {
@@ -322,10 +284,15 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     if (loading) {
         return (
             <View style={styles.container}>
-                <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-                <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
-                <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                    <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+                <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        accessibilityLabel={t('Retour')}>
                         <View style={styles.iconContainer}>
                             <Ionicons name="arrow-back" size={22} color={C.primary} />
                         </View>
@@ -346,10 +313,11 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     if (!order) {
         return (
             <View style={styles.container}>
-                <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-                <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
                 <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                    <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        accessibilityLabel={t('Retour')}>
                         <View style={styles.iconContainer}>
                             <Ionicons name="arrow-back" size={22} color={C.primary} />
                         </View>
@@ -365,7 +333,9 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     <Text style={styles.errorText}>
                         {t('Cette commande n\'existe pas ou vous n\'avez pas accès à ses détails.')}
                     </Text>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.errorBtn} activeOpacity={0.85}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.errorBtn} activeOpacity={0.85}
+                        accessibilityRole="button"
+                        hitSlop={6}>
                         <Text style={styles.errorBtnText}>{t('Retour')}</Text>
                         <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
@@ -381,13 +351,13 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
             <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -411,8 +381,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             >
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Commande')}</Text>
-                    <Text style={styles.titleHighlight}>#{shortRef}</Text>
+                    <Text style={styles.title}>{t('Commande')} #{shortRef}</Text>
                     <Text style={styles.subtitle}>
                         {t('Commandé le')} {formatDateTime(order.created_at)}
                     </Text>
@@ -476,12 +445,16 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             )}
 
                             <View style={styles.trackingActions}>
-                                <TouchableOpacity onPress={copyTracking} style={styles.trackingBtn} activeOpacity={0.85}>
+                                <TouchableOpacity onPress={copyTracking} style={styles.trackingBtn} activeOpacity={0.85}
+                                    accessibilityRole="button"
+                                    hitSlop={6}>
                                     <Ionicons name="copy-outline" size={14} color={C.primary} />
                                     <Text style={styles.trackingBtnText}>{t('Copier')}</Text>
                                 </TouchableOpacity>
                                 {order.tracking_url ? (
-                                    <TouchableOpacity onPress={openCarrierUrl} style={styles.trackingBtnPrimary} activeOpacity={0.85}>
+                                    <TouchableOpacity onPress={openCarrierUrl} style={styles.trackingBtnPrimary} activeOpacity={0.85}
+                                        accessibilityRole="button"
+                                        hitSlop={6}>
                                         <Ionicons name="open-outline" size={14} color={C.accent} />
                                         <Text style={styles.trackingBtnPrimaryText}>{t('Suivre en ligne')}</Text>
                                     </TouchableOpacity>
@@ -572,7 +545,9 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             <View style={styles.shipDivider} />
 
                             {/* Téléphone (avec call) */}
-                            <TouchableOpacity onPress={callCustomer} activeOpacity={0.7}>
+                            <TouchableOpacity onPress={callCustomer} activeOpacity={0.7}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 <View style={styles.shipBlock}>
                                     <View style={styles.shipIconWrap}>
                                         <Ionicons name="call" size={14} color={C.accent} />
@@ -715,33 +690,11 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: { top: -100, right: -100, backgroundColor: C.primary },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.auraGreen },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: { width: 44, height: 44, justifyContent: 'center' },
-    iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: 'center', alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -752,7 +705,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         letterSpacing: 0.3,
     },
@@ -862,19 +815,7 @@ const styles = StyleSheet.create({
         marginBottom: 22,
         paddingHorizontal: 4,
     },
-    title: {
-        fontSize: 34,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 34,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 13,
         color: C.textSec,
@@ -907,7 +848,7 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     statusBadge: {
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 1.8,
         marginBottom: 8,
@@ -967,7 +908,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     stepperDotLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '600',
         letterSpacing: 0.2,
@@ -1014,13 +955,13 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     trackingBadgeText: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.3,
     },
     trackingLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: 'rgba(255, 255, 255, 0.65)',
         fontWeight: '600',
         letterSpacing: 0.5,
@@ -1120,7 +1061,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sectionCountText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 0.3,
@@ -1161,7 +1102,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(13, 43, 78, 0.12)',
     },
     itemQtyText: {
-        fontSize: 11.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
         letterSpacing: 0.2,
@@ -1174,7 +1115,7 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
     itemUnitPrice: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         marginTop: 2,
@@ -1218,7 +1159,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     txRef: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         letterSpacing: 0.2,
@@ -1242,7 +1183,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     shipLabel: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.2,
@@ -1255,7 +1196,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.1,
     },
     shipValueSub: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         marginTop: 2,
@@ -1276,7 +1217,7 @@ const styles = StyleSheet.create({
     },
     shipNote: {
         flex: 1,
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         fontStyle: 'italic',
@@ -1336,13 +1277,13 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.3)',
     },
     evLatestBadgeText: {
-        fontSize: 8.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.8,
     },
     evDesc: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '400',
         lineHeight: 16,
@@ -1355,12 +1296,12 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     evLocation: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '600',
     },
     evTime: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         letterSpacing: 0.2,
@@ -1392,7 +1333,7 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '45deg' }],
     },
     footerText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         letterSpacing: 0.2,

@@ -1,8 +1,9 @@
 'use strict'
 import React, { useState, useEffect, useCallback } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
-    TextInput, Alert, Platform, ActivityIndicator,
+    TextInput, Platform, ActivityIndicator,
     KeyboardAvoidingView, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -22,6 +23,7 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import KkiapayModal from '../../components/KkiapayModal'
@@ -29,6 +31,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { ttcFromHt, tvaFromHt } from '../../lib/tax'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    CheckoutScreen — THEME "CORPORATE PREMIUM 2026"
@@ -38,26 +41,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',      // Bleu Profond (Agence)
-    primaryDark: '#022C22',
-    accent: '#C9A84C',       // Or (Agence)
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',    // Vert (Agence)
-    error: '#EF4444',        // Rouge (Agence)
-    success: '#10B981',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const SHIPPING_KEY = '@rg_mobile_shipping'
@@ -206,8 +192,6 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
 
     /* ── Bouton "Payer" pulse subtil pour attirer l'œil ── */
     const payPulse = useSharedValue(0)
@@ -215,33 +199,14 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
-        payPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
+        payPulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const payGlowStyle = useAnimatedStyle(() => ({
         opacity: interpolate(payPulse.value, [0, 1], [0.15, 0.4]),
@@ -298,7 +263,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
     const handlePay = () => {
         const err = validateForm()
         if (err) {
-            Alert.alert(t('Information requise'), err)
+            toast(t('Information requise'), err)
             return
         }
         persistShipping()
@@ -308,10 +273,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
     /* ── Après paiement Kkiapay réussi ── */
     const handlePaymentSuccess = async (txId: string) => {
         if (!profile) {
-            Alert.alert(
-                t('Compte requis'),
-                t('Veuillez vous connecter pour finaliser votre commande. Référence paiement : ') + txId,
-            )
+            toast(t('Compte requis'), t('Veuillez vous connecter pour finaliser votre commande. Référence paiement : ') + txId)
             setShowPayment(false)
             return
         }
@@ -351,10 +313,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             const data = await res.json().catch(() => ({}))
 
             if (!res.ok || !data.ok) {
-                Alert.alert(
-                    t('Erreur enregistrement'),
-                    t("Le paiement a été reçu mais la commande n'a pas pu être enregistrée. Référence : ") + txId,
-                )
+                toast(t('Erreur enregistrement'), t("Le paiement a été reçu mais la commande n'a pas pu être enregistrée. Référence : ") + txId)
                 return
             }
 
@@ -365,10 +324,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             })
         } catch (e) {
             console.error('[Checkout] Submit failed:', e)
-            Alert.alert(
-                t('Erreur'),
-                t('Impossible de finaliser votre commande. Référence : ') + txId,
-            )
+            toast(t('Erreur'), t('Impossible de finaliser votre commande. Référence : ') + txId)
         } finally {
             setSubmitting(false)
         }
@@ -381,13 +337,17 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -418,8 +378,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             >
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Finaliser')}</Text>
-                    <Text style={styles.titleHighlight}>{t('la commande.')}</Text>
+                    <Text style={styles.title}>{t('Finaliser la commande')}</Text>
                     <Text style={styles.subtitle}>
                         {t('Renseignez votre adresse de livraison et procédez au paiement sécurisé.')}
                     </Text>
@@ -632,6 +591,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                         onPress={handlePay}
                         disabled={submitting}
                         activeOpacity={0.85}
+                        accessibilityRole="button"
+                        hitSlop={6}
                     >
                         {submitting ? (
                             <ActivityIndicator color={C.primaryText} size="small" />
@@ -667,49 +628,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar avec stepper ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
     /* ── Stepper ── */
     stepper: {
@@ -736,7 +663,7 @@ const styles = StyleSheet.create({
         borderColor: C.primary,
     },
     stepText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primaryText,
     },
@@ -758,19 +685,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         paddingHorizontal: 8,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -823,7 +738,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     cardCountText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -852,7 +767,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cartQtyText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
     },
@@ -895,7 +810,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     totalSubLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         marginTop: 3,
@@ -918,7 +833,7 @@ const styles = StyleSheet.create({
         marginBottom: 7,
     },
     fieldLabel: {
-        fontSize: 11.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.textSec,
         letterSpacing: 0.3,
@@ -999,7 +914,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.2)',
     },
     paymentLogoText: {
-        fontSize: 11.5,
+        fontSize: 12,
         fontWeight: '700',
         color: C.primary,
         letterSpacing: 0.2,
@@ -1032,7 +947,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     securityText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 16,
@@ -1063,7 +978,7 @@ const styles = StyleSheet.create({
         flex: 0.9,
     },
     bottomBarLabel: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '600',
         letterSpacing: 0.3,

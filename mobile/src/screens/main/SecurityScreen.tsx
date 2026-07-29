@@ -1,9 +1,10 @@
 'use strict'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Alert, Dimensions, Pressable, Image,
+    ActivityIndicator, Dimensions, Pressable, Image,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
@@ -16,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -26,64 +28,9 @@ const { width: SCREEN_W } = Dimensions.get('window')
 /* ──────────────────────────────────────────────
    PALETTE — Corporate Premium 2026
    ────────────────────────────────────────────── */
-const C = {
-    bg: '#FFFFFF',
-    bgDeep: '#F8FAF9',
-    surface: '#FFFFFF',
-    surfaceAlt: '#F0FDF4',
-    primary: '#047857',   // Émeraude Profond
-    primaryDeep: '#022C22',
-    primarySoft: '#10B981',
-    accent: '#C9A84C',   // Or
-    accentSoft: '#E2C97E',
-    aura: '#10B981',   // Émeraude vif
-    auraSoft: '#34D399',
-    danger: '#EF4444',
-    warning: '#F59E0B',
-    success: '#10B981',
-    textPrimary: '#1a2332',
-    textSecond: '#4A5568',
-    textMuted: '#718096',
-    border: 'rgba(16,185,129,0.12)',
-    borderStrong: 'rgba(16,185,129,0.22)',
-}
-
-/* ──────────────────────────────────────────────
-   FLOATING AURA — décor d'arrière-plan
-   ────────────────────────────────────────────── */
-function FloatingAura({
-    size, color, top, left, right, delay = 0, duration = 7000,
-}: {
-    size: number; color: string;
-    top?: number; left?: number; right?: number;
-    delay?: number; duration?: number;
-}) {
-    const t = useSharedValue(0)
-    useEffect(() => {
-        t.value = withDelay(delay, withRepeat(
-            withTiming(1, { duration, easing: Easing.inOut(Easing.quad) }),
-            -1, true,
-        ))
-    }, [])
-    const style = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: interpolate(t.value, [0, 1], [0, -24]) },
-            { translateX: interpolate(t.value, [0, 1], [0, 16]) },
-            { scale: interpolate(t.value, [0, 1], [1, 1.12]) },
-        ],
-        opacity: interpolate(t.value, [0, 1], [0.55, 0.85]),
-    }))
-    return (
-        <Animated.View
-            pointerEvents="none"
-            style={[{
-                position: 'absolute',
-                width: size, height: size, borderRadius: size / 2,
-                backgroundColor: color, top, left, right,
-            }, style]}
-        />
-    )
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 /* ──────────────────────────────────────────────
    ANIMATED SECTION — fade-in staggered
@@ -112,6 +59,8 @@ function InteractiveButton({ onPress, disabled, style, children }: any) {
             disabled={disabled}
             onPressIn={() => { s.value = withSpring(0.97, { damping: 14 }) }}
             onPressOut={() => { s.value = withSpring(1, { damping: 14 }) }}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             <Animated.View style={[animated, style]}>{children}</Animated.View>
         </Pressable>
@@ -125,8 +74,8 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
     const shine = useSharedValue(0)
     const pulse = useSharedValue(0)
     useEffect(() => {
-        shine.value = withRepeat(withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.quad) }), -1, false)
-        pulse.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad) }), -1, true)
+        shine.value = withTiming(1, { duration: 600 })
+        pulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const shineStyle = useAnimatedStyle(() => ({
@@ -139,12 +88,12 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
     }))
 
     const level = score === 0 ? t('Définir') : score <= 1 ? t('Faible') : score === 2 ? t('Correct') : score === 3 ? t('Robuste') : t('Excellent')
-    const levelColor = score === 0 ? C.accent : score <= 1 ? C.danger : score === 2 ? C.warning : score === 3 ? C.auraSoft : C.aura
+    const levelColor = score === 0 ? C.accent : score <= 1 ? C.danger : score === 2 ? C.warning : score === 3 ? C.successMid : C.success
 
     return (
         <View style={hero.wrap}>
             <LinearGradient
-                colors={['#022C22', '#047857', '#10B981']}
+                colors={['#00643C', '#008751', '#1FA36A']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={hero.gradient}
             >
@@ -250,6 +199,8 @@ function PasswordField({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={field2.eyeBtn}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={show ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                     {show
                         ? <EyeOff size={18} color={C.textSecond} strokeWidth={1.8} />
@@ -305,13 +256,13 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             const token = await getToken()
             const res = await fetch(`${API_BASE}/api/client/2fa/setup`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
             const json = await res.json()
-            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Erreur')); return }
+            if (!res.ok) { toast(t('Erreur'), json.error || t('Erreur')); return }
             setTwofaQr(json.qrCode); setTwofaSecret(json.secret); setTwofaCode(''); setTwofaStep('enroll')
-        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+        } catch { toast(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
     }, [getToken, t])
 
     const confirmEnroll2fa = useCallback(async () => {
-        if (!/^\d{6}$/.test(twofaCode)) { Alert.alert(t('Code requis'), t('Entrez le code à 6 chiffres.')); return }
+        if (!/^\d{6}$/.test(twofaCode)) { toast(t('Code requis'), t('Entrez le code à 6 chiffres.')); return }
         setTwofaBusy(true)
         try {
             const token = await getToken()
@@ -320,14 +271,14 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 body: JSON.stringify({ code: twofaCode, action: 'setup' }),
             })
             const json = await res.json()
-            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Code incorrect')); return }
+            if (!res.ok) { toast(t('Erreur'), json.error || t('Code incorrect')); return }
             setTwofaEnabled(true); setTwofaStep('idle'); setTwofaQr(''); setTwofaSecret(''); setTwofaCode('')
-            Alert.alert(t('2FA activée'), t('La double authentification est maintenant active sur votre compte.'))
-        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+            toast(t('2FA activée'), t('La double authentification est maintenant active sur votre compte.'))
+        } catch { toast(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
     }, [twofaCode, getToken, t])
 
     const disable2fa = useCallback(async () => {
-        if (!/^\d{6}$/.test(twofaCode)) { Alert.alert(t('Code requis'), t('Entrez le code à 6 chiffres pour confirmer.')); return }
+        if (!/^\d{6}$/.test(twofaCode)) { toast(t('Code requis'), t('Entrez le code à 6 chiffres pour confirmer.')); return }
         setTwofaBusy(true)
         try {
             const token = await getToken()
@@ -336,10 +287,10 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 body: JSON.stringify({ code: twofaCode }),
             })
             const json = await res.json()
-            if (!res.ok) { Alert.alert(t('Erreur'), json.error || t('Code incorrect')); return }
+            if (!res.ok) { toast(t('Erreur'), json.error || t('Code incorrect')); return }
             setTwofaEnabled(false); setTwofaStep('idle'); setTwofaCode('')
-            Alert.alert(t('2FA désactivée'), t('La double authentification a été retirée de votre compte.'))
-        } catch { Alert.alert(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
+            toast(t('2FA désactivée'), t('La double authentification a été retirée de votre compte.'))
+        } catch { toast(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
     }, [twofaCode, getToken, t])
 
     // Politique forte (identique au web/inscription) : 12+ car., majuscule, 2 chiffres, spécial
@@ -356,34 +307,31 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
         if (/[^A-Za-z0-9]/.test(p)) score++
         if (score <= 1) return { level: 1, label: t('Faible'), color: C.danger }
         if (score === 2) return { level: 2, label: t('Moyen'), color: C.warning }
-        if (score === 3) return { level: 3, label: t('Bon'), color: C.auraSoft }
-        return { level: 4, label: t('Fort'), color: C.aura }
+        if (score === 3) return { level: 3, label: t('Bon'), color: C.successMid }
+        return { level: 4, label: t('Fort'), color: C.success }
     }, [newPassword, t])
 
     const handleSave = useCallback(async () => {
         if (!newPassword.trim()) {
-            Alert.alert(t('Champ requis'), t('Veuillez saisir un nouveau mot de passe.'))
+            toast(t('Champ requis'), t('Veuillez saisir un nouveau mot de passe.'))
             return
         }
         if (!isPasswordStrong(newPassword)) {
-            Alert.alert(t('Mot de passe trop faible'), t('Requis : 12 caractères minimum, 1 majuscule, 2 chiffres et 1 caractère spécial.'))
+            toast(t('Mot de passe trop faible'), t('Requis : 12 caractères minimum, 1 majuscule, 2 chiffres et 1 caractère spécial.'))
             return
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert(t('Mots de passe différents'), t('La confirmation ne correspond pas au nouveau mot de passe.'))
+            toast(t('Mots de passe différents'), t('La confirmation ne correspond pas au nouveau mot de passe.'))
             return
         }
         setLoading(true)
         const { error } = await supabase.auth.updateUser({ password: newPassword })
         setLoading(false)
         if (error) {
-            Alert.alert(t('Erreur'), error.message)
+            toast(t('Erreur'), error.message)
         } else {
-            Alert.alert(
-                t('Mot de passe modifié'),
-                t('Votre mot de passe a été mis à jour avec succès.'),
-                [{ text: t('OK'), onPress: () => navigation.goBack() }]
-            )
+            toast(t('Mot de passe modifié'), t('Votre mot de passe a été mis à jour avec succès.'), 'success')
+            navigation.goBack()
         }
     }, [newPassword, confirmPassword, navigation, t])
 
@@ -399,15 +347,11 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            {/* Background ivoire + auras */}
             <View style={StyleSheet.absoluteFillObject}>
                 <LinearGradient
                     colors={[C.bg, C.bgDeep, C.bg]}
                     style={StyleSheet.absoluteFillObject}
                 />
-                <FloatingAura size={220} color="rgba(201,168,76,0.14)" top={-60} right={-80} delay={0} duration={6500} />
-                <FloatingAura size={180} color="rgba(16,185,129,0.10)" top={320} left={-70} delay={800} duration={7800} />
-                <FloatingAura size={140} color="rgba(4,120,87,0.08)" top={620} right={-50} delay={1600} duration={8500} />
             </View>
 
             {/* Header custom */}
@@ -526,16 +470,16 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                 <View style={[
                                     styles.matchBanner,
                                     {
-                                        backgroundColor: (newPassword === confirmPassword ? C.aura : C.danger) + '12',
-                                        borderColor: (newPassword === confirmPassword ? C.aura : C.danger) + '30'
+                                        backgroundColor: (newPassword === confirmPassword ? C.success : C.danger) + '12',
+                                        borderColor: (newPassword === confirmPassword ? C.success : C.danger) + '30'
                                     },
                                 ]}>
                                     {newPassword === confirmPassword
-                                        ? <Check size={14} color={C.aura} strokeWidth={2.5} />
+                                        ? <Check size={14} color={C.success} strokeWidth={2.5} />
                                         : <X size={14} color={C.danger} strokeWidth={2.5} />}
                                     <Text style={[
                                         styles.matchText,
-                                        { color: newPassword === confirmPassword ? C.aura : C.danger },
+                                        { color: newPassword === confirmPassword ? C.success : C.danger },
                                     ]}>
                                         {newPassword === confirmPassword
                                             ? t('Les mots de passe correspondent')
@@ -594,7 +538,9 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                         </Text>
 
                         {!twofaLoading && !twofaEnabled && twofaStep === 'idle' && (
-                            <TouchableOpacity onPress={startEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}>
+                            <TouchableOpacity onPress={startEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Activer la 2FA')}</Text>}
                             </TouchableOpacity>
                         )}
@@ -612,14 +558,18 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                 <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
                                     keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
                                     style={styles.twofaInput} maxLength={6} />
-                                <TouchableOpacity onPress={confirmEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}>
+                                <TouchableOpacity onPress={confirmEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}
+                                    accessibilityRole="button"
+                                    hitSlop={6}>
                                     {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Confirmer')}</Text>}
                                 </TouchableOpacity>
                             </View>
                         )}
 
                         {twofaEnabled && twofaStep === 'idle' && (
-                            <TouchableOpacity onPress={() => { setTwofaStep('disable'); setTwofaCode('') }} style={styles.twofaGhostBtn}>
+                            <TouchableOpacity onPress={() => { setTwofaStep('disable'); setTwofaCode('') }} style={styles.twofaGhostBtn}
+                                accessibilityRole="button"
+                                hitSlop={6}>
                                 <Text style={styles.twofaGhostText}>{t('Désactiver la 2FA')}</Text>
                             </TouchableOpacity>
                         )}
@@ -631,10 +581,14 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                     keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
                                     style={styles.twofaInput} maxLength={6} />
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                                    <TouchableOpacity onPress={disable2fa} disabled={twofaBusy} style={[styles.twofaDangerBtn, { flex: 1 }]}>
+                                    <TouchableOpacity onPress={disable2fa} disabled={twofaBusy} style={[styles.twofaDangerBtn, { flex: 1 }]}
+                                        accessibilityRole="button"
+                                        hitSlop={6}>
                                         {twofaBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.twofaPrimaryText}>{t('Désactiver')}</Text>}
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setTwofaStep('idle'); setTwofaCode('') }} style={styles.twofaCancelBtn}>
+                                    <TouchableOpacity onPress={() => { setTwofaStep('idle'); setTwofaCode('') }} style={styles.twofaCancelBtn}
+                                        accessibilityRole="button"
+                                        hitSlop={6}>
                                         <Text style={styles.twofaGhostText}>{t('Annuler')}</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -692,7 +646,7 @@ const styles = StyleSheet.create({
     headerBtnGhost: { width: 42, height: 42 },
     headerCenter: { flex: 1, alignItems: 'center' },
     headerTitle: { fontSize: 17, fontWeight: '700', color: C.primary, letterSpacing: 0.3 },
-    headerSub: { fontSize: 11, color: C.textMuted, marginTop: 2, letterSpacing: 0.5, textTransform: 'uppercase' },
+    headerSub: { fontSize: 12, color: C.textMuted, marginTop: 2, letterSpacing: 0.5, textTransform: 'uppercase' },
 
     scroll: { padding: 20, paddingBottom: 60, gap: 18 },
 
@@ -745,17 +699,17 @@ const styles = StyleSheet.create({
     twofaStatus: { fontSize: 12, color: C.textMuted, marginTop: 2 },
     twofaDesc: { fontSize: 13, color: '#475569', lineHeight: 19 },
     twofaHint: { fontSize: 12.5, color: C.textMuted },
-    twofaSecret: { fontSize: 13, color: '#1a2332', fontWeight: '700', backgroundColor: '#F1F5F9', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, letterSpacing: 1 },
+    twofaSecret: { fontSize: 13, color: '#3C3C3C', fontWeight: '700', backgroundColor: '#F5F5F5', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, letterSpacing: 1 },
     twofaQrWrap: { alignSelf: 'center', backgroundColor: '#fff', padding: 8, borderRadius: 14, borderWidth: 1, borderColor: C.border },
     twofaQr: { width: 168, height: 168 },
-    twofaInput: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, letterSpacing: 6, color: '#1a2332', backgroundColor: '#FBFCFD' },
+    twofaInput: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, letterSpacing: 6, color: '#3C3C3C', backgroundColor: '#FFFFFF' },
     twofaPrimaryBtn: { backgroundColor: C.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
     twofaPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 14 },
     twofaGhostBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
     twofaGhostText: { color: C.danger, fontWeight: '700', fontSize: 13.5 },
     twofaDangerBtn: { backgroundColor: C.danger, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
     twofaCancelBtn: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
-    cardSub: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+    cardSub: { fontSize: 12, color: C.textMuted, marginTop: 2 },
     cardBody: { padding: 20 },
 
     /* STRENGTH */
@@ -765,7 +719,7 @@ const styles = StyleSheet.create({
     },
     strengthBars: { flexDirection: 'row', gap: 5, flex: 1 },
     strengthBar: { flex: 1, height: 5, borderRadius: 3 },
-    strengthLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', minWidth: 56, textAlign: 'right' },
+    strengthLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', minWidth: 56, textAlign: 'right' },
 
     /* RULES */
     rulesGrid: {
@@ -780,18 +734,18 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: C.border,
     },
     ruleChipDone: {
-        backgroundColor: C.aura + '10',
-        borderColor: C.aura + '35',
+        backgroundColor: C.success + '10',
+        borderColor: C.success + '35',
     },
     ruleDot: {
         width: 14, height: 14, borderRadius: 7,
         backgroundColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    ruleDotDone: { backgroundColor: C.aura },
+    ruleDotDone: { backgroundColor: C.success },
     ruleDotEmpty: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.textMuted },
-    ruleText: { fontSize: 11, fontWeight: '600', color: C.textMuted, letterSpacing: 0.2 },
-    ruleTextDone: { color: C.aura },
+    ruleText: { fontSize: 12, fontWeight: '600', color: C.textMuted, letterSpacing: 0.2 },
+    ruleTextDone: { color: C.success },
 
     divider: { height: 1, backgroundColor: C.border, marginBottom: 18 },
 
@@ -844,7 +798,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: 8, paddingVertical: 14,
     },
-    trustText: { fontSize: 10, color: C.textMuted, letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: '600' },
+    trustText: { fontSize: 12, color: C.textMuted, letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: '600' },
 })
 
 /* HERO styles */
@@ -870,7 +824,7 @@ const hero = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(212,160,23,0.35)',
         paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     },
-    chipText: { fontSize: 9.5, fontWeight: '700', color: C.accent, letterSpacing: 1.2 },
+    chipText: { fontSize: 12, fontWeight: '700', color: C.accent, letterSpacing: 1.2 },
     levelChip: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
         paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
@@ -878,7 +832,7 @@ const hero = StyleSheet.create({
         borderWidth: 1,
     },
     levelDot: { width: 6, height: 6, borderRadius: 3 },
-    levelText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
+    levelText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
 
     shieldWrap: {
         alignItems: 'center', justifyContent: 'center',
@@ -913,7 +867,7 @@ const hero = StyleSheet.create({
     },
     statCol: { flex: 1, alignItems: 'center', gap: 4 },
     statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.10)' },
-    statLabel: { fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
+    statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
     statValue: { fontSize: 12, color: '#FFF', fontWeight: '700', letterSpacing: 0.3 },
 })
 
@@ -921,7 +875,7 @@ const hero = StyleSheet.create({
 const field2 = StyleSheet.create({
     group: { marginBottom: 14 },
     label: {
-        fontSize: 11, fontWeight: '700', color: C.primary,
+        fontSize: 12, fontWeight: '700', color: C.primary,
         marginBottom: 8, letterSpacing: 0.8, textTransform: 'uppercase',
     },
     wrapper: {

@@ -1,9 +1,9 @@
 'use strict'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, ActivityIndicator, Linking, Alert,
-    Pressable, Dimensions,
+    RefreshControl, Platform, ActivityIndicator, Linking, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -21,10 +21,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    InvoicesScreen — THEME "CORPORATE PREMIUM 2026"
@@ -33,28 +35,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-    warning: '#C9A84C',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Invoices'>
@@ -161,7 +144,9 @@ function FilterPill({
     }))
 
     return (
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress}
+            accessibilityRole="button"
+            hitSlop={6}>
             <Animated.View style={[styles.filterPill, pillStyle]}>
                 <Ionicons
                     name={icon}
@@ -228,6 +213,8 @@ function InvoiceCard({
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1) }}
                 onPressOut={() => { pressAnim.value = withSpring(0) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <View style={styles.invCard}>
                     {/* Status accent bar à gauche */}
@@ -305,41 +292,20 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const totalGlow = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
 
         // Halo doré pulsant pour la card total
-        totalGlow.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
+        totalGlow.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const totalGlowStyle = useAnimatedStyle(() => ({
         opacity: interpolate(totalGlow.value, [0, 1], [0.15, 0.35]),
@@ -383,7 +349,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     const openInvoice = (inv: Invoice) => {
         const url = inv.pdf_url || `${API_BASE}/api/invoices/${inv.id}`
         Linking.openURL(url).catch(() => {
-            Alert.alert(t('Erreur'), t("Impossible d'ouvrir la facture."))
+            toast(t('Erreur'), t("Impossible d'ouvrir la facture."))
         })
     }
 
@@ -410,13 +376,17 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -500,6 +470,8 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                             <Pressable
                                 onPress={() => setFilter('all')}
                                 style={styles.emptyCatBtn}
+                                accessibilityRole="button"
+                                hitSlop={6}
                             >
                                 <Text style={styles.emptyCatBtnText}>
                                     {t('Voir toutes')}
@@ -513,8 +485,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     <>
                         {/* HEADER TITRE */}
                         <Animated.View style={[styles.headerContainer, styleHeader]}>
-                            <Text style={styles.title}>{t('Vos')}</Text>
-                            <Text style={styles.titleHighlight}>{t('factures.')}</Text>
+                            <Text style={styles.title}>{t('Mes factures')}</Text>
                             <Text style={styles.subtitle}>
                                 {t('Historique complet de votre facturation Retour Gagnant.')}
                             </Text>
@@ -653,49 +624,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -708,7 +645,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -725,19 +662,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         paddingHorizontal: 8,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -816,7 +741,7 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     totalBadgeText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.2,
@@ -861,7 +786,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.4)',
     },
     totalSplitLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: 'rgba(255, 255, 255, 0.6)',
         fontWeight: '700',
         letterSpacing: 0.5,
@@ -890,7 +815,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     filterTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -935,7 +860,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     filterCountText: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.textSec,
     },
@@ -992,7 +917,7 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     invRef: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -1012,7 +937,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     invDate: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
     },
@@ -1024,7 +949,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 3,
     },
     emailText: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.success,
         fontWeight: '700',
         letterSpacing: 0.2,
@@ -1054,7 +979,7 @@ const styles = StyleSheet.create({
         borderRadius: 2.5,
     },
     statusText: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 0.3,
     },
@@ -1130,7 +1055,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.border,
     },
     emptyHint: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontStyle: 'italic',
         letterSpacing: 0.3,
@@ -1217,7 +1142,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     infoText: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
         lineHeight: 16,

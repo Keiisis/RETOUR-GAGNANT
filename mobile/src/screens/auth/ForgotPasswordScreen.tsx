@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from '../../lib/feedback'
 import {
     View, Text, TextInput, StyleSheet, KeyboardAvoidingView,
-    Platform, ScrollView, ActivityIndicator, Alert,
-    Pressable, Dimensions, Image, TouchableOpacity
+    Platform, ScrollView, ActivityIndicator, Pressable, Dimensions, Image, TouchableOpacity
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -19,7 +19,9 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    ForgotPasswordScreen — THEME "CORPORATE PREMIUM 2026"
@@ -32,21 +34,9 @@ const { width } = Dimensions.get('window')
 const LOGO_IMG = require('../../../assets/adaptive-icon.png')
 
 // Palette de l'agence (identique Login/Register)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    accent: '#C9A84C',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-
-    textSec: '#64748B',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 export default function ForgotPasswordScreen({ navigation }: any) {
     const insets = useSafeAreaInsets()
@@ -62,27 +52,11 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     const formAnim = useSharedValue(0)
     const btnAnim = useSharedValue(0)
 
-    /* ── Auras lentes ── */
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
-
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
         formAnim.value = withDelay(150, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
         btnAnim.value = withDelay(300, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
@@ -98,12 +72,10 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         transform: [{ translateY: 50 * (1 - btnAnim.value) }],
     }))
 
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const handleReset = async () => {
         if (!email.trim()) {
-            Alert.alert(t('Champs requis'), t('Veuillez entrer votre adresse email.'))
+            toast(t('Champs requis'), t('Veuillez entrer votre adresse email.'))
             return
         }
 
@@ -112,26 +84,27 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         setLoading(false)
 
         if (error) {
-            Alert.alert(t('Erreur'), error.message)
+            toast(t('Erreur'), error.message)
         } else {
-            Alert.alert(
-                t('Email envoyé'),
-                t('Vérifiez votre boîte de réception pour réinitialiser votre mot de passe.'),
-                [{ text: t('OK'), onPress: () => navigation.navigate('Login') }]
-            )
+            toast(t('Email envoyé'), t('Vérifiez votre boîte de réception pour réinitialiser votre mot de passe.'), 'success')
+            navigation.navigate('Login')
         }
     }
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
 
-            {/* BACKGROUND PREMIUM : Auras diffuses */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -159,8 +132,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                         <Ionicons name="key-outline" size={28} color={C.accent} />
                     </View>
 
-                    <Text style={styles.title}>{t('Mot de passe')}</Text>
-                    <Text style={styles.titleHighlight}>{t('oublié ?')}</Text>
+                    <Text style={styles.title}>{t('Mot de passe oublié ?')}</Text>
                     <Text style={styles.subtitle}>
                         {t('Entrez votre adresse email et nous vous enverrons un lien de réinitialisation sécurisé.')}
                     </Text>
@@ -191,7 +163,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                         loading={loading}
                     />
 
-                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink}>
+                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink}
+                        accessibilityRole="button"
+                        hitSlop={6}>
                         <Text style={styles.backText}>
                             {t('Retour à')} <Text style={styles.backBold}>{t('la connexion')}</Text>
                         </Text>
@@ -254,7 +228,9 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
 ═══════════════════════════════════════════════════════════ */
 function InteractiveButton({ title, onPress, disabled, loading }: any) {
     return (
-        <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.btn, disabled && styles.btnDisabled]}>
+        <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.btn, disabled && styles.btnDisabled]}
+            accessibilityRole="button"
+            hitSlop={6}>
             {loading ? (
                 <ActivityIndicator color={C.primaryText} size="small" />
             ) : (
@@ -276,46 +252,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras discrètes ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: -50,
-        left: -150,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
     /* ── Scroll & Header ── */
     scroll: {
@@ -345,19 +290,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 20,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 15,
         color: C.textSec,
@@ -424,7 +357,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F1F5F9',
+        color: '#F5F5F5',
     },
     backLink: {
         marginTop: 24,
@@ -447,7 +380,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footer: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.placeholder,
         letterSpacing: 1,
     },

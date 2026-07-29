@@ -90,7 +90,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 </View>
 
                 {!isLast && (
-                    <Pressable hitSlop={12} onPress={onComplete}>
+                    <Pressable hitSlop={12} onPress={onComplete}
+                        accessibilityRole="button">
                         <Text style={styles.skipText}>{t('Passer')}</Text>
                     </Pressable>
                 )}
@@ -156,6 +157,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                         activeOpacity={0.85}
                         onPress={goNext}
                         style={styles.cta}
+                        accessibilityRole="button"
+                        hitSlop={6}
                     >
                         <Text style={styles.ctaText}>
                             {isLast ? t('Commencer mon retour') : t('Continuer')}
@@ -267,7 +270,7 @@ function ArrowIcon() {
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
             <Path
                 d="M5 12h14M13 6l6 6-6 6"
-                stroke="#1A1613"
+                stroke="#3C3C3C"
                 strokeWidth={2.2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -341,7 +344,7 @@ const styles = StyleSheet.create({
         bottom: 200,
     },
     kicker: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         letterSpacing: 3,
         marginBottom: 18,
@@ -415,7 +418,7 @@ const styles = StyleSheet.create({
     ctaText: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1A1613',
+        color: '#3C3C3C',
         letterSpacing: -0.3,
     },
 })

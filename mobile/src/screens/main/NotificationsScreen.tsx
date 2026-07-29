@@ -1,8 +1,9 @@
 'use strict'
 import React, { useEffect, useState, useCallback } from 'react'
+import { confirm, toast } from '../../lib/feedback'
 import {
     View, Text, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, Switch, Alert, ActivityIndicator,
+    RefreshControl, Platform, Switch, ActivityIndicator,
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -24,8 +25,10 @@ import Constants from 'expo-constants'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    NotificationsScreen — THEME "CORPORATE PREMIUM 2026"
@@ -34,28 +37,9 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (cohérente avec tous les écrans)
-const C = {
-    bg: '#F8F9FA',
-    surface: 'rgba(255, 255, 255, 0.85)',
-    surfaceSolid: '#FFFFFF',
-    border: '#E2E8F0',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-    purple: '#8B5CF6',
-
-    textSec: '#64748B',
-    textMuted: '#94A3B8',
-    placeholder: '#94A3B8',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Notifications'>
 
@@ -171,6 +155,8 @@ function NotifCard({
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1) }}
                 onPressOut={() => { pressAnim.value = withSpring(0) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <Animated.View style={[
                     styles.notifCard,
@@ -244,38 +230,17 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
     const bellPulse = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        bellPulse.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-                withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
+        bellPulse.value = withTiming(1, { duration: 600 })
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
     const bellPulseStyle = useAnimatedStyle(() => ({
         opacity: interpolate(bellPulse.value, [0, 1], [0.4, 1]),
         transform: [{ scale: interpolate(bellPulse.value, [0, 1], [0.9, 1.15]) }],
@@ -341,44 +306,39 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                     finalStatus = status
                 }
                 if (finalStatus !== 'granted') {
-                    Alert.alert(
-                        t('Permission refusée'),
-                        t('Activez les notifications dans les paramètres de votre appareil pour recevoir des alertes.')
-                    )
+                    toast(t('Permission refusée'), t('Activez les notifications dans les paramètres de votre appareil pour recevoir des alertes.'))
                     return
                 }
                 const projectId =
                     Constants.expoConfig?.extra?.eas?.projectId
                     ?? Constants.easConfig?.projectId
                 if (!projectId) {
-                    Alert.alert(t('Configuration'), t('Identifiant projet EAS introuvable. Contactez le support.'))
+                    toast(t('Configuration'), t('Identifiant projet EAS introuvable. Contactez le support.'))
                     return
                 }
                 const tokenData = await Notifications.getExpoPushTokenAsync({ projectId })
                 const token = tokenData.data
                 await updateProfile({ push_token: token })
                 setPushEnabled(true)
-                Alert.alert(t('Notifications activées'), t('Vous recevrez désormais des alertes pour vos dossiers et messages.'))
+                toast(t('Notifications activées'), t('Vous recevrez désormais des alertes pour vos dossiers et messages.'))
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : t('Erreur')
-                Alert.alert(t('Erreur'), msg)
+                toast(t('Erreur'), msg)
             } finally {
                 setRegisteringPush(false)
             }
         } else {
-            Alert.alert(
-                t('Désactiver les notifications'),
-                t('Vous ne recevrez plus d\'alertes push. Vous pourrez les réactiver à tout moment.'),
-                [
-                    { text: t('Annuler'), style: 'cancel' },
-                    {
-                        text: t('Désactiver'), style: 'destructive', onPress: async () => {
-                            await updateProfile({ push_token: undefined })
-                            setPushEnabled(false)
-                        },
-                    },
-                ]
-            )
+            confirm({
+                title: t('Désactiver les notifications'),
+                message: t('Vous ne recevrez plus d\'alertes push. Vous pourrez les réactiver à tout moment.'),
+                confirmLabel: t('Désactiver'),
+                cancelLabel: t('Annuler'),
+                destructive: true,
+                onConfirm: async () => {
+                    await updateProfile({ push_token: undefined })
+                    setPushEnabled(false)
+                },
+            })
         }
     }
 
@@ -422,13 +382,17 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -525,8 +489,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                     <>
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Vos')}</Text>
-                    <Text style={styles.titleHighlight}>{t('notifications.')}</Text>
+                    <Text style={styles.title}>{t('Notifications')}</Text>
                     <Text style={styles.subtitle}>
                         {unreadCount > 0
                             ? t("Vous avez de nouvelles alertes à consulter.")
@@ -621,6 +584,8 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                 <Pressable
                                     style={[styles.filterPill, filter === 'all' && styles.filterPillActive]}
                                     onPress={() => setFilter('all')}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
                                 >
                                     <Text style={[styles.filterPillText, filter === 'all' && styles.filterPillTextActive]}>
                                         {t('Toutes')}
@@ -634,6 +599,8 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                 <Pressable
                                     style={[styles.filterPill, filter === 'unread' && styles.filterPillActive]}
                                     onPress={() => setFilter('unread')}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
                                 >
                                     <Text style={[styles.filterPillText, filter === 'unread' && styles.filterPillTextActive]}>
                                         {t('Non lues')}
@@ -651,6 +618,8 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                     style={styles.markAllBtn}
                                     onPress={markAllRead}
                                     activeOpacity={0.8}
+                                    accessibilityRole="button"
+                                    hitSlop={6}
                                 >
                                     <Ionicons name="checkmark-done" size={14} color={C.accent} />
                                     <Text style={styles.markAllText}>{t('Tout lire')}</Text>
@@ -676,33 +645,11 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: { top: -100, right: -100, backgroundColor: C.primary },
-    aura2: { bottom: 50, left: -100, backgroundColor: C.auraGreen },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: { width: 44, height: 44, justifyContent: 'center' },
-    iconContainer: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: 'center', alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -715,7 +662,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.25)',
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -733,19 +680,7 @@ const styles = StyleSheet.create({
         marginBottom: 22,
         paddingHorizontal: 4,
     },
-    title: {
-        fontSize: 38,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
-    },
+    title: { ...typography.h1, color: C.text },
     subtitle: {
         fontSize: 14,
         color: C.textSec,
@@ -813,13 +748,13 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     pushStatusText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.success,
         letterSpacing: 0.8,
     },
     pushSub: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '500',
     },
@@ -833,7 +768,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     statsTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -879,7 +814,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     statLabel: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1,
@@ -934,7 +869,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(212, 160, 23, 0.25)',
     },
     filterCountText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
     },
@@ -953,7 +888,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.3)',
     },
     markAllText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -1043,7 +978,7 @@ const styles = StyleSheet.create({
         borderColor: C.accent,
     },
     emptyHeroBadgeText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 1.2,
@@ -1155,12 +1090,12 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     notifTypeBadge: {
-        fontSize: 9.5,
+        fontSize: 12,
         fontWeight: '800',
         letterSpacing: 1.2,
     },
     notifTime: {
-        fontSize: 10.5,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '600',
         letterSpacing: 0.2,
@@ -1218,7 +1153,7 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '45deg' }],
     },
     footerText: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
         letterSpacing: 0.2,

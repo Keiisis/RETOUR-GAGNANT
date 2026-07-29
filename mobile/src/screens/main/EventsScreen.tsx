@@ -20,9 +20,11 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
+import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { ttcFromHt } from '../../lib/tax'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    EventsScreen — THEME "CORPORATE PREMIUM 2026"
@@ -32,27 +34,9 @@ import { ttcFromHt } from '../../lib/tax'
 const { width } = Dimensions.get('window')
 
 // Palette de l'agence (identique aux autres écrans)
-const C = {
-    bg: '#FFFFFF',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceSolid: '#FFFFFF',
-    border: 'rgba(16, 185, 129, 0.12)',
-
-    primary: '#047857',
-    primaryDark: '#022C22',
-    accent: '#C9A84C',
-    accentDark: '#A68B3C',
-    accentLight: '#E2C97E',
-    auraGreen: '#10B981',
-    error: '#EF4444',
-    success: '#10B981',
-    info: '#3B82F6',
-
-    textSec: '#4A5568',
-    textMuted: '#718096',
-    placeholder: '#718096',
-    primaryText: '#FFFFFF',
-}
+// Palette de l'ecran : plus de copie locale. Toutes les couleurs
+// viennent du design system v2 (blanc + tricolore Benin).
+const C = screenColors
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -158,12 +142,7 @@ function FeaturedEventCard({
 
     useEffect(() => {
         // Halo doré qui respire en arrière-plan
-        glowAnim.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-                withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-            ), -1, false
-        )
+        glowAnim.value = withTiming(1, { duration: 600 })
     }, [])
 
     const cardStyle = useAnimatedStyle(() => ({
@@ -183,6 +162,8 @@ function FeaturedEventCard({
             onPress={onPress}
             onPressIn={() => { pressAnim.value = withSpring(1) }}
             onPressOut={() => { pressAnim.value = withSpring(0) }}
+            accessibilityRole="button"
+            hitSlop={6}
         >
             <Animated.View style={[featuredStyles.card, cardStyle]}>
                 {/* Halo doré pulsant en arrière-plan */}
@@ -344,7 +325,7 @@ const featuredStyles = StyleSheet.create({
         paddingVertical: 5,
     },
     starText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.primary,
         letterSpacing: 1,
@@ -361,7 +342,7 @@ const featuredStyles = StyleSheet.create({
         borderColor: 'rgba(10, 107, 59, 0.4)',
     },
     registeredText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: '#34D399',
         letterSpacing: 0.3,
@@ -396,7 +377,7 @@ const featuredStyles = StyleSheet.create({
         opacity: 0.5,
     },
     dateMonth: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accent,
         letterSpacing: 2,
@@ -413,19 +394,12 @@ const featuredStyles = StyleSheet.create({
         borderColor: 'rgba(212, 160, 23, 0.35)',
     },
     countdownText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accent,
         letterSpacing: 0.3,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: C.primaryText,
-        letterSpacing: -0.4,
-        lineHeight: 28,
-        marginBottom: 8,
-    },
+    title: { ...typography.h1, color: C.text },
     desc: {
         fontSize: 13,
         color: 'rgba(255,255,255,0.7)',
@@ -454,7 +428,7 @@ const featuredStyles = StyleSheet.create({
         borderTopColor: 'rgba(255,255,255,0.1)',
     },
     priceLabel: {
-        fontSize: 10,
+        fontSize: 12,
         color: 'rgba(255,255,255,0.5)',
         fontWeight: '600',
         letterSpacing: 0.5,
@@ -526,6 +500,8 @@ function EventCard({
                 onPress={onPress}
                 onPressIn={() => { pressAnim.value = withSpring(1) }}
                 onPressOut={() => { pressAnim.value = withSpring(0) }}
+                accessibilityRole="button"
+                hitSlop={6}
             >
                 <View style={cardStyles.card}>
                     {/* Colonne date à gauche */}
@@ -658,7 +634,7 @@ const cardStyles = StyleSheet.create({
         lineHeight: 24,
     },
     dateMonth: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.2,
@@ -671,7 +647,7 @@ const cardStyles = StyleSheet.create({
         marginVertical: 6,
     },
     dateTime: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '600',
         color: C.textSec,
         letterSpacing: 0.3,
@@ -704,7 +680,7 @@ const cardStyles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     catText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.5,
@@ -738,7 +714,7 @@ const cardStyles = StyleSheet.create({
         marginTop: 4,
     },
     desc: {
-        fontSize: 11.5,
+        fontSize: 12,
         color: C.textSec,
         fontWeight: '400',
         lineHeight: 15,
@@ -751,7 +727,7 @@ const cardStyles = StyleSheet.create({
     },
     metaText: {
         flex: 1,
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontWeight: '500',
     },
@@ -773,7 +749,7 @@ const cardStyles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     soonText: {
-        fontSize: 9,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -815,7 +791,7 @@ const cardStyles = StyleSheet.create({
         borderRadius: 8,
     },
     viewBtnText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.primaryText,
         letterSpacing: 0.2,
@@ -837,32 +813,16 @@ export default function EventsScreen({ navigation }: any) {
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
-    const aura1Y = useSharedValue(0)
-    const aura2X = useSharedValue(0)
 
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        aura1Y.value = withRepeat(
-            withSequence(
-                withTiming(25, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(-10, { duration: 6000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
-        aura2X.value = withRepeat(
-            withSequence(
-                withTiming(-30, { duration: 7000, easing: Easing.inOut(Easing.quad) }),
-                withTiming(15, { duration: 7000, easing: Easing.inOut(Easing.quad) })
-            ), -1, true
-        )
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-    const aura1Style = useAnimatedStyle(() => ({ transform: [{ translateY: aura1Y.value }] }))
-    const aura2Style = useAnimatedStyle(() => ({ transform: [{ translateX: aura2X.value }] }))
 
     const fetchEvents = useCallback(async () => {
         try {
@@ -896,13 +856,17 @@ export default function EventsScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
-            {/* 🎨 BACKGROUND PREMIUM : Auras */}
-            <Animated.View style={[styles.aura, styles.aura1, aura1Style]} />
-            <Animated.View style={[styles.aura, styles.aura2, aura2Style]} />
 
             {/* NAV BAR */}
-            <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}>
+            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+                <FlagBar height={6} radiusTop={false} />
+            </View>
+
+            <View style={styles.navBar}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
                         <Ionicons name="arrow-back" size={22} color={C.primary} />
                     </View>
@@ -932,8 +896,7 @@ export default function EventsScreen({ navigation }: any) {
             >
                 {/* HEADER TITRE */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Nos')}</Text>
-                    <Text style={styles.titleHighlight}>{t('événements.')}</Text>
+                    <Text style={styles.title}>{t('Événements')}</Text>
                     <Text style={styles.subtitle}>
                         {t('Galas, forums, circuits culturels et séminaires de la diaspora.')}
                     </Text>
@@ -1047,6 +1010,8 @@ export default function EventsScreen({ navigation }: any) {
                                         <Pressable
                                             onPress={() => setCategory('Tous')}
                                             style={styles.emptyCatBtn}
+                                            accessibilityRole="button"
+                                            hitSlop={6}
                                         >
                                             <Text style={styles.emptyCatBtnText}>
                                                 {t('Voir tous les événements')}
@@ -1112,7 +1077,9 @@ function CategoryPill({
     const textColor = active ? C.primaryText : C.textSec
 
     return (
-        <Pressable onPress={onPress}>
+        <Pressable onPress={onPress}
+            accessibilityRole="button"
+            hitSlop={6}>
             <Animated.View style={[styles.filterPill, pillStyle]}>
                 <Ionicons name={icon} size={14} color={iconColor} />
                 <Text style={[styles.filterText, { color: textColor }]}>
@@ -1146,49 +1113,15 @@ const styles = StyleSheet.create({
         backgroundColor: C.bg,
     },
 
-    /* ── Auras Corporate ── */
-    aura: {
-        position: 'absolute',
-        width: width * 0.9,
-        height: width * 0.9,
-        borderRadius: width,
-        opacity: 0.05,
-    },
-    aura1: {
-        top: -100,
-        right: -100,
-        backgroundColor: C.primary,
-    },
-    aura2: {
-        bottom: 50,
-        left: -100,
-        backgroundColor: C.auraGreen,
-    },
-
     /* ── Nav Bar ── */
-    navBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        zIndex: 10,
-    },
+    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
         justifyContent: 'center',
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
     navCounter: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1207,7 +1140,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     navCounterText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '700',
         color: C.accentDark,
         letterSpacing: 0.3,
@@ -1229,13 +1162,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: C.primary,
         letterSpacing: -0.5,
-    },
-    titleHighlight: {
-        fontSize: 38,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: -0.5,
-        marginTop: -4,
     },
     subtitle: {
         fontSize: 15,
@@ -1283,7 +1209,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     filterTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '800',
         color: C.accentDark,
         letterSpacing: 1.5,
@@ -1328,7 +1254,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     filterCountText: {
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '800',
         color: C.textSec,
     },
@@ -1414,7 +1340,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.border,
     },
     emptyHint: {
-        fontSize: 11,
+        fontSize: 12,
         color: C.textMuted,
         fontStyle: 'italic',
         letterSpacing: 0.3,
