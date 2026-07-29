@@ -324,7 +324,8 @@
       "Bash(sed -n '/emptyHeroIcon: {/,/^    },/p' screens/main/MessagesScreen.tsx)",
       "Bash(python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/untranslated.py\")",
       "Bash(grep -E \"title|Vocaux|description|//\")",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(xargs -0 du -h)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",
