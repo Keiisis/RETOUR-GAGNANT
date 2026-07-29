@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
@@ -1130,7 +1130,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
 
     /* ── Loading ── */
@@ -1192,12 +1192,7 @@ const styles = StyleSheet.create({
         marginBottom: 22,
     },
     emptyHeroGlow: {
-        position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        backgroundColor: C.accent,
-        opacity: 0.08,
+        display: 'none',
     },
     emptyIconWrap: {
         width: 84,
@@ -1207,7 +1202,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
@@ -1258,7 +1253,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderRadius: 14,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.2,

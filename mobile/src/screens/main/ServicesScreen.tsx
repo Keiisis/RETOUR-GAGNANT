@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { FlagBar } from '../../components/ui'
 import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
+import { pricingEnabled, showPriceFor } from '../../lib/pricing-visibility'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
@@ -429,13 +430,14 @@ function getIconForSlug(slug: string, icon_type?: string): keyof typeof Ionicons
 ═══════════════════════════════════════════════════════════ */
 
 interface ServiceCardProps {
+    pricingOn: boolean
     svc: ServiceFull
     index: number
     onPress: () => void
     t: (s: string) => string
 }
 
-function ServiceCard({ svc, index, onPress, t }: ServiceCardProps) {
+function ServiceCard({ svc, index, onPress, t, pricingOn }: ServiceCardProps) {
     const enterAnim = useSharedValue(0)
     const pressAnim = useSharedValue(0)
 
@@ -459,6 +461,9 @@ function ServiceCard({ svc, index, onPress, t }: ServiceCardProps) {
        Source unique partagée avec le web et le panel client : lib/service-mode. */
     const mode = getServiceMode({ slug: svc.id })
     const cta = MODE_COPY[mode].cta
+    // Le site masque les tarifs sur les fiches (services_show_calculator = false) :
+    // l'app applique la meme regle plutot que d'annoncer un montant absent du web.
+    const showPrice = showPriceFor(svc.id, pricingOn)
 
     return (
         <Animated.View style={enterStyle}>
@@ -486,8 +491,19 @@ function ServiceCard({ svc, index, onPress, t }: ServiceCardProps) {
 
                     <View style={styles.cardFooter}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.cardMetaLabel}>{t('Tarif')}</Text>
-                            <Text style={styles.cardMetaValue} numberOfLines={1}>{t(svc.price)}</Text>
+                            {showPrice ? (
+                                <>
+                                    <Text style={styles.cardMetaLabel}>{t('Tarif')}</Text>
+                                    <Text style={styles.cardMetaValue} numberOfLines={1}>{t(svc.price)}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={styles.cardMetaLabel}>{t('Devis')}</Text>
+                                    <Text style={styles.cardMetaValue} numberOfLines={1}>
+                                        {t('Établi en rendez-vous')}
+                                    </Text>
+                                </>
+                            )}
                         </View>
                         <View style={styles.cardCta}>
                             <Text style={styles.cardCtaText} numberOfLines={1}>{t(cta)}</Text>
@@ -580,6 +596,9 @@ export default function ServicesScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [query, setQuery] = useState('')
+    const [pricingOn, setPricingOn] = useState(false)
+
+    useEffect(() => { pricingEnabled().then(setPricingOn).catch(() => setPricingOn(false)) }, [])
     const [family, setFamily] = useState<Family>('all')
 
     /* Recherche + filtre famille, puis regroupement en sections.
@@ -836,6 +855,7 @@ export default function ServicesScreen({ navigation }: any) {
                                         index={idx}
                                         onPress={() => handlePress(svc)}
                                         t={t}
+                                        pricingOn={pricingOn}
                                     />
                                 ))}
                             </View>

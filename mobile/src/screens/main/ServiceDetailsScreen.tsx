@@ -31,6 +31,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
+import { pricingEnabled, showPriceFor } from '../../lib/pricing-visibility'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
@@ -151,6 +152,12 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
     const modeCopy = MODE_COPY[serviceMode]
     const [loading, setLoading] = useState(false)
     const [showKkiapay, setShowKkiapay] = useState(false)
+
+    // Le site masque les tarifs des fiches (services_show_calculator = false).
+    // L'app suit la meme regle : le montant se construit en rendez-vous.
+    const [pricingOn, setPricingOn] = useState(false)
+    useEffect(() => { pricingEnabled().then(setPricingOn).catch(() => setPricingOn(false)) }, [])
+    const showPrice = showPriceFor(serviceId, pricingOn)
 
     /* ── Données dynamiques DB ── */
     const [dynamicPrice, setDynamicPrice] = useState<string | null>(null)
@@ -373,8 +380,8 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                             />
                             <InfoPill
                                 icon={<Tag size={18} color={C.primary} strokeWidth={2} />}
-                                label={t('Tarif')}
-                                value={t(price || 'Sur devis')}
+                                label={showPrice ? t('Tarif') : t('Devis')}
+                                value={showPrice ? t(price || 'Sur devis') : t('Établi en rendez-vous')}
                             />
                         </View>
                     </AnimatedSection>
@@ -428,7 +435,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     )}
 
                     {/* TARIFICATION */}
-                    {pricingOptions.length > 0 && (
+                    {showPrice && pricingOptions.length > 0 && (
                         <AnimatedSection delay={380}>
                             <SectionHeader icon={<Tag size={16} color={C.primary} strokeWidth={2.4} />} title={t('Tarification')} />
                             <View style={styles.pricingList}>

@@ -310,7 +310,14 @@
       "Bash(curl -s -o /dev/null -w '%{http_code} %{size_download}' 'https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/render/image/public/products/images/1776958326482-76hetd.png?width=400&quality=70' --max-time 30)",
       "Bash(curl -s -o /dev/null -w '%{http_code} %{size_download}' 'https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/render/image/public/products/images/1776958326482-76hetd.png?width=800&quality=75' --max-time 30)",
       "Bash(cd \"c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/mobile/src\" && sed -n '/const AVATAR_PRESETS/,/^    }$/p' screens/main/ProfilScreen.tsx | head -30)",
-      "Bash(python /tmp/pal.py)"
+      "Bash(python /tmp/pal.py)",
+      "Bash(grep -v \"^\\\\s*//\")",
+      "Bash(awk 'NR>290 && /price|pricing_options|Tarif/ {print NR\": \"$0}' \"app/\\(routes\\)/services/[slug]/page.tsx\")",
+      "Bash(node -e \"require.resolve\\('sharp'\\); console.log\\('sharp: disponible'\\)\")",
+      "Bash(node --env-file=.env.local scripts/recompress-product-images.mjs --dry)",
+      "Bash(node --env-file=.env.local scripts/recompress-product-images.mjs)",
+      "Bash(sed -n '/^    eventCard: {/,/^    },/p' screens/main/EventsScreen.tsx)",
+      "Bash(sed -n '/^    featuredCard: {/,/^    },/p' screens/main/EventsScreen.tsx)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",
