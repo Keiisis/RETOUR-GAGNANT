@@ -80,7 +80,13 @@ export default function CallScreen({ navigation, route }: any) {
 
             // Build sans le module natif : on ne bloque pas l'utilisateur,
             // on bascule sur l'appel téléphonique classique.
-            if (!isCallSupported()) {
+            // La detection est elle-meme protegee : si elle echoue, on
+            // considere que l'appel in-app n'est pas disponible plutot que
+            // de laisser une exception remonter jusqu'a l'ecran.
+            let disponible = false
+            try { disponible = isCallSupported() } catch { disponible = false }
+
+            if (!disponible) {
                 toast(
                     t('Appel téléphonique'),
                     t("L'appel dans l'application nécessite une mise à jour. Nous ouvrons votre téléphone."),

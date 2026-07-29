@@ -11,6 +11,7 @@
    classique au lieu de planter.
 ══════════════════════════════════════════════════════════════ */
 
+import { NativeModules } from 'react-native'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -27,10 +28,21 @@ type WebRTCModule = {
 let webrtc: WebRTCModule | null = null
 let tenteDeCharger = false
 
+/* react-native-webrtc LÈVE une exception des son chargement quand la
+   partie native est absente (voir son index.ts : `if (WebRTCModule === null)
+   throw`). Un try/catch autour du require ne suffit pas : sur un build
+   compile avant l'ajout du module, l'erreur remontait jusqu'a l'ecran et
+   affichait un ecran rouge au lieu de basculer sur l'appel telephonique.
+
+   On interroge donc d'abord le registre des modules natifs — une simple
+   lecture de propriete, qui ne peut pas echouer — et on ne charge le
+   module JS que s'il a de quoi fonctionner. */
 function loadWebRTC(): WebRTCModule | null {
     if (tenteDeCharger) return webrtc
     tenteDeCharger = true
     try {
+        const natif = (NativeModules as Record<string, unknown>).WebRTCModule
+        if (!natif) return (webrtc = null)
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         webrtc = require('react-native-webrtc') as WebRTCModule
     } catch {

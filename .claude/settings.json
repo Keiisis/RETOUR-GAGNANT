@@ -325,7 +325,8 @@
       "Bash(python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/untranslated.py\")",
       "Bash(grep -E \"title|Vocaux|description|//\")",
       "Bash(git commit *)",
-      "Bash(xargs -0 du -h)"
+      "Bash(xargs -0 du -h)",
+      "Bash(sed -n '/Build sans le module natif/,/navigation.goBack\\(\\)/p' src/screens/main/CallScreen.tsx)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",
