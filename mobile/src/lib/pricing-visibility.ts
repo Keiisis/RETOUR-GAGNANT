@@ -37,13 +37,23 @@ export async function pricingEnabled(): Promise<boolean> {
     inFlight = (async () => {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/settings/frontend`, { timeoutMs: 8000 })
-            const json = await res.json().catch(() => ({}))
-            const global = json?.settings?.services_show_calculator
-            const legacy = json?.settings?.passeport_show_calculator
-            // Le toggle global a priorité, exactement comme sur le web.
-            if (global === 'false') return false
-            if (global === undefined && legacy === 'false') return false
-            return true
+            // `fetch` ne lève PAS sur un 4xx/5xx : sans ce test, une réponse
+            // { error: "Accès refusé." } passait pour un réglage absent et on
+            // retombait sur « prix visible » — l'inverse de ce qu'il faut.
+            if (!res.ok) return false
+            const json = await res.json().catch(() => null)
+            const settings = json?.settings
+            if (!settings || typeof settings !== 'object') return false
+
+            const global = settings.services_show_calculator
+            const legacy = settings.passeport_show_calculator
+            // On n'affiche un tarif QUE si le réglage l'autorise explicitement.
+            // Toute autre situation (clé absente, valeur inattendue, panne)
+            // masque le prix : mieux vaut taire un montant que d'en annoncer
+            // un que le site n'affiche pas.
+            if (global === 'true') return true
+            if (global === undefined && legacy === 'true') return true
+            return false
         } catch {
             return false
         } finally {
