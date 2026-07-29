@@ -1,723 +1,404 @@
-// src/screens/payments/PaymentsScreen.tsx
 'use strict'
-import React, { useState, useEffect, useCallback } from 'react'
-import { confirm } from '../../lib/feedback'
+/* ═══════════════════════════════════════════════════════════
+   PAIEMENTS
+
+   Cet écran affichait des données ENTIÈREMENT FICTIVES : deux cartes
+   bancaires au nom de « JEAN DUPONT », un solde de -219,48 €, et des
+   transactions inventées (« Abonnement Premium », « Module Pro »,
+   « Licence annuelle ») — des produits que l'agence ne vend pas.
+
+   Deux corrections de fond :
+
+   1. Les moyens de paiement enregistrés n'existent pas et ne peuvent pas
+      exister : RGB encaisse via les widgets Kkiapay et FedaPay, qui ne
+      conservent aucune carte côté marchand. On présente donc les canaux
+      réellement acceptés, à titre d'information, sans prétendre qu'une
+      carte est « enregistrée ».
+
+   2. L'historique vient désormais des deux sources réelles déjà exposées
+      à l'app : les commandes (/api/mobile/orders) et les factures
+      (/api/mobile/invoices).
+═══════════════════════════════════════════════════════════ */
+
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-    View, Text, StyleSheet, ScrollView, KeyboardAvoidingView,
-    Platform, ActivityIndicator, Pressable, Dimensions,
-    TouchableOpacity, RefreshControl,
+    View, Text, ScrollView, StyleSheet, Pressable,
+    ActivityIndicator, RefreshControl, Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    withDelay,
-    withSpring,
-    withRepeat,
-    withSequence,
-    Easing,
-    interpolate,
-    interpolateColor,
+    useSharedValue, useAnimatedStyle, withDelay, withTiming, Easing,
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
-import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { FlagBar } from '../../components/ui'
+import { authHeaders } from '../../config/api'
+import { fetchWithTimeout } from '../../lib/fetch'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
-/* ═══════════════════════════════════════════════════════════
-   PaymentsScreen — THEME "CORPORATE PREMIUM 2026"
-   (Aligné avec RegisterScreen / EditProfilScreen)
-═══════════════════════════════════════════════════════════ */
-const { width } = Dimensions.get('window')
-
-// Palette de l'agence
-// Palette de l'ecran : plus de copie locale. Toutes les couleurs
-// viennent du design system v2 (blanc + tricolore Benin).
 const C = screenColors
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
-/* ═══════════════════════════════════════════════════════════
-   TYPES
-═══════════════════════════════════════════════════════════ */
-type CardBrand = 'visa' | 'mastercard' | 'amex'
-interface PaymentMethod {
-    id: string
-    brand: CardBrand
-    last4: string
-    holder: string
-    expMonth: number
-    expYear: number
-    isDefault: boolean
-}
-interface Transaction {
+/* Une ligne d'historique, quelle que soit son origine. */
+interface Entry {
     id: string
     title: string
     subtitle: string
-    amount: number          // négatif = débit, positif = crédit
+    amount: number
     currency: string
-    date: string            // ISO
-    status: 'completed' | 'pending' | 'failed'
+    date: string
+    paid: boolean
     icon: keyof typeof Ionicons.glyphMap
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MOCK DATA (remplacer par fetch API)
-═══════════════════════════════════════════════════════════ */
-const MOCK_METHODS: PaymentMethod[] = [
-    { id: 'pm_1', brand: 'visa', last4: '4242', holder: 'JEAN DUPONT', expMonth: 12, expYear: 2027, isDefault: true },
-    { id: 'pm_2', brand: 'mastercard', last4: '8819', holder: 'JEAN DUPONT', expMonth: 8, expYear: 2026, isDefault: false },
-]
-const MOCK_TX: Transaction[] = [
-    { id: 't1', title: 'Abonnement Premium', subtitle: 'Renouvellement mensuel', amount: -29.99, currency: '€', date: '2026-05-20', status: 'completed', icon: 'star-outline' },
-    { id: 't2', title: 'Remboursement', subtitle: 'Commande #A1042', amount: 14.50, currency: '€', date: '2026-05-12', status: 'completed', icon: 'arrow-undo-outline' },
-    { id: 't3', title: 'Achat Module Pro', subtitle: 'Licence annuelle', amount: -199.00, currency: '€', date: '2026-04-28', status: 'pending', icon: 'cube-outline' },
-    { id: 't4', title: 'Frais de service', subtitle: 'Avril 2026', amount: -4.99, currency: '€', date: '2026-04-01', status: 'failed', icon: 'alert-circle-outline' },
+/* Canaux réellement acceptés par l'agence. Aucune carte n'est conservée :
+   le paiement se fait dans le widget du prestataire, à chaque règlement. */
+const CHANNELS: Array<{
+    icon: keyof typeof Ionicons.glyphMap
+    label: string
+    detail: string
+}> = [
+    { icon: 'phone-portrait-outline', label: 'Mobile Money', detail: 'MTN, Moov — via Kkiapay' },
+    { icon: 'card-outline', label: 'Carte bancaire', detail: 'Visa, Mastercard — via Kkiapay et FedaPay' },
+    { icon: 'business-outline', label: 'Virement', detail: 'Sur demande, pour les montants importants' },
 ]
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : ANIMATED SECTION (Stagger d'entrée)
-═══════════════════════════════════════════════════════════ */
 function AnimatedSection({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
     const anim = useSharedValue(0)
     useEffect(() => {
-        anim.value = withDelay(delay, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
+        anim.value = withDelay(delay, withTiming(1, { duration: 420, easing: Easing.out(Easing.quad) }))
     }, [delay])
-    const animStyle = useAnimatedStyle(() => ({
+    const s = useAnimatedStyle(() => ({
         opacity: anim.value,
-        transform: [{ translateY: 30 * (1 - anim.value) }],
+        transform: [{ translateY: 18 * (1 - anim.value) }],
     }))
-    return <Animated.View style={[animStyle, style]}>{children}</Animated.View>
+    return <Animated.View style={[s, style]}>{children}</Animated.View>
 }
 
-/* ═══════════════════════════════════════════════════════════
-   ECRAN PRINCIPAL
-═══════════════════════════════════════════════════════════ */
 export default function PaymentsScreen({ navigation }: any) {
     const insets = useSafeAreaInsets()
-    const { user } = useAuth() as any
+    const { profile } = useAuth()
     const { t } = useLang()
 
-    const [methods, setMethods] = useState<PaymentMethod[]>(MOCK_METHODS)
-    const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TX)
-    const [loading, setLoading] = useState(false)
+    const [tab, setTab] = useState<'history' | 'channels'>('history')
+    const [entries, setEntries] = useState<Entry[]>([])
+    const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
-    const [tab, setTab] = useState<'methods' | 'history'>('methods')
-    useEffect(() => {
-    }, [])
 
-    /* ── Actions ── */
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true)
-        // TODO: refetch API
-        setTimeout(() => setRefreshing(false), 900)
-    }, [])
-
-    const setDefault = (id: string) => {
-        setMethods(prev => prev.map(m => ({ ...m, isDefault: m.id === id })))
+    const formatPrice = (n: number, c: string) => {
+        if (c === 'XOF' || c === 'XAF') return `${Math.round(n).toLocaleString('fr-FR')} FCFA`
+        if (c === 'EUR') return `${n.toLocaleString('fr-FR')} €`
+        return `${n} ${c}`
     }
+    const formatDate = (iso: string) =>
+        new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 
-    const removeMethod = (id: string) => {
-        confirm({
-            title: t('Supprimer cette carte ?'),
-            message: t('Cette action est définitive.'),
-            confirmLabel: t('Supprimer'),
-            cancelLabel: t('Annuler'),
-            destructive: true,
-            onConfirm: () => setMethods(prev => prev.filter(m => m.id !== id)),
-        })
-    }
+    /* ── Historique réel : commandes + factures ── */
+    const fetchEntries = useCallback(async () => {
+        if (!profile) { setLoading(false); return }
+        try {
+            const headers = { ...(await authHeaders()) }
+            const [ordersRes, invoicesRes] = await Promise.all([
+                fetchWithTimeout(`${API_BASE}/api/mobile/orders`, { timeoutMs: 10000, headers })
+                    .then(r => r.json()).catch(() => ({})),
+                fetchWithTimeout(`${API_BASE}/api/mobile/invoices`, { timeoutMs: 10000, headers })
+                    .then(r => r.json()).catch(() => ({})),
+            ])
 
-    const addMethod = () => {
-        navigation?.navigate?.('AddPaymentMethod')
-    }
+            const fromOrders: Entry[] = (ordersRes?.orders || []).map((o: any) => ({
+                id: `o_${o.id}`,
+                title: o.product_title || t('Commande boutique'),
+                subtitle: `${t('Commande')} · ${String(o.payment_method || '').toUpperCase() || t('En ligne')}`,
+                amount: Number(o.amount) || 0,
+                currency: o.currency || 'XOF',
+                date: o.created_at,
+                paid: o.payment_status === 'completed' || o.payment_status === 'paid',
+                icon: 'bag-handle-outline',
+            }))
 
-    /* ── Calculs ── */
-    const balance = transactions.reduce((acc, tx) => acc + tx.amount, 0)
-    const defaultMethod = methods.find(m => m.isDefault) || methods[0]
+            const fromInvoices: Entry[] = (invoicesRes?.invoices || []).map((f: any) => ({
+                id: `f_${f.id}`,
+                title: f.description || `${t('Facture')} ${f.invoice_ref || ''}`.trim(),
+                subtitle: `${t('Facture')} ${f.invoice_ref || ''}`.trim(),
+                amount: Number(f.amount) || 0,
+                currency: f.currency || 'XOF',
+                date: f.paid_at || f.issued_at,
+                paid: f.status === 'paid' || !!f.paid_at,
+                icon: 'receipt-outline',
+            }))
+
+            const all = [...fromOrders, ...fromInvoices]
+                .filter(e => !!e.date)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            setEntries(all)
+        } catch { /* silencieux : l'état vide suffit */ } finally { setLoading(false) }
+    }, [profile, t])
+
+    useEffect(() => { fetchEntries() }, [fetchEntries])
+
+    const onRefresh = async () => { setRefreshing(true); await fetchEntries(); setRefreshing(false) }
+
+    /* Total réglé, calculé sur les seules lignes effectivement payées. */
+    const totals = useMemo(() => {
+        const paid = entries.filter(e => e.paid)
+        const currency = paid[0]?.currency || 'XOF'
+        const sum = paid
+            .filter(e => e.currency === currency)
+            .reduce((acc, e) => acc + e.amount, 0)
+        return { sum, currency, count: paid.length }
+    }, [entries])
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-
-            {/* NAV BAR */}
+        <View style={styles.container}>
             <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
                 <FlagBar height={6} radiusTop={false} />
             </View>
 
             <View style={styles.navBar}>
-                <Pressable onPress={() => navigation?.goBack?.()} style={styles.navBack}
+                <Pressable
+                    onPress={() => navigation.goBack()}
                     accessibilityRole="button"
-                    hitSlop={6}
-                    accessibilityLabel={t('Retour')}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
-                    </View>
+                    accessibilityLabel={t('Retour')}
+                    hitSlop={8}
+                    style={styles.iconContainer}
+                >
+                    <Ionicons name="arrow-back" size={20} color={C.text} />
                 </Pressable>
-                <Text style={styles.navTitle}>{t('Paiements')}</Text>
-                <Pressable onPress={addMethod} style={styles.navBack}
-                    accessibilityRole="button"
-                    hitSlop={6}
-                    accessibilityLabel={t('Ajouter')}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="add" size={24} color={C.primary} />
-                    </View>
-                </Pressable>
+                <Text style={styles.navTitle}>{t('Mes paiements')}</Text>
             </View>
 
             <ScrollView
-                contentContainerStyle={styles.scroll}
                 showsVerticalScrollIndicator={false}
-                bounces
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
                 }
             >
-                {/* HEADER TITRE */}
-                <AnimatedSection delay={0}>
-                    <View style={styles.headerContainer}>
-                        <Text style={styles.title}>{t('Mes paiements')}</Text>
-                        <Text style={styles.subtitle}>
-                            {t('Gérez vos moyens de paiement et suivez vos transactions en toute sécurité.')}
-                        </Text>
-                    </View>
-                </AnimatedSection>
+                <Text style={styles.subtitle}>
+                    {t('Historique de vos règlements et moyens de paiement acceptés.')}
+                </Text>
 
-                {/* HERO CARD : Carte principale */}
-                <AnimatedSection delay={120}>
-                    <HeroCard method={defaultMethod} balance={balance} t={t} />
-                </AnimatedSection>
-
-                {/* TABS */}
-                <AnimatedSection delay={220} style={{ marginTop: 28 }}>
-                    <View style={styles.tabsContainer}>
-                        <TabButton label={t('Moyens de paiement')} active={tab === 'methods'} onPress={() => setTab('methods')} />
-                        <TabButton label={t('Historique')} active={tab === 'history'} onPress={() => setTab('history')} />
-                    </View>
-                </AnimatedSection>
-
-                {/* CONTENU */}
-                {tab === 'methods' ? (
-                    <AnimatedSection delay={300} style={styles.section}>
-                        {methods.length === 0 ? (
-                            <EmptyState
-                                icon="card-outline"
-                                title={t('Aucune carte enregistrée')}
-                                subtitle={t('Ajoutez votre première carte pour commencer.')}
-                            />
-                        ) : (
-                            methods.map((m, i) => (
-                                <MethodRow
-                                    key={m.id}
-                                    method={m}
-                                    onSetDefault={() => setDefault(m.id)}
-                                    onRemove={() => removeMethod(m.id)}
-                                    t={t}
-                                    delay={i * 80}
-                                />
-                            ))
-                        )}
-
-                        <InteractiveButton
-                            title={t('Ajouter un moyen de paiement')}
-                            icon="add-circle-outline"
-                            onPress={addMethod}
-                            loading={loading}
-                        />
-                    </AnimatedSection>
-                ) : (
-                    <AnimatedSection delay={300} style={styles.section}>
-                        {transactions.length === 0 ? (
-                            <EmptyState
-                                icon="receipt-outline"
-                                title={t('Aucune transaction')}
-                                subtitle={t('Vos opérations apparaîtront ici.')}
-                            />
-                        ) : (
-                            transactions.map((tx, i) => (
-                                <TransactionRow key={tx.id} tx={tx} t={t} delay={i * 60} />
-                            ))
-                        )}
-                    </AnimatedSection>
-                )}
-
-                {/* SECURITE */}
-                <AnimatedSection delay={400} style={{ marginTop: 32 }}>
-                    <View style={styles.securityBox}>
-                        <View style={styles.securityIconWrap}>
-                            <Ionicons name="shield-checkmark" size={20} color={C.accent} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.securityTitle}>{t('Paiements sécurisés')}</Text>
-                            <Text style={styles.securitySub}>
-                                {t('Chiffrement bout-en-bout · PCI DSS · 3D Secure')}
+                {/* ── Total réglé ── */}
+                <AnimatedSection delay={60}>
+                    <View style={styles.summaryCard}>
+                        <FlagBar height={5} radiusTop={false} />
+                        <View style={styles.summaryBody}>
+                            <Text style={styles.summaryLabel}>{t('TOTAL RÉGLÉ')}</Text>
+                            <Text style={styles.summaryValue}>
+                                {formatPrice(totals.sum, totals.currency)}
+                            </Text>
+                            <Text style={styles.summaryHint}>
+                                {totals.count} {totals.count > 1 ? t('règlements') : t('règlement')}
                             </Text>
                         </View>
                     </View>
                 </AnimatedSection>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    )
-}
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : HERO CARD (Carte de crédit premium)
-═══════════════════════════════════════════════════════════ */
-function HeroCard({ method, balance, t }: { method?: PaymentMethod; balance: number; t: (s: string) => string }) {
-    const shine = useSharedValue(0)
-    useEffect(() => {
-        shine.value = withTiming(1, { duration: 600 })
-    }, [])
-    const shineStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(shine.value, [0, 1], [0.05, 0.18]),
-        transform: [{ translateX: interpolate(shine.value, [0, 1], [-width * 0.3, width * 0.3]) }],
-    }))
-
-    return (
-        <View style={styles.heroCard}>
-            {/* Halo Or animé */}
-            <Animated.View style={[styles.heroShine, shineStyle]} />
-
-            <View style={styles.heroTop}>
-                <View>
-                    <Text style={styles.heroLabel}>{t('Solde net')}</Text>
-                    <Text style={styles.heroBalance}>
-                        {balance < 0 ? '-' : ''}{Math.abs(balance).toFixed(2)} €
-                    </Text>
-                </View>
-                <View style={styles.heroBrandWrap}>
-                    <Ionicons name="diamond-outline" size={18} color={C.accent} />
-                    <Text style={styles.heroBrandText}>PREMIUM</Text>
-                </View>
-            </View>
-
-            <View style={styles.heroChip}>
-                <View style={styles.heroChipInner} />
-            </View>
-
-            <View style={styles.heroBottom}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.heroNumber}>
-                        •••• •••• •••• {method?.last4 ?? '0000'}
-                    </Text>
-                    <View style={styles.heroMetaRow}>
-                        <View>
-                            <Text style={styles.heroMetaLabel}>{t('Titulaire')}</Text>
-                            <Text style={styles.heroMetaValue}>{method?.holder ?? '—'}</Text>
-                        </View>
-                        <View style={{ marginLeft: 24 }}>
-                            <Text style={styles.heroMetaLabel}>{t('Expire')}</Text>
-                            <Text style={styles.heroMetaValue}>
-                                {method ? `${String(method.expMonth).padStart(2, '0')}/${String(method.expYear).slice(-2)}` : '—/—'}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-                <BrandLogo brand={method?.brand} />
-            </View>
-        </View>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : BRAND LOGO
-═══════════════════════════════════════════════════════════ */
-function BrandLogo({ brand }: { brand?: CardBrand }) {
-    if (brand === 'visa') return <Text style={[styles.brandText, { fontStyle: 'italic' }]}>VISA</Text>
-    if (brand === 'mastercard') return (
-        <View style={styles.mcWrap}>
-            <View style={[styles.mcDot, { backgroundColor: '#EB001B', marginRight: -8 }]} />
-            <View style={[styles.mcDot, { backgroundColor: '#FCD116', opacity: 0.9 }]} />
-        </View>
-    )
-    if (brand === 'amex') return <Text style={styles.brandText}>AMEX</Text>
-    return <Ionicons name="card" size={28} color={C.accentLight} />
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : TAB BUTTON
-═══════════════════════════════════════════════════════════ */
-function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-    const anim = useSharedValue(active ? 1 : 0)
-    useEffect(() => {
-        anim.value = withSpring(active ? 1 : 0, { damping: 18, stiffness: 180 })
-    }, [active])
-    const rStyle = useAnimatedStyle(() => ({
-        backgroundColor: interpolateColor(anim.value, [0, 1], ['transparent', C.surfaceSolid]),
-        shadowOpacity: interpolate(anim.value, [0, 1], [0, 0.08]),
-    }))
-    const textStyle = useAnimatedStyle(() => ({
-        color: interpolateColor(anim.value, [0, 1], [C.textSec, C.primary]),
-    }))
-    return (
-        <Pressable onPress={onPress} style={{ flex: 1 }}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            hitSlop={6}>
-            <Animated.View style={[styles.tabBtn, rStyle]}>
-                <Animated.Text style={[styles.tabText, textStyle]}>{label}</Animated.Text>
-            </Animated.View>
-        </Pressable>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : METHOD ROW
-═══════════════════════════════════════════════════════════ */
-function MethodRow({
-    method, onSetDefault, onRemove, t, delay,
-}: {
-    method: PaymentMethod
-    onSetDefault: () => void
-    onRemove: () => void
-    t: (s: string) => string
-    delay: number
-}) {
-    return (
-        <AnimatedSection delay={delay}>
-            <View style={styles.methodRow}>
-                <View style={styles.methodBrand}>
-                    <BrandLogo brand={method.brand} />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.methodTitle}>
-                            {method.brand.toUpperCase()} •••• {method.last4}
-                        </Text>
-                        {method.isDefault && (
-                            <View style={styles.defaultBadge}>
-                                <Text style={styles.defaultBadgeText}>{t('Par défaut')}</Text>
-                            </View>
-                        )}
-                    </View>
-                    <Text style={styles.methodSub}>
-                        {t('Expire')} {String(method.expMonth).padStart(2, '0')}/{String(method.expYear).slice(-2)} · {method.holder}
-                    </Text>
-                </View>
-
-                <View style={styles.methodActions}>
-                    {!method.isDefault && (
-                        <TouchableOpacity onPress={onSetDefault} hitSlop={10} style={styles.methodAction}
+                {/* ── Onglets ── */}
+                <View style={styles.tabs}>
+                    {(['history', 'channels'] as const).map((k) => (
+                        <Pressable
+                            key={k}
+                            onPress={() => setTab(k)}
                             accessibilityRole="button"
-                            accessibilityLabel="Définir comme moyen de paiement par défaut">
-                            <Ionicons name="star-outline" size={18} color={C.primary} />
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity onPress={onRemove} hitSlop={10} style={styles.methodAction}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('Supprimer')}>
-                        <Ionicons name="trash-outline" size={18} color={C.error} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </AnimatedSection>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : TRANSACTION ROW
-═══════════════════════════════════════════════════════════ */
-function TransactionRow({ tx, t, delay }: { tx: Transaction; t: (s: string) => string; delay: number }) {
-    const isCredit = tx.amount > 0
-    const statusColor =
-        tx.status === 'completed' ? C.success :
-            tx.status === 'pending' ? C.accent : C.error
-
-    return (
-        <AnimatedSection delay={delay}>
-            <View style={styles.txRow}>
-                <View style={[styles.txIconWrap, { backgroundColor: isCredit ? '#E6F3ED' : '#F5F5F5' }]}>
-                    <Ionicons name={tx.icon} size={20} color={isCredit ? C.success : C.primary} />
+                            accessibilityState={{ selected: tab === k }}
+                            style={[styles.tab, tab === k && styles.tabActive]}
+                        >
+                            <Text style={[styles.tabText, tab === k && styles.tabTextActive]}>
+                                {k === 'history' ? t('Historique') : t('Moyens acceptés')}
+                            </Text>
+                        </Pressable>
+                    ))}
                 </View>
 
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.txTitle}>{tx.title}</Text>
-                    <Text style={styles.txSub}>{tx.subtitle} · {formatDate(tx.date)}</Text>
-                </View>
+                {tab === 'history' ? (
+                    loading ? (
+                        <View style={styles.center}><ActivityIndicator color={C.primary} /></View>
+                    ) : entries.length === 0 ? (
+                        <View style={styles.emptyCard}>
+                            <View style={styles.emptyIcon}>
+                                <Ionicons name="receipt-outline" size={30} color={C.accentDark} />
+                            </View>
+                            <Text style={styles.emptyTitle}>{t('Aucun règlement')}</Text>
+                            <Text style={styles.emptyText}>
+                                {t('Vos paiements apparaîtront ici après chaque commande ou prestation réglée.')}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={styles.listCard}>
+                            {entries.map((e, i) => (
+                                <View
+                                    key={e.id}
+                                    style={[styles.row, i < entries.length - 1 && styles.rowBorder]}
+                                >
+                                    <View style={styles.rowIcon}>
+                                        <Ionicons name={e.icon} size={19} color={C.primary} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.rowTitle} numberOfLines={1}>{e.title}</Text>
+                                        <Text style={styles.rowSub} numberOfLines={1}>
+                                            {e.subtitle} · {formatDate(e.date)}
+                                        </Text>
+                                    </View>
+                                    <View style={{ alignItems: 'flex-end' }}>
+                                        <Text style={styles.rowAmount}>
+                                            {formatPrice(e.amount, e.currency)}
+                                        </Text>
+                                        <View style={[
+                                            styles.badge,
+                                            { backgroundColor: e.paid ? C.surfaceSoft : C.accentSoft },
+                                        ]}>
+                                            <Text style={[
+                                                styles.badgeText,
+                                                { color: e.paid ? C.primary : C.accentDark },
+                                            ]}>
+                                                {e.paid ? t('Réglé') : t('En attente')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    )
+                ) : (
+                    <>
+                        <View style={styles.listCard}>
+                            {CHANNELS.map((c, i) => (
+                                <View
+                                    key={c.label}
+                                    style={[styles.row, i < CHANNELS.length - 1 && styles.rowBorder]}
+                                >
+                                    <View style={styles.rowIcon}>
+                                        <Ionicons name={c.icon} size={19} color={C.primary} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.rowTitle}>{t(c.label)}</Text>
+                                        <Text style={styles.rowSub}>{t(c.detail)}</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
 
-                <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.txAmount, { color: isCredit ? C.success : C.primary }]}>
-                        {isCredit ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} {tx.currency}
-                    </Text>
-                    <View style={[styles.txStatusDot, { backgroundColor: statusColor }]}>
-                        <Text style={styles.txStatusText}>
-                            {tx.status === 'completed' ? t('Validée') : tx.status === 'pending' ? t('En cours') : t('Échouée')}
-                        </Text>
-                    </View>
-                </View>
-            </View>
-        </AnimatedSection>
-    )
-}
+                        {/* Aucune carte n'est conservée : on le dit explicitement
+                            plutôt que d'afficher de fausses cartes enregistrées. */}
+                        <View style={styles.noticeCard}>
+                            <Ionicons name="lock-closed-outline" size={17} color={C.primary} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.noticeTitle}>{t('Aucune carte enregistrée')}</Text>
+                                <Text style={styles.noticeText}>
+                                    {t('Vos coordonnées bancaires ne sont jamais stockées. Le règlement se fait à chaque fois dans la fenêtre sécurisée de notre prestataire.')}
+                                </Text>
+                            </View>
+                        </View>
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : EMPTY STATE
-═══════════════════════════════════════════════════════════ */
-function EmptyState({ icon, title, subtitle }: { icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }) {
-    return (
-        <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-                <Ionicons name={icon} size={28} color={C.accent} />
-            </View>
-            <Text style={styles.emptyTitle}>{title}</Text>
-            <Text style={styles.emptySub}>{subtitle}</Text>
+                        <Pressable
+                            onPress={() => Linking.openURL('tel:+2290160322121').catch(() => { })}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Appeler l\'agence')}
+                            style={styles.helpBtn}
+                        >
+                            <Ionicons name="call-outline" size={18} color={C.primaryText} />
+                            <Text style={styles.helpBtnText}>{t('Une question sur un paiement ?')}</Text>
+                        </Pressable>
+                    </>
+                )}
+            </ScrollView>
         </View>
     )
 }
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : BOUTON INTERACTIF (identique RegisterScreen)
-═══════════════════════════════════════════════════════════ */
-function InteractiveButton({ title, onPress, disabled, loading, icon }: any) {
-    return (
-        <TouchableOpacity
-            onPress={onPress}
-            disabled={disabled || loading}
-            activeOpacity={0.85}
-            style={[styles.btn, (disabled || loading) && styles.btnDisabled, { marginTop: 20 }]}
-            accessibilityRole="button"
-            hitSlop={6}
-        >
-            {loading ? (
-                <ActivityIndicator color={C.primaryText} size="small" />
-            ) : (
-                <>
-                    {icon && <Ionicons name={icon} size={18} color={C.accent} style={{ marginRight: 8 }} />}
-                    <Text style={styles.btnText}>{title}</Text>
-                    <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
-                </>
-            )}
-        </TouchableOpacity>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════════════════════ */
-function formatDate(iso: string) {
-    try {
-        const d = new Date(iso)
-        return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-    } catch {
-        return iso
-    }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   STYLES
-═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
-
-    /* ── Nav ── */
     topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
-    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
-    navBack: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-    navTitle: { fontSize: 16, fontWeight: '700', color: C.primary, letterSpacing: 0.3 },
-    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
 
-    scroll: { paddingHorizontal: 24, paddingBottom: 80 },
-
-    /* ── Header ── */
-    headerContainer: { marginTop: 8, marginBottom: 28 },
-    title: { ...typography.h1, color: C.text },
-    subtitle: { fontSize: 15, color: C.textSec, marginTop: 12, lineHeight: 22 },
-
-    /* ── HERO CARD ── */
-    heroCard: {
-        borderRadius: radius.xl,
-        backgroundColor: C.surface,
-        padding: spacing.lg,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: C.border,
-        ...shadows.cardRaised,
+    navBar: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md,
     },
-    heroShine: {
-        display: 'none',
-    },
-    heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    heroLabel: { color: C.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
-    heroBalance: { color: C.textPrimary, fontSize: 30, fontWeight: '800', marginTop: 6, letterSpacing: -0.5 },
-    heroBrandWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
-        borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
-        paddingHorizontal: 10, paddingVertical: 6,
-        borderRadius: 12,
-    },
-    heroBrandText: { color: C.accentDark, fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-    heroChip: {
-        width: 38, height: 28,
-        backgroundColor: C.accentLight,
-        borderRadius: 6,
-        marginTop: 14,
-        padding: 4,
-    },
-    heroChipInner: {
-        flex: 1,
-        backgroundColor: C.accent,
-        borderRadius: 3,
-        opacity: 0.7,
-    },
-    heroBottom: {
-        position: 'absolute',
-        bottom: 22, left: 22, right: 22,
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-    },
-    heroNumber: { color: C.textPrimary, fontSize: 17, fontWeight: '600', letterSpacing: 2 },
-    heroMetaRow: { flexDirection: 'row', marginTop: 10 },
-    heroMetaLabel: { color: C.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase' },
-    heroMetaValue: { color: C.textPrimary, fontSize: 12, fontWeight: '600', marginTop: 2 },
-
-    brandText: { color: C.primaryText, fontSize: 20, fontWeight: '800', letterSpacing: 1 },
-    mcWrap: { flexDirection: 'row', alignItems: 'center' },
-    mcDot: { width: 22, height: 22, borderRadius: 11 },
-
-    /* ── Tabs ── */
-    tabsContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#F5F5F5',
-        borderRadius: 14,
-        padding: 4,
-    },
-    tabBtn: {
-        height: 42,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 8,
-        elevation: 0,
-    },
-    tabText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
-
-    section: { marginTop: 18, gap: 12 },
-
-    /* ── Method row ── */
-    methodRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surfaceSolid,
-        borderWidth: 1,
-        borderColor: C.border,
-        borderRadius: 16,
-        padding: 14,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 10,
-        elevation: 1,
-    },
-    methodBrand: {
-        width: 48, height: 36,
-        borderRadius: 8,
-        backgroundColor: C.primary,
+    iconContainer: {
+        width: 44, height: 44, borderRadius: radius.pill,
+        backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: 12,
     },
-    methodTitle: { fontSize: 14, fontWeight: '700', color: C.primary, letterSpacing: 0.3 },
-    methodSub: { fontSize: 12, color: C.textSec, marginTop: 2 },
-    methodActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    methodAction: {
-        width: 36, height: 36, borderRadius: 18,
-        backgroundColor: C.bg,
-        alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: C.border,
-    },
-    defaultBadge: {
-        marginLeft: 8,
-        backgroundColor: 'rgba(252, 209, 22, 0.12)',
-        borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
-        paddingHorizontal: 8, paddingVertical: 2,
-        borderRadius: 8,
-    },
-    defaultBadgeText: { color: C.accent, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 },
+    navTitle: { ...typography.h1, color: C.text, flex: 1 },
 
-    /* ── Transaction ── */
-    txRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surfaceSolid,
-        borderWidth: 1,
-        borderColor: C.border,
-        borderRadius: 16,
-        padding: 14,
-    },
-    txIconWrap: {
-        width: 44, height: 44, borderRadius: 12,
-        alignItems: 'center', justifyContent: 'center',
-        marginRight: 12,
-    },
-    txTitle: { fontSize: 14, fontWeight: '700', color: C.primary },
-    txSub: { fontSize: 12, color: C.textSec, marginTop: 2 },
-    txAmount: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
-    txStatusDot: {
-        marginTop: 4,
-        paddingHorizontal: 8, paddingVertical: 2,
-        borderRadius: 8,
-    },
-    txStatusText: { color: C.primaryText, fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+    scroll: { paddingHorizontal: 20 },
+    subtitle: { ...typography.body, color: C.textMuted, marginBottom: spacing.lg },
 
-    /* ── Empty ── */
-    empty: {
-        alignItems: 'center',
-        paddingVertical: 32,
-        paddingHorizontal: 20,
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: C.border,
-        borderStyle: 'dashed',
+    /* ── Total ── */
+    summaryCard: {
+        backgroundColor: C.surface, borderRadius: radius.xl,
+        overflow: 'hidden', marginBottom: spacing.lg, ...shadows.cardRaised,
+    },
+    summaryBody: { padding: spacing.lg },
+    summaryLabel: { ...typography.overline, fontSize: 11, color: C.textMuted },
+    summaryValue: { ...typography.h1, color: C.text, marginTop: spacing.xs },
+    summaryHint: { ...typography.bodySmall, color: C.textMuted, marginTop: spacing.xs },
+
+    /* ── Onglets ── */
+    tabs: {
+        flexDirection: 'row', backgroundColor: C.surfaceAlt,
+        borderRadius: radius.pill, padding: 4, marginBottom: spacing.lg,
+    },
+    tab: { flex: 1, height: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+    tabActive: { backgroundColor: C.surface, ...shadows.card },
+    tabText: { ...typography.label, color: C.textMuted },
+    tabTextActive: { color: C.primary },
+
+    /* ── Listes ── */
+    listCard: {
+        backgroundColor: C.surface, borderRadius: radius.xl,
+        overflow: 'hidden', ...shadows.card,
+    },
+    row: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
+    rowIcon: {
+        width: 42, height: 42, borderRadius: radius.lg,
+        backgroundColor: C.surfaceSoft,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    rowTitle: { ...typography.label, fontSize: 15, color: C.text },
+    rowSub: { ...typography.caption, color: C.textMuted, marginTop: 2 },
+    rowAmount: { ...typography.label, fontSize: 15, color: C.text },
+    badge: {
+        paddingHorizontal: spacing.sm, paddingVertical: 3,
+        borderRadius: radius.pill, marginTop: 4,
+    },
+    badgeText: { ...typography.caption, fontSize: 11 },
+
+    /* ── État vide ── */
+    center: { paddingVertical: 48, alignItems: 'center' },
+    emptyCard: {
+        backgroundColor: C.surface, borderRadius: radius.xl,
+        padding: spacing.xl, alignItems: 'center', ...shadows.card,
     },
     emptyIcon: {
-        width: 56, height: 56, borderRadius: 28,
-        backgroundColor: 'rgba(252, 209, 22, 0.12)',
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 12,
+        width: 68, height: 68, borderRadius: radius.xl,
+        backgroundColor: C.accentSoft,
+        alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md,
     },
-    emptyTitle: { fontSize: 15, fontWeight: '700', color: C.primary },
-    emptySub: { fontSize: 13, color: C.textSec, marginTop: 4, textAlign: 'center' },
+    emptyTitle: { ...typography.h3, color: C.primary },
+    emptyText: {
+        ...typography.bodySmall, color: C.textMuted,
+        textAlign: 'center', marginTop: spacing.sm,
+    },
 
-    /* ── Bouton ── */
-    btn: {
-        height: 60,
-        backgroundColor: C.primary,
-        borderRadius: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
+    /* ── Mention et aide ── */
+    noticeCard: {
+        flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start',
+        backgroundColor: C.surfaceSoft, borderRadius: radius.xl,
+        padding: spacing.md, marginTop: spacing.md,
     },
-    btnDisabled: { backgroundColor: '#E4E4E4', shadowOpacity: 0, elevation: 0 },
-    btnText: { color: C.primaryText, fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
-
-    /* ── Security ── */
-    securityBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        borderRadius: 16,
-        padding: 14,
+    noticeTitle: { ...typography.label, color: C.primary },
+    noticeText: { ...typography.caption, color: C.textMuted, marginTop: 2 },
+    helpBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm, height: 52, borderRadius: radius.pill,
+        backgroundColor: C.primary, marginTop: spacing.lg,
     },
-    securityIconWrap: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(252, 209, 22, 0.12)',
-        alignItems: 'center', justifyContent: 'center',
-        marginRight: 12,
-    },
-    securityTitle: { fontSize: 14, fontWeight: '700', color: C.primary },
-    securitySub: { fontSize: 12, color: C.textSec, marginTop: 2 },
+    helpBtnText: { ...typography.button, color: C.primaryText },
 })

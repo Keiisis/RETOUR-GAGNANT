@@ -502,13 +502,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: C.success,
     },
-    sealGlow: {
-        position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        backgroundColor: C.success,
-    },
+    sealGlow: { display: 'none' },
     seal: {
         width: 110,
         height: 110,

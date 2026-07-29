@@ -266,9 +266,7 @@ const featuredStyles = StyleSheet.create({
         borderColor: C.border,
         ...shadows.cardRaised,
     },
-    glow: {
-        display: 'none',
-    },
+    glow: { display: 'none' },
     patternDot1: {
         position: 'absolute',
         top: 80,

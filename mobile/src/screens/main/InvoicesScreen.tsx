@@ -698,15 +698,7 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
     },
-    totalGlow: {
-        position: 'absolute',
-        top: -80,
-        right: -80,
-        width: 240,
-        height: 240,
-        borderRadius: 120,
-        backgroundColor: C.accent,
-    },
+    totalGlow: { display: 'none' },
     patternDot1: {
         position: 'absolute',
         top: 70,

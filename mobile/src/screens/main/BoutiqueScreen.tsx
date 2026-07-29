@@ -137,7 +137,7 @@ const videoStyles = StyleSheet.create({
     },
     tintOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 135, 81, 0.15)', // Bleu agence
+        backgroundColor: 'rgba(60, 60, 60, 0.10)',
     },
     vignette: {
         ...StyleSheet.absoluteFillObject,
@@ -147,14 +147,7 @@ const videoStyles = StyleSheet.create({
         shadowRadius: 40,
         shadowOffset: { width: 0, height: 0 },
     },
-    shine: {
-        position: 'absolute',
-        top: -20,
-        bottom: -20,
-        width: 80,
-        backgroundColor: 'rgba(252, 209, 22, 0.18)',
-        transform: [{ skewX: '-20deg' }],
-    },
+    shine: { display: 'none' },
     innerBorder: {
         position: 'absolute',
         top: 6,

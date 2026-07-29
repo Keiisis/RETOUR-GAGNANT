@@ -560,14 +560,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 22,
     },
-    emptyHeroGlow: {
-        position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        backgroundColor: C.accent,
-        opacity: 0.08,
-    },
+    emptyHeroGlow: { display: 'none' },
     emptyIconWrap: {
         width: 84,
         height: 84,

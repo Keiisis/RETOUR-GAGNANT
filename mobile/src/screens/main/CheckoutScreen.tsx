@@ -995,15 +995,7 @@ const styles = StyleSheet.create({
         flex: 1.4,
         position: 'relative',
     },
-    payBtnGlow: {
-        position: 'absolute',
-        top: -4,
-        bottom: -4,
-        left: -4,
-        right: -4,
-        borderRadius: 18,
-        backgroundColor: C.accent,
-    },
+    payBtnGlow: { display: 'none' },
     payBtn: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -464,14 +464,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
     },
-    logoHalo: {
-        position: 'absolute',
-        top: 0,
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: C.accent,
-    },
+    logoHalo: { display: 'none' },
     logoWrap: {
         width: 88,
         height: 88,

@@ -350,8 +350,6 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                         </View>
                     </View>
                 </AnimatedSection>
-
-                <Text style={styles.footerText}>RGB · {t('Excellence administrative')}</Text>
             </ScrollView>
 
             {/* ── Barre d'assistance flottante ──
@@ -526,8 +524,4 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
 
-    footerText: {
-        ...typography.caption, color: colors.textFaint,
-        textAlign: 'center', marginTop: spacing.sm,
-    },
 })

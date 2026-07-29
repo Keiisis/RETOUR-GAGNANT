@@ -755,15 +755,15 @@ const styles = StyleSheet.create({
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 135, 81, 0.35)',
+        backgroundColor: 'rgba(60, 60, 60, 0.12)',
     },
     heroOverlayBottom: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        height: 80,
-        backgroundColor: 'rgba(0, 135, 81, 0.6)',
+        height: 130,
+        backgroundColor: 'rgba(60, 60, 60, 0.42)',
     },
     heroContent: {
         ...StyleSheet.absoluteFillObject,
@@ -1191,9 +1191,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 22,
     },
-    emptyHeroGlow: {
-        display: 'none',
-    },
+    emptyHeroGlow: { display: 'none' },
     emptyIconWrap: {
         width: 84,
         height: 84,

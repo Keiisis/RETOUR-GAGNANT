@@ -770,16 +770,7 @@ const styles = StyleSheet.create({
         shadowRadius: 18,
         elevation: 8,
     },
-    nextRdvGlow: {
-        position: 'absolute',
-        top: -80,
-        right: -80,
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: C.accent,
-        opacity: 0.15,
-    },
+    nextRdvGlow: { display: 'none' },
     nextRdvBadge: {
         flexDirection: 'row',
         alignItems: 'center',

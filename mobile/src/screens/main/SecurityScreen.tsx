@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -92,24 +92,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
 
     return (
         <View style={hero.wrap}>
-            <LinearGradient
-                colors={['#00643C', '#008751', '#1FA36A']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={hero.gradient}
-            >
-                {/* shine doré */}
-                <Animated.View style={[hero.shine, shineStyle]}>
-                    <LinearGradient
-                        colors={['transparent', 'rgba(252,209,22,0.35)', 'transparent']}
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                        style={{ flex: 1 }}
-                    />
-                </Animated.View>
-
-                {/* watermark */}
-                <View style={hero.watermark}>
-                    <ShieldCheck size={180} color="rgba(252,209,22,0.08)" strokeWidth={1} />
-                </View>
+            <View style={hero.gradient}>
 
                 {/* chip top */}
                 <View style={hero.topRow}>
@@ -156,7 +139,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
                         <Text style={hero.statValue}>AES-256</Text>
                     </View>
                 </View>
-            </LinearGradient>
+            </View>
         </View>
     )
 }
@@ -348,10 +331,6 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={StyleSheet.absoluteFillObject}>
-                <LinearGradient
-                    colors={[C.bg, C.bgDeep, C.bg]}
-                    style={StyleSheet.absoluteFillObject}
-                />
             </View>
 
             {/* Header custom */}
@@ -444,7 +423,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                     <View key={text} style={[styles.ruleChip, rule && styles.ruleChipDone]}>
                                         <View style={[styles.ruleDot, rule && styles.ruleDotDone]}>
                                             {rule
-                                                ? <Check size={10} color="#FFF" strokeWidth={3} />
+                                                ? <Check size={10} color={C.textPrimary} strokeWidth={3} />
                                                 : <View style={styles.ruleDotEmpty} />}
                                         </View>
                                         <Text style={[styles.ruleText, rule && styles.ruleTextDone]}>{text}</Text>
@@ -493,26 +472,23 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                 disabled={loading}
                                 style={{ marginTop: 8 }}
                             >
-                                <LinearGradient
-                                    colors={loading
-                                        ? [C.textMuted, C.textMuted]
-                                        : [C.primaryDeep, C.primary, C.primarySoft]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                                    style={styles.saveBtn}
-                                >
+                                <View style={[
+                                    styles.saveBtn,
+                                    { backgroundColor: loading ? C.textMuted : C.primary },
+                                ]}>
                                     {loading ? (
-                                        <ActivityIndicator color="#FFF" size="small" />
+                                        <ActivityIndicator color={C.primaryText} size="small" />
                                     ) : (
                                         <>
                                             <View style={styles.saveBtnIcon}>
-                                                <ShieldCheck size={16} color={C.accent} strokeWidth={2} />
+                                                <ShieldCheck size={16} color={C.primaryText} strokeWidth={2} />
                                             </View>
                                             <Text style={styles.saveBtnText}>
                                                 {t('Mettre à jour le mot de passe')}
                                             </Text>
                                         </>
                                     )}
-                                </LinearGradient>
+                                </View>
                             </InteractiveButton>
                         </View>
                     </View>
@@ -765,13 +741,8 @@ const styles = StyleSheet.create({
         shadowColor: C.primary, shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
     },
-    saveBtnIcon: {
-        width: 26, height: 26, borderRadius: 8,
-        backgroundColor: 'rgba(252,209,22,0.15)',
-        alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: 'rgba(252,209,22,0.4)',
-    },
-    saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF', letterSpacing: 0.6, textTransform: 'uppercase' },
+    saveBtnIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    saveBtnText: { ...typography.button, color: C.primaryText },
 
     /* SESSION CARD */
     sessionCard: {
@@ -808,10 +779,15 @@ const hero = StyleSheet.create({
         shadowColor: C.primaryDeep, shadowOffset: { width: 0, height: 14 },
         shadowOpacity: 0.28, shadowRadius: 22, elevation: 10,
     },
-    gradient: { padding: 22, overflow: 'hidden' },
-    shine: {
-        position: 'absolute', top: 0, bottom: 0, width: 160,
+    gradient: {
+        borderRadius: radius.xl,
+        padding: spacing.lg,
+        backgroundColor: C.surfaceSoft,
+        borderWidth: 1,
+        borderColor: C.border,
+        overflow: 'hidden',
     },
+    shine: { display: 'none' },
     watermark: {
         position: 'absolute', right: -40, bottom: -40, opacity: 0.6,
     },
@@ -851,11 +827,11 @@ const hero = StyleSheet.create({
     },
 
     title: {
-        fontSize: 22, fontWeight: '700', color: '#FFF',
+        fontSize: 22, fontWeight: '700', color: C.textPrimary,
         textAlign: 'center', letterSpacing: 0.4,
     },
     subtitle: {
-        fontSize: 12, color: 'rgba(255,255,255,0.65)',
+        fontSize: 12, color: C.textMuted,
         textAlign: 'center', marginTop: 6, lineHeight: 18,
         paddingHorizontal: 12,
     },
@@ -867,8 +843,8 @@ const hero = StyleSheet.create({
     },
     statCol: { flex: 1, alignItems: 'center', gap: 4 },
     statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.10)' },
-    statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
-    statValue: { fontSize: 12, color: '#FFF', fontWeight: '700', letterSpacing: 0.3 },
+    statLabel: { fontSize: 12, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
+    statValue: { fontSize: 12, color: C.textPrimary, fontWeight: '700', letterSpacing: 0.3 },
 })
 
 /* FIELD styles */

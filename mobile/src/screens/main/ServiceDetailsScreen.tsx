@@ -28,6 +28,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { colors as themeColors, spacing, radius, shadows, typography, fonts, motion, screenColors } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
@@ -245,17 +246,73 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
         ? t('Pièces à fournir pour les afro-descendants')
         : t('Ce que nous proposons')
 
+    /* Demande de rendez-vous : meme table que l'ecran RDV et que le site
+       (rdv_requests), donc visible par les agents dans leur agenda.
+       Avant, ce bouton creait un DOSSIER a 0 franc, ce que l'API refusait :
+       le client voyait une erreur alors qu'il demandait juste un entretien. */
+    const requestAppointment = useCallback(async () => {
+        if (!profile?.id) {
+            toast(t('Non connecté'), t('Veuillez vous connecter pour demander un rendez-vous.'))
+            return
+        }
+        setLoading(true)
+        try {
+            const clientName = `${profile.prenom || ''} ${profile.nom || ''}`.trim() || (profile.email || '')
+            const { data: inserted, error } = await supabase.from('rdv_requests').insert({
+                client_id: profile.id,
+                client_email: profile.email,
+                date: null,
+                heure: null,
+                type: 'telephone',
+                motif: title || serviceId || 'Prestation',
+                notes: `Demande depuis la fiche « ${title || serviceId} » dans l'application mobile.`,
+                statut: 'en_attente',
+            }).select('id').single()
+            if (error) throw error
+
+            // Alerte de l'equipe — meme chemin que le panel web.
+            fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                timeoutMs: 12000,
+                body: JSON.stringify({
+                    rdvId: inserted?.id,
+                    clientName,
+                    clientEmail: profile.email,
+                    service: title || serviceId,
+                    date: null, heure: null, type: 'telephone',
+                }),
+            }).catch(() => { /* non bloquant */ })
+
+            await supabase.from('notifications').insert({
+                user_id: profile.id,
+                title: 'Demande de rendez-vous envoyée',
+                body: `Votre demande concernant « ${title || serviceId} » a bien été reçue. Notre équipe vous contactera sous 24h.`,
+                type: 'appointment',
+                is_read: false,
+                created_at: new Date().toISOString(),
+            })
+
+            toast(t('Demande envoyée'), t("Notre équipe vous contactera sous 24h pour convenir d'un créneau."), 'success')
+            navigation.navigate('Appointments')
+        } catch (e: unknown) {
+            toast(t('Erreur'), e instanceof Error ? e.message : t("La demande n'a pas pu être envoyée."))
+        } finally {
+            setLoading(false)
+        }
+    }, [profile, title, serviceId, t, navigation])
+
     const initiateCheckout = useCallback(() => {
         if (!profile) {
             toast(t('Non connecté'), t('Veuillez vous connecter pour commander ce service.'))
             return
         }
-        // Sur le site public, AUCUNE fiche service ne fait payer directement :
-        // toutes proposent un rendez-vous. Seule la Consultation Fa encaisse,
-        // via son ecran dedie (FaScreen), et la Nationalite via son formulaire.
-        // On enregistre donc la demande, sans widget de paiement.
-        createDossierViaApi(null, 0)
-    }, [profile, price, serviceMode])
+        // Chaque parcours mene la ou le site public mene.
+        if (serviceMode === 'form') { navigation.navigate('NationaliteForm'); return }
+        if (serviceMode === 'shop') { navigation.navigate('Boutique'); return }
+        if (serviceMode === 'booking') { navigation.navigate('Fa'); return }
+        requestAppointment()
+    }, [profile, serviceMode, navigation, requestAppointment, t])
 
     const createDossierViaApi = async (transactionId: string | null, numericPrice: number) => {
         if (!profile?.id) {

@@ -931,16 +931,7 @@ const styles = StyleSheet.create({
         elevation: 8,
         position: 'relative',
     },
-    trackingGlow: {
-        position: 'absolute',
-        top: -60,
-        right: -60,
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        backgroundColor: C.accent,
-        opacity: 0.15,
-    },
+    trackingGlow: { display: 'none' },
     trackingBadge: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -317,7 +317,9 @@
       "Bash(node --env-file=.env.local scripts/recompress-product-images.mjs --dry)",
       "Bash(node --env-file=.env.local scripts/recompress-product-images.mjs)",
       "Bash(sed -n '/^    eventCard: {/,/^    },/p' screens/main/EventsScreen.tsx)",
-      "Bash(sed -n '/^    featuredCard: {/,/^    },/p' screens/main/EventsScreen.tsx)"
+      "Bash(sed -n '/^    featuredCard: {/,/^    },/p' screens/main/EventsScreen.tsx)",
+      "Bash(sed -n '/^    heroOverlay: {/,/^    },/p' screens/main/OrdersScreen.tsx)",
+      "Bash(sed -n '/^    heroOverlayBottom: {/,/^    },/p' screens/main/OrdersScreen.tsx)"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",

@@ -900,14 +900,7 @@ const styles = StyleSheet.create({
         marginBottom: 28,
         position: 'relative',
     },
-    dateGlow: {
-        position: 'absolute',
-        top: 0,
-        width: 220,
-        height: 220,
-        borderRadius: 110,
-        backgroundColor: C.accent,
-    },
+    dateGlow: { display: 'none' },
     dateCard: {
         backgroundColor: C.primary,
         borderRadius: 22,

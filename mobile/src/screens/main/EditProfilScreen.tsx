@@ -598,14 +598,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
     },
-    avatarHalo: {
-        position: 'absolute',
-        top: 12,
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: C.accent,
-    },
+    avatarHalo: { display: 'none' },
     avatar: {
         width: 84,
         height: 84,
