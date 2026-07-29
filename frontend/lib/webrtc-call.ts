@@ -140,8 +140,29 @@ export class CallEngine {
         }
 
         pc.onicecandidate = (event) => {
-            if (!event.candidate) return
+            if (!event.candidate) {
+                console.log(`[appel:${this.opts.role}] collecte terminée`)
+                return
+            }
+            // Le TYPE du candidat dit tout : « host » = réseau local,
+            // « srflx » = adresse publique vue par STUN, « relay » = passe
+            // par TURN. Sans relay dans la liste, deux pairs masqués par
+            // leur opérateur ne peuvent jamais se joindre.
+            console.log(
+                `[appel:${this.opts.role}] candidat local ${event.candidate.type}`
+                + ` (${event.candidate.protocol})`,
+            )
             void this.send('ice', event.candidate.toJSON())
+        }
+
+        // Se déclenche quand un serveur STUN ou TURN refuse ou ne répond pas.
+        // Un code 401 ici signifie que les identifiants TURN sont rejetés.
+        pc.onicecandidateerror = (event: Event) => {
+            const e = event as RTCPeerConnectionIceErrorEvent
+            console.warn(
+                `[appel:${this.opts.role}] serveur ICE en échec — ${e.url}`
+                + ` (code ${e.errorCode} : ${e.errorText})`,
+            )
         }
 
         pc.oniceconnectionstatechange = () => {
@@ -153,6 +174,15 @@ export class CallEngine {
 
         pc.onconnectionstatechange = () => {
             console.log(`[appel:${this.opts.role}] connexion → ${pc.connectionState}`)
+            if (pc.connectionState === 'connected') {
+                void pc.getStats().then((stats) => {
+                    stats.forEach((r) => {
+                        if (r.type === 'candidate-pair' && r.state === 'succeeded') {
+                            console.log(`[appel:${this.opts.role}] chemin retenu`, r)
+                        }
+                    })
+                })
+            }
             this.opts.onStateChange?.(pc.connectionState)
             if (pc.connectionState === 'failed') {
                 this.opts.onEnded?.('La connexion audio n’a pas pu s’établir.')
@@ -263,9 +293,10 @@ export class CallEngine {
             .order('id', { ascending: true })
 
         for (const row of data || []) {
-            await this.receive(row.type as string, row.payload)
+            this.enqueue(row.type as string, row.payload)
         }
-        await this.flushIce()
+        // On attend que la file ait tout absorbé avant de rendre la main.
+        await this.queue
     }
 
     /** Coupe le micro et ferme tout. Idempotent. */

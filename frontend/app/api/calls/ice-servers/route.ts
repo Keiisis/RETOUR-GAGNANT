@@ -55,11 +55,24 @@ const STUN_PUBLIC: IceServer[] = [
  * Identifiants publics et documentés — ce ne sont pas des secrets.
  */
 const TURN_PUBLIC: IceServer[] = [
+    // Point d'entree historique.
     {
         urls: [
             'turn:openrelay.metered.ca:80',
             'turn:openrelay.metered.ca:443',
             'turn:openrelay.metered.ca:443?transport=tcp',
+        ],
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    // Point d'entree actuel du meme projet. Les deux sont declares : si
+    // l'un ne repond plus, l'autre reste disponible. Un serveur ICE muet
+    // ne bloque rien — le navigateur essaie tous les candidats en parallele.
+    {
+        urls: [
+            'turn:staticauth.openrelay.metered.ca:80',
+            'turn:staticauth.openrelay.metered.ca:443',
+            'turn:staticauth.openrelay.metered.ca:443?transport=tcp',
         ],
         username: 'openrelayproject',
         credential: 'openrelayproject',
