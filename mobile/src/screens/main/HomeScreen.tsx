@@ -161,7 +161,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
             >
                 {/* ── Liseré tricolore : signature de marque ── */}
                 <View style={styles.topFlag}><FlagBar height={6} radiusTop={false} /></View>
@@ -337,27 +337,12 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                         ))}
                     </View>
                 </AnimatedSection>
-
-                {/* ── Engagement ── */}
-                <AnimatedSection delay={400} style={styles.section}>
-                    <View style={styles.tipCard}>
-                        <ShieldCheck size={19} color={colors.primary} strokeWidth={2} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.tipTitle}>{t('Engagement RGB')}</Text>
-                            <Text style={styles.tipDesc}>
-                                {t('Vos données sont chiffrées et traitées par des agents certifiés.')}
-                            </Text>
-                        </View>
-                    </View>
-                </AnimatedSection>
-            </ScrollView>
-
-            {/* ── Barre d'assistance flottante ──
+                {/* ── Barre d'assistance ──
                 Volontairement sans nom de conseiller : l'agent assigné vit dans
                 dossier_tracking.agent_assigne, qui n'est pas encore exposé à
                 l'app. Afficher un prénom ici serait inventé. Les deux actions
                 pointent vers les canaux réels (chat in-app, ligne de l'agence). */}
-            <View style={[styles.advisorBar, { bottom: insets.bottom + 92 }]}>
+                <View style={styles.advisorBar}>
                 <Image
                     source={require('../../../assets/images/conseillere.webp')}
                     style={styles.advisorAvatar}
@@ -388,8 +373,9 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                     hitSlop={6}
                 >
                     <Phone size={19} color={colors.textOnPrimary} strokeWidth={2} />
-                </Pressable>
-            </View>
+                    </Pressable>
+                </View>
+            </ScrollView>
         </View>
     )
 }
@@ -493,17 +479,11 @@ const styles = StyleSheet.create({
     listDesc: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
 
     /* ── Engagement ── */
-    tipCard: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
-        backgroundColor: colors.primarySoft,
-        borderRadius: radius.xl, padding: spacing.md,
-    },
-    tipTitle: { ...typography.label, color: colors.primaryDark },
-    tipDesc: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
 
     /* ── Barre d'assistance ── */
     advisorBar: {
-        position: 'absolute', left: spacing.gutter, right: spacing.gutter,
+        marginHorizontal: spacing.gutter,
+        marginTop: spacing.sm,
         flexDirection: 'row', alignItems: 'center', gap: spacing.md,
         backgroundColor: colors.floating,
         borderRadius: radius.pill,

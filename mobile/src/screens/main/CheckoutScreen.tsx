@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     cardCountText: {
         fontSize: 12,
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: 'rgba(252, 209, 22, 0.06)',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
     },
     paymentLogoText: {
         fontSize: 12,

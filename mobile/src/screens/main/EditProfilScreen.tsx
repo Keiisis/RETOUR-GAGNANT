@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     changesBadgeDot: {
         width: 6,
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 14,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         padding: 14,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.18)',
+        borderColor: C.border,
     },
     tipIconWrap: {
         width: 32,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     tipTitle: {
         fontSize: 12.5,

@@ -263,7 +263,7 @@ const ticketStyles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     vipMiniText: {
         fontSize: 12,
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     featuredNavText: {
         fontSize: 12,
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         minWidth: 110,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
@@ -982,7 +982,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
     },
     registeredText: {
         fontSize: 12,
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
     },
     metaLabel: {
         fontSize: 12,
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
     },
     freeBadgeText: {
         fontSize: 12,
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         paddingHorizontal: 18,
         borderWidth: 1.2,
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
     },
     registeredIconWrap: {
         width: 38,

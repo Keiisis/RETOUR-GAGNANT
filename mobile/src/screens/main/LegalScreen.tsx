@@ -534,34 +534,6 @@ export default function LegalScreen({ navigation }: any) {
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ INFO SÉCURITÉ ═══ */}
-                <AnimatedSection delay={500}>
-                    <View style={styles.securityGrid}>
-                        <View style={styles.securityCard}>
-                            <View style={styles.securityIconWrap}>
-                                <Ionicons name="lock-closed" size={16} color={C.success} />
-                            </View>
-                            <Text style={styles.securityLabel}>{t('CHIFFREMENT')}</Text>
-                            <Text style={styles.securityValue}>TLS/SSL 256-bit</Text>
-                        </View>
-
-                        <View style={styles.securityCard}>
-                            <View style={styles.securityIconWrap}>
-                                <Ionicons name="server-outline" size={16} color={C.info} />
-                            </View>
-                            <Text style={styles.securityLabel}>{t('HÉBERGEMENT')}</Text>
-                            <Text style={styles.securityValue}>{t('Certifié UE')}</Text>
-                        </View>
-
-                        <View style={styles.securityCard}>
-                            <View style={styles.securityIconWrap}>
-                                <Ionicons name="key-outline" size={16} color={C.accent} />
-                            </View>
-                            <Text style={styles.securityLabel}>{t('AUTH')}</Text>
-                            <Text style={styles.securityValue}>{t('Tokens chiffrés')}</Text>
-                        </View>
-                    </View>
-                </AnimatedSection>
 
                 {/* ═══ FOOTER ═══ */}
                 <AnimatedSection delay={600}>
@@ -616,7 +588,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -670,7 +642,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     docBadgeTitle: {
         fontSize: 13,
@@ -692,7 +664,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
     },
 
     /* ── TOC ── */
@@ -752,7 +724,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     sectionBadge: {
         fontSize: 12,
@@ -815,7 +787,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     contactBadgeText: {
@@ -861,50 +833,6 @@ const styles = StyleSheet.create({
     },
 
     /* ── Security Grid ── */
-    securityGrid: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 28,
-    },
-    securityCard: {
-        flex: 1,
-        backgroundColor: C.surface,
-        borderRadius: 14,
-        padding: 14,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        alignItems: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 1,
-    },
-    securityIconWrap: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
-    },
-    securityLabel: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accentDark,
-        letterSpacing: 1,
-        marginBottom: 3,
-    },
-    securityValue: {
-        fontSize: 12,
-        color: C.primary,
-        fontWeight: '700',
-        letterSpacing: 0.2,
-        textAlign: 'center',
-    },
 
     /* ── Footer ── */
     footerWrap: {

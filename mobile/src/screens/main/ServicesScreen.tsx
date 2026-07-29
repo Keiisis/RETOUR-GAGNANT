@@ -490,7 +490,7 @@ function ServiceCard({ svc, index, onPress, t, pricingOn }: ServiceCardProps) {
                     <View style={styles.cardDivider} />
 
                     <View style={styles.cardFooter}>
-                        <View style={{ flex: 1 }}>
+                        <View style={styles.cardMeta}>
                             {showPrice ? (
                                 <>
                                     <Text style={styles.cardMetaLabel}>{t('Tarif')}</Text>
@@ -506,7 +506,7 @@ function ServiceCard({ svc, index, onPress, t, pricingOn }: ServiceCardProps) {
                             )}
                         </View>
                         <View style={styles.cardCta}>
-                            <Text style={styles.cardCtaText} numberOfLines={1}>{t(cta)}</Text>
+                            <Text style={styles.cardCtaText}>{t(cta)}</Text>
                         </View>
                     </View>
                 </View>
@@ -942,16 +942,18 @@ const styles = StyleSheet.create({
     cardTitle: { ...typography.h3, color: C.text, marginBottom: spacing.xs },
     cardDesc: { ...typography.bodySmall, color: C.textMuted },
     cardDivider: { height: 1, backgroundColor: C.border, marginVertical: spacing.md },
-    cardFooter: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    cardFooter: { gap: spacing.md },
+    cardMeta: { gap: 2 },
     cardMetaLabel: { ...typography.overline, fontSize: 12, color: C.textMuted },
     cardMetaValue: { ...typography.label, color: C.text, marginTop: 2 },
     cardCta: {
         backgroundColor: C.primary,
         borderRadius: radius.pill,
-        paddingHorizontal: spacing.lg, paddingVertical: 13,
-        maxWidth: '58%',
+        paddingHorizontal: spacing.lg,
+        paddingVertical: 14,
+        alignItems: 'center',
     },
-    cardCtaText: { ...typography.button, fontSize: 14, color: C.primaryText },
+    cardCtaText: { ...typography.button, fontSize: 15, color: C.primaryText, textAlign: 'center' },
 
     /* ── Aucun resultat ── */
     noResult: { alignItems: 'center', paddingVertical: 48, gap: spacing.sm },

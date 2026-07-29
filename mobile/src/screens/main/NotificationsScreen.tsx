@@ -449,10 +449,6 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                 <View style={styles.emptyIconWrap}>
                                     <Ionicons name="notifications-off-outline" size={36} color={C.accent} />
                                 </View>
-                                <View style={styles.emptyHeroBadge}>
-                                    <Ionicons name="checkmark" size={10} color={C.accent} />
-                                    <Text style={styles.emptyHeroBadgeText}>{t('À JOUR')}</Text>
-                                </View>
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucune notification')}</Text>
                             <Text style={styles.emptyText}>
@@ -552,7 +548,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                         </View>
                         <View style={styles.statsGrid}>
                             <View style={styles.statCard}>
-                                <View style={[styles.statIcon, { backgroundColor: 'rgba(252, 209, 22, 0.10)', borderColor: 'rgba(252, 209, 22, 0.25)' }]}>
+                                <View style={[styles.statIcon, { backgroundColor: 'rgba(252, 209, 22, 0.10)', borderColor: C.border }]}>
                                     <Ionicons name="notifications-outline" size={14} color={C.accent} />
                                 </View>
                                 <Text style={styles.statValue}>{notifications.length}</Text>
@@ -566,7 +562,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                 <Text style={styles.statLabel}>{t('NON LUES')}</Text>
                             </View>
                             <View style={styles.statCard}>
-                                <View style={[styles.statIcon, { backgroundColor: 'rgba(0, 135, 81, 0.10)', borderColor: 'rgba(0, 135, 81, 0.25)' }]}>
+                                <View style={[styles.statIcon, { backgroundColor: 'rgba(0, 135, 81, 0.10)', borderColor: C.border }]}>
                                     <Ionicons name="checkmark-done" size={14} color={C.success} />
                                 </View>
                                 <Text style={styles.statValue}>{notifications.length - unreadCount}</Text>
@@ -659,7 +655,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -707,7 +703,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     pushCardActive: {
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
         backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     pushIconWrap: {
@@ -739,7 +735,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     pushStatusDot: {
         width: 6,
@@ -885,7 +881,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     markAllText: {
         fontSize: 12,
@@ -950,31 +946,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
         shadowRadius: 16,
         elevation: 6,
-    },
-    emptyHeroBadge: {
-        position: 'absolute',
-        bottom: -8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: C.primary,
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderWidth: 1.5,
-        borderColor: C.accent,
-    },
-    emptyHeroBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: 1.2,
     },
     emptyTitle: {
         fontSize: 22,
@@ -1011,7 +988,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     emptyFilterTitle: {
@@ -1052,7 +1029,7 @@ const styles = StyleSheet.create({
     },
     notifCardUnread: {
         backgroundColor: C.surfaceSolid,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
         shadowOpacity: 0.08,
     },
     unreadBar: {

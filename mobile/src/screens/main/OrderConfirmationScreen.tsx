@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     ticketStatusDot: {
         width: 6,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.22)',
+        borderColor: C.border,
     },
     ticketRowLabel: {
         fontSize: 12.5,
@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
     },
     timelineDotActive: {
         backgroundColor: 'rgba(252, 209, 22, 0.10)',
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
     },
     timelineConnector: {
         width: 2,
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     supportTitle: {
         fontSize: 13,

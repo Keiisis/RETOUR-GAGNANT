@@ -393,10 +393,6 @@ export default function MessagesScreen({ navigation }: any) {
                             <View style={styles.emptyIconWrap}>
                                 <Ionicons name="chatbubbles" size={36} color={C.accent} />
                             </View>
-                            <View style={styles.emptyHeroBadge}>
-                                <Ionicons name="sparkles" size={10} color={C.accent} />
-                                <Text style={styles.emptyHeroBadgeText}>{t('NOUVEAU')}</Text>
-                            </View>
                         </View>
 
                         <Text style={styles.emptyTitle}>{t('Démarrez la conversation')}</Text>
@@ -569,31 +565,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.1,
         shadowRadius: 16,
         elevation: 6,
-    },
-    emptyHeroBadge: {
-        position: 'absolute',
-        bottom: -8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: C.primary,
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderWidth: 1.5,
-        borderColor: C.accent,
-    },
-    emptyHeroBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: 1.2,
     },
     emptyTitle: {
         fontSize: 22,
@@ -659,7 +636,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     suggestionText: {
         flex: 1,
@@ -755,7 +732,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderBottomRightRadius: 4,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.18,
@@ -848,7 +825,7 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 6,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
     },
     sendBtnDisabled: {
         backgroundColor: '#E4E4E4',

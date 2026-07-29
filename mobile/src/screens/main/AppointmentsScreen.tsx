@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     nextRdvBadgeDot: {
@@ -822,7 +822,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     nextRdvDate: {
         fontSize: 13,
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: 'rgba(252, 209, 22, 0.10)',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
@@ -1189,7 +1189,7 @@ const styles = StyleSheet.create({
     },
     typeIconWrapActive: {
         backgroundColor: 'rgba(252, 209, 22, 0.15)',
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
     },
     typeBtnText: {
         fontSize: 12,

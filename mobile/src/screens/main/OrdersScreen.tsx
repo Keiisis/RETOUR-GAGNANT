@@ -461,10 +461,6 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 <View style={styles.emptyIconWrap}>
                                     <Ionicons name="bag-outline" size={36} color={C.accent} />
                                 </View>
-                                <View style={styles.emptyHeroBadge}>
-                                    <Ionicons name="sparkles" size={10} color={C.accent} />
-                                    <Text style={styles.emptyHeroBadgeText}>{t('DÉCOUVRIR')}</Text>
-                                </View>
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucune commande')}</Text>
                             <Text style={styles.emptyText}>
@@ -704,7 +700,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -780,7 +776,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.5)',
+        borderColor: C.border,
     },
     heroBadgeDot: {
         width: 7,
@@ -853,7 +849,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     searchHeaderBadge: {
         fontSize: 12,
@@ -1070,7 +1066,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.18)',
+        borderColor: C.border,
         marginBottom: 10,
     },
     orderTrackingIcon: {
@@ -1206,25 +1202,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 16,
         elevation: 6,
-    },
-    emptyHeroBadge: {
-        position: 'absolute',
-        bottom: -8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: C.primary,
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderWidth: 1.5,
-        borderColor: C.accent,
-    },
-    emptyHeroBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accent,
-        letterSpacing: 1.2,
     },
     emptyTitle: {
         fontSize: 22,

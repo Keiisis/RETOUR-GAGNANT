@@ -659,7 +659,7 @@ const cardStyles = StyleSheet.create({
         paddingHorizontal: 7,
         paddingVertical: 3,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
     },
     catDot: {
         width: 4,
@@ -691,7 +691,7 @@ const cardStyles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     title: {
         fontSize: 14.5,
@@ -728,7 +728,7 @@ const cardStyles = StyleSheet.create({
         paddingVertical: 2,
         borderRadius: 5,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     soonDot: {
         width: 5,
@@ -758,7 +758,7 @@ const cardStyles = StyleSheet.create({
     },
     priceBadgeFree: {
         backgroundColor: 'rgba(0, 135, 81, 0.10)',
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     priceText: {
         fontSize: 12,
@@ -1119,7 +1119,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterDot: {
         width: 6,
@@ -1291,7 +1291,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 20,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
     },
     emptyGlobalTitle: {
         fontSize: 18,

@@ -797,7 +797,7 @@ const hero = StyleSheet.create({
     chip: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
         backgroundColor: 'rgba(252,209,22,0.15)',
-        borderWidth: 1, borderColor: 'rgba(252,209,22,0.35)',
+        borderWidth: 1, borderColor: C.border,
         paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     },
     chipText: { fontSize: 12, fontWeight: '700', color: C.accent, letterSpacing: 1.2 },
@@ -822,7 +822,7 @@ const hero = StyleSheet.create({
     shieldInner: {
         width: 80, height: 80, borderRadius: 40,
         backgroundColor: 'rgba(252,209,22,0.10)',
-        borderWidth: 1.5, borderColor: 'rgba(252,209,22,0.4)',
+        borderWidth: 1.5, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
 

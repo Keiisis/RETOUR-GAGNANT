@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: C.surfaceSoft,
         borderWidth: 1,
-        borderColor: 'rgba(252,209,22,0.18)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252,209,22,0.35)',
+        borderColor: C.border,
     },
     addBtnText: {
         color: C.surface,

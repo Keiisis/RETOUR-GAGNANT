@@ -156,7 +156,7 @@ const videoStyles = StyleSheet.create({
         bottom: 6,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     cornerBadge: {
         position: 'absolute',
@@ -170,7 +170,7 @@ const videoStyles = StyleSheet.create({
         borderRadius: 999,
         backgroundColor: 'rgba(0, 135, 81, 0.75)',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
     },
     cornerDot: {
         width: 5,
@@ -409,7 +409,7 @@ const cardStyles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.5)',
+        borderColor: C.border,
     },
     vipTagText: {
         fontSize: 12,
@@ -506,7 +506,7 @@ const cardStyles = StyleSheet.create({
         borderRadius: 6,
         marginTop: 6,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.2)',
+        borderColor: C.border,
     },
     inCartText: {
         fontSize: 12,
@@ -1002,7 +1002,7 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
         marginTop: 16,
     },
     countDot: {
@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
     },
     cartBadge: {
         position: 'absolute',

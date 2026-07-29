@@ -319,7 +319,10 @@
       "Bash(sed -n '/^    eventCard: {/,/^    },/p' screens/main/EventsScreen.tsx)",
       "Bash(sed -n '/^    featuredCard: {/,/^    },/p' screens/main/EventsScreen.tsx)",
       "Bash(sed -n '/^    heroOverlay: {/,/^    },/p' screens/main/OrdersScreen.tsx)",
-      "Bash(sed -n '/^    heroOverlayBottom: {/,/^    },/p' screens/main/OrdersScreen.tsx)"
+      "Bash(sed -n '/^    heroOverlayBottom: {/,/^    },/p' screens/main/OrdersScreen.tsx)",
+      "Bash(sed -n '/emptyHeroWrap: {/,/^    },/p' screens/main/MessagesScreen.tsx)",
+      "Bash(sed -n '/emptyHeroIcon: {/,/^    },/p' screens/main/MessagesScreen.tsx)",
+      "Bash(python \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/untranslated.py\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\frontend",

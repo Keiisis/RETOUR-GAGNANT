@@ -166,7 +166,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
 
     // ── Batch API call for translations ──
     const retryCount = useRef(0)
-    const MAX_RETRIES = 1 // Only retry once per flush, then give up (failedForever)
+    const MAX_RETRIES = 3 // Trois tentatives : un ecran a moitie traduit est pire qu'un ecran lent
 
     const flushBatch = useCallback(async () => {
         const currentLang = langRef.current
@@ -183,8 +183,8 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         )
         if (toTranslate.length === 0) return
 
-        const CHUNK_SIZE = 10 // Smaller chunks = more reliable
-        const FETCH_TIMEOUT = 15000 // 15 seconds max per chunk
+        const CHUNK_SIZE = 24 // Assez gros pour couvrir un ecran en un ou deux appels
+        const FETCH_TIMEOUT = 20000 // Lots plus gros -> on laisse un peu plus de temps
         isFlushing.current = true
         setIsTranslating(true)
 
@@ -253,7 +253,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
 
                     // Small delay between chunks to avoid rate limiting
                     if (i + CHUNK_SIZE < toTranslate.length) {
-                        await new Promise(r => setTimeout(r, 300))
+                        await new Promise(r => setTimeout(r, 150))
                     }
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : ''
@@ -370,6 +370,16 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
             flushBatch()
         }
     }, [flushBatch])
+
+
+    /* Relance automatique des textes abandonnes. Sans cela, une coupure
+       reseau d'une seconde laissait un ecran mi-francais mi-anglais jusqu'au
+       prochain retour en avant-plan de l'application. */
+    useEffect(() => {
+        if (lang === DEFAULT_LANG) return
+        const id = setInterval(() => { retryFailed() }, 45000)
+        return () => clearInterval(id)
+    }, [lang, retryFailed])
 
     // ── clearCache(lang?) — wipe AsyncStorage cache for a language (or all) ──
     const clearCache = useCallback(async (target?: LangCode) => {

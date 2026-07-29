@@ -47,31 +47,11 @@ const LINKS = [
     { label: 'Nous contacter', icon: 'mail-outline' as const, url: 'mailto:contact@retourgagnantbenin.bj' },
 ]
 
-const VALUES = [
-    { title: 'Excellence', desc: 'Un service irréprochable à chaque étape.', icon: 'diamond-outline' as const },
-    { title: 'Engagement', desc: 'Votre réussite est notre mission première.', icon: 'heart-outline' as const },
-    { title: 'Proximité', desc: 'Présents au Bénin et dans la diaspora.', icon: 'earth-outline' as const },
-    { title: 'Confiance', desc: '500+ familles nous ont fait confiance.', icon: 'people-outline' as const },
-]
-
-const TEAM = [
-    { name: 'Équipe Juridique', role: 'Passeports & Documents', icon: 'briefcase-outline' as const },
-    { name: 'Équipe Immobilier', role: 'Logement & Construction', icon: 'home-outline' as const },
-    { name: 'Équipe Business', role: 'Investissement & Entreprise', icon: 'trending-up-outline' as const },
-    { name: 'Équipe Culture', role: 'Guide & Accompagnement', icon: 'map-outline' as const },
-]
-
 const SOCIALS = [
     { icon: 'logo-facebook' as const, label: 'Facebook', url: 'https://facebook.com' },
     { icon: 'logo-instagram' as const, label: 'Instagram', url: 'https://instagram.com' },
     { icon: 'logo-youtube' as const, label: 'YouTube', url: 'https://youtube.com' },
     { icon: 'logo-whatsapp' as const, label: 'WhatsApp', url: 'https://wa.me/' },
-]
-
-const STATS = [
-    { value: '500+', label: 'Familles accompagnées' },
-    { value: '9', label: 'Services premium' },
-    { value: '24/7', label: 'Support diaspora' },
 ]
 
 /* ═══════════════════════════════════════════════════════════
@@ -158,7 +138,6 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
     useEffect(() => {
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-
         // Halo doré qui respire autour du logo
         logoPulse.value = withTiming(1, { duration: 600 })
     }, [])
@@ -167,7 +146,6 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
         opacity: headerAnim.value,
         transform: [{ translateY: 30 * (1 - headerAnim.value) }],
     }))
-
 
     const logoHaloStyle = useAnimatedStyle(() => ({
         opacity: interpolate(logoPulse.value, [0, 1], [0.15, 0.45]),
@@ -244,21 +222,6 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ STATS ROW ═══ */}
-                <AnimatedSection delay={250}>
-                    <View style={styles.statsRow}>
-                        {STATS.map((s, i) => (
-                            <React.Fragment key={i}>
-                                <View style={styles.statItem}>
-                                    <Text style={styles.statValue}>{s.value}</Text>
-                                    <Text style={styles.statLabel}>{t(s.label)}</Text>
-                                </View>
-                                {i < STATS.length - 1 && <View style={styles.statDivider} />}
-                            </React.Fragment>
-                        ))}
-                    </View>
-                </AnimatedSection>
-
                 {/* ═══ NOTRE HISTOIRE ═══ */}
                 <AnimatedSection delay={350}>
                     <View style={styles.card}>
@@ -289,52 +252,6 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                                 {t("Le retour ne s'improvise pas. Il se prépare avec rigueur.")}
                             </Text>
                         </View>
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ NOS VALEURS ═══ */}
-                <AnimatedSection delay={450}>
-                    <View style={styles.sectionTitleWrap}>
-                        <Text style={styles.sectionLabel}>{t('NOS VALEURS')}</Text>
-                        <View style={styles.sectionUnderline} />
-                    </View>
-
-                    <View style={styles.valuesGrid}>
-                        {VALUES.map((v, i) => (
-                            <View key={i} style={styles.valueCard}>
-                                <View style={styles.valueIconWrap}>
-                                    <Ionicons name={v.icon} size={22} color={C.accent} />
-                                </View>
-                                <Text style={styles.valueTitle}>{t(v.title)}</Text>
-                                <Text style={styles.valueDesc}>{t(v.desc)}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ ÉQUIPE ═══ */}
-                <AnimatedSection delay={550}>
-                    <View style={styles.sectionTitleWrap}>
-                        <Text style={styles.sectionLabel}>{t('NOTRE ÉQUIPE')}</Text>
-                        <View style={styles.sectionUnderline} />
-                    </View>
-
-                    <View style={styles.teamCard}>
-                        {TEAM.map((m, i) => (
-                            <View
-                                key={i}
-                                style={[styles.teamItem, i < TEAM.length - 1 && styles.teamItemBorder]}
-                            >
-                                <View style={styles.teamIcon}>
-                                    <Ionicons name={m.icon} size={18} color={C.primary} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.teamName}>{t(m.name)}</Text>
-                                    <Text style={styles.teamRole}>{t(m.role)}</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-                            </View>
-                        ))}
                     </View>
                 </AnimatedSection>
 
@@ -474,7 +391,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 18,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25,
@@ -542,45 +459,6 @@ const styles = StyleSheet.create({
     },
 
     /* ── Stats Row ── */
-    statsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 12,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        marginBottom: 24,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-    },
-    statItem: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: C.primary,
-        letterSpacing: -0.5,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: C.textSec,
-        fontWeight: '500',
-        marginTop: 4,
-        textAlign: 'center',
-        letterSpacing: 0.2,
-    },
-    statDivider: {
-        width: 1,
-        height: 36,
-        backgroundColor: C.border,
-    },
 
     /* ── Card générique ── */
     card: {
@@ -680,28 +558,6 @@ const styles = StyleSheet.create({
     },
 
     /* ── Values Grid ── */
-    valuesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 24,
-    },
-    valueCard: {
-        flex: 1,
-        minWidth: '47%',
-        backgroundColor: C.surface,
-        borderRadius: 14,
-        padding: 16,
-        borderWidth: 1.2,
-        borderColor: C.border,
-        alignItems: 'center',
-        gap: 6,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 1,
-    },
     valueIconWrap: {
         width: 48,
         height: 48,
@@ -711,70 +567,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.20)',
-    },
-    valueTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.primary,
-        textAlign: 'center',
-        letterSpacing: -0.1,
-    },
-    valueDesc: {
-        fontSize: 12,
-        color: C.textSec,
-        textAlign: 'center',
-        lineHeight: 15,
-        fontWeight: '400',
+        borderColor: C.border,
     },
 
     /* ── Team Card ── */
-    teamCard: {
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1.2,
-        borderColor: C.border,
-        marginBottom: 24,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-    },
-    teamItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-    },
-    teamItemBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: C.border,
-    },
-    teamIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
-    },
-    teamName: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.primary,
-        letterSpacing: -0.1,
-    },
-    teamRole: {
-        fontSize: 12,
-        color: C.textSec,
-        marginTop: 2,
-        fontWeight: '500',
-    },
 
     /* ── Links Card ── */
     linksCard: {

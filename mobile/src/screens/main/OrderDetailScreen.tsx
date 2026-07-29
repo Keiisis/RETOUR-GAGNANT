@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderRadius: 14,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
     },
     errorBtnText: {
         color: C.primaryText,
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
         padding: 20,
         marginBottom: 22,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         overflow: 'hidden',
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 10 },
@@ -942,7 +942,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     trackingBadgeText: {
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 14,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
     },
     trackingBtnPrimaryText: {
         fontSize: 12.5,
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     sectionTitle: {
         flex: 1,
@@ -1171,7 +1171,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     shipLabel: {
         fontSize: 12,
@@ -1204,7 +1204,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 10,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.15)',
+        borderColor: C.border,
     },
     shipNote: {
         flex: 1,
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     evLatestBadgeText: {
         fontSize: 12,

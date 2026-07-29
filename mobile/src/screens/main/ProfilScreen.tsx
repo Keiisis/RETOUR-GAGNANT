@@ -144,7 +144,7 @@ const menuStyles = StyleSheet.create({
     },
     iconWrapAccent: {
         backgroundColor: 'rgba(252, 209, 22, 0.10)',
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     textWrap: {
         flex: 1,

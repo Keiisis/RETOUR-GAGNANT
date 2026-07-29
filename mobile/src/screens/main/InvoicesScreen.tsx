@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.3,
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     totalBadgeText: {
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
 
     /* ── Empty Card ── */
@@ -1010,7 +1010,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 20,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.2)',
+        borderColor: C.border,
     },
     emptyTitle: {
         fontSize: 18,
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     emptyCatBtnText: {
         color: C.accentDark,

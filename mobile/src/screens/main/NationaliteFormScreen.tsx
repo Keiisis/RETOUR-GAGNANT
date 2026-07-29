@@ -745,7 +745,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                 </Text>
                                                 <View style={styles.docSlotTags}>
                                                     {slot.ancestral && (
-                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(252, 209, 22, 0.12)', borderColor: 'rgba(252, 209, 22, 0.3)' }]}>
+                                                        <View style={[styles.miniTag, { backgroundColor: 'rgba(252, 209, 22, 0.12)', borderColor: C.border }]}>
                                                             <Text style={[styles.miniTagText, { color: C.accentDark }]}>{t('ANCESTRAL')}</Text>
                                                         </View>
                                                     )}
@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     navCounterText: {
         fontSize: 12,
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     stepperBadgeText: {
         fontSize: 12,
@@ -1172,7 +1172,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     stepHeaderBadge: {
         fontSize: 12,
@@ -1220,7 +1220,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         marginBottom: 18,
         position: 'relative',
     },
@@ -1329,7 +1329,7 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     switchRowHighlight: {
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     switchIconWrap: {
@@ -1340,7 +1340,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.25)',
+        borderColor: C.border,
     },
     switchLabel: {
         fontSize: 13,
@@ -1413,7 +1413,7 @@ const styles = StyleSheet.create({
         padding: 14,
         marginBottom: 16,
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.18,
@@ -1428,7 +1428,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
     },
     docCounterLabel: {
         fontSize: 12,
@@ -1466,7 +1466,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     docSlotActive: {
-        borderColor: 'rgba(0, 135, 81, 0.3)',
+        borderColor: C.border,
         backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     docSlotHeader: {
@@ -1486,7 +1486,7 @@ const styles = StyleSheet.create({
     },
     docSlotIconActive: {
         backgroundColor: 'rgba(0, 135, 81, 0.10)',
-        borderColor: 'rgba(0, 135, 81, 0.25)',
+        borderColor: C.border,
     },
     docSlotTitle: {
         fontSize: 12.5,
@@ -1522,7 +1522,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.3)',
+        borderColor: C.border,
     },
     uploadBtnSecondary: {
         backgroundColor: C.surfaceSolid,
@@ -1631,7 +1631,7 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         padding: 22,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         marginTop: 6,
         marginBottom: 10,
         position: 'relative',
@@ -1653,7 +1653,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(252, 209, 22, 0.4)',
+        borderColor: C.border,
         marginBottom: 14,
     },
     paymentBadgeText: {
@@ -1724,7 +1724,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
@@ -1825,7 +1825,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 18,
         borderWidth: 1.5,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         alignItems: 'center',
         marginBottom: 24,
     },
@@ -1856,7 +1856,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.2,
-        borderColor: 'rgba(252, 209, 22, 0.35)',
+        borderColor: C.border,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.2,
