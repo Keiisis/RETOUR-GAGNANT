@@ -249,6 +249,24 @@ export async function middleware(request: NextRequest) {
     )
 
     // ── Définir si on est sur un panel interne ────────────────
+    //
+    // /api/nationality/download est un point d'accès RÉSERVÉ au personnel
+    // (il vérifie lui-même session + rôle admin/agent), mais il vit hors de
+    // /api/admin et /api/agent : il échappait donc à cette exemption.
+    //
+    // Conséquence observée en production : la page /admin/nationalite
+    // s'affichait normalement — elle commence par /admin, donc exemptée —
+    // tandis que SON PROPRE téléchargement était refusé par le WAF avec
+    // « Accès refusé ». L'administrateur était bloqué dans son back-office
+    // par sa seule adresse IP, dont la réputation avait chuté après un
+    // changement d'IP opérateur.
+    //
+    // Le cercle était vicieux : chaque tentative refusée enregistrait une
+    // violation de plus, ce qui dégradait encore la réputation de l'IP.
+    //
+    // Il n'est pas déplacé sous /api/admin car un agent l'utilise aussi
+    // (app/agent/nationalite), et le garde du middleware n'y accepte que
+    // les rôles administrateurs.
     const isInternalPanelPath = (
         pathname.startsWith('/admin') ||
         pathname.startsWith('/agent') ||
@@ -256,6 +274,7 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/api/admin') ||
         pathname.startsWith('/api/agent') ||
         pathname.startsWith('/api/client') ||
+        pathname.startsWith('/api/nationality/download') ||
         isTokenAuthedPublic
     )
 

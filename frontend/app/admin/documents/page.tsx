@@ -326,11 +326,35 @@ export default function AdminDocumentsPage() {
             else { const j = await res.json().catch(() => ({})); alert(j.error || 'Approbation impossible.') }
         } finally { setApprovingId(null) }
     }
+    /* Mêmes trois défauts que sur /admin/nationalite, corrigés à l'identique :
+       révocation de l'URL avant que le navigateur ait lu le blob, ancre jamais
+       insérée dans le document, et erreur avalée en silence. */
     const downloadZip = async (id: string, ref: string) => {
-        const res = await fetch(`/api/nationality/download?id=${id}`)
-        if (res.ok) {
-            const blob = await res.blob(); const url = URL.createObjectURL(blob)
-            const a = document.createElement('a'); a.href = url; a.download = `Dossier_${ref}.zip`; a.click(); URL.revokeObjectURL(url)
+        try {
+            const res = await fetch(`/api/nationality/download?id=${id}`, { credentials: 'same-origin' })
+            if (!res.ok) {
+                let detail = `HTTP ${res.status}`
+                try {
+                    const j = await res.json()
+                    if (j?.error) detail = j.detail ? `${j.error} — ${j.detail}` : j.error
+                } catch { /* réponse non JSON : le code HTTP suffit */ }
+                alert(`Téléchargement impossible : ${detail}`)
+                return
+            }
+            const blob = await res.blob()
+            if (blob.size === 0) { alert('Le dossier généré est vide. Signalez-le à la technique.'); return }
+
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `Dossier_${ref}.zip`
+            a.style.display = 'none'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        } catch (e) {
+            alert(`Téléchargement impossible : ${e instanceof Error ? e.message : 'erreur réseau'}`)
         }
     }
 
