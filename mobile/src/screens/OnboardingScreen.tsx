@@ -122,7 +122,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 <LinearGradient
                     colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.85)']}
                     locations={[0, 0.4, 1]}
-                    style={StyleSheet.absoluteFillObject}
+                    style={StyleSheet.absoluteFill}
                     pointerEvents="none"
                 />
 
@@ -234,7 +234,7 @@ function SlideView({
                     'rgba(0,0,0,0.95)',
                 ]}
                 locations={[0, 0.35, 0.7, 1]}
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
                 pointerEvents="none"
             />
 
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
     },
     imageWrap: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     image: {
         width: '100%',

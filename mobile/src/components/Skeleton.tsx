@@ -60,7 +60,7 @@ export default function Skeleton({
                 colors={[skeletonColors.base, skeletonColors.highlight, skeletonColors.base]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
-                style={[StyleSheet.absoluteFillObject, animatedStyle]}
+                style={[StyleSheet.absoluteFill, animatedStyle]}
             />
         </View>
     )

@@ -638,7 +638,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     <View style={styles.modalOverlayContainer}>
                         <Animated.View style={[styles.modalBg, overlayStyle]}>
                             <Pressable
-                                style={StyleSheet.absoluteFillObject}
+                                style={StyleSheet.absoluteFill}
                                 onPress={() => setShowModal(false)}
                                 accessibilityRole="button"
                                 hitSlop={6}
@@ -1190,7 +1190,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalBg: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0, 135, 81, 0.55)',
     },
     modalSheet: {

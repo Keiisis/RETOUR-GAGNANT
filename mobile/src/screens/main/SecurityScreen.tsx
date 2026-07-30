@@ -330,7 +330,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={StyleSheet.absoluteFillObject}>
+            <View style={StyleSheet.absoluteFill}>
             </View>
 
             {/* Header custom */}

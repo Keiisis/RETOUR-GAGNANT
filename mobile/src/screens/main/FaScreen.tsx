@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
 
     // Sheets
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },
-    sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: C.overlay },
+    sheetBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: C.overlay },
     sheet: { backgroundColor: C.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, maxHeight: '90%' },
     sheetHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: spacing.md },
 

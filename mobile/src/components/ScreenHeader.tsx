@@ -24,7 +24,7 @@ export default function ScreenHeader({ title, subtitle, onBack, rightAction }: S
     return (
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
             <View style={styles.headerBgWrap}>
-                <LinearGradient colors={[royal.deepEmerald, royal.deepLightEmerald]} style={StyleSheet.absoluteFillObject} />
+                <LinearGradient colors={[royal.deepEmerald, royal.deepLightEmerald]} style={StyleSheet.absoluteFill} />
             </View>
             <View style={styles.headerTopRow}>
                 {onBack ? (
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     headerBgWrap: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
         overflow: 'hidden',

@@ -118,7 +118,7 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
     return (
         <View style={styles.hero}>
             {/* Video animée */}
-            <Animated.View style={[StyleSheet.absoluteFillObject, videoStyle]}>
+            <Animated.View style={[StyleSheet.absoluteFill, videoStyle]}>
                 <Video
                     source={require('../../../assets/images/delivery_video.mp4')}
                     style={{ width: '100%', height: '100%' }}
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     heroOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(60, 60, 60, 0.12)',
     },
     heroOverlayBottom: {
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(60, 60, 60, 0.42)',
     },
     heroContent: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         padding: 18,
         justifyContent: 'space-between',
     },

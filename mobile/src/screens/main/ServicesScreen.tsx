@@ -911,11 +911,11 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end', marginBottom: spacing.md,
         backgroundColor: C.surfaceAlt,
     },
-    familyImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+    familyImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
     /* Voile sombre uniquement SOUS le texte : garantit le contraste AA
        quelle que soit la photo, sans assombrir l'ecran. */
     familyScrim: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0,0,0,0.34)',
     },
     familyBannerText: {

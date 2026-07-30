@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     noteText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: C.textMuted, lineHeight: 17 },
 
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },
-    sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: C.overlay },
+    sheetBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: C.overlay },
     sheet: { backgroundColor: C.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, maxHeight: '85%' },
     sheetHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: spacing.md },
     detailHead: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: spacing.md },

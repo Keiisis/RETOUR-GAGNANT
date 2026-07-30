@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Outfit_500Medium',
     },
     priceShineWrap: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         overflow: 'hidden',
         borderRadius: 16,
     },

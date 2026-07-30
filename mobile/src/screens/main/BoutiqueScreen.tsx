@@ -91,7 +91,7 @@ const StorefrontVideo = () => {
         >
             <Video
                 source={require('../../../assets/images/boutique_video.mp4')}
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
                 resizeMode={ResizeMode.COVER}
                 shouldPlay
                 isLooping
@@ -136,11 +136,11 @@ const videoStyles = StyleSheet.create({
         elevation: 10,
     },
     tintOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(60, 60, 60, 0.10)',
     },
     vignette: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         borderRadius: 16,
         shadowColor: '#000',
         shadowOpacity: 0.6,
@@ -378,12 +378,12 @@ const cardStyles = StyleSheet.create({
         height: '100%',
     },
     imageLoading: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: C.surfaceAlt,
     },
     imageOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0, 135, 81, 0.03)',
     },
     placeholder: {
@@ -430,7 +430,7 @@ const cardStyles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     outOfStockOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(255,255,255,0.7)',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1106,10 +1106,10 @@ const styles = StyleSheet.create({
         zIndex: 100,
     },
     modalBgAnim: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     modalBg: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0, 135, 81, 0.55)',
     },
     bottomSheet: {

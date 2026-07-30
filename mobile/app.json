@@ -32,7 +32,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1B2A4A"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -107,7 +106,8 @@
           "cameraPermission": false,
           "microphonePermission": "L'application utilise votre micro pour vous permettre d'appeler un conseiller."
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "owner": "keysosi"
   }

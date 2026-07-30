@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
     },
     barTint: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor:
             Platform.OS === 'ios'
                 ? 'rgba(255,255,255,0.78)'
