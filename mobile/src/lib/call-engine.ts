@@ -11,7 +11,7 @@
    classique au lieu de planter.
 ══════════════════════════════════════════════════════════════ */
 
-import { NativeModules } from 'react-native'
+import { NativeModules, PermissionsAndroid, Platform } from 'react-native'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -54,6 +54,48 @@ function loadWebRTC(): WebRTCModule | null {
 /** L'appel in-app est-il disponible dans CE build ? */
 export function isCallSupported(): boolean {
     return loadWebRTC() !== null
+}
+
+/* ── Permission micro ──────────────────────────────────────────
+   react-native-webrtc demande lui-même RECORD_AUDIO au moment du
+   getUserMedia, mais son rejet est opaque : il ne distingue pas un refus
+   ponctuel — que l'on peut redemander — d'un refus définitif, où Android
+   n'affiche PLUS AUCUNE boîte de dialogue. Dans ce second cas, laisser
+   l'utilisateur réessayer est une impasse : seul un passage par les
+   réglages système débloque la situation.
+   On demande donc la permission nous-mêmes, en amont, pour pouvoir
+   proposer la bonne issue. */
+export type EtatMicro = 'accorde' | 'refuse' | 'bloque'
+
+export async function demanderMicro(textes: {
+    titre: string
+    message: string
+    bouton: string
+    refus: string
+}): Promise<EtatMicro> {
+    // iOS n'a pas d'API équivalente : getUserMedia déclenche la demande
+    // système à partir de la description déclarée dans app.json.
+    if (Platform.OS !== 'android') return 'accorde'
+
+    try {
+        const perm = PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+        if (await PermissionsAndroid.check(perm)) return 'accorde'
+
+        const res = await PermissionsAndroid.request(perm, {
+            title: textes.titre,
+            message: textes.message,
+            buttonPositive: textes.bouton,
+            buttonNegative: textes.refus,
+        })
+
+        if (res === PermissionsAndroid.RESULTS.GRANTED) return 'accorde'
+        if (res === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) return 'bloque'
+        return 'refuse'
+    } catch {
+        // Demande impossible : on laisse getUserMedia tenter sa chance
+        // plutôt que de bloquer un appel qui aurait pu aboutir.
+        return 'accorde'
+    }
 }
 
 /* ── Session audio du téléphone ────────────────────────────────

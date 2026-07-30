@@ -10,13 +10,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, Image, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react-native'
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Settings } from 'lucide-react-native'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { toast } from '../../lib/feedback'
-import { MobileCallEngine, isCallSupported, formatDuree, basculerHautParleur } from '../../lib/call-engine'
+import {
+    MobileCallEngine, isCallSupported, formatDuree, basculerHautParleur, demanderMicro,
+} from '../../lib/call-engine'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const C = screenColors
@@ -53,6 +55,9 @@ export default function CallScreen({ navigation, route }: any) {
     const [secondes, setSecondes] = useState(0)
     const [agentNom, setAgentNom] = useState<string | null>(null)
     const [message, setMessage] = useState<string | null>(null)
+    /* Android a enregistré un refus définitif du micro : il ne redemandera
+       plus. Réessayer ne sert à rien, on propose les réglages système. */
+    const [microBloque, setMicroBloque] = useState(false)
 
     const engine = useRef<MobileCallEngine | null>(null)
     const callIdRef = useRef<string | null>(null)
@@ -118,6 +123,26 @@ export default function CallScreen({ navigation, route }: any) {
                 )
                 Linking.openURL(`tel:${AGENCE_TEL}`).catch(() => { })
                 navigation.goBack()
+                return
+            }
+
+            // Le micro AVANT toute chose : inutile d'ouvrir une ligne en base
+            // et de faire sonner les agents si la voix ne pourra pas passer.
+            const micro = await demanderMicro({
+                titre: t('Autoriser le micro'),
+                message: t('RGB a besoin de votre micro pour vous mettre en relation avec un conseiller.'),
+                bouton: t('Autoriser'),
+                refus: t('Refuser'),
+            })
+            if (!vivant) return
+            if (micro !== 'accorde') {
+                setMicroBloque(micro === 'bloque')
+                setMessage(
+                    micro === 'bloque'
+                        ? t("Le micro est bloqué pour RGB. Ouvrez les réglages du téléphone pour l'autoriser.")
+                        : t('Autorisez le micro pour appeler.'),
+                )
+                setEtat('termine')
                 return
             }
 
@@ -289,6 +314,19 @@ export default function CallScreen({ navigation, route }: any) {
                 >
                     <PhoneOff size={24} color={C.primaryText} strokeWidth={2} />
                 </Pressable>
+
+                {/* Micro bloqué : le seul geste utile est d'ouvrir les
+                    réglages du téléphone — Android ne redemandera pas. */}
+                {etat === 'termine' && microBloque && (
+                    <Pressable
+                        onPress={() => { void Linking.openSettings().catch(() => { }) }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Ouvrir les réglages du téléphone')}
+                        style={styles.roundBtn}
+                    >
+                        <Settings size={22} color={C.primary} strokeWidth={2} />
+                    </Pressable>
+                )}
 
                 {etat === 'termine' && (
                     <Pressable
