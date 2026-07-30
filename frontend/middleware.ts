@@ -110,23 +110,53 @@ async function refreshWafConfig(): Promise<void> {
     if (!stale || !SUPA_URL || !SUPA_KEY) return
 
     try {
-        const [configRes, rulesRes] = await Promise.all([
+        const [configRes, rulesRes, trustedRes] = await Promise.all([
             fetch(`${SUPA_URL}/rest/v1/waf_config?select=key,value`, {
                 headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
             }),
             fetch(`${SUPA_URL}/rest/v1/waf_rules?enabled=eq.true&select=*`, {
                 headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
             }),
+            // ── Liste blanche DYNAMIQUE du personnel ──
+            // Alimentée par /api/admin/ping à chaque ouverture de panel,
+            // avec une durée de vie glissante de 7 jours. Réponse à l'IP
+            // opérateur dynamique : une liste saisie à la main est périmée
+            // dès le lendemain, et une adresse recyclée arrive avec la
+            // réputation de son précédent occupant.
+            //
+            // La requête est jointe à ce rafraîchissement plutôt que faite
+            // à part : elle profite de la même barrière de péremption
+            // (1 minute), donc elle n'ajoute AUCUN coût par requête.
+            fetch(
+                `${SUPA_URL}/rest/v1/waf_trusted_ips?expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=ip`,
+                { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } },
+            ),
         ])
+
+        // Les deux listes se cumulent : celle saisie en configuration reste
+        // maîtresse pour les adresses fixes (serveurs, prestataires), la
+        // dynamique ne fait qu'ajouter les postes du personnel.
+        let ipsDeConfiance: string[] = []
+        if (trustedRes.ok) {
+            try {
+                const rows = await trustedRes.json() as Array<{ ip: string }>
+                if (Array.isArray(rows)) {
+                    ipsDeConfiance = rows.map(r => r.ip).filter(Boolean)
+                }
+            } catch { /* table absente ou réponse illisible : on continue sans */ }
+        }
 
         if (configRes.ok) {
             const rows = await configRes.json() as Array<{ key: string; value: string }>
             if (Array.isArray(rows)) {
                 const map = Object.fromEntries(rows.map(r => [r.key, r.value]))
+                const statiques: string[] = map['whitelisted_ips']
+                    ? JSON.parse(map['whitelisted_ips'])
+                    : []
                 setWafConfig({
                     paranoiaLevel:    parseInt(map['paranoia_level'] || '1') || 1,
                     blockedCountries: map['blocked_countries'] ? JSON.parse(map['blocked_countries']) : [],
-                    whitelistedIps:   map['whitelisted_ips']   ? JSON.parse(map['whitelisted_ips'])   : [],
+                    whitelistedIps:   [...new Set([...statiques, ...ipsDeConfiance])],
                     whitelistedPaths: map['whitelisted_paths'] ? JSON.parse(map['whitelisted_paths']) : [],
                     enabled:          map['enabled'] !== 'false',
                     // Plages des robots d'indexation, alimentées par le cron
@@ -135,6 +165,13 @@ async function refreshWafConfig(): Promise<void> {
                     crawlerRanges:    map['crawler_ranges'] ? JSON.parse(map['crawler_ranges']) : [],
                 })
             }
+        } else if (ipsDeConfiance.length > 0) {
+            // La configuration n'a pas répondu mais les adresses du personnel
+            // sont connues : sans cette branche, une panne de lecture de
+            // `waf_config` aurait à nouveau enfermé l'administrateur dehors —
+            // exactement le scénario que ce mécanisme doit empêcher.
+            const actuelles = getWafConfig().whitelistedIps || []
+            setWafConfig({ whitelistedIps: [...new Set([...actuelles, ...ipsDeConfiance])] })
         }
 
         if (rulesRes.ok) {
