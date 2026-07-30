@@ -26,9 +26,24 @@
 | react-native-webview | 13.x | Dépendance interne du SDK Kkiapay |
 | @react-native-async-storage | 2.x | Stockage local (onboarding flag, lang, cache traductions) |
 
-> ⚠️ **Build : dev build obligatoire** (`expo-dev-client` actif).
-> Plus de support Expo Go — le SDK Kkiapay nécessite des modules natifs (Android Java + iOS Swift).
+> ⚠️ **Build de développement OBLIGATOIRE** (`expo-dev-client` actif).
+> **Expo Go ne peut pas exécuter ce projet, quelle que soit sa version.** Expo Go
+> embarque un jeu FIGÉ de modules natifs ; l'application en exige qui n'y sont pas :
+> `react-native-webrtc` et `react-native-incall-manager` (appel vocal).
+> Depuis le passage en SDK 56, Expo Go refuse le projet dès l'ouverture
+> (« Project is incompatible with this version of Expo Go ») au lieu de planter
+> plus loin — c'est un message plus clair, pas une régression.
+>
+> ❌ **Correction d'une affirmation erronée de ce fichier** : il était écrit que le
+> SDK Kkiapay « nécessite des modules natifs (Android Java + iOS Swift) ». C'est
+> FAUX, vérifié dans `node_modules/@kkiapay-org/react-native-sdk` : le paquet ne
+> contient AUCUN fichier natif (`.java`, `.kt`, `.swift`, `.podspec`) et charge
+> `https://widget-v3.kkiapay.me` dans une `<WebView>`. Kkiapay n'a rien à voir avec
+> l'impossibilité d'utiliser Expo Go.
+>
 > Commande : `eas build --profile development --platform android` (et `--platform ios`).
+> `npm start` passe désormais `--dev-client` : sans cela, la commande proposait
+> Expo Go, qui ne peut pas fonctionner ici.
 
 ---
 
@@ -159,18 +174,41 @@ FR (défaut, source) / EN / ES / PT / CR (Antillais) / HT (Haïtien)
 
 ---
 
-## 💳 PAIEMENT KKIAPAY — Architecture v2 (SDK natif)
+## 💳 PAIEMENT KKIAPAY — widget web en WebView (le titre disait « SDK natif » à tort)
 
 **Évolution v1 → v2** :
 - v1 : `Linking.openURL()` ouvrait `/mobile-payment` dans le navigateur, retour via deep link
-- v2 (actuel) : **Widget natif in-app** via `@kkiapay-org/react-native-sdk` — Android + iOS
+- v2 (actuel) : **Widget Kkiapay dans une `<WebView>` in-app** via `@kkiapay-org/react-native-sdk` — Android + iOS. Le mot « natif » employé ici auparavant était inexact (voir section ci-dessous).
 - Plus user-friendly, retour instantané, callbacks JS directs
 
-### Pourquoi React Native SDK (pas natif Android/iOS séparé)
-Kkiapay propose 3 SDK : Android (`co.opensi.kkiapay:kkiapay`), iOS Swift, et React Native.
-**Le SDK React Native est un wrapper officiel** qui bridge automatiquement vers les SDK natifs Android + iOS.
-→ **Un seul code, deux plateformes**, pas besoin d'écrire de Java/Swift, pas besoin d'éjecter Expo.
-Le dev build (`expo-dev-client`) embarque les modules natifs automatiquement à chaque `eas build`.
+### ⚠️ Ce que le SDK React Native de Kkiapay fait RÉELLEMENT
+
+> Cette section affirmait que le SDK React Native « bridge automatiquement vers les
+> SDK natifs Android + iOS ». **C'est faux**, et l'erreur a coûté du temps : elle a
+> servi de base à une recommandation technique erronée le 2026-07-30.
+
+Vérifié dans `node_modules/@kkiapay-org/react-native-sdk@0.1.13` :
+
+- **aucun fichier natif** — pas de `.java`, `.kt`, `.swift`, `.m`, ni `.podspec` ;
+- `src/kkiapay.tsx` charge `https://widget-v3.kkiapay.me?` dans une `<WebView>` ;
+- ses dépendances sont `react-native-webview`, `react-native-safe-area-context`, `buffer`.
+
+C'est donc **un habillage de page web**, pas un pont vers du natif. Kkiapay ne
+publie sur npm que du web et du serveur (`kkiapay`, `kkiapay-react`,
+`@kkiapay-org/uikit`, `@kkiapay-org/js-sdk`, `@kkiapay-org/nodejs-sdk`).
+Aucun SDK React Native natif n'existe.
+
+**Contrainte structurelle, pas un défaut de Kkiapay** : une passerelle ne peut pas
+laisser l'application afficher le formulaire de carte nativement sans que le
+marchand devienne responsable PCI-DSS. La page hébergée EST le modèle de sécurité.
+
+Pour du paiement réellement natif : `@stripe/stripe-react-native` (PaymentSheet
+native, Apple Pay / Google Pay, données de carte jamais dans notre code — Stripe
+est déjà configuré dans la table `settings`), et pour le Mobile Money un formulaire
+natif s'appuyant sur l'API serveur Kkiapay si elle expose un débit direct.
+
+Le dev build (`expo-dev-client`) reste obligatoire, mais **à cause de
+`react-native-webrtc` et `react-native-incall-manager`**, pas de Kkiapay.
 
 ```text
 ┌──────────────────────────┐                    ┌─────────────────┐
@@ -179,7 +217,7 @@ Le dev build (`expo-dev-client`) embarque les modules natifs automatiquement à 
 │  KkiapayProvider (App)   │                    │                 │
 │   └─ KkiapayModal        │                    │                 │
 │       ├─ useKkiapay() hook                    │                 │
-│       │   ├─ openKkiapayWidget()  ──────────▶│  Widget natif   │
+│       │   ├─ openKkiapayWidget()  ──────────▶│  Widget WebView │
 │       │   │   { amount, key, sandbox, ... }  │  (in-app, MoMo  │
 │       │   ├─ addSuccessListener  ◀───────────│   /Carte/Visa)  │
 │       │   └─ addFailedListener   ◀───────────│                 │
@@ -196,7 +234,7 @@ Le dev build (`expo-dev-client`) embarque les modules natifs automatiquement à 
 | `kkiapay_sandbox` | `'true'` / `'false'` | Mode test (`true`) ou prod (`false`) |
 
 ### Contraintes techniques (v2)
-- ✅ **Dev build obligatoire** (Expo Go incompatible — module natif)
+- ✅ **Dev build obligatoire** — à cause de `react-native-webrtc` et `react-native-incall-manager`, PAS de Kkiapay (dont le SDK est du JavaScript pur)
 - ✅ Listeners `addSuccessListener` / `addFailedListener` enregistrés **une seule fois** au mount, callbacks via `useRef` (pas de stale closure, pas de listener orphelin — le SDK n'expose pas de `removeListener`)
 - ✅ Mode sandbox/prod **lu depuis Supabase**, jamais hardcodé
 - ✅ `<KkiapayProvider>` doit wrapper `App.tsx` au-dessus du Navigator pour que `useKkiapay()` fonctionne
@@ -291,7 +329,7 @@ retirer alors l'exclusion.
 - [ ] `npx tsc --noEmit` → 0 erreur
 - [ ] Les 9 services sont identiques web et mobile
 - [ ] Les `pricing_options` sont présentes sur chaque service
-- [ ] `KkiapayModal` utilise `useKkiapay()` (SDK natif), pas `Linking` ni WebView
+- [ ] `KkiapayModal` utilise `useKkiapay()` du SDK Kkiapay, pas `Linking` ni une `<WebView>` montee a la main (le SDK gere lui-meme sa WebView interne)
 - [ ] `<KkiapayProvider>` wrap App dans `App.tsx`
 - [ ] Les types dans `RootStackParamList` matchent les params passés
 - [ ] Pas d'import du composant `<T>` (supprimé) — utiliser `useLang().t()` direct
