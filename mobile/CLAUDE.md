@@ -239,6 +239,7 @@ soumis → verifie → traitement → validation → termine
 | Boucle infinie de re-tentatives traduction réseau coupé | Pas de circuit-breaker | `failedForever` Set + `MAX_RETRIES = 1` + retry sur `AppState` foreground |
 | Stale closure dans `flushBatch` | Closure capturait `cache`/`lang` initiaux | `cacheRef` + `langRef` |
 | Services différents web/mobile | Données hardcodées différentes | Synchro manuelle `SERVICES_DATA` ↔ `FALLBACK_SERVICES` |
+| **Micro impossible à autoriser (appel vocal)** — Android n'affichait aucune entrée « Microphone » dans les autorisations | `expo-image-picker` configuré avec `"microphonePermission": false` : son plugin appelle alors `withBlockedPermissions(['android.permission.RECORD_AUDIO'])`, ce qui écrit `tools:node="remove"` dans le manifeste. Le fusionneur Gradle **supprime** la permission de l'APK, **même quand un autre plugin l'ajoute** (ici `@config-plugins/react-native-webrtc`). Un blocage gagne toujours. | Donner une **description en clair** à `microphonePermission`, jamais `false`, dès lors qu'une fonctionnalité de l'app a besoin du micro. Vérifier avec `grep 'tools:node="remove"' android/app/src/main/AndroidManifest.xml` → doit renvoyer 0. ⚠️ Chercher le seul nom de la permission ne prouve RIEN : il apparaît aussi dans la directive de suppression. |
 
 ---
 

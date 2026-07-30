@@ -83,7 +83,7 @@
         {
           "photosPermission": "Sélectionnez des photos pour vos documents.",
           "cameraPermission": "Prenez une photo pour votre profil ou vos documents.",
-          "microphonePermission": false
+          "microphonePermission": "L'application utilise votre micro pour vous permettre d'appeler un conseiller."
         }
       ],
       [
