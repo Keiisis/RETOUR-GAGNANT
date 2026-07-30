@@ -163,9 +163,17 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
+            {/* La tab bar n'est PAS en superposition : elle occupe sa propre
+                place dans la mise en page (voir MainTabNavigator, `barOuter`
+                sans position absolue) et applique elle-même la marge de la
+                barre système. Le contenu s'arrête donc déjà au-dessus d'elle.
+                Un `insets.bottom + 72` supplémentaire ajoutait de 96 à 120 px
+                de vide sous le dernier élément — le blanc visible en bas de
+                l'accueil. Seule reste ici la respiration normale de fin de
+                page. Ne pas y réintroduire insets.bottom. */}
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 72 }}
+                contentContainerStyle={{ paddingBottom: spacing.lg }}
             >
                 {/* ── Liseré tricolore : signature de marque ── */}
                 <View style={styles.topFlag}><FlagBar height={6} radiusTop={false} /></View>
