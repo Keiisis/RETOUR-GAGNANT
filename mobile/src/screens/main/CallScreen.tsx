@@ -24,6 +24,23 @@ const AGENCE_TEL = '+2290160322121'
 
 type Etat = 'connexion' | 'sonne' | 'actif' | 'termine'
 
+/* Lecture défensive d'une cause d'erreur.
+   Tous les rejets ne sont pas des instances d'Error : react-native-webrtc
+   rejette avec un MediaStreamError, qui est un objet simple. Le test
+   `e instanceof Error` renvoyait donc une chaîne vide, et la vraie cause
+   — y compris un refus de micro — disparaissait derrière un message
+   générique. */
+function detailErreur(e: unknown): string {
+    if (typeof e === 'string' && e) return e
+    if (e && typeof e === 'object') {
+        const o = e as { message?: unknown; name?: unknown; code?: unknown }
+        if (typeof o.message === 'string' && o.message) return o.message
+        if (typeof o.name === 'string' && o.name) return o.name
+        if (typeof o.code === 'string' && o.code) return o.code
+    }
+    return 'cause inconnue'
+}
+
 export default function CallScreen({ navigation, route }: any) {
     const insets = useSafeAreaInsets()
     const { profile } = useAuth()
@@ -104,6 +121,12 @@ export default function CallScreen({ navigation, route }: any) {
                 return
             }
 
+            // Quelle etape a echoue : ouvrir la ligne en base, ou ouvrir le
+            // micro et negocier la connexion. Sans cette distinction, les
+            // deux pannes rendaient le meme message et il etait impossible
+            // de savoir laquelle traiter.
+            let etape: 'ligne' | 'audio' = 'ligne'
+
             try {
                 const nom = `${profile.prenom || ''} ${profile.nom || ''}`.trim() || (profile.email || '')
                 const { data: appel, error } = await supabase
@@ -149,13 +172,19 @@ export default function CallScreen({ navigation, route }: any) {
                     onEnded: (raison) => { setMessage(raison); void raccrocher(true) },
                 })
                 engine.current = moteur
+                etape = 'audio'
                 await moteur.start()
             } catch (e) {
-                const msg = e instanceof Error ? e.message : ''
+                const cause = detailErreur(e)
+                console.error(`[appel] échec à l'étape « ${etape} » :`, cause)
+
+                const refus = /permission|denied|autoris/i.test(cause)
                 setMessage(
-                    msg.includes('Permission') || msg.includes('denied')
+                    refus
                         ? t('Autorisez le micro pour appeler.')
-                        : t("L'appel n'a pas pu être lancé."),
+                        : `${etape === 'ligne'
+                            ? t("La ligne n'a pas pu être ouverte.")
+                            : t("Le micro ou la connexion audio a échoué.")}\n${cause}`,
                 )
                 setEtat('termine')
             }

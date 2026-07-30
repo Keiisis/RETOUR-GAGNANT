@@ -221,17 +221,38 @@ export class MobileCallEngine {
 
         ouvrirSessionAudio(false)
 
-        this.local = await rtc.mediaDevices.getUserMedia({
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                channelCount: 1,
-            },
-            video: false,
-        })
+        /* Chaque etape porte son nom dans l'erreur qu'elle leve. Sans cela,
+           « micro refuse » et « connexion impossible » remontaient a l'ecran
+           sous la meme forme, et il fallait deviner laquelle traiter. Les
+           rejets de react-native-webrtc ne sont pas des instances d'Error :
+           on lit `message` puis `name` avant d'abandonner. */
+        const cause = (e: unknown): string => {
+            const o = (e || {}) as { message?: unknown; name?: unknown }
+            if (typeof o.message === 'string' && o.message) return o.message
+            if (typeof o.name === 'string' && o.name) return o.name
+            return 'cause inconnue'
+        }
 
-        const pc = new rtc.RTCPeerConnection({ iceServers: await getIceServers(supabase) })
+        try {
+            this.local = await rtc.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1,
+                },
+                video: false,
+            })
+        } catch (e) {
+            throw new Error(`micro — ${cause(e)}`)
+        }
+
+        let pc: any
+        try {
+            pc = new rtc.RTCPeerConnection({ iceServers: await getIceServers(supabase) })
+        } catch (e) {
+            throw new Error(`connexion — ${cause(e)}`)
+        }
         this.pc = pc
 
         for (const track of this.local.getTracks()) pc.addTrack(track, this.local)
