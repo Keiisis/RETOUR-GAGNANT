@@ -109,7 +109,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#1B2A4A"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "owner": "keysosi"
   }

@@ -21,7 +21,7 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
-import { Video, ResizeMode } from 'expo-av'
+import { useVideoPlayer, VideoView } from 'expo-video'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
@@ -81,6 +81,15 @@ const StorefrontVideo = () => {
     const STORE_WIDTH = width - H_PADDING * 2
     const STORE_HEIGHT = 200
 
+    /* expo-av a été RETIRÉ du SDK 56 : sa dernière version publiée, 16.0.8,
+       visait le SDK 54. expo-video est son remplaçant officiel.
+       Le lecteur remplace les anciennes propriétés `shouldPlay`, `isLooping`
+       et `isMuted`, qui sont désormais des attributs du lecteur lui-même. */
+    const player = useVideoPlayer(
+        require('../../../assets/images/boutique_video.mp4'),
+        (p) => { p.loop = true; p.muted = true; p.play() },
+    )
+
     return (
         <Animated.View
             style={[
@@ -89,13 +98,12 @@ const StorefrontVideo = () => {
                 animStyle,
             ]}
         >
-            <Video
-                source={require('../../../assets/images/boutique_video.mp4')}
+            <VideoView
+                player={player}
                 style={StyleSheet.absoluteFill}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay
-                isLooping
-                isMuted={true}
+                contentFit="cover"
+                nativeControls={false}
+                accessible={false}
             />
 
             {/* Overlay bleu agence très subtil pour cohérence chromatique */}

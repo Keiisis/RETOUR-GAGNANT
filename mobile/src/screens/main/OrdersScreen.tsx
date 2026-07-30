@@ -20,7 +20,7 @@ import Animated, {
     interpolate,
     interpolateColor,
 } from 'react-native-reanimated'
-import { Video, ResizeMode } from 'expo-av'
+import { useVideoPlayer, VideoView } from 'expo-video'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
@@ -115,17 +115,24 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
         transform: [{ scale: interpolate(dotPulse.value, [0, 1], [0.85, 1.15]) }],
     }))
 
+    /* expo-av a été RETIRÉ du SDK 56 ; expo-video est son remplaçant.
+       Lecture en boucle et muette, portée par le lecteur au lieu des
+       anciennes propriétés du composant. */
+    const player = useVideoPlayer(
+        require('../../../assets/images/delivery_video.mp4'),
+        (p) => { p.loop = true; p.muted = true; p.play() },
+    )
+
     return (
         <View style={styles.hero}>
             {/* Video animée */}
             <Animated.View style={[StyleSheet.absoluteFill, videoStyle]}>
-                <Video
-                    source={require('../../../assets/images/delivery_video.mp4')}
+                <VideoView
+                    player={player}
                     style={{ width: '100%', height: '100%' }}
-                    resizeMode={ResizeMode.COVER}
-                    shouldPlay
-                    isLooping
-                    isMuted
+                    contentFit="cover"
+                    nativeControls={false}
+                    accessible={false}
                 />
             </Animated.View>
 
