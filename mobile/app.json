@@ -6,13 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "retourgagnant",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1B2A4A"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "bj.retourgagnantbenin.app",
@@ -107,7 +101,15 @@
           "microphonePermission": "L'application utilise votre micro pour vous permettre d'appeler un conseiller."
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1B2A4A"
+        }
+      ]
     ],
     "owner": "keysosi"
   }
