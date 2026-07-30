@@ -243,6 +243,49 @@ soumis → verifie → traitement → validation → termine
 
 ---
 
+## 🎙️ APPEL VOCAL — pourquoi expo-doctor est mis en sourdine sur 2 paquets
+
+`react-native-webrtc` et `react-native-incall-manager` sont exclus du contrôle
+`reactNativeDirectoryCheck` dans `package.json`. **Ce n'est pas une suppression
+d'alerte de confort — voici l'enquête qui l'a justifiée.**
+
+L'annuaire React Native les marque « untested on New Architecture ». Ce libellé
+signifie *« personne n'a soumis de résultat de test »*, pas *« incompatible »* :
+c'est une métadonnée communautaire, pas une propriété du code.
+
+Vérifié dans les sources installées :
+
+```
+WebRTCModule        extends ReactContextBaseJavaModule   ← API bridge classique
+WebRTCModulePackage implements ReactPackage
+InCallManagerModule extends ReactContextBaseJavaModule
+```
+
+Aucune des deux ne déclare de `codegenConfig`. Elles fonctionnent donc par la
+**couche d'interopérabilité** que React Native fournit délibérément pour
+l'écosystème legacy sous nouvelle architecture.
+
+Alternatives examinées au registre npm — **aucune ne fait mieux** :
+
+| Paquet | Version | Nouvelle archi |
+|---|---|---|
+| `react-native-webrtc` | 124.0.8 | non déclarée |
+| `@livekit/react-native-webrtc` | 144.1.2 | non déclarée |
+| `@stream-io/react-native-webrtc` | 145.1.1 | non déclarée |
+
+LiveKit et Stream vendent de la vidéo temps réel et maintiennent leurs propres
+forks : si une implémentation WebRTC nativement TurboModule existait pour React
+Native, ce serait la leur. **Il n'y en a aucune.** Changer de fork ne
+supprimerait pas l'avertissement et remplacerait le moteur d'appel sans gain.
+
+⚠️ L'exclusion est **nominative** : tout AUTRE paquet incompatible sera toujours
+signalé. Ne jamais élargir cette liste sans refaire l'enquête ci-dessus.
+
+À réexaminer si `react-native-webrtc` publie un jour un `codegenConfig` :
+retirer alors l'exclusion.
+
+---
+
 ## 🔧 CHECKLIST PRÉ-COMMIT
 
 - [ ] `npx tsc --noEmit` → 0 erreur

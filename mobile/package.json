@@ -13,6 +13,16 @@
     "build:preview:android": "eas build --profile preview --platform android",
     "build:prod:android": "eas build --profile production --platform android"
   },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-webrtc",
+          "react-native-incall-manager"
+        ]
+      }
+    }
+  },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "15.0.1",
     "@expo-google-fonts/inter": "^0.4.2",
