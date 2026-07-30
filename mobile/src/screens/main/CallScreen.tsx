@@ -84,13 +84,20 @@ export default function CallScreen({ navigation, route }: any) {
             // La detection est elle-meme protegee : si elle echoue, on
             // considere que l'appel in-app n'est pas disponible plutot que
             // de laisser une exception remonter jusqu'a l'ecran.
+            //
+            // Deux situations mènent ici, et le message doit valoir pour les
+            // deux : un build de développement antérieur à l'ajout de
+            // react-native-webrtc, ou Expo Go — qui embarque un jeu figé de
+            // modules natifs et ne pourra JAMAIS passer cet appel, quelle
+            // que soit la version de l'application. Parler de simple « mise
+            // à jour » envoyait chercher un correctif inexistant.
             let disponible = false
             try { disponible = isCallSupported() } catch { disponible = false }
 
             if (!disponible) {
                 toast(
                     t('Appel téléphonique'),
-                    t("L'appel dans l'application nécessite une mise à jour. Nous ouvrons votre téléphone."),
+                    t("Cet appel exige le build RGB à jour — Expo Go ne le permet pas. Nous ouvrons votre téléphone."),
                 )
                 Linking.openURL(`tel:${AGENCE_TEL}`).catch(() => { })
                 navigation.goBack()
