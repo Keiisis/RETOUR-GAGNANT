@@ -126,6 +126,13 @@ export interface CallEngineOptions {
     onRemoteStream?: (stream: MediaStream) => void
     /** L'autre partie a raccroché ou la connexion est morte. */
     onEnded?: (raison: string) => void
+    /**
+     * Le micro a été perdu et n'a pas pu être repris — casque débranché,
+     * périphérique refusé. L'appel reste ouvert et la réception fonctionne,
+     * mais l'interlocuteur n'entend plus rien : il faut le signaler, sinon
+     * on parle dans le vide sans le savoir.
+     */
+    onMicroPerdu?: () => void
 }
 
 /**
@@ -151,6 +158,15 @@ export class CallEngine {
     private remoteReady = false
     private readonly opts: CallEngineOptions
     private readonly other: CallRole
+
+    /* État du micro voulu par l'utilisateur, conservé à part du track :
+       un remplacement de périphérique ne doit pas rétablir un micro que
+       l'agent avait coupé. */
+    private muet = false
+    /* Évite deux reprises simultanées quand le système émet plusieurs
+       notifications de changement pour un seul branchement. */
+    private repriseEnCours = false
+    private surChangementPeripherique: (() => void) | null = null
 
     constructor(opts: CallEngineOptions) {
         this.opts = opts
@@ -188,6 +204,8 @@ export class CallEngine {
         for (const track of this.localStream.getTracks()) {
             pc.addTrack(track, this.localStream)
         }
+
+        this.surveillerMicro()
 
         pc.ontrack = (event) => {
             /* Par defaut le navigateur constitue un tampon genereux pour
@@ -365,10 +383,90 @@ export class CallEngine {
         await this.queue
     }
 
+    /* ── Suivi du micro pendant l'appel ───────────────────────────
+       Un `MediaStreamTrack` reste attaché au périphérique sur lequel il a
+       été ouvert. Quand on branche un casque en pleine conversation, le
+       système bascule son entrée par défaut mais le track continue de
+       pointer vers l'ancien micro : selon les cas il se coupe (`mute`) ou
+       se termine (`ended`), et l'interlocuteur n'entend PLUS RIEN.
+
+       Le sens inverse, lui, continue de fonctionner : l'élément <audio>
+       suit la sortie par défaut du système. D'où le symptôme observé —
+       l'agent entend le client, le client n'entend plus l'agent.
+
+       On reprend donc le micro sur le nouveau périphérique et on échange
+       le track dans l'émetteur. `replaceTrack` opère sans renégociation :
+       ni coupure, ni nouvelle offre SDP. */
+    private surveillerMicro(): void {
+        const surveillerTracks = () => {
+            this.localStream?.getAudioTracks().forEach(t => {
+                t.onmute = () => { void this.reprendreMicro('micro coupé par le système') }
+                t.onended = () => { void this.reprendreMicro('micro déconnecté') }
+            })
+        }
+        surveillerTracks()
+
+        // Branchement ou retrait d'un casque, d'un micro USB, d'un Bluetooth.
+        if (navigator.mediaDevices && !this.surChangementPeripherique) {
+            this.surChangementPeripherique = () => {
+                void this.reprendreMicro('changement de périphérique')
+            }
+            navigator.mediaDevices.addEventListener('devicechange', this.surChangementPeripherique)
+        }
+    }
+
+    private async reprendreMicro(raison: string): Promise<void> {
+        if (this.closed || this.repriseEnCours || !this.pc) return
+        this.repriseEnCours = true
+        try {
+            const emetteur = this.pc.getSenders().find(s => s.track?.kind === 'audio')
+            if (!emetteur) return
+
+            // Le périphérique par défaut vient de changer : on n'impose aucun
+            // deviceId, on laisse le système désigner le bon.
+            const flux = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1,
+                },
+                video: false,
+            })
+            const nouveau = flux.getAudioTracks()[0]
+            if (!nouveau) { flux.getTracks().forEach(t => t.stop()); return }
+
+            // Si l'appel s'est terminé pendant l'ouverture du micro, on rend
+            // le périphérique au système au lieu de le garder ouvert.
+            if (this.closed) { flux.getTracks().forEach(t => t.stop()); return }
+
+            nouveau.enabled = !this.muet
+            await emetteur.replaceTrack(nouveau)
+
+            const ancien = this.localStream
+            this.localStream = flux
+            try { ancien?.getTracks().forEach(t => t.stop()) } catch { /* déjà arrêté */ }
+
+            this.surveillerMicro()
+            console.log(`[appel:${this.opts.role}] micro repris (${raison})`)
+        } catch (e) {
+            // Reprise impossible : on le dit plutôt que de laisser
+            // l'interlocuteur parler dans le vide sans le savoir.
+            console.error(`[appel:${this.opts.role}] reprise du micro impossible (${raison}) :`, e)
+            this.opts.onMicroPerdu?.()
+        } finally {
+            this.repriseEnCours = false
+        }
+    }
+
     /** Coupe le micro et ferme tout. Idempotent. */
     hangup(): void {
         if (this.closed) return
         this.closed = true
+        if (this.surChangementPeripherique && navigator.mediaDevices) {
+            navigator.mediaDevices.removeEventListener('devicechange', this.surChangementPeripherique)
+            this.surChangementPeripherique = null
+        }
         try { this.localStream?.getTracks().forEach(t => t.stop()) } catch { /* déjà arrêté */ }
         try { this.pc?.close() } catch { /* déjà fermée */ }
         if (this.channel) { void this.opts.supabase.removeChannel(this.channel) }
@@ -379,6 +477,7 @@ export class CallEngine {
 
     /** Coupe ou rétablit le micro sans quitter l'appel. */
     setMuted(muted: boolean): void {
+        this.muet = muted
         this.localStream?.getAudioTracks().forEach(t => { t.enabled = !muted })
     }
 }

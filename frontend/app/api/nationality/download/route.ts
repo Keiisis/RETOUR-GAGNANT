@@ -1,12 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import JSZip from 'jszip';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+/*
+ * ⚠️ Cette route lit avec la clé de service (contournement du RLS) et
+ * renvoie un dossier de nationalité COMPLET : identité, parents, ancêtres,
+ * numéro de pièce d'identité, et les pièces justificatives elles-mêmes.
+ *
+ * Elle n'exigeait AUCUNE identité. Le garde du middleware ne couvre que
+ * /api/admin et /api/agent (voir « 5bis » dans middleware.ts) : ce chemin
+ * y échappait. N'importe qui connaissant ou devinant un identifiant
+ * pouvait donc télécharger le dossier entier d'un client.
+ *
+ * Le contrôle est fait ici plutôt qu'en ajoutant un chemin au middleware :
+ * la route porte elle-même sa protection, elle ne peut plus la perdre lors
+ * d'un déplacement ou d'un changement de matcher.
+ */
+const ROLES_AUTORISES = ['admin', 'super_admin', 'superadmin', 'agent'];
+
+async function verifierAcces(req: NextRequest): Promise<NextResponse | null> {
+    if (!supabaseUrl || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json({ error: 'Configuration serveur incomplète' }, { status: 500 });
+    }
+    try {
+        const session = createServerClient(
+            supabaseUrl,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+        );
+        const { data: { user } } = await session.auth.getUser();
+        if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+
+        const admin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const { data: prof } = await admin
+            .from('user_profiles').select('role').eq('id', user.id).maybeSingle();
+
+        if (!ROLES_AUTORISES.includes(prof?.role || '')) {
+            return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
+        }
+        return null;
+    } catch {
+        // Fail-closed : sur une route qui expose des données personnelles,
+        // le doute se tranche en refusant.
+        return NextResponse.json({ error: 'Erreur d\'authentification' }, { status: 401 });
+    }
+}
+
 export async function GET(req: NextRequest) {
     try {
+        const refus = await verifierAcces(req);
+        if (refus) return refus;
+
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
@@ -173,6 +221,12 @@ Généré par Retour Gagnant Bénin le ${new Date().toLocaleString('fr-FR')}
             },
         });
     } catch (error) {
-        return NextResponse.json({ error: 'Erreur génération ZIP' }, { status: 500 });
+        // Sans cette trace, un échec de génération restait invisible côté
+        // serveur comme côté navigateur.
+        console.error('[nationalite/download] échec de génération :', error);
+        return NextResponse.json({
+            error: 'Erreur génération ZIP',
+            detail: error instanceof Error ? error.message : String(error),
+        }, { status: 500 });
     }
 }

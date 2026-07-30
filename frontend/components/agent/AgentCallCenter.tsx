@@ -152,6 +152,12 @@ export function AgentCallCenter() {
                 onStateChange: setConnexion,
                 onRemoteStream: (stream) => { if (audioRef.current) audioRef.current.srcObject = stream },
                 onEnded: (raison) => { setErreur(raison); void raccrocher() },
+                /* Micro perdu sans reprise possible : l'appel tient toujours
+                   et on entend le client, mais lui ne nous entend plus. Sans
+                   ce signal, l'agent parlait dans le vide. */
+                onMicroPerdu: () => setErreur(
+                    "Micro perdu — le client ne vous entend plus. Vérifiez votre casque, puis rappelez.",
+                ),
             })
             engine.current = moteur
             await moteur.answer()

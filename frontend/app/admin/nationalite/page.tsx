@@ -126,14 +126,64 @@ export default function AdminNationalitePage() {
         }
     }
 
+    /*
+     * Téléchargement du dossier complet en ZIP.
+     *
+     * Trois défauts corrigés ici, qui faisaient que « rien ne se passe » :
+     *
+     * 1. `URL.revokeObjectURL` était appelé JUSTE APRÈS `a.click()`. Le clic
+     *    ne fait que déclencher le téléchargement, il ne l'attend pas : on
+     *    invalidait donc l'URL avant que le navigateur ait fini de lire le
+     *    blob. Sur un ZIP contenant les pièces d'identité — plusieurs Mo —
+     *    le téléchargement était annulé. On libère maintenant après un
+     *    délai, une fois la lecture engagée.
+     *
+     * 2. L'ancre n'était jamais insérée dans le document. Firefox ignore le
+     *    clic programmatique sur un élément détaché.
+     *
+     * 3. `if (res.ok)` sans `else` : toute erreur — 401, 403, 500 — était
+     *    avalée en silence. L'utilisateur ne pouvait pas distinguer un
+     *    échec d'un bouton mort.
+     */
+    const [zipEnCours, setZipEnCours] = useState<string | null>(null)
+
     const downloadZip = async (id: string, ref: string) => {
-        const res = await fetch(`/api/nationality/download?id=${id}`)
-        if (res.ok) {
+        setZipEnCours(id)
+        try {
+            const res = await fetch(`/api/nationality/download?id=${id}`, {
+                // La route vérifie la session : les cookies doivent suivre.
+                credentials: 'same-origin',
+            })
+
+            if (!res.ok) {
+                let detail = `HTTP ${res.status}`
+                try {
+                    const j = await res.json()
+                    if (j?.error) detail = j.detail ? `${j.error} — ${j.detail}` : j.error
+                } catch { /* réponse non JSON : le code HTTP suffit */ }
+                alert(`Téléchargement impossible : ${detail}`)
+                return
+            }
+
             const blob = await res.blob()
+            if (blob.size === 0) {
+                alert('Le dossier généré est vide. Signalez-le à la technique.')
+                return
+            }
+
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
-            a.href = url; a.download = `Dossier_${ref}.zip`; a.click()
-            URL.revokeObjectURL(url)
+            a.href = url
+            a.download = `Dossier_${ref}.zip`
+            a.style.display = 'none'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        } catch (e) {
+            alert(`Téléchargement impossible : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        } finally {
+            setZipEnCours(null)
         }
     }
 
@@ -340,7 +390,9 @@ export default function AdminNationalitePage() {
                                                 <button onClick={() => openPreview(a)} className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Eye size={12} /> <T>Prévisualiser</T></button>
                                             )}
                                             <button onClick={() => openEdit(a)} className="bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Pencil size={12} /> <T>Éditer</T></button>
-                                            <button onClick={() => downloadZip(a.id, a.application_ref)} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Download size={12} /> <T>Télécharger ZIP</T></button>
+                                            <button onClick={() => downloadZip(a.id, a.application_ref)} disabled={zipEnCours === a.id}
+                                                className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1">
+                                                {zipEnCours === a.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} <T>Télécharger ZIP</T></button>
                                             <button onClick={() => resetDocs(a)} disabled={resettingId === a.id}
                                                 title={t('Efface toutes les pièces jointes (garde le dossier + paiement) pour permettre un nouveau dépôt propre via relance')}
                                                 className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1">
