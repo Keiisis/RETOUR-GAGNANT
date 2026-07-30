@@ -3,43 +3,55 @@
 #
 #  EAS archive depuis la RACINE DU DÉPÔT, pas depuis mobile/ : le projet
 #  mobile étant versionné dans ce monorepo, l'archive embarquait tout —
-#  le site Next.js, les maquettes, et 333 Mo de fichiers sources Sketch,
-#  Figma et Adobe. 525 Mo au total, soit près de six minutes de
-#  téléversement à chaque build, pour un projet mobile qui ne pèse que
-#  29 Mo une fois l'inutile retiré.
+#  le site Next.js, les maquettes, et les fichiers sources de design.
+#  525 Mo au total, soit près de sept minutes de téléversement à chaque
+#  build, pour un projet mobile qui n'en pèse qu'une trentaine.
 #
-#  Un premier .easignore avait été placé dans mobile/ : sans effet,
-#  puisque ce n'est pas la racine de l'archive.
+#  ⚠️ DEUX PIÈGES, tous deux rencontrés pour de vrai :
+#
+#  1. Un premier .easignore avait été placé dans mobile/ : sans effet,
+#     puisque ce n'est pas la racine de l'archive.
+#
+#  2. Une règle NON ANCRÉE s'applique à TOUS les niveaux, comme dans un
+#     .gitignore. Écrite « Assets/ », elle visait le dossier de maquettes
+#     à la racine mais excluait aussi mobile/assets/ — donc les icônes de
+#     l'application. Prebuild échouait alors sur :
+#       ENOENT: no such file or directory, open './assets/adaptive-icon.png'
+#     Tout dossier précis est donc ancré par un / initial. Seuls les
+#     motifs volontairement récursifs (node_modules, .expo…) en sont
+#     dépourvus.
 #
 #  ⚠️ .easignore REMPLACE .gitignore côté EAS : tout ce qui doit être
 #  exclu doit figurer ici, y compris ce que git ignore déjà.
 # ══════════════════════════════════════════════════════════════
 
-# ── Dépendances et sorties de compilation ─────────────────────
+# ── Dépendances et sorties de compilation (à tous les niveaux) ─
 node_modules/
-**/node_modules/
 .next/
-**/.next/
 .expo/
-**/.expo/
-dist/
-build/
 web-build/
-mobile/android/
-mobile/ios/
 
-# ── Le site web et ses ressources : hors sujet pour un build mobile ─
-frontend/
-backend/
-Aura-Link/
+# ── Dossiers natifs : régénérés par prebuild à chaque build ────
+/mobile/android/
+/mobile/ios/
+
+# ── Le site web et ses annexes : hors sujet pour un build mobile ─
+/frontend/
+/backend/
+/Aura-Link/
+/KeysOsi-Link/
+/Notre-Histoire/
 
 # ── Sources de design et maquettes ────────────────────────────
-Assets/
-design/
-mobile/assets/Ajouts/
+/Assets/
+/design/
+/mobile/assets/Ajouts/
 
-# ── Sorties d'outils d'analyse ────────────────────────────────
-strix_runs/
+# ── Sorties d'outils d'analyse et scripts hors app ────────────
+/strix_runs/
+/logo_base64.txt
+/*.sql
+/test-waf.ts
 
 # ── Secrets et signatures : ne doivent jamais quitter le poste ─
 *.jks
@@ -52,9 +64,9 @@ strix_runs/
 !.env.example
 
 # ── Divers ────────────────────────────────────────────────────
-.git/
-.claude/
-.vscode/
+/.git/
+/.claude/
+/.vscode/
 .DS_Store
 *.log
 npm-debug.*
