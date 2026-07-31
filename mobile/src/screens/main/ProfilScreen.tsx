@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.surface,
         borderRadius: radius.lg,
         overflow: 'hidden',
-        borderWidth: 1.2,
+        borderWidth: 1,
         borderColor: C.border,
         marginBottom: spacing.md,
         ...shadows.card,
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.dangerSoft,
         borderRadius: radius.lg,
         paddingVertical: spacing.md,
-        borderWidth: 1.2,
+        borderWidth: 1,
         borderColor: C.danger,
     },
     logoutIconWrap: {

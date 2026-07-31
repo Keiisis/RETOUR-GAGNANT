@@ -822,7 +822,7 @@ const hero = StyleSheet.create({
     shieldInner: {
         width: 80, height: 80, borderRadius: 40,
         backgroundColor: C.accentSoft,
-        borderWidth: 1.5, borderColor: C.border,
+        borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
 
@@ -857,7 +857,7 @@ const field2 = StyleSheet.create({
     wrapper: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: C.surfaceAlt,
-        borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border,
+        borderRadius: radius.md, borderWidth: 1, borderColor: C.border,
         paddingLeft: spacing.sm, paddingRight: 12, minHeight: 54,
     },
     wrapperFocus: {

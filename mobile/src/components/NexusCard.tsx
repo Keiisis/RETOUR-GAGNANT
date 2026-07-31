@@ -41,7 +41,7 @@ export default function NexusCard({ variant = 'glass', children, style, ...props
                 return {
                     backgroundColor: colors.surface,
                     borderColor: colors.borderGold,
-                    borderWidth: 1.5,
+                    borderWidth: 1,
                     ...shadows.gold,
                 }
             default:

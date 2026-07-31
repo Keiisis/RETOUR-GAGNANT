@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     bookPriest: { fontFamily: fonts.body, fontSize: 13.5, color: C.textMuted, marginTop: 2, marginBottom: spacing.md },
     label: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textPrimary, marginTop: spacing.md, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.4 },
     modeRow: { flexDirection: 'row', gap: 12 },
-    modeCard: { flex: 1, backgroundColor: C.surface, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', borderWidth: 1.5, borderColor: C.border },
+    modeCard: { flex: 1, backgroundColor: C.surface, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: C.border },
     modeCardActive: { backgroundColor: C.primary, borderColor: C.primary },
     modeIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
     modeLabel: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.textPrimary },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     input: { backgroundColor: C.surfaceWarm, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 13 : 10, fontFamily: fonts.body, fontSize: 14.5, color: C.textPrimary, borderWidth: 1, borderColor: C.border, marginBottom: spacing.sm },
 
     clauseRow: { flexDirection: 'row', gap: 10, marginTop: spacing.md, alignItems: 'flex-start' },
-    checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: C.borderPrimary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+    checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.borderPrimary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
     checkboxOn: { backgroundColor: C.primary, borderColor: C.primary },
     clauseText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: C.textMuted, lineHeight: 18 },
     secure: { fontFamily: fonts.body, fontSize: 12, color: C.textMuted, textAlign: 'center', marginTop: spacing.sm },
