@@ -4,7 +4,7 @@ import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
     TextInput, ActivityIndicator, Platform, KeyboardAvoidingView,
-    Switch, Pressable, Dimensions,
+    Switch, Pressable, Dimensions, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LucideIcon } from '../../components/Icon'
@@ -29,7 +29,7 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -161,6 +161,141 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
                     {...rest}
                 />
             </Animated.View>
+        </View>
+    )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LISTES D'OPTIONS — IDENTIQUES À CELLES DU SITE
+
+   Le formulaire web contraint huit champs à une liste ; le mobile n'offrait
+   qu'une saisie libre avec un exemple en gris. Deux consequences reelles :
+   le client pouvait ecrire « masculin », « M » ou « homme » la ou le site
+   n'accepte que « Masculin », et l'agent recevait des valeurs qu'aucun
+   filtre du panel ne reconnait.
+
+   Les listes sont recopiees a l'identique depuis
+   frontend/app/(routes)/nationalite/formulaire/page.tsx. Toute evolution
+   doit se faire DES DEUX COTES.
+═══════════════════════════════════════════════════════════ */
+const PAYS = ['Bénin', 'France', 'États-Unis', 'Brésil', 'Haïti', 'Canada', 'Royaume-Uni',
+    'Jamaïque', 'Trinidad et Tobago', 'Colombie', 'Cuba', 'Guadeloupe', 'Martinique',
+    'Guyane française', 'Suriname', 'Barbade', 'Bahamas', 'République Dominicaine',
+    'Porto Rico', 'Antigua-et-Barbuda', 'Allemagne', 'Belgique', 'Suisse', 'Pays-Bas',
+    'Italie', 'Espagne', 'Portugal', 'Ghana', 'Togo', 'Nigeria', 'Sénégal', "Côte d'Ivoire",
+    'Cameroun', 'Congo', 'Gabon', 'Mali', 'Burkina Faso', 'Guinée', 'Niger', 'Tchad', 'Autre']
+
+const PROFESSIONS = ['Salarié(e)', 'Entrepreneur/Commerçant', 'Profession libérale',
+    'Étudiant(e)', 'Fonctionnaire', 'Retraité(e)', 'Artisan', 'Agriculteur', 'Artiste',
+    'Ingénieur', 'Médecin', 'Avocat', 'Enseignant', 'Sans emploi', 'Autre']
+
+const GENRES = ['Masculin', 'Féminin', 'Non-binaire', 'Préfère ne pas préciser']
+
+const LIENS = ['Père', 'Mère', 'Grand-père paternel', 'Grand-mère paternelle',
+    'Grand-père maternel', 'Grand-mère maternelle', 'Arrière-grand-père',
+    'Arrière-grand-mère', 'Autre']
+
+/* Ces deux listes stockent un CODE en base, pas le libellé affiché — c'est
+   ce que fait le site, et le panel agent filtre sur ce code. */
+const SITUATIONS: Array<{ code: string; label: string }> = [
+    { code: 'celibataire', label: 'Célibataire' },
+    { code: 'marie', label: 'Marié(e)' },
+    { code: 'divorce', label: 'Divorcé(e)' },
+    { code: 'veuf', label: 'Veuf/Veuve' },
+    { code: 'union_libre', label: 'Union libre' },
+]
+
+const TYPES_DOCUMENT: Array<{ code: string; label: string }> = [
+    { code: 'passeport', label: 'Passeport' },
+    { code: 'cni', label: 'CNI' },
+    { code: 'carte_electeur', label: "Carte d'électeur" },
+    { code: 'autre', label: 'Autre' },
+]
+
+/* ═══════════════════════════════════════════════════════════
+   COMPOSANT : CHAMP À OPTIONS
+
+   Même anatomie que `Field` — libellé, icône, cadre — pour que les deux se
+   suivent sans rupture dans le formulaire. Le choix s'ouvre dans une feuille
+   par le bas, plus confortable au pouce qu'une liste déroulante native.
+═══════════════════════════════════════════════════════════ */
+function SelectField({
+    label, icon, value, onSelect, options, required, placeholder,
+}: {
+    label: string
+    icon?: string
+    value: string
+    onSelect: (v: string) => void
+    /** Chaîne simple, ou couple code/libellé quand la base stocke un code. */
+    options: Array<string | { code: string; label: string }>
+    required?: boolean
+    placeholder?: string
+}) {
+    const { t } = useLang()
+    const [ouvert, setOuvert] = useState(false)
+    const insets = useSafeAreaInsets()
+
+    const normalisees = options.map(o => typeof o === 'string' ? { code: o, label: o } : o)
+    const choisi = normalisees.find(o => o.code === value)
+
+    return (
+        <View style={styles.fieldWrap}>
+            {label && (
+                <Text style={styles.fieldLabel}>
+                    {label}
+                    {required && <Text style={{ color: C.primary }}> *</Text>}
+                </Text>
+            )}
+
+            <Pressable
+                onPress={() => setOuvert(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`${label} : ${choisi ? t(choisi.label) : t('choisir')}`}
+                style={styles.fieldContainer}
+            >
+                {icon && (
+                    <LucideIcon name={icon} size={18} color={C.placeholder} style={styles.fieldIcon} />
+                )}
+                <Text
+                    style={[styles.fieldInput, !choisi && { color: C.placeholder }]}
+                    numberOfLines={1}
+                >
+                    {choisi ? t(choisi.label) : (placeholder || t('Choisir'))}
+                </Text>
+                <LucideIcon name="chevron-down" size={18} color={C.textMuted} />
+            </Pressable>
+
+            <Modal visible={ouvert} transparent animationType="slide" onRequestClose={() => setOuvert(false)}>
+                <Pressable style={styles.selectOverlay} onPress={() => setOuvert(false)}>
+                    <Pressable
+                        style={[styles.selectSheet, { paddingBottom: insets.bottom + spacing.md }]}
+                        onPress={e => e.stopPropagation()}
+                    >
+                        <View style={styles.selectHandle} />
+                        <Text style={styles.selectTitle}>{label}</Text>
+
+                        <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+                            {normalisees.map(o => {
+                                const actif = o.code === value
+                                return (
+                                    <Pressable
+                                        key={o.code}
+                                        onPress={() => { onSelect(o.code); setOuvert(false) }}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: actif }}
+                                        style={[styles.selectOption, actif && styles.selectOptionActive]}
+                                    >
+                                        <Text style={[styles.selectOptionText, actif && styles.selectOptionTextActive]}>
+                                            {t(o.label)}
+                                        </Text>
+                                        {actif && <LucideIcon name="checkmark" size={18} color={C.primary} />}
+                                    </Pressable>
+                                )
+                            })}
+                        </ScrollView>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </View>
     )
 }
@@ -537,9 +672,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                     <Field icon="calendar-outline" label={t('Date de naissance')} placeholder="JJ/MM/AAAA"
                                         value={(formData as any)[`ancestor${n}_date_naissance`]}
                                         onChangeText={(v: string) => updateField(`ancestor${n}_date_naissance` as any, v)} />
-                                    <Field icon="link-outline" label={t('Lien de parenté')} required={n === 1} placeholder={t('Ex: Grand-père')}
-                                        value={(formData as any)[`ancestor${n}_lien_parente`]}
-                                        onChangeText={(v: string) => updateField(`ancestor${n}_lien_parente` as any, v)} />
+                                    <SelectField icon="git-branch" label={t('Lien de parenté')} options={LIENS} value={(formData as any)[`ancestor${n}_lien_parente`] || ''} onSelect={(v: string) => updateField(`ancestor${n}_lien_parente` as any, v)} />
                                     <Field icon="flag-outline" label={t('Nationalité')}
                                         value={(formData as any)[`ancestor${n}_nationalite`]}
                                         onChangeText={(v: string) => updateField(`ancestor${n}_nationalite` as any, v)} />
@@ -580,16 +713,16 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <Field icon="person-outline" label={t('Nom')} required value={formData.nom} onChangeText={(v: string) => updateField('nom', v)} />
                         <Field icon="person-outline" label={t('Prénom')} required value={formData.prenom} onChangeText={(v: string) => updateField('prenom', v)} />
                         <Field icon="mail-outline" label={t('Email')} required value={formData.email} onChangeText={(v: string) => updateField('email', v)} keyboardType="email-address" />
-                        <Field icon="male-female-outline" label={t('Genre')} required placeholder={t('Masculin, Féminin…')} value={formData.genre} onChangeText={(v: string) => updateField('genre', v)} />
+                        <SelectField icon="male-female-outline" label={t('Genre')} required options={GENRES} value={formData.genre} onSelect={(v: string) => updateField('genre', v)} />
                         <Field icon="calendar-outline" label={t('Date de naissance')} required placeholder="JJ/MM/AAAA" value={formData.date_naissance} onChangeText={(v: string) => updateField('date_naissance', v)} />
-                        <Field icon="earth-outline" label={t('Pays de naissance')} value={formData.pays_naissance} onChangeText={(v: string) => updateField('pays_naissance', v)} />
+                        <SelectField icon="earth-outline" label={t('Pays de naissance')} options={PAYS} value={formData.pays_naissance} onSelect={(v: string) => updateField('pays_naissance', v)} />
                         <Field icon="location-outline" label={t('Ville de naissance')} value={formData.ville_naissance} onChangeText={(v: string) => updateField('ville_naissance', v)} />
-                        <Field icon="flag-outline" label={t('Nationalité actuelle')} required value={formData.nationalite} onChangeText={(v: string) => updateField('nationalite', v)} />
-                        <Field icon="home-outline" label={t('Pays de résidence')} required value={formData.pays_residence} onChangeText={(v: string) => updateField('pays_residence', v)} />
+                        <SelectField icon="flag-outline" label={t('Nationalité actuelle')} required options={PAYS} value={formData.nationalite} onSelect={(v: string) => updateField('nationalite', v)} />
+                        <SelectField icon="earth-outline" label={t('Pays de résidence')} required options={PAYS} value={formData.pays_residence} onSelect={(v: string) => updateField('pays_residence', v)} />
                         <Field label={t('Adresse de résidence')} textArea value={formData.adresse_residence} onChangeText={(v: string) => updateField('adresse_residence', v)} />
                         <Field icon="call-outline" label={t('Téléphone')} value={formData.telephone} onChangeText={(v: string) => updateField('telephone', v)} keyboardType="phone-pad" />
-                        <Field icon="briefcase-outline" label={t('Profession')} value={formData.profession} onChangeText={(v: string) => updateField('profession', v)} />
-                        <Field icon="heart-outline" label={t('Situation matrimoniale')} placeholder={t('Célibataire, Marié(e)…')} value={formData.situation_matrimoniale} onChangeText={(v: string) => updateField('situation_matrimoniale', v)} />
+                        <SelectField icon="briefcase-outline" label={t('Profession')} options={PROFESSIONS} value={formData.profession} onSelect={(v: string) => updateField('profession', v)} />
+                        <SelectField icon="heart-outline" label={t('Situation matrimoniale')} options={SITUATIONS} value={formData.situation_matrimoniale} onSelect={(v: string) => updateField('situation_matrimoniale', v)} />
                         <Field icon="people-outline" label={t("Nombre d'enfants")} value={String(formData.nombre_enfants)} onChangeText={(v: string) => updateField('nombre_enfants', parseInt(v, 10) || 0)} keyboardType="phone-pad" />
 
                         <SwitchRow
@@ -616,11 +749,10 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         </View>
                         <Text style={styles.stepIntro}>{t("Pièce d'identité et informations sur vos parents.")}</Text>
 
-                        <Field icon="card-outline" label={t("Type de document d'identité")} required placeholder={t('Passeport, CNI…')}
-                            value={formData.type_document_identite} onChangeText={(v: string) => updateField('type_document_identite', v)} />
+                        <SelectField icon="card-outline" label={''} required options={TYPES_DOCUMENT} value={formData.type_document_identite} onSelect={(v: string) => updateField('type_document_identite', v)} />
                         <Field icon="barcode-outline" label={t('Numéro du document')} value={formData.numero_document} onChangeText={(v: string) => updateField('numero_document', v)} />
                         <Field icon="calendar-outline" label={t("Date d'expiration")} placeholder="JJ/MM/AAAA" value={formData.date_expiration_document} onChangeText={(v: string) => updateField('date_expiration_document', v)} />
-                        <Field icon="earth-outline" label={t('Pays de délivrance')} value={formData.pays_delivrance} onChangeText={(v: string) => updateField('pays_delivrance', v)} />
+                        <SelectField icon="earth-outline" label={t('Pays de délivrance')} options={PAYS} value={formData.pays_delivrance} onSelect={(v: string) => updateField('pays_delivrance', v)} />
                         <Field icon="location-outline" label={t('Lieu de délivrance')} value={formData.lieu_delivrance} onChangeText={(v: string) => updateField('lieu_delivrance', v)} />
                         <Field icon="business-outline" label={t('Autorité de délivrance')} value={formData.autorite_delivrance} onChangeText={(v: string) => updateField('autorite_delivrance', v)} />
 
@@ -1021,6 +1153,56 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
    STYLES
 ═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
+    /* ── Feuille de sélection ──
+       Ouverte par le bas plutôt qu'une liste déroulante native : plus
+       confortable au pouce, et rendu identique sur Android et iOS. */
+    selectOverlay: {
+        flex: 1,
+        backgroundColor: C.overlay,
+        justifyContent: 'flex-end',
+    },
+    selectSheet: {
+        backgroundColor: C.surface,
+        borderTopLeftRadius: radius.xxl,
+        borderTopRightRadius: radius.xxl,
+        paddingHorizontal: spacing.gutter,
+        paddingTop: spacing.sm,
+        ...shadows.floating,
+    },
+    selectHandle: {
+        width: 44, height: 5, borderRadius: 3,
+        backgroundColor: C.borderStrong,
+        alignSelf: 'center',
+        marginBottom: spacing.md,
+    },
+    selectTitle: {
+        ...typography.h3,
+        color: C.text,
+        marginBottom: spacing.sm,
+    },
+    selectOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: C.border,
+    },
+    selectOptionActive: {
+        borderBottomColor: C.primary,
+    },
+    selectOptionText: {
+        ...typography.body,
+        color: C.text,
+        flex: 1,
+    },
+    selectOptionTextActive: {
+        ...typography.body,
+        fontFamily: fonts.bold,
+        color: C.primary,
+        flex: 1,
+    },
+
     container: {
         flex: 1,
         backgroundColor: C.bg,
