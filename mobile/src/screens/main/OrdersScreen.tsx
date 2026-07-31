@@ -7,7 +7,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -64,18 +64,18 @@ export interface OrderListItem {
 
 const SHIPPING_CONFIG: Record<string, {
     label: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     color: string
     bgRgba: string
     borderRgba: string
 }> = {
-    pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: 'rgba(138, 138, 138, 0.08)', borderRgba: 'rgba(138, 138, 138, 0.18)' },
-    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.warning, bgRgba: 'rgba(217, 119, 6, 0.10)', borderRgba: 'rgba(217, 119, 6, 0.25)' },
-    shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: 'rgba(0, 100, 60, 0.10)', borderRgba: 'rgba(0, 100, 60, 0.25)' },
-    in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: 'rgba(0, 135, 81, 0.08)', borderRgba: 'rgba(0, 135, 81, 0.18)' },
-    delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: 'rgba(0, 135, 81, 0.10)', borderRgba: 'rgba(0, 135, 81, 0.25)' },
-    failed: { label: 'Échec', icon: 'close-circle-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
-    returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
+    pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: C.surfaceAlt, borderRgba: C.border },
+    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.warning, bgRgba: C.accentSoft, borderRgba: C.border },
+    shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: C.surfaceSoft, borderRgba: C.border },
+    in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: C.surfaceSoft, borderRgba: C.border },
+    delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: C.surfaceSoft, borderRgba: C.border },
+    failed: { label: 'Échec', icon: 'close-circle-outline', color: C.error, bgRgba: C.dangerSoft, borderRgba: C.danger },
+    returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: C.dangerSoft, borderRgba: C.danger },
 }
 
 type FilterKey = 'all' | 'active' | 'delivered'
@@ -223,7 +223,7 @@ function OrderCard({
                                 <Text style={styles.orderRef}>#{shortRef}</Text>
                             </View>
                             <View style={[styles.orderStatusPill, { backgroundColor: cfg.bgRgba, borderColor: cfg.borderRgba }]}>
-                                <Ionicons name={cfg.icon} size={11} color={cfg.color} />
+                                <LucideIcon name={cfg.icon} size={11} color={cfg.color} />
                                 <Text style={[styles.orderStatusText, { color: cfg.color }]}>
                                     {t(cfg.label)}
                                 </Text>
@@ -243,14 +243,14 @@ function OrderCard({
                         {/* Meta line */}
                         <View style={styles.orderMetaRow}>
                             <View style={styles.orderMetaItem}>
-                                <Ionicons name="cube-outline" size={11} color={C.textMuted} />
+                                <LucideIcon name="cube-outline" size={11} color={C.textMuted} />
                                 <Text style={styles.orderMetaText}>
                                     {itemsCount} {itemsCount > 1 ? t('articles') : t('article')}
                                 </Text>
                             </View>
                             <View style={styles.orderMetaDot} />
                             <View style={styles.orderMetaItem}>
-                                <Ionicons name="calendar-outline" size={11} color={C.textMuted} />
+                                <LucideIcon name="calendar-outline" size={11} color={C.textMuted} />
                                 <Text style={styles.orderMetaText}>{formatDate(order.created_at)}</Text>
                             </View>
                         </View>
@@ -259,7 +259,7 @@ function OrderCard({
                         {order.tracking_code ? (
                             <View style={styles.orderTrackingRow}>
                                 <View style={styles.orderTrackingIcon}>
-                                    <Ionicons name="paper-plane" size={10} color={C.accent} />
+                                    <LucideIcon name="paper-plane" size={10} color={C.accent} />
                                 </View>
                                 <Text style={styles.orderTrackingText} numberOfLines={1}>
                                     {order.tracking_code}
@@ -282,7 +282,7 @@ function OrderCard({
                                 <Text style={styles.orderAmount}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
                             <View style={styles.orderArrow}>
-                                <Ionicons name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
                             </View>
                         </View>
                     </View>
@@ -407,12 +407,12 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <Ionicons name="cube" size={12} color={C.accent} />
+                    <LucideIcon name="cube" size={12} color={C.accent} />
                     <Text style={styles.navCounterText}>{t('Mes commandes')}</Text>
                 </View>
 
@@ -424,7 +424,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                 >
                     <View style={styles.iconContainer}>
-                        <Ionicons name="storefront-outline" size={20} color={C.primary} />
+                        <LucideIcon name="storefront-outline" size={20} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -466,7 +466,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                             <View style={styles.emptyHero}>
                                 <View style={styles.emptyHeroGlow} />
                                 <View style={styles.emptyIconWrap}>
-                                    <Ionicons name="bag-outline" size={36} color={C.accent} />
+                                    <LucideIcon name="bag-outline" size={36} color={C.accent} />
                                 </View>
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucune commande')}</Text>
@@ -480,15 +480,15 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 accessibilityRole="button"
                                 hitSlop={6}
                             >
-                                <Ionicons name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                <LucideIcon name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
                                 <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
-                                <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <View style={styles.emptyFilterState}>
                             <View style={styles.emptyFilterIcon}>
-                                <Ionicons name="filter-outline" size={28} color={C.textSec} />
+                                <LucideIcon name="filter-outline" size={28} color={C.textSec} />
                             </View>
                             <Text style={styles.emptyFilterTitle}>{t('Aucun résultat')}</Text>
                             <Text style={styles.emptyFilterText}>
@@ -535,7 +535,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     <View style={styles.searchCard}>
                         <View style={styles.searchHeader}>
                             <View style={styles.searchHeaderIcon}>
-                                <Ionicons name="paper-plane" size={14} color={C.accent} />
+                                <LucideIcon name="paper-plane" size={14} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.searchHeaderBadge}>{t('SUIVI RAPIDE')}</Text>
@@ -545,7 +545,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
 
                         <View style={styles.searchInputRow}>
                             <Animated.View style={[styles.searchInputWrap, searchInputStyle]}>
-                                <Ionicons
+                                <LucideIcon
                                     name="barcode-outline"
                                     size={18}
                                     color={searchFocused ? C.accent : C.placeholder}
@@ -576,7 +576,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 {searching ? (
                                     <ActivityIndicator color={C.primaryText} size="small" />
                                 ) : (
-                                    <Ionicons name="search" size={20} color={C.primaryText} />
+                                    <LucideIcon name="search" size={20} color={C.primaryText} />
                                 )}
                             </TouchableOpacity>
                         </View>
@@ -638,7 +638,7 @@ function FilterPill({
 }: {
     label: string
     count: number
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     active: boolean
     onPress: () => void
     color?: string
@@ -660,7 +660,7 @@ function FilterPill({
             accessibilityRole="button"
             hitSlop={6}>
             <Animated.View style={[styles.filterPill, pillStyle]}>
-                <Ionicons
+                <LucideIcon
                     name={icon}
                     size={13}
                     color={active ? useColor : C.textSec}
@@ -670,7 +670,7 @@ function FilterPill({
                 </Text>
                 <View style={[
                     styles.filterPillCount,
-                    active && { backgroundColor: 'rgba(252, 209, 22, 0.25)' },
+                    active && { backgroundColor: C.accentSoft },
                 ]}>
                     <Text style={[
                         styles.filterPillCountText,
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
     },
     heroOverlay: {
         ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(60, 60, 60, 0.12)',
+        backgroundColor: C.surfaceAlt,
     },
     heroOverlayBottom: {
         position: 'absolute',
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 130,
-        backgroundColor: 'rgba(60, 60, 60, 0.42)',
+        backgroundColor: C.surfaceAlt,
     },
     heroContent: {
         ...StyleSheet.absoluteFill,
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(252, 209, 22, 0.20)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: radius.sm,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
         ...shadows.card,
     },
     searchBtnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         borderColor: 'transparent',
     },
 
@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
                 letterSpacing: 0.2,
     },
     filterPillCount: {
-        backgroundColor: 'rgba(0, 135, 81, 0.08)',
+        backgroundColor: C.surfaceSoft,
         borderRadius: radius.xs,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xxs,
@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        backgroundColor: 'rgba(252, 209, 22, 0.06)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.xs,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.18)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingTop: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(226, 232, 240, 0.6)',
+        borderTopColor: C.border,
     },
     orderAmountLabel: {
         ...typography.button, fontSize: 12,
@@ -1203,11 +1203,11 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: radius.xl,
-        backgroundColor: 'rgba(138, 138, 138, 0.08)',
+        backgroundColor: C.surfaceAlt,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(138, 138, 138, 0.20)',
+        borderColor: C.border,
         marginBottom: spacing.md,
     },
     emptyFilterTitle: {

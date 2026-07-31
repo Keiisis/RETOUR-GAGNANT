@@ -7,7 +7,7 @@ import {
     Pressable, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import * as ImagePicker from 'expo-image-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { decode } from 'base64-arraybuffer'
@@ -82,7 +82,7 @@ function AnimatedSection({
 function MenuItem({
     icon, label, sub, onPress, isLast, accent,
 }: {
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     label: string
     sub: string
     onPress: () => void
@@ -108,13 +108,13 @@ function MenuItem({
         >
             <Animated.View style={[menuStyles.item, !isLast && menuStyles.itemBorder, animStyle]}>
                 <View style={[menuStyles.iconWrap, accent && menuStyles.iconWrapAccent]}>
-                    <Ionicons name={icon} size={18} color={accent ? C.accent : C.primary} />
+                    <LucideIcon name={icon} size={18} color={accent ? C.accent : C.primary} />
                 </View>
                 <View style={menuStyles.textWrap}>
                     <Text style={menuStyles.label}>{label}</Text>
                     <Text style={menuStyles.sub} numberOfLines={1}>{sub}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                <LucideIcon name="chevron-forward" size={16} color={C.textMuted} />
             </Animated.View>
         </Pressable>
     )
@@ -499,7 +499,7 @@ export default function ProfilScreen() {
                         hitSlop={8}
                         style={styles.navEditBtn}
                     >
-                        <Ionicons name="create-outline" size={19} color={C.primary} />
+                        <LucideIcon name="create-outline" size={19} color={C.primary} />
                     </Pressable>
                 </View>
 
@@ -521,7 +521,7 @@ export default function ProfilScreen() {
                                     {renderAvatarContent()}
                                 </View>
                                 <View style={styles.cameraBadge}>
-                                    <Ionicons name="camera" size={14} color={C.primaryText} />
+                                    <LucideIcon name="camera" size={14} color={C.primaryText} />
                                 </View>
                             </Pressable>
 
@@ -534,12 +534,12 @@ export default function ProfilScreen() {
 
                             <View style={styles.badgesRow}>
                                 <View style={styles.roleBadge}>
-                                    <Ionicons name="shield-checkmark" size={13} color={C.primary} />
+                                    <LucideIcon name="shield-checkmark" size={13} color={C.primary} />
                                     <Text style={styles.roleText}>{t('Client vérifié')}</Text>
                                 </View>
                                 {profile?.ville ? (
                                     <View style={styles.villeBadge}>
-                                        <Ionicons name="location-outline" size={13} color={C.accentInk} />
+                                        <LucideIcon name="location-outline" size={13} color={C.accentInk} />
                                         <Text style={styles.villeText}>{profile.ville}</Text>
                                     </View>
                                 ) : null}
@@ -591,7 +591,7 @@ export default function ProfilScreen() {
                                 hitSlop={6}
                             >
                                 <View style={styles.statIconWrap}>
-                                    <Ionicons name={s.icon} size={20} color={C.primary} />
+                                    <LucideIcon name={s.icon} size={20} color={C.primary} />
                                 </View>
                                 <Text style={styles.statValue}>{s.value}</Text>
                                 <Text style={styles.statLabel} numberOfLines={1}>{s.label}</Text>
@@ -634,7 +634,7 @@ export default function ProfilScreen() {
                         hitSlop={6}
                     >
                         <View style={styles.logoutIconWrap}>
-                            <Ionicons name="log-out-outline" size={18} color={C.error} />
+                            <LucideIcon name="log-out-outline" size={18} color={C.error} />
                         </View>
                         <Text style={styles.logoutText}>{t('Se déconnecter')}</Text>
                     </TouchableOpacity>

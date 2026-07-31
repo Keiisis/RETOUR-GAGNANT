@@ -6,7 +6,7 @@ import {
     Pressable,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -64,7 +64,7 @@ export interface AppEvent {
 
 const CATEGORIES = ['Tous', 'Gala', 'Forum', 'Tourisme', 'Séminaire', 'Conférence']
 
-const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+const CATEGORY_ICONS: Record<string, string> = {
     'Tous': 'apps-outline',
     'Gala': 'sparkles-outline',
     'Forum': 'people-outline',
@@ -177,13 +177,13 @@ function FeaturedEventCard({
                 {/* Top row : badges */}
                 <View style={featuredStyles.topRow}>
                     <View style={featuredStyles.starBadge}>
-                        <Ionicons name="star" size={11} color={C.primary} />
+                        <LucideIcon name="star" size={11} color={C.primary} />
                         <Text style={featuredStyles.starText}>{t('ÉVÉNEMENT PHARE')}</Text>
                     </View>
 
                     {isRegistered && (
                         <View style={featuredStyles.registeredBadge}>
-                            <Ionicons name="checkmark-circle" size={12} color={C.success} />
+                            <LucideIcon name="checkmark-circle" size={12} color={C.success} />
                             <Text style={featuredStyles.registeredText}>{t('Inscrit')}</Text>
                         </View>
                     )}
@@ -204,7 +204,7 @@ function FeaturedEventCard({
 
                     {daysUntil > 0 && daysUntil <= 30 && (
                         <View style={featuredStyles.countdownBadge}>
-                            <Ionicons name="time-outline" size={11} color={C.accent} />
+                            <LucideIcon name="time-outline" size={11} color={C.accent} />
                             <Text style={featuredStyles.countdownText}>
                                 {daysUntil === 1
                                     ? t('Demain')
@@ -226,7 +226,7 @@ function FeaturedEventCard({
                 )}
 
                 <View style={featuredStyles.metaRow}>
-                    <Ionicons name="location-outline" size={13} color={C.accent} />
+                    <LucideIcon name="location-outline" size={13} color={C.accent} />
                     <Text style={featuredStyles.metaText} numberOfLines={1}>
                         {event.address || event.location}
                     </Text>
@@ -247,7 +247,7 @@ function FeaturedEventCard({
 
                     <View style={featuredStyles.cta}>
                         <Text style={featuredStyles.ctaText}>{t("S'inscrire")}</Text>
-                        <Ionicons name="arrow-forward" size={14} color={C.accent} />
+                        <LucideIcon name="arrow-forward" size={14} color={C.accent} />
                     </View>
                 </View>
             </Animated.View>
@@ -507,13 +507,13 @@ function EventCard({
 
                             {event.is_featured && (
                                 <View style={cardStyles.featuredBadge}>
-                                    <Ionicons name="star" size={9} color={C.accent} />
+                                    <LucideIcon name="star" size={9} color={C.accent} />
                                 </View>
                             )}
 
                             {isRegistered && (
                                 <View style={cardStyles.miniRegistered}>
-                                    <Ionicons name="checkmark-circle" size={11} color={C.success} />
+                                    <LucideIcon name="checkmark-circle" size={11} color={C.success} />
                                 </View>
                             )}
                         </View>
@@ -532,7 +532,7 @@ function EventCard({
 
                         {/* Lieu */}
                         <View style={cardStyles.metaRow}>
-                            <Ionicons name="location-outline" size={11} color={C.textMuted} />
+                            <LucideIcon name="location-outline" size={11} color={C.textMuted} />
                             <Text style={cardStyles.metaText} numberOfLines={1}>
                                 {event.location}
                             </Text>
@@ -563,7 +563,7 @@ function EventCard({
 
                             <View style={cardStyles.viewBtn}>
                                 <Text style={cardStyles.viewBtnText}>{t('Détails')}</Text>
-                                <Ionicons name="arrow-forward" size={11} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={11} color={C.accent} />
                             </View>
                         </View>
                     </View>
@@ -825,7 +825,7 @@ export default function EventsScreen({ navigation }: any) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
@@ -878,7 +878,7 @@ export default function EventsScreen({ navigation }: any) {
                     <AnimatedSection delay={150}>
                         <View style={styles.emptyGlobalCard}>
                             <View style={styles.emptyGlobalIcon}>
-                                <Ionicons name="calendar-outline" size={42} color={C.accent} />
+                                <LucideIcon name="calendar-outline" size={42} color={C.accent} />
                             </View>
                             <Text style={styles.emptyGlobalTitle}>
                                 {t('Aucun événement pour le moment')}
@@ -956,7 +956,7 @@ export default function EventsScreen({ navigation }: any) {
                                 {otherEvents.length === 0 ? (
                                     <View style={styles.emptyCatWrap}>
                                         <View style={styles.emptyCatIcon}>
-                                            <Ionicons name="search-outline" size={28} color={C.textMuted} />
+                                            <LucideIcon name="search-outline" size={28} color={C.textMuted} />
                                         </View>
                                         <Text style={styles.emptyCatTitle}>
                                             {t('Aucun événement')}
@@ -973,7 +973,7 @@ export default function EventsScreen({ navigation }: any) {
                                             <Text style={styles.emptyCatBtnText}>
                                                 {t('Voir tous les événements')}
                                             </Text>
-                                            <Ionicons name="arrow-forward" size={13} color={C.accent} />
+                                            <LucideIcon name="arrow-forward" size={13} color={C.accent} />
                                         </Pressable>
                                     </View>
                                 ) : (
@@ -1004,7 +1004,7 @@ function CategoryPill({
     label, icon, count, active, onPress,
 }: {
     label: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     count: number
     active: boolean
     onPress: () => void
@@ -1036,7 +1036,7 @@ function CategoryPill({
             accessibilityRole="button"
             hitSlop={6}>
             <Animated.View style={[styles.filterPill, pillStyle]}>
-                <Ionicons name={icon} size={14} color={iconColor} />
+                <LucideIcon name={icon} size={14} color={iconColor} />
                 <Text style={[styles.filterText, { color: textColor }]}>
                     {label}
                 </Text>

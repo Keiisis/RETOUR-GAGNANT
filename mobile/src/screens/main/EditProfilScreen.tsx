@@ -7,7 +7,7 @@ import {
     ActivityIndicator, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -78,7 +78,7 @@ interface FieldProps {
     value: string
     onChange: (v: string) => void
     placeholder: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     keyboardType?: 'default' | 'phone-pad' | 'email-address'
     required?: boolean
     helper?: string
@@ -111,12 +111,12 @@ const Field = React.memo(function Field({
                 <Text style={fieldStyles.label}>{label}</Text>
                 {required && <Text style={fieldStyles.required}>•</Text>}
                 {hasValue && !required && (
-                    <Ionicons name="checkmark-circle" size={13} color={C.success} style={{ marginLeft: 4 }} />
+                    <LucideIcon name="checkmark-circle" size={13} color={C.success} style={{ marginLeft: 4 }} />
                 )}
             </View>
 
             <Animated.View style={[fieldStyles.inputWrap, wrapStyle]}>
-                <Ionicons name={icon} size={18} color={iconColor} style={fieldStyles.icon} />
+                <LucideIcon name={icon} size={18} color={iconColor} style={fieldStyles.icon} />
                 <TextInput
                     style={fieldStyles.input}
                     value={value}
@@ -138,14 +138,14 @@ const Field = React.memo(function Field({
                         accessibilityRole="button"
                         accessibilityLabel="Effacer le champ"
                     >
-                        <Ionicons name="close-circle" size={18} color={C.textMuted} />
+                        <LucideIcon name="close-circle" size={18} color={C.textMuted} />
                     </Pressable>
                 )}
             </Animated.View>
 
             {helper && (
                 <Text style={fieldStyles.helper}>
-                    <Ionicons name="information-circle-outline" size={11} color={C.textMuted} /> {helper}
+                    <LucideIcon name="information-circle-outline" size={11} color={C.textMuted} /> {helper}
                 </Text>
             )}
         </View>
@@ -294,7 +294,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
@@ -371,7 +371,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                 <AnimatedSection delay={250}>
                     <View style={styles.emailCard}>
                         <View style={styles.emailIconWrap}>
-                            <Ionicons name="mail-outline" size={18} color={C.primary} />
+                            <LucideIcon name="mail-outline" size={18} color={C.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.emailLabel}>{t('Adresse email')}</Text>
@@ -380,7 +380,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                             </Text>
                         </View>
                         <View style={styles.lockedBadge}>
-                            <Ionicons name="lock-closed" size={11} color={C.textSec} />
+                            <LucideIcon name="lock-closed" size={11} color={C.textSec} />
                             <Text style={styles.lockedText}>{t('Verrouillé')}</Text>
                         </View>
                     </View>
@@ -391,7 +391,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                     <View style={styles.formCard}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="person-outline" size={15} color={C.primary} />
+                                <LucideIcon name="person-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Informations personnelles')}</Text>
                         </View>
@@ -444,7 +444,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                 <AnimatedSection delay={450}>
                     <View style={styles.tipCard}>
                         <View style={styles.tipIconWrap}>
-                            <Ionicons name="bulb-outline" size={16} color={C.accent} />
+                            <LucideIcon name="bulb-outline" size={16} color={C.accent} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.tipTitle}>{t('Bon à savoir')}</Text>
@@ -487,7 +487,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                         <ActivityIndicator color={C.primaryText} size="small" />
                     ) : (
                         <>
-                            <Ionicons
+                            <LucideIcon
                                 name="checkmark-circle"
                                 size={18}
                                 color={hasChanges ? C.accent : C.textMuted}
@@ -502,7 +502,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                                 {t('Enregistrer')}
                             </Text>
                             {hasChanges && (
-                                <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                             )}
                         </>
                     )}
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -618,11 +618,11 @@ const styles = StyleSheet.create({
     /* ── Completion bar ── */
     completionWrap: {
         width: '100%',
-        backgroundColor: 'rgba(0, 135, 81, 0.04)',
+        backgroundColor: C.surfaceSoft,
         borderRadius: radius.sm,
         padding: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.06)',
+        borderColor: C.border,
     },
     completionHeader: {
         flexDirection: 'row',
@@ -661,22 +661,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: 'rgba(138, 138, 138, 0.06)',
+        backgroundColor: C.surfaceAlt,
         borderRadius: radius.md,
         padding: spacing.md,
         borderWidth: 1,
-        borderColor: 'rgba(138, 138, 138, 0.15)',
+        borderColor: C.border,
         marginBottom: spacing.md,
     },
     emailIconWrap: {
         width: 36,
         height: 36,
         borderRadius: radius.sm,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     emailLabel: {
         ...typography.overline,
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 12,
-        backgroundColor: 'rgba(252, 209, 22, 0.06)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.md,
         padding: spacing.md,
         borderWidth: 1,
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
         ...shadows.card,
     },
     saveBtnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },
@@ -824,6 +824,6 @@ const styles = StyleSheet.create({
                 letterSpacing: 0.2,
     },
     saveBtnTextDisabled: {
-        color: '#F5F5F5',
+        color: C.surfaceAlt,
     },
 })

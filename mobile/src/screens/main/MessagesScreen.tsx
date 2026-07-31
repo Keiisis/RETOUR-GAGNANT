@@ -7,7 +7,7 @@ import {
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -86,10 +86,10 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
             >
                 <Animated.View style={[styles.suggestion, pressStyle]}>
                     <View style={styles.suggestionIconWrap}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={13} color={C.accent} />
+                        <LucideIcon name="chatbubble-ellipses-outline" size={13} color={C.accent} />
                     </View>
                     <Text style={styles.suggestionText} numberOfLines={2}>{text}</Text>
-                    <Ionicons name="arrow-forward" size={14} color={C.textMuted} />
+                    <LucideIcon name="arrow-forward" size={14} color={C.textMuted} />
                 </Animated.View>
             </Pressable>
         </Animated.View>
@@ -325,7 +325,7 @@ export default function MessagesScreen({ navigation }: any) {
                 <View style={[styles.row, isMe ? styles.rowMe : styles.rowThem]}>
                     {!isMe && (
                         <View style={styles.agentAvatar}>
-                            <Ionicons name="people" size={14} color={C.accent} />
+                            <LucideIcon name="people" size={14} color={C.accent} />
                         </View>
                     )}
                     <View style={[styles.bubble, isMe ? styles.myBubble : styles.theirBubble]}>
@@ -333,7 +333,7 @@ export default function MessagesScreen({ navigation }: any) {
                             <View style={styles.agentNameRow}>
                                 <Text style={styles.agentName}>{t('Équipe RGB')}</Text>
                                 <View style={styles.agentBadge}>
-                                    <Ionicons name="shield-checkmark" size={9} color={C.accent} />
+                                    <LucideIcon name="shield-checkmark" size={9} color={C.accent} />
                                 </View>
                             </View>
                         )}
@@ -346,8 +346,8 @@ export default function MessagesScreen({ navigation }: any) {
                             </Text>
                             {isMe && (
                                 isTemp
-                                    ? <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.55)" />
-                                    : <Ionicons name="checkmark-done" size={13} color={C.accentLight} />
+                                    ? <LucideIcon name="time-outline" size={12} color="rgba(255,255,255,0.55)" />
+                                    : <LucideIcon name="checkmark-done" size={13} color={C.accentLight} />
                             )}
                         </View>
                     </View>
@@ -380,7 +380,7 @@ export default function MessagesScreen({ navigation }: any) {
                         hitSlop={8}
                         style={styles.iconContainer}
                     >
-                        <Ionicons name="arrow-back" size={20} color={C.text} />
+                        <LucideIcon name="arrow-back" size={20} color={C.text} />
                     </Pressable>
                 ) : null}
 
@@ -408,7 +408,7 @@ export default function MessagesScreen({ navigation }: any) {
                         <View style={styles.emptyHero}>
                             <View style={styles.emptyHeroGlow} />
                             <View style={styles.emptyIconWrap}>
-                                <Ionicons name="chatbubbles" size={36} color={C.accent} />
+                                <LucideIcon name="chatbubbles" size={36} color={C.accent} />
                             </View>
                         </View>
 
@@ -456,7 +456,7 @@ export default function MessagesScreen({ navigation }: any) {
             {/* BARRE D'ENVOI */}
             <View style={[styles.inputBar, { paddingBottom: insets.bottom + 10 }]}>
                 <View style={[styles.inputWrap, { borderColor: inputBorderColor }]}>
-                    <Ionicons
+                    <LucideIcon
                         name="chatbubble-outline"
                         size={18}
                         color={inputFocused ? C.accent : C.placeholder}
@@ -491,7 +491,7 @@ export default function MessagesScreen({ navigation }: any) {
                     {sending ? (
                         <ActivityIndicator color={C.primaryText} size="small" />
                     ) : (
-                        <Ionicons name="arrow-up" size={20} color={C.primaryText} />
+                        <LucideIcon name="arrow-up" size={20} color={C.primaryText} />
                     )}
                 </TouchableOpacity>
             </View>

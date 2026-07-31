@@ -7,7 +7,7 @@ import {
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -83,7 +83,7 @@ interface TrackingEvent {
 
 const SHIPPING_CONFIG: Record<string, {
     label: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     color: string
     bgRgba: string
     borderRgba: string
@@ -104,7 +104,7 @@ const STAGE_LABELS: Record<string, string> = {
     in_transit: 'Transit',
     delivered: 'Livré',
 }
-const STAGE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+const STAGE_ICONS: Record<string, string> = {
     preparing: 'cube',
     shipped: 'paper-plane',
     in_transit: 'car',
@@ -175,9 +175,9 @@ function ShippingStepper({ currentIdx, statusColor }: { currentIdx: number; stat
                                 ]}
                             >
                                 {isDone ? (
-                                    <Ionicons name="checkmark" size={12} color={C.primaryText} />
+                                    <LucideIcon name="checkmark" size={12} color={C.primaryText} />
                                 ) : (
-                                    <Ionicons
+                                    <LucideIcon
                                         name={STAGE_ICONS[stage]}
                                         size={11}
                                         color={isActive ? statusColor : C.textMuted}
@@ -294,7 +294,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         hitSlop={6}
                         accessibilityLabel={t('Retour')}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="arrow-back" size={22} color={C.primary} />
+                            <LucideIcon name="arrow-back" size={22} color={C.primary} />
                         </View>
                     </Pressable>
                 </View>
@@ -319,14 +319,14 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         hitSlop={6}
                         accessibilityLabel={t('Retour')}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="arrow-back" size={22} color={C.primary} />
+                            <LucideIcon name="arrow-back" size={22} color={C.primary} />
                         </View>
                     </Pressable>
                 </View>
                 <View style={styles.errorState}>
                     <View style={styles.errorHero}>
                         <View style={styles.errorIconWrap}>
-                            <Ionicons name="alert-circle-outline" size={36} color={C.error} />
+                            <LucideIcon name="alert-circle-outline" size={36} color={C.error} />
                         </View>
                     </View>
                     <Text style={styles.errorTitle}>{t('Commande introuvable')}</Text>
@@ -337,7 +337,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         accessibilityRole="button"
                         hitSlop={6}>
                         <Text style={styles.errorBtnText}>{t('Retour')}</Text>
-                        <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                        <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -359,13 +359,13 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <View style={[styles.navCounter, { backgroundColor: cfg.bgRgba, borderColor: cfg.borderRgba }]}>
                     <Animated.View style={truckPulseStyle}>
-                        <Ionicons name={cfg.icon} size={12} color={cfg.color} />
+                        <LucideIcon name={cfg.icon} size={12} color={cfg.color} />
                     </Animated.View>
                     <Text style={[styles.navCounterText, { color: cfg.color }]}>
                         {t(cfg.label)}
@@ -391,7 +391,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                 <AnimatedSection delay={100}>
                     <View style={[styles.statusCard, { borderColor: cfg.borderRgba }]}>
                         <View style={[styles.statusIconWrap, { backgroundColor: cfg.bgRgba, borderColor: cfg.borderRgba }]}>
-                            <Ionicons name={cfg.icon} size={28} color={cfg.color} />
+                            <LucideIcon name={cfg.icon} size={28} color={cfg.color} />
                         </View>
 
                         <Text style={[styles.statusBadge, { color: cfg.color }]}>
@@ -430,7 +430,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             <View style={styles.trackingGlow} />
 
                             <View style={styles.trackingBadge}>
-                                <Ionicons name="paper-plane" size={11} color={C.accent} />
+                                <LucideIcon name="paper-plane" size={11} color={C.accent} />
                                 <Text style={styles.trackingBadgeText}>{t('SUIVI COLIS')}</Text>
                             </View>
 
@@ -439,7 +439,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
 
                             {order.tracking_carrier && (
                                 <View style={styles.trackingCarrierRow}>
-                                    <Ionicons name="business-outline" size={12} color={C.accentLight} />
+                                    <LucideIcon name="business-outline" size={12} color={C.accentLight} />
                                     <Text style={styles.trackingCarrierText}>{order.tracking_carrier}</Text>
                                 </View>
                             )}
@@ -448,14 +448,14 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                 <TouchableOpacity onPress={copyTracking} style={styles.trackingBtn} activeOpacity={0.85}
                                     accessibilityRole="button"
                                     hitSlop={6}>
-                                    <Ionicons name="copy-outline" size={14} color={C.primary} />
+                                    <LucideIcon name="copy-outline" size={14} color={C.primary} />
                                     <Text style={styles.trackingBtnText}>{t('Copier')}</Text>
                                 </TouchableOpacity>
                                 {order.tracking_url ? (
                                     <TouchableOpacity onPress={openCarrierUrl} style={styles.trackingBtnPrimary} activeOpacity={0.85}
                                         accessibilityRole="button"
                                         hitSlop={6}>
-                                        <Ionicons name="open-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="open-outline" size={14} color={C.accent} />
                                         <Text style={styles.trackingBtnPrimaryText}>{t('Suivre en ligne')}</Text>
                                     </TouchableOpacity>
                                 ) : null}
@@ -468,7 +468,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                 <AnimatedSection delay={300}>
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionIcon}>
-                            <Ionicons name="receipt" size={16} color={C.accent} />
+                            <LucideIcon name="receipt" size={16} color={C.accent} />
                         </View>
                         <Text style={styles.sectionTitle}>{t('Articles commandés')}</Text>
                         <View style={styles.sectionCount}>
@@ -510,7 +510,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             </View>
                             {order.transaction_id ? (
                                 <View style={styles.txRefRow}>
-                                    <Ionicons name="finger-print" size={11} color={C.textMuted} />
+                                    <LucideIcon name="finger-print" size={11} color={C.textMuted} />
                                     <Text style={styles.txRef}>
                                         {t('Réf')} : {order.transaction_id.slice(0, 18)}…
                                     </Text>
@@ -525,7 +525,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     <AnimatedSection delay={400}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionIcon}>
-                                <Ionicons name="location" size={16} color={C.accent} />
+                                <LucideIcon name="location" size={16} color={C.accent} />
                             </View>
                             <Text style={styles.sectionTitle}>{t('Adresse de livraison')}</Text>
                         </View>
@@ -534,7 +534,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             {/* Destinataire */}
                             <View style={styles.shipBlock}>
                                 <View style={styles.shipIconWrap}>
-                                    <Ionicons name="person" size={14} color={C.accent} />
+                                    <LucideIcon name="person" size={14} color={C.accent} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.shipLabel}>{t('DESTINATAIRE')}</Text>
@@ -550,13 +550,13 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                 hitSlop={6}>
                                 <View style={styles.shipBlock}>
                                     <View style={styles.shipIconWrap}>
-                                        <Ionicons name="call" size={14} color={C.accent} />
+                                        <LucideIcon name="call" size={14} color={C.accent} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.shipLabel}>{t('TÉLÉPHONE')}</Text>
                                         <Text style={styles.shipValue}>{order.customer_phone}</Text>
                                     </View>
-                                    <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
+                                    <LucideIcon name="chevron-forward" size={14} color={C.textMuted} />
                                 </View>
                             </TouchableOpacity>
 
@@ -565,7 +565,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             {/* Adresse */}
                             <View style={styles.shipBlock}>
                                 <View style={styles.shipIconWrap}>
-                                    <Ionicons name="map" size={14} color={C.accent} />
+                                    <LucideIcon name="map" size={14} color={C.accent} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.shipLabel}>{t('ADRESSE')}</Text>
@@ -580,7 +580,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                 <>
                                     <View style={styles.shipDivider} />
                                     <View style={styles.shipNoteBox}>
-                                        <Ionicons name="document-text-outline" size={12} color={C.textSec} />
+                                        <LucideIcon name="document-text-outline" size={12} color={C.textSec} />
                                         <Text style={styles.shipNote}>{order.shipping_notes}</Text>
                                     </View>
                                 </>
@@ -594,7 +594,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     <AnimatedSection delay={500}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionIcon}>
-                                <Ionicons name="time" size={16} color={C.accent} />
+                                <LucideIcon name="time" size={16} color={C.accent} />
                             </View>
                             <Text style={styles.sectionTitle}>{t('Historique du colis')}</Text>
                             <View style={styles.sectionCount}>
@@ -622,7 +622,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                                     borderWidth: 2,
                                                 },
                                             ]}>
-                                                <Ionicons
+                                                <LucideIcon
                                                     name={evCfg.icon}
                                                     size={11}
                                                     color={isLatest ? C.primaryText : evCfg.color}
@@ -648,7 +648,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                             ) : null}
                                             {ev.location ? (
                                                 <View style={styles.evLocationRow}>
-                                                    <Ionicons name="location-outline" size={11} color={C.textMuted} />
+                                                    <LucideIcon name="location-outline" size={11} color={C.textMuted} />
                                                     <Text style={styles.evLocation}>{ev.location}</Text>
                                                 </View>
                                             ) : null}

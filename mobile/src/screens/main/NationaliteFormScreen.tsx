@@ -7,7 +7,7 @@ import {
     Switch, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -103,7 +103,7 @@ function PremiumStepper({ current, total }: { current: number; total: number }) 
         <View style={styles.stepperWrap}>
             <View style={styles.stepperHeader}>
                 <View style={styles.stepperBadge}>
-                    <Ionicons name={STEPS_META[current].icon} size={11} color={C.accent} />
+                    <LucideIcon name={STEPS_META[current].icon} size={11} color={C.accent} />
                     <Text style={styles.stepperBadgeText}>
                         {`CHAPITRE ${current + 1} / ${total}`}
                     </Text>
@@ -129,7 +129,7 @@ function PremiumStepper({ current, total }: { current: number; total: number }) 
                             ]}
                         >
                             {isDone ? (
-                                <Ionicons name="checkmark" size={10} color={C.primaryText} />
+                                <LucideIcon name="checkmark" size={10} color={C.primaryText} />
                             ) : (
                                 <Text style={[
                                     styles.stepDotText,
@@ -171,7 +171,7 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
             )}
             <Animated.View style={[styles.fieldContainer, textArea && styles.fieldContainerTextArea, rStyle]}>
                 {icon && !textArea && (
-                    <Ionicons
+                    <LucideIcon
                         name={icon}
                         size={18}
                         color={focused ? C.accent : C.placeholder}
@@ -204,14 +204,14 @@ function SwitchRow({ label, value, onValueChange, icon, highlight }: any) {
         <View style={[styles.switchRow, highlight && styles.switchRowHighlight]}>
             {icon && (
                 <View style={styles.switchIconWrap}>
-                    <Ionicons name={icon} size={16} color={C.accent} />
+                    <LucideIcon name={icon} size={16} color={C.accent} />
                 </View>
             )}
             <Text style={[styles.switchLabel, { flex: 1 }]}>{label}</Text>
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: '#E4E4E4', true: C.accent }}
+                trackColor={{ false: C.borderStrong, true: C.accent }}
                 thumbColor={C.surfaceSolid}
                 ios_backgroundColor="#E4E4E4"
             />
@@ -485,7 +485,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <View style={styles.heroCard}>
                             <View style={styles.heroIconWrap}>
                                 <View style={styles.heroIconGlow} />
-                                <Ionicons name="shield-checkmark" size={32} color={C.accent} />
+                                <LucideIcon name="shield-checkmark" size={32} color={C.accent} />
                             </View>
                             <Text style={styles.heroBadge}>{t('CADRE JURIDIQUE OFFICIEL')}</Text>
                             <Text style={styles.heroTitle}>{t('Loi N° 2024-31')}</Text>
@@ -496,7 +496,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.quoteBox}>
                                 <View style={styles.quoteBar} />
                                 <View style={{ flex: 1 }}>
-                                    <Ionicons name="library" size={16} color={C.accent} style={{ marginBottom: 8 }} />
+                                    <LucideIcon name="library" size={16} color={C.accent} style={{ marginBottom: 8 }} />
                                     <Text style={styles.quoteText}>
                                         {t('"La reconnaissance est un acte de mémoire et de justice pour les descendants des Africains déportés lors de la traite négrière."')}
                                     </Text>
@@ -522,7 +522,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <Ionicons name="git-branch" size={20} color={C.accent} />
+                                <LucideIcon name="git-branch" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 02')}</Text>
@@ -599,7 +599,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <Ionicons name="person" size={20} color={C.accent} />
+                                <LucideIcon name="person" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 03')}</Text>
@@ -638,7 +638,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <Ionicons name="people" size={20} color={C.accent} />
+                                <LucideIcon name="people" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 04')}</Text>
@@ -662,7 +662,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View key={p.prefix} style={styles.subCard}>
                                 <View style={styles.subCardHeader}>
                                     <View style={styles.subCardNumber}>
-                                        <Ionicons name={p.icon} size={14} color={C.accent} />
+                                        <LucideIcon name={p.icon} size={14} color={C.accent} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.subCardTitle}>{p.label}</Text>
@@ -699,7 +699,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <Ionicons name="document-attach" size={20} color={C.accent} />
+                                <LucideIcon name="document-attach" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 05')}</Text>
@@ -711,7 +711,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Compteur global */}
                         <View style={styles.docCounter}>
                             <View style={styles.docCounterIcon}>
-                                <Ionicons name="cloud-upload-outline" size={18} color={C.accent} />
+                                <LucideIcon name="cloud-upload-outline" size={18} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.docCounterLabel}>{t('DOCUMENTS TÉLÉVERSÉS')}</Text>
@@ -732,7 +732,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                     <View style={[styles.docSlot, hasFiles && styles.docSlotActive]}>
                                         <View style={styles.docSlotHeader}>
                                             <View style={[styles.docSlotIcon, hasFiles && styles.docSlotIconActive]}>
-                                                <Ionicons
+                                                <LucideIcon
                                                     name={hasFiles ? 'checkmark-circle' : 'document-outline'}
                                                     size={18}
                                                     color={hasFiles ? C.success : C.textSec}
@@ -763,7 +763,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                 accessibilityRole="button"
                                                 hitSlop={6}
                                             >
-                                                <Ionicons
+                                                <LucideIcon
                                                     name={hasFiles ? 'add' : 'cloud-upload-outline'}
                                                     size={14}
                                                     color={hasFiles ? C.primary : C.primaryText}
@@ -781,13 +781,13 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                     return (
                                                         <View key={idx} style={styles.uploadedItem}>
                                                             <View style={styles.uploadedItemIcon}>
-                                                                <Ionicons name="document-text" size={14} color={C.accent} />
+                                                                <LucideIcon name="document-text" size={14} color={C.accent} />
                                                             </View>
                                                             <Text style={styles.uploadedItemName} numberOfLines={1}>{f.name}</Text>
                                                             <TouchableOpacity onPress={() => removeFile(globalIndex)} hitSlop={10}
                                                                 accessibilityRole="button"
                                                                 accessibilityLabel={t('Effacer')}>
-                                                                <Ionicons name="close-circle" size={18} color={C.error} />
+                                                                <LucideIcon name="close-circle" size={18} color={C.error} />
                                                             </TouchableOpacity>
                                                         </View>
                                                     )
@@ -807,7 +807,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <Ionicons name="ribbon" size={20} color={C.accent} />
+                                <LucideIcon name="ribbon" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 06')}</Text>
@@ -821,7 +821,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Demandeur */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <Ionicons name="person-circle" size={16} color={C.accent} />
+                                <LucideIcon name="person-circle" size={16} color={C.accent} />
                                 <Text style={styles.recapHeaderText}>{t('LE DEMANDEUR')}</Text>
                             </View>
                             <InfoRow label={t('Nom complet')} value={`${formData.prenom} ${formData.nom}`} />
@@ -833,7 +833,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Racines */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <Ionicons name="git-branch" size={16} color={C.accent} />
+                                <LucideIcon name="git-branch" size={16} color={C.accent} />
                                 <Text style={styles.recapHeaderText}>{t('LES RACINES')}</Text>
                             </View>
                             <InfoRow label={t('1er Ancêtre')} value={`${formData.ancestor1_prenom} ${formData.ancestor1_nom}`.trim()} />
@@ -846,7 +846,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Preuves */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <Ionicons name="document-attach" size={16} color={C.accent} />
+                                <LucideIcon name="document-attach" size={16} color={C.accent} />
                                 <Text style={styles.recapHeaderText}>{t('LES PREUVES')}</Text>
                             </View>
                             <InfoRow label={t('Documents')} value={t('{n} pièce(s) jointe(s)', { n: rawDocs.length })} last />
@@ -856,7 +856,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <View style={styles.paymentCard}>
                             <View style={styles.paymentGlow} />
                             <View style={styles.paymentBadge}>
-                                <Ionicons name="lock-closed" size={11} color={C.accent} />
+                                <LucideIcon name="lock-closed" size={11} color={C.accent} />
                                 <Text style={styles.paymentBadgeText}>{t('PAIEMENT SÉCURISÉ')}</Text>
                             </View>
                             <Text style={styles.paymentLabel}>{t('Frais de dossier')}</Text>
@@ -866,15 +866,15 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.paymentDivider} />
                             <View style={styles.paymentFeatures}>
                                 <View style={styles.paymentFeature}>
-                                    <Ionicons name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
                                     <Text style={styles.paymentFeatureText}>{t('Suivi en temps réel')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <Ionicons name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
                                     <Text style={styles.paymentFeatureText}>{t('Email de confirmation')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <Ionicons name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
                                     <Text style={styles.paymentFeatureText}>{t('Accompagnement dédié')}</Text>
                                 </View>
                             </View>
@@ -890,10 +890,10 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.successSeal}>
                                 <View style={styles.successSealGlow} />
                                 <View style={styles.successSealInner}>
-                                    <Ionicons name="checkmark" size={42} color={C.primaryText} />
+                                    <LucideIcon name="checkmark" size={42} color={C.primaryText} />
                                 </View>
                                 <View style={styles.successSealBadge}>
-                                    <Ionicons name="ribbon" size={12} color={C.accent} />
+                                    <LucideIcon name="ribbon" size={12} color={C.accent} />
                                 </View>
                             </View>
 
@@ -906,7 +906,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             {savedRef && (
                                 <View style={styles.refBox}>
                                     <View style={styles.refLabel}>
-                                        <Ionicons name="finger-print" size={12} color={C.accent} />
+                                        <LucideIcon name="finger-print" size={12} color={C.accent} />
                                         <Text style={styles.refLabelText}>{t('RÉFÉRENCE OFFICIELLE')}</Text>
                                     </View>
                                     <Text style={styles.refValue}>{savedRef}</Text>
@@ -921,7 +921,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.successBtnText}>{t("Retourner à l'accueil")}</Text>
-                                <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -949,12 +949,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     accessibilityLabel={t('Retour')}
                 >
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <Ionicons name="shield-checkmark" size={12} color={C.accent} />
+                    <LucideIcon name="shield-checkmark" size={12} color={C.accent} />
                     <Text style={styles.navCounterText}>{t('Nationalité VIP')}</Text>
                 </View>
             </View>
@@ -999,7 +999,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                         ? t('Payer {amount} {currency}', { amount: formAmount.toLocaleString('fr-FR'), currency: formCurrency })
                                         : t('Poursuivre')}
                                 </Text>
-                                <Ionicons
+                                <LucideIcon
                                     name={currentStep === 5 ? 'lock-closed' : 'arrow-forward'}
                                     size={18}
                                     color={C.accent}
@@ -1696,7 +1696,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     primaryBtnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
         borderColor: 'transparent',

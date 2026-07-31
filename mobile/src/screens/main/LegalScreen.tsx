@@ -6,7 +6,7 @@ import {
     LayoutAnimation, UIManager,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -147,7 +147,7 @@ function ClauseItem({
                     </Text>
 
                     <Animated.View style={[clauseStyles.chevron, chevronStyle]}>
-                        <Ionicons
+                        <LucideIcon
                             name="chevron-down"
                             size={16}
                             color={isOpen ? C.accent : C.textMuted}
@@ -177,7 +177,7 @@ const clauseStyles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     itemActive: {
-        backgroundColor: 'rgba(252, 209, 22, 0.04)',
+        backgroundColor: C.accentSoft,
     },
     header: {
         flexDirection: 'row',
@@ -245,7 +245,7 @@ function TocPill({
     label, icon, active, onPress,
 }: {
     label: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     active: boolean
     onPress: () => void
 }) {
@@ -265,7 +265,7 @@ function TocPill({
             accessibilityRole="button"
             hitSlop={6}>
             <Animated.View style={[styles.tocPill, pillStyle]}>
-                <Ionicons name={icon} size={15} color={active ? C.accent : C.textSec} />
+                <LucideIcon name={icon} size={15} color={active ? C.accent : C.textSec} />
                 <Text style={[
                     styles.tocText,
                     { color: active ? C.primaryText : C.textSec },
@@ -393,12 +393,12 @@ export default function LegalScreen({ navigation }: any) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <Ionicons name="shield-checkmark" size={12} color={C.accent} />
+                    <LucideIcon name="shield-checkmark" size={12} color={C.accent} />
                     <Text style={styles.navCounterText}>
                         {t('Officiel')}
                     </Text>
@@ -421,7 +421,7 @@ export default function LegalScreen({ navigation }: any) {
                 <AnimatedSection delay={100}>
                     <View style={styles.documentBadge}>
                         <View style={styles.docBadgeIcon}>
-                            <Ionicons name="document-text-outline" size={20} color={C.accent} />
+                            <LucideIcon name="document-text-outline" size={20} color={C.accent} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.docBadgeTitle}>{t('Document officiel')}</Text>
@@ -430,7 +430,7 @@ export default function LegalScreen({ navigation }: any) {
                             </Text>
                         </View>
                         <View style={styles.docCheckmark}>
-                            <Ionicons name="checkmark" size={14} color={C.success} />
+                            <LucideIcon name="checkmark" size={14} color={C.success} />
                         </View>
                     </View>
                 </AnimatedSection>
@@ -462,7 +462,7 @@ export default function LegalScreen({ navigation }: any) {
                 <AnimatedSection delay={300}>
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionIconWrap}>
-                            <Ionicons name={currentSection.icon} size={18} color={C.accent} />
+                            <LucideIcon name={currentSection.icon} size={18} color={C.accent} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.sectionBadge}>{currentSection.badge}</Text>
@@ -502,7 +502,7 @@ export default function LegalScreen({ navigation }: any) {
                         <View style={styles.contactGlow} />
 
                         <View style={styles.contactBadge}>
-                            <Ionicons name="shield-checkmark" size={11} color={C.accent} />
+                            <LucideIcon name="shield-checkmark" size={11} color={C.accent} />
                             <Text style={styles.contactBadgeText}>{t('VOS DROITS')}</Text>
                         </View>
 
@@ -520,11 +520,11 @@ export default function LegalScreen({ navigation }: any) {
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <Ionicons name="mail" size={16} color={C.primary} style={{ marginRight: 8 }} />
+                            <LucideIcon name="mail" size={16} color={C.primary} style={{ marginRight: 8 }} />
                             <Text style={styles.contactBtnText} numberOfLines={1}>
                                 contact@retourgagnantbenin.bj
                             </Text>
-                            <Ionicons name="arrow-forward" size={14} color={C.primary} style={{ marginLeft: 8 }} />
+                            <LucideIcon name="arrow-forward" size={14} color={C.primary} style={{ marginLeft: 8 }} />
                         </TouchableOpacity>
                     </View>
                 </AnimatedSection>
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: radius.md,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: 'rgba(0, 135, 81, 0.12)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: radius.md,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.18)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,

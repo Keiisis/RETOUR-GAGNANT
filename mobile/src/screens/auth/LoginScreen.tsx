@@ -4,7 +4,7 @@ import {
     View, Text, TextInput, StyleSheet, KeyboardAvoidingView,
     Platform, ScrollView, ActivityIndicator, Pressable, TouchableOpacity, Dimensions, Image
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -148,7 +148,7 @@ export default function LoginScreen({ navigation }: any) {
                             <TouchableOpacity activeOpacity={0.5} onPress={() => setShowPassword(p => !p)} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} style={styles.eyeBtn}
                                 accessibilityRole="button"
                                 accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
-                                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={focused === 'password' ? C.primary : C.placeholder} />
+                                <LucideIcon name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={focused === 'password' ? C.primary : C.placeholder} />
                             </TouchableOpacity>
                         }
                     />
@@ -198,7 +198,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
 
     return (
         <Animated.View style={[styles.fieldContainer, rStyle]}>
-            <Ionicons name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
+            <LucideIcon name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
             <TextInput
                 style={styles.fieldInput}
                 placeholder={placeholder}
@@ -238,7 +238,7 @@ function InteractiveButton({ title, onPress, disabled, loading }: any) {
             ) : (
                 <>
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

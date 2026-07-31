@@ -7,6 +7,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -216,7 +217,7 @@ function FaqItem({
             >
                 <Animated.View style={[faqStyles.question, pressStyle]}>
                     <Animated.View style={[faqStyles.qIconWrap, iconBgStyle]}>
-                        <Ionicons
+                        <LucideIcon
                             name="help-circle-outline"
                             size={16}
                             color={isOpen ? C.accent : C.primary}
@@ -228,7 +229,7 @@ function FaqItem({
                     </Text>
 
                     <Animated.View style={[faqStyles.chevron, chevronStyle]}>
-                        <Ionicons
+                        <LucideIcon
                             name="chevron-down"
                             size={16}
                             color={isOpen ? C.accent : C.textMuted}
@@ -258,7 +259,7 @@ const faqStyles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     itemActive: {
-        backgroundColor: 'rgba(252, 209, 22, 0.04)',
+        backgroundColor: C.accentSoft,
     },
     question: {
         flexDirection: 'row',
@@ -322,7 +323,7 @@ function QuickTopicPill({
     label, icon, active, onPress, count,
 }: {
     label: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     active: boolean
     onPress: () => void
     count: number
@@ -352,7 +353,7 @@ function QuickTopicPill({
             accessibilityRole="button"
             hitSlop={6}>
             <Animated.View style={[styles.topicPill, pillStyle]}>
-                <Ionicons name={icon} size={13} color={iconColor} />
+                <LucideIcon name={icon} size={13} color={iconColor} />
                 <Text style={[styles.topicText, { color: textColor }]}>
                     {label}
                 </Text>
@@ -442,13 +443,13 @@ export default function FAQScreen() {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 {/* Badge total questions */}
                 <View style={styles.navCounter}>
-                    <Ionicons name="help-circle" size={12} color={C.accent} />
+                    <LucideIcon name="help-circle" size={12} color={C.accent} />
                     <Text style={styles.navCounterText}>
                         {totalQuestions} {t('questions')}
                     </Text>
@@ -471,7 +472,7 @@ export default function FAQScreen() {
                 {/* ═══ BARRE DE RECHERCHE PREMIUM ═══ */}
                 <AnimatedSection delay={100}>
                     <Animated.View style={[styles.searchBar, searchBarStyle]}>
-                        <Ionicons
+                        <LucideIcon
                             name="search"
                             size={18}
                             color={searchFocused ? C.accent : C.placeholder}
@@ -496,7 +497,7 @@ export default function FAQScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={t('Effacer')}
                             >
-                                <Ionicons name="close-circle" size={18} color={C.textMuted} />
+                                <LucideIcon name="close-circle" size={18} color={C.textMuted} />
                             </Pressable>
                         )}
                     </Animated.View>
@@ -531,7 +532,7 @@ export default function FAQScreen() {
                 {(search.length > 0 || activeTopic !== 'Tous') && (
                     <AnimatedSection delay={250}>
                         <View style={styles.resultsCount}>
-                            <Ionicons name="filter" size={12} color={C.accentDark} />
+                            <LucideIcon name="filter" size={12} color={C.accentDark} />
                             <Text style={styles.resultsCountText}>
                                 {filteredCount} {filteredCount > 1 ? t('résultats') : t('résultat')}
                                 {search.length > 0 && (
@@ -549,7 +550,7 @@ export default function FAQScreen() {
                     <AnimatedSection delay={300}>
                         <View style={styles.noResult}>
                             <View style={styles.noResultIconWrap}>
-                                <Ionicons name="search" size={32} color={C.accent} />
+                                <LucideIcon name="search" size={32} color={C.accent} />
                             </View>
                             <Text style={styles.noResultTitle}>{t('Aucun résultat')}</Text>
                             <Text style={styles.noResultText}>
@@ -563,7 +564,7 @@ export default function FAQScreen() {
                                         accessibilityRole="button"
                                         hitSlop={6}
                                     >
-                                        <Ionicons name="close-circle-outline" size={14} color={C.accentDark} />
+                                        <LucideIcon name="close-circle-outline" size={14} color={C.accentDark} />
                                         <Text style={styles.noResultBtnText}>
                                             {t('Effacer la recherche')}
                                         </Text>
@@ -576,7 +577,7 @@ export default function FAQScreen() {
                                         accessibilityRole="button"
                                         hitSlop={6}
                                     >
-                                        <Ionicons name="apps-outline" size={14} color={C.accentDark} />
+                                        <LucideIcon name="apps-outline" size={14} color={C.accentDark} />
                                         <Text style={styles.noResultBtnText}>
                                             {t('Voir tout')}
                                         </Text>
@@ -591,7 +592,7 @@ export default function FAQScreen() {
                             {/* En-tête catégorie */}
                             <View style={styles.catHeader}>
                                 <View style={styles.catIconWrap}>
-                                    <Ionicons name={cat.icon} size={16} color={C.accent} />
+                                    <LucideIcon name={cat.icon} size={16} color={C.accent} />
                                 </View>
                                 <Text style={styles.catTitle}>{t(cat.category)}</Text>
                                 <View style={styles.catCount}>
@@ -635,7 +636,7 @@ export default function FAQScreen() {
                             <View style={styles.contactGlow} />
 
                             <View style={styles.contactIconWrap}>
-                                <Ionicons name="chatbubble-ellipses" size={22} color={C.accent} />
+                                <LucideIcon name="chatbubble-ellipses" size={22} color={C.accent} />
                             </View>
 
                             <View style={{ flex: 1 }}>
@@ -649,7 +650,7 @@ export default function FAQScreen() {
                             </View>
 
                             <View style={styles.contactArrow}>
-                                <Ionicons name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
                             </View>
                         </View>
                     </Pressable>
@@ -667,7 +668,7 @@ export default function FAQScreen() {
                             accessibilityRole="button"
                             hitSlop={6}>
                             <View style={styles.channelIconWrap}>
-                                <Ionicons name="mail-outline" size={18} color={C.primary} />
+                                <LucideIcon name="mail-outline" size={18} color={C.primary} />
                             </View>
                             <Text style={styles.channelLabel}>{t('Email')}</Text>
                             <Text style={styles.channelValue} numberOfLines={1}>
@@ -691,7 +692,7 @@ export default function FAQScreen() {
                             accessibilityRole="button"
                             hitSlop={6}>
                             <View style={styles.channelIconWrap}>
-                                <Ionicons name="call-outline" size={18} color={C.info} />
+                                <LucideIcon name="call-outline" size={18} color={C.info} />
                             </View>
                             <Text style={styles.channelLabel}>{t('Téléphone')}</Text>
                             <Text style={styles.channelValue}>
@@ -728,7 +729,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
         height: 16,
         paddingHorizontal: spacing.xs,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(0, 135, 81, 0.08)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -845,7 +846,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.08)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.xs,
         paddingHorizontal: 12,
         paddingVertical: spacing.sm,
@@ -880,7 +881,7 @@ const styles = StyleSheet.create({
         width: 76,
         height: 76,
         borderRadius: radius.xl,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.sm,
@@ -908,7 +909,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         borderRadius: radius.pill,
@@ -934,7 +935,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -951,9 +952,9 @@ const styles = StyleSheet.create({
         height: 18,
         paddingHorizontal: spacing.xs,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -989,7 +990,7 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: radius.lg,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: C.accentSoft,
         borderWidth: 1.2,
         borderColor: C.border,
         alignItems: 'center',
@@ -1015,7 +1016,7 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: C.accentSoft,
         borderWidth: 1,
         borderColor: C.border,
         alignItems: 'center',
@@ -1059,12 +1060,12 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: radius.sm,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.sm,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     channelLabel: {
         ...typography.button, fontSize: 12,

@@ -7,7 +7,7 @@ import {
     Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import SignatureScreenLib, { SignatureViewRef } from 'react-native-signature-canvas'
 import Animated, {
     useSharedValue,
@@ -235,7 +235,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -264,7 +264,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     <Animated.View style={[styles.savedCard, styleCard1]}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="checkmark-circle" size={16} color={C.success} />
+                                <LucideIcon name="checkmark-circle" size={16} color={C.success} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Signature enregistrée')}</Text>
                         </View>
@@ -282,7 +282,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                         </View>
 
                         <View style={styles.savedFooter}>
-                            <Ionicons name="time-outline" size={12} color={C.textMuted} />
+                            <LucideIcon name="time-outline" size={12} color={C.textMuted} />
                             <Text style={styles.savedDate}>
                                 {t('Mise à jour')} : {new Date(savedSig.updated_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </Text>
@@ -293,7 +293,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     <Animated.View style={[styles.prefCard, styleCard2]}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="settings-outline" size={15} color={C.primary} />
+                                <LucideIcon name="settings-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Comportement par défaut')}</Text>
                         </View>
@@ -321,7 +321,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                         <Pressable onPress={handleDelete} style={styles.deleteLink}
                             accessibilityRole="button"
                             hitSlop={6}>
-                            <Ionicons name="trash-outline" size={15} color={C.error} />
+                            <LucideIcon name="trash-outline" size={15} color={C.error} />
                             <Text style={styles.deleteText}>{t('Supprimer la signature')}</Text>
                         </Pressable>
                     </Animated.View>
@@ -340,7 +340,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     {/* CANVAS */}
                     <Animated.View style={[styles.canvasWrap, styleCard1]}>
                         <View style={styles.canvasGuideTop}>
-                            <Ionicons name="create-outline" size={14} color={C.accent} />
+                            <LucideIcon name="create-outline" size={14} color={C.accent} />
                             <Text style={styles.canvasGuideText}>{t('Zone de signature')}</Text>
                         </View>
 
@@ -371,7 +371,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <Ionicons name="refresh-outline" size={16} color={C.textSec} />
+                            <LucideIcon name="refresh-outline" size={16} color={C.textSec} />
                             <Text style={styles.btnSecondaryText}>{t('Effacer')}</Text>
                         </TouchableOpacity>
 
@@ -400,7 +400,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             ) : (
                                 <>
                                     <Text style={styles.btnText}>{t('Enregistrer')}</Text>
-                                    <Ionicons name="checkmark" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="checkmark" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -459,7 +459,7 @@ function PrefOption({
                     <Text style={styles.prefDescription}>{description}</Text>
                 </View>
                 {active && (
-                    <Ionicons name="checkmark-circle" size={18} color={C.accent} />
+                    <LucideIcon name="checkmark-circle" size={18} color={C.accent} />
                 )}
             </Animated.View>
         </Pressable>
@@ -477,7 +477,7 @@ function InteractiveButton({
     onPress: () => void
     disabled?: boolean
     loading?: boolean
-    icon?: keyof typeof Ionicons.glyphMap
+    icon?: string
 }) {
     return (
         <TouchableOpacity
@@ -492,9 +492,9 @@ function InteractiveButton({
                 <ActivityIndicator color={C.primaryText} size="small" />
             ) : (
                 <>
-                    {icon && <Ionicons name={icon} size={18} color={C.accent} style={{ marginRight: 8 }} />}
+                    {icon && <LucideIcon name={icon} size={18} color={C.accent} style={{ marginRight: 8 }} />}
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: 'rgba(0, 135, 81, 0.12)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.gutter,
     },
     btnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
                 letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F5F5F5',
+        color: C.surfaceAlt,
     },
     btnSecondary: {
         flexDirection: 'row',
@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: C.border,
-        backgroundColor: 'rgba(252, 209, 22, 0.04)',
+        backgroundColor: C.accentSoft,
     },
     canvasGuideText: {
         ...typography.overline,

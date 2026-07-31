@@ -3,7 +3,7 @@ import {
     View, Text, TextInput, StyleSheet, KeyboardAvoidingView,
     Platform, ActivityIndicator, Pressable, TouchableOpacity,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { screenColors, fonts } from '../../config/theme'
@@ -31,7 +31,7 @@ export default function TwoFactorScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
             <View style={styles.card}>
                 <View style={styles.iconWrap}>
-                    <Ionicons name="shield-checkmark" size={30} color={C.primary} />
+                    <LucideIcon name="shield-checkmark" size={30} color={C.primary} />
                 </View>
                 <Text style={styles.title}>{t('Vérification en deux étapes')}</Text>
                 <Text style={styles.subtitle}>{t('Entrez le code à 6 chiffres de votre application d\'authentification.')}</Text>
@@ -49,7 +49,7 @@ export default function TwoFactorScreen() {
 
                 {error ? (
                     <View style={styles.errorRow}>
-                        <Ionicons name="alert-circle" size={15} color={C.danger} />
+                        <LucideIcon name="alert-circle" size={15} color={C.danger} />
                         <Text style={styles.errorText}>{error}</Text>
                     </View>
                 ) : null}

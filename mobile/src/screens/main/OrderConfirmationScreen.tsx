@@ -5,7 +5,7 @@ import {
     Pressable, Dimensions, Share,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -191,12 +191,12 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                     hitSlop={6}
                     accessibilityLabel={t('Fermer')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="close" size={22} color={C.primary} />
+                        <LucideIcon name="close" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <Ionicons name="checkmark-circle" size={12} color={C.success} />
+                    <LucideIcon name="checkmark-circle" size={12} color={C.success} />
                     <Text style={styles.navCounterText}>{t('Confirmée')}</Text>
                 </View>
 
@@ -205,7 +205,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                     hitSlop={6}
                     accessibilityLabel={t('Partager')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="share-outline" size={20} color={C.primary} />
+                        <LucideIcon name="share-outline" size={20} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -232,13 +232,13 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
 
                         <Animated.View style={[styles.seal, sealStyle]}>
                             <Animated.View style={checkStyle}>
-                                <Ionicons name="checkmark" size={56} color={C.primaryText} />
+                                <LucideIcon name="checkmark" size={56} color={C.primaryText} />
                             </Animated.View>
                         </Animated.View>
 
                         {/* Badge couronne en bas */}
                         <View style={styles.sealBadge}>
-                            <Ionicons name="ribbon" size={14} color={C.accent} />
+                            <LucideIcon name="ribbon" size={14} color={C.accent} />
                         </View>
                     </View>
                 </View>
@@ -258,7 +258,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                         {/* Header du ticket */}
                         <View style={styles.ticketHeader}>
                             <View style={styles.ticketHeaderLeft}>
-                                <Ionicons name="receipt" size={14} color={C.accent} />
+                                <LucideIcon name="receipt" size={14} color={C.accent} />
                                 <Text style={styles.ticketHeaderText}>{t('REÇU OFFICIEL')}</Text>
                             </View>
                             <View style={styles.ticketStatusBadge}>
@@ -289,7 +289,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             <View style={styles.ticketRow}>
                                 <View style={styles.ticketRowLeft}>
                                     <View style={styles.ticketRowIcon}>
-                                        <Ionicons name="calendar-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="calendar-outline" size={14} color={C.accent} />
                                     </View>
                                     <Text style={styles.ticketRowLabel}>{t('Date')}</Text>
                                 </View>
@@ -301,7 +301,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             <View style={styles.ticketRow}>
                                 <View style={styles.ticketRowLeft}>
                                     <View style={styles.ticketRowIcon}>
-                                        <Ionicons name="time-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="time-outline" size={14} color={C.accent} />
                                     </View>
                                     <Text style={styles.ticketRowLabel}>{t('Heure')}</Text>
                                 </View>
@@ -314,7 +314,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                                     <View style={styles.ticketRow}>
                                         <View style={styles.ticketRowLeft}>
                                             <View style={styles.ticketRowIcon}>
-                                                <Ionicons name="card-outline" size={14} color={C.accent} />
+                                                <LucideIcon name="card-outline" size={14} color={C.accent} />
                                             </View>
                                             <Text style={styles.ticketRowLabel}>{t('Réf. paiement')}</Text>
                                         </View>
@@ -362,7 +362,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                                         styles.timelineDot,
                                         step.status === 'current' && styles.timelineDotActive,
                                     ]}>
-                                        <Ionicons
+                                        <LucideIcon
                                             name={step.icon}
                                             size={14}
                                             color={step.status === 'current' ? C.accent : C.textMuted}
@@ -394,9 +394,9 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <Ionicons name="cube" size={18} color={C.accent} style={{ marginRight: 10 }} />
+                            <LucideIcon name="cube" size={18} color={C.accent} style={{ marginRight: 10 }} />
                             <Text style={styles.primaryBtnText}>{t('Suivre ma commande')}</Text>
-                            <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 10 }} />
+                            <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 10 }} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -406,7 +406,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <Ionicons name="storefront-outline" size={18} color={C.primary} style={{ marginRight: 10 }} />
+                            <LucideIcon name="storefront-outline" size={18} color={C.primary} style={{ marginRight: 10 }} />
                             <Text style={styles.secondaryBtnText}>{t('Retour à la boutique')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -422,7 +422,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                         </View>
                         <View style={styles.supportCard}>
                             <View style={styles.supportIcon}>
-                                <Ionicons name="headset" size={16} color={C.accent} />
+                                <LucideIcon name="headset" size={16} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.supportTitle}>{t('Besoin d\'aide ?')}</Text>
@@ -430,7 +430,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                                     {t("Contactez notre équipe via la messagerie.")}
                                 </Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                            <LucideIcon name="chevron-forward" size={16} color={C.textMuted} />
                         </View>
                     </View>
                 </AnimatedSection>

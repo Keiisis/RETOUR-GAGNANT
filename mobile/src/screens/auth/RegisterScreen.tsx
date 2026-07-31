@@ -5,7 +5,7 @@ import {
     Platform, ScrollView, ActivityIndicator, Pressable, Dimensions, TouchableOpacity
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -146,7 +146,7 @@ export default function RegisterScreen({ navigation }: any) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -194,7 +194,7 @@ export default function RegisterScreen({ navigation }: any) {
                             <TouchableOpacity onPress={() => setShowPassword(p => !p)} hitSlop={15} style={[styles.eyeBtn, { zIndex: 10 }]}
                                 accessibilityRole="button"
                                 accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
-                                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={focused ? C.primary : C.placeholder} />
+                                <LucideIcon name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={focused ? C.primary : C.placeholder} />
                             </TouchableOpacity>
                         }
                     />
@@ -204,7 +204,7 @@ export default function RegisterScreen({ navigation }: any) {
                         <View style={{ marginTop: 8, paddingHorizontal: 4, gap: 4 }}>
                             {pwdChecks.map(c => (
                                 <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Ionicons
+                                    <LucideIcon
                                         name={c.ok ? 'checkmark-circle' : 'ellipse-outline'}
                                         size={15}
                                         color={c.ok ? C.success : C.placeholder}
@@ -252,7 +252,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
 
     return (
         <Animated.View style={[styles.fieldContainer, rStyle]}>
-            <Ionicons name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
+            <LucideIcon name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
             <TextInput
                 style={styles.fieldInput}
                 placeholder={placeholder}
@@ -285,7 +285,7 @@ function InteractiveButton({ title, onPress, disabled, loading }: any) {
             ) : (
                 <>
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -73,10 +73,10 @@ const TYPE_CONFIG = {
 }
 
 const STATUS_CONFIG = {
-    confirmed: { label: 'Confirmé', color: C.success, bg: 'rgba(0, 135, 81, 0.10)', dot: C.success },
-    pending: { label: 'En attente', color: C.accentDark, bg: 'rgba(252, 209, 22, 0.10)', dot: C.accent },
-    cancelled: { label: 'Annulé', color: C.error, bg: 'rgba(232, 17, 45, 0.08)', dot: C.error },
-    completed: { label: 'Terminé', color: C.textSec, bg: 'rgba(138, 138, 138, 0.10)', dot: C.textSec },
+    confirmed: { label: 'Confirmé', color: C.success, bg: C.surfaceSoft, dot: C.success },
+    pending: { label: 'En attente', color: C.accentDark, bg: C.accentSoft, dot: C.accent },
+    cancelled: { label: 'Annulé', color: C.error, bg: C.dangerSoft, dot: C.error },
+    completed: { label: 'Terminé', color: C.textSec, bg: C.surfaceAlt, dot: C.textSec },
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -153,12 +153,12 @@ function AppointmentCard({
                 {/* Infos */}
                 <View style={styles.rdvInfo}>
                     <View style={styles.rdvTypeRow}>
-                        <Ionicons name={tc.icon} size={13} color={C.accent} />
+                        <LucideIcon name={tc.icon} size={13} color={C.accent} />
                         <Text style={styles.rdvType}>{t(tc.label)}</Text>
                     </View>
 
                     <View style={styles.rdvMeta}>
-                        <Ionicons name="time-outline" size={11} color={C.textMuted} />
+                        <LucideIcon name="time-outline" size={11} color={C.textMuted} />
                         <Text style={styles.rdvMetaText}>30 min</Text>
                         {appt.agent_name && (
                             <>
@@ -187,7 +187,7 @@ function AppointmentCard({
                         accessibilityRole="button"
                         accessibilityLabel={t('Annuler ce rendez-vous')}
                     >
-                        <Ionicons name="close-circle-outline" size={22} color={C.error} />
+                        <LucideIcon name="close-circle-outline" size={22} color={C.error} />
                     </Pressable>
                 )}
             </View>
@@ -463,14 +463,14 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 <Pressable onPress={() => setShowModal(true)} style={styles.navAddBtn}
                     accessibilityRole="button"
                     hitSlop={6}>
-                    <Ionicons name="add" size={18} color={C.accent} />
+                    <LucideIcon name="add" size={18} color={C.accent} />
                     <Text style={styles.navAddText}>{t('Demander')}</Text>
                 </Pressable>
             </View>
@@ -503,7 +503,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     ) : (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <Ionicons name="calendar-outline" size={36} color={C.accent} />
+                                <LucideIcon name="calendar-outline" size={36} color={C.accent} />
                             </View>
                             <Text style={styles.emptyTitle}>
                                 {tab === 'upcoming'
@@ -523,9 +523,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     accessibilityRole="button"
                                     hitSlop={6}
                                 >
-                                    <Ionicons name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
                                     <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
-                                    <Ionicons name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -565,7 +565,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
                             <View style={styles.nextRdvRow}>
                                 <View style={styles.nextRdvIconWrap}>
-                                    <Ionicons name="calendar-outline" size={14} color={C.accent} />
+                                    <LucideIcon name="calendar-outline" size={14} color={C.accent} />
                                 </View>
                                 <Text style={styles.nextRdvDate}>
                                     {formatDateTime(nextRdv.scheduled_at)}
@@ -575,7 +575,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                             {nextRdv.agent_name && (
                                 <View style={styles.nextRdvRow}>
                                     <View style={styles.nextRdvIconWrap}>
-                                        <Ionicons name="person-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="person-outline" size={14} color={C.accent} />
                                     </View>
                                     <Text style={styles.nextRdvDate}>
                                         {t('Avec')} {nextRdv.agent_name}
@@ -585,7 +585,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
                             <View style={styles.nextRdvRow}>
                                 <View style={styles.nextRdvIconWrap}>
-                                    <Ionicons
+                                    <LucideIcon
                                         name={TYPE_CONFIG[nextRdv.type]?.icon || 'call-outline'}
                                         size={14}
                                         color={C.accent}
@@ -657,7 +657,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     accessibilityRole="button"
                                     hitSlop={6}
                                     accessibilityLabel={t('Fermer')}>
-                                    <Ionicons name="close" size={20} color={C.primary} />
+                                    <LucideIcon name="close" size={20} color={C.primary} />
                                 </Pressable>
                             </View>
 
@@ -680,7 +680,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                             hitSlop={6}
                                         >
                                             <View style={[styles.typeIconWrap, active && styles.typeIconWrapActive]}>
-                                                <Ionicons
+                                                <LucideIcon
                                                     name={cfg.icon}
                                                     size={18}
                                                     color={active ? C.accent : C.textSec}
@@ -691,7 +691,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                             </Text>
                                             {active && (
                                                 <View style={styles.typeCheckBadge}>
-                                                    <Ionicons name="checkmark" size={10} color={C.primaryText} />
+                                                    <LucideIcon name="checkmark" size={10} color={C.primaryText} />
                                                 </View>
                                             )}
                                         </TouchableOpacity>
@@ -800,9 +800,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     <ActivityIndicator color={C.primaryText} size="small" />
                                 ) : (
                                     <>
-                                        <Ionicons name="paper-plane-outline" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                        <LucideIcon name="paper-plane-outline" size={18} color={C.accent} style={{ marginRight: 8 }} />
                                         <Text style={styles.submitBtnText}>{t('Envoyer la demande')}</Text>
-                                        <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: 'rgba(252, 209, 22, 0.18)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.pill,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
         width: 72,
         height: 72,
         borderRadius: radius.xl,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderWidth: 1,
         borderColor: C.border,
         alignItems: 'center',
@@ -1072,10 +1072,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: spacing.sm,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         borderRadius: radius.xs,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     rdvDay: {
         ...typography.h3, fontSize: 18,
@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
     },
     modalBg: {
         ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(0, 135, 81, 0.55)',
+        backgroundColor: C.surfaceSoft,
     },
     modalSheet: {
         backgroundColor: C.bg,
@@ -1266,20 +1266,20 @@ const styles = StyleSheet.create({
     },
     typeBtnActive: {
         borderColor: C.accent,
-        backgroundColor: 'rgba(252, 209, 22, 0.06)',
+        backgroundColor: C.accentSoft,
     },
     typeIconWrap: {
         width: 40,
         height: 40,
         borderRadius: radius.sm,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     typeIconWrapActive: {
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: C.accentSoft,
         borderColor: C.border,
     },
     typeBtnText: {
@@ -1334,7 +1334,7 @@ const styles = StyleSheet.create({
         ...shadows.card,
     },
     submitBtnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

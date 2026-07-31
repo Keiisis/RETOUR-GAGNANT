@@ -5,7 +5,7 @@ import {
     Platform, ScrollView, ActivityIndicator, Pressable, Dimensions, Image, TouchableOpacity
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -106,7 +106,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -129,7 +129,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
                     {/* Icône clé dans un cercle */}
                     <View style={styles.keyIconWrap}>
-                        <Ionicons name="key-outline" size={28} color={C.accent} />
+                        <LucideIcon name="key-outline" size={28} color={C.accent} />
                     </View>
 
                     <Text style={styles.title}>{t('Mot de passe oublié ?')}</Text>
@@ -202,7 +202,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
 
     return (
         <Animated.View style={[styles.fieldContainer, rStyle]}>
-            <Ionicons name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
+            <LucideIcon name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
             <TextInput
                 style={styles.fieldInput}
                 placeholder={placeholder}
@@ -236,7 +236,7 @@ function InteractiveButton({ title, onPress, disabled, loading }: any) {
             ) : (
                 <>
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <Ionicons name="send-outline" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="send-outline" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

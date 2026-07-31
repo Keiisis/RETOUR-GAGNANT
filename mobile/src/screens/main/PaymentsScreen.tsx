@@ -26,7 +26,7 @@ import {
     ActivityIndicator, RefreshControl, Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue, useAnimatedStyle, withDelay, withTiming, Easing,
 } from 'react-native-reanimated'
@@ -49,13 +49,13 @@ interface Entry {
     currency: string
     date: string
     paid: boolean
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
 }
 
 /* Canaux réellement acceptés par l'agence. Aucune carte n'est conservée :
    le paiement se fait dans le widget du prestataire, à chaque règlement. */
 const CHANNELS: Array<{
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     label: string
     detail: string
 }> = [
@@ -163,7 +163,7 @@ export default function PaymentsScreen({ navigation }: any) {
                     hitSlop={8}
                     style={styles.iconContainer}
                 >
-                    <Ionicons name="arrow-back" size={20} color={C.text} />
+                    <LucideIcon name="arrow-back" size={20} color={C.text} />
                 </Pressable>
                 <Text style={styles.navTitle}>{t('Mes paiements')}</Text>
             </View>
@@ -218,7 +218,7 @@ export default function PaymentsScreen({ navigation }: any) {
                     ) : entries.length === 0 ? (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIcon}>
-                                <Ionicons name="receipt-outline" size={30} color={C.accentDark} />
+                                <LucideIcon name="receipt-outline" size={30} color={C.accentDark} />
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucun règlement')}</Text>
                             <Text style={styles.emptyText}>
@@ -233,7 +233,7 @@ export default function PaymentsScreen({ navigation }: any) {
                                     style={[styles.row, i < entries.length - 1 && styles.rowBorder]}
                                 >
                                     <View style={styles.rowIcon}>
-                                        <Ionicons name={e.icon} size={19} color={C.primary} />
+                                        <LucideIcon name={e.icon} size={19} color={C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.rowTitle} numberOfLines={1}>{e.title}</Text>
@@ -270,7 +270,7 @@ export default function PaymentsScreen({ navigation }: any) {
                                     style={[styles.row, i < CHANNELS.length - 1 && styles.rowBorder]}
                                 >
                                     <View style={styles.rowIcon}>
-                                        <Ionicons name={c.icon} size={19} color={C.primary} />
+                                        <LucideIcon name={c.icon} size={19} color={C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.rowTitle}>{t(c.label)}</Text>
@@ -283,7 +283,7 @@ export default function PaymentsScreen({ navigation }: any) {
                         {/* Aucune carte n'est conservée : on le dit explicitement
                             plutôt que d'afficher de fausses cartes enregistrées. */}
                         <View style={styles.noticeCard}>
-                            <Ionicons name="lock-closed-outline" size={17} color={C.primary} />
+                            <LucideIcon name="lock-closed-outline" size={17} color={C.primary} />
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.noticeTitle}>{t('Aucune carte enregistrée')}</Text>
                                 <Text style={styles.noticeText}>
@@ -298,7 +298,7 @@ export default function PaymentsScreen({ navigation }: any) {
                             accessibilityLabel={t('Appeler l\'agence')}
                             style={styles.helpBtn}
                         >
-                            <Ionicons name="call-outline" size={18} color={C.primaryText} />
+                            <LucideIcon name="call-outline" size={18} color={C.primaryText} />
                             <Text style={styles.helpBtnText}>{t('Une question sur un paiement ?')}</Text>
                         </Pressable>
                     </>

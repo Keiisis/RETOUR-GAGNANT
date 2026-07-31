@@ -20,7 +20,7 @@ import Animated, {
     Easing,
     interpolateColor,
 } from 'react-native-reanimated'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { FlagBar } from '../../components/ui'
@@ -268,7 +268,7 @@ const ProductCard = ({
                             </>
                         ) : (
                             <View style={cardStyles.placeholder}>
-                                <Ionicons name="sparkles-outline" size={28} color={C.accent} />
+                                <LucideIcon name="sparkles-outline" size={28} color={C.accent} />
                             </View>
                         )}
 
@@ -279,7 +279,7 @@ const ProductCard = ({
                         <View style={cardStyles.tagWrap}>
                             {item.is_featured && (
                                 <View style={cardStyles.vipTag}>
-                                    <Ionicons name="star" size={8} color={C.accent} />
+                                    <LucideIcon name="star" size={8} color={C.accent} />
                                     <Text style={cardStyles.vipTagText}>VIP</Text>
                                 </View>
                             )}
@@ -313,7 +313,7 @@ const ProductCard = ({
                                 hitSlop={6}
                             >
                                 <Animated.View style={[cardStyles.quickBtn, quickBtnStyle]}>
-                                    <Ionicons
+                                    <LucideIcon
                                         name={inCart ? 'remove' : 'add'}
                                         size={18}
                                         color={C.primaryText}
@@ -347,7 +347,7 @@ const ProductCard = ({
                         {/* Indicateur "dans le panier" */}
                         {inCart && (
                             <View style={cardStyles.inCartBadge}>
-                                <Ionicons name="checkmark-circle" size={11} color={C.success} />
+                                <LucideIcon name="checkmark-circle" size={11} color={C.success} />
                                 <Text style={cardStyles.inCartText}>
                                     {inCart.quantity} {t('réservé(s)')}
                                 </Text>
@@ -679,7 +679,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconCircle}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
@@ -693,7 +693,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     accessibilityLabel={t('Mes commandes')}
                     hitSlop={6}>
                     <View style={styles.iconCircle}>
-                        <Ionicons name="cube-outline" size={20} color={C.primary} />
+                        <LucideIcon name="cube-outline" size={20} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -761,7 +761,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         hitSlop={6}
                     >
                         <View style={styles.cartFabIconWrap}>
-                            <Ionicons name="bag-handle" size={22} color={C.accent} />
+                            <LucideIcon name="bag-handle" size={22} color={C.accent} />
                             <View style={styles.cartBadge}>
                                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
                             </View>
@@ -770,7 +770,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                             <Text style={styles.cartFabLabel}>{t('Ouvrir le panier')}</Text>
                             <Text style={styles.cartFabTotal}>{formatPrice(cartTotal)}</Text>
                         </View>
-                        <Ionicons name="arrow-forward" size={18} color={C.accent} />
+                        <LucideIcon name="arrow-forward" size={18} color={C.accent} />
                     </TouchableOpacity>
                 </Animated.View>
             )}
@@ -800,7 +800,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 accessibilityRole="button"
                                 hitSlop={6}
                                 accessibilityLabel={t('Fermer')}>
-                                <Ionicons name="close" size={20} color={C.primary} />
+                                <LucideIcon name="close" size={20} color={C.primary} />
                             </Pressable>
                         </View>
 
@@ -818,7 +818,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             <Image source={{ uri: item.product.images[0] }} style={styles.cartImg} />
                                         ) : (
                                             <View style={[styles.cartImg, styles.cartImgPlaceholder]}>
-                                                <Ionicons name="sparkles-outline" size={18} color={C.accent} />
+                                                <LucideIcon name="sparkles-outline" size={18} color={C.accent} />
                                             </View>
                                         )}
                                     </View>
@@ -842,7 +842,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             hitSlop={6}
                                             accessibilityLabel={t('Retirer')}
                                         >
-                                            <Ionicons name="remove" size={14} color={C.primary} />
+                                            <LucideIcon name="remove" size={14} color={C.primary} />
                                         </TouchableOpacity>
                                         <Text style={styles.qtyValue}>{item.quantity}</Text>
                                         <TouchableOpacity
@@ -853,7 +853,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             hitSlop={6}
                                             accessibilityLabel={t('Ajouter')}
                                         >
-                                            <Ionicons name="add" size={14} color={C.primary} />
+                                            <LucideIcon name="add" size={14} color={C.primary} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -879,7 +879,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.checkoutBtnText}>
                                     {t('Sceller la commande')}
                                 </Text>
-                                <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </Animated.View>

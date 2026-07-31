@@ -7,7 +7,7 @@ import {
     Pressable,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -283,7 +283,7 @@ export default function DossierScreen({ navigation }: any) {
         return { icon: 'time-outline' as const, color: C.warning, label: t('En attente') }
     }
 
-    const fileIcon = (type?: string): keyof typeof Ionicons.glyphMap => {
+    const fileIcon = (type?: string): string => {
         if (!type) return 'document-outline'
         if (type.includes('pdf')) return 'document-text-outline'
         if (type.includes('image')) return 'image-outline'
@@ -311,7 +311,7 @@ export default function DossierScreen({ navigation }: any) {
                         hitSlop={8}
                         style={styles.iconContainer}
                     >
-                        <Ionicons name="arrow-back" size={20} color={C.text} />
+                        <LucideIcon name="arrow-back" size={20} color={C.text} />
                     </Pressable>
                 ) : null}
 
@@ -333,7 +333,7 @@ export default function DossierScreen({ navigation }: any) {
                         <ActivityIndicator color={C.primary} size="small" />
                     ) : (
                         <>
-                            <Ionicons name="add" size={17} color={C.primary} />
+                            <LucideIcon name="add" size={17} color={C.primary} />
                             <Text style={styles.uploadHeaderBtnText}>{t('Ajouter')}</Text>
                         </>
                     )}
@@ -376,7 +376,7 @@ export default function DossierScreen({ navigation }: any) {
                     <AnimatedSection delay={150}>
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <Ionicons name="folder-open-outline" size={36} color={C.accent} />
+                                <LucideIcon name="folder-open-outline" size={36} color={C.accent} />
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucun dossier en cours')}</Text>
                             <Text style={styles.emptyText}>
@@ -390,7 +390,7 @@ export default function DossierScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.emptyBtnText}>{t('Découvrir les services')}</Text>
-                                <Ionicons name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -400,7 +400,7 @@ export default function DossierScreen({ navigation }: any) {
                         {dossiers.length > 1 && (
                             <AnimatedSection delay={100}>
                                 <View style={styles.tabsHeader}>
-                                    <Ionicons name="layers-outline" size={14} color={C.textSec} />
+                                    <LucideIcon name="layers-outline" size={14} color={C.textSec} />
                                     <Text style={styles.tabsHeaderText}>
                                         {t('Sélectionnez un dossier')}
                                     </Text>
@@ -509,7 +509,7 @@ export default function DossierScreen({ navigation }: any) {
                                                                         current && styles.tlDotCurrent,
                                                                     ]}>
                                                                         {done && (
-                                                                            <Ionicons name="checkmark" size={13} color={C.primaryText} />
+                                                                            <LucideIcon name="checkmark" size={13} color={C.primaryText} />
                                                                         )}
                                                                         {current && <View style={styles.tlDotPulse} />}
                                                                     </View>
@@ -552,7 +552,7 @@ export default function DossierScreen({ navigation }: any) {
                                                 {/* Note de l'équipe */}
                                                 {selected.notes ? (
                                                     <View style={styles.notesRow}>
-                                                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={C.primary} />
+                                                        <LucideIcon name="chatbubble-ellipses-outline" size={16} color={C.primary} />
                                                         <View style={{ flex: 1 }}>
                                                             <Text style={styles.notesLabel}>
                                                                 {t('Note de l\'équipe')}
@@ -570,7 +570,7 @@ export default function DossierScreen({ navigation }: any) {
                                         <View style={styles.docsCard}>
                                             <View style={styles.cardHeader}>
                                                 <View style={styles.cardHeaderBadge}>
-                                                    <Ionicons name="document-text-outline" size={15} color={C.primary} />
+                                                    <LucideIcon name="document-text-outline" size={15} color={C.primary} />
                                                 </View>
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={styles.cardTitle}>{t('Documents')}</Text>
@@ -590,7 +590,7 @@ export default function DossierScreen({ navigation }: any) {
                                                     {uploading ? (
                                                         <ActivityIndicator color={C.accent} size="small" />
                                                     ) : (
-                                                        <Ionicons name="add" size={20} color={C.accent} />
+                                                        <LucideIcon name="add" size={20} color={C.accent} />
                                                     )}
                                                 </TouchableOpacity>
                                             </View>
@@ -611,7 +611,7 @@ export default function DossierScreen({ navigation }: any) {
                                                         return (
                                                             <View key={doc.id} style={styles.docCard}>
                                                                 <View style={styles.docIconWrap}>
-                                                                    <Ionicons
+                                                                    <LucideIcon
                                                                         name={fileIcon(doc.file_type)}
                                                                         size={20}
                                                                         color={C.primary}
@@ -631,7 +631,7 @@ export default function DossierScreen({ navigation }: any) {
                                                                     styles.docStatusBadge,
                                                                     { backgroundColor: st.color + '15', borderColor: st.color + '30' },
                                                                 ]}>
-                                                                    <Ionicons name={st.icon} size={12} color={st.color} />
+                                                                    <LucideIcon name={st.icon} size={12} color={st.color} />
                                                                     <Text style={[styles.docStatusLabel, { color: st.color }]}>
                                                                         {st.label}
                                                                     </Text>
@@ -643,7 +643,7 @@ export default function DossierScreen({ navigation }: any) {
                                             ) : (
                                                 <View style={styles.noDocsCard}>
                                                     <View style={styles.noDocsIconWrap}>
-                                                        <Ionicons name="cloud-upload-outline" size={32} color={C.accent} />
+                                                        <LucideIcon name="cloud-upload-outline" size={32} color={C.accent} />
                                                     </View>
                                                     <Text style={styles.noDocsTitle}>
                                                         {t('Aucun document envoyé')}
@@ -658,11 +658,11 @@ export default function DossierScreen({ navigation }: any) {
                                                         accessibilityRole="button"
                                                         hitSlop={6}
                                                     >
-                                                        <Ionicons name="add" size={16} color={C.accent} />
+                                                        <LucideIcon name="add" size={16} color={C.accent} />
                                                         <Text style={styles.uploadNowText}>
                                                             {t('Ajouter un document')}
                                                         </Text>
-                                                        <Ionicons name="arrow-forward" size={14} color={C.accent} />
+                                                        <LucideIcon name="arrow-forward" size={14} color={C.accent} />
                                                     </TouchableOpacity>
                                                 </View>
                                             )}
@@ -673,7 +673,7 @@ export default function DossierScreen({ navigation }: any) {
                                     <AnimatedSection delay={350}>
                                         <View style={styles.tipCard}>
                                             <View style={styles.tipIconWrap}>
-                                                <Ionicons name="shield-checkmark-outline" size={16} color={C.accent} />
+                                                <LucideIcon name="shield-checkmark-outline" size={16} color={C.accent} />
                                             </View>
                                             <View style={{ flex: 1 }}>
                                                 <Text style={styles.tipTitle}>
@@ -713,7 +713,7 @@ export default function DossierScreen({ navigation }: any) {
 
                         <View style={styles.modalHeader}>
                             <View style={styles.modalIconWrap}>
-                                <Ionicons name="cloud-upload-outline" size={20} color={C.accent} />
+                                <LucideIcon name="cloud-upload-outline" size={20} color={C.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.modalTitle}>{t('Ajouter un document')}</Text>
@@ -749,7 +749,7 @@ export default function DossierScreen({ navigation }: any) {
                                                 accessibilityRole="button"
                                                 hitSlop={6}
                                             >
-                                                <Ionicons
+                                                <LucideIcon
                                                     name="folder-outline"
                                                     size={13}
                                                     color={isTarget ? C.accent : C.textSec}
@@ -764,7 +764,7 @@ export default function DossierScreen({ navigation }: any) {
                                                     {d.service_type}
                                                 </Text>
                                                 {isTarget && (
-                                                    <Ionicons name="checkmark-circle" size={14} color={C.accent} />
+                                                    <LucideIcon name="checkmark-circle" size={14} color={C.accent} />
                                                 )}
                                             </TouchableOpacity>
                                         )
@@ -810,20 +810,20 @@ export default function DossierScreen({ navigation }: any) {
                                         styles.modalOptionIcon,
                                         { backgroundColor: opt.accent + '15', borderColor: opt.accent + '30' },
                                     ]}>
-                                        <Ionicons name={opt.icon} size={20} color={opt.accent} />
+                                        <LucideIcon name={opt.icon} size={20} color={opt.accent} />
                                     </View>
                                     <View style={styles.modalOptionText}>
                                         <Text style={styles.modalOptionLabel}>{opt.label}</Text>
                                         <Text style={styles.modalOptionSub}>{opt.sub}</Text>
                                     </View>
-                                    <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                                    <LucideIcon name="chevron-forward" size={16} color={C.textMuted} />
                                 </TouchableOpacity>
                             ))}
                         </View>
 
                         {/* Sécurité info */}
                         <View style={styles.modalSecurityRow}>
-                            <Ionicons name="lock-closed" size={11} color={C.textSec} />
+                            <LucideIcon name="lock-closed" size={11} color={C.textSec} />
                             <Text style={styles.modalSecurityText}>
                                 {t('Transfert chiffré · URL signée 1h')}
                             </Text>

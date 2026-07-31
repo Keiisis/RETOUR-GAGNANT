@@ -10,7 +10,7 @@ import {
     ArrowLeft, Calendar, Check, Clock, CreditCard, Star, Tag, Users,
     Sparkles, ShieldCheck, Award, ChevronRight, Zap, FileText, Send,
 } from 'lucide-react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
     useSharedValue,
@@ -118,7 +118,7 @@ const ServiceHero = ({ icon, title, subtitle, onBack, t }: any) => {
 
             <View style={hero.identity}>
                 <View style={hero.iconTile}>
-                    <Ionicons name={icon || 'briefcase-outline'} size={30} color={C.primary} />
+                    <LucideIcon name={icon || 'briefcase-outline'} size={30} color={C.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={hero.title}>{t(title || 'Detail de la prestation')}</Text>
@@ -499,7 +499,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                         ]}>{item.step}</Text>
                                     </View>
                                     <View style={styles.processCard}>
-                                        <Ionicons name={item.icon} size={18} color={C.primary} />
+                                        <LucideIcon name={item.icon} size={18} color={C.primary} />
                                         <Text style={styles.processLabel}>{item.label}</Text>
                                     </View>
                                 </View>

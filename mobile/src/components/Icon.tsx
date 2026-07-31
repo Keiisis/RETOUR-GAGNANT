@@ -18,13 +18,67 @@ import React from 'react'
 import {
     Home, FileText, Building2, Compass, Landmark, TrendingUp,
     User, Settings, Bell, Search, ChevronRight, ChevronLeft,
-    ChevronDown, ChevronUp, Calendar, Clock, MapPin, Phone,
+    ChevronDown, ChevronUp, ArrowUp, Calendar, Clock, MapPin, Phone,
     Mail, Lock, Eye, EyeOff, Plus, Minus, X, Check, 
     AlertCircle, Info, HelpCircle, Star, Heart, Share2,
     Download, Upload, Camera, Image, Shield, CreditCard,
     LogOut, Menu, Filter, Edit, Trash2, Send, MessageSquare,
     Globe, ArrowLeft, ArrowRight, ExternalLink, Copy,
-    CheckCircle, XCircle, AlertTriangle, type LucideProps,
+    CheckCircle, XCircle, AlertTriangle,
+    Undo2,
+    CornerUpLeft,
+    LayoutGrid,
+    Layers,
+    List,
+    SlidersHorizontal,
+    RefreshCw,
+    Link,
+    PencilLine,
+    Images,
+    Video,
+    CheckCheck,
+    Activity,
+    ShieldCheck,
+    Key,
+    Fingerprint,
+    File,
+    Paperclip,
+    Folder,
+    FolderOpen,
+    UploadCloud,
+    Receipt,
+    ScanLine,
+    BookOpen,
+    Library,
+    MailOpen,
+    MessagesSquare,
+    MessageCircle,
+    Headphones,
+    BellOff,
+    CircleUser,
+    Users,
+    ShoppingCart,
+    ShoppingBag,
+    Store,
+    Banknote,
+    Wallet,
+    Ticket,
+    Package,
+    Truck,
+    Plane,
+    Map,
+    Languages,
+    Flag,
+    Briefcase,
+    Sparkles,
+    Award,
+    Lightbulb,
+    Hammer,
+    GitBranch,
+    Network,
+    Smartphone,
+    CheckCircle2,
+    Circle, type LucideProps,
 } from 'lucide-react-native'
 
 // ── Mapping Ionicons → Lucide (pour faciliter la migration progressive) ──
@@ -152,6 +206,79 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
     'card-outline': CreditCard,
     'open': ExternalLink,
     'open-outline': ExternalLink,
+
+    /* Complement : couvre les noms reellement employes dans l'app.
+       Les logos de marque (Facebook, Instagram, YouTube) restent sur
+       Ionicons : Lucide les a retires de sa version 1, et un globe
+       generique a leur place ferait perdre la reconnaissance immediate. */
+    'airplane-outline': Plane,
+    'apps-outline': LayoutGrid,
+    'arrow-undo-outline': Undo2,
+    'arrow-up': ArrowUp,
+    'bag-handle': ShoppingBag,
+    'bag-handle-outline': ShoppingBag,
+    'bag-outline': ShoppingBag,
+    'barcode-outline': ScanLine,
+    'book-outline': BookOpen,
+    'briefcase-outline': Briefcase,
+    'bulb-outline': Lightbulb,
+    'car-outline': Truck,
+    'cart-outline': ShoppingCart,
+    'cash-outline': Banknote,
+    'chatbubble-ellipses': MessageCircle,
+    'chatbubble-ellipses-outline': MessageCircle,
+    'checkmark-done': CheckCheck,
+    'cube': Package,
+    'cube-outline': Package,
+    'document-attach': Paperclip,
+    'document-outline': File,
+    'earth-outline': Globe,
+    'finger-print': Fingerprint,
+    'flag-outline': Flag,
+    'folder-open': FolderOpen,
+    'folder-open-outline': FolderOpen,
+    'folder-outline': Folder,
+    'git-branch': GitBranch,
+    'git-network-outline': Network,
+    'hammer-outline': Hammer,
+    'headset': Headphones,
+    'images-outline': Images,
+    'key-outline': Key,
+    'language-outline': Languages,
+    'layers-outline': Layers,
+    'library': Library,
+    'link-outline': Link,
+    'list': List,
+    'logo-whatsapp': MessageCircle,
+    'mail-unread-outline': MailOpen,
+    'male-female-outline': Users,
+    'man-outline': User,
+    'map': Map,
+    'map-outline': Map,
+    'notifications-off-outline': BellOff,
+    'paper-plane': Send,
+    'paper-plane-outline': Send,
+    'people': Users,
+    'people-outline': Users,
+    'phone-portrait-outline': Smartphone,
+    'pulse-outline': Activity,
+    'receipt': Receipt,
+    'receipt-outline': Receipt,
+    'refresh-outline': RefreshCw,
+    'return-up-back-outline': CornerUpLeft,
+    'ribbon': Award,
+    'ribbon-outline': Award,
+    'search-circle-outline': Search,
+    'share-outline': Share2,
+    'sparkles': Sparkles,
+    'sparkles-outline': Sparkles,
+    'storefront': Store,
+    'storefront-outline': Store,
+    'ticket': Ticket,
+    'ticket-outline': Ticket,
+    'videocam-outline': Video,
+    'wallet-outline': Wallet,
+    'woman-outline': User,
 }
 
 interface LucideIconProps {
@@ -160,21 +287,28 @@ interface LucideIconProps {
     size?: number
     color?: string
     strokeWidth?: number
+    /** Marges ponctuelles posees par l'appelant. */
+    style?: any
+    /** Remplissage : utilise pour les etoiles et coeurs pleins. */
+    fill?: string
 }
 
 /**
  * Composant bridge : accepte les noms d'icônes Ionicons et les convertit
  * automatiquement en icônes Lucide (cohérence avec le site web).
  */
-export function LucideIcon({ name, size = 24, color = '#F2F2F2', strokeWidth = 1.75 }: LucideIconProps) {
+export function LucideIcon({ name, size = 24, color, strokeWidth = 2, style, fill }: LucideIconProps) {
     const IconComponent = ICON_MAP[name]
+    if (!IconComponent && __DEV__) {
+        console.warn('[LucideIcon] nom sans correspondance : ' + name)
+    }
     
     if (!IconComponent) {
         // Fallback : si l'icône n'est pas dans le mapping, afficher un cercle info
-        return <Info size={size} color={color} strokeWidth={strokeWidth} />
+        return <Circle size={size} color={color} strokeWidth={strokeWidth} style={style} />
     }
     
-    return <IconComponent size={size} color={color} strokeWidth={strokeWidth} />
+    return <IconComponent size={size} color={color} strokeWidth={strokeWidth} style={style} fill={fill} />
 }
 
 // Re-export toutes les icônes Lucide pour import direct
@@ -188,4 +322,58 @@ export {
     LogOut, Menu, Filter, Edit, Trash2, Send, MessageSquare,
     Globe, ArrowLeft, ArrowRight, ExternalLink, Copy,
     CheckCircle, XCircle, AlertTriangle,
+    Undo2,
+    CornerUpLeft,
+    LayoutGrid,
+    Layers,
+    List,
+    SlidersHorizontal,
+    RefreshCw,
+    Link,
+    PencilLine,
+    Images,
+    Video,
+    CheckCheck,
+    Activity,
+    ShieldCheck,
+    Key,
+    Fingerprint,
+    File,
+    Paperclip,
+    Folder,
+    FolderOpen,
+    UploadCloud,
+    Receipt,
+    ScanLine,
+    BookOpen,
+    Library,
+    MailOpen,
+    MessagesSquare,
+    MessageCircle,
+    Headphones,
+    BellOff,
+    CircleUser,
+    Users,
+    ShoppingCart,
+    ShoppingBag,
+    Store,
+    Banknote,
+    Wallet,
+    Ticket,
+    Package,
+    Truck,
+    Plane,
+    Map,
+    Languages,
+    Flag,
+    Briefcase,
+    Sparkles,
+    Award,
+    Lightbulb,
+    Hammer,
+    GitBranch,
+    Network,
+    Smartphone,
+    CheckCircle2,
+    Circle,
 } from 'lucide-react-native'

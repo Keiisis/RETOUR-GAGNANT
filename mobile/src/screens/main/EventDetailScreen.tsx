@@ -7,7 +7,7 @@ import {
     Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -138,7 +138,7 @@ function TicketCard({
                 {/* Bandeau VIP doré */}
                 {isVip && (
                     <View style={ticketStyles.vipBanner}>
-                        <Ionicons name="star" size={9} color={C.primary} />
+                        <LucideIcon name="star" size={9} color={C.primary} />
                         <Text style={ticketStyles.vipBannerText}>RECOMMANDÉ</Text>
                     </View>
                 )}
@@ -147,7 +147,7 @@ function TicketCard({
                     {/* Radio personnalisé */}
                     <Animated.View style={[ticketStyles.radio, radioStyle]}>
                         <Animated.View style={[ticketStyles.radioInner, innerStyle]}>
-                            <Ionicons name="checkmark" size={10} color={C.primary} />
+                            <LucideIcon name="checkmark" size={10} color={C.primary} />
                         </Animated.View>
                     </Animated.View>
 
@@ -156,7 +156,7 @@ function TicketCard({
                             <Text style={ticketStyles.name}>{label}</Text>
                             {isVip && (
                                 <View style={ticketStyles.vipMiniBadge}>
-                                    <Ionicons name="star" size={8} color={C.accent} />
+                                    <LucideIcon name="star" size={8} color={C.accent} />
                                     <Text style={ticketStyles.vipMiniText}>VIP</Text>
                                 </View>
                             )}
@@ -168,7 +168,7 @@ function TicketCard({
                             <View style={ticketStyles.perks}>
                                 {perks.map((perk, i) => (
                                     <View key={i} style={ticketStyles.perkRow}>
-                                        <Ionicons name="checkmark-circle" size={11} color={C.success} />
+                                        <LucideIcon name="checkmark-circle" size={11} color={C.success} />
                                         <Text style={ticketStyles.perkText}>{perk}</Text>
                                     </View>
                                 ))}
@@ -481,7 +481,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
@@ -489,7 +489,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
                 {event.is_featured && (
                     <View style={styles.featuredNavBadge}>
-                        <Ionicons name="star" size={11} color={C.accent} />
+                        <LucideIcon name="star" size={11} color={C.accent} />
                         <Text style={styles.featuredNavText}>{t('À la une')}</Text>
                     </View>
                 )}
@@ -528,7 +528,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         )}
                         {isRegistered && (
                             <View style={styles.registeredBadge}>
-                                <Ionicons name="checkmark-circle" size={12} color={C.success} />
+                                <LucideIcon name="checkmark-circle" size={12} color={C.success} />
                                 <Text style={styles.registeredText}>{t('Inscrit')}</Text>
                             </View>
                         )}
@@ -548,7 +548,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         {metaInfos.map((item, i) => (
                             <View key={i} style={styles.metaCard}>
                                 <View style={styles.metaIconWrap}>
-                                    <Ionicons name={item.icon} size={16} color={C.accent} />
+                                    <LucideIcon name={item.icon} size={16} color={C.accent} />
                                 </View>
                                 <Text style={styles.metaLabel}>{item.label}</Text>
                                 <Text style={styles.metaValue} numberOfLines={2}>
@@ -564,7 +564,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="information-circle-outline" size={15} color={C.primary} />
+                                <LucideIcon name="information-circle-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t("À propos de l'événement")}</Text>
                         </View>
@@ -580,7 +580,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="ticket-outline" size={15} color={C.primary} />
+                                <LucideIcon name="ticket-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Tarifs & Billets')}</Text>
                             {isFree && (
@@ -628,7 +628,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 <AnimatedSection delay={450}>
                     <View style={styles.infoBox}>
                         <View style={styles.infoIconWrap}>
-                            <Ionicons name="shield-checkmark" size={16} color={C.success} />
+                            <LucideIcon name="shield-checkmark" size={16} color={C.success} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.infoTitle}>{t('Inscription sécurisée')}</Text>
@@ -647,7 +647,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 {isRegistered ? (
                     <View style={styles.registeredBtn}>
                         <View style={styles.registeredIconWrap}>
-                            <Ionicons name="checkmark-circle" size={22} color={C.success} />
+                            <LucideIcon name="checkmark-circle" size={22} color={C.success} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.registeredBtnLabel}>{t('Vous êtes inscrit')}</Text>
@@ -677,9 +677,9 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 <ActivityIndicator color={C.primaryText} size="small" />
                             ) : (
                                 <>
-                                    <Ionicons name="ticket" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="ticket" size={18} color={C.accent} style={{ marginRight: 8 }} />
                                     <Text style={styles.btnText}>{t("S'inscrire")}</Text>
-                                    <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -720,7 +720,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                     hitSlop={6}
                                     accessibilityLabel={t('Fermer')}
                                 >
-                                    <Ionicons name="close" size={20} color={C.primary} />
+                                    <LucideIcon name="close" size={20} color={C.primary} />
                                 </Pressable>
                             </View>
 
@@ -732,7 +732,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             <View style={styles.recap}>
                                 <View style={styles.recapRow}>
                                     <View style={styles.recapIconWrap}>
-                                        <Ionicons name="ticket-outline" size={14} color={C.primary} />
+                                        <LucideIcon name="ticket-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.recapLabel}>{t('Type de billet')}</Text>
                                     <View style={styles.recapBadge}>
@@ -746,7 +746,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
                                 <View style={styles.recapRow}>
                                     <View style={styles.recapIconWrap}>
-                                        <Ionicons name="calendar-outline" size={14} color={C.primary} />
+                                        <LucideIcon name="calendar-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.recapLabel}>{t('Date')}</Text>
                                     <Text style={styles.recapValue} numberOfLines={1}>
@@ -758,7 +758,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
                                 <View style={styles.recapRow}>
                                     <View style={styles.recapIconWrap}>
-                                        <Ionicons name="cash-outline" size={14} color={C.primary} />
+                                        <LucideIcon name="cash-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.recapLabel}>{t('Montant')}</Text>
                                     <Text style={[
@@ -772,7 +772,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
                             {!isFreeTicket && (
                                 <View style={styles.payNotice}>
-                                    <Ionicons name="information-circle" size={16} color={C.info} />
+                                    <LucideIcon name="information-circle" size={16} color={C.info} />
                                     <Text style={styles.payNoticeText}>
                                         {t('Le paiement sécurisé sera lancé immédiatement après confirmation.')}
                                     </Text>
@@ -791,7 +791,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                     <ActivityIndicator color={C.primaryText} size="small" />
                                 ) : (
                                     <>
-                                        <Ionicons
+                                        <LucideIcon
                                             name={isFreeTicket ? 'checkmark-circle' : 'card-outline'}
                                             size={18}
                                             color={C.accent}
@@ -800,7 +800,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                         <Text style={styles.confirmBtnText}>
                                             {isFreeTicket ? t("Confirmer l'inscription") : t('Confirmer et payer')}
                                         </Text>
-                                        <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -1165,7 +1165,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     btnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

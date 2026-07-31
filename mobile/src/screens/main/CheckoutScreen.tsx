@@ -7,7 +7,7 @@ import {
     KeyboardAvoidingView, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -109,7 +109,7 @@ function Field({
     value: string
     onChange: (v: string) => void
     placeholder?: string
-    icon?: keyof typeof Ionicons.glyphMap
+    icon?: string
     keyboardType?: 'default' | 'phone-pad' | 'email-address'
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
     multiline?: boolean
@@ -145,7 +145,7 @@ function Field({
                 ]}
             >
                 {icon && (
-                    <Ionicons
+                    <LucideIcon
                         name={icon}
                         size={18}
                         color={iconColor}
@@ -349,14 +349,14 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
 
                 {/* Stepper visuel : étape 2/3 */}
                 <View style={styles.stepper}>
                     <View style={[styles.step, styles.stepDone]}>
-                        <Ionicons name="checkmark" size={12} color={C.primaryText} />
+                        <LucideIcon name="checkmark" size={12} color={C.primaryText} />
                     </View>
                     <View style={styles.stepLine} />
                     <View style={[styles.step, styles.stepActive]}>
@@ -389,7 +389,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="bag-handle-outline" size={15} color={C.primary} />
+                                <LucideIcon name="bag-handle-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Votre commande')}</Text>
                             <View style={styles.cardCountBadge}>
@@ -448,7 +448,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="location-outline" size={15} color={C.primary} />
+                                <LucideIcon name="location-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Adresse de livraison')}</Text>
                         </View>
@@ -532,26 +532,26 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     <View style={styles.paymentMethodsCard}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="card-outline" size={15} color={C.primary} />
+                                <LucideIcon name="card-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardTitle}>{t('Moyens de paiement acceptés')}</Text>
                         </View>
 
                         <View style={styles.paymentLogos}>
                             <View style={styles.paymentLogo}>
-                                <Ionicons name="phone-portrait-outline" size={18} color={C.accent} />
+                                <LucideIcon name="phone-portrait-outline" size={18} color={C.accent} />
                                 <Text style={styles.paymentLogoText}>Mobile Money</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <Ionicons name="card-outline" size={18} color={C.accent} />
+                                <LucideIcon name="card-outline" size={18} color={C.accent} />
                                 <Text style={styles.paymentLogoText}>Visa</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <Ionicons name="card-outline" size={18} color={C.accent} />
+                                <LucideIcon name="card-outline" size={18} color={C.accent} />
                                 <Text style={styles.paymentLogoText}>Mastercard</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <Ionicons name="wallet-outline" size={18} color={C.accent} />
+                                <LucideIcon name="wallet-outline" size={18} color={C.accent} />
                                 <Text style={styles.paymentLogoText}>Wave</Text>
                             </View>
                         </View>
@@ -562,7 +562,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                 <AnimatedSection delay={450}>
                     <View style={styles.securityNote}>
                         <View style={styles.securityIconWrap}>
-                            <Ionicons name="shield-checkmark" size={16} color={C.success} />
+                            <LucideIcon name="shield-checkmark" size={16} color={C.success} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.securityTitle}>{t('Paiement 100% sécurisé')}</Text>
@@ -598,9 +598,9 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             <ActivityIndicator color={C.primaryText} size="small" />
                         ) : (
                             <>
-                                <Ionicons name="lock-closed" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                <LucideIcon name="lock-closed" size={18} color={C.accent} style={{ marginRight: 8 }} />
                                 <Text style={styles.payBtnText}>{t('Payer maintenant')}</Text>
-                                <Ionicons name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
                             </>
                         )}
                     </TouchableOpacity>
@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     payBtnDisabled: {
-        backgroundColor: '#E4E4E4',
+        backgroundColor: C.borderStrong,
         shadowOpacity: 0,
         elevation: 0,
     },

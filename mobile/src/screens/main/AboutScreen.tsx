@@ -5,7 +5,7 @@ import {
     Platform, Linking, Image, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -89,7 +89,7 @@ function AnimatedSection({
 function LinkItem({
     icon, label, onPress, isLast,
 }: {
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     label: string
     onPress: () => void
     isLast: boolean
@@ -112,10 +112,10 @@ function LinkItem({
         >
             <Animated.View style={[styles.linkItem, !isLast && styles.linkItemBorder, animStyle]}>
                 <View style={styles.linkIconWrap}>
-                    <Ionicons name={icon} size={18} color={C.primary} />
+                    <LucideIcon name={icon} size={18} color={C.primary} />
                 </View>
                 <Text style={styles.linkLabel}>{label}</Text>
-                <Ionicons name="open-outline" size={16} color={C.textMuted} />
+                <LucideIcon name="open-outline" size={16} color={C.textMuted} />
             </Animated.View>
         </Pressable>
     )
@@ -170,7 +170,7 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                     hitSlop={6}
                     accessibilityLabel={t('Retour')}>
                     <View style={styles.iconContainer}>
-                        <Ionicons name="arrow-back" size={22} color={C.primary} />
+                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
                     </View>
                 </Pressable>
             </View>
@@ -227,7 +227,7 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <View style={styles.cardHeaderBadge}>
-                                <Ionicons name="book-outline" size={15} color={C.primary} />
+                                <LucideIcon name="book-outline" size={15} color={C.primary} />
                             </View>
                             <Text style={styles.cardLabel}>{t('NOTRE HISTOIRE')}</Text>
                         </View>
@@ -293,7 +293,7 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                                 hitSlop={6}
                             >
                                 <View style={styles.socialIconWrap}>
-                                    <Ionicons name={s.icon} size={22} color={C.primary} />
+                                    <LucideIcon name={s.icon} size={22} color={C.primary} />
                                 </View>
                                 <Text style={styles.socialLabel}>{s.label}</Text>
                             </TouchableOpacity>
@@ -424,12 +424,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.1)',
+        borderColor: C.border,
     },
     versionDot: {
         width: 6,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     quoteBox: {
         marginTop: spacing.md,
         padding: spacing.md,
-        backgroundColor: 'rgba(252, 209, 22, 0.06)',
+        backgroundColor: C.accentSoft,
         borderRadius: radius.sm,
         borderLeftWidth: 3,
         borderLeftColor: C.accent,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: radius.md,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.xs,
@@ -569,11 +569,11 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: radius.xs,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     linkLabel: {
         flex: 1,
@@ -603,11 +603,11 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: radius.md,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.10)',
+        borderColor: C.border,
     },
     socialLabel: {
         ...typography.caption,

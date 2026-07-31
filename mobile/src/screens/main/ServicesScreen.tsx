@@ -7,7 +7,7 @@ import {
     TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { LucideIcon } from '../../components/Icon'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -49,7 +49,7 @@ export interface PricingOption {
 
 export interface ServiceFull {
     id: string
-    icon: keyof typeof Ionicons.glyphMap
+    icon: string
     title: string
     subtitle: string
     desc: string
@@ -402,7 +402,7 @@ export const SERVICES_DATA: ServiceFull[] = [
 
 // ─── Mapping slug → icon ──────────────────────────────────────────────────────
 
-const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+const ICON_MAP: Record<string, string> = {
     nationalite: 'ribbon-outline', nationalite_vip: 'ribbon-outline',
     ancestrale: 'search-circle-outline', recherche: 'search-circle-outline',
     passeport: 'document-text-outline',
@@ -416,7 +416,7 @@ const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
     autres: 'apps-outline',
 }
 
-function getIconForSlug(slug: string, icon_type?: string): keyof typeof Ionicons.glyphMap {
+function getIconForSlug(slug: string, icon_type?: string): string {
     if (icon_type && ICON_MAP[icon_type]) return ICON_MAP[icon_type]
     const key = slug.toLowerCase().replace(/-/g, '_')
     for (const [k, v] of Object.entries(ICON_MAP)) {
@@ -479,7 +479,7 @@ function ServiceCard({ svc, index, onPress, t, pricingOn }: ServiceCardProps) {
                 <View style={styles.cardInner}>
                     <View style={styles.cardHead}>
                         <View style={styles.cardIconWrap}>
-                            <Ionicons name={svc.icon} size={26} color={C.primary} />
+                            <LucideIcon name={svc.icon} size={26} color={C.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.cardTitle}>{t(svc.title)}</Text>
@@ -787,7 +787,7 @@ export default function ServicesScreen({ navigation }: any) {
 
                 {/* RECHERCHE */}
                 <View style={styles.searchBar}>
-                    <Ionicons name="search" size={19} color={C.textMuted} />
+                    <LucideIcon name="search" size={19} color={C.textMuted} />
                     <TextInput
                         value={query}
                         onChangeText={setQuery}
@@ -804,7 +804,7 @@ export default function ServicesScreen({ navigation }: any) {
                             accessibilityLabel={t('Effacer la recherche')}
                             hitSlop={8}
                         >
-                            <Ionicons name="close-circle" size={19} color={C.textMuted} />
+                            <LucideIcon name="close-circle" size={19} color={C.textMuted} />
                         </Pressable>
                     )}
                 </View>
@@ -826,7 +826,7 @@ export default function ServicesScreen({ navigation }: any) {
                     </View>
                 ) : visibleSections.length === 0 ? (
                     <View style={styles.noResult}>
-                        <Ionicons name="search-outline" size={34} color={C.textMuted} />
+                        <LucideIcon name="search-outline" size={34} color={C.textMuted} />
                         <Text style={styles.noResultTitle}>{t('Aucune prestation trouvée')}</Text>
                         <Text style={styles.noResultText}>
                             {t('Essayez un autre mot-clé ou changez de catégorie.')}
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.34)',
     },
     familyBannerText: {
-        ...typography.overline, fontSize: 13, color: '#FFFFFF',
+        ...typography.overline, fontSize: 13, color: C.primaryText,
         paddingHorizontal: spacing.md, paddingBottom: spacing.md,
     },
 
