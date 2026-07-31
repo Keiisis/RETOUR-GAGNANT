@@ -525,40 +525,48 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     {/* CTA PRÊT À DÉMARRER */}
                     <AnimatedSection delay={560}>
                         <View style={styles.ctaCard}>
+                            {/* Liseré tricolore : même signature que les cartes
+                                de l'accueil, il ancre le bloc dans la charte. */}
+                            <FlagBar height={4} radiusTop={false} />
 
-                            <View style={styles.ctaHeader}>
-                                <View style={styles.ctaIcon}>
-                                    <Calendar size={18} color={C.primaryText} strokeWidth={2.4} />
+                            <View style={styles.ctaBody}>
+                                <View style={styles.ctaHeader}>
+                                    <View style={styles.ctaIcon}>
+                                        <Calendar size={19} color={C.primary} strokeWidth={2.2} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.ctaKicker}>{t('PROCHAINE ÉTAPE')}</Text>
+                                        <Text style={styles.ctaTitle}>{t('Prêt à démarrer ?')}</Text>
+                                    </View>
                                 </View>
-                                <Text style={styles.ctaTitle}>{t('Prêt à démarrer ?')}</Text>
-                            </View>
-                            <Text style={styles.ctaSubtitle}>
-                                {t(modeCopy.note)}
-                            </Text>
+                                <Text style={styles.ctaSubtitle}>
+                                    {t(modeCopy.note)}
+                                </Text>
 
-                            <InteractiveButton
-                                disabled={loading}
-                                onPress={initiateCheckout}
-                                accessibilityLabel={t(modeCopy.cta)}
-                                style={[styles.payBtn, loading && { opacity: 0.7 }]}
-                            >
-                                <View style={styles.payBtnGradient}>
-                                    {loading ? (
-                                        <ActivityIndicator color={C.primary} size="small" />
-                                    ) : (
-                                        <>
-                                            {serviceMode === 'booking'
-                                                ? <CreditCard size={20} color={C.primary} strokeWidth={2.4} />
-                                                : <Send size={20} color={C.primaryText} strokeWidth={2.4} />}
-                                            <Text style={styles.payBtnText}>{t(modeCopy.cta)}</Text>
-                                        </>
-                                    )}
+                                <InteractiveButton
+                                    disabled={loading}
+                                    onPress={initiateCheckout}
+                                    accessibilityLabel={t(modeCopy.cta)}
+                                    style={[styles.payBtn, loading && { opacity: 0.7 }]}
+                                >
+                                    <View style={styles.payBtnGradient}>
+                                        {loading ? (
+                                            <ActivityIndicator color={C.primaryText} size="small" />
+                                        ) : (
+                                            <>
+                                                {serviceMode === 'booking'
+                                                    ? <CreditCard size={19} color={C.primaryText} strokeWidth={2.2} />
+                                                    : <Send size={19} color={C.primaryText} strokeWidth={2.2} />}
+                                                <Text style={styles.payBtnText}>{t(modeCopy.cta)}</Text>
+                                            </>
+                                        )}
+                                    </View>
+                                </InteractiveButton>
+
+                                <View style={styles.ctaFreeRow}>
+                                    <Sparkles size={12} color={C.accentDark} fill={C.accentDark} strokeWidth={0} />
+                                    <Text style={styles.ctaFreeNote}>{t('Premier appel de 15 min gratuit')}</Text>
                                 </View>
-                            </InteractiveButton>
-
-                            <View style={styles.ctaFreeRow}>
-                                <Sparkles size={11} color={C.primary} fill={C.primary} strokeWidth={0} />
-                                <Text style={styles.ctaFreeNote}>{t('Premier appel de 15 min gratuit')}</Text>
                             </View>
                         </View>
                     </AnimatedSection>
@@ -666,6 +674,10 @@ const styles = StyleSheet.create({
         position: 'absolute', top: 0, left: 0, right: 0,
         paddingBottom: 12, paddingHorizontal: spacing.lg,
         zIndex: 100,
+        /* Fond opaque INDISPENSABLE : l'en-tête est en position absolue et le
+           contenu défile dessous. Sans lui, la liste des pièces à fournir se
+           superposait au titre du service, les deux textes se chevauchant. */
+        backgroundColor: C.surface,
         borderBottomWidth: 1, borderBottomColor: C.border,
     },
     stickyRow: {
@@ -910,41 +922,58 @@ const styles = StyleSheet.create({
     },
 
     /* CTA Card */
+    /* ── Bloc « Prêt à démarrer ? » ────────────────────────────
+       Refait sur le vocabulaire de l'accueil. Trois défauts corrigés :
+
+       • la carte n'avait AUCUN fond — elle était transparente, et son
+         ombre verte à 30 % d'opacité produisait le halo qui la faisait
+         flotter au lieu de la poser ;
+       • les textes étaient blancs, hérités du thème sombre d'avant la
+         charte v2 : sur fond blanc ils étaient invisibles, ne laissant
+         voir que l'icône du calendrier et l'étoile, orphelines ;
+       • le bouton portait une seconde ombre, dorée, qui doublait le halo.
+
+       Désormais : surface blanche posée, liseré tricolore, ombre teintée
+       du gris de texte comme toutes les cartes de l'application. */
     ctaCard: {
-        borderRadius: radius.xl,
-        padding: spacing.xl,
+        backgroundColor: C.surface,
+        borderRadius: radius.xxl,
+        borderWidth: 1,
+        borderColor: C.line,
         overflow: 'hidden',
-        alignItems: 'center',
-        shadowColor: C.primary, shadowOpacity: 0.3,
-        shadowRadius: 22, shadowOffset: { width: 0, height: 12 },
-        elevation: 10,
+        ...shadows.card,
+    },
+    ctaBody: {
+        padding: spacing.lg,
     },
     ctaHeader: {
-        flexDirection: 'row', alignItems: 'center', gap: 10,
-        marginBottom: 6,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        marginBottom: spacing.md,
     },
     ctaIcon: {
-        width: 38, height: 38, borderRadius: 12,
-        backgroundColor: C.primary,
+        width: 44, height: 44, borderRadius: radius.md,
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center', justifyContent: 'center',
     },
+    ctaKicker: {
+        ...typography.overline,
+        fontSize: 12,
+        color: C.primary,
+    },
     ctaTitle: {
-        fontSize: 18, fontFamily: fonts.bodyBold,
-        color: '#FFF', letterSpacing: 0.3,
+        fontSize: 19, fontFamily: fonts.bodyBold,
+        color: C.text, marginTop: 2,
     },
     ctaSubtitle: {
-        fontSize: 13, lineHeight: 19,
-        color: 'rgba(255,255,255,0.82)',
-        textAlign: 'center', marginBottom: 20,
+        fontSize: 13, lineHeight: 20,
+        color: C.textMuted,
+        marginBottom: spacing.lg,
         fontFamily: 'Inter_400Regular',
     },
     payBtn: {
         width: '100%',
-        borderRadius: radius.lg,
+        borderRadius: radius.pill,
         overflow: 'hidden',
-        shadowColor: C.gold, shadowOpacity: 0.45,
-        shadowRadius: 14, shadowOffset: { width: 0, height: 8 },
-        elevation: 8,
     },
     payBtnGradient: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -955,24 +984,26 @@ const styles = StyleSheet.create({
         fontSize: 15, fontFamily: fonts.bodyBold, color: C.primaryText,
     },
     ctaFreeRow: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        marginTop: 14,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 6, marginTop: spacing.md,
     },
     ctaFreeNote: {
         fontSize: 12, fontFamily: 'Inter_600SemiBold',
-        color: 'rgba(255,255,255,0.78)',
+        color: C.textMuted,
     },
 
     /* Security banner */
+    /* Couleurs reprises de la charte : les rgba() codés en dur étaient un
+       reste d'avant le design system v2. */
     securityBanner: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-        backgroundColor: 'rgba(10,107,59,0.08)',
+        backgroundColor: C.surfaceSoft,
         paddingHorizontal: 16, paddingVertical: 12,
         borderRadius: radius.md,
-        borderWidth: 1, borderColor: 'rgba(10,107,59,0.18)',
+        borderWidth: 1, borderColor: C.border,
     },
     securityText: {
         fontSize: 12, fontFamily: 'Inter_500Medium',
-        color: C.emerald, textAlign: 'center',
+        color: C.primary, textAlign: 'center',
     },
 })
