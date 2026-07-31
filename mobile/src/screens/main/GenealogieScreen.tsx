@@ -17,7 +17,6 @@ import {
     ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, Sparkles,
 } from 'lucide-react-native'
 import * as FileSystem from 'expo-file-system/legacy'
-import * as Sharing from 'expo-sharing'
 import { Download } from 'lucide-react-native'
 import { toast } from '../../lib/feedback'
 import { authHeaders } from '../../config/api'
@@ -27,6 +26,19 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
+
+/* expo-sharing est un module NATIF : un `import` direct fait planter l'ecran
+   entier sur tout build compile avant son ajout — « Cannot find native module
+   'ExpoSharing' ». On le charge donc paresseusement et on tolere son absence :
+   le fichier est alors ecrit sur le telephone, sans feuille de partage. */
+function chargerPartage(): { isAvailableAsync: () => Promise<boolean>; shareAsync: (u: string, o?: object) => Promise<void> } | null {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        return require('expo-sharing')
+    } catch {
+        return null
+    }
+}
 
 // Libellés de rôle (non genrés) — miroir de lib/genealogy/requirements (web).
 const ROLE_LABELS: Record<string, string> = {
@@ -123,13 +135,14 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
             const chemin = `${FileSystem.cacheDirectory}Plan-de-composition-familiale.pdf`
             await FileSystem.writeAsStringAsync(chemin, base64, { encoding: FileSystem.EncodingType.Base64 })
 
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(chemin, {
+            const partage = chargerPartage()
+            if (partage && await partage.isAvailableAsync().catch(() => false)) {
+                await partage.shareAsync(chemin, {
                     mimeType: 'application/pdf',
                     dialogTitle: t('Plan de composition familiale'),
                 })
             } else {
-                toast(t('Enregistré'), t('Le document a été enregistré sur votre téléphone.'))
+                toast(t('Document enregistré'), t('Votre plan a été enregistré sur le téléphone.'))
             }
         } catch (e) {
             toast(t('Téléchargement impossible'), e instanceof Error ? e.message : t('Erreur réseau'))

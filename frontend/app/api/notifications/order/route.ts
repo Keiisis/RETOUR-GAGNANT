@@ -150,6 +150,36 @@ export async function POST(request: Request) {
       is_read: false,
     })
 
+    /* ── Notification DANS l'application, pour le CLIENT ──
+       La ligne ci-dessus n'a pas de `user_id` : c'est une notification de
+       personnel, lue par le panel admin. L'écran Notifications du mobile,
+       lui, filtre sur `user_id` — le client ne voyait donc jamais la
+       confirmation de son propre paiement, qu'il s'agisse d'un article de
+       la boutique ou d'une consultation Fa.
+
+       On résout l'utilisateur par son adresse : la commande peut venir du
+       site sans session mobile. Non bloquant, comme pour la nationalité :
+       un paiement encaissé ne doit jamais échouer sur une notification. */
+    if (type === 'payment_success' && order.customer_email) {
+      try {
+        const { data: uid } = await supabase.rpc('resolve_client_user_id', {
+          p_client_id: null, p_email: order.customer_email,
+        })
+        if (uid) {
+          await supabase.rpc('create_client_notification', {
+            p_user_id: uid,
+            p_title: 'Paiement confirmé',
+            p_body: `Votre paiement de ${formatPrice(order.amount)} ${order.currency || 'XOF'} `
+                  + `pour « ${order.product_title} » est confirmé. `
+                  + `Notre équipe vous recontacte pour la suite.`,
+            p_type: 'paiement',
+          })
+        }
+      } catch (e) {
+        console.warn('[Notification] notification client in-app non créée :', e)
+      }
+    }
+
     // Email notification via Nodemailer
     console.log('[Notification] SMTP config:', { host: settings.smtp_host || 'MANQUANT', user: settings.smtp_user || 'MANQUANT', pass: settings.smtp_pass ? '***' : 'MANQUANT', port: settings.smtp_port || '(default 465)' })
     console.log('[Notification] Admin email:', adminEmail || 'MANQUANT', '| Client email:', order.customer_email || 'MANQUANT')
