@@ -337,7 +337,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         accessibilityRole="button"
                         hitSlop={6}>
                         <Text style={styles.errorBtnText}>{t('Retour')}</Text>
-                        <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
+                        <LucideIcon name="arrow-forward" size={16} color={C.primaryText} style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -430,7 +430,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             <View style={styles.trackingGlow} />
 
                             <View style={styles.trackingBadge}>
-                                <LucideIcon name="paper-plane" size={11} color={C.primary} />
+                                <LucideIcon name="paper-plane" size={11} color={C.primaryText} />
                                 <Text style={styles.trackingBadgeText}>{t('SUIVI COLIS')}</Text>
                             </View>
 
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     },
     trackingBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 1.3,
     },
     trackingLabel: {
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
     },
     sectionCountText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 0.3,
     },
 

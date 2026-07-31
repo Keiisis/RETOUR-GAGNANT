@@ -470,7 +470,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                 <Pressable onPress={() => setShowModal(true)} style={styles.navAddBtn}
                     accessibilityRole="button"
                     hitSlop={6}>
-                    <LucideIcon name="add" size={18} color={C.primary} />
+                    <LucideIcon name="add" size={18} color={C.primaryText} />
                     <Text style={styles.navAddText}>{t('Demander')}</Text>
                 </Pressable>
             </View>
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     },
     nextRdvBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.primary,
+                color: C.primaryText,
         letterSpacing: 1.2,
     },
     nextRdvTitle: {

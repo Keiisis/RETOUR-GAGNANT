@@ -325,7 +325,7 @@ export default function MessagesScreen({ navigation }: any) {
                 <View style={[styles.row, isMe ? styles.rowMe : styles.rowThem]}>
                     {!isMe && (
                         <View style={styles.agentAvatar}>
-                            <LucideIcon name="people" size={14} color={C.primary} />
+                            <LucideIcon name="people" size={14} color={C.primaryText} />
                         </View>
                     )}
                     <View style={[styles.bubble, isMe ? styles.myBubble : styles.theirBubble]}>

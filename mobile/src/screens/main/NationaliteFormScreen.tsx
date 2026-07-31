@@ -662,7 +662,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View key={p.prefix} style={styles.subCard}>
                                 <View style={styles.subCardHeader}>
                                     <View style={styles.subCardNumber}>
-                                        <LucideIcon name={p.icon} size={14} color={C.primary} />
+                                        <LucideIcon name={p.icon} size={14} color={C.primaryText} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.subCardTitle}>{p.label}</Text>
@@ -711,7 +711,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Compteur global */}
                         <View style={styles.docCounter}>
                             <View style={styles.docCounterIcon}>
-                                <LucideIcon name="cloud-upload-outline" size={18} color={C.primary} />
+                                <LucideIcon name="cloud-upload-outline" size={18} color={C.primaryText} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.docCounterLabel}>{t('DOCUMENTS TÉLÉVERSÉS')}</Text>
@@ -856,7 +856,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <View style={styles.paymentCard}>
                             <View style={styles.paymentGlow} />
                             <View style={styles.paymentBadge}>
-                                <LucideIcon name="lock-closed" size={11} color={C.primary} />
+                                <LucideIcon name="lock-closed" size={11} color={C.primaryText} />
                                 <Text style={styles.paymentBadgeText}>{t('PAIEMENT SÉCURISÉ')}</Text>
                             </View>
                             <Text style={styles.paymentLabel}>{t('Frais de dossier')}</Text>
@@ -893,7 +893,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                     <LucideIcon name="checkmark" size={42} color={C.primaryText} />
                                 </View>
                                 <View style={styles.successSealBadge}>
-                                    <LucideIcon name="ribbon" size={12} color={C.primary} />
+                                    <LucideIcon name="ribbon" size={12} color={C.primaryText} />
                                 </View>
                             </View>
 
@@ -906,7 +906,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             {savedRef && (
                                 <View style={styles.refBox}>
                                     <View style={styles.refLabel}>
-                                        <LucideIcon name="finger-print" size={12} color={C.primary} />
+                                        <LucideIcon name="finger-print" size={12} color={C.primaryText} />
                                         <Text style={styles.refLabelText}>{t('RÉFÉRENCE OFFICIELLE')}</Text>
                                     </View>
                                     <Text style={styles.refValue}>{savedRef}</Text>
@@ -921,7 +921,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.successBtnText}>{t("Retourner à l'accueil")}</Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
         color: C.textSec,
     },
     stepDotTextActive: {
-        color: C.primary,
+        color: C.primaryText,
     },
 
     /* ── Scroll ── */
@@ -1357,7 +1357,7 @@ const styles = StyleSheet.create({
     },
     subCardNumberText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 0.3,
     },
     subCardTitle: {
@@ -1604,7 +1604,7 @@ const styles = StyleSheet.create({
     },
     paymentBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 1.2,
     },
     paymentLabel: {
@@ -1761,7 +1761,7 @@ const styles = StyleSheet.create({
     },
     refLabelText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 1.5,
     },
     refValue: {

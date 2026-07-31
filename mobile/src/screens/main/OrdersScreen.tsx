@@ -282,7 +282,7 @@ function OrderCard({
                                 <Text style={styles.orderAmount}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
                             <View style={styles.orderArrow}>
-                                <LucideIcon name="arrow-forward" size={16} color={C.primary} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primaryText} />
                             </View>
                         </View>
                     </View>
@@ -480,9 +480,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 accessibilityRole="button"
                                 hitSlop={6}
                             >
-                                <LucideIcon name="storefront" size={16} color={C.primary} style={{ marginRight: 8 }} />
+                                <LucideIcon name="storefront" size={16} color={C.primaryText} style={{ marginRight: 8 }} />
                                 <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
-                                <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primaryText} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     ) : (

@@ -400,7 +400,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             ) : (
                                 <>
                                     <Text style={styles.btnText}>{t('Enregistrer')}</Text>
-                                    <LucideIcon name="checkmark" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="checkmark" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>

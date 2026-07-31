@@ -261,7 +261,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                                     colors={[C.primarySoft, C.primaryDeep]}
                                     style={StyleSheet.absoluteFill}
                                 />
-                                <ShoppingCart size={64} color={C.primary} strokeWidth={1.25} />
+                                <ShoppingCart size={64} color={C.primaryText} strokeWidth={1.25} />
                             </View>
                         )}
                     </Animated.View>

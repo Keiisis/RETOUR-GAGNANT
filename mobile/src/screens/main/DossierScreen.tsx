@@ -390,7 +390,7 @@ export default function DossierScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.emptyBtnText}>{t('Découvrir les services')}</Text>
-                                <LucideIcon name="arrow-forward" size={16} color={C.primary} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primaryText} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -658,11 +658,11 @@ export default function DossierScreen({ navigation }: any) {
                                                         accessibilityRole="button"
                                                         hitSlop={6}
                                                     >
-                                                        <LucideIcon name="add" size={16} color={C.primary} />
+                                                        <LucideIcon name="add" size={16} color={C.primaryText} />
                                                         <Text style={styles.uploadNowText}>
                                                             {t('Ajouter un document')}
                                                         </Text>
-                                                        <LucideIcon name="arrow-forward" size={14} color={C.primary} />
+                                                        <LucideIcon name="arrow-forward" size={14} color={C.primaryText} />
                                                     </TouchableOpacity>
                                                 </View>
                                             )}

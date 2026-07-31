@@ -598,9 +598,9 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             <ActivityIndicator color={C.primaryText} size="small" />
                         ) : (
                             <>
-                                <LucideIcon name="lock-closed" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                                <LucideIcon name="lock-closed" size={18} color={C.primaryText} style={{ marginRight: 8 }} />
                                 <Text style={styles.payBtnText}>{t('Payer maintenant')}</Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                             </>
                         )}
                     </TouchableOpacity>

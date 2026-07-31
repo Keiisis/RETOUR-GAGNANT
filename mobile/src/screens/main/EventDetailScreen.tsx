@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     },
     dateMonth: {
         ...typography.button, fontSize: 13,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 3,
     },
     dateYear: {
@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
     },
     recapBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 1,
     },
     recapPrice: {

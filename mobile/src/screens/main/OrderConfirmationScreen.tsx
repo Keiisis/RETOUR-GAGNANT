@@ -238,7 +238,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
 
                         {/* Badge couronne en bas */}
                         <View style={styles.sealBadge}>
-                            <LucideIcon name="ribbon" size={14} color={C.primary} />
+                            <LucideIcon name="ribbon" size={14} color={C.primaryText} />
                         </View>
                     </View>
                 </View>
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     },
     ticketStatusText: {
         ...typography.button, fontSize: 12,
-        color: C.success,
+        color: C.primaryText,
         letterSpacing: 1,
     },
     ticketRefBlock: {

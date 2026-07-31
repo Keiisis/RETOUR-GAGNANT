@@ -420,7 +420,7 @@ const cardStyles = StyleSheet.create({
     },
     vipTagText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 0.5,
     },
     discountTag: {
@@ -761,7 +761,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         hitSlop={6}
                     >
                         <View style={styles.cartFabIconWrap}>
-                            <LucideIcon name="bag-handle" size={22} color={C.primary} />
+                            <LucideIcon name="bag-handle" size={22} color={C.primaryText} />
                             <View style={styles.cartBadge}>
                                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
                             </View>
@@ -879,7 +879,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.checkoutBtnText}>
                                     {t('Sceller la commande')}
                                 </Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </Animated.View>
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
     },
     countText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 0.3,
     },
 
@@ -1069,7 +1069,7 @@ const styles = StyleSheet.create({
     },
     cartBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.primary,
+        color: C.primaryText,
     },
     cartFabTextWrap: {
         flex: 1,

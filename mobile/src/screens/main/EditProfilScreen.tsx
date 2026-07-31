@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     },
     avatarText: {
         ...typography.h1, fontSize: 32,
-                color: C.primary,
+                color: C.primaryText,
         letterSpacing: 1,
     },
     identityName: {

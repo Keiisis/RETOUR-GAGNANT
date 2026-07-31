@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     docNum: {
-        fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: C.primary,
+        fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: C.primaryText,
     },
     docText: {
         flex: 1, fontSize: 13, lineHeight: 20,

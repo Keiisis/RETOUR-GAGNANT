@@ -1096,7 +1096,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.primary,
+                color: C.primaryText,
         letterSpacing: 0.3,
     },
 

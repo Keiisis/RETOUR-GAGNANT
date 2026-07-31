@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     },
     pushStatusText: {
         ...typography.button, fontSize: 12,
-                color: C.success,
+                color: C.primaryText,
         letterSpacing: 0.8,
     },
     pushSub: {
