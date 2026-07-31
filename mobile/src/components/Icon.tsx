@@ -304,11 +304,32 @@ export function LucideIcon({ name, size = 24, color, strokeWidth = 2, style, fil
     }
     
     if (!IconComponent) {
-        // Fallback : si l'icône n'est pas dans le mapping, afficher un cercle info
-        return <Circle size={size} color={color} strokeWidth={strokeWidth} style={style} />
+        // Repli neutre : un cercle vaut mieux qu'un écran blanc.
+        return <Circle size={size} color={color} strokeWidth={strokeWidth} />
     }
-    
-    return <IconComponent size={size} color={color} strokeWidth={strokeWidth} style={style} fill={fill} />
+
+    /* ⚠️ NE JAMAIS passer `fill` ni `style` quand ils sont vides.
+       Lucide construit son SVG ainsi (dist/cjs/Icon.js) :
+
+           { ...defaultAttributes,   // fill: "none"
+             ...customAttrs }        // <- nos props arrivent ici
+
+       Étaler `fill: undefined` ÉCRASE le `fill: "none"` de Lucide. Le SVG
+       retombe alors sur son remplissage par défaut, qui est NOIR : toutes
+       les icônes se retrouvaient pleines de noir avec un simple liseré de
+       couleur. On ne transmet donc que les propriétés réellement fournies. */
+    const optionnelles: Record<string, unknown> = {}
+    if (fill !== undefined) optionnelles.fill = fill
+    if (style !== undefined) optionnelles.style = style
+
+    return (
+        <IconComponent
+            size={size}
+            color={color}
+            strokeWidth={strokeWidth}
+            {...optionnelles}
+        />
+    )
 }
 
 // Re-export toutes les icônes Lucide pour import direct
