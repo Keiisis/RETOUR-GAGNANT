@@ -289,7 +289,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
         if ((p.match(/\d/g) || []).length >= 2) score++
         if (/[^A-Za-z0-9]/.test(p)) score++
         if (score <= 1) return { level: 1, label: t('Faible'), color: C.danger }
-        if (score === 2) return { level: 2, label: t('Moyen'), color: C.warning }
+        if (score === 2) return { level: 2, label: t('Moyen'), color: C.primary }
         if (score === 3) return { level: 3, label: t('Bon'), color: C.successMid }
         return { level: 4, label: t('Fort'), color: C.success }
     }, [newPassword, t])

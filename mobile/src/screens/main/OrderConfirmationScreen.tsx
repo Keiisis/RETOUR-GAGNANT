@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     },
     ticketHeaderText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.3,
     },
     ticketStatusBadge: {
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     },
     timelineTitle: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.5,
     },
     timelineLine: {

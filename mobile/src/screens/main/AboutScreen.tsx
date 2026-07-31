@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     },
     cardLabel: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     cardTitle: {
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     sectionUnderline: {

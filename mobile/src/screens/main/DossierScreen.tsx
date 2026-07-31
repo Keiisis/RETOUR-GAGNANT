@@ -280,7 +280,7 @@ export default function DossierScreen({ navigation }: any) {
     const docStatusInfo = (s: string) => {
         if (s === 'approved') return { icon: 'checkmark-circle' as const, color: C.success, label: t('Validé') }
         if (s === 'rejected') return { icon: 'close-circle' as const, color: C.error, label: t('Refusé') }
-        return { icon: 'time-outline' as const, color: C.warning, label: t('En attente') }
+        return { icon: 'time-outline' as const, color: C.primary, label: t('En attente') }
     }
 
     const fileIcon = (type?: string): string => {
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     },
     notesLabel: {
         ...typography.overline,
-        color: C.accentDark,
+        color: C.primary,
         marginBottom: spacing.xxs,
     },
     notesText: {
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     uploadingText: {
         ...typography.label,
         fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
     },
 
     /* ── Doc Cards ── */
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
     },
     tipTitle: {
         ...typography.label,
-        color: C.accentDark,
+        color: C.primary,
         marginBottom: spacing.xxs,
     },
     tipText: {

@@ -89,7 +89,7 @@ const SHIPPING_CONFIG: Record<string, {
     borderRgba: string
 }> = {
     pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: 'rgba(138, 138, 138, 0.08)', borderRgba: 'rgba(138, 138, 138, 0.20)' },
-    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.warning, bgRgba: 'rgba(217, 119, 6, 0.10)', borderRgba: 'rgba(217, 119, 6, 0.25)' },
+    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.primary, bgRgba: 'rgba(217, 119, 6, 0.10)', borderRgba: 'rgba(217, 119, 6, 0.25)' },
     shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: 'rgba(0, 100, 60, 0.10)', borderRgba: 'rgba(0, 100, 60, 0.25)' },
     in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: 'rgba(0, 135, 81, 0.08)', borderRgba: 'rgba(0, 135, 81, 0.20)' },
     delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: 'rgba(0, 135, 81, 0.10)', borderRgba: 'rgba(0, 135, 81, 0.25)' },
@@ -1140,7 +1140,7 @@ const styles = StyleSheet.create({
     },
     shipLabel: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.2,
         marginBottom: 3,
     },
@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
     },
     evLatestBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 0.8,
     },
     evDesc: {

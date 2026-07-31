@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     },
     tocTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     tocUnderline: {
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     },
     sectionBadge: {
         ...typography.overline,
-                color: C.accentDark,
+                color: C.primary,
         marginBottom: spacing.xxs,
     },
     sectionTitle: {

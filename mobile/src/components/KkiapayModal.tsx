@@ -120,7 +120,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
 
                     {/* Service info */}
                     <View style={styles.serviceBox}>
-                        <Briefcase size={20} color={colors.gold} strokeWidth={1.75} />
+                        <Briefcase size={20} color={colors.primary} strokeWidth={1.75} />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.serviceLabel}>{t('Service')}</Text>
                             <Text style={styles.serviceName} numberOfLines={2}>{serviceName}</Text>

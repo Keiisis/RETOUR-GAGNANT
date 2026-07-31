@@ -230,7 +230,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                         <Card flagTop raised onPress={() => navigation.navigate('Dossier')}>
                             <View style={styles.dossierTop}>
                                 <View style={styles.stepBadge}>
-                                    <FileCheck2 size={14} color={colors.accentInk} strokeWidth={2.2} />
+                                    <FileCheck2 size={14} color={colors.primary} strokeWidth={2.2} />
                                     <Text style={styles.stepBadgeText}>{stepLabel}</Text>
                                 </View>
                                 <IconTile icon={FolderOpen} tone="primary" size={48} />
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md, paddingVertical: 9,
         borderRadius: radius.pill, alignSelf: 'flex-start',
     },
-    stepBadgeText: { ...typography.label, color: colors.accentInk },
+    stepBadgeText: { ...typography.label, color: colors.primary },
     dossierTitle: { ...typography.h2, color: colors.text, marginTop: spacing.md },
     progressBg: {
         height: 8, borderRadius: radius.pill, overflow: 'hidden',

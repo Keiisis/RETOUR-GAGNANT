@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     },
     cardCountText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 0.3,
     },
 

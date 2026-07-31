@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     },
     suggestionsTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     suggestionsWrap: {

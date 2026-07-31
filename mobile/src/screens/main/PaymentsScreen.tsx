@@ -218,7 +218,7 @@ export default function PaymentsScreen({ navigation }: any) {
                     ) : entries.length === 0 ? (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIcon}>
-                                <LucideIcon name="receipt-outline" size={30} color={C.accentDark} />
+                                <LucideIcon name="receipt-outline" size={30} color={C.primary} />
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucun règlement')}</Text>
                             <Text style={styles.emptyText}>

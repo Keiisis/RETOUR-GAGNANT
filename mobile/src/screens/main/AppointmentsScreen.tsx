@@ -74,7 +74,7 @@ const TYPE_CONFIG = {
 
 const STATUS_CONFIG = {
     confirmed: { label: 'Confirmé', color: C.success, bg: C.surfaceSoft, dot: C.success },
-    pending: { label: 'En attente', color: C.accentDark, bg: C.accentSoft, dot: C.accent },
+    pending: { label: 'En attente', color: C.primary, bg: C.accentSoft, dot: C.accent },
     cancelled: { label: 'Annulé', color: C.error, bg: C.dangerSoft, dot: C.error },
     completed: { label: 'Terminé', color: C.textSec, bg: C.surfaceAlt, dot: C.textSec },
 }
@@ -1084,7 +1084,7 @@ const styles = StyleSheet.create({
     },
     rdvMonth: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1,
         marginTop: spacing.xxs,
     },
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
     },
     modalSubtitle: {
         ...typography.overline,
-                color: C.accentDark,
+                color: C.primary,
         marginBottom: spacing.xs,
     },
     slotsLoading: { paddingVertical: spacing.lg, alignItems: 'center' },

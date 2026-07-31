@@ -539,7 +539,7 @@ export default function ProfilScreen() {
                                 </View>
                                 {profile?.ville ? (
                                     <View style={styles.villeBadge}>
-                                        <LucideIcon name="location-outline" size={13} color={C.accentInk} />
+                                        <LucideIcon name="location-outline" size={13} color={C.primary} />
                                         <Text style={styles.villeText}>{profile.ville}</Text>
                                     </View>
                                 ) : null}
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     roleBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.primarySoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
     roleText: { ...typography.label, fontSize: 12, color: C.primary },
     villeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.accentSoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
-    villeText: { ...typography.label, fontSize: 12, color: C.accentInk },
+    villeText: { ...typography.label, fontSize: 12, color: C.primary },
 
     /* ── Completion ── */
     completionWrap: { marginTop: spacing.lg },
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     sectionUnderline: {

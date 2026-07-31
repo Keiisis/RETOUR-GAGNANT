@@ -40,7 +40,7 @@ export default function EmptyState({
                 end={{ x: 1, y: 1 }}
                 style={styles.iconCircle}
             >
-                <Icon size={32} color={colors.goldDark} strokeWidth={1.6} />
+                <Icon size={32} color={colors.primary} strokeWidth={1.6} />
             </LinearGradient>
 
             <Text style={styles.title}>{title}</Text>

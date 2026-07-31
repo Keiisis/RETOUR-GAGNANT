@@ -746,7 +746,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                 <View style={styles.docSlotTags}>
                                                     {slot.ancestral && (
                                                         <View style={[styles.miniTag, { backgroundColor: C.accentSoft, borderColor: C.border }]}>
-                                                            <Text style={[styles.miniTagText, { color: C.accentDark }]}>{t('ANCESTRAL')}</Text>
+                                                            <Text style={[styles.miniTagText, { color: C.primary }]}>{t('ANCESTRAL')}</Text>
                                                         </View>
                                                     )}
                                                     {slot.multi && (
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -1096,7 +1096,7 @@ const styles = StyleSheet.create({
     },
     stepperBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.2,
     },
     stepperLabel: {
@@ -1175,7 +1175,7 @@ const styles = StyleSheet.create({
     },
     stepHeaderBadge: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.2,
         marginBottom: spacing.xxs,
     },
@@ -1218,7 +1218,7 @@ const styles = StyleSheet.create({
     heroIconGlow: { display: 'none' },
     heroBadge: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.5,
         marginBottom: spacing.sm,
     },
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     },
     subCardTag: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.2,
     },
 
@@ -1549,7 +1549,7 @@ const styles = StyleSheet.create({
     },
     recapHeaderText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.3,
     },
     infoRow: {
@@ -1726,7 +1726,7 @@ const styles = StyleSheet.create({
     },
     successBadge: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.5,
         marginBottom: spacing.sm,
     },

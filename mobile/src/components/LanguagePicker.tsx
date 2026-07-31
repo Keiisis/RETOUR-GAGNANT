@@ -82,7 +82,7 @@ export default function LanguagePicker({ visible, onClose }: LanguagePickerProps
                             accessibilityRole="button"
                             accessibilityLabel="Fermer"
                             hitSlop={6}>
-                            <X size={18} color={colors.gold} strokeWidth={1.75} />
+                            <X size={18} color={colors.primary} strokeWidth={1.75} />
                         </TouchableOpacity>
                     </View>
 
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     },
     headerSub: {
         ...typography.caption,
-        color: colors.gold + '99',
+        color: colors.primary + '99',
         marginTop: spacing.xxs,
     },
     closeBtn: {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
         ...typography.label, fontSize: 15,
         color: colors.textPrimary,
     },
-    nativeLabelActive: { color: colors.textGold },
+    nativeLabelActive: { color: colors.primary },
     frenchLabel: {
         ...typography.caption,
         color: colors.textMuted, marginTop: spacing.xxs,

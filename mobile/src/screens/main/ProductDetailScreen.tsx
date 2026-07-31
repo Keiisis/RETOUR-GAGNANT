@@ -261,7 +261,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                                     colors={[C.primarySoft, C.primaryDeep]}
                                     style={StyleSheet.absoluteFill}
                                 />
-                                <ShoppingCart size={64} color={C.gold} strokeWidth={1.25} />
+                                <ShoppingCart size={64} color={C.primary} strokeWidth={1.25} />
                             </View>
                         )}
                     </Animated.View>
@@ -335,7 +335,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                         <View style={styles.ratingRow}>
                             <View style={styles.starsRow}>
                                 {[0, 1, 2, 3, 4].map((i) => (
-                                    <Star key={i} size={13} color={C.gold} fill={i < 4 ? C.gold : 'transparent'} strokeWidth={1.5} />
+                                    <Star key={i} size={13} color={C.primary} fill={i < 4 ? C.gold : 'transparent'} strokeWidth={1.5} />
                                 ))}
                             </View>
                             <Text style={styles.ratingText}>4.8 · 124 {t('avis')}</Text>
@@ -408,7 +408,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     <AnimatedSection delay={380} style={styles.longDescBox}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionIconWrap}>
-                                <Tag size={14} color={C.gold} strokeWidth={1.8} />
+                                <Tag size={14} color={C.primary} strokeWidth={1.8} />
                             </View>
                             <Text style={styles.sectionTitle}>{t('Description détaillée')}</Text>
                         </View>
@@ -494,10 +494,10 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     ) : (
                         <>
                             <View style={styles.addBtnIcon}>
-                                <ShoppingCart size={18} color={C.gold} strokeWidth={2} />
+                                <ShoppingCart size={18} color={C.primary} strokeWidth={2} />
                             </View>
                             <Text style={styles.addBtnText}>{t('Ajouter au panier')}</Text>
-                            <ChevronRight size={18} color={C.gold} strokeWidth={2.2} />
+                            <ChevronRight size={18} color={C.primary} strokeWidth={2.2} />
                         </>
                     )}
                 </InteractiveButton>
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     floatingPrice: {
         fontSize: 12,
         fontFamily: 'Outfit_700Bold',
-        color: C.goldDeep,
+        color: C.primaryDeep,
         marginTop: 2,
     },
 
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
     },
     category: {
         fontSize: 12,
-        color: C.goldDeep,
+        color: C.primaryDeep,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 1.4,
         textTransform: 'uppercase',
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
     totalValue: {
         fontSize: 18,
         fontFamily: 'Outfit_700Bold',
-        color: C.goldDeep,
+        color: C.primaryDeep,
         letterSpacing: -0.3,
     },
 

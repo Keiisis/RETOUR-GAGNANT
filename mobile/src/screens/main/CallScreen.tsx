@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     label: { ...typography.overline, fontSize: 12, color: C.textMuted },
     title: { ...typography.h1, fontSize: 26, color: C.text, textAlign: 'center', marginTop: spacing.sm },
     timer: { ...typography.h2, color: C.primary, marginTop: spacing.md },
-    message: { ...typography.bodySmall, color: C.accentDark, textAlign: 'center', marginTop: spacing.md },
+    message: { ...typography.bodySmall, color: C.primary, textAlign: 'center', marginTop: spacing.md },
 
     actions: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

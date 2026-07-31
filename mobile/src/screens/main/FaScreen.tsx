@@ -207,7 +207,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     showsVerticalScrollIndicator={false}
                     ListHeaderComponent={
                         <View style={styles.intro}>
-                            <View style={styles.introIcon}><Sparkles size={18} color={C.gold} /></View>
+                            <View style={styles.introIcon}><Sparkles size={18} color={C.primary} /></View>
                             <Text style={styles.introText}>
                                 {t('Le Fa est la sagesse divinatoire du Bénin. Nos prêtres accompagnent votre quête de racines avec respect et discrétion.')}
                             </Text>
@@ -286,7 +286,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                     <Section title={t('Avis')}>
                                         {detail.reviews.slice(0, 6).map((r, i) => (
                                             <View key={i} style={styles.review}>
-                                                <Quote size={14} color={C.gold} style={{ marginBottom: 4 }} />
+                                                <Quote size={14} color={C.primary} style={{ marginBottom: 4 }} />
                                                 {!!r.comment && <Text style={styles.reviewText}>{r.comment}</Text>}
                                                 <View style={styles.reviewFoot}>
                                                     <Text style={styles.reviewAuthor}>{r.author_name}</Text>
@@ -390,7 +390,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
     return (
         <View style={{ flexDirection: 'row', gap: 1 }}>
             {[1, 2, 3, 4, 5].map(i => (
-                <Star key={i} size={size} color={C.gold} fill={i <= Math.round(value) ? C.gold : 'transparent'} />
+                <Star key={i} size={size} color={C.primary} fill={i <= Math.round(value) ? C.gold : 'transparent'} />
             ))}
         </View>
     )
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     chipSmText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
 
     ratingText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
-    noRating: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.gold, marginTop: 3 },
+    noRating: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primary, marginTop: 3 },
 
     // Sheets
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },

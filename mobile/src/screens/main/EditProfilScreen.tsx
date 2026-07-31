@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     },
     changesBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     },
     tipTitle: {
         ...typography.button, fontSize: 12.5,
-                color: C.accentDark,
+                color: C.primary,
         marginBottom: spacing.xxs,
         letterSpacing: 0.2,
     },

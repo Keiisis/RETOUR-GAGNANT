@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     },
     canvasGuideText: {
         ...typography.overline,
-                color: C.accentDark,
+                color: C.primary,
     },
     canvas: {
         flex: 1,

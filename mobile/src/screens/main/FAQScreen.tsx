@@ -532,7 +532,7 @@ export default function FAQScreen() {
                 {(search.length > 0 || activeTopic !== 'Tous') && (
                     <AnimatedSection delay={250}>
                         <View style={styles.resultsCount}>
-                            <LucideIcon name="filter" size={12} color={C.accentDark} />
+                            <LucideIcon name="filter" size={12} color={C.primary} />
                             <Text style={styles.resultsCountText}>
                                 {filteredCount} {filteredCount > 1 ? t('résultats') : t('résultat')}
                                 {search.length > 0 && (
@@ -564,7 +564,7 @@ export default function FAQScreen() {
                                         accessibilityRole="button"
                                         hitSlop={6}
                                     >
-                                        <LucideIcon name="close-circle-outline" size={14} color={C.accentDark} />
+                                        <LucideIcon name="close-circle-outline" size={14} color={C.primary} />
                                         <Text style={styles.noResultBtnText}>
                                             {t('Effacer la recherche')}
                                         </Text>
@@ -577,7 +577,7 @@ export default function FAQScreen() {
                                         accessibilityRole="button"
                                         hitSlop={6}
                                     >
-                                        <LucideIcon name="apps-outline" size={14} color={C.accentDark} />
+                                        <LucideIcon name="apps-outline" size={14} color={C.primary} />
                                         <Text style={styles.noResultBtnText}>
                                             {t('Voir tout')}
                                         </Text>
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     },
     filterTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     filterUnderline: {
@@ -857,7 +857,7 @@ const styles = StyleSheet.create({
     },
     resultsCountText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
                 letterSpacing: 0.2,
     },
     resultsCountQuery: {
@@ -917,7 +917,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     noResultBtnText: {
-        color: C.accentDark,
+        color: C.primary,
         ...typography.button, fontSize: 12,
                 letterSpacing: 0.2,
     },
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
     },
     channelsTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     channelsUnderline: {

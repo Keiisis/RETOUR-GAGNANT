@@ -564,7 +564,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 </InteractiveButton>
 
                                 <View style={styles.ctaFreeRow}>
-                                    <Sparkles size={12} color={C.accentDark} fill={C.accentDark} strokeWidth={0} />
+                                    <Sparkles size={12} color={C.primary} fill={C.accentDark} strokeWidth={0} />
                                     <Text style={styles.ctaFreeNote}>{t('Premier appel de 15 min gratuit')}</Text>
                                 </View>
                             </View>
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.pill, backgroundColor: C.accent,
     },
     pricingPrice: {
-        fontSize: 13, fontFamily: fonts.bodyBold, color: C.accentDark,
+        fontSize: 13, fontFamily: fonts.bodyBold, color: C.primary,
     },
 
     /* Timeline / Processus */
@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     docNum: {
-        fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: C.gold,
+        fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: C.primary,
     },
     docText: {
         flex: 1, fontSize: 13, lineHeight: 20,

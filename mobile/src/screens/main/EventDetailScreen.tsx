@@ -265,7 +265,7 @@ const ticketStyles = StyleSheet.create({
     },
     vipMiniText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
     },
     desc: {
         ...typography.caption,
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     },
     featuredNavText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -1247,7 +1247,7 @@ const styles = StyleSheet.create({
     },
     sheetSubtitle: {
         ...typography.overline,
-        color: C.accentDark,
+        color: C.primary,
         marginBottom: 4,
     },
     sheetTitle: {

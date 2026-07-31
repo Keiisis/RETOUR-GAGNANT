@@ -84,7 +84,7 @@ const TYPE_CONFIG: Record<string, {
     },
     appointment: {
         icon: 'calendar',
-        color: C.purple,
+        color: C.primary,
         bgRgba: C.accentSoft,
         borderRgba: C.border,
         label: 'RENDEZ-VOUS',
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     },
     statsTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     statsUnderline: {
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1,
     },
 
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
     },
     markAllText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 

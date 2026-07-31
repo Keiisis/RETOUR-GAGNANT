@@ -147,7 +147,7 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
                 >
                     <View style={styles.stat}>
-                        <Sparkles size={16} color={C.gold} />
+                        <Sparkles size={16} color={C.primary} />
                         <Text style={styles.statText}>
                             {persons.length} {persons.length > 1 ? t('membres identifiés') : t('membre identifié')}{tree.name ? ` · ${tree.name}` : ''}
                         </Text>

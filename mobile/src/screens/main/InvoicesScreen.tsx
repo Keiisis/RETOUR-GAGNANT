@@ -73,7 +73,7 @@ const STATUS_CONFIG: Record<string, {
     },
     pending: {
         label: 'En attente',
-        color: C.warning,
+        color: C.primary,
         bg: C.accentSoft,
         icon: 'time-outline',
     },
@@ -228,7 +228,7 @@ function InvoiceCard({
                     {/* Contenu */}
                     <View style={styles.invInfo}>
                         <View style={styles.refRow}>
-                            <LucideIcon name="receipt-outline" size={11} color={C.accentDark} />
+                            <LucideIcon name="receipt-outline" size={11} color={C.primary} />
                             <Text style={styles.invRef}>{invoice.invoice_ref}</Text>
                         </View>
 
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     },
     filterTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     filterUnderline: {
@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
     },
     invRef: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
     invDesc: {
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     emptyCatBtnText: {
-        color: C.accentDark,
+        color: C.primary,
         ...typography.button, fontSize: 12,
                 letterSpacing: 0.2,
     },

@@ -603,7 +603,7 @@ const cardStyles = StyleSheet.create({
     },
     dateMonth: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.2,
         marginTop: spacing.xxs,
     },
@@ -647,7 +647,7 @@ const cardStyles = StyleSheet.create({
     },
     catText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.5,
     },
     featuredBadge: {
@@ -710,7 +710,7 @@ const cardStyles = StyleSheet.create({
     },
     soonText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
     footer: {
@@ -1096,7 +1096,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -1161,7 +1161,7 @@ const styles = StyleSheet.create({
     },
     filterTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     filterUnderline: {
@@ -1330,7 +1330,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     emptyCatBtnText: {
-        color: C.accentDark,
+        color: C.primary,
         ...typography.button, fontSize: 12,
                 letterSpacing: 0.2,
     },

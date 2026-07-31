@@ -70,7 +70,7 @@ const SHIPPING_CONFIG: Record<string, {
     borderRgba: string
 }> = {
     pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: C.surfaceAlt, borderRgba: C.border },
-    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.warning, bgRgba: C.accentSoft, borderRgba: C.border },
+    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.primary, bgRgba: C.accentSoft, borderRgba: C.border },
     shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: C.surfaceSoft, borderRgba: C.border },
     in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: C.surfaceSoft, borderRgba: C.border },
     delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: C.surfaceSoft, borderRgba: C.border },
@@ -609,7 +609,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 icon="time-outline"
                                 active={filter === 'active'}
                                 onPress={() => setFilter('active')}
-                                color={C.warning}
+                                color={C.primary}
                             />
                             <FilterPill
                                 label={t('Livrées')}
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     },
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
     },
     searchHeaderBadge: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.3,
         marginBottom: spacing.xxs,
     },
@@ -904,7 +904,7 @@ const styles = StyleSheet.create({
     },
     filtersTitle: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.5,
     },
     filtersLine: {
@@ -974,7 +974,7 @@ const styles = StyleSheet.create({
     orderRefBlock: {},
     orderRefLabel: {
         ...typography.button, fontSize: 12,
-                color: C.accentDark,
+                color: C.primary,
         letterSpacing: 1.3,
         marginBottom: spacing.xxs,
     },
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
     },
     orderTrackingCarrier: {
         ...typography.caption,
-        color: C.accentDark,
+        color: C.primary,
                 flex: 1,
     },
 

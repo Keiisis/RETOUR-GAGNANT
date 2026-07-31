@@ -476,7 +476,7 @@ const cardStyles = StyleSheet.create({
     },
     category: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.4,
     },
     title: { ...typography.h1, color: C.text },
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
     },
     countText: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -1133,7 +1133,7 @@ const styles = StyleSheet.create({
     },
     sheetSubtitle: {
         ...typography.overline,
-        color: C.accentDark,
+        color: C.primary,
         marginBottom: 4,
     },
     sheetTitle: {
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
     },
     cartItemCategory: {
         ...typography.button, fontSize: 12,
-        color: C.accentDark,
+        color: C.primary,
         letterSpacing: 1.2,
         marginBottom: 4,
     },
