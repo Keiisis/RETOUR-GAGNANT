@@ -56,6 +56,10 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     const { t } = useLang()
 
     const [priests, setPriests] = useState<Priest[]>([])
+    /* Distingue « aucun prêtre publié » de « la requête a échoué » :
+       le même message pour deux causes opposées empêchait de savoir
+       s'il fallait saisir des données ou corriger un accès. */
+    const [erreurAnnuaire, setErreurAnnuaire] = useState<string | null>(null)
     const [prices, setPrices] = useState<{ presentiel?: string; visio?: string }>({})
     const [loading, setLoading] = useState(true)
 
@@ -81,15 +85,65 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     fetchWithTimeout(`${API_BASE}/api/fa-priests`, { timeoutMs: 15000 }),
                     fetchWithTimeout(`${API_BASE}/api/services/consultation-fa-racines`, { timeoutMs: 15000 }).catch(() => null),
                 ])
-                const pData = await pRes.json().catch(() => ({ priests: [] }))
-                if (alive) setPriests(Array.isArray(pData.priests) ? pData.priests : [])
+                if (!pRes.ok) {
+                    if (alive) setErreurAnnuaire(`HTTP ${pRes.status}`)
+                } else {
+                    const pData = await pRes.json().catch(() => ({ priests: [] }))
+                    if (alive) {
+                        setPriests(Array.isArray(pData.priests) ? pData.priests : [])
+                        setErreurAnnuaire(null)
+                    }
+                }
                 if (sRes) {
                     const sData = await sRes.json().catch(() => ({}))
-                    const opts: PricingOption[] = sData?.service?.pricing_options || sData?.pricing_options || []
-                    const find = (n: string) => opts.find(o => (o.label || '').toLowerCase().includes(n))?.price
-                    if (alive) setPrices({ presentiel: find('présentiel') || find('presentiel'), visio: find('visio') })
+                    const svc = sData?.service || sData || {}
+                    const opts: PricingOption[] = svc.pricing_options || []
+
+                    /* Deux sources, dans cet ordre :
+
+                       1. `pricing_options` — le detail par mode, quand l'admin l'a
+                          renseigne. La recherche est LARGE : les libelles varient
+                          d'une saisie a l'autre (« Presentiel », « En presentiel »,
+                          « Sur place », « Visio », « Visioconference », « A
+                          distance »). Un `includes('presentiel')` strict ne
+                          trouvait rien des que le libelle differait.
+
+                       2. `price_display` — la ligne unique affichee par la liste
+                          des services, du type « Presentiel 350 € · Visio 380 € ».
+                          C'est CE champ que l'ecran des services lit, et c'est
+                          pour cela que la liste affichait des prix la ou cet ecran
+                          n'affichait rien : il interrogeait une autre colonne.
+
+                       Sans l'un ni l'autre, on n'invente rien : les cartes restent
+                       sans montant plutot que d'annoncer un prix faux. */
+                    const chercher = (mots: string[]) => {
+                        const trouve = opts.find(o => {
+                            const l = (o.label || '').toLowerCase()
+                            return mots.some(m => l.includes(m))
+                        })
+                        return trouve?.price
+                    }
+                    let presentiel = chercher(['présentiel', 'presentiel', 'sur place', 'in-person', 'in person'])
+                    let visio = chercher(['visio', 'distance', 'video', 'vidéo', 'ligne'])
+
+                    if (!presentiel || !visio) {
+                        const ligne: string = svc.price_display || svc.price || ''
+                        // « Présentiel 350 € · Visio 380 € » → on isole chaque montant.
+                        const parts = ligne.split(/[·|,;]/)
+                        for (const part of parts) {
+                            const bas = part.toLowerCase()
+                            const montant = part.replace(/^[^0-9]*/, '').trim()
+                            if (!montant) continue
+                            if (!presentiel && /présentiel|presentiel|sur place|in-person|in person/.test(bas)) presentiel = montant
+                            if (!visio && /visio|distance|video|vidéo|ligne/.test(bas)) visio = montant
+                        }
+                    }
+
+                    if (alive) setPrices({ presentiel, visio })
                 }
-            } catch { /* réseau */ }
+            } catch (e) {
+                if (alive) setErreurAnnuaire(e instanceof Error ? e.message : 'réseau')
+            }
             if (alive) setLoading(false)
         })()
         return () => { alive = false }
@@ -215,7 +269,9 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     }
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Text style={styles.emptyText}>{t('Annuaire en cours de mise à jour. Revenez bientôt.')}</Text>
+                            <Text style={styles.emptyText}>{erreurAnnuaire
+                                ? `${t('Annuaire momentanément inaccessible.')} (${erreurAnnuaire})`
+                                : t('Annuaire en cours de mise à jour. Revenez bientôt.')}</Text>
                         </View>
                     }
                     renderItem={({ item }) => (
