@@ -124,8 +124,8 @@ const menuStyles = StyleSheet.create({
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
         gap: 12,
     },
     itemBorder: {
@@ -135,31 +135,29 @@ const menuStyles = StyleSheet.create({
     iconWrap: {
         width: 38,
         height: 38,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0, 135, 81, 0.06)',
+        borderRadius: radius.sm,
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(0, 135, 81, 0.08)',
+        borderColor: C.border,
     },
     iconWrapAccent: {
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: C.accentSoft,
         borderColor: C.border,
     },
     textWrap: {
         flex: 1,
     },
     label: {
-        fontSize: 13.5,
-        fontWeight: '700',
-        color: C.primary,
+        ...typography.button, fontSize: 13.5,
+                color: C.primary,
         letterSpacing: -0.1,
     },
     sub: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
-        marginTop: 2,
+                marginTop: spacing.xxs,
     },
 })
 
@@ -676,11 +674,11 @@ const styles = StyleSheet.create({
     },
 
     scroll: {
-        paddingBottom: 20,
+        paddingBottom: spacing.gutter,
     },
 
     /* ── Nav Bar ── */
-    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navTitle: { ...typography.h1, color: C.text, flex: 1 },
     navEditBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
 
@@ -688,8 +686,8 @@ const styles = StyleSheet.create({
 
     /* ── Profile Card (Hero bleu massif) ── */
     profileBody: { padding: spacing.lg },
-    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
-    profileCard: { backgroundColor: C.surface, borderRadius: radius.xl, marginHorizontal: 20, marginBottom: spacing.md, overflow: 'hidden', ...shadows.cardRaised },
+    topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
+    profileCard: { backgroundColor: C.surface, borderRadius: radius.xl, marginHorizontal: spacing.gutter, marginBottom: spacing.md, overflow: 'hidden', ...shadows.cardRaised },
 
     /* ── Avatar ── */
     avatarOuter: { width: 96, height: 96, alignSelf: 'center', marginBottom: spacing.md },
@@ -698,7 +696,7 @@ const styles = StyleSheet.create({
         width: 94,
         height: 94,
         borderRadius: 47,
-        backgroundColor: 'rgba(0, 135, 81, 0.3)',
+        backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -723,9 +721,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     avatarInitials: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: C.accent,
+        ...typography.h1, fontSize: 32,
+                color: C.accent,
         letterSpacing: 1,
     },
     cameraBadge: { position: 'absolute', right: -2, bottom: -2, width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.surface },
@@ -735,9 +732,9 @@ const styles = StyleSheet.create({
 
     /* ── Badges ── */
     badgesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.md },
-    roleBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.primarySoft, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radius.pill },
+    roleBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.primarySoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
     roleText: { ...typography.label, fontSize: 12, color: C.primary },
-    villeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.accentSoft, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radius.pill },
+    villeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.accentSoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
     villeText: { ...typography.label, fontSize: 12, color: C.accentInk },
 
     /* ── Completion ── */
@@ -749,7 +746,7 @@ const styles = StyleSheet.create({
     completionFill: { height: '100%', borderRadius: radius.pill, backgroundColor: C.primary },
 
     /* ── Stats Row ── */
-    statsRow: { flexDirection: 'row', gap: spacing.md, marginHorizontal: 20, marginBottom: spacing.lg },
+    statsRow: { flexDirection: 'row', gap: spacing.md, marginHorizontal: spacing.gutter, marginBottom: spacing.lg },
     statCard: { flex: 1, alignItems: 'center', backgroundColor: C.surface, borderRadius: radius.xl, paddingVertical: spacing.md, gap: spacing.xs, ...shadows.card },
     statIconWrap: { width: 44, height: 44, borderRadius: radius.lg, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
     statValue: { ...typography.h2, color: C.text },
@@ -760,14 +757,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        marginHorizontal: 20,
-        marginBottom: 10,
-        marginTop: 8,
+        marginHorizontal: spacing.gutter,
+        marginBottom: spacing.sm,
+        marginTop: spacing.sm,
     },
     sectionLabel: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.accentDark,
+        ...typography.button, fontSize: 12,
+                color: C.accentDark,
         letterSpacing: 1.5,
     },
     sectionUnderline: {
@@ -778,18 +774,14 @@ const styles = StyleSheet.create({
 
     /* ── Menu Card ── */
     menuCard: {
-        marginHorizontal: 20,
+        marginHorizontal: spacing.gutter,
         backgroundColor: C.surface,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         overflow: 'hidden',
         borderWidth: 1.2,
         borderColor: C.border,
-        marginBottom: 16,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
+        marginBottom: spacing.md,
+        ...shadows.card,
     },
 
     /* ── Logout ── */
@@ -798,26 +790,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        marginHorizontal: 20,
-        marginTop: 10,
-        backgroundColor: 'rgba(232, 17, 45, 0.06)',
-        borderRadius: 16,
-        paddingVertical: 16,
+        marginHorizontal: spacing.gutter,
+        marginTop: spacing.sm,
+        backgroundColor: C.dangerSoft,
+        borderRadius: radius.lg,
+        paddingVertical: spacing.md,
         borderWidth: 1.2,
-        borderColor: 'rgba(232, 17, 45, 0.2)',
+        borderColor: C.danger,
     },
     logoutIconWrap: {
         width: 32,
         height: 32,
-        borderRadius: 10,
-        backgroundColor: 'rgba(232, 17, 45, 0.12)',
+        borderRadius: radius.xs,
+        backgroundColor: C.dangerSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
     logoutText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.error,
+        ...typography.button, fontSize: 14,
+                color: C.error,
         letterSpacing: 0.2,
     },
 
@@ -829,8 +820,8 @@ const styles = StyleSheet.create({
     footerDivider: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        marginBottom: 14,
+        gap: spacing.sm,
+        marginBottom: spacing.md,
     },
     dividerLine: {
         width: 40,
@@ -845,17 +836,16 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '45deg' }],
     },
     version: {
-        fontSize: 13,
+        ...typography.button, fontSize: 13,
         color: C.primary,
-        fontWeight: '700',
-        textAlign: 'center',
+                textAlign: 'center',
         letterSpacing: 0.2,
     },
     versionSub: {
         fontSize: 12,
         color: C.textMuted,
         textAlign: 'center',
-        marginTop: 4,
+        marginTop: spacing.xs,
         fontStyle: 'italic',
         letterSpacing: 0.2,
     },

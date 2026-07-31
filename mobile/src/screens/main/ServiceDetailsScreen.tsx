@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.xl,
         padding: spacing.lg,
         borderWidth: 1, borderColor: C.border,
-        shadowColor: C.primary, shadowOpacity: 0.08,
+        ...shadows.card, shadowOpacity: 0.08,
         shadowRadius: 20, shadowOffset: { width: 0, height: 8 },
         elevation: 4,
     },
@@ -718,29 +718,29 @@ const styles = StyleSheet.create({
 
     /* Infos clés — 3 pills horizontaux */
     infoGrid: {
-        flexDirection: 'row', gap: 10,
+        flexDirection: 'row', gap: spacing.sm,
     },
     infoPill: {
         flex: 1,
         backgroundColor: C.surface,
         borderRadius: radius.lg,
-        padding: 14,
+        padding: spacing.md,
         alignItems: 'center',
         borderWidth: 1, borderColor: C.border,
-        shadowColor: C.primary, shadowOpacity: 0.06,
+        ...shadows.card, shadowOpacity: 0.06,
         shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
         elevation: 2,
     },
     infoIconWrap: {
-        width: 38, height: 38, borderRadius: 19,
+        width: 38, height: 38, borderRadius: radius.xl,
         backgroundColor: C.goldGlow,
         alignItems: 'center', justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: spacing.sm,
     },
     infoLabel: {
         fontSize: 12, fontFamily: 'Inter_600SemiBold',
         color: C.textSubtle, letterSpacing: 0.8,
-        textTransform: 'uppercase', marginBottom: 4,
+        textTransform: 'uppercase', marginBottom: spacing.xs,
     },
     infoValue: {
         fontSize: 12, fontFamily: 'Inter_700Bold',
@@ -749,14 +749,14 @@ const styles = StyleSheet.create({
 
     /* Trust chips */
     trustRow: {
-        flexDirection: 'row', justifyContent: 'center', gap: 8,
+        flexDirection: 'row', justifyContent: 'center', gap: spacing.sm,
         flexWrap: 'wrap',
     },
     trustChip: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
         backgroundColor: C.surface,
-        paddingHorizontal: 12, paddingVertical: 7,
-        borderRadius: 999,
+        paddingHorizontal: 12, paddingVertical: spacing.sm,
+        borderRadius: radius.pill,
         borderWidth: 1, borderColor: C.border,
     },
     trustText: {
@@ -766,11 +766,11 @@ const styles = StyleSheet.create({
 
     /* Section header */
     sectionHeader: {
-        flexDirection: 'row', alignItems: 'center', gap: 10,
-        marginBottom: 14,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        marginBottom: spacing.md,
     },
     sectionIcon: {
-        width: 30, height: 30, borderRadius: 8,
+        width: 30, height: 30, borderRadius: radius.xs,
         backgroundColor: C.goldGlow,
         alignItems: 'center', justifyContent: 'center',
     },
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     sectionLine: {
-        flex: 1, height: 1, backgroundColor: C.border, marginLeft: 4,
+        flex: 1, height: 1, backgroundColor: C.border, marginLeft: spacing.xs,
     },
 
     /* Features */
@@ -810,16 +810,16 @@ const styles = StyleSheet.create({
     },
     vipHeader: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-        marginBottom: 18,
+        marginBottom: spacing.md,
     },
     vipBadgeIcon: {
-        width: 36, height: 36, borderRadius: 10,
+        width: 36, height: 36, borderRadius: radius.xs,
         backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
     },
     vipTitle: {
         fontSize: 16, fontFamily: fonts.bodyBold,
-        color: C.textPrimary, marginBottom: 4,
+        color: C.textPrimary, marginBottom: spacing.xs,
     },
     vipSubtitle: {
         fontSize: 12, lineHeight: 17,
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     vipStep: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
         backgroundColor: C.surface,
-        borderRadius: radius.md, padding: 12, marginBottom: 10,
+        borderRadius: radius.md, padding: 12, marginBottom: spacing.sm,
         borderWidth: 1, borderColor: C.border,
     },
     vipStepNum: {
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
     },
     vipStepTitle: {
         fontSize: 13, fontFamily: 'Inter_700Bold',
-        color: C.textPrimary, marginBottom: 3,
+        color: C.textPrimary, marginBottom: spacing.xxs,
     },
     vipStepDesc: {
         fontSize: 12, lineHeight: 16,
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     pricingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: C.surface,
-        borderRadius: radius.md, padding: 14,
+        borderRadius: radius.md, padding: spacing.md,
         borderWidth: 1, borderColor: C.border,
         overflow: 'hidden',
     },
@@ -861,10 +861,10 @@ const styles = StyleSheet.create({
     },
     pricingLabel: {
         fontSize: 13, fontFamily: 'Inter_600SemiBold',
-        color: C.primary, marginLeft: 8,
+        color: C.primary, marginLeft: spacing.sm,
     },
     pricingChip: {
-        paddingHorizontal: spacing.md, paddingVertical: 7,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
         borderRadius: radius.pill, backgroundColor: C.accent,
     },
     pricingPrice: {
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
     },
     processRow: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
-        marginBottom: 10,
+        marginBottom: spacing.sm,
     },
     processStep: {
         width: 40, height: 40, borderRadius: radius.md,
@@ -889,9 +889,9 @@ const styles = StyleSheet.create({
         fontSize: 16, fontFamily: fonts.bodyBold,
     },
     processCard: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
+        flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
         backgroundColor: C.surface,
-        paddingHorizontal: 14, paddingVertical: 12,
+        paddingHorizontal: spacing.md, paddingVertical: 12,
         borderRadius: radius.md,
         borderWidth: 1, borderColor: C.border,
     },
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: C.border,
     },
     docBullet: {
-        width: 32, height: 32, borderRadius: 10,
+        width: 32, height: 32, borderRadius: radius.xs,
         backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
     },
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     },
     ctaTitle: {
         fontSize: 19, fontFamily: fonts.bodyBold,
-        color: C.text, marginTop: 2,
+        color: C.text, marginTop: spacing.xxs,
     },
     ctaSubtitle: {
         fontSize: 13, lineHeight: 20,
@@ -985,7 +985,7 @@ const styles = StyleSheet.create({
     },
     ctaFreeRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 6, marginTop: spacing.md,
+        gap: spacing.xs, marginTop: spacing.md,
     },
     ctaFreeNote: {
         fontSize: 12, fontFamily: 'Inter_600SemiBold',
@@ -996,9 +996,9 @@ const styles = StyleSheet.create({
     /* Couleurs reprises de la charte : les rgba() codés en dur étaient un
        reste d'avant le design system v2. */
     securityBanner: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
         backgroundColor: C.surfaceSoft,
-        paddingHorizontal: 16, paddingVertical: 12,
+        paddingHorizontal: spacing.md, paddingVertical: 12,
         borderRadius: radius.md,
         borderWidth: 1, borderColor: C.border,
     },

@@ -874,16 +874,16 @@ export default function ServicesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
 
-    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
 
-    scrollContent: { paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: 20 },
+    scrollContent: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: 20 },
 
     title: { ...typography.h1, color: C.text, marginBottom: spacing.lg },
 
     /* ── Filtres par famille ── */
     chipsRow: { gap: spacing.sm, paddingRight: spacing.lg, paddingBottom: spacing.lg },
     chip: {
-        paddingHorizontal: spacing.md, paddingVertical: 10,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
         borderRadius: radius.pill,
         backgroundColor: C.surface,
         borderWidth: 1, borderColor: C.border,
@@ -948,13 +948,13 @@ const styles = StyleSheet.create({
         backgroundColor: C.primary,
         borderRadius: radius.pill,
         paddingHorizontal: spacing.lg,
-        paddingVertical: 14,
+        paddingVertical: spacing.md,
         alignItems: 'center',
     },
     cardCtaText: { ...typography.button, fontSize: 15, color: C.primaryText, textAlign: 'center' },
 
     /* ── Aucun resultat ── */
-    noResult: { alignItems: 'center', paddingVertical: 48, gap: spacing.sm },
+    noResult: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
     noResultTitle: { ...typography.h3, color: C.text },
     noResultText: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center' },
 
@@ -968,19 +968,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 10,
+        gap: spacing.sm,
+        paddingVertical: spacing.sm,
         backgroundColor: C.surface,
         borderWidth: 1,
         borderColor: C.border,
-        borderRadius: 12,
-        marginBottom: 20,
+        borderRadius: radius.sm,
+        marginBottom: spacing.gutter,
     },
     translatingText: {
         color: C.primary,
-        fontSize: 12,
-        fontWeight: '600',
-    },
+        ...typography.caption,
+            },
 
     /* ── Grille ── */
 
@@ -992,7 +991,7 @@ const styles = StyleSheet.create({
     skeletonCard: {
         height: 200,
         backgroundColor: C.surface,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: C.border,
@@ -1000,14 +999,14 @@ const styles = StyleSheet.create({
     skeletonIcon: {
         width: 44,
         height: 44,
-        borderRadius: 12,
+        borderRadius: radius.sm,
         backgroundColor: C.border,
-        marginBottom: 8,
+        marginBottom: spacing.sm,
     },
     skeletonLine: {
         height: 10,
         backgroundColor: C.border,
-        borderRadius: 4,
-        marginBottom: 6,
+        borderRadius: radius.xs,
+        marginBottom: spacing.xs,
     },
 })
