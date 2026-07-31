@@ -99,46 +99,15 @@ function PremiumStepper({ current, total }: { current: number; total: number }) 
         width: `${progress.value * 100}%`,
     }))
 
+    /* Une seule barre, fine, à la façon de celle du dossier sur l'accueil.
+       Les six pastilles numérotées ont été retirées : elles répétaient le
+       « chapitre n sur 6 » du sur-titre sans rien apporter, puisqu'on ne peut
+       pas sauter d'étape. Trois indicateurs pour une même information, c'est
+       ce qui donnait au formulaire son air chargé. */
     return (
         <View style={styles.stepperWrap}>
-            <View style={styles.stepperHeader}>
-                <View style={styles.stepperBadge}>
-                    <LucideIcon name={STEPS_META[current].icon} size={11} color={C.primary} />
-                    <Text style={styles.stepperBadgeText}>
-                        {`CHAPITRE ${current + 1} / ${total}`}
-                    </Text>
-                </View>
-                <Text style={styles.stepperLabel}>{STEPS_META[current].label}</Text>
-            </View>
-
             <View style={styles.progressTrack}>
                 <Animated.View style={[styles.progressFill, fillStyle]} />
-            </View>
-
-            <View style={styles.stepDotsRow}>
-                {STEPS_META.map((s, i) => {
-                    const isDone = i < current
-                    const isActive = i === current
-                    return (
-                        <View
-                            key={s.key}
-                            style={[
-                                styles.stepDot,
-                                isDone && styles.stepDotDone,
-                                isActive && styles.stepDotActive,
-                            ]}
-                        >
-                            {isDone ? (
-                                <LucideIcon name="checkmark" size={10} color={C.primaryText} />
-                            ) : (
-                                <Text style={[
-                                    styles.stepDotText,
-                                    isActive && styles.stepDotTextActive,
-                                ]}>{i + 1}</Text>
-                            )}
-                        </View>
-                    )
-                })}
             </View>
         </View>
     )
@@ -959,10 +928,24 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 </View>
             </View>
 
-            {/* HEADER + STEPPER */}
+            {/* EN-TÊTE — vocabulaire de l'accueil
+                L'ancien en-tête annonçait la progression QUATRE fois : pastille
+                « CHAPITRE 1 / 6 », barre, six pastilles numérotées, et libellé
+                du chapitre. D'où l'impression de surcharge.
+
+                L'accueil pose un sur-titre discret puis un grand titre —
+                « BONJOUR, » puis le prénom. On applique la même grammaire :
+                le sur-titre porte le repère de progression, le titre porte le
+                nom du chapitre. Une seule barre fine complète, et les six
+                pastilles disparaissent : elles répétaient l'information sans
+                rien ajouter, puisqu'on ne peut pas sauter d'étape. */}
             {currentStep < 6 && (
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Demande de nationalité')}</Text>
+                    <Text style={styles.overline}>
+                        {`${t('CHAPITRE')} ${currentStep + 1} ${t('SUR')} 6`}
+                    </Text>
+                    <Text style={styles.title}>{t(STEPS_META[currentStep].label)}</Text>
+                    <Text style={styles.subtitle}>{t('Demande de nationalité béninoise')}</Text>
                     <PremiumStepper current={currentStep} total={6} />
                 </Animated.View>
             )}
@@ -1066,87 +1049,32 @@ const styles = StyleSheet.create({
     },
 
     /* ── Header ── */
+    /* Même grammaire que l'accueil : gouttière commune, sur-titre discret,
+       grand titre, sous-titre en gris secondaire. */
     headerContainer: {
-        paddingHorizontal: spacing.lg,
-        marginTop: spacing.sm,
-        marginBottom: 12,
+        paddingHorizontal: spacing.gutter,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.md,
     },
-    title: { ...typography.h1, color: C.text },
+    overline: { ...typography.overline, color: C.textFaint },
+    title: { ...typography.h1, color: C.text, marginTop: spacing.xs },
+    subtitle: { ...typography.bodySmall, color: C.textMuted, marginTop: spacing.xs },
 
     /* ── Stepper ── */
     stepperWrap: {
-        marginTop: spacing.gutter,
+        marginTop: spacing.md,
     },
-    stepperHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing.sm,
-    },
-    stepperBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs,
-        backgroundColor: C.accentSoft,
-        borderRadius: radius.pill,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderWidth: 1,
-        borderColor: C.border,
-    },
-    stepperBadgeText: {
-        ...typography.button, fontSize: 12,
-        color: C.primary,
-        letterSpacing: 1.2,
-    },
-    stepperLabel: {
-        ...typography.button, fontSize: 13,
-        color: C.primary,
-        letterSpacing: -0.2,
-    },
+    /* Fine et sobre, a l'image de la barre du dossier sur l'accueil. */
     progressTrack: {
-        height: 5,
-        backgroundColor: C.border,
-        borderRadius: 3,
+        height: 6,
+        backgroundColor: C.surfaceAlt,
+        borderRadius: radius.pill,
         overflow: 'hidden',
-        marginBottom: 12,
     },
     progressFill: {
         height: '100%',
         backgroundColor: C.primary,
         borderRadius: 3,
-    },
-    stepDotsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    stepDot: {
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: C.surface,
-        borderWidth: 1,
-        borderColor: C.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    stepDotDone: {
-        backgroundColor: C.success,
-        borderColor: C.success,
-    },
-    stepDotActive: {
-        backgroundColor: C.primary,
-        borderColor: C.primary,
-        borderWidth: 2,
-        transform: [{ scale: 1.1 }],
-    },
-    stepDotText: {
-        ...typography.button, fontSize: 12,
-        color: C.textSec,
-    },
-    stepDotTextActive: {
-        color: C.primaryText,
     },
 
     /* ── Scroll ── */
