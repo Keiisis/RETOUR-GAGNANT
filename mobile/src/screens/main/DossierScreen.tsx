@@ -376,7 +376,7 @@ export default function DossierScreen({ navigation }: any) {
                     <AnimatedSection delay={150}>
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <LucideIcon name="folder-open-outline" size={36} color={C.accent} />
+                                <LucideIcon name="folder-open-outline" size={36} color={C.primary} />
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucun dossier en cours')}</Text>
                             <Text style={styles.emptyText}>
@@ -390,7 +390,7 @@ export default function DossierScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.emptyBtnText}>{t('Découvrir les services')}</Text>
-                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primary} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -588,16 +588,16 @@ export default function DossierScreen({ navigation }: any) {
                                                     accessibilityLabel={t('Ajouter')}
                                                 >
                                                     {uploading ? (
-                                                        <ActivityIndicator color={C.accent} size="small" />
+                                                        <ActivityIndicator color={C.primary} size="small" />
                                                     ) : (
-                                                        <LucideIcon name="add" size={20} color={C.accent} />
+                                                        <LucideIcon name="add" size={20} color={C.primary} />
                                                     )}
                                                 </TouchableOpacity>
                                             </View>
 
                                             {uploading && (
                                                 <View style={styles.uploadingBanner}>
-                                                    <ActivityIndicator color={C.accent} size="small" />
+                                                    <ActivityIndicator color={C.primary} size="small" />
                                                     <Text style={styles.uploadingText}>
                                                         {t('Envoi sécurisé en cours…')}
                                                     </Text>
@@ -643,7 +643,7 @@ export default function DossierScreen({ navigation }: any) {
                                             ) : (
                                                 <View style={styles.noDocsCard}>
                                                     <View style={styles.noDocsIconWrap}>
-                                                        <LucideIcon name="cloud-upload-outline" size={32} color={C.accent} />
+                                                        <LucideIcon name="cloud-upload-outline" size={32} color={C.primary} />
                                                     </View>
                                                     <Text style={styles.noDocsTitle}>
                                                         {t('Aucun document envoyé')}
@@ -658,11 +658,11 @@ export default function DossierScreen({ navigation }: any) {
                                                         accessibilityRole="button"
                                                         hitSlop={6}
                                                     >
-                                                        <LucideIcon name="add" size={16} color={C.accent} />
+                                                        <LucideIcon name="add" size={16} color={C.primary} />
                                                         <Text style={styles.uploadNowText}>
                                                             {t('Ajouter un document')}
                                                         </Text>
-                                                        <LucideIcon name="arrow-forward" size={14} color={C.accent} />
+                                                        <LucideIcon name="arrow-forward" size={14} color={C.primary} />
                                                     </TouchableOpacity>
                                                 </View>
                                             )}
@@ -673,7 +673,7 @@ export default function DossierScreen({ navigation }: any) {
                                     <AnimatedSection delay={350}>
                                         <View style={styles.tipCard}>
                                             <View style={styles.tipIconWrap}>
-                                                <LucideIcon name="shield-checkmark-outline" size={16} color={C.accent} />
+                                                <LucideIcon name="shield-checkmark-outline" size={16} color={C.primary} />
                                             </View>
                                             <View style={{ flex: 1 }}>
                                                 <Text style={styles.tipTitle}>
@@ -713,7 +713,7 @@ export default function DossierScreen({ navigation }: any) {
 
                         <View style={styles.modalHeader}>
                             <View style={styles.modalIconWrap}>
-                                <LucideIcon name="cloud-upload-outline" size={20} color={C.accent} />
+                                <LucideIcon name="cloud-upload-outline" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.modalTitle}>{t('Ajouter un document')}</Text>
@@ -764,7 +764,7 @@ export default function DossierScreen({ navigation }: any) {
                                                     {d.service_type}
                                                 </Text>
                                                 {isTarget && (
-                                                    <LucideIcon name="checkmark-circle" size={14} color={C.accent} />
+                                                    <LucideIcon name="checkmark-circle" size={14} color={C.primary} />
                                                 )}
                                             </TouchableOpacity>
                                         )
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
         maxWidth: 200,
     },
     tabActive: {
-        borderColor: C.accent,
+        borderColor: C.primary,
         backgroundColor: C.surfaceSolid,
         ...shadows.card,
     },
@@ -1307,7 +1307,7 @@ const styles = StyleSheet.create({
     },
     dossierChipActive: {
         backgroundColor: C.accentSoft,
-        borderColor: C.accent,
+        borderColor: C.primary,
     },
     dossierChipText: {
         ...typography.label,

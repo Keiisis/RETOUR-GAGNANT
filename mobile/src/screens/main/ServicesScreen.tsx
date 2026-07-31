@@ -112,7 +112,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "L'immobilier au Bénin offre de réelles opportunités — à condition de savoir naviguer dans un marché foncier qui requiert vigilance et expertise juridique. Nous vous accompagnons de la sélection du bien à la signature de l'acte notarié, en veillant à chaque étape à la solidité juridique de votre acquisition.",
         duration: '4 à 12 semaines',
         price: 'À partir de 25 000 FCFA',
-        color: C.accent,
+        color: C.primary,
         features: [
             "Vérification du Titre Foncier (TF) et purge des oppositions cadastrales",
             "Bornage et identification parcellaire auprès de l'ANDF",
@@ -205,7 +205,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Construire au Bénin depuis l'étranger, c'est possible — à condition d'être bien entouré. Entre les devis approximatifs, les délais non respectés et les matériaux de qualité variable, les risques sont réels. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
         duration: 'Selon durée des travaux',
         price: 'À partir de 50 000 FCFA',
-        color: C.accent,
+        color: C.primary,
         features: [
             "Aide à l'achat et à la location de terrain ou de bien immobilier",
             "Bureau d'architecte — conception et plans techniques",
@@ -299,7 +299,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été effacée par la traite transatlantique. Nous mobilisons archives, bases de données spécialisées et associations expertes pour reconstituer votre lignée africaine.",
         duration: '4 à 10 semaines',
         price: '250 €',
-        color: C.accent,
+        color: C.primary,
         features: [
             "Extrait de naissance de vos deux parents (père et mère)",
             "Extrait de naissance ou de décès de vos grands-parents (côté paternel et maternel)",
@@ -327,7 +327,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         fullDescription: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un Bokonon (prêtre du Fa) reconnu, pour une consultation traditionnelle menée dans les règles de l'art. Retour Gagnant Bénin intervient exclusivement comme intermédiaire de mise en relation : un accord est signé dès l'enclenchement de la procédure.",
         duration: 'Selon disponibilité du Bokonon',
         price: 'Présentiel 550 € · Visio 780 €',
-        color: C.accent,
+        color: C.primary,
         features: [
             'Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté',
             "Présentiel — accueil, prise de rendez-vous avec le prêtre Fa, aide sur place",

@@ -97,7 +97,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
                 {/* chip top */}
                 <View style={hero.topRow}>
                     <View style={hero.chip}>
-                        <Sparkles size={11} color={C.accent} strokeWidth={2} />
+                        <Sparkles size={11} color={C.primary} strokeWidth={2} />
                         <Text style={hero.chipText}>{t('PROTECTION PREMIUM')}</Text>
                     </View>
                     <View style={[hero.levelChip, { borderColor: levelColor + '60' }]}>
@@ -110,7 +110,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
                 <View style={hero.shieldWrap}>
                     <Animated.View style={[hero.shieldRing, ringStyle]} />
                     <View style={hero.shieldInner}>
-                        <ShieldCheck size={44} color={C.accent} strokeWidth={1.6} />
+                        <ShieldCheck size={44} color={C.primary} strokeWidth={1.6} />
                     </View>
                 </View>
 
@@ -362,7 +362,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 <AnimatedSection delay={120}>
                     <View style={styles.infoBanner}>
                         <View style={styles.infoIconBox}>
-                            <ShieldCheck size={18} color={C.accent} strokeWidth={2} />
+                            <ShieldCheck size={18} color={C.primary} strokeWidth={2} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.infoTitle}>{t('Conseil de sécurité')}</Text>
@@ -800,7 +800,7 @@ const hero = StyleSheet.create({
         borderWidth: 1, borderColor: C.border,
         paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill,
     },
-    chipText: { ...typography.button, fontSize: 12, color: C.accent, letterSpacing: 1.2 },
+    chipText: { ...typography.button, fontSize: 12, color: C.primary, letterSpacing: 1.2 },
     levelChip: {
         flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
         paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill,
@@ -861,7 +861,7 @@ const field2 = StyleSheet.create({
         paddingLeft: spacing.sm, paddingRight: 12, minHeight: 54,
     },
     wrapperFocus: {
-        borderColor: C.accent,
+        borderColor: C.primary,
         backgroundColor: '#FFF',
         ...shadows.card, shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15, shadowRadius: 10, elevation: 3,

@@ -157,7 +157,7 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
                         </View>
                         <View style={styles.heroStatDivider} />
                         <View style={styles.heroStat}>
-                            <Text style={[styles.heroStatValue, { color: C.accent }]}>{activeCount}</Text>
+                            <Text style={[styles.heroStatValue, { color: C.primary }]}>{activeCount}</Text>
                             <Text style={styles.heroStatLabel}>EN COURS</Text>
                         </View>
                     </View>
@@ -259,7 +259,7 @@ function OrderCard({
                         {order.tracking_code ? (
                             <View style={styles.orderTrackingRow}>
                                 <View style={styles.orderTrackingIcon}>
-                                    <LucideIcon name="paper-plane" size={10} color={C.accent} />
+                                    <LucideIcon name="paper-plane" size={10} color={C.primary} />
                                 </View>
                                 <Text style={styles.orderTrackingText} numberOfLines={1}>
                                     {order.tracking_code}
@@ -282,7 +282,7 @@ function OrderCard({
                                 <Text style={styles.orderAmount}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
                             <View style={styles.orderArrow}>
-                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primary} />
                             </View>
                         </View>
                     </View>
@@ -318,7 +318,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
     }, [searchFocused])
 
     const searchInputStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(searchFocusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(searchFocusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: searchFocused ? C.surfaceSolid : C.surface,
     }))
 
@@ -412,7 +412,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <LucideIcon name="cube" size={12} color={C.accent} />
+                    <LucideIcon name="cube" size={12} color={C.primary} />
                     <Text style={styles.navCounterText}>{t('Mes commandes')}</Text>
                 </View>
 
@@ -466,7 +466,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                             <View style={styles.emptyHero}>
                                 <View style={styles.emptyHeroGlow} />
                                 <View style={styles.emptyIconWrap}>
-                                    <LucideIcon name="bag-outline" size={36} color={C.accent} />
+                                    <LucideIcon name="bag-outline" size={36} color={C.primary} />
                                 </View>
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucune commande')}</Text>
@@ -480,9 +480,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 accessibilityRole="button"
                                 hitSlop={6}
                             >
-                                <LucideIcon name="storefront" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                <LucideIcon name="storefront" size={16} color={C.primary} style={{ marginRight: 8 }} />
                                 <Text style={styles.shopBtnText}>{t('Visiter la boutique')}</Text>
-                                <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -535,7 +535,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     <View style={styles.searchCard}>
                         <View style={styles.searchHeader}>
                             <View style={styles.searchHeaderIcon}>
-                                <LucideIcon name="paper-plane" size={14} color={C.accent} />
+                                <LucideIcon name="paper-plane" size={14} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.searchHeaderBadge}>{t('SUIVI RAPIDE')}</Text>
@@ -561,7 +561,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                     placeholderTextColor={C.placeholder}
                                     autoCapitalize="characters"
                                     autoCorrect={false}
-                                    selectionColor={C.accent}
+                                    selectionColor={C.primary}
                                 />
                             </Animated.View>
                             <TouchableOpacity
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     },
     heroBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1.3,
     },
     heroStats: {
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
     },
     orderAmount: {
         ...typography.h3, fontSize: 16,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: -0.3,
     },
     orderArrow: {

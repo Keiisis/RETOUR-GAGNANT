@@ -340,7 +340,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     {/* CANVAS */}
                     <Animated.View style={[styles.canvasWrap, styleCard1]}>
                         <View style={styles.canvasGuideTop}>
-                            <LucideIcon name="create-outline" size={14} color={C.accent} />
+                            <LucideIcon name="create-outline" size={14} color={C.primary} />
                             <Text style={styles.canvasGuideText}>{t('Zone de signature')}</Text>
                         </View>
 
@@ -400,7 +400,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                             ) : (
                                 <>
                                     <Text style={styles.btnText}>{t('Enregistrer')}</Text>
-                                    <LucideIcon name="checkmark" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="checkmark" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -459,7 +459,7 @@ function PrefOption({
                     <Text style={styles.prefDescription}>{description}</Text>
                 </View>
                 {active && (
-                    <LucideIcon name="checkmark-circle" size={18} color={C.accent} />
+                    <LucideIcon name="checkmark-circle" size={18} color={C.primary} />
                 )}
             </Animated.View>
         </Pressable>
@@ -492,9 +492,9 @@ function InteractiveButton({
                 <ActivityIndicator color={C.primaryText} size="small" />
             ) : (
                 <>
-                    {icon && <LucideIcon name={icon} size={18} color={C.accent} style={{ marginRight: 8 }} />}
+                    {icon && <LucideIcon name={icon} size={18} color={C.primary} style={{ marginRight: 8 }} />}
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>

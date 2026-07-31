@@ -337,7 +337,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         accessibilityRole="button"
                         hitSlop={6}>
                         <Text style={styles.errorBtnText}>{t('Retour')}</Text>
-                        <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                        <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -430,7 +430,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             <View style={styles.trackingGlow} />
 
                             <View style={styles.trackingBadge}>
-                                <LucideIcon name="paper-plane" size={11} color={C.accent} />
+                                <LucideIcon name="paper-plane" size={11} color={C.primary} />
                                 <Text style={styles.trackingBadgeText}>{t('SUIVI COLIS')}</Text>
                             </View>
 
@@ -455,7 +455,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                     <TouchableOpacity onPress={openCarrierUrl} style={styles.trackingBtnPrimary} activeOpacity={0.85}
                                         accessibilityRole="button"
                                         hitSlop={6}>
-                                        <LucideIcon name="open-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="open-outline" size={14} color={C.primary} />
                                         <Text style={styles.trackingBtnPrimaryText}>{t('Suivre en ligne')}</Text>
                                     </TouchableOpacity>
                                 ) : null}
@@ -468,7 +468,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                 <AnimatedSection delay={300}>
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionIcon}>
-                            <LucideIcon name="receipt" size={16} color={C.accent} />
+                            <LucideIcon name="receipt" size={16} color={C.primary} />
                         </View>
                         <Text style={styles.sectionTitle}>{t('Articles commandés')}</Text>
                         <View style={styles.sectionCount}>
@@ -525,7 +525,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     <AnimatedSection delay={400}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionIcon}>
-                                <LucideIcon name="location" size={16} color={C.accent} />
+                                <LucideIcon name="location" size={16} color={C.primary} />
                             </View>
                             <Text style={styles.sectionTitle}>{t('Adresse de livraison')}</Text>
                         </View>
@@ -534,7 +534,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             {/* Destinataire */}
                             <View style={styles.shipBlock}>
                                 <View style={styles.shipIconWrap}>
-                                    <LucideIcon name="person" size={14} color={C.accent} />
+                                    <LucideIcon name="person" size={14} color={C.primary} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.shipLabel}>{t('DESTINATAIRE')}</Text>
@@ -550,7 +550,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                 hitSlop={6}>
                                 <View style={styles.shipBlock}>
                                     <View style={styles.shipIconWrap}>
-                                        <LucideIcon name="call" size={14} color={C.accent} />
+                                        <LucideIcon name="call" size={14} color={C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.shipLabel}>{t('TÉLÉPHONE')}</Text>
@@ -565,7 +565,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                             {/* Adresse */}
                             <View style={styles.shipBlock}>
                                 <View style={styles.shipIconWrap}>
-                                    <LucideIcon name="map" size={14} color={C.accent} />
+                                    <LucideIcon name="map" size={14} color={C.primary} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.shipLabel}>{t('ADRESSE')}</Text>
@@ -594,7 +594,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                     <AnimatedSection delay={500}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionIcon}>
-                                <LucideIcon name="time" size={16} color={C.accent} />
+                                <LucideIcon name="time" size={16} color={C.primary} />
                             </View>
                             <Text style={styles.sectionTitle}>{t('Historique du colis')}</Text>
                             <View style={styles.sectionCount}>
@@ -618,7 +618,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                                 },
                                                 isLatest && {
                                                     backgroundColor: evCfg.color,
-                                                    borderColor: C.accent,
+                                                    borderColor: C.primary,
                                                     borderWidth: 2,
                                                 },
                                             ]}>
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     },
     trackingBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 1.3,
     },
     trackingLabel: {
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     },
     trackingBtnPrimaryText: {
         ...typography.button, fontSize: 12.5,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 0.2,
     },
 
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
     },
     sectionCountText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 0.3,
     },
 
@@ -1105,7 +1105,7 @@ const styles = StyleSheet.create({
     },
     totalValue: {
         ...typography.h2,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: -0.5,
     },
     txRefRow: {

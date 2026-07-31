@@ -235,7 +235,7 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
                         <Text style={styles.cardTitle}>
                             {t('Née de la diaspora,')}
                             {'\n'}
-                            <Text style={{ color: C.accent }}>{t('pour la diaspora.')}</Text>
+                            <Text style={{ color: C.primary }}>{t('pour la diaspora.')}</Text>
                         </Text>
 
                         <Text style={styles.cardText}>
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     brandSub: {
-        color: C.accent,
+        color: C.primary,
         ...typography.button, fontSize: 14,
                 letterSpacing: 8,
     },
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
         top: -2,
         left: 12,
         ...typography.h1, fontSize: 36,
-        color: C.accent,
+        color: C.primary,
                 opacity: 0.4,
     },
     quoteText: {

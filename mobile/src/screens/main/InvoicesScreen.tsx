@@ -267,7 +267,7 @@ function InvoiceCard({
                             <LucideIcon
                                 name={invoice.pdf_url ? 'download-outline' : 'open-outline'}
                                 size={12}
-                                color={C.accent}
+                                color={C.primary}
                             />
                         </View>
                     </View>
@@ -394,7 +394,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
                 {!loading && invoices.length > 0 && (
                     <View style={styles.navCounter}>
-                        <LucideIcon name="receipt" size={12} color={C.accent} />
+                        <LucideIcon name="receipt" size={12} color={C.primary} />
                         <Text style={styles.navCounterText}>
                             {invoices.length} {invoices.length > 1 ? t('factures') : t('facture')}
                         </Text>
@@ -435,7 +435,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     ) : invoices.length === 0 ? (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <LucideIcon name="receipt-outline" size={42} color={C.accent} />
+                                <LucideIcon name="receipt-outline" size={42} color={C.primary} />
                             </View>
                             <Text style={styles.emptyTitle}>
                                 {t('Aucune facture')}
@@ -476,7 +476,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.emptyCatBtnText}>
                                     {t('Voir toutes')}
                                 </Text>
-                                <LucideIcon name="arrow-forward" size={13} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={13} color={C.primary} />
                             </Pressable>
                         </View>
                     )
@@ -504,7 +504,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         <View style={styles.patternDot2} />
 
                                         <View style={styles.totalBadge}>
-                                            <LucideIcon name="wallet-outline" size={11} color={C.accent} />
+                                            <LucideIcon name="wallet-outline" size={11} color={C.primary} />
                                             <Text style={styles.totalBadgeText}>
                                                 {t('TOTAL FACTURÉ')}
                                             </Text>
@@ -538,7 +538,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
                                             <View style={styles.totalSplitItem}>
                                                 <View style={[styles.totalSplitDot, { backgroundColor: C.accentSoft }]}>
-                                                    <LucideIcon name="time-outline" size={10} color={C.accent} />
+                                                    <LucideIcon name="time-outline" size={10} color={C.primary} />
                                                 </View>
                                                 <View>
                                                     <Text style={styles.totalSplitLabel}>{t('En attente')}</Text>
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     },
     totalBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1.2,
     },
     totalAmount: {

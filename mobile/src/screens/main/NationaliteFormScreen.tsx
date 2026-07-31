@@ -103,7 +103,7 @@ function PremiumStepper({ current, total }: { current: number; total: number }) 
         <View style={styles.stepperWrap}>
             <View style={styles.stepperHeader}>
                 <View style={styles.stepperBadge}>
-                    <LucideIcon name={STEPS_META[current].icon} size={11} color={C.accent} />
+                    <LucideIcon name={STEPS_META[current].icon} size={11} color={C.primary} />
                     <Text style={styles.stepperBadgeText}>
                         {`CHAPITRE ${current + 1} / ${total}`}
                     </Text>
@@ -156,7 +156,7 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
     }, [focused])
 
     const rStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: focused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.02, 0.08]),
     }))
@@ -166,7 +166,7 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
             {label && (
                 <Text style={styles.fieldLabel}>
                     {label}
-                    {required && <Text style={{ color: C.accent }}> *</Text>}
+                    {required && <Text style={{ color: C.primary }}> *</Text>}
                 </Text>
             )}
             <Animated.View style={[styles.fieldContainer, textArea && styles.fieldContainerTextArea, rStyle]}>
@@ -186,7 +186,7 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
                     onChangeText={onChangeText}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    selectionColor={C.accent}
+                    selectionColor={C.primary}
                     multiline={textArea}
                     keyboardType={keyboardType}
                     {...rest}
@@ -204,14 +204,14 @@ function SwitchRow({ label, value, onValueChange, icon, highlight }: any) {
         <View style={[styles.switchRow, highlight && styles.switchRowHighlight]}>
             {icon && (
                 <View style={styles.switchIconWrap}>
-                    <LucideIcon name={icon} size={16} color={C.accent} />
+                    <LucideIcon name={icon} size={16} color={C.primary} />
                 </View>
             )}
             <Text style={[styles.switchLabel, { flex: 1 }]}>{label}</Text>
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: C.borderStrong, true: C.accent }}
+                trackColor={{ false: C.borderStrong, true: C.primary }}
                 thumbColor={C.surfaceSolid}
                 ios_backgroundColor="#E4E4E4"
             />
@@ -485,7 +485,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <View style={styles.heroCard}>
                             <View style={styles.heroIconWrap}>
                                 <View style={styles.heroIconGlow} />
-                                <LucideIcon name="shield-checkmark" size={32} color={C.accent} />
+                                <LucideIcon name="shield-checkmark" size={32} color={C.primary} />
                             </View>
                             <Text style={styles.heroBadge}>{t('CADRE JURIDIQUE OFFICIEL')}</Text>
                             <Text style={styles.heroTitle}>{t('Loi N° 2024-31')}</Text>
@@ -496,7 +496,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.quoteBox}>
                                 <View style={styles.quoteBar} />
                                 <View style={{ flex: 1 }}>
-                                    <LucideIcon name="library" size={16} color={C.accent} style={{ marginBottom: 8 }} />
+                                    <LucideIcon name="library" size={16} color={C.primary} style={{ marginBottom: 8 }} />
                                     <Text style={styles.quoteText}>
                                         {t('"La reconnaissance est un acte de mémoire et de justice pour les descendants des Africains déportés lors de la traite négrière."')}
                                     </Text>
@@ -522,7 +522,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <LucideIcon name="git-branch" size={20} color={C.accent} />
+                                <LucideIcon name="git-branch" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 02')}</Text>
@@ -599,7 +599,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <LucideIcon name="person" size={20} color={C.accent} />
+                                <LucideIcon name="person" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 03')}</Text>
@@ -638,7 +638,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <LucideIcon name="people" size={20} color={C.accent} />
+                                <LucideIcon name="people" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 04')}</Text>
@@ -662,7 +662,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View key={p.prefix} style={styles.subCard}>
                                 <View style={styles.subCardHeader}>
                                     <View style={styles.subCardNumber}>
-                                        <LucideIcon name={p.icon} size={14} color={C.accent} />
+                                        <LucideIcon name={p.icon} size={14} color={C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.subCardTitle}>{p.label}</Text>
@@ -699,7 +699,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <LucideIcon name="document-attach" size={20} color={C.accent} />
+                                <LucideIcon name="document-attach" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 05')}</Text>
@@ -711,7 +711,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Compteur global */}
                         <View style={styles.docCounter}>
                             <View style={styles.docCounterIcon}>
-                                <LucideIcon name="cloud-upload-outline" size={18} color={C.accent} />
+                                <LucideIcon name="cloud-upload-outline" size={18} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.docCounterLabel}>{t('DOCUMENTS TÉLÉVERSÉS')}</Text>
@@ -741,7 +741,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                             <View style={{ flex: 1 }}>
                                                 <Text style={styles.docSlotTitle}>
                                                     {t(slot.label)}
-                                                    {slot.required && <Text style={{ color: C.accent }}> *</Text>}
+                                                    {slot.required && <Text style={{ color: C.primary }}> *</Text>}
                                                 </Text>
                                                 <View style={styles.docSlotTags}>
                                                     {slot.ancestral && (
@@ -781,7 +781,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                                     return (
                                                         <View key={idx} style={styles.uploadedItem}>
                                                             <View style={styles.uploadedItemIcon}>
-                                                                <LucideIcon name="document-text" size={14} color={C.accent} />
+                                                                <LucideIcon name="document-text" size={14} color={C.primary} />
                                                             </View>
                                                             <Text style={styles.uploadedItemName} numberOfLines={1}>{f.name}</Text>
                                                             <TouchableOpacity onPress={() => removeFile(globalIndex)} hitSlop={10}
@@ -807,7 +807,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     <AnimatedSection delay={0}>
                         <View style={styles.stepHeader}>
                             <View style={styles.stepHeaderIcon}>
-                                <LucideIcon name="ribbon" size={20} color={C.accent} />
+                                <LucideIcon name="ribbon" size={20} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.stepHeaderBadge}>{t('CHAPITRE 06')}</Text>
@@ -821,7 +821,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Demandeur */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <LucideIcon name="person-circle" size={16} color={C.accent} />
+                                <LucideIcon name="person-circle" size={16} color={C.primary} />
                                 <Text style={styles.recapHeaderText}>{t('LE DEMANDEUR')}</Text>
                             </View>
                             <InfoRow label={t('Nom complet')} value={`${formData.prenom} ${formData.nom}`} />
@@ -833,7 +833,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Racines */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <LucideIcon name="git-branch" size={16} color={C.accent} />
+                                <LucideIcon name="git-branch" size={16} color={C.primary} />
                                 <Text style={styles.recapHeaderText}>{t('LES RACINES')}</Text>
                             </View>
                             <InfoRow label={t('1er Ancêtre')} value={`${formData.ancestor1_prenom} ${formData.ancestor1_nom}`.trim()} />
@@ -846,7 +846,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         {/* Section : Preuves */}
                         <View style={styles.recapCard}>
                             <View style={styles.recapHeader}>
-                                <LucideIcon name="document-attach" size={16} color={C.accent} />
+                                <LucideIcon name="document-attach" size={16} color={C.primary} />
                                 <Text style={styles.recapHeaderText}>{t('LES PREUVES')}</Text>
                             </View>
                             <InfoRow label={t('Documents')} value={t('{n} pièce(s) jointe(s)', { n: rawDocs.length })} last />
@@ -856,7 +856,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                         <View style={styles.paymentCard}>
                             <View style={styles.paymentGlow} />
                             <View style={styles.paymentBadge}>
-                                <LucideIcon name="lock-closed" size={11} color={C.accent} />
+                                <LucideIcon name="lock-closed" size={11} color={C.primary} />
                                 <Text style={styles.paymentBadgeText}>{t('PAIEMENT SÉCURISÉ')}</Text>
                             </View>
                             <Text style={styles.paymentLabel}>{t('Frais de dossier')}</Text>
@@ -866,15 +866,15 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.paymentDivider} />
                             <View style={styles.paymentFeatures}>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
                                     <Text style={styles.paymentFeatureText}>{t('Suivi en temps réel')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
                                     <Text style={styles.paymentFeatureText}>{t('Email de confirmation')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.accent} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
                                     <Text style={styles.paymentFeatureText}>{t('Accompagnement dédié')}</Text>
                                 </View>
                             </View>
@@ -893,7 +893,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                     <LucideIcon name="checkmark" size={42} color={C.primaryText} />
                                 </View>
                                 <View style={styles.successSealBadge}>
-                                    <LucideIcon name="ribbon" size={12} color={C.accent} />
+                                    <LucideIcon name="ribbon" size={12} color={C.primary} />
                                 </View>
                             </View>
 
@@ -906,7 +906,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             {savedRef && (
                                 <View style={styles.refBox}>
                                     <View style={styles.refLabel}>
-                                        <LucideIcon name="finger-print" size={12} color={C.accent} />
+                                        <LucideIcon name="finger-print" size={12} color={C.primary} />
                                         <Text style={styles.refLabelText}>{t('RÉFÉRENCE OFFICIELLE')}</Text>
                                     </View>
                                     <Text style={styles.refValue}>{savedRef}</Text>
@@ -921,7 +921,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 hitSlop={6}
                             >
                                 <Text style={styles.successBtnText}>{t("Retourner à l'accueil")}</Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </AnimatedSection>
@@ -954,7 +954,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <LucideIcon name="shield-checkmark" size={12} color={C.accent} />
+                    <LucideIcon name="shield-checkmark" size={12} color={C.primary} />
                     <Text style={styles.navCounterText}>{t('Nationalité VIP')}</Text>
                 </View>
             </View>
@@ -1002,7 +1002,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 <LucideIcon
                                     name={currentStep === 5 ? 'lock-closed' : 'arrow-forward'}
                                     size={18}
-                                    color={C.accent}
+                                    color={C.primary}
                                     style={{ marginLeft: 10 }}
                                 />
                             </>
@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
     },
     progressFill: {
         height: '100%',
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         borderRadius: 3,
     },
     stepDotsRow: {
@@ -1137,7 +1137,7 @@ const styles = StyleSheet.create({
     },
     stepDotActive: {
         backgroundColor: C.primary,
-        borderColor: C.accent,
+        borderColor: C.primary,
         borderWidth: 2,
         transform: [{ scale: 1.1 }],
     },
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
         color: C.textSec,
     },
     stepDotTextActive: {
-        color: C.accent,
+        color: C.primary,
     },
 
     /* ── Scroll ── */
@@ -1353,11 +1353,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: C.accent,
+        borderColor: C.primary,
     },
     subCardNumberText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 0.3,
     },
     subCardTitle: {
@@ -1604,7 +1604,7 @@ const styles = StyleSheet.create({
     },
     paymentBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 1.2,
     },
     paymentLabel: {
@@ -1619,7 +1619,7 @@ const styles = StyleSheet.create({
     },
     paymentCurrency: {
         ...typography.h3, fontSize: 18,
-        color: C.accent,
+        color: C.primary,
     },
     paymentDivider: {
         height: 1,
@@ -1704,7 +1704,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 4,
-        borderColor: C.accent,
+        borderColor: C.primary,
         shadowColor: '#3C3C3C',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
@@ -1722,7 +1722,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
-        borderColor: C.accent,
+        borderColor: C.primary,
     },
     successBadge: {
         ...typography.button, fontSize: 12,
@@ -1761,7 +1761,7 @@ const styles = StyleSheet.create({
     },
     refLabelText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 1.5,
     },
     refValue: {

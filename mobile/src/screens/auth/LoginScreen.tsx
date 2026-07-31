@@ -114,7 +114,7 @@ export default function LoginScreen({ navigation }: any) {
 
                     <Text style={styles.brandTitle}>
                         <Text style={{ color: C.primary }}>RETOUR </Text>
-                        <Text style={{ color: C.accent }}>GAGNANT</Text>
+                        <Text style={{ color: C.primary }}>GAGNANT</Text>
                     </Text>
                     <Text style={styles.brandSub}>BÉNIN</Text>
 
@@ -188,7 +188,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
     }, [focused])
 
     const rStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: focused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.01, 0.08]),
         transform: [{ scale: interpolate(focusAnim.value, [0, 1], [1, 1.01]) }]
@@ -211,7 +211,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
                 autoCapitalize={autoCapitalize || 'none'}
                 autoCorrect={false}
                 secureTextEntry={secureTextEntry}
-                selectionColor={C.accent}
+                selectionColor={C.primary}
             />
             {rightSlot}
         </Animated.View>
@@ -238,7 +238,7 @@ function InteractiveButton({ title, onPress, disabled, loading }: any) {
             ) : (
                 <>
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     forgotText: {
-        color: C.accent, // Or agence
+        color: C.primary, // Or agence
         fontSize: 14,
         fontFamily: fonts.semibold,
     },

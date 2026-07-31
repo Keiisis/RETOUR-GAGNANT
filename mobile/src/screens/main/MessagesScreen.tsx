@@ -70,7 +70,7 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
         ),
         borderColor: interpolateColor(
             pressAnim.value, [0, 1],
-            [C.border, C.accent]
+            [C.border, C.primary]
         ),
         transform: [{ scale: interpolate(pressAnim.value, [0, 1], [1, 0.98]) }],
     }))
@@ -86,7 +86,7 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
             >
                 <Animated.View style={[styles.suggestion, pressStyle]}>
                     <View style={styles.suggestionIconWrap}>
-                        <LucideIcon name="chatbubble-ellipses-outline" size={13} color={C.accent} />
+                        <LucideIcon name="chatbubble-ellipses-outline" size={13} color={C.primary} />
                     </View>
                     <Text style={styles.suggestionText} numberOfLines={2}>{text}</Text>
                     <LucideIcon name="arrow-forward" size={14} color={C.textMuted} />
@@ -325,7 +325,7 @@ export default function MessagesScreen({ navigation }: any) {
                 <View style={[styles.row, isMe ? styles.rowMe : styles.rowThem]}>
                     {!isMe && (
                         <View style={styles.agentAvatar}>
-                            <LucideIcon name="people" size={14} color={C.accent} />
+                            <LucideIcon name="people" size={14} color={C.primary} />
                         </View>
                     )}
                     <View style={[styles.bubble, isMe ? styles.myBubble : styles.theirBubble]}>
@@ -333,7 +333,7 @@ export default function MessagesScreen({ navigation }: any) {
                             <View style={styles.agentNameRow}>
                                 <Text style={styles.agentName}>{t('Équipe RGB')}</Text>
                                 <View style={styles.agentBadge}>
-                                    <LucideIcon name="shield-checkmark" size={9} color={C.accent} />
+                                    <LucideIcon name="shield-checkmark" size={9} color={C.primary} />
                                 </View>
                             </View>
                         )}
@@ -408,7 +408,7 @@ export default function MessagesScreen({ navigation }: any) {
                         <View style={styles.emptyHero}>
                             <View style={styles.emptyHeroGlow} />
                             <View style={styles.emptyIconWrap}>
-                                <LucideIcon name="chatbubbles" size={36} color={C.accent} />
+                                <LucideIcon name="chatbubbles" size={36} color={C.primary} />
                             </View>
                         </View>
 
@@ -472,7 +472,7 @@ export default function MessagesScreen({ navigation }: any) {
                         onBlur={() => setInputFocused(false)}
                         multiline
                         maxLength={1000}
-                        selectionColor={C.accent}
+                        selectionColor={C.primary}
                     />
                 </View>
                 <TouchableOpacity
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: C.accent,
+        borderColor: C.primary,
     },
     agentNameRow: {
         flexDirection: 'row',
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
     },
     agentName: {
         ...typography.overline,
-                color: C.accent,
+                color: C.primary,
     },
     agentBadge: {
         width: 14,

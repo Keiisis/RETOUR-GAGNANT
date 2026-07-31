@@ -398,7 +398,7 @@ export default function LegalScreen({ navigation }: any) {
                 </Pressable>
 
                 <View style={styles.navCounter}>
-                    <LucideIcon name="shield-checkmark" size={12} color={C.accent} />
+                    <LucideIcon name="shield-checkmark" size={12} color={C.primary} />
                     <Text style={styles.navCounterText}>
                         {t('Officiel')}
                     </Text>
@@ -421,7 +421,7 @@ export default function LegalScreen({ navigation }: any) {
                 <AnimatedSection delay={100}>
                     <View style={styles.documentBadge}>
                         <View style={styles.docBadgeIcon}>
-                            <LucideIcon name="document-text-outline" size={20} color={C.accent} />
+                            <LucideIcon name="document-text-outline" size={20} color={C.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.docBadgeTitle}>{t('Document officiel')}</Text>
@@ -462,7 +462,7 @@ export default function LegalScreen({ navigation }: any) {
                 <AnimatedSection delay={300}>
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionIconWrap}>
-                            <LucideIcon name={currentSection.icon} size={18} color={C.accent} />
+                            <LucideIcon name={currentSection.icon} size={18} color={C.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.sectionBadge}>{currentSection.badge}</Text>
@@ -502,7 +502,7 @@ export default function LegalScreen({ navigation }: any) {
                         <View style={styles.contactGlow} />
 
                         <View style={styles.contactBadge}>
-                            <LucideIcon name="shield-checkmark" size={11} color={C.accent} />
+                            <LucideIcon name="shield-checkmark" size={11} color={C.primary} />
                             <Text style={styles.contactBadgeText}>{t('VOS DROITS')}</Text>
                         </View>
 
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
     },
     contactBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1.2,
     },
     contactTitle: {

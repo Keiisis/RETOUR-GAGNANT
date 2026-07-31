@@ -217,10 +217,10 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                 {/* ═══ HERO SUCCESS SEAL ═══ */}
                 <View style={styles.heroWrap}>
                     {/* Confettis décoratifs */}
-                    <ConfettiDot delay={0} x={20} y={20} color={C.accent} size={6} />
+                    <ConfettiDot delay={0} x={20} y={20} color={C.primary} size={6} />
                     <ConfettiDot delay={300} x={width - 60} y={30} color={C.success} size={5} />
                     <ConfettiDot delay={600} x={40} y={100} color={C.info} size={4} />
-                    <ConfettiDot delay={900} x={width - 80} y={120} color={C.accent} size={7} />
+                    <ConfettiDot delay={900} x={width - 80} y={120} color={C.primary} size={7} />
                     <ConfettiDot delay={400} x={80} y={60} color={C.accentLight} size={5} />
                     <ConfettiDot delay={700} x={width - 100} y={80} color={C.success} size={4} />
 
@@ -238,7 +238,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
 
                         {/* Badge couronne en bas */}
                         <View style={styles.sealBadge}>
-                            <LucideIcon name="ribbon" size={14} color={C.accent} />
+                            <LucideIcon name="ribbon" size={14} color={C.primary} />
                         </View>
                     </View>
                 </View>
@@ -258,7 +258,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                         {/* Header du ticket */}
                         <View style={styles.ticketHeader}>
                             <View style={styles.ticketHeaderLeft}>
-                                <LucideIcon name="receipt" size={14} color={C.accent} />
+                                <LucideIcon name="receipt" size={14} color={C.primary} />
                                 <Text style={styles.ticketHeaderText}>{t('REÇU OFFICIEL')}</Text>
                             </View>
                             <View style={styles.ticketStatusBadge}>
@@ -289,7 +289,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             <View style={styles.ticketRow}>
                                 <View style={styles.ticketRowLeft}>
                                     <View style={styles.ticketRowIcon}>
-                                        <LucideIcon name="calendar-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="calendar-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.ticketRowLabel}>{t('Date')}</Text>
                                 </View>
@@ -301,7 +301,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             <View style={styles.ticketRow}>
                                 <View style={styles.ticketRowLeft}>
                                     <View style={styles.ticketRowIcon}>
-                                        <LucideIcon name="time-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="time-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.ticketRowLabel}>{t('Heure')}</Text>
                                 </View>
@@ -314,7 +314,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                                     <View style={styles.ticketRow}>
                                         <View style={styles.ticketRowLeft}>
                                             <View style={styles.ticketRowIcon}>
-                                                <LucideIcon name="card-outline" size={14} color={C.accent} />
+                                                <LucideIcon name="card-outline" size={14} color={C.primary} />
                                             </View>
                                             <Text style={styles.ticketRowLabel}>{t('Réf. paiement')}</Text>
                                         </View>
@@ -394,9 +394,9 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <LucideIcon name="cube" size={18} color={C.accent} style={{ marginRight: 10 }} />
+                            <LucideIcon name="cube" size={18} color={C.primary} style={{ marginRight: 10 }} />
                             <Text style={styles.primaryBtnText}>{t('Suivre ma commande')}</Text>
-                            <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 10 }} />
+                            <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 10 }} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -422,7 +422,7 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                         </View>
                         <View style={styles.supportCard}>
                             <View style={styles.supportIcon}>
-                                <LucideIcon name="headset" size={16} color={C.accent} />
+                                <LucideIcon name="headset" size={16} color={C.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.supportTitle}>{t('Besoin d\'aide ?')}</Text>
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 4,
-        borderColor: C.accent,
+        borderColor: C.primary,
         shadowColor: '#3C3C3C',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2.5,
-        borderColor: C.accent,
+        borderColor: C.primary,
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,

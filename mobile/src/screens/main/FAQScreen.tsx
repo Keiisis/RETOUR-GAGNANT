@@ -399,7 +399,7 @@ export default function FAQScreen() {
     }))
 
     const searchBarStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(searchFocusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(searchFocusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: searchFocused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(searchFocusAnim.value, [0, 1], [0.04, 0.10]),
     }))
@@ -449,7 +449,7 @@ export default function FAQScreen() {
 
                 {/* Badge total questions */}
                 <View style={styles.navCounter}>
-                    <LucideIcon name="help-circle" size={12} color={C.accent} />
+                    <LucideIcon name="help-circle" size={12} color={C.primary} />
                     <Text style={styles.navCounterText}>
                         {totalQuestions} {t('questions')}
                     </Text>
@@ -487,7 +487,7 @@ export default function FAQScreen() {
                             placeholderTextColor={C.placeholder}
                             autoCapitalize="none"
                             returnKeyType="search"
-                            selectionColor={C.accent}
+                            selectionColor={C.primary}
                         />
                         {search.length > 0 && (
                             <Pressable
@@ -550,7 +550,7 @@ export default function FAQScreen() {
                     <AnimatedSection delay={300}>
                         <View style={styles.noResult}>
                             <View style={styles.noResultIconWrap}>
-                                <LucideIcon name="search" size={32} color={C.accent} />
+                                <LucideIcon name="search" size={32} color={C.primary} />
                             </View>
                             <Text style={styles.noResultTitle}>{t('Aucun résultat')}</Text>
                             <Text style={styles.noResultText}>
@@ -592,7 +592,7 @@ export default function FAQScreen() {
                             {/* En-tête catégorie */}
                             <View style={styles.catHeader}>
                                 <View style={styles.catIconWrap}>
-                                    <LucideIcon name={cat.icon} size={16} color={C.accent} />
+                                    <LucideIcon name={cat.icon} size={16} color={C.primary} />
                                 </View>
                                 <Text style={styles.catTitle}>{t(cat.category)}</Text>
                                 <View style={styles.catCount}>
@@ -636,7 +636,7 @@ export default function FAQScreen() {
                             <View style={styles.contactGlow} />
 
                             <View style={styles.contactIconWrap}>
-                                <LucideIcon name="chatbubble-ellipses" size={22} color={C.accent} />
+                                <LucideIcon name="chatbubble-ellipses" size={22} color={C.primary} />
                             </View>
 
                             <View style={{ flex: 1 }}>
@@ -650,7 +650,7 @@ export default function FAQScreen() {
                             </View>
 
                             <View style={styles.contactArrow}>
-                                <LucideIcon name="arrow-forward" size={16} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={16} color={C.primary} />
                             </View>
                         </View>
                     </Pressable>
@@ -998,7 +998,7 @@ const styles = StyleSheet.create({
     },
     contactBadge: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1.2,
         marginBottom: spacing.xs,
     },

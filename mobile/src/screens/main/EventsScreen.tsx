@@ -204,7 +204,7 @@ function FeaturedEventCard({
 
                     {daysUntil > 0 && daysUntil <= 30 && (
                         <View style={featuredStyles.countdownBadge}>
-                            <LucideIcon name="time-outline" size={11} color={C.accent} />
+                            <LucideIcon name="time-outline" size={11} color={C.primary} />
                             <Text style={featuredStyles.countdownText}>
                                 {daysUntil === 1
                                     ? t('Demain')
@@ -226,7 +226,7 @@ function FeaturedEventCard({
                 )}
 
                 <View style={featuredStyles.metaRow}>
-                    <LucideIcon name="location-outline" size={13} color={C.accent} />
+                    <LucideIcon name="location-outline" size={13} color={C.primary} />
                     <Text style={featuredStyles.metaText} numberOfLines={1}>
                         {event.address || event.location}
                     </Text>
@@ -247,7 +247,7 @@ function FeaturedEventCard({
 
                     <View style={featuredStyles.cta}>
                         <Text style={featuredStyles.ctaText}>{t("S'inscrire")}</Text>
-                        <LucideIcon name="arrow-forward" size={14} color={C.accent} />
+                        <LucideIcon name="arrow-forward" size={14} color={C.primary} />
                     </View>
                 </View>
             </Animated.View>
@@ -362,7 +362,7 @@ const featuredStyles = StyleSheet.create({
     },
     dateMonth: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 2,
     },
     countdownBadge: {
@@ -378,7 +378,7 @@ const featuredStyles = StyleSheet.create({
     },
     countdownText: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 0.3,
     },
     title: { ...typography.h1, color: C.text },
@@ -412,7 +412,7 @@ const featuredStyles = StyleSheet.create({
     },
     priceValue: {
         ...typography.h3,
-                color: C.accent,
+                color: C.primary,
         marginTop: spacing.xxs,
         letterSpacing: -0.2,
     },
@@ -428,7 +428,7 @@ const featuredStyles = StyleSheet.create({
         borderColor: C.border,
     },
     ctaText: {
-        color: C.accent,
+        color: C.primary,
         ...typography.button, fontSize: 13,
                 letterSpacing: 0.2,
     },
@@ -507,7 +507,7 @@ function EventCard({
 
                             {event.is_featured && (
                                 <View style={cardStyles.featuredBadge}>
-                                    <LucideIcon name="star" size={9} color={C.accent} />
+                                    <LucideIcon name="star" size={9} color={C.primary} />
                                 </View>
                             )}
 
@@ -563,7 +563,7 @@ function EventCard({
 
                             <View style={cardStyles.viewBtn}>
                                 <Text style={cardStyles.viewBtnText}>{t('Détails')}</Text>
-                                <LucideIcon name="arrow-forward" size={11} color={C.accent} />
+                                <LucideIcon name="arrow-forward" size={11} color={C.primary} />
                             </View>
                         </View>
                     </View>
@@ -878,7 +878,7 @@ export default function EventsScreen({ navigation }: any) {
                     <AnimatedSection delay={150}>
                         <View style={styles.emptyGlobalCard}>
                             <View style={styles.emptyGlobalIcon}>
-                                <LucideIcon name="calendar-outline" size={42} color={C.accent} />
+                                <LucideIcon name="calendar-outline" size={42} color={C.primary} />
                             </View>
                             <Text style={styles.emptyGlobalTitle}>
                                 {t('Aucun événement pour le moment')}
@@ -973,7 +973,7 @@ export default function EventsScreen({ navigation }: any) {
                                             <Text style={styles.emptyCatBtnText}>
                                                 {t('Voir tous les événements')}
                                             </Text>
-                                            <LucideIcon name="arrow-forward" size={13} color={C.accent} />
+                                            <LucideIcon name="arrow-forward" size={13} color={C.primary} />
                                         </Pressable>
                                     </View>
                                 ) : (

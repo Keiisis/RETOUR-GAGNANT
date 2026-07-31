@@ -91,7 +91,7 @@ const TYPE_CONFIG: Record<string, {
     },
     event: {
         icon: 'sparkles',
-        color: C.accent,
+        color: C.primary,
         bgRgba: C.accentSoft,
         borderRgba: C.border,
         label: 'ÉVÉNEMENT',
@@ -400,7 +400,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
 
                 <View style={styles.navCounter}>
                     <Animated.View style={bellPulseStyle}>
-                        <LucideIcon name="notifications" size={12} color={C.accent} />
+                        <LucideIcon name="notifications" size={12} color={C.primary} />
                     </Animated.View>
                     <Text style={styles.navCounterText}>
                         {unreadCount > 0
@@ -447,7 +447,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                             <View style={styles.emptyHero}>
                                 <View style={styles.emptyHeroGlow} />
                                 <View style={styles.emptyIconWrap}>
-                                    <LucideIcon name="notifications-off-outline" size={36} color={C.accent} />
+                                    <LucideIcon name="notifications-off-outline" size={36} color={C.primary} />
                                 </View>
                             </View>
                             <Text style={styles.emptyTitle}>{t('Aucune notification')}</Text>
@@ -531,7 +531,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                             <Switch
                                 value={pushEnabled}
                                 onValueChange={handleTogglePush}
-                                trackColor={{ false: C.borderStrong, true: C.accent }}
+                                trackColor={{ false: C.borderStrong, true: C.primary }}
                                 thumbColor={C.surfaceSolid}
                                 ios_backgroundColor="#E4E4E4"
                             />
@@ -549,7 +549,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                         <View style={styles.statsGrid}>
                             <View style={styles.statCard}>
                                 <View style={[styles.statIcon, { backgroundColor: C.accentSoft, borderColor: C.border }]}>
-                                    <LucideIcon name="notifications-outline" size={14} color={C.accent} />
+                                    <LucideIcon name="notifications-outline" size={14} color={C.primary} />
                                 </View>
                                 <Text style={styles.statValue}>{notifications.length}</Text>
                                 <Text style={styles.statLabel}>{t('TOTAL')}</Text>
@@ -617,7 +617,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                                     accessibilityRole="button"
                                     hitSlop={6}
                                 >
-                                    <LucideIcon name="checkmark-done" size={14} color={C.accent} />
+                                    <LucideIcon name="checkmark-done" size={14} color={C.primary} />
                                     <Text style={styles.markAllText}>{t('Tout lire')}</Text>
                                 </TouchableOpacity>
                             )}
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
                 color: C.primary,
     },
     filterCountTextActive: {
-        color: C.accent,
+        color: C.primary,
     },
     markAllBtn: {
         flexDirection: 'row',

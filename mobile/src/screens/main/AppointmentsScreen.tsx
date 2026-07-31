@@ -153,7 +153,7 @@ function AppointmentCard({
                 {/* Infos */}
                 <View style={styles.rdvInfo}>
                     <View style={styles.rdvTypeRow}>
-                        <LucideIcon name={tc.icon} size={13} color={C.accent} />
+                        <LucideIcon name={tc.icon} size={13} color={C.primary} />
                         <Text style={styles.rdvType}>{t(tc.label)}</Text>
                     </View>
 
@@ -470,7 +470,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                 <Pressable onPress={() => setShowModal(true)} style={styles.navAddBtn}
                     accessibilityRole="button"
                     hitSlop={6}>
-                    <LucideIcon name="add" size={18} color={C.accent} />
+                    <LucideIcon name="add" size={18} color={C.primary} />
                     <Text style={styles.navAddText}>{t('Demander')}</Text>
                 </Pressable>
             </View>
@@ -503,7 +503,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     ) : (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <LucideIcon name="calendar-outline" size={36} color={C.accent} />
+                                <LucideIcon name="calendar-outline" size={36} color={C.primary} />
                             </View>
                             <Text style={styles.emptyTitle}>
                                 {tab === 'upcoming'
@@ -523,9 +523,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     accessibilityRole="button"
                                     hitSlop={6}
                                 >
-                                    <LucideIcon name="calendar" size={16} color={C.accent} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="calendar" size={16} color={C.primary} style={{ marginRight: 8 }} />
                                     <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
-                                    <LucideIcon name="arrow-forward" size={16} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -565,7 +565,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
                             <View style={styles.nextRdvRow}>
                                 <View style={styles.nextRdvIconWrap}>
-                                    <LucideIcon name="calendar-outline" size={14} color={C.accent} />
+                                    <LucideIcon name="calendar-outline" size={14} color={C.primary} />
                                 </View>
                                 <Text style={styles.nextRdvDate}>
                                     {formatDateTime(nextRdv.scheduled_at)}
@@ -575,7 +575,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                             {nextRdv.agent_name && (
                                 <View style={styles.nextRdvRow}>
                                     <View style={styles.nextRdvIconWrap}>
-                                        <LucideIcon name="person-outline" size={14} color={C.accent} />
+                                        <LucideIcon name="person-outline" size={14} color={C.primary} />
                                     </View>
                                     <Text style={styles.nextRdvDate}>
                                         {t('Avec')} {nextRdv.agent_name}
@@ -588,7 +588,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     <LucideIcon
                                         name={TYPE_CONFIG[nextRdv.type]?.icon || 'call-outline'}
                                         size={14}
-                                        color={C.accent}
+                                        color={C.primary}
                                     />
                                 </View>
                                 <Text style={styles.nextRdvDate}>
@@ -800,9 +800,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     <ActivityIndicator color={C.primaryText} size="small" />
                                 ) : (
                                     <>
-                                        <LucideIcon name="paper-plane-outline" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                        <LucideIcon name="paper-plane-outline" size={18} color={C.primary} style={{ marginRight: 8 }} />
                                         <Text style={styles.submitBtnText}>{t('Envoyer la demande')}</Text>
-                                        <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     },
     nextRdvBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1.2,
     },
     nextRdvTitle: {
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     typeBtnActive: {
-        borderColor: C.accent,
+        borderColor: C.primary,
         backgroundColor: C.accentSoft,
     },
     typeIconWrap: {
@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
         minHeight: 110,
     },
     notesWrapFocused: {
-        borderColor: C.accent,
+        borderColor: C.primary,
         backgroundColor: C.surfaceSolid,
     },
     notesInput: {

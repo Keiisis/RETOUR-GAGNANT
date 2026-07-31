@@ -96,7 +96,7 @@ const Field = React.memo(function Field({
     }, [focused])
 
     const wrapStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: focused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.02, 0.08]),
         transform: [{ scale: interpolate(focusAnim.value, [0, 1], [1, 1.005]) }],
@@ -126,7 +126,7 @@ const Field = React.memo(function Field({
                     keyboardType={keyboardType}
                     autoCapitalize={keyboardType === 'default' ? 'words' : 'none'}
                     autoCorrect={false}
-                    selectionColor={C.accent}
+                    selectionColor={C.primary}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                 />
@@ -444,7 +444,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                 <AnimatedSection delay={450}>
                     <View style={styles.tipCard}>
                         <View style={styles.tipIconWrap}>
-                            <LucideIcon name="bulb-outline" size={16} color={C.accent} />
+                            <LucideIcon name="bulb-outline" size={16} color={C.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.tipTitle}>{t('Bon à savoir')}</Text>
@@ -502,7 +502,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                                 {t('Enregistrer')}
                             </Text>
                             {hasChanges && (
-                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                             )}
                         </>
                     )}
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     },
     avatarText: {
         ...typography.h1, fontSize: 32,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1,
     },
     identityName: {
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     },
     completionPercent: {
         ...typography.button, fontSize: 14,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: -0.2,
     },
     completionBar: {
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     },
     completionFill: {
         height: '100%',
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         borderRadius: 3,
     },
     completionHint: {

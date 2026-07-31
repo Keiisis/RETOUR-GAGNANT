@@ -268,7 +268,7 @@ const ProductCard = ({
                             </>
                         ) : (
                             <View style={cardStyles.placeholder}>
-                                <LucideIcon name="sparkles-outline" size={28} color={C.accent} />
+                                <LucideIcon name="sparkles-outline" size={28} color={C.primary} />
                             </View>
                         )}
 
@@ -279,7 +279,7 @@ const ProductCard = ({
                         <View style={cardStyles.tagWrap}>
                             {item.is_featured && (
                                 <View style={cardStyles.vipTag}>
-                                    <LucideIcon name="star" size={8} color={C.accent} />
+                                    <LucideIcon name="star" size={8} color={C.primary} />
                                     <Text style={cardStyles.vipTagText}>VIP</Text>
                                 </View>
                             )}
@@ -420,7 +420,7 @@ const cardStyles = StyleSheet.create({
     },
     vipTagText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 0.5,
     },
     discountTag: {
@@ -761,7 +761,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         hitSlop={6}
                     >
                         <View style={styles.cartFabIconWrap}>
-                            <LucideIcon name="bag-handle" size={22} color={C.accent} />
+                            <LucideIcon name="bag-handle" size={22} color={C.primary} />
                             <View style={styles.cartBadge}>
                                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
                             </View>
@@ -770,7 +770,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                             <Text style={styles.cartFabLabel}>{t('Ouvrir le panier')}</Text>
                             <Text style={styles.cartFabTotal}>{formatPrice(cartTotal)}</Text>
                         </View>
-                        <LucideIcon name="arrow-forward" size={18} color={C.accent} />
+                        <LucideIcon name="arrow-forward" size={18} color={C.primary} />
                     </TouchableOpacity>
                 </Animated.View>
             )}
@@ -818,7 +818,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                             <Image source={{ uri: item.product.images[0] }} style={styles.cartImg} />
                                         ) : (
                                             <View style={[styles.cartImg, styles.cartImgPlaceholder]}>
-                                                <LucideIcon name="sparkles-outline" size={18} color={C.accent} />
+                                                <LucideIcon name="sparkles-outline" size={18} color={C.primary} />
                                             </View>
                                         )}
                                     </View>
@@ -879,7 +879,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.checkoutBtnText}>
                                     {t('Sceller la commande')}
                                 </Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                             </TouchableOpacity>
                         </View>
                     </Animated.View>

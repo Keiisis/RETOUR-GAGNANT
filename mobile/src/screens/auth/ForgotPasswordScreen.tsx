@@ -129,7 +129,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
                     {/* Icône clé dans un cercle */}
                     <View style={styles.keyIconWrap}>
-                        <LucideIcon name="key-outline" size={28} color={C.accent} />
+                        <LucideIcon name="key-outline" size={28} color={C.primary} />
                     </View>
 
                     <Text style={styles.title}>{t('Mot de passe oublié ?')}</Text>
@@ -192,7 +192,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
     }, [focused])
 
     const rStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: focused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.01, 0.08]),
         transform: [{ scale: interpolate(focusAnim.value, [0, 1], [1, 1.01]) }]
@@ -214,7 +214,7 @@ function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlu
                 keyboardType={keyboardType}
                 autoCapitalize={autoCapitalize}
                 secureTextEntry={secureTextEntry}
-                selectionColor={C.accent}
+                selectionColor={C.primary}
                 returnKeyType="send"
                 onSubmitEditing={onSubmitEditing}
             />
@@ -236,7 +236,7 @@ function InteractiveButton({ title, onPress, disabled, loading }: any) {
             ) : (
                 <>
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <LucideIcon name="send-outline" size={18} color={C.accent} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="send-outline" size={18} color={C.primary} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>

@@ -462,7 +462,7 @@ export default function ProfilScreen() {
         if (uploadingAvatar) {
             return (
                 <View style={styles.avatarLoading}>
-                    <ActivityIndicator color={C.accent} size="large" />
+                    <ActivityIndicator color={C.primary} size="large" />
                 </View>
             )
         }
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     },
     avatarInitials: {
         ...typography.h1, fontSize: 32,
-                color: C.accent,
+                color: C.primary,
         letterSpacing: 1,
     },
     cameraBadge: { position: 'absolute', right: -2, bottom: -2, width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.surface },

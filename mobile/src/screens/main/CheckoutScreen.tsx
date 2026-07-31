@@ -123,7 +123,7 @@ function Field({
     }, [focused])
 
     const wrapStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: focused ? C.surfaceSolid : C.surface,
         shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.01, 0.08]),
         transform: [{ scale: interpolate(focusAnim.value, [0, 1], [1, 1.005]) }],
@@ -165,7 +165,7 @@ function Field({
                     autoCorrect={false}
                     multiline={multiline}
                     numberOfLines={multiline ? 3 : 1}
-                    selectionColor={C.accent}
+                    selectionColor={C.primary}
                 />
             </Animated.View>
         </View>
@@ -539,19 +539,19 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
                         <View style={styles.paymentLogos}>
                             <View style={styles.paymentLogo}>
-                                <LucideIcon name="phone-portrait-outline" size={18} color={C.accent} />
+                                <LucideIcon name="phone-portrait-outline" size={18} color={C.primary} />
                                 <Text style={styles.paymentLogoText}>Mobile Money</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <LucideIcon name="card-outline" size={18} color={C.accent} />
+                                <LucideIcon name="card-outline" size={18} color={C.primary} />
                                 <Text style={styles.paymentLogoText}>Visa</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <LucideIcon name="card-outline" size={18} color={C.accent} />
+                                <LucideIcon name="card-outline" size={18} color={C.primary} />
                                 <Text style={styles.paymentLogoText}>Mastercard</Text>
                             </View>
                             <View style={styles.paymentLogo}>
-                                <LucideIcon name="wallet-outline" size={18} color={C.accent} />
+                                <LucideIcon name="wallet-outline" size={18} color={C.primary} />
                                 <Text style={styles.paymentLogoText}>Wave</Text>
                             </View>
                         </View>
@@ -598,9 +598,9 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             <ActivityIndicator color={C.primaryText} size="small" />
                         ) : (
                             <>
-                                <LucideIcon name="lock-closed" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                <LucideIcon name="lock-closed" size={18} color={C.primary} style={{ marginRight: 8 }} />
                                 <Text style={styles.payBtnText}>{t('Payer maintenant')}</Text>
-                                <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                             </>
                         )}
                     </TouchableOpacity>

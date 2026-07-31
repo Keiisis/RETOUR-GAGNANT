@@ -111,7 +111,7 @@ function TicketCard({
     }, [selected])
 
     const wrapStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(anim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(anim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: interpolateColor(
             anim.value,
             [0, 1],
@@ -121,7 +121,7 @@ function TicketCard({
     }))
 
     const radioStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(anim.value, [0, 1], [C.border, C.accent]),
+        borderColor: interpolateColor(anim.value, [0, 1], [C.border, C.primary]),
         backgroundColor: interpolateColor(anim.value, [0, 1], [C.surfaceSolid, C.accent]),
     }))
 
@@ -156,7 +156,7 @@ function TicketCard({
                             <Text style={ticketStyles.name}>{label}</Text>
                             {isVip && (
                                 <View style={ticketStyles.vipMiniBadge}>
-                                    <LucideIcon name="star" size={8} color={C.accent} />
+                                    <LucideIcon name="star" size={8} color={C.primary} />
                                     <Text style={ticketStyles.vipMiniText}>VIP</Text>
                                 </View>
                             )}
@@ -489,7 +489,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
                 {event.is_featured && (
                     <View style={styles.featuredNavBadge}>
-                        <LucideIcon name="star" size={11} color={C.accent} />
+                        <LucideIcon name="star" size={11} color={C.primary} />
                         <Text style={styles.featuredNavText}>{t('À la une')}</Text>
                     </View>
                 )}
@@ -548,7 +548,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         {metaInfos.map((item, i) => (
                             <View key={i} style={styles.metaCard}>
                                 <View style={styles.metaIconWrap}>
-                                    <LucideIcon name={item.icon} size={16} color={C.accent} />
+                                    <LucideIcon name={item.icon} size={16} color={C.primary} />
                                 </View>
                                 <Text style={styles.metaLabel}>{item.label}</Text>
                                 <Text style={styles.metaValue} numberOfLines={2}>
@@ -677,9 +677,9 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 <ActivityIndicator color={C.primaryText} size="small" />
                             ) : (
                                 <>
-                                    <LucideIcon name="ticket" size={18} color={C.accent} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="ticket" size={18} color={C.primary} style={{ marginRight: 8 }} />
                                     <Text style={styles.btnText}>{t("S'inscrire")}</Text>
-                                    <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -794,13 +794,13 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                         <LucideIcon
                                             name={isFreeTicket ? 'checkmark-circle' : 'card-outline'}
                                             size={18}
-                                            color={C.accent}
+                                            color={C.primary}
                                             style={{ marginRight: 8 }}
                                         />
                                         <Text style={styles.confirmBtnText}>
                                             {isFreeTicket ? t("Confirmer l'inscription") : t('Confirmer et payer')}
                                         </Text>
-                                        <LucideIcon name="arrow-forward" size={18} color={C.accent} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     },
     dateMonth: {
         ...typography.button, fontSize: 13,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 3,
     },
     dateYear: {
@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
     },
     recapBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.accent,
+        color: C.primary,
         letterSpacing: 1,
     },
     recapPrice: {
