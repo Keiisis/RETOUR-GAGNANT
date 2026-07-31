@@ -3,6 +3,7 @@ import {
     View, Text, StyleSheet, TouchableOpacity,
     Animated, Dimensions, Platform, Pressable, ImageBackground,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path } from 'react-native-svg'
 import { useLang } from '../contexts/LangContext'
@@ -60,6 +61,7 @@ const SLIDES: Slide[] = [
    Composant principal
 ═══════════════════════════════════════ */
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+    const insets = useSafeAreaInsets()
     const { t } = useLang()
     const [current, setCurrent] = useState(0)
     const flatRef = useRef<Animated.FlatList<Slide>>(null)
@@ -126,12 +128,22 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                     pointerEvents="none"
                 />
 
-                <View style={styles.footerInner}>
+                {/* Marge basse issue de `insets` : sous Android 15+ l'app
+                   dessine sous la barre systeme, et une constante placait le
+                   bouton « Continuer » dessous. */}
+                <View style={[styles.footerInner, { paddingBottom: insets.bottom + 20 }]}>
                     {/* Progress segments */}
                     <View style={styles.progressTrack}>
                         {SLIDES.map((_, i) => {
                             const inputRange = [(i - 1) * width, i * width, (i + 1) * width]
-                            const flex = scrollX.interpolate({
+                            /* `flex` était animé ici, d'où l'erreur console
+                               « Style property 'flex' is not supported by native
+                               animated module » : le défilement est piloté par
+                               le moteur natif (`useNativeDriver: true`), qui
+                               n'accepte que les transformations et l'opacité.
+                               `scaleX` produit le même effet — le segment actif
+                               s'allonge — et il est nativement pris en charge. */
+                            const scaleX = scrollX.interpolate({
                                 inputRange,
                                 outputRange: [1, 3, 1],
                                 extrapolate: 'clamp',
@@ -146,7 +158,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                                     key={i}
                                     style={[
                                         styles.progressSeg,
-                                        { flex, opacity, backgroundColor: '#FFFFFF' },
+                                        {
+                                            opacity,
+                                            backgroundColor: '#FFFFFF',
+                                            transform: [{ scaleX }],
+                                        },
                                     ]}
                                 />
                             )
@@ -389,15 +405,21 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         paddingHorizontal: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+        // paddingBottom fourni au montage depuis insets.bottom
     },
     progressTrack: {
         flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         height: 3,
         gap: 6,
         marginBottom: 22,
     },
     progressSeg: {
+        /* Largeur fixe, indispensable depuis le passage de `flex` à `scaleX` :
+           sans elle les segments n'auraient plus aucune dimension. Le segment
+           actif est agrandi trois fois par l'animation. */
+        width: 26,
         height: 3,
         borderRadius: 2,
     },

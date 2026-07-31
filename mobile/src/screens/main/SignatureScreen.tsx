@@ -328,7 +328,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                 </ScrollView>
             ) : (
                 /* ═══ MODE ÉDITION ═══ */
-                <View style={styles.editorContainer}>
+                <View style={[styles.editorContainer, { paddingBottom: insets.bottom + 16 }]}>
                     {/* HEADER TITRE */}
                     <Animated.View style={[styles.headerContainer, styleHeader, { marginBottom: 24 }]}>
                         <Text style={styles.title}>{t('Dessinez votre signature')}</Text>
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
     editorContainer: {
         flex: 1,
         paddingHorizontal: 28,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+        // paddingBottom fourni au montage depuis insets.bottom
     },
     canvasWrap: {
         flex: 1,

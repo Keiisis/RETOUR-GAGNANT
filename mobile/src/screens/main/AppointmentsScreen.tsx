@@ -645,7 +645,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                             />
                         </Animated.View>
 
-                        <Animated.View style={[styles.modalSheet, sheetStyle]}>
+                        <Animated.View style={[styles.modalSheet, sheetStyle, { paddingBottom: insets.bottom + 20 }]}>
                             <View style={styles.modalHandle} />
 
                             <View style={styles.modalHeader}>
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 28,
         paddingHorizontal: 24,
         paddingTop: 12,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        // paddingBottom fourni au montage depuis insets.bottom
         shadowColor: C.primary,
         shadowOpacity: 0.3,
         shadowRadius: 30,

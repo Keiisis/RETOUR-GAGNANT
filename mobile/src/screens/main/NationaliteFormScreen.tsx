@@ -968,16 +968,20 @@ export default function NationaliteFormScreen({ navigation }: any) {
             )}
 
             <ScrollView
-                contentContainerStyle={styles.scroll}
+                /* Réserve pour le pied d'action, qui recouvre le contenu. */
+                contentContainerStyle={[styles.scroll, { paddingBottom: 120 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
                 {renderStepContent()}
             </ScrollView>
 
-            {/* FOOTER ACTIONS */}
+            {/* FOOTER ACTIONS
+                Marge basse issue de `insets` : sous Android 15+ l'application
+                dessine sous la barre système, et une constante laissait le
+                bouton « Continuer » dessous, donc inatteignable. */}
             {currentStep < 6 && (
-                <View style={styles.footer}>
+                <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
                     <TouchableOpacity
                         style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
                         onPress={nextStep}
@@ -1706,7 +1710,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.surfaceSolid,
         paddingHorizontal: 20,
         paddingTop: 14,
-        paddingBottom: Platform.OS === 'ios' ? 32 : 18,
+        // paddingBottom fourni au montage depuis insets.bottom : voir l'usage.
         borderTopWidth: 1,
         borderTopColor: C.border,
         shadowColor: C.primary,

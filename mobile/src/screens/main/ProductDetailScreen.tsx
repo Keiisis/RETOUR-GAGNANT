@@ -230,7 +230,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onScroll={onScroll}
                 scrollEventThrottle={16}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 140 }}
+                contentContainerStyle={{ paddingBottom: 140 + insets.bottom }}
             >
                 {/* ── HERO CAROUSEL ── */}
                 <View style={styles.carouselWrap}>
@@ -466,8 +466,13 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 )}
             </AnimatedScroll>
 
-            {/* ── CTA FIXE BAS ── */}
-            <View style={styles.bottomBar}>
+            {/* ── CTA FIXE BAS ──
+                La marge basse vient de `insets`, jamais d'une constante : sous
+                Android 15+ l'application dessine SOUS la barre de navigation
+                système. Une valeur codée en dur (18 dp) passait dessous sur les
+                appareils à trois boutons, qui en occupent près de 48 — le
+                bouton devenait inatteignable. */}
+            <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 14 }]}>
                 <LinearGradient
                     colors={['rgba(245,241,234,0)', C.bg]}
                     style={styles.bottomFade}
@@ -930,7 +935,7 @@ const styles = StyleSheet.create({
         right: 0,
         paddingHorizontal: 18,
         paddingTop: 14,
-        paddingBottom: Platform.OS === 'ios' ? 32 : 18,
+        // paddingBottom fourni au montage depuis insets.bottom : voir l'usage.
     },
     bottomFade: {
         position: 'absolute',

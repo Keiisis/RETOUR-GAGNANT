@@ -708,7 +708,7 @@ export default function DossierScreen({ navigation }: any) {
                     accessibilityRole="button"
                     hitSlop={6}
                 >
-                    <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+                    <View style={[styles.modalSheet, { paddingBottom: insets.bottom + 20 }]} onStartShouldSetResponder={() => true}>
                         <View style={styles.modalHandle} />
 
                         <View style={styles.modalHeader}>
@@ -1305,7 +1305,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
         padding: 22,
-        paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+        // paddingBottom fourni au montage depuis insets.bottom
         shadowColor: C.primary,
         shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.15,

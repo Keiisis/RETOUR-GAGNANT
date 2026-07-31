@@ -318,7 +318,10 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
             </View>
 
             <ScrollView
-                contentContainerStyle={styles.scroll}
+                /* La barre d'action est en position absolue au-dessus du
+                   contenu : sans cette réserve, les derniers champs passaient
+                   dessous et devenaient illisibles. */
+                contentContainerStyle={[styles.scroll, { paddingBottom: 110 + insets.bottom }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
@@ -463,8 +466,11 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                 </AnimatedSection>
             </ScrollView>
 
-            {/* ═══ CTA FIXE EN BAS ═══ */}
-            <View style={styles.bottomBar}>
+            {/* ═══ CTA FIXE EN BAS ═══
+                Marge basse issue de `insets` : sous Android 15+ l'application
+                dessine sous la barre de navigation système, et une constante
+                laissait les boutons dessous. */}
+            <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 14 }]}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
                     style={styles.cancelBtn}
@@ -819,7 +825,7 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 20,
         paddingTop: 14,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 18,
+        // paddingBottom fourni au montage depuis insets.bottom : voir l'usage.
         backgroundColor: 'rgba(255, 255, 255, 0.96)',
         borderTopWidth: 1,
         borderTopColor: C.border,

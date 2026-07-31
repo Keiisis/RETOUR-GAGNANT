@@ -712,7 +712,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                             />
                         </Animated.View>
 
-                        <Animated.View style={[styles.sheet, sheetStyle]}>
+                        <Animated.View style={[styles.sheet, sheetStyle, { paddingBottom: insets.bottom + 20 }]}>
                             <View style={styles.sheetHandle} />
 
                             <View style={styles.sheetHeader}>
@@ -1259,7 +1259,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 28,
         paddingHorizontal: 24,
         paddingTop: 12,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        // paddingBottom fourni au montage depuis insets.bottom
         shadowColor: C.primary,
         shadowOpacity: 0.3,
         shadowRadius: 30,

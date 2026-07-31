@@ -454,7 +454,7 @@ export default function MessagesScreen({ navigation }: any) {
             </Animated.View>
 
             {/* BARRE D'ENVOI */}
-            <View style={styles.inputBar}>
+            <View style={[styles.inputBar, { paddingBottom: insets.bottom + 10 }]}>
                 <View style={[styles.inputWrap, { borderColor: inputBorderColor }]}>
                     <Ionicons
                         name="chatbubble-outline"
@@ -797,7 +797,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.surfaceSolid,
         paddingHorizontal: 16,
         paddingTop: 12,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 14,
+        // paddingBottom fourni au montage depuis insets.bottom
         borderTopWidth: 1,
         borderTopColor: C.border,
         gap: 10,
