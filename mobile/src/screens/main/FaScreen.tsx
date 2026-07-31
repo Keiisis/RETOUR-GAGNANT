@@ -271,21 +271,32 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                         <View style={styles.empty}>
                             <Text style={styles.emptyText}>{erreurAnnuaire
                                 ? `${t('Annuaire momentanément inaccessible.')} (${erreurAnnuaire})`
-                                : t('Annuaire en cours de mise à jour. Revenez bientôt.')}</Text>
+                                : t('Nos prêtres ne sont pas encore présentés ici. Vous pouvez réserver dès maintenant : notre équipe vous met en relation avec un Bokonon reconnu.')}</Text>
                         </View>
                     }
                     renderItem={({ item }) => (
                         <PriestCard priest={item} t={t} onOpen={() => setDetail(item)} onBook={() => openBooking(item)} />
                     )}
                     ListFooterComponent={
-                        priests.length > 0 ? (
-                            <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}
-                                accessibilityRole="button"
-                                hitSlop={6}>
-                                <Text style={styles.anyBtnText}>{t('Réserver sans choisir de prêtre')}</Text>
-                                <ChevronRight size={16} color={C.primary} />
-                            </Pressable>
-                        ) : null
+                        /* Ce bouton ne s'affichait QUE si l'annuaire contenait au
+                           moins un prêtre. L'annuaire étant vide, l'écran devenait
+                           un cul-de-sac : plus aucun moyen de réserver.
+
+                           Or le site ne liste aucun prêtre : il propose
+                           directement le choix du mode, le prix et le paiement.
+                           La réservation ne doit donc jamais dépendre de
+                           l'annuaire — celui-ci n'est qu'un confort quand des
+                           prêtres sont publiés. */
+                        <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}
+                            accessibilityRole="button"
+                            hitSlop={6}>
+                            <Text style={styles.anyBtnText}>
+                                {priests.length > 0
+                                    ? t('Réserver sans choisir de prêtre')
+                                    : t('Réserver ma consultation')}
+                            </Text>
+                            <ChevronRight size={16} color={C.primary} />
+                        </Pressable>
                     }
                 />
             )}
