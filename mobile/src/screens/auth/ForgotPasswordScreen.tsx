@@ -21,7 +21,7 @@ import Animated, {
 import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    ForgotPasswordScreen — THEME "CORPORATE PREMIUM 2026"
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
         color: C.textSec,
         marginTop: 14,
         lineHeight: 22,
-        fontWeight: '400',
+        fontFamily: fonts.regular,
         textAlign: 'center',
         paddingHorizontal: 10,
     },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
         flex: 1,
         color: C.primary,
         fontSize: 15,
-        fontWeight: '500',
+        fontFamily: fonts.medium,
         height: '100%',
     },
 
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     btnText: {
         color: C.primaryText,
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
@@ -367,11 +367,11 @@ const styles = StyleSheet.create({
     backText: {
         color: C.textSec,
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: fonts.medium,
     },
     backBold: {
         color: C.primary,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
     },
 
     /* ── Footer ── */

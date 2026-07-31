@@ -1060,8 +1060,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     navCounterText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 0.3,
     },
@@ -1096,14 +1095,12 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     stepperBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.2,
     },
     stepperLabel: {
-        fontSize: 13,
-        fontWeight: '800',
+        ...typography.button, fontSize: 13,
         color: C.primary,
         letterSpacing: -0.2,
     },
@@ -1145,8 +1142,7 @@ const styles = StyleSheet.create({
         transform: [{ scale: 1.1 }],
     },
     stepDotText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.textSec,
     },
     stepDotTextActive: {
@@ -1178,23 +1174,19 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     stepHeaderBadge: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.2,
         marginBottom: 2,
     },
     stepHeaderTitle: {
-        fontSize: 19,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 19,
         color: C.primary,
         letterSpacing: -0.3,
     },
     stepIntro: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 19,
         marginBottom: 18,
         paddingHorizontal: 4,
         fontStyle: 'italic',
@@ -1229,25 +1221,21 @@ const styles = StyleSheet.create({
     },
     heroIconGlow: { display: 'none' },
     heroBadge: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.5,
         marginBottom: 8,
     },
     heroTitle: {
-        fontSize: 26,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 26,
         color: C.primary,
         letterSpacing: -0.5,
         textAlign: 'center',
         marginBottom: 8,
     },
     heroSubtitle: {
-        fontSize: 13.5,
+        ...typography.bodySmall, fontSize: 13.5,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 20,
         textAlign: 'center',
         marginBottom: 22,
     },
@@ -1267,11 +1255,9 @@ const styles = StyleSheet.create({
         marginRight: 14,
     },
     quoteText: {
-        fontSize: 13,
+        ...typography.label,
         color: C.primary,
-        lineHeight: 20,
         fontStyle: 'italic',
-        fontWeight: '500',
     },
 
     /* ── Field ── */
@@ -1279,13 +1265,10 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     fieldLabel: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.overline,
         color: C.textSec,
-        letterSpacing: 0.4,
         marginBottom: 6,
         marginLeft: 4,
-        textTransform: 'uppercase',
     },
     fieldContainer: {
         flexDirection: 'row',
@@ -1310,8 +1293,7 @@ const styles = StyleSheet.create({
     fieldInput: {
         flex: 1,
         color: C.primary,
-        fontSize: 14.5,
-        fontWeight: '500',
+        ...typography.body, fontSize: 14.5,
         paddingVertical: 0,
     },
     fieldInputTextArea: {
@@ -1346,10 +1328,8 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     switchLabel: {
-        fontSize: 13,
-        fontWeight: '600',
+        ...typography.label,
         color: C.primary,
-        lineHeight: 18,
     },
 
     /* ── Sub Card (ancêtres / parents) ── */
@@ -1387,21 +1367,18 @@ const styles = StyleSheet.create({
         borderColor: C.accent,
     },
     subCardNumberText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 0.3,
     },
     subCardTitle: {
-        fontSize: 15,
-        fontWeight: '800',
+        ...typography.button,
         color: C.primary,
         letterSpacing: -0.2,
         marginBottom: 2,
     },
     subCardTag: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.2,
     },
@@ -1434,15 +1411,13 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     docCounterLabel: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentLight,
         letterSpacing: 1.2,
         marginBottom: 2,
     },
     docCounterValue: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.primaryText,
     },
     docCounterBadge: {
@@ -1454,8 +1429,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     docCounterBadgeText: {
-        fontSize: 13,
-        fontWeight: '800',
+        ...typography.button, fontSize: 13,
         color: C.primary,
     },
 
@@ -1492,10 +1466,8 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     docSlotTitle: {
-        fontSize: 12.5,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12.5,
         color: C.primary,
-        lineHeight: 17,
         marginBottom: 4,
     },
     docSlotTags: {
@@ -1510,8 +1482,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     miniTagText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         letterSpacing: 0.5,
     },
 
@@ -1532,8 +1503,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     uploadBtnText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primaryText,
         letterSpacing: 0.3,
     },
@@ -1569,8 +1539,7 @@ const styles = StyleSheet.create({
     },
     uploadedItemName: {
         flex: 1,
-        fontSize: 12,
-        fontWeight: '600',
+        ...typography.caption,
         color: C.primary,
     },
 
@@ -1598,8 +1567,7 @@ const styles = StyleSheet.create({
         borderBottomColor: C.border,
     },
     recapHeaderText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.3,
     },
@@ -1615,15 +1583,13 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(226, 232, 240, 0.6)',
     },
     infoLabel: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
         flex: 1,
     },
     infoValue: {
-        fontSize: 12.5,
+        ...typography.button, fontSize: 12.5,
         color: C.primary,
-        fontWeight: '700',
         flex: 1.2,
         textAlign: 'right',
     },
@@ -1660,27 +1626,23 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     paymentBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 1.2,
     },
     paymentLabel: {
-        fontSize: 12,
+        ...typography.caption,
         color: 'rgba(255, 255, 255, 0.7)',
-        fontWeight: '500',
         marginBottom: 4,
     },
     paymentAmount: {
-        fontSize: 38,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 38,
         color: C.primaryText,
         letterSpacing: -1,
     },
     paymentCurrency: {
-        fontSize: 18,
+        ...typography.h3, fontSize: 18,
         color: C.accent,
-        fontWeight: '700',
     },
     paymentDivider: {
         height: 1,
@@ -1696,9 +1658,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     paymentFeatureText: {
-        fontSize: 12.5,
+        ...typography.label, fontSize: 12.5,
         color: 'rgba(255, 255, 255, 0.85)',
-        fontWeight: '500',
     },
 
     /* ── Footer ── */
@@ -1742,8 +1703,7 @@ const styles = StyleSheet.create({
     },
     primaryBtnText: {
         color: C.primaryText,
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         letterSpacing: 0.2,
     },
 
@@ -1780,7 +1740,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 4,
         borderColor: C.accent,
-        shadowColor: C.success,
+        shadowColor: '#3C3C3C',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
@@ -1800,25 +1760,21 @@ const styles = StyleSheet.create({
         borderColor: C.accent,
     },
     successBadge: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.5,
         marginBottom: 8,
     },
     successTitle: {
-        fontSize: 28,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 28,
         color: C.primary,
         letterSpacing: -0.5,
         textAlign: 'center',
         marginBottom: 12,
     },
     successSubtitle: {
-        fontSize: 13.5,
+        ...typography.bodySmall, fontSize: 13.5,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 20,
         textAlign: 'center',
         marginBottom: 22,
     },
@@ -1839,14 +1795,12 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     refLabelText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 1.5,
     },
     refValue: {
-        fontSize: 22,
-        fontWeight: '800',
+        ...typography.h2,
         color: C.primaryText,
         letterSpacing: 2,
     },
@@ -1868,8 +1822,7 @@ const styles = StyleSheet.create({
     },
     successBtnText: {
         color: C.primaryText,
-        fontSize: 14.5,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14.5,
         letterSpacing: 0.2,
     },
 })

@@ -28,7 +28,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -187,7 +187,7 @@ function ShippingStepper({ currentIdx, statusColor }: { currentIdx: number; stat
                             <Text
                                 style={[
                                     styles.stepperDotLabel,
-                                    (isDone || isActive) && { color: statusColor, fontWeight: '800' },
+                                    (isDone || isActive) && { color: statusColor, fontFamily: fonts.extrabold },
                                 ]}
                                 numberOfLines={1}
                             >
@@ -703,8 +703,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     navCounterText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         letterSpacing: 0.3,
     },
 
@@ -732,16 +731,14 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     loadingTitle: {
-        fontSize: 16,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 16,
         color: C.primary,
         letterSpacing: -0.2,
         marginTop: 6,
     },
     loadingText: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
-        fontWeight: '500',
         textAlign: 'center',
     },
 
@@ -769,19 +766,16 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(232, 17, 45, 0.25)',
     },
     errorTitle: {
-        fontSize: 20,
-        fontWeight: '800',
+        ...typography.h2, fontSize: 20,
         color: C.primary,
         letterSpacing: -0.3,
         textAlign: 'center',
         marginTop: 8,
     },
     errorText: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
         textAlign: 'center',
-        lineHeight: 19,
-        fontWeight: '500',
         marginBottom: 16,
     },
     errorBtn: {
@@ -796,8 +790,7 @@ const styles = StyleSheet.create({
     },
     errorBtnText: {
         color: C.primaryText,
-        fontSize: 14,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14,
         letterSpacing: 0.2,
     },
 
@@ -815,11 +808,9 @@ const styles = StyleSheet.create({
     },
     title: { ...typography.h1, color: C.text },
     subtitle: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
         marginTop: 10,
-        lineHeight: 18,
-        fontWeight: '500',
     },
 
     /* ── Status Card (Hero) ── */
@@ -846,23 +837,20 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     statusBadge: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         letterSpacing: 1.8,
         marginBottom: 8,
     },
     statusMainText: {
-        fontSize: 17,
-        fontWeight: '800',
+        ...typography.h3,
         color: C.primary,
         letterSpacing: -0.3,
         textAlign: 'center',
         marginBottom: 4,
     },
     statusSubText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
         textAlign: 'center',
     },
 
@@ -906,9 +894,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     stepperDotLabel: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '600',
         letterSpacing: 0.2,
         textAlign: 'center',
     },
@@ -944,22 +931,17 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     trackingBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 1.3,
     },
     trackingLabel: {
-        fontSize: 12,
+        ...typography.overline,
         color: 'rgba(255, 255, 255, 0.65)',
-        fontWeight: '600',
-        letterSpacing: 0.5,
         marginBottom: 4,
-        textTransform: 'uppercase',
     },
     trackingCode: {
-        fontSize: 22,
-        fontWeight: '800',
+        ...typography.h2,
         color: C.primaryText,
         letterSpacing: 2,
         marginBottom: 6,
@@ -971,9 +953,8 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     trackingCarrierText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.accentLight,
-        fontWeight: '600',
     },
     trackingActions: {
         flexDirection: 'row',
@@ -991,8 +972,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
     },
     trackingBtnText: {
-        fontSize: 12.5,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12.5,
         color: C.primary,
         letterSpacing: 0.2,
     },
@@ -1010,8 +990,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     trackingBtnPrimaryText: {
-        fontSize: 12.5,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12.5,
         color: C.accent,
         letterSpacing: 0.2,
     },
@@ -1036,8 +1015,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         flex: 1,
-        fontSize: 14,
-        fontWeight: '800',
+        ...typography.button, fontSize: 14,
         color: C.primary,
         letterSpacing: -0.2,
     },
@@ -1050,8 +1028,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sectionCountText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 0.3,
     },
@@ -1091,28 +1068,23 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(0, 135, 81, 0.12)',
     },
     itemQtyText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primary,
         letterSpacing: 0.2,
     },
     itemName: {
-        fontSize: 13,
+        ...typography.button, fontSize: 13,
         color: C.primary,
-        fontWeight: '700',
         letterSpacing: -0.1,
-        lineHeight: 18,
     },
     itemUnitPrice: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
         marginTop: 2,
     },
     itemPrice: {
-        fontSize: 13.5,
+        ...typography.button, fontSize: 13.5,
         color: C.primary,
-        fontWeight: '800',
         letterSpacing: -0.2,
     },
     totalSection: {
@@ -1128,15 +1100,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     totalLabel: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.overline, fontSize: 13,
         color: C.textSec,
-        letterSpacing: 0.2,
-        textTransform: 'uppercase',
     },
     totalValue: {
-        fontSize: 22,
-        fontWeight: '800',
+        ...typography.h2,
         color: C.accent,
         letterSpacing: -0.5,
     },
@@ -1148,9 +1116,8 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     txRef: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
         letterSpacing: 0.2,
     },
 
@@ -1172,22 +1139,19 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     shipLabel: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.2,
         marginBottom: 3,
     },
     shipValue: {
-        fontSize: 13,
+        ...typography.button, fontSize: 13,
         color: C.primary,
-        fontWeight: '700',
         letterSpacing: -0.1,
     },
     shipValueSub: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
         marginTop: 2,
     },
     shipDivider: {
@@ -1206,11 +1170,9 @@ const styles = StyleSheet.create({
     },
     shipNote: {
         flex: 1,
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
         fontStyle: 'italic',
-        lineHeight: 16,
     },
 
     /* ── Events Timeline ── */
@@ -1248,14 +1210,13 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     evLabel: {
-        fontSize: 13,
+        ...typography.button, fontSize: 13,
         color: C.textSec,
-        fontWeight: '700',
         letterSpacing: -0.1,
     },
     evLabelLatest: {
         color: C.primary,
-        fontWeight: '800',
+        fontFamily: fonts.extrabold,
     },
     evLatestBadge: {
         backgroundColor: 'rgba(252, 209, 22, 0.15)',
@@ -1266,16 +1227,13 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     evLatestBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 0.8,
     },
     evDesc: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 16,
         marginBottom: 4,
     },
     evLocationRow: {
@@ -1285,14 +1243,12 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     evLocation: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '600',
     },
     evTime: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
         letterSpacing: 0.2,
         marginTop: 2,
     },
@@ -1322,9 +1278,8 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '45deg' }],
     },
     footerText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
         letterSpacing: 0.2,
         textAlign: 'center',
     },

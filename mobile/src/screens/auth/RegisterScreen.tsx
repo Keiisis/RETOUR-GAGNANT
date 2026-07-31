@@ -21,7 +21,7 @@ import Animated, {
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    RegisterScreen — THEME "CORPORATE PREMIUM 2026"
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         color: C.textSec,
         marginTop: 14,
         lineHeight: 22,
-        fontWeight: '400',
+        fontFamily: fonts.regular,
     },
     formContainer: {
         gap: 16,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     btnText: {
         color: C.primaryText,
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
@@ -393,10 +393,10 @@ const styles = StyleSheet.create({
     loginText: {
         color: C.textSec,
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: fonts.medium,
     },
     loginBold: {
         color: C.primary,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
     },
 })

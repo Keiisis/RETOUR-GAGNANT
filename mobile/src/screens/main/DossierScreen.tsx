@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.primarySoft,
         borderRadius: radius.pill,
         paddingHorizontal: spacing.md,
-        paddingVertical: 9,
+        paddingVertical: spacing.sm,
     },
     uploadHeaderBtnDisabled: { opacity: 0.45 },
     uploadHeaderBtnText: { ...typography.label, color: C.primary },
@@ -900,7 +900,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs,
         marginBottom: spacing.sm,
-        paddingHorizontal: 4,
+        paddingHorizontal: spacing.xs,
     },
     tabsHeaderText: {
         ...typography.overline,
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     heroWrap: { position: 'relative' },
     heroImage: { width: '100%', height: 168, backgroundColor: C.surfaceAlt },
     statusPill: {
-        paddingHorizontal: spacing.md, paddingVertical: 7,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
         borderRadius: radius.pill, alignSelf: 'flex-start',
     },
     statusPillOnHero: {
@@ -1115,7 +1115,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs,
         paddingHorizontal: spacing.sm,
-        paddingVertical: 5,
+        paddingVertical: spacing.xs,
         borderRadius: radius.pill,
         borderWidth: 1,
     },
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        marginBottom: 20,
+        marginBottom: spacing.gutter,
     },
     modalIconWrap: {
         width: 44, height: 44, borderRadius: radius.md,
@@ -1298,7 +1298,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs,
         paddingHorizontal: spacing.sm,
-        paddingVertical: 9,
+        paddingVertical: spacing.sm,
         borderRadius: radius.pill,
         borderWidth: 1.2,
         borderColor: C.border,

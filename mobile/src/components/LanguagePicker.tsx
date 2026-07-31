@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     handle: {
         width: 40, height: 4, borderRadius: 2,
         backgroundColor: colors.border,
-        alignSelf: 'center', marginTop: 10, marginBottom: 0,
+        alignSelf: 'center', marginTop: spacing.sm, marginBottom: 0,
     },
 
     // ── Header ──
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     headerSub: {
         ...typography.caption,
         color: colors.gold + '99',
-        marginTop: 2,
+        marginTop: spacing.xxs,
     },
     closeBtn: {
         width: 34, height: 34, borderRadius: 17,
@@ -210,10 +210,10 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     activeBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 8,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
         backgroundColor: colors.gold + '12',
         borderRadius: radius.sm, borderWidth: 1, borderColor: colors.gold + '25',
-        paddingHorizontal: 12, paddingVertical: 7,
+        paddingHorizontal: 12, paddingVertical: spacing.sm,
         alignSelf: 'flex-start',
     },
     activeBadgeFlag: { fontSize: 18 },
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     activeDot: {
         width: 7, height: 7, borderRadius: 3.5,
         backgroundColor: colors.success,
-        marginLeft: 2,
+        marginLeft: spacing.xxs,
     },
 
     // ── List ──
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     },
     langItem: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: spacing.md, paddingVertical: 13,
+        paddingHorizontal: spacing.md, paddingVertical: spacing.md,
         gap: 12,
     },
     langItemActive: {
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     },
 
     flagWrap: {
-        width: 44, height: 44, borderRadius: 14,
+        width: 44, height: 44, borderRadius: radius.md,
         backgroundColor: colors.background,
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: colors.borderLight,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     nativeLabelActive: { color: colors.textGold },
     frenchLabel: {
         ...typography.caption,
-        color: colors.textMuted, marginTop: 2,
+        color: colors.textMuted, marginTop: spacing.xxs,
     },
 
     checkWrap: { width: 28, height: 28 },
@@ -281,9 +281,9 @@ const styles = StyleSheet.create({
 
     // ── Footer ──
     footer: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
         marginHorizontal: spacing.lg, marginTop: spacing.md,
-        paddingHorizontal: 12, paddingVertical: 8,
+        paddingHorizontal: 12, paddingVertical: spacing.sm,
         backgroundColor: colors.navyMuted,
         borderRadius: radius.sm,
     },

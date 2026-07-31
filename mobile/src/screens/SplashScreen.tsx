@@ -12,7 +12,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext';
-import { screenColors } from '../config/theme'
+import { screenColors, fonts } from '../config/theme'
 
 const { width } = Dimensions.get('window');
 
@@ -216,9 +216,8 @@ const styles = StyleSheet.create({
     },
     brandWord: {
         fontSize: 30,
-        fontWeight: '900',
+        fontFamily: fonts.extrabold,
         letterSpacing: 3,
-        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },
     brandSpace: {
         fontSize: 30,
@@ -247,11 +246,10 @@ const styles = StyleSheet.create({
     },
     langTitle: {
         fontSize: 34,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
         color: C.ink,
         letterSpacing: -1,
         marginBottom: 8,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     },
     langSubtitle: {
         fontSize: 16,
@@ -291,7 +289,7 @@ const styles = StyleSheet.create({
     },
     langLabel: {
         fontSize: 16,
-        fontWeight: '500',
+        fontFamily: fonts.medium,
         color: C.ink,
         letterSpacing: -0.2,
         marginBottom: 2,
@@ -336,7 +334,7 @@ const styles = StyleSheet.create({
     ctaText: {
         color: C.bg,
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: fonts.semibold,
         letterSpacing: -0.2,
     },
     ctaTextDisabled: {

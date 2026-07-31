@@ -663,8 +663,7 @@ const styles = StyleSheet.create({
         borderColor: C.primary,
     },
     stepText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primaryText,
     },
     stepLine: {
@@ -687,11 +686,9 @@ const styles = StyleSheet.create({
     },
     title: { ...typography.h1, color: C.text },
     subtitle: {
-        fontSize: 15,
+        ...typography.body,
         color: C.textSec,
         marginTop: 14,
-        lineHeight: 22,
-        fontWeight: '400',
     },
 
     /* ── Card générique ── */
@@ -723,8 +720,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cardTitle: {
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         color: C.primary,
         letterSpacing: -0.2,
         flex: 1,
@@ -738,8 +734,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     cardCountText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 0.3,
     },
@@ -767,20 +762,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cartQtyText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primary,
     },
     cartItemName: {
         flex: 1,
-        fontSize: 13.5,
+        ...typography.bodySmall, fontSize: 13.5,
         color: C.primary,
-        fontWeight: '500',
-        lineHeight: 18,
     },
     cartItemPrice: {
-        fontSize: 14,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14,
         color: C.primary,
         letterSpacing: -0.2,
     },
@@ -793,7 +784,7 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     taxLabel: { fontSize: 12.5, color: C.textMuted },
-    taxValue: { fontSize: 12.5, color: C.textSec, fontWeight: '600' },
+    taxValue: { ...typography.label, fontSize: 12.5, color: C.textSec },
     totalRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -804,20 +795,17 @@ const styles = StyleSheet.create({
         borderTopColor: C.border,
     },
     totalLabel: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
-        fontWeight: '600',
         letterSpacing: 0.2,
     },
     totalSubLabel: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
         marginTop: 3,
     },
     totalValue: {
-        fontSize: 24,
-        fontWeight: '800',
+        ...typography.h2, fontSize: 24,
         color: C.primary,
         letterSpacing: -0.5,
     },
@@ -833,17 +821,12 @@ const styles = StyleSheet.create({
         marginBottom: 7,
     },
     fieldLabel: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.overline,
         color: C.textSec,
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
     },
     fieldRequired: {
         color: C.error,
-        fontSize: 14,
-        fontWeight: '800',
-        lineHeight: 14,
+        ...typography.button, fontSize: 14
     },
     inputWrap: {
         flexDirection: 'row',
@@ -869,8 +852,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         color: C.primary,
-        fontSize: 14,
-        fontWeight: '500',
+        ...typography.bodySmall,
         paddingVertical: 0,
     },
     inputMultiline: {
@@ -914,8 +896,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     paymentLogoText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.primary,
         letterSpacing: 0.2,
     },
@@ -940,17 +921,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     securityTitle: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.success,
         letterSpacing: -0.1,
         marginBottom: 2,
     },
     securityText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
-        lineHeight: 16,
     },
 
     /* ── Bottom Bar (CTA fixe) ── */
@@ -978,16 +956,12 @@ const styles = StyleSheet.create({
         flex: 0.9,
     },
     bottomBarLabel: {
-        fontSize: 12,
+        ...typography.overline,
         color: C.textSec,
-        fontWeight: '600',
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
         marginBottom: 2,
     },
     bottomBarTotal: {
-        fontSize: 18,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 18,
         color: C.primary,
         letterSpacing: -0.4,
     },
@@ -1016,8 +990,7 @@ const styles = StyleSheet.create({
     },
     payBtnText: {
         color: C.primaryText,
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         letterSpacing: 0.2,
     },
 })

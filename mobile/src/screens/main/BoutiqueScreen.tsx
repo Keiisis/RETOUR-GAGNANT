@@ -188,8 +188,7 @@ const videoStyles = StyleSheet.create({
     },
     cornerText: {
         color: C.primaryText,
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         letterSpacing: 1.2,
     },
 })
@@ -420,8 +419,7 @@ const cardStyles = StyleSheet.create({
         borderColor: C.border,
     },
     vipTagText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 0.5,
     },
@@ -432,8 +430,7 @@ const cardStyles = StyleSheet.create({
         borderRadius: 6,
     },
     discountText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primaryText,
         letterSpacing: 0.3,
     },
@@ -444,8 +441,7 @@ const cardStyles = StyleSheet.create({
         justifyContent: 'center',
     },
     outOfStockText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.error,
         letterSpacing: 2,
         backgroundColor: C.surfaceSolid,
@@ -479,8 +475,7 @@ const cardStyles = StyleSheet.create({
         gap: 5,
     },
     category: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.4,
     },
@@ -492,16 +487,14 @@ const cardStyles = StyleSheet.create({
         marginTop: 4,
     },
     price: {
-        fontSize: 15,
-        fontWeight: '800',
+        ...typography.button,
         color: C.primary,
         letterSpacing: -0.3,
     },
     priceOld: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
         textDecorationLine: 'line-through',
-        fontWeight: '500',
     },
     inCartBadge: {
         flexDirection: 'row',
@@ -517,8 +510,7 @@ const cardStyles = StyleSheet.create({
         borderColor: C.border,
     },
     inCartText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 0.2,
     },
@@ -931,8 +923,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     navTitle: {
-        fontSize: 16,
-        fontWeight: '700',
+        ...typography.h3, fontSize: 16,
         color: C.primary,
         letterSpacing: 0.2,
     },
@@ -953,8 +944,7 @@ const styles = StyleSheet.create({
     },
     translatingText: {
         color: C.primary,
-        fontSize: 12,
-        fontWeight: '600',
+        ...typography.caption
     },
 
     /* ── Loading ── */
@@ -966,8 +956,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         color: C.textSec,
-        fontSize: 13,
-        fontWeight: '500',
+        ...typography.label
     },
 
     /* ── Empty ── */
@@ -988,17 +977,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     title: {
-        fontSize: 38,
-        fontWeight: '700',
+        ...typography.h1, fontSize: 38,
         color: C.primary,
         letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 15,
+        ...typography.body,
         color: C.textSec,
         marginTop: 14,
-        lineHeight: 22,
-        fontWeight: '400',
     },
     countBadge: {
         flexDirection: 'row',
@@ -1020,8 +1006,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     countText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 0.3,
     },
@@ -1083,22 +1068,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     cartBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primary,
     },
     cartFabTextWrap: {
         flex: 1,
     },
     cartFabLabel: {
-        fontSize: 12,
-        fontWeight: '600',
+        ...typography.caption,
         color: 'rgba(255,255,255,0.7)',
         letterSpacing: 0.3,
     },
     cartFabTotal: {
-        fontSize: 15,
-        fontWeight: '800',
+        ...typography.button,
         color: C.primaryText,
         letterSpacing: 0.2,
     },
@@ -1150,16 +1132,12 @@ const styles = StyleSheet.create({
         marginBottom: 18,
     },
     sheetSubtitle: {
-        fontSize: 12,
-        fontWeight: '600',
+        ...typography.overline,
         color: C.accentDark,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
         marginBottom: 4,
     },
     sheetTitle: {
-        fontSize: 26,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 26,
         color: C.primary,
         letterSpacing: -0.5,
     },
@@ -1205,23 +1183,19 @@ const styles = StyleSheet.create({
         marginLeft: 14,
     },
     cartItemCategory: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.2,
         marginBottom: 4,
     },
     cartItemName: {
-        fontSize: 14,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14,
         color: C.primary,
         marginBottom: 5,
         letterSpacing: -0.2,
-        lineHeight: 18,
     },
     cartItemPrice: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.primary,
     },
     cartQtyControl: {
@@ -1242,8 +1216,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     qtyValue: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.primary,
         minWidth: 18,
         textAlign: 'center',
@@ -1263,13 +1236,11 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     totalLabel: {
-        fontSize: 14,
+        ...typography.bodySmall,
         color: C.textSec,
-        fontWeight: '500',
     },
     totalValue: {
-        fontSize: 26,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 26,
         color: C.primary,
         letterSpacing: -0.5,
     },
@@ -1288,8 +1259,7 @@ const styles = StyleSheet.create({
     },
     checkoutBtnText: {
         color: C.primaryText,
-        fontSize: 16,
-        fontWeight: '700',
+        ...typography.h3, fontSize: 16,
         letterSpacing: 0.2,
     },
 })

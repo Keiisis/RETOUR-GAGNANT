@@ -22,7 +22,7 @@ import { RouteProp } from '@react-navigation/native'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    OrderConfirmationScreen — THEME "CORPORATE PREMIUM 2026"
@@ -465,8 +465,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     navCounterText: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 0.3,
     },
@@ -510,7 +509,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 4,
         borderColor: C.accent,
-        shadowColor: C.success,
+        shadowColor: '#3C3C3C',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 20,
@@ -537,8 +536,7 @@ const styles = StyleSheet.create({
 
     /* ── Titre ── */
     successBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 1.8,
         textAlign: 'center',
@@ -546,11 +544,9 @@ const styles = StyleSheet.create({
     },
     title: { ...typography.h1, color: C.text },
     subtitle: {
-        fontSize: 14,
+        ...typography.bodySmall,
         color: C.textSec,
         marginTop: 14,
-        lineHeight: 21,
-        fontWeight: '400',
         textAlign: 'center',
         paddingHorizontal: 8,
     },
@@ -584,8 +580,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     ticketHeaderText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.3,
     },
@@ -607,8 +602,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.success,
     },
     ticketStatusText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 1,
     },
@@ -618,15 +612,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
     },
     ticketRefLabel: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.textSec,
         letterSpacing: 1.5,
         marginBottom: 8,
     },
     ticketRefValue: {
-        fontSize: 30,
-        fontWeight: '800',
+        ...typography.h1,
         color: C.primary,
         letterSpacing: 2,
     },
@@ -693,20 +685,17 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     ticketRowLabel: {
-        fontSize: 12.5,
+        ...typography.label, fontSize: 12.5,
         color: C.textSec,
-        fontWeight: '500',
     },
     ticketRowValue: {
-        fontSize: 13,
+        ...typography.button, fontSize: 13,
         color: C.primary,
-        fontWeight: '700',
         letterSpacing: -0.1,
     },
     ticketRowValueSmall: {
-        fontSize: 12,
+        ...typography.button, fontSize: 12,
         color: C.primary,
-        fontWeight: '700',
         letterSpacing: 0.2,
         maxWidth: 160,
     },
@@ -724,8 +713,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     timelineTitle: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 1.5,
     },
@@ -782,21 +770,18 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     timelineItemTitle: {
-        fontSize: 13.5,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13.5,
         color: C.textSec,
         letterSpacing: -0.1,
         marginBottom: 3,
     },
     timelineItemTitleActive: {
         color: C.primary,
-        fontWeight: '800',
+        fontFamily: fonts.extrabold,
     },
     timelineItemDesc: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        lineHeight: 16,
-        fontWeight: '400',
     },
 
     /* ── Actions ── */
@@ -821,8 +806,7 @@ const styles = StyleSheet.create({
     },
     primaryBtnText: {
         color: C.primaryText,
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         letterSpacing: 0.2,
     },
     secondaryBtn: {
@@ -842,8 +826,7 @@ const styles = StyleSheet.create({
     },
     secondaryBtnText: {
         color: C.primary,
-        fontSize: 14.5,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14.5,
         letterSpacing: 0.2,
     },
 
@@ -892,15 +875,13 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     supportTitle: {
-        fontSize: 13,
-        fontWeight: '800',
+        ...typography.button, fontSize: 13,
         color: C.primary,
         letterSpacing: -0.1,
         marginBottom: 2,
     },
     supportText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
     },
 })

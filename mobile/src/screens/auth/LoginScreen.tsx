@@ -19,7 +19,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
-import { screenColors } from '../../config/theme'
+import { screenColors, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    LoginScreen — THEME "CORPORATE PREMIUM 2026"
@@ -280,12 +280,12 @@ const styles = StyleSheet.create({
 
     brandTitle: {
         fontSize: 26,
-        fontWeight: '800',
+        fontFamily: fonts.extrabold,
         letterSpacing: 2,
     },
     brandSub: {
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: fonts.semibold,
         color: C.success, // Vert Agence
         letterSpacing: 6,
         marginTop: 2,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     forgotText: {
         color: C.accent, // Or agence
         fontSize: 14,
-        fontWeight: '600',
+        fontFamily: fonts.semibold,
     },
     bottomContainer: {
         marginTop: 32,
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     btnText: {
         color: C.primaryText,
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
@@ -372,10 +372,10 @@ const styles = StyleSheet.create({
     registerText: {
         color: C.textSec,
         fontSize: 14,
-        fontWeight: '500',
+        fontFamily: fonts.medium,
     },
     registerBold: {
         color: C.primary,
-        fontWeight: '700',
+        fontFamily: fonts.bold,
     },
 })

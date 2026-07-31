@@ -26,7 +26,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
 import { ttcFromHt } from '../../lib/tax'
 import type { AppEvent } from './EventsScreen'
-import { screenColors } from '../../config/theme'
+import { screenColors, typography } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    EventDetailScreen — THEME "CORPORATE PREMIUM 2026"
@@ -214,8 +214,7 @@ const ticketStyles = StyleSheet.create({
     },
     vipBannerText: {
         color: C.primary,
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         letterSpacing: 0.6,
     },
     cardInner: {
@@ -249,8 +248,7 @@ const ticketStyles = StyleSheet.create({
         marginBottom: 4,
     },
     name: {
-        fontSize: 14,
-        fontWeight: '800',
+        ...typography.button, fontSize: 14,
         color: C.primary,
         letterSpacing: -0.2,
     },
@@ -266,15 +264,12 @@ const ticketStyles = StyleSheet.create({
         borderColor: C.border,
     },
     vipMiniText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
     },
     desc: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 16,
     },
     perks: {
         marginTop: 8,
@@ -286,16 +281,14 @@ const ticketStyles = StyleSheet.create({
         gap: 5,
     },
     perkText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
     },
     priceWrap: {
         alignItems: 'flex-end',
     },
     price: {
-        fontSize: 16,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 16,
         color: C.primary,
         letterSpacing: -0.3,
     },
@@ -882,8 +875,7 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     featuredNavText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accentDark,
         letterSpacing: 0.3,
     },
@@ -917,11 +909,9 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     dateDay: {
-        fontSize: 56,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 56,
         color: C.primaryText,
         letterSpacing: -2,
-        lineHeight: 60,
     },
     dateDivider: {
         width: 50,
@@ -931,15 +921,13 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     dateMonth: {
-        fontSize: 13,
-        fontWeight: '800',
+        ...typography.button, fontSize: 13,
         color: C.accent,
         letterSpacing: 3,
     },
     dateYear: {
-        fontSize: 12,
+        ...typography.caption,
         color: 'rgba(255,255,255,0.6)',
-        fontWeight: '600',
         marginTop: 2,
         letterSpacing: 1,
     },
@@ -968,8 +956,7 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     catText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.primary,
         letterSpacing: 1,
     },
@@ -985,28 +972,23 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     registeredText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 0.5,
     },
     title: {
-        fontSize: 26,
-        fontWeight: '800',
+        ...typography.h1, fontSize: 26,
         color: C.primary,
         letterSpacing: -0.5,
         textAlign: 'center',
-        lineHeight: 32,
         paddingHorizontal: 8,
     },
     subtitle: {
-        fontSize: 13.5,
+        ...typography.bodySmall, fontSize: 13.5,
         color: C.textSec,
         marginTop: 10,
-        lineHeight: 19,
         textAlign: 'center',
         paddingHorizontal: 16,
-        fontWeight: '400',
     },
 
     /* ── Meta Grid (2x2) ── */
@@ -1042,19 +1024,14 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     metaLabel: {
-        fontSize: 12,
-        fontWeight: '700',
+        ...typography.overline,
         color: C.textMuted,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
         marginBottom: 3,
     },
     metaValue: {
-        fontSize: 12.5,
-        fontWeight: '600',
+        ...typography.label, fontSize: 12.5,
         color: C.primary,
         letterSpacing: -0.1,
-        lineHeight: 16,
     },
 
     /* ── Card générique ── */
@@ -1086,8 +1063,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cardTitle: {
-        fontSize: 14,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14,
         color: C.primary,
         letterSpacing: -0.1,
         flex: 1,
@@ -1101,16 +1077,13 @@ const styles = StyleSheet.create({
         borderColor: C.border,
     },
     freeBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.success,
         letterSpacing: 0.5,
     },
     description: {
-        fontSize: 13.5,
+        ...typography.bodySmall, fontSize: 13.5,
         color: C.textSec,
-        lineHeight: 21,
-        fontWeight: '400',
     },
 
     /* ── Info Box ── */
@@ -1133,17 +1106,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     infoTitle: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.success,
         letterSpacing: -0.1,
         marginBottom: 2,
     },
     infoText: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
-        lineHeight: 16,
     },
 
     /* ── Bottom Bar ── */
@@ -1171,16 +1141,12 @@ const styles = StyleSheet.create({
         flex: 0.85,
     },
     bottomBarLabel: {
-        fontSize: 12,
+        ...typography.overline,
         color: C.textSec,
-        fontWeight: '600',
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
         marginBottom: 2,
     },
     bottomBarValue: {
-        fontSize: 18,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 18,
         color: C.primary,
         letterSpacing: -0.4,
     },
@@ -1205,8 +1171,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: C.primaryText,
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         letterSpacing: 0.2,
     },
 
@@ -1232,15 +1197,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     registeredBtnLabel: {
-        fontSize: 14,
-        fontWeight: '800',
+        ...typography.button, fontSize: 14,
         color: C.success,
         letterSpacing: -0.1,
     },
     registeredBtnSub: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '500',
         marginTop: 2,
     },
 
@@ -1283,16 +1246,12 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     sheetSubtitle: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.overline,
         color: C.accentDark,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
         marginBottom: 4,
     },
     sheetTitle: {
-        fontSize: 22,
-        fontWeight: '800',
+        ...typography.h2,
         color: C.primary,
         letterSpacing: -0.4,
     },
@@ -1307,11 +1266,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sheetEvent: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
-        fontWeight: '500',
         marginBottom: 18,
-        lineHeight: 18,
     },
 
     /* ── Recap ── */
@@ -1340,14 +1297,12 @@ const styles = StyleSheet.create({
     },
     recapLabel: {
         flex: 1,
-        fontSize: 12.5,
+        ...typography.label, fontSize: 12.5,
         color: C.textSec,
-        fontWeight: '600',
         letterSpacing: 0.2,
     },
     recapValue: {
-        fontSize: 13,
-        fontWeight: '700',
+        ...typography.button, fontSize: 13,
         color: C.primary,
         letterSpacing: -0.1,
     },
@@ -1358,14 +1313,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     recapBadgeText: {
-        fontSize: 12,
-        fontWeight: '800',
+        ...typography.button, fontSize: 12,
         color: C.accent,
         letterSpacing: 1,
     },
     recapPrice: {
-        fontSize: 16,
-        fontWeight: '800',
+        ...typography.h3, fontSize: 16,
         color: C.primary,
         letterSpacing: -0.3,
     },
@@ -1389,10 +1342,8 @@ const styles = StyleSheet.create({
     },
     payNoticeText: {
         flex: 1,
-        fontSize: 12,
+        ...typography.caption,
         color: C.info,
-        fontWeight: '500',
-        lineHeight: 16,
     },
 
     /* ── Confirm button ── */
@@ -1412,8 +1363,7 @@ const styles = StyleSheet.create({
     },
     confirmBtnText: {
         color: C.primaryText,
-        fontSize: 15,
-        fontWeight: '700',
+        ...typography.button,
         letterSpacing: 0.2,
     },
     cancelBtn: {
@@ -1427,7 +1377,6 @@ const styles = StyleSheet.create({
     },
     cancelText: {
         color: C.textSec,
-        fontSize: 14,
-        fontWeight: '700',
+        ...typography.button, fontSize: 14
     },
 })

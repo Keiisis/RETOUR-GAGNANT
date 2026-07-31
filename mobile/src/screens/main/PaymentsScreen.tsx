@@ -310,11 +310,11 @@ export default function PaymentsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
-    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
+    topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
 
     navBar: {
         flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-        paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md,
+        paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md,
     },
     iconContainer: {
         width: 44, height: 44, borderRadius: radius.pill,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     /* ── Onglets ── */
     tabs: {
         flexDirection: 'row', backgroundColor: C.surfaceAlt,
-        borderRadius: radius.pill, padding: 4, marginBottom: spacing.lg,
+        borderRadius: radius.pill, padding: spacing.xs, marginBottom: spacing.lg,
     },
     tab: { flex: 1, height: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
     tabActive: { backgroundColor: C.surface, ...shadows.card },
@@ -365,13 +365,13 @@ const styles = StyleSheet.create({
     rowSub: { ...typography.caption, color: C.textMuted, marginTop: 2 },
     rowAmount: { ...typography.label, fontSize: 15, color: C.text },
     badge: {
-        paddingHorizontal: spacing.sm, paddingVertical: 3,
-        borderRadius: radius.pill, marginTop: 4,
+        paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs,
+        borderRadius: radius.pill, marginTop: spacing.xs,
     },
     badgeText: { ...typography.caption, fontSize: 11 },
 
     /* ── État vide ── */
-    center: { paddingVertical: 48, alignItems: 'center' },
+    center: { paddingVertical: spacing.xxl, alignItems: 'center' },
     emptyCard: {
         backgroundColor: C.surface, borderRadius: radius.xl,
         padding: spacing.xl, alignItems: 'center', ...shadows.card,

@@ -27,7 +27,7 @@ import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    SignatureScreen — THEME "CORPORATE PREMIUM 2026"
@@ -453,7 +453,7 @@ function PrefOption({
                     <Animated.View style={[styles.radioInner, innerStyle]} />
                 </Animated.View>
                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.prefLabel, active && { color: C.primary, fontWeight: '700' }]}>
+                    <Text style={[styles.prefLabel, active && { color: C.primary, fontFamily: fonts.bold }]}>
                         {label}
                     </Text>
                     <Text style={styles.prefDescription}>{description}</Text>
@@ -517,8 +517,8 @@ const styles = StyleSheet.create({
     },
 
     /* ── Nav Bar ── */
-    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
-    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
+    topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     navBack: {
         width: 44,
         height: 44,
@@ -534,24 +534,22 @@ const styles = StyleSheet.create({
 
     /* ── Header (identique RegisterScreen) ── */
     headerContainer: {
-        marginTop: 15,
-        marginBottom: 32,
+        marginTop: spacing.md,
+        marginBottom: spacing.xl,
     },
     title: { ...typography.h1, color: C.text },
     subtitle: {
-        fontSize: 15,
+        ...typography.body,
         color: C.textSec,
-        marginTop: 14,
-        lineHeight: 22,
-        fontWeight: '400',
-    },
+        marginTop: spacing.md,
+            },
 
     /* ── Card Header partagé ── */
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        marginBottom: 16,
+        gap: spacing.sm,
+        marginBottom: spacing.md,
     },
     cardHeaderBadge: {
         width: 30,
@@ -562,9 +560,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cardTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: C.primary,
+        ...typography.button, fontSize: 14,
+                color: C.primary,
         letterSpacing: -0.1,
         flex: 1,
     },
@@ -572,20 +569,16 @@ const styles = StyleSheet.create({
     /* ── Card : Signature enregistrée ── */
     savedCard: {
         backgroundColor: C.surface,
-        padding: 20,
-        borderRadius: 16,
+        padding: spacing.gutter,
+        borderRadius: radius.lg,
         borderWidth: 1.2,
         borderColor: C.border,
-        marginBottom: 18,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
+        marginBottom: spacing.md,
+        ...shadows.card,
     },
     sigPreviewWrap: {
         backgroundColor: C.surfaceSolid,
-        borderRadius: 12,
+        borderRadius: radius.sm,
         borderWidth: 1,
         borderColor: C.border,
         padding: 12,
@@ -610,44 +603,38 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sigWatermarkText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: C.success,
+        ...typography.button, fontSize: 12,
+                color: C.success,
     },
     savedFooter: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: spacing.xs,
         marginTop: 12,
         justifyContent: 'flex-end',
     },
     savedDate: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textMuted,
-        fontWeight: '500',
-    },
+            },
 
     /* ── Card : Préférences ── */
     prefCard: {
         backgroundColor: C.surface,
-        padding: 20,
-        borderRadius: 16,
+        padding: spacing.gutter,
+        borderRadius: radius.lg,
         borderWidth: 1.2,
         borderColor: C.border,
-        marginBottom: 18,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
+        marginBottom: spacing.md,
+        ...shadows.card,
     },
     prefRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 14,
-        paddingVertical: 14,
-        paddingHorizontal: 4,
-        borderRadius: 10,
+        gap: spacing.md,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xs,
+        borderRadius: radius.xs,
     },
     prefRowBorder: {
         borderBottomWidth: 1,
@@ -669,36 +656,29 @@ const styles = StyleSheet.create({
         backgroundColor: C.accent,
     },
     prefLabel: {
-        fontSize: 14,
+        ...typography.bodySmall,
         color: C.primary,
-        fontWeight: '500',
-        marginBottom: 2,
+                marginBottom: spacing.xxs,
     },
     prefDescription: {
-        fontSize: 12,
+        ...typography.caption,
         color: C.textSec,
-        fontWeight: '400',
-        lineHeight: 15,
     },
 
     /* ── Bottom container & buttons ── */
     bottomContainer: {
-        marginTop: 16,
-        gap: 16,
+        marginTop: spacing.md,
+        gap: spacing.md,
     },
     btn: {
         height: 60,
         backgroundColor: C.primary,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
-        paddingHorizontal: 20,
+        ...shadows.card,
+        paddingHorizontal: spacing.gutter,
     },
     btnDisabled: {
         backgroundColor: '#E4E4E4',
@@ -707,9 +687,8 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: C.primaryText,
-        fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: 0.2,
+        ...typography.h3, fontSize: 16,
+                letterSpacing: 0.2,
     },
     btnTextDisabled: {
         color: '#F5F5F5',
@@ -718,34 +697,32 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: spacing.xs,
         backgroundColor: C.surface,
-        paddingHorizontal: 16,
+        paddingHorizontal: spacing.md,
         height: 60,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         borderWidth: 1.2,
         borderColor: C.border,
     },
     btnSecondaryText: {
-        fontSize: 13,
+        ...typography.label,
         color: C.textSec,
-        fontWeight: '600',
-    },
+            },
 
     /* ── Lien supprimer ── */
     deleteLink: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        padding: 14,
-        marginTop: 4,
+        gap: spacing.sm,
+        padding: spacing.md,
+        marginTop: spacing.xs,
     },
     deleteText: {
         color: C.error,
-        fontSize: 14,
-        fontWeight: '600',
-    },
+        ...typography.bodySmall,
+            },
 
     /* ── Mode édition ── */
     editorContainer: {
@@ -756,33 +733,26 @@ const styles = StyleSheet.create({
     canvasWrap: {
         flex: 1,
         backgroundColor: C.surface,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         borderWidth: 1.2,
         borderColor: C.border,
         overflow: 'hidden',
-        marginBottom: 18,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
+        marginBottom: spacing.md,
+        ...shadows.card,
     },
     canvasGuideTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        gap: spacing.xs,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: C.border,
         backgroundColor: 'rgba(252, 209, 22, 0.04)',
     },
     canvasGuideText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: C.accentDark,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
+        ...typography.overline,
+                color: C.accentDark,
     },
     canvas: {
         flex: 1,
@@ -800,6 +770,6 @@ const styles = StyleSheet.create({
     },
     editorActions: {
         flexDirection: 'row',
-        gap: 10,
+        gap: spacing.sm,
     },
 })

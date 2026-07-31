@@ -610,102 +610,102 @@ const styles = StyleSheet.create({
 
     header: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: spacing.gutter,
         paddingBottom: 12, gap: 12,
     },
     headerBtn: {
-        width: 42, height: 42, borderRadius: 14,
+        width: 42, height: 42, borderRadius: radius.md,
         backgroundColor: C.surface,
         borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
     headerBtnGhost: { width: 42, height: 42 },
     headerCenter: { flex: 1, alignItems: 'center' },
-    headerTitle: { fontSize: 17, fontWeight: '700', color: C.primary, letterSpacing: 0.3 },
-    headerSub: { fontSize: 12, color: C.textMuted, marginTop: 2, letterSpacing: 0.5, textTransform: 'uppercase' },
+    headerTitle: { ...typography.h3, color: C.primary, letterSpacing: 0.3 },
+    headerSub: { fontSize: 12, color: C.textMuted, marginTop: spacing.xxs, letterSpacing: 0.5, textTransform: 'uppercase' },
 
-    scroll: { padding: 20, paddingBottom: 60, gap: 18 },
+    scroll: { padding: spacing.gutter, paddingBottom: 60, gap: 18 },
 
     /* INFO BANNER */
     infoBanner: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
         backgroundColor: C.surface,
-        borderRadius: 18,
+        borderRadius: radius.lg,
         borderWidth: 1, borderColor: C.border,
-        padding: 16,
-        shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
+        padding: spacing.md,
+        ...shadows.card, shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
     },
     infoIconBox: {
-        width: 36, height: 36, borderRadius: 10,
+        width: 36, height: 36, borderRadius: radius.xs,
         backgroundColor: C.accent + '15',
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: C.accent + '30',
     },
-    infoTitle: { fontSize: 13, fontWeight: '700', color: C.primary, marginBottom: 3, letterSpacing: 0.2 },
+    infoTitle: { ...typography.button, fontSize: 13, color: C.primary, marginBottom: spacing.xxs, letterSpacing: 0.2 },
     infoText: { fontSize: 12, color: C.textSecond, lineHeight: 18 },
 
     /* MAIN CARD */
     card: {
         backgroundColor: C.surface,
-        borderRadius: 22,
+        borderRadius: radius.xl,
         borderWidth: 1, borderColor: C.border,
         overflow: 'hidden',
-        shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
+        ...shadows.card, shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.08, shadowRadius: 20, elevation: 4,
     },
     cardHeader: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
-        paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16,
+        paddingHorizontal: spacing.gutter, paddingTop: spacing.gutter, paddingBottom: spacing.md,
         borderBottomWidth: 1, borderBottomColor: C.border,
         backgroundColor: C.surfaceAlt,
     },
     cardHeaderIcon: {
-        width: 36, height: 36, borderRadius: 12,
+        width: 36, height: 36, borderRadius: radius.sm,
         backgroundColor: C.primary + '10',
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: C.primary + '20',
     },
-    cardTitle: { fontSize: 15, fontWeight: '700', color: C.primary, letterSpacing: 0.2 },
+    cardTitle: { ...typography.button, color: C.primary, letterSpacing: 0.2 },
 
     /* 2FA */
-    twofaCard: { backgroundColor: C.surface, borderRadius: 20, borderWidth: 1, borderColor: C.border, padding: 18, gap: 12 },
+    twofaCard: { backgroundColor: C.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: C.border, padding: spacing.md, gap: 12 },
     twofaHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    twofaIconBox: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(4,120,87,0.10)', alignItems: 'center', justifyContent: 'center' },
+    twofaIconBox: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: 'rgba(4,120,87,0.10)', alignItems: 'center', justifyContent: 'center' },
     twofaStatus: { fontSize: 12, color: C.textMuted, marginTop: 2 },
     twofaDesc: { fontSize: 13, color: '#505050', lineHeight: 19 },
     twofaHint: { fontSize: 12.5, color: C.textMuted },
-    twofaSecret: { fontSize: 13, color: '#3C3C3C', fontWeight: '700', backgroundColor: '#F5F5F5', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, letterSpacing: 1 },
-    twofaQrWrap: { alignSelf: 'center', backgroundColor: '#fff', padding: 8, borderRadius: 14, borderWidth: 1, borderColor: C.border },
+    twofaSecret: { ...typography.button, fontSize: 13, color: '#3C3C3C',  backgroundColor: '#F5F5F5', borderRadius: radius.xs, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, letterSpacing: 1 },
+    twofaQrWrap: { alignSelf: 'center', backgroundColor: '#fff', padding: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: C.border },
     twofaQr: { width: 168, height: 168 },
-    twofaInput: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 12, textAlign: 'center', fontSize: 18, letterSpacing: 6, color: '#3C3C3C', backgroundColor: '#FFFFFF' },
-    twofaPrimaryBtn: { backgroundColor: C.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-    twofaPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-    twofaGhostBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-    twofaGhostText: { color: C.danger, fontWeight: '700', fontSize: 13.5 },
-    twofaDangerBtn: { backgroundColor: C.danger, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-    twofaCancelBtn: { borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+    twofaInput: { borderWidth: 1, borderColor: C.border, borderRadius: radius.sm, paddingVertical: 12, textAlign: 'center', fontSize: 18, letterSpacing: 6, color: '#3C3C3C', backgroundColor: '#FFFFFF' },
+    twofaPrimaryBtn: { backgroundColor: C.primary, borderRadius: radius.sm, paddingVertical: spacing.md, alignItems: 'center' },
+    twofaPrimaryText: { color: '#fff', ...typography.button, fontSize: 14 },
+    twofaGhostBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', borderRadius: radius.sm, paddingVertical: 12, alignItems: 'center' },
+    twofaGhostText: { color: C.danger, ...typography.button, fontSize: 13.5 },
+    twofaDangerBtn: { backgroundColor: C.danger, borderRadius: radius.sm, paddingVertical: spacing.md, alignItems: 'center' },
+    twofaCancelBtn: { borderWidth: 1, borderColor: C.border, borderRadius: radius.sm, paddingVertical: spacing.md, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
     cardSub: { fontSize: 12, color: C.textMuted, marginTop: 2 },
     cardBody: { padding: 20 },
 
     /* STRENGTH */
     strengthWrap: {
         flexDirection: 'row', alignItems: 'center',
-        gap: 12, marginTop: 4, marginBottom: 14,
+        gap: 12, marginTop: spacing.xs, marginBottom: spacing.md,
     },
-    strengthBars: { flexDirection: 'row', gap: 5, flex: 1 },
+    strengthBars: { flexDirection: 'row', gap: spacing.xs, flex: 1 },
     strengthBar: { flex: 1, height: 5, borderRadius: 3 },
-    strengthLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', minWidth: 56, textAlign: 'right' },
+    strengthLabel: { ...typography.overline, letterSpacing: 0.5, textTransform: 'uppercase', minWidth: 56, textAlign: 'right' },
 
     /* RULES */
     rulesGrid: {
-        flexDirection: 'row', flexWrap: 'wrap', gap: 6,
-        marginBottom: 18,
+        flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs,
+        marginBottom: spacing.md,
     },
     ruleChip: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: 10, paddingVertical: 7,
-        borderRadius: 10,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+        paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+        borderRadius: radius.xs,
         backgroundColor: C.surfaceAlt,
         borderWidth: 1, borderColor: C.border,
     },
@@ -720,63 +720,63 @@ const styles = StyleSheet.create({
     },
     ruleDotDone: { backgroundColor: C.success },
     ruleDotEmpty: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.textMuted },
-    ruleText: { fontSize: 12, fontWeight: '600', color: C.textMuted, letterSpacing: 0.2 },
+    ruleText: { ...typography.caption, color: C.textMuted, letterSpacing: 0.2 },
     ruleTextDone: { color: C.success },
 
     divider: { height: 1, backgroundColor: C.border, marginBottom: 18 },
 
     /* MATCH BANNER */
     matchBanner: {
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 12, paddingVertical: 10,
-        borderRadius: 12, borderWidth: 1,
-        marginTop: -4, marginBottom: 14,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+        paddingHorizontal: 12, paddingVertical: spacing.sm,
+        borderRadius: radius.sm, borderWidth: 1,
+        marginTop: -4, marginBottom: spacing.md,
     },
-    matchText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
+    matchText: { ...typography.caption, letterSpacing: 0.2 },
 
     /* SAVE BTN */
     saveBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 10, paddingVertical: 16, borderRadius: 14,
-        shadowColor: C.primary, shadowOffset: { width: 0, height: 6 },
+        gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.md,
+        ...shadows.card, shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
     },
-    saveBtnIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    saveBtnIcon: { width: 26, height: 26, borderRadius: radius.xs, alignItems: 'center', justifyContent: 'center' },
     saveBtnText: { ...typography.button, color: C.primaryText },
 
     /* SESSION CARD */
     sessionCard: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: 14,
+        flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
         backgroundColor: C.surface,
-        borderRadius: 20,
-        padding: 18,
+        borderRadius: radius.xl,
+        padding: spacing.md,
         borderWidth: 1, borderColor: C.danger + '20',
         borderLeftWidth: 4, borderLeftColor: C.danger,
-        shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
+        ...shadows.card, shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
     },
     sessionIconBox: {
-        width: 42, height: 42, borderRadius: 12,
+        width: 42, height: 42, borderRadius: radius.sm,
         backgroundColor: C.danger + '12',
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: C.danger + '25',
     },
-    sessionTitle: { fontSize: 14, fontWeight: '700', color: C.primary, marginBottom: 4, letterSpacing: 0.2 },
+    sessionTitle: { ...typography.button, fontSize: 14, color: C.primary, marginBottom: spacing.xs, letterSpacing: 0.2 },
     sessionText: { fontSize: 12, color: C.textSecond, lineHeight: 19 },
 
     /* TRUST FOOTER */
     trustFooter: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 8, paddingVertical: 14,
+        gap: spacing.sm, paddingVertical: spacing.md,
     },
-    trustText: { fontSize: 12, color: C.textMuted, letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: '600' },
+    trustText: { ...typography.overline, color: C.textMuted },
 })
 
 /* HERO styles */
 const hero = StyleSheet.create({
     wrap: {
-        borderRadius: 26, overflow: 'hidden',
-        shadowColor: C.primaryDeep, shadowOffset: { width: 0, height: 14 },
+        borderRadius: radius.xxl, overflow: 'hidden',
+        shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: 14 },
         shadowOpacity: 0.28, shadowRadius: 22, elevation: 10,
     },
     gradient: {
@@ -795,24 +795,24 @@ const hero = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     },
     chip: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
         backgroundColor: 'rgba(252,209,22,0.15)',
         borderWidth: 1, borderColor: C.border,
-        paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+        paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill,
     },
-    chipText: { fontSize: 12, fontWeight: '700', color: C.accent, letterSpacing: 1.2 },
+    chipText: { ...typography.button, fontSize: 12, color: C.accent, letterSpacing: 1.2 },
     levelChip: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+        paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill,
         backgroundColor: 'rgba(255,255,255,0.06)',
         borderWidth: 1,
     },
     levelDot: { width: 6, height: 6, borderRadius: 3 },
-    levelText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
+    levelText: { ...typography.overline, letterSpacing: 0.6, textTransform: 'uppercase' },
 
     shieldWrap: {
         alignItems: 'center', justifyContent: 'center',
-        marginTop: 22, marginBottom: 14, height: 92,
+        marginTop: spacing.gutter, marginBottom: spacing.md, height: 92,
     },
     shieldRing: {
         position: 'absolute',
@@ -827,59 +827,59 @@ const hero = StyleSheet.create({
     },
 
     title: {
-        fontSize: 22, fontWeight: '700', color: C.textPrimary,
+        ...typography.h2, color: C.textPrimary,
         textAlign: 'center', letterSpacing: 0.4,
     },
     subtitle: {
         fontSize: 12, color: C.textMuted,
-        textAlign: 'center', marginTop: 6, lineHeight: 18,
+        textAlign: 'center', marginTop: spacing.xs, lineHeight: 18,
         paddingHorizontal: 12,
     },
 
     statsRow: {
         flexDirection: 'row', alignItems: 'center',
-        marginTop: 22, paddingTop: 18,
+        marginTop: spacing.gutter, paddingTop: spacing.md,
         borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.10)',
     },
     statCol: { flex: 1, alignItems: 'center', gap: 4 },
     statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.10)' },
-    statLabel: { fontSize: 12, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
-    statValue: { fontSize: 12, color: C.textPrimary, fontWeight: '700', letterSpacing: 0.3 },
+    statLabel: { ...typography.overline, color: C.textMuted },
+    statValue: { ...typography.button, fontSize: 12, color: C.textPrimary,  letterSpacing: 0.3 },
 })
 
 /* FIELD styles */
 const field2 = StyleSheet.create({
     group: { marginBottom: 14 },
     label: {
-        fontSize: 12, fontWeight: '700', color: C.primary,
-        marginBottom: 8, letterSpacing: 0.8, textTransform: 'uppercase',
+        ...typography.overline, color: C.primary,
+        marginBottom: spacing.sm, letterSpacing: 0.8, textTransform: 'uppercase',
     },
     wrapper: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: C.surfaceAlt,
-        borderRadius: 14, borderWidth: 1.5, borderColor: C.border,
-        paddingLeft: 8, paddingRight: 12, minHeight: 54,
+        borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border,
+        paddingLeft: spacing.sm, paddingRight: 12, minHeight: 54,
     },
     wrapperFocus: {
         borderColor: C.accent,
         backgroundColor: '#FFF',
-        shadowColor: C.accent, shadowOffset: { width: 0, height: 4 },
+        ...shadows.card, shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15, shadowRadius: 10, elevation: 3,
     },
     iconBox: {
-        width: 36, height: 36, borderRadius: 10,
+        width: 36, height: 36, borderRadius: radius.xs,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: C.surface,
         borderWidth: 1, borderColor: C.border,
-        marginRight: 10,
+        marginRight: spacing.sm,
     },
     iconBoxFocus: {
         backgroundColor: C.accent + '12',
         borderColor: C.accent + '40',
     },
     input: {
-        flex: 1, fontSize: 15, color: C.textPrimary,
-        fontWeight: '500', letterSpacing: 0.2,
+        flex: 1, ...typography.body, color: C.textPrimary,
+         letterSpacing: 0.2,
     },
     eyeBtn: { padding: 6 },
 })
