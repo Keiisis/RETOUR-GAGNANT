@@ -505,6 +505,35 @@ export async function POST(request: NextRequest) {
             }
             void notifyStaffNationalityPayment(paymentInfo)
             void sendNationalityPaymentReceipt(paymentInfo)
+
+            /* ── Notification DANS l'application ──
+               Le personnel recevait un courriel et le client son reçu, mais
+               AUCUNE notification in-app n'était créée : l'écran Notifications
+               du mobile lit la table `notifications`, qui restait vide après un
+               dépôt de dossier. Le client payait, puis ne voyait rien.
+
+               Même mécanisme que les rendez-vous : on résout l'utilisateur à
+               partir de son adresse — le dépôt peut venir du site sans session
+               mobile — puis on écrit la notification.
+
+               Volontairement non bloquant : un dossier payé et enregistré ne
+               doit jamais échouer parce qu'une notification n'est pas passée. */
+            try {
+                const { data: uid } = await supabase.rpc('resolve_client_user_id', {
+                    p_client_id: null, p_email: email,
+                })
+                if (uid) {
+                    await supabase.rpc('create_client_notification', {
+                        p_user_id: uid,
+                        p_title: 'Dossier de nationalité enregistré',
+                        p_body: `Votre demande ${ref} a bien été reçue et votre paiement confirmé. `
+                              + `Un conseiller la prend en charge et vous tiendra informé de son avancement.`,
+                        p_type: 'dossier',
+                    })
+                }
+            } catch (e) {
+                console.warn('[nationality] notification in-app non créée :', e)
+            }
             // Traçabilité comptable : facture (payée) dans facturation + comptabilité.
             // Le cas « facture manuelle sélectionnée » (isPrepaid) possède déjà sa
             // propre facture réelle → on ne double pas.

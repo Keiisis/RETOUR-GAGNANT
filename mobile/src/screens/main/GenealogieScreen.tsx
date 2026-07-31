@@ -16,10 +16,17 @@ import { LinearGradient } from 'expo-linear-gradient'
 import {
     ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, Sparkles,
 } from 'lucide-react-native'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Sharing from 'expo-sharing'
+import { Download } from 'lucide-react-native'
+import { toast } from '../../lib/feedback'
+import { authHeaders } from '../../config/api'
 import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 // Libellés de rôle (non genrés) — miroir de lib/genealogy/requirements (web).
 const ROLE_LABELS: Record<string, string> = {
@@ -75,6 +82,61 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
     const [tree, setTree] = useState<Tree | null>(null)
     const [persons, setPersons] = useState<Person[]>([])
     const [selected, setSelected] = useState<Person | null>(null)
+    const [telechargement, setTelechargement] = useState(false)
+
+    /* ── Téléchargement du plan ──
+       L'admin peut sortir le dossier en PDF depuis son panel ; le client ne
+       le pouvait pas depuis l'application. La route serveur accepte pourtant
+       un jeton client et verifie `can_read_tree` : elle etait simplement
+       inutilisee cote mobile.
+
+       Le client CONSULTE et TELECHARGE — il ne modifie rien. L'ecriture reste
+       le privilege de l'admin, garanti par la meme fonction cote base. */
+    const telechargerPlan = useCallback(async () => {
+        if (!tree || telechargement) return
+        setTelechargement(true)
+        try {
+            const res = await fetch(`${API_BASE}/api/genealogie/dossier-pdf`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify({ tree_id: tree.id, dossier_type: 'both' }),
+            })
+            if (!res.ok) {
+                let detail = `HTTP ${res.status}`
+                try { const j = await res.json(); if (j?.error) detail = j.error } catch { /* non JSON */ }
+                toast(t('Téléchargement impossible'), detail)
+                return
+            }
+
+            /* Le PDF arrive en binaire : on passe par le base64 parce que
+               React Native n'expose pas d'API de fichier sur un Blob. */
+            const buffer = await res.arrayBuffer()
+            const octets = new Uint8Array(buffer)
+            let binaire = ''
+            for (let i = 0; i < octets.length; i++) binaire += String.fromCharCode(octets[i])
+            /* `btoa` est fourni par Hermes ; on le lit sur globalThis pour ne
+               dependre ni de `global` ni du polyfill Buffer de Node. */
+            const encoder = (globalThis as { btoa?: (s: string) => string }).btoa
+            if (!encoder) throw new Error(t('Encodage indisponible sur cet appareil'))
+            const base64 = encoder(binaire)
+
+            const chemin = `${FileSystem.cacheDirectory}Plan-de-composition-familiale.pdf`
+            await FileSystem.writeAsStringAsync(chemin, base64, { encoding: FileSystem.EncodingType.Base64 })
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(chemin, {
+                    mimeType: 'application/pdf',
+                    dialogTitle: t('Plan de composition familiale'),
+                })
+            } else {
+                toast(t('Enregistré'), t('Le document a été enregistré sur votre téléphone.'))
+            }
+        } catch (e) {
+            toast(t('Téléchargement impossible'), e instanceof Error ? e.message : t('Erreur réseau'))
+        } finally {
+            setTelechargement(false)
+        }
+    }, [tree, telechargement, t])
 
     const load = useCallback(async () => {
         try {
@@ -127,6 +189,24 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                     <Text style={styles.hTitle}>{t('Plan de composition de famille')}</Text>
                     <Text style={styles.hSub}>{t('Votre lignée, génération après génération')}</Text>
                 </View>
+
+                {/* Le client télécharge son plan, comme l'admin depuis son
+                    panel. Il ne peut pas le modifier : l'écran est en lecture
+                    seule, et la base le garantit indépendamment de l'interface. */}
+                {tree && (
+                    <Pressable
+                        onPress={telechargerPlan}
+                        disabled={telechargement}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Télécharger mon plan de composition familiale')}
+                        hitSlop={10}
+                        style={[styles.back, telechargement && { opacity: 0.5 }]}
+                    >
+                        {telechargement
+                            ? <ActivityIndicator size="small" color={C.primary} />
+                            : <Download size={20} color={C.primary} />}
+                    </Pressable>
+                )}
             </View>
 
             {loading ? (

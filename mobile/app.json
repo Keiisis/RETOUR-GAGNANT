@@ -110,7 +110,8 @@
           "backgroundColor": "#1B2A4A"
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-sharing"
     ],
     "owner": "keysosi"
   }
