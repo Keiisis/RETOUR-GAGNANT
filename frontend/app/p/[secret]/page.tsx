@@ -5,7 +5,7 @@ import { getProposalBySecret } from '@/app/actions/ai-proposals'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import {
     Loader2, ChevronRight, ChevronLeft, MapPin,
-    Star, CreditCard, Calendar, CheckCircle, Sparkles, BookOpen,
+    CreditCard, Calendar, CheckCircle, Sparkles, BookOpen,
     HandIcon, FileDown, MessageCircle, Wifi, Waves, Car, UserCheck,
     Mountain, UtensilsCrossed, Shield, Landmark, Download, Hotel
 } from 'lucide-react'
@@ -74,7 +74,8 @@ function HighlightIcon({ text }: { text: string }) {
     if (t.includes('sécuri') || t.includes('protec'))              return <Shield className={cls} />
     if (t.includes('visite') || t.includes('culturel') || t.includes('musée')) return <Landmark className={cls} />
     if (t.includes('hôtel') || t.includes('chambre') || t.includes('suite')) return <Hotel className={cls} />
-    return <Star className={`${cls} fill-current`} />
+    // Défaut : une coche « inclus » (ergonomique), plutôt qu'une étoile facon emoji.
+    return <CheckCircle className={cls} />
 }
 
 // ─── 3D slide transitions ─────────────────────────────────────
@@ -626,7 +627,6 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                     <Price amount={proposal.total_amount} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
-                                            <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-[#008751]/25 hidden sm:block" />
                                         </div>
 
                                         {/* Items with progress bars */}

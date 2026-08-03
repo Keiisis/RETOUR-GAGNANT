@@ -27,6 +27,8 @@ export interface InvoicePdfData {
     conditions?: string
     validite?: string
     isManual?: boolean
+    /** 'facture' (défaut) ou 'devis' — change le titre, le badge et le texte légal. */
+    docType?: 'devis' | 'facture'
 }
 
 // Convert price to string format
@@ -143,22 +145,24 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     ], ML + 20, y + 8)
 
     // Document Meta
+    const isDevis = data.docType === 'devis'
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(22)
     pdf.setTextColor(C.dark[0], C.dark[1], C.dark[2])
-    pdf.text('FACTURE', PW - MR, y + 5, { align: 'right' })
+    pdf.text(isDevis ? 'DEVIS' : 'FACTURE', PW - MR, y + 5, { align: 'right' })
 
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(8)
     pdf.setTextColor(80, 80, 80)
-    pdf.text(`N° : ${data.invoiceRef}`, PW - MR, y + 11, { align: 'right' })
+    pdf.text(`${isDevis ? 'Réf.' : 'N°'} : ${data.invoiceRef}`, PW - MR, y + 11, { align: 'right' })
     pdf.text(`Date : ${data.date}`, PW - MR, y + 15, { align: 'right' })
 
-    // Status Badge
-    const statusText = data.isPaid ? 'ACQUITTEE' : 'EN ATTENTE'
-    const statusW = 28
+    // Status Badge — devis : "DEVIS" (vert) ; facture : ACQUITTÉE / EN ATTENTE
+    const statusText = isDevis ? (data.validite ? `VALABLE ${data.validite}` : 'DEVIS') : (data.isPaid ? 'ACQUITTEE' : 'EN ATTENTE')
+    const statusW = isDevis ? 34 : 28
     const statusH = 6
-    pdf.setFillColor(data.isPaid ? 0 : 220, data.isPaid ? 135 : 120, data.isPaid ? 81 : 30)
+    const badgeGreen = isDevis || data.isPaid
+    pdf.setFillColor(badgeGreen ? 0 : 220, badgeGreen ? 135 : 120, badgeGreen ? 81 : 30)
     pdf.roundedRect(PW - MR - statusW, y + 18, statusW, statusH, 1, 1, 'F')
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(7.5)
@@ -320,7 +324,9 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
 
     // ── LEGAL CLAUSES & SUMMARY IN WORDS ──────────────────────────────
     const amtWords = toWordsFr(data.total)
-    const summaryText = `Arrêtée la présente facture à la somme de ${amtWords} (${fmt(data.total, data.currency)}) TTC.`
+    const summaryText = isDevis
+        ? `Arrêté le présent devis à la somme de ${amtWords} (${fmt(data.total, data.currency)}) TTC.`
+        : `Arrêtée la présente facture à la somme de ${amtWords} (${fmt(data.total, data.currency)}) TTC.`
     const summaryLines = pdf.splitTextToSize(summaryText, CW - 6)
 
     pdf.setFillColor(248, 249, 251)

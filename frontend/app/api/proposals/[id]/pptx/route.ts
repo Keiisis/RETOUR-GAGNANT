@@ -269,21 +269,21 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             const imgX = 7.7            // l'image occupe la droite
             const imgW = W - imgX       // ≈ 5.63"
 
-            // ── Image pleine hauteur, fondue dans l'encre ──
+            // ── Image plein cadre à droite, SPLIT NET (fini les voiles dégradés
+            //    qui faisaient d'affreuses rayures) ──
             if (imgData) {
                 try {
                     slide.addImage({ data: imgData, x: imgX, y: 0, w: imgW, h: H })
-                    // Fondu vers la gauche : deux voiles d'encre superposés (pas de couleur gadget)
-                    slide.addShape('rect', { x: imgX - 0.9, y: 0, w: 1.6, h: H, fill: { color: C.ink, transparency: 15 }, line: { width: 0 } })
-                    slide.addShape('rect', { x: imgX - 2.0, y: 0, w: 1.3, h: H, fill: { color: C.ink, transparency: 55 }, line: { width: 0 } })
                 } catch {
                     slide.addShape('rect', { x: imgX, y: 0, w: imgW, h: H, fill: { color: C.inkSoft }, line: { width: 0 } })
                 }
             } else {
-                // Pas d'image : panneau sobre avec filet vert
+                // Pas d'image : panneau sobre uni
                 slide.addShape('rect', { x: imgX, y: 0, w: imgW, h: H, fill: { color: C.inkSoft }, line: { width: 0 } })
-                slide.addShape('rect', { x: imgX, y: 0, w: 0.05, h: H, fill: { color: C.green }, line: { width: 0 } })
             }
+            // Fin filet vert vertical sur la ligne de partage : une couture nette,
+            // élégante, plutôt qu'un dégradé baveux.
+            slide.addShape('rect', { x: imgX - 0.02, y: 0, w: 0.04, h: H, fill: { color: C.green }, line: { width: 0 } })
 
             // ── Filet tricolore en tête ──
             addFlagRule(slide, 0, 0.1)
