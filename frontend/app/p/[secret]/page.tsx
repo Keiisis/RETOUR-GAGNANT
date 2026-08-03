@@ -49,12 +49,15 @@ interface Proposal {
 // ─── Constants ────────────────────────────────────────────────
 // Icônes premium (lucide) — plus aucun emoji dans les Smart Slides
 const TYPE_META: Record<string, { label: string; Icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>; accent: string; accentBg: string }> = {
-    hero:       { label: 'Bienvenue',      Icon: Sparkles,         accent: '#FCD116', accentBg: 'rgba(252,209,22,0.12)' },
-    hotel:      { label: 'Hébergement',    Icon: Hotel,            accent: '#38BDF8', accentBg: 'rgba(56,189,248,0.12)' },
-    restaurant: { label: 'Gastronomie',    Icon: UtensilsCrossed,  accent: '#FB923C', accentBg: 'rgba(251,146,60,0.12)' },
-    activity:   { label: 'Découverte',     Icon: Mountain,         accent: '#34D399', accentBg: 'rgba(52,211,153,0.12)' },
-    transport:  { label: 'Transport VIP',  Icon: Car,              accent: '#A78BFA', accentBg: 'rgba(167,139,250,0.12)' },
-    pricing:    { label: 'Votre Devis',    Icon: CreditCard,       accent: '#FCD116', accentBg: 'rgba(252,209,22,0.10)' },
+    /* Charte stricte : accents du drapeau UNIQUEMENT, et lisibles sur fond
+       clair (le jaune ne sert jamais de couleur de texte, seulement de fond).
+       Fini les néon hors-charte (bleu ciel, orange, violet) qui juraient. */
+    hero:       { label: 'Bienvenue',      Icon: Sparkles,         accent: '#008751', accentBg: 'rgba(0,135,81,0.10)' },
+    hotel:      { label: 'Hébergement',    Icon: Hotel,            accent: '#008751', accentBg: 'rgba(0,135,81,0.10)' },
+    restaurant: { label: 'Gastronomie',    Icon: UtensilsCrossed,  accent: '#E8112D', accentBg: 'rgba(232,17,45,0.10)' },
+    activity:   { label: 'Découverte',     Icon: Mountain,         accent: '#00643C', accentBg: 'rgba(0,100,60,0.10)' },
+    transport:  { label: 'Transport VIP',  Icon: Car,              accent: '#008751', accentBg: 'rgba(0,135,81,0.10)' },
+    pricing:    { label: 'Votre Devis',    Icon: CreditCard,       accent: '#008751', accentBg: 'rgba(0,135,81,0.10)' },
 }
 
 // ─── Highlight icon auto-detect ────────────────────────────────
@@ -117,6 +120,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     const [currentSlide, setCurrentSlide] = useState(0)
     const [direction, setDirection] = useState(0)
     const [showSwipeHint, setShowSwipeHint] = useState(true)
+    // Images (souvent des URL Google) qui échouent : on retombe sur le décor
+    // de marque au lieu d'un cadre vide.
+    const [brokenImgs, setBrokenImgs] = useState<Set<string>>(new Set())
+    const markBroken = (id: string) => setBrokenImgs(prev => prev.has(id) ? prev : new Set(prev).add(id))
 
     useEffect(() => {
         const load = async () => {
@@ -234,10 +241,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     initial="enter" animate="center" exit="exit"
                     className="absolute inset-0 z-0"
                 >
-                    {currentItem.image_url ? (
+                    {currentItem.image_url && !brokenImgs.has(currentItem.id) ? (
                         <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={currentItem.image_url} alt="" className="w-full h-full object-cover object-center" />
+                            <img src={currentItem.image_url} alt="" className="w-full h-full object-cover object-center" onError={() => markBroken(currentItem.id)} />
                             {/* Strong gradient from bottom for text readability */}
                             <div className="absolute inset-0 bg-gradient-to-t from-white via-white/70 to-transparent" />
                             <div className="absolute inset-0 bg-gradient-to-r from-white/50 via-transparent to-transparent" />
@@ -332,7 +339,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-white/85 backdrop-blur-xl border border-slate-200"
                                     style={{ boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 30px ${meta.accent}20` }}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" />
+                                    <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) (fig as HTMLElement).style.display = 'none' }} />
                                     {img.caption && (
                                         <figcaption className="px-3 py-2 text-[10px] md:text-[11px] font-semibold text-slate-900/85 leading-snug">
                                             {img.caption}
@@ -347,7 +354,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
             {/* ═══ FLOATING IMAGE CARD (desktop, non-hero slides) ═══ */}
             <AnimatePresence>
-                {currentItem.image_url && !['hero', 'pricing'].includes(currentItem.type) && (
+                {currentItem.image_url && !brokenImgs.has(currentItem.id) && !['hero', 'pricing'].includes(currentItem.type) && (
                     <motion.div
                         key={currentItem.id + '-img-card'}
                         initial={{ opacity: 0, x: 40, scale: 0.9 }}
@@ -357,7 +364,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         style={{ boxShadow: `0 0 50px ${meta.accent}30, 0 20px 60px rgba(0,0,0,0.6)` }}
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={currentItem.image_url} alt="" className="w-full h-full object-cover" />
+                        <img src={currentItem.image_url} alt="" className="w-full h-full object-cover" onError={() => markBroken(currentItem.id)} />
                         <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
                         {/* Price badge overlay */}
                         {currentItem.selling_price > 0 && (
@@ -534,8 +541,10 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Title */}
                                     <motion.h1
                                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                                        className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black leading-[1.1] mb-3 md:mb-4 drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]"
-                                        style={{ background: `linear-gradient(120deg, #ffffff 50%, ${meta.accent} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                                        className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black leading-[1.1] mb-3 md:mb-4 drop-shadow-[0_1px_8px_rgba(255,255,255,0.9)]"
+                                        // Dégradé encre → accent (et non blanc → accent) : le blanc
+                                        // disparaissait sur le fond clair, rendant le titre illisible.
+                                        style={{ background: `linear-gradient(115deg, #14241C 15%, ${meta.accent} 130%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                     >
                                         {currentItem.title}
                                     </motion.h1>

@@ -9,7 +9,7 @@ import {
     Trash2, Copy, Sparkles, TrendingUp, BarChart3, CheckCircle
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { formatCurrencySync, type CurrencyCode } from '@/lib/currency'
+import { formatCurrencySync, convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
 
 interface Proposal {
     id: string
@@ -71,8 +71,12 @@ export default function AdminProposalsPage() {
     const [scrapedCategories, setScrapedCategories] = useState<Record<string, ScrapedItem[]>>({})
     const [, setScrapedImages] = useState<ScrapedImage[]>([])
     const [activeCategory, setActiveCategory] = useState('hotel')
+    // Images de scraping cassées → tuile d'icône (fini le cadre « flou »).
+    const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
 
     useEffect(() => { fetchProposals() }, [])
+    // Taux réels (DB) pour agréger des devises différentes en un total XOF fiable.
+    useEffect(() => { void refreshRates() }, [])
 
     const fetchProposals = async () => {
         setLoading(true)
@@ -187,9 +191,12 @@ export default function AdminProposalsPage() {
 
     const totalSelected = getSelectedItems().length
 
-    // Stats
-    const totalRevenue = proposals.filter(p => p.status === 'paid').reduce((acc, p) => acc + (p.total_amount || 0), 0)
-    const pendingRevenue = proposals.filter(p => p.status === 'ready').reduce((acc, p) => acc + (p.total_amount || 0), 0)
+    // Stats — chaque devis peut être libellé dans une devise différente. On
+    // ramène chaque montant en XOF (devise de reporting du cabinet) avant de
+    // sommer : additionner des EUR et des FCFA en affichant « FCFA » était faux.
+    const toXOF = (p: Proposal) => convertCurrency(p.total_amount || 0, (p.currency as CurrencyCode) || 'XOF', 'XOF')
+    const totalRevenue = proposals.filter(p => p.status === 'paid').reduce((acc, p) => acc + toXOF(p), 0)
+    const pendingRevenue = proposals.filter(p => p.status === 'ready').reduce((acc, p) => acc + toXOF(p), 0)
     const conversionRate = proposals.length > 0 ? (proposals.filter(p => p.status === 'paid').length / proposals.length) * 100 : 0
 
     return (
@@ -242,7 +249,7 @@ export default function AdminProposalsPage() {
                         </div>
                         <h3 className="text-slate-400 font-medium text-sm">Chiffre d&apos;Affaires (Payé)</h3>
                     </div>
-                    <p className="text-3xl font-black text-white">{totalRevenue.toLocaleString()} <span className="text-lg text-slate-500">FCFA</span></p>
+                    <p className="text-3xl font-black text-white">{formatCurrencySync(totalRevenue, 'XOF')}</p>
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
@@ -253,7 +260,7 @@ export default function AdminProposalsPage() {
                         </div>
                         <h3 className="text-slate-400 font-medium text-sm">En Attente (Prêt)</h3>
                     </div>
-                    <p className="text-3xl font-black text-white">{pendingRevenue.toLocaleString()} <span className="text-lg text-slate-500">FCFA</span></p>
+                    <p className="text-3xl font-black text-white">{formatCurrencySync(pendingRevenue, 'XOF')}</p>
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
@@ -538,16 +545,22 @@ export default function AdminProposalsPage() {
                                                         onClick={() => toggleItem(catKey, item.id)}
                                                         className={`text-left p-4 rounded-xl border transition-all flex gap-3 ${item.selected ? 'bg-[#FCD116]/10 border-[#FCD116]/50 ring-2 ring-[#FCD116]/20' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
                                                     >
-                                                        {item.image_url ? (
+                                                        {item.image_url && !brokenImages.has(item.id) ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={item.image_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                                                            <img
+                                                                src={item.image_url}
+                                                                alt=""
+                                                                className="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-slate-800"
+                                                                onError={() => setBrokenImages(prev => new Set(prev).add(item.id))}
+                                                            />
                                                         ) : (
-                                                            <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 text-2xl">
+                                                            <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 text-slate-400">
                                                                 {CATEGORY_META[activeCategory]?.icon}
                                                             </div>
                                                         )}
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-white font-bold text-sm truncate">{item.title}</p>
+                                                            {/* text-slate-100 : immunisé contre l'override globals.css (invisible en carte sélectionnée). */}
+                                                            <p className="text-slate-100 font-bold text-sm truncate">{item.title || item.address || '—'}</p>
                                                             {item.address && <p className="text-slate-400 text-xs truncate flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{item.address}</p>}
                                                             {item.rating > 0 && (
                                                                 <p className="text-[#FCD116] text-xs font-bold mt-1 flex items-center gap-1">
