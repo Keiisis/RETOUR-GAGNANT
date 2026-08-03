@@ -191,9 +191,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
             <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center gap-6">
                 <div className="relative">
                     <div className="absolute -inset-6 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full blur-3xl opacity-25 animate-pulse" />
-                    <Loader2 className="w-16 h-16 text-amber-600 animate-spin relative z-10" />
+                    <Loader2 className="w-16 h-16 text-[#008751] animate-spin relative z-10" />
                 </div>
-                <p className="text-amber-600 uppercase tracking-[0.3em] font-black text-xs">Retour Gagnant Bénin</p>
+                <p className="text-[#008751] uppercase tracking-[0.3em] font-black text-xs">Retour Gagnant Bénin</p>
             </div>
         )
     }
@@ -201,9 +201,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
     if (!proposal || items.length === 0) {
         return (
             <div className="h-[100dvh] w-screen bg-[#F4F7F5] flex flex-col items-center justify-center text-slate-900 p-6 text-center">
-                <Shield size={44} className="mb-6 text-amber-600" />
+                <Shield size={44} className="mb-6 text-[#008751]" />
                 <h1 className="text-2xl font-black mb-3">Proposition introuvable</h1>
-                <p className="text-slate-500 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-amber-600 font-bold">Retour Gagnant</span>.</p>
+                <p className="text-slate-500 text-sm max-w-sm">Ce lien a expiré ou n&apos;est pas valide. Contactez votre agent <span className="text-[#008751] font-bold">Retour Gagnant</span>.</p>
             </div>
         )
     }
@@ -285,7 +285,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full flex items-center justify-center font-black text-white text-[10px] md:text-xs shadow-xl">RG</div>
                     <div className="hidden sm:block">
                         <p className="text-[8px] font-black uppercase tracking-[0.25em] drop-shadow-md">
-                            <span className="text-emerald-700">Retour</span> <span className="text-amber-600">Gagnant</span> <span className="text-[#E8112D]">Bénin</span>
+                            <span className="text-emerald-700">Retour</span> <span className="text-[#008751]">Gagnant</span> <span className="text-[#E8112D]">Bénin</span>
                         </p>
                         <p className="font-bold text-slate-900/80 text-[11px] drop-shadow-md truncate max-w-[140px]">{proposal.client_name}</p>
                     </div>
@@ -313,7 +313,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
                 {/* Destination + date */}
                 <div className="text-right pointer-events-auto">
-                    <p className="text-[9px] font-black text-amber-600 tracking-[0.2em] uppercase drop-shadow-md truncate max-w-[110px] md:max-w-none">{proposal.destination}</p>
+                    <p className="text-[9px] font-black text-[#008751] tracking-[0.2em] uppercase drop-shadow-md truncate max-w-[110px] md:max-w-none">{proposal.destination}</p>
                     {proposal.start_date && (
                         <p className="text-[9px] md:text-[10px] text-slate-900/60 flex items-center justify-end gap-1 mt-0.5">
                             <Calendar className="w-2.5 h-2.5" />
@@ -400,7 +400,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: -20 }}
                                 transition={{ repeat: Infinity, duration: 1.5, repeatType: 'reverse' }}
-                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-amber-600/80 text-[10px] font-bold uppercase tracking-widest bg-white/85 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200"
+                                className="md:hidden absolute -top-14 right-0 flex items-center gap-2 text-[#008751]/80 text-[10px] font-bold uppercase tracking-widest bg-white/85 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200"
                             >
                                 <HandIcon className="w-4 h-4" /> Balayez l&apos;écran
                             </motion.div>
@@ -430,8 +430,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Title */}
                                     <motion.h1
                                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-4 drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]"
-                                        style={{ background: 'linear-gradient(120deg, #047857 0%, #B45309 55%, #065F46 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                                        className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-[-0.02em] mb-4 drop-shadow-[0_2px_10px_rgba(255,255,255,0.85)]"
+                                        // Dégradé tricolore charte (vert → rouge), fini le brun #B45309 hors-charte.
+                                        style={{ background: 'linear-gradient(118deg, #008751 0%, #005C38 48%, #E8112D 128%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                     >
                                         {currentItem.title}
                                     </motion.h1>
@@ -454,7 +455,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         >
                                             {durationDays > 0 && (
                                                 <span className="px-3 py-1.5 bg-white/85 backdrop-blur-xl border border-slate-200 rounded-full text-[10px] md:text-xs font-bold text-slate-900/90 flex items-center gap-1.5">
-                                                    <Calendar className="w-3 h-3 text-amber-600" /> {durationDays} jour{durationDays > 1 ? 's' : ''}
+                                                    <Calendar className="w-3 h-3 text-[#008751]" /> {durationDays} jour{durationDays > 1 ? 's' : ''}
                                                 </span>
                                             )}
                                             {hotelCount > 0 && (
@@ -484,7 +485,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-white/85 backdrop-blur-xl border border-[#FCD116]/20 rounded-full mb-6"
                                     >
                                         <span className="text-[10px] text-slate-900/55 uppercase tracking-widest">Total</span>
-                                        <span className="text-amber-600 font-black text-base md:text-lg">
+                                        <span className="text-[#008751] font-black text-base md:text-lg">
                                             <Price amount={proposal.total_amount} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                         </span>
                                     </motion.div>
@@ -541,9 +542,9 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                     {/* Title */}
                                     <motion.h1
                                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                                        className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black leading-[1.1] mb-3 md:mb-4 drop-shadow-[0_1px_8px_rgba(255,255,255,0.9)]"
-                                        // Dégradé encre → accent (et non blanc → accent) : le blanc
-                                        // disparaissait sur le fond clair, rendant le titre illisible.
+                                        className="font-display text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold leading-[1.04] tracking-[-0.015em] mb-3 md:mb-4 drop-shadow-[0_1px_8px_rgba(255,255,255,0.9)]"
+                                        // Playfair Display + dégradé encre → accent (le blanc disparaissait
+                                        // sur fond clair). Serif éditorial = élégance premium.
                                         style={{ background: `linear-gradient(115deg, #14241C 15%, ${meta.accent} 130%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                     >
                                         {currentItem.title}
@@ -615,17 +616,17 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-5 relative z-10">
                                             <div>
-                                                <p className="text-[9px] md:text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-[#008751] uppercase tracking-[0.2em] mb-1">Votre Tarif VIP</p>
                                                 {totalOriginal > proposal.total_amount && (
                                                     <p className="text-xs text-slate-900/50 line-through mb-0.5">
                                                         <Price amount={totalOriginal} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                     </p>
                                                 )}
-                                                <p className="text-2xl md:text-4xl font-black text-slate-900">
+                                                <p className="font-display text-3xl md:text-5xl font-bold text-slate-900 tracking-[-0.01em]">
                                                     <Price amount={proposal.total_amount} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />
                                                 </p>
                                             </div>
-                                            <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-amber-600/25 hidden sm:block" />
+                                            <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-[#008751]/25 hidden sm:block" />
                                         </div>
 
                                         {/* Items with progress bars */}
@@ -681,7 +682,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 onClick={(e) => { e.stopPropagation(); router.push(`/p/${secret}/paiement`) }}
                                                 className="bg-slate-100 border border-slate-200 hover:bg-slate-100 text-slate-900 py-3.5 md:py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 touch-manipulation"
                                             >
-                                                <BookOpen className="w-4 h-4 text-amber-600" /> Réserver
+                                                <BookOpen className="w-4 h-4 text-[#008751]" /> Réserver
                                             </button>
                                         </div>
 
@@ -691,7 +692,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                                 href={`/api/proposals/${proposal.id}/devis`}
                                                 target="_blank" rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-slate-500 hover:text-amber-600 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
+                                                className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-slate-500 hover:text-[#008751] py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
                                             >
                                                 <FileDown className="w-3.5 h-3.5" /> Devis PDF
                                             </a>
@@ -710,7 +711,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             <p className="text-slate-900/55 text-[9px] md:text-[10px] flex items-center gap-1.5">
                                                 <CheckCircle className="w-3 h-3 text-emerald-700" /> Paiement 100% sécurisé — Retour Gagnant Bénin
                                             </p>
-                                            <p className="text-amber-600/35 text-[9px]">
+                                            <p className="text-[#008751]/35 text-[9px]">
                                                 {(() => {
                                                     const validUntil = proposal?.valid_until 
                                                         ? new Date(proposal.valid_until) 
@@ -760,7 +761,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                 className="fixed bottom-[88px] left-4 md:bottom-20 md:left-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-white/90 hover:bg-[#FCD116]/20 backdrop-blur-xl border border-[#FCD116]/30 hover:border-[#FCD116]/70 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 touch-manipulation"
                 title="Télécharger le devis PDF"
             >
-                <FileDown className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
+                <FileDown className="w-5 h-5 md:w-6 md:h-6 text-[#008751]" />
             </a>
 
             {/* ═══ FLOATING WHATSAPP (bas droite) ═══ */}

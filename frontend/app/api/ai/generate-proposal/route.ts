@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
 import { requireStaff } from '@/lib/api-guard'
+import { getRatesXOF } from '@/lib/server-rates'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -104,6 +105,7 @@ Règles strictes :
 3. Crée une slide pour CHAQUE restaurant sélectionné (type:"restaurant")
 4. Crée une slide pour CHAQUE activité sélectionnée (type:"activity")
 5. Si transport sélectionné, crée une slide (type:"transport", prix par défaut 40000 FCFA/jour)
+   IMPORTANT : TOUS les "original_price" sont exprimés en FCFA (XOF), jamais dans une autre devise.
 6. "pricing" : Slide finale récapitulative. (original_price: 0)
 7. Chaque slide DOIT avoir des "highlights" (3 points forts)
 8. Chaque slide DOIT avoir un "subtitle" accrocheur
@@ -127,6 +129,21 @@ Format :
         }
 
         const items: ProposalItem[] = parsed.items || []
+
+        // ── CONVERSION DEVISE À LA SOURCE ─────────────────────────────
+        // Les prix générés par l'IA (comme ceux de Google Maps) sont TOUJOURS
+        // en FCFA (XOF). Si l'agent a choisi une autre devise (EUR, USD, GBP),
+        // on convertit chaque prix vers cette devise AVANT stockage — sinon un
+        // hôtel à 150 000 FCFA se retrouvait étiqueté « 150 000 € » (absurde).
+        // Le montant stocké est ainsi correctement libellé dans proposal.currency.
+        const target = (currency || 'XOF').toUpperCase()
+        const rates = await getRatesXOF()
+        const rate = rates[target] && rates[target] > 0 ? rates[target] : 1
+        const fromXOF = (xof: number) =>
+            target === 'XOF' ? Math.round(xof) : Math.round((xof / rate) * 100) / 100
+        for (const it of items) {
+            it.original_price = fromXOF(Number(it.original_price) || 0)
+        }
 
         // Sauvegarde dans DB
         const proposalData: Record<string, unknown> = {
