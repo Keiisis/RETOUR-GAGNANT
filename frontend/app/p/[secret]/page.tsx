@@ -337,8 +337,8 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {currentItem.images!.map((img, gi) => (
                                 <figure key={gi}
-                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-white/85 backdrop-blur-xl border border-slate-200"
-                                    style={{ boxShadow: `0 12px 40px rgba(0,0,0,0.5), 0 0 30px ${meta.accent}20` }}>
+                                    className="snap-start flex-shrink-0 w-44 md:w-56 rounded-2xl overflow-hidden bg-white border border-slate-200/80"
+                                    style={{ boxShadow: '0 12px 32px rgba(60,60,60,0.14)' }}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.url} alt={img.caption || ''} className="w-full h-28 md:h-36 object-cover" onError={(e) => { const fig = e.currentTarget.closest('figure'); if (fig) (fig as HTMLElement).style.display = 'none' }} />
                                     {img.caption && (

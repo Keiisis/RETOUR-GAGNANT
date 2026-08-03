@@ -18,41 +18,39 @@ const COMPANY = {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   REFONTE ANTI « AI-SLOP » — charte stricte du drapeau béninois.
+   PPTX — MÊME DIRECTION ARTISTIQUE QUE L'ÉCRAN D'ACCUEIL MOBILE.
 
-   Ce qui trahissait la génération automatique dans l'ancienne version :
-   des accents NÉON hors charte (bleu ciel #38BDF8, orange #FB923C,
-   violet #A78BFA) pour distinguer les catégories, un fond différent par
-   catégorie, et une typographie « Calibri » partout. On revient à une
-   direction éditoriale sobre :
-     · une seule base sombre neutre (encre chaude, pas un bleu-nuit criard) ;
-     · les SEULES couleurs sont celles du drapeau : vert, jaune, rouge ;
-     · titres en serif (Georgia) pour l'élégance, corps en Calibri ;
-     · la catégorie se lit à l'étiquette, pas à une couleur gadget.
+   « LE BLANC EST LA FORCE » : fonds blancs francs, encre anthracite
+   (#3C3C3C, jamais de noir pur), accents du drapeau béninois, fin liseré
+   tricolore en signature, typographie Plus Jakarta Sans. Plus AUCUN fond
+   sombre. Les slides à plusieurs images sont mis en page en mosaïque nette.
+   Valeurs reprises de mobile/src/config/theme.ts (design system v2).
 ══════════════════════════════════════════════════════════════════ */
 const C = {
     green:     '008751',
     greenDeep: '00643C',
+    greenSoft: 'E6F3ED',
     yellow:    'FCD116',
+    yellowSoft:'FEF7DC',
+    yellowInk: '8A6D08',
     red:       'E8112D',
-    ink:       '0E1512',   // encre chaude quasi-noire (neutre, jamais bleu-nuit)
-    inkSoft:   '16211C',   // panneaux
     white:     'FFFFFF',
-    mist:      'D7E0DB',   // texte secondaire clair
-    fog:       '93A79E',   // texte discret
+    mist:      'F5F5F5',
+    ink:       '3C3C3C',
+    inkMuted:  '505050',
+    inkFaint:  '8A8A8A',
+    line:      'F0F0F0',
+    lineStrong:'E4E4E4',
 }
 
-// Polices : serif éditorial pour les titres, sans-serif pour le corps.
-// Georgia / Calibri sont présentes sur tout poste Office / Windows.
-const TITLE = 'Georgia'
-const BODY  = 'Calibri'
+// Police du design mobile. Se substitue proprement si absente du poste.
+const FONT = 'Plus Jakarta Sans'
+// Ombre douce TEINTÉE gris (jamais noire), comme les cartes posées sur blanc.
+const SOFT_SHADOW = { type: 'outer' as const, color: 'BDBDBD', blur: 10, offset: 4, angle: 90, opacity: 0.45 }
 
-// Dimensions LAYOUT_WIDE : 13.33" × 7.5"
 const W = 13.33
 const H = 7.5
 
-// Catégories : plus AUCUNE couleur propre. Un libellé lisible suffit ;
-// l'accent visuel unique est le vert du Bénin, le jaune pour le premium.
 const CATEGORY: Record<string, { label: string }> = {
     hotel:      { label: 'Hébergement' },
     restaurant: { label: 'Gastronomie' },
@@ -62,13 +60,9 @@ const CATEGORY: Record<string, { label: string }> = {
     pricing:    { label: 'Devis' },
 }
 
-// Séparateur de milliers : toLocaleString('fr-FR') insère une espace fine
-// insécable (U+202F) que certains rendus PowerPoint affichent mal. On la
-// ramène à une espace normale, cohérent avec le devis PDF.
 const fmt = (n: number) =>
     Math.round(n).toLocaleString('fr-FR').replace(/[    ]/g, ' ')
 
-// ── Fetch image URL → base64 data URI ────────────────────────────
 async function fetchImageBase64(url: string): Promise<string | null> {
     try {
         const ctrl = new AbortController()
@@ -97,10 +91,10 @@ interface ProposalRow {
     created_at: string
 }
 
-// Label monétaire du devis. La devise est celle saisie par l'agent.
 const LABEL_DEVISE: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
 const labelDevise = (c?: string | null) => LABEL_DEVISE[(c || 'XOF').toUpperCase()] || (c || 'FCFA')
 
+interface SlideImageRow { url: string; caption?: string }
 interface ItemRow {
     type: string
     title: string
@@ -112,6 +106,17 @@ interface ItemRow {
     original_price: number
     selling_price: number
     order_index: number
+    metadata?: { images?: SlideImageRow[] } | null
+}
+
+// Toutes les images d'un item (principale + galerie metadata.images), dédupliquées.
+function imageUrlsOf(item: ItemRow): string[] {
+    const urls: string[] = []
+    if (item.image_url) urls.push(item.image_url)
+    for (const g of item.metadata?.images || []) {
+        if (g?.url && !urls.includes(g.url)) urls.push(g.url)
+    }
+    return urls
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -142,106 +147,133 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const contentItems = items.filter(i => i.type !== 'hero' && i.type !== 'pricing')
         const billable = contentItems.filter(i => i.selling_price > 0)
 
-        // ── Pré-fetch toutes les images en parallèle ──────────────
-        const imageDataArr: (string | null)[] = await Promise.all(
-            contentItems.map(item => item.image_url ? fetchImageBase64(item.image_url) : Promise.resolve(null))
+        // ── Pré-fetch : pour chaque item, TOUTES ses images (galeries incluses) ──
+        const itemImages: string[][] = await Promise.all(
+            contentItems.map(async item => {
+                const datas = await Promise.all(imageUrlsOf(item).map(u => fetchImageBase64(u)))
+                return datas.filter((d): d is string => !!d)
+            })
         )
 
-        // Image de couverture : celle de la slide « hero » (l'agent y met la ville
-        // du voyage), sinon la première image de contenu disponible. Fini le fond
-        // noir : la couverture est portée par une vraie photo.
+        // Image de couverture : galerie du hero, sinon 1re image de contenu.
         const heroItem = items.find(i => i.type === 'hero')
-        const heroImg = (heroItem?.image_url ? await fetchImageBase64(heroItem.image_url) : null)
-            || imageDataArr.find((d): d is string => !!d)
+        const heroImg = (heroItem ? (await Promise.all(imageUrlsOf(heroItem).map(u => fetchImageBase64(u)))).find((d): d is string => !!d) : null)
+            || itemImages.flat().find(Boolean)
             || null
 
-        // ── Initialiser pptx ──────────────────────────────────────
         const pptx = new pptxgen()
         pptx.author  = COMPANY.name
         pptx.company = COMPANY.name
         pptx.title   = `Voyage ${p.destination} — ${p.client_name}`
         pptx.layout  = 'LAYOUT_WIDE'
 
-        // Filet tricolore fin, la signature de la maison (réutilisé partout).
-        const addFlagRule = (slide: pptxgen.Slide, y: number, h = 0.06) => {
-            slide.addShape('rect', { x: 0,          y, w: W * 0.34, h, fill: { color: C.green },  line: { width: 0 } })
-            slide.addShape('rect', { x: W * 0.34,   y, w: W * 0.33, h, fill: { color: C.yellow }, line: { width: 0 } })
-            slide.addShape('rect', { x: W * 0.67,   y, w: W * 0.33, h, fill: { color: C.red },    line: { width: 0 } })
+        // Fin liseré tricolore — la signature de la maison.
+        const addFlagRule = (slide: pptxgen.Slide, y: number, h = 0.1) => {
+            slide.addShape('rect', { x: 0,        y, w: W * 0.34, h, fill: { color: C.green },  line: { width: 0 } })
+            slide.addShape('rect', { x: W * 0.34, y, w: W * 0.33, h, fill: { color: C.yellow }, line: { width: 0 } })
+            slide.addShape('rect', { x: W * 0.67, y, w: W * 0.33, h, fill: { color: C.red },    line: { width: 0 } })
         }
 
-        // ── Pied de page commun, discret ──────────────────────────
+        // Pied de page discret sur blanc.
         const addFooter = (slide: pptxgen.Slide) => {
-            addFlagRule(slide, H - 0.06, 0.06)
             slide.addText(
                 `${COMPANY.name}   ·   ${COMPANY.phone1}   ·   ${COMPANY.email}`,
-                { x: 0, y: H - 0.42, w: W, h: 0.3, fontSize: 8, color: C.fog, align: 'center', fontFace: BODY, charSpacing: 1 }
+                { x: 0.5, y: H - 0.5, w: W - 1, h: 0.3, fontSize: 8, color: C.inkFaint, align: 'center', fontFace: FONT, charSpacing: 1 },
             )
+            addFlagRule(slide, H - 0.1, 0.1)
+        }
+
+        /* Mosaïque d'images « cover » (recadrées, jamais déformées) dans un
+           rectangle (bx,by,bw,bh). 1→plein cadre, 2→empilées, 3→une grande +
+           deux, 4→grille 2×2, 5+→2×2 avec pastille « +N ». Ombre douce grise. */
+        const placeImages = (slide: pptxgen.Slide, imgs: string[], bx: number, by: number, bw: number, bh: number) => {
+            const g = 0.14 // gouttière
+            const frame = (data: string, x: number, y: number, w: number, h: number) => {
+                slide.addImage({ data, x, y, w, h, sizing: { type: 'cover', w, h }, shadow: SOFT_SHADOW })
+                slide.addShape('rect', { x, y, w, h, fill: { type: 'none' }, line: { color: C.lineStrong, width: 0.75 } })
+            }
+            if (imgs.length === 0) {
+                // Aucune image : panneau vert doux avec initiale du drapeau.
+                slide.addShape('roundRect', { x: bx, y: by, w: bw, h: bh, rectRadius: 0.12, fill: { color: C.greenSoft }, line: { width: 0 } })
+                slide.addText('RG', { x: bx, y: by, w: bw, h: bh, align: 'center', valign: 'middle', fontFace: FONT, bold: true, fontSize: 40, color: C.green })
+                return
+            }
+            if (imgs.length === 1) {
+                frame(imgs[0], bx, by, bw, bh)
+                return
+            }
+            if (imgs.length === 2) {
+                const h = (bh - g) / 2
+                frame(imgs[0], bx, by, bw, h)
+                frame(imgs[1], bx, by + h + g, bw, h)
+                return
+            }
+            if (imgs.length === 3) {
+                const topH = bh * 0.58
+                const botH = bh - topH - g
+                const halfW = (bw - g) / 2
+                frame(imgs[0], bx, by, bw, topH)
+                frame(imgs[1], bx, by + topH + g, halfW, botH)
+                frame(imgs[2], bx + halfW + g, by + topH + g, halfW, botH)
+                return
+            }
+            // 4 et plus : grille 2×2
+            const cw = (bw - g) / 2
+            const ch = (bh - g) / 2
+            const cells = [
+                [bx, by], [bx + cw + g, by],
+                [bx, by + ch + g], [bx + cw + g, by + ch + g],
+            ]
+            const shown = imgs.slice(0, 4)
+            shown.forEach((im, i) => frame(im, cells[i][0], cells[i][1], cw, ch))
+            const extra = imgs.length - 4
+            if (extra > 0) {
+                // Pastille « +N » sur la dernière cellule.
+                const [ex, ey] = cells[3]
+                slide.addShape('rect', { x: ex, y: ey, w: cw, h: ch, fill: { color: '3C3C3C', transparency: 35 }, line: { width: 0 } })
+                slide.addText(`+${extra}`, { x: ex, y: ey, w: cw, h: ch, align: 'center', valign: 'middle', fontFace: FONT, bold: true, fontSize: 28, color: C.white })
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDE HERO — couverture éditoriale
+        // SLIDE HERO — couverture blanche éditoriale (texte à gauche, photo à droite)
         // ═══════════════════════════════════════════════════════════
         {
             const slide = pptx.addSlide()
-            if (heroImg) {
-                // Couverture portée par la photo de la ville. Voile sombre UNIFORME
-                // (pas de bandes) pour garder le texte blanc parfaitement lisible.
-                slide.background = { data: heroImg }
-                slide.addShape('rect', { x: 0, y: 0, w: W, h: H, fill: { color: '0A140E', transparency: 32 }, line: { width: 0 } })
-            } else {
-                slide.background = { color: C.ink }
-            }
-
-            // Filet tricolore en tête
+            slide.background = { color: C.white }
             addFlagRule(slide, 0, 0.14)
 
-            // Wordmark discret
+            // Colonne photo à droite (ou panneau vert doux si aucune image)
+            placeImages(slide, heroImg ? [heroImg] : [], 6.85, 0.75, 5.95, 6.0)
+
+            const Lx = 0.7, Lw = 5.9
             slide.addText('RETOUR GAGNANT BÉNIN', {
-                x: 0, y: 0.55, w: W, h: 0.35,
-                fontSize: 12, bold: true, color: C.yellow,
-                align: 'center', fontFace: BODY, charSpacing: 6,
+                x: Lx, y: 0.75, w: Lw, h: 0.3, fontSize: 11, bold: true, color: C.green,
+                fontFace: FONT, charSpacing: 4,
             })
-
-            // Surtitre
             slide.addText('CARNET DE VOYAGE SUR MESURE', {
-                x: 0, y: 2.05, w: W, h: 0.4,
-                fontSize: 13, color: C.fog,
-                align: 'center', fontFace: BODY, charSpacing: 4,
+                x: Lx, y: 1.7, w: Lw, h: 0.35, fontSize: 12, color: C.inkFaint,
+                fontFace: FONT, charSpacing: 3,
             })
-
-            // Destination — grand serif
             slide.addText(p.destination, {
-                x: 0.5, y: 2.4, w: W - 1, h: 1.5,
-                fontSize: 60, bold: true, color: C.white,
-                align: 'center', fontFace: TITLE,
+                x: Lx, y: 2.1, w: Lw, h: 1.5, fontSize: 54, bold: true, color: C.ink, fontFace: FONT,
             })
+            slide.addShape('rect', { x: Lx, y: 3.55, w: 1.4, h: 0.045, fill: { color: C.green }, line: { width: 0 } })
 
-            // Filet vert court sous le titre
-            slide.addShape('rect', { x: W / 2 - 0.9, y: 4.0, w: 1.8, h: 0.035, fill: { color: C.green }, line: { width: 0 } })
-
-            // Préparé pour
             slide.addText('PRÉPARÉ EXCLUSIVEMENT POUR', {
-                x: 0, y: 4.35, w: W, h: 0.32,
-                fontSize: 10, color: C.fog,
-                align: 'center', fontFace: BODY, charSpacing: 3,
+                x: Lx, y: 3.85, w: Lw, h: 0.3, fontSize: 9, color: C.inkFaint, fontFace: FONT, charSpacing: 2,
             })
             slide.addText(p.client_name, {
-                x: 0, y: 4.65, w: W, h: 0.7,
-                fontSize: 28, italic: true, color: C.yellow,
-                align: 'center', fontFace: TITLE,
+                x: Lx, y: 4.15, w: Lw, h: 0.55, fontSize: 24, bold: true, color: C.ink, fontFace: FONT,
             })
 
-            // Dates
             if (p.start_date && p.end_date) {
                 const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
                 slide.addText(`Du ${fmtDate(p.start_date)}  au  ${fmtDate(p.end_date)}`, {
-                    x: 0, y: 5.45, w: W, h: 0.36,
-                    fontSize: 12, color: C.mist,
-                    align: 'center', fontFace: BODY,
+                    x: Lx, y: 4.8, w: Lw, h: 0.32, fontSize: 12, color: C.inkMuted, fontFace: FONT,
                 })
             }
 
-            // Sommaire du séjour — une seule ligne sobre (fini les cartes néon)
             const parts = [
                 { n: items.filter(i => i.type === 'hotel').length,      s: 'hébergements' },
                 { n: items.filter(i => i.type === 'restaurant').length, s: 'restaurants' },
@@ -250,135 +282,102 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             ].filter(x => x.n > 0).map(x => `${x.n} ${x.s}`)
             if (parts.length > 0) {
                 slide.addText(parts.join('   ·   '), {
-                    x: 0, y: p.start_date ? 5.85 : 5.55, w: W, h: 0.34,
-                    fontSize: 12, color: C.mist, align: 'center', fontFace: BODY,
+                    x: Lx, y: p.start_date ? 5.2 : 4.9, w: Lw, h: 0.32, fontSize: 12, color: C.inkMuted, fontFace: FONT,
                 })
             }
 
-            // Total — pilule verte, montant jaune
-            const totalY = 6.35
+            // Total — pilule vert doux, montant vert
             slide.addShape('roundRect', {
-                x: W / 2 - 2.3, y: totalY, w: 4.6, h: 0.62, rectRadius: 0.08,
-                fill: { color: C.ink }, line: { color: C.green, width: 1.25 },
+                x: Lx, y: 5.75, w: 4.4, h: 0.62, rectRadius: 0.09,
+                fill: { color: C.greenSoft }, line: { color: C.green, width: 1 },
             })
             slide.addText(
                 [
-                    { text: 'TOTAL ESTIMÉ    ', options: { color: C.fog, fontSize: 12, bold: false } },
-                    { text: `${fmt(p.total_amount)} ${cur}`, options: { color: C.yellow, fontSize: 15, bold: true } },
+                    { text: 'TOTAL ESTIMÉ    ', options: { color: C.inkMuted, fontSize: 11, bold: false } },
+                    { text: `${fmt(p.total_amount)} ${cur}`, options: { color: C.green, fontSize: 15, bold: true } },
                 ],
-                { x: W / 2 - 2.3, y: totalY, w: 4.6, h: 0.62, align: 'center', fontFace: BODY },
+                { x: Lx + 0.1, y: 5.75, w: 4.2, h: 0.62, align: 'center', valign: 'middle', fontFace: FONT },
             )
 
             addFooter(slide)
         }
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDES CONTENU
+        // SLIDES CONTENU — blanc, texte à gauche, images (mosaïque) à droite
         // ═══════════════════════════════════════════════════════════
         contentItems.forEach((item, idx) => {
             const slide = pptx.addSlide()
-            slide.background = { color: C.ink }
+            slide.background = { color: C.white }
             const cat = CATEGORY[item.type] || CATEGORY.hotel
+            addFlagRule(slide, 0, 0.12)
 
-            const imgData = imageDataArr[idx]
-            const imgX = 7.7            // l'image occupe la droite
-            const imgW = W - imgX       // ≈ 5.63"
+            // Mosaïque d'images à droite
+            placeImages(slide, itemImages[idx] || [], 6.85, 0.75, 5.95, 5.6)
 
-            // ── Image plein cadre à droite, SPLIT NET (fini les voiles dégradés
-            //    qui faisaient d'affreuses rayures) ──
-            if (imgData) {
-                try {
-                    slide.addImage({ data: imgData, x: imgX, y: 0, w: imgW, h: H })
-                } catch {
-                    slide.addShape('rect', { x: imgX, y: 0, w: imgW, h: H, fill: { color: C.inkSoft }, line: { width: 0 } })
-                }
-            } else {
-                // Pas d'image : panneau sobre uni
-                slide.addShape('rect', { x: imgX, y: 0, w: imgW, h: H, fill: { color: C.inkSoft }, line: { width: 0 } })
-            }
-            // Fin filet vert vertical sur la ligne de partage : une couture nette,
-            // élégante, plutôt qu'un dégradé baveux.
-            slide.addShape('rect', { x: imgX - 0.02, y: 0, w: 0.04, h: H, fill: { color: C.green }, line: { width: 0 } })
+            const Lx = 0.7, Lw = 5.85
 
-            // ── Filet tricolore en tête ──
-            addFlagRule(slide, 0, 0.1)
-
-            // ── Étiquette catégorie (contour vert, texte vert) ──
-            slide.addShape('roundRect', {
-                x: 0.6, y: 0.5, w: 2.5, h: 0.42, rectRadius: 0.06,
-                fill: { color: C.ink }, line: { color: C.green, width: 1 },
-            })
+            // Sur-titre catégorie (vert)
             slide.addText(cat.label.toUpperCase(), {
-                x: 0.6, y: 0.5, w: 2.5, h: 0.42,
-                fontSize: 10, bold: true, color: C.green,
-                align: 'center', fontFace: BODY, charSpacing: 2,
+                x: Lx, y: 0.7, w: Lw, h: 0.3, fontSize: 11, bold: true, color: C.green,
+                fontFace: FONT, charSpacing: 2,
             })
-
-            // ── Localisation ──
+            // Localisation
             if (item.location) {
                 slide.addText(item.location, {
-                    x: 0.62, y: 1.15, w: 6.6, h: 0.36,
-                    fontSize: 12, color: C.fog, fontFace: BODY, charSpacing: 1,
+                    x: Lx, y: 1.08, w: Lw, h: 0.3, fontSize: 12, color: C.inkFaint, fontFace: FONT,
                 })
             }
-
-            // ── Titre — grand serif ──
-            const titleY = item.location ? 1.55 : 1.15
+            // Titre (encre)
+            const titleY = item.location ? 1.5 : 1.1
             slide.addText(item.title, {
-                x: 0.6, y: titleY, w: 6.7, h: 1.7,
-                fontSize: 38, bold: true, color: C.white,
-                fontFace: TITLE, wrap: true, valign: 'top',
+                x: Lx, y: titleY, w: Lw, h: 1.6, fontSize: 34, bold: true, color: C.ink,
+                fontFace: FONT, valign: 'top',
             })
-
-            // ── Sous-titre ──
-            const stY = titleY + 1.75
+            // Sous-titre (vert)
+            const stY = titleY + 1.65
             if (item.subtitle) {
                 slide.addText(item.subtitle, {
-                    x: 0.6, y: stY, w: 6.7, h: 0.5,
-                    fontSize: 14, italic: true, color: C.green, fontFace: TITLE,
+                    x: Lx, y: stY, w: Lw, h: 0.4, fontSize: 13, italic: true, color: C.green, fontFace: FONT,
                 })
             }
-
-            // ── Description ──
-            const descY = item.subtitle ? stY + 0.55 : stY
+            // Description (encre douce)
+            const descY = item.subtitle ? stY + 0.5 : stY
             if (item.description) {
                 slide.addText(item.description, {
-                    x: 0.6, y: descY, w: 6.7, h: 1.2,
-                    fontSize: 12, color: C.mist, fontFace: BODY, wrap: true, lineSpacingMultiple: 1.15,
+                    x: Lx, y: descY, w: Lw, h: 1.15, fontSize: 11.5, color: C.inkMuted, fontFace: FONT,
+                    valign: 'top', lineSpacingMultiple: 1.2,
                 })
             }
-
-            // ── Points forts — pastilles vertes discrètes ──
-            const hlY = (item.description ? descY + 1.3 : descY) + 0.05
+            // Points forts — pastilles vert doux
+            const hlY = (item.description ? descY + 1.25 : descY) + 0.05
             const highlights = (item.highlights || []).slice(0, 6)
             highlights.forEach((h, i) => {
                 const col = i % 2
                 const row = Math.floor(i / 2)
-                const x = 0.6 + col * 3.35
-                const yy = hlY + row * 0.5
+                const x = Lx + col * 2.95
+                const yy = hlY + row * 0.48
                 slide.addShape('roundRect', {
-                    x, y: yy, w: 3.2, h: 0.4, rectRadius: 0.05,
-                    fill: { color: C.green, transparency: 88 },
-                    line: { color: C.green, width: 0.5 },
+                    x, y: yy, w: 2.8, h: 0.4, rectRadius: 0.06,
+                    fill: { color: C.greenSoft }, line: { width: 0 },
                 })
                 slide.addText(h, {
-                    x: x + 0.12, y: yy, w: 2.95, h: 0.4,
-                    fontSize: 10, color: C.white, fontFace: BODY, valign: 'middle',
+                    x: x + 0.14, y: yy, w: 2.55, h: 0.4, fontSize: 9.5, color: C.greenDeep,
+                    fontFace: FONT, valign: 'middle',
                 })
             })
 
-            // ── Prix — pilule jaune, en bas de la colonne texte ──
+            // Prix — pilule JAUNE (fond premium), texte encre
             if (item.selling_price > 0) {
                 slide.addShape('roundRect', {
-                    x: 0.6, y: 6.35, w: 3.2, h: 0.55, rectRadius: 0.07,
+                    x: Lx, y: 6.35, w: 3.3, h: 0.55, rectRadius: 0.08,
                     fill: { color: C.yellow }, line: { width: 0 },
                 })
                 slide.addText(
                     [
-                        { text: 'TARIF INCLUS   ', options: { color: C.greenDeep, fontSize: 9, bold: true } },
+                        { text: 'TARIF INCLUS   ', options: { color: C.yellowInk, fontSize: 9, bold: true } },
                         { text: `${fmt(item.selling_price)} ${cur}`, options: { color: '3C2E00', fontSize: 14, bold: true } },
                     ],
-                    { x: 0.6, y: 6.35, w: 3.2, h: 0.55, align: 'center', fontFace: BODY, valign: 'middle' },
+                    { x: Lx + 0.1, y: 6.35, w: 3.1, h: 0.55, align: 'center', valign: 'middle', fontFace: FONT },
                 )
             }
 
@@ -386,79 +385,67 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         })
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDE PRICING — Récapitulatif
+        // SLIDE PRICING — récapitulatif blanc
         // ═══════════════════════════════════════════════════════════
         {
             const slide = pptx.addSlide()
-            slide.background = { color: C.ink }
+            slide.background = { color: C.white }
             addFlagRule(slide, 0, 0.14)
 
-            // Titre serif
             slide.addText('Récapitulatif du devis', {
-                x: 0, y: 0.5, w: W, h: 0.8,
-                fontSize: 32, bold: true, color: C.white,
-                align: 'center', fontFace: TITLE,
+                x: 0, y: 0.55, w: W, h: 0.8, fontSize: 30, bold: true, color: C.ink, align: 'center', fontFace: FONT,
             })
-            slide.addShape('rect', { x: W / 2 - 0.9, y: 1.35, w: 1.8, h: 0.03, fill: { color: C.yellow }, line: { width: 0 } })
+            slide.addShape('rect', { x: W / 2 - 0.9, y: 1.35, w: 1.8, h: 0.045, fill: { color: C.green }, line: { width: 0 } })
 
-            // Tableau
-            const tX   = 1.6
-            const tW   = W - 3.2
-            const cTit = tX + 0.35
-            const cTitW = tW - 3.0
-            const cPri = tX + tW - 2.4
-            const cPriW = 2.2
-            const rH   = 0.5
-            let rY     = 1.75
+            const tX = 1.6, tW = W - 3.2
+            const cTit = tX + 0.35, cTitW = tW - 3.0
+            const cPri = tX + tW - 2.4, cPriW = 2.2
+            const rH = 0.5
+            let rY = 1.8
 
-            // En-tête
-            slide.addShape('rect', { x: tX, y: rY, w: tW, h: rH, fill: { color: C.green, transparency: 78 }, line: { width: 0 } })
-            slide.addText('PRESTATION', { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 11, bold: true, color: C.yellow, fontFace: BODY, valign: 'middle', charSpacing: 2 })
-            slide.addText(`PRIX (${cur})`, { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 11, bold: true, color: C.yellow, align: 'right', fontFace: BODY, valign: 'middle', charSpacing: 1 })
+            slide.addShape('rect', { x: tX, y: rY, w: tW, h: rH, fill: { color: C.greenSoft }, line: { width: 0 } })
+            slide.addText('PRESTATION', { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 11, bold: true, color: C.greenDeep, fontFace: FONT, valign: 'middle', charSpacing: 2 })
+            slide.addText(`PRIX (${cur})`, { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 11, bold: true, color: C.greenDeep, align: 'right', fontFace: FONT, valign: 'middle', charSpacing: 1 })
             rY += rH
 
             const maxItems = 9
             billable.slice(0, maxItems).forEach((item, i) => {
                 if (i % 2 === 1) {
-                    slide.addShape('rect', { x: tX, y: rY, w: tW, h: rH, fill: { color: C.white, transparency: 94 }, line: { width: 0 } })
+                    slide.addShape('rect', { x: tX, y: rY, w: tW, h: rH, fill: { color: C.mist }, line: { width: 0 } })
                 }
-                // Filet vert sur le bord gauche (accent unique, uniforme)
-                slide.addShape('rect', { x: tX, y: rY, w: 0.05, h: rH, fill: { color: C.green }, line: { width: 0 } })
-                slide.addText(item.title, { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 12, color: C.white, fontFace: BODY, valign: 'middle' })
-                slide.addText(`${fmt(item.selling_price)}`, { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 12, color: C.mist, align: 'right', fontFace: BODY, valign: 'middle' })
+                slide.addShape('rect', { x: tX, y: rY, w: 0.06, h: rH, fill: { color: C.green }, line: { width: 0 } })
+                slide.addText(item.title, { x: cTit, y: rY, w: cTitW, h: rH, fontSize: 12, color: C.ink, fontFace: FONT, valign: 'middle' })
+                slide.addText(`${fmt(item.selling_price)}`, { x: cPri, y: rY, w: cPriW, h: rH, fontSize: 12, color: C.inkMuted, align: 'right', fontFace: FONT, valign: 'middle' })
                 rY += rH
             })
+            // Séparateur bas de table
+            slide.addShape('rect', { x: tX, y: rY, w: tW, h: 0.015, fill: { color: C.lineStrong }, line: { width: 0 } })
 
             // Total
-            rY += 0.2
-            slide.addShape('roundRect', { x: tX, y: rY, w: tW, h: 0.66, rectRadius: 0.06, fill: { color: C.green, transparency: 70 }, line: { color: C.green, width: 1.25 } })
-            slide.addText('TOTAL', { x: tX + 0.35, y: rY, w: 5, h: 0.66, fontSize: 15, bold: true, color: C.white, fontFace: BODY, valign: 'middle', charSpacing: 2 })
+            rY += 0.22
+            slide.addShape('roundRect', { x: tX, y: rY, w: tW, h: 0.66, rectRadius: 0.07, fill: { color: C.green }, line: { width: 0 } })
+            slide.addText('TOTAL', { x: tX + 0.35, y: rY, w: 5, h: 0.66, fontSize: 15, bold: true, color: C.white, fontFace: FONT, valign: 'middle', charSpacing: 2 })
             slide.addText(`${fmt(p.total_amount)} ${cur}`, {
-                x: cPri - 0.6, y: rY, w: cPriW + 0.6, h: 0.66,
-                fontSize: 17, bold: true, color: C.yellow, align: 'right', fontFace: BODY, valign: 'middle',
+                x: cPri - 0.6, y: rY, w: cPriW + 0.6, h: 0.66, fontSize: 17, bold: true, color: C.yellow, align: 'right', fontFace: FONT, valign: 'middle',
             })
             rY += 0.66
 
-            // Bloc contact
-            const cY = Math.min(rY + 0.45, H - 1.5)
-            slide.addShape('roundRect', { x: tX, y: cY, w: tW, h: 1.05, rectRadius: 0.06, fill: { color: C.inkSoft }, line: { color: C.green, width: 0.75 } })
+            // Bloc contact — vert doux
+            const cY = Math.min(rY + 0.45, H - 1.55)
+            slide.addShape('roundRect', { x: tX, y: cY, w: tW, h: 1.05, rectRadius: 0.08, fill: { color: C.greenSoft }, line: { width: 0 } })
             slide.addText('Pour finaliser votre réservation, contactez votre conseiller :', {
-                x: tX, y: cY + 0.1, w: tW, h: 0.3,
-                fontSize: 10, color: C.fog, align: 'center', fontFace: BODY,
+                x: tX, y: cY + 0.12, w: tW, h: 0.3, fontSize: 10, color: C.inkMuted, align: 'center', fontFace: FONT,
             })
             slide.addText(`${COMPANY.phone1}   ·   ${COMPANY.phone2}   ·   ${COMPANY.email}`, {
-                x: tX, y: cY + 0.42, w: tW, h: 0.34,
-                fontSize: 13, bold: true, color: C.yellow, align: 'center', fontFace: BODY,
+                x: tX, y: cY + 0.44, w: tW, h: 0.34, fontSize: 13, bold: true, color: C.green, align: 'center', fontFace: FONT,
             })
             slide.addText(`${COMPANY.address}   ·   IFU : ${COMPANY.ifu}   ·   RCCM : ${COMPANY.rccm}`, {
-                x: tX, y: cY + 0.76, w: tW, h: 0.24,
-                fontSize: 8.5, color: C.fog, align: 'center', fontFace: BODY,
+                x: tX, y: cY + 0.78, w: tW, h: 0.24, fontSize: 8.5, color: C.inkFaint, align: 'center', fontFace: FONT,
             })
 
             addFooter(slide)
         }
 
-        // ── Générer et retourner ──────────────────────────────────
         const buf = await pptx.write({ outputType: 'nodebuffer' }) as Buffer
         const safeName = p.client_name.replace(/[^a-zA-Z0-9\-]/g, '_')
         const mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
