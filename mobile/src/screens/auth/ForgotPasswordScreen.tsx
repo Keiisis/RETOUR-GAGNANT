@@ -284,8 +284,8 @@ const styles = StyleSheet.create({
     keyIconWrap: {
         width: 56,
         height: 56,
-        borderRadius: 28,
-        backgroundColor: 'rgba(252, 209, 22, 0.1)',
+        borderRadius: radius.xxl,
+        backgroundColor: C.accentSoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
@@ -310,12 +310,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 60,
         borderWidth: 1,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         paddingHorizontal: 16,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 12,
-        elevation: 2,
+        ...shadows.card,
     },
     fieldIcon: {
         marginRight: 12,
@@ -335,15 +332,11 @@ const styles = StyleSheet.create({
     btn: {
         height: 60,
         backgroundColor: C.primary,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
+        ...shadows.card,
     },
     btnDisabled: {
         backgroundColor: C.borderStrong,
@@ -357,7 +350,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F5F5F5',
+        color: C.surfaceAlt,
     },
     backLink: {
         marginTop: 24,

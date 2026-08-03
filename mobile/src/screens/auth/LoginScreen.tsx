@@ -19,7 +19,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
-import { screenColors, fonts } from '../../config/theme'
+import { confirm } from '../../lib/feedback'
+import { fetchWithTimeout } from '../../lib/fetch'
+import { screenColors, fonts, radius, shadows, spacing, typography } from '../../config/theme'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ═══════════════════════════════════════════════════════════
    LoginScreen — THEME "CORPORATE PREMIUM 2026"
@@ -82,8 +86,57 @@ export default function LoginScreen({ navigation }: any) {
         setLoading(true)
         const { error } = await signIn(email.trim(), password)
         setLoading(false)
-        if (error) {
-            toast(t('Erreur'), t('Email ou mot de passe incorrect.'))
+        if (!error) return
+
+        /* L'écran affichait « Email ou mot de passe incorrect » pour TOUTE
+           erreur — y compris un compte valide mais dont l'e-mail n'est pas
+           encore confirmé. Un client qui venait de s'inscrire se voyait donc
+           accuser d'un mauvais mot de passe, et croyait la création de compte
+           cassée. On distingue désormais ce cas et on propose de renvoyer le
+           lien de confirmation, puisque rien ne le permettait dans l'app. */
+        const msg = (error.message || '').toLowerCase()
+        const nonConfirme = msg.includes('confirm') || msg.includes('not confirmed') || msg.includes('email')
+
+        if (nonConfirme) {
+            confirm({
+                title: t('Compte à activer'),
+                message: t("Votre compte existe mais n'est pas encore activé. Vérifiez votre boîte mail (et vos spams) pour le lien de confirmation. Vous renvoyer ce lien ?"),
+                confirmLabel: t('Renvoyer le lien'),
+                cancelLabel: t('Plus tard'),
+                onConfirm: () => { void renvoyerConfirmation() },
+            })
+            return
+        }
+
+        toast(t('Connexion impossible'), t('Email ou mot de passe incorrect.'))
+    }
+
+    /* Renvoi du lien de confirmation. La route web
+       /api/client/resend-confirmation existait déjà mais n'était branchée
+       nulle part côté mobile — le client sans e-mail reçu restait bloqué. */
+    const renvoyerConfirmation = async () => {
+        if (!email.trim()) {
+            toast(t('Email requis'), t('Saisissez votre adresse pour recevoir le lien.'))
+            return
+        }
+        setLoading(true)
+        try {
+            const res = await fetchWithTimeout(`${API_BASE}/api/client/resend-confirmation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                timeoutMs: 15000,
+                body: JSON.stringify({ email: email.trim().toLowerCase() }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (res.ok) {
+                toast(t('Lien envoyé'), t('Un nouveau lien de confirmation vient de partir vers votre adresse.'), 'success')
+            } else {
+                toast(t('Envoi impossible'), json.error || t('Réessayez dans quelques minutes.'))
+            }
+        } catch {
+            toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -304,12 +357,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 60,
         borderWidth: 1,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         paddingHorizontal: 16,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 12,
-        elevation: 2,
+        ...shadows.card,
     },
     fieldIcon: {
         marginRight: 12,
@@ -340,15 +390,11 @@ const styles = StyleSheet.create({
     btn: {
         height: 60,
         backgroundColor: C.primary, // Bleu massif
-        borderRadius: 16,
+        borderRadius: radius.lg,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
+        ...shadows.card,
     },
     btnDisabled: {
         backgroundColor: C.borderStrong,
@@ -362,7 +408,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F5F5F5',
+        color: C.surfaceAlt,
     },
     registerLink: {
         marginTop: 24,

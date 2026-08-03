@@ -336,12 +336,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 60,
         borderWidth: 1,
-        borderRadius: 16, // Moins "rondouillard", plus sérieux
+        borderRadius: radius.lg, // Moins "rondouillard", plus sérieux
         paddingHorizontal: 16,
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 12,
-        elevation: 2,
+        ...shadows.card,
     },
     fieldIcon: {
         marginRight: 12,
@@ -361,15 +358,11 @@ const styles = StyleSheet.create({
     btn: {
         height: 60,
         backgroundColor: C.primary, // Bleu massif
-        borderRadius: 16, // Cohérent avec les inputs
+        borderRadius: radius.lg, // Cohérent avec les inputs
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: C.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 8,
+        ...shadows.card,
     },
     btnDisabled: {
         backgroundColor: C.borderStrong,
@@ -383,7 +376,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     btnTextDisabled: {
-        color: '#F5F5F5',
+        color: C.surfaceAlt,
     },
     loginLink: {
         marginTop: 24,
