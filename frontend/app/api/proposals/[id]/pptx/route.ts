@@ -147,6 +147,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             contentItems.map(item => item.image_url ? fetchImageBase64(item.image_url) : Promise.resolve(null))
         )
 
+        // Image de couverture : celle de la slide « hero » (l'agent y met la ville
+        // du voyage), sinon la première image de contenu disponible. Fini le fond
+        // noir : la couverture est portée par une vraie photo.
+        const heroItem = items.find(i => i.type === 'hero')
+        const heroImg = (heroItem?.image_url ? await fetchImageBase64(heroItem.image_url) : null)
+            || imageDataArr.find((d): d is string => !!d)
+            || null
+
         // ── Initialiser pptx ──────────────────────────────────────
         const pptx = new pptxgen()
         pptx.author  = COMPANY.name
@@ -175,7 +183,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         // ═══════════════════════════════════════════════════════════
         {
             const slide = pptx.addSlide()
-            slide.background = { color: C.ink }
+            if (heroImg) {
+                // Couverture portée par la photo de la ville. Voile sombre UNIFORME
+                // (pas de bandes) pour garder le texte blanc parfaitement lisible.
+                slide.background = { data: heroImg }
+                slide.addShape('rect', { x: 0, y: 0, w: W, h: H, fill: { color: '0A140E', transparency: 32 }, line: { width: 0 } })
+            } else {
+                slide.background = { color: C.ink }
+            }
 
             // Filet tricolore en tête
             addFlagRule(slide, 0, 0.14)

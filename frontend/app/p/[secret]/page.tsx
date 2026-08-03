@@ -491,19 +491,27 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         </span>
                                     </motion.div>
 
-                                    {/* CTA */}
+                                    {/* CTA — vert charte premium, voile brillant qui balaie,
+                                        flèche en pastille qui glisse, halo vert. */}
                                     <motion.button
                                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
                                         onClick={(e) => { e.stopPropagation(); goToSlide(1) }}
-                                        className="relative px-8 md:px-10 py-3.5 md:py-4 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] rounded-full text-[#050D1A] font-black uppercase tracking-wider text-xs md:text-sm transition-all flex items-center gap-2.5 active:scale-95 touch-manipulation overflow-hidden group"
+                                        className="group relative inline-flex items-center gap-3 pl-7 pr-4 md:pl-9 md:pr-5 py-3 md:py-3.5 rounded-full text-white font-bold uppercase tracking-[0.12em] text-xs md:text-sm overflow-hidden shadow-[0_12px_32px_-10px_rgba(0,135,81,0.65)] hover:shadow-[0_16px_44px_-8px_rgba(0,135,81,0.8)] transition-shadow touch-manipulation"
+                                        style={{ background: 'linear-gradient(100deg, #00844F 0%, #00A862 52%, #006B40 100%)' }}
                                     >
-                                        <motion.div
-                                            className="absolute inset-0 bg-slate-200"
-                                            animate={{ x: ['-100%', '200%'] }}
-                                            transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
-                                            style={{ transform: 'skewX(-20deg)', width: '30%' }}
+                                        {/* Voile brillant qui traverse */}
+                                        <motion.span
+                                            aria-hidden
+                                            className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent"
+                                            style={{ transform: 'skewX(-18deg)' }}
+                                            animate={{ x: ['0%', '520%'] }}
+                                            transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.4 }}
                                         />
-                                        Découvrir l&apos;expérience <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                                        <span className="relative z-10">Découvrir l&apos;expérience</span>
+                                        <span className="relative z-10 flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/20 group-hover:bg-white/30 transition-colors">
+                                            <ChevronRight className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-0.5" />
+                                        </span>
                                     </motion.button>
                                 </>
                             )}
@@ -561,10 +569,11 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         </motion.p>
                                     )}
 
-                                    {/* ── Stat cards ────────────────────── */}
+                                    {/* ── Stat cards (défilables horizontalement sur mobile,
+                                        jamais de débordement de page) ── */}
                                     <motion.div
                                         initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-                                        className="flex gap-2 md:gap-3 mb-4 md:mb-5"
+                                        className="flex gap-2 md:gap-3 mb-4 md:mb-5 overflow-x-auto no-scrollbar -mx-1 px-1 snap-x"
                                     >
                                         <StatCard label="Catégorie" value={meta.label} accent={meta.accent} />
                                         {currentItem.location && <StatCard label="Lieu" value={currentItem.location} accent={meta.accent} />}
