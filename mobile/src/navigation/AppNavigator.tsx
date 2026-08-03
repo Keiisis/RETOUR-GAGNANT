@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
+import ConfirmEmailScreen from '../screens/auth/ConfirmEmailScreen'
 import TwoFactorScreen from '../screens/auth/TwoFactorScreen'
 import MainTabNavigator from './MainTabNavigator'
 import SplashScreen from '../screens/SplashScreen'
@@ -62,6 +63,7 @@ export type RootStackParamList = {
     Onboarding: undefined
     Login: undefined
     Register: undefined
+    ConfirmEmail: { email: string }
     ForgotPassword: undefined
     TwoFactor: undefined
     Main: undefined
@@ -268,6 +270,11 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name="Register"
                         component={RegisterScreen}
+                        options={pushIOS}
+                    />
+                    <Stack.Screen
+                        name="ConfirmEmail"
+                        component={ConfirmEmailScreen}
                         options={pushIOS}
                     />
                     <Stack.Screen

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
-import fsNode from 'fs'
-import path from 'path'
 import { rateLimit, getClientIp, type RateLimitConfig } from '@/lib/rate-limit'
 import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
+import { buildConfirmEmail } from '@/lib/emails/confirm-email'
 
 // Limite par IP (en plus de la limite par email) : empêche un attaquant de
 // faire tourner les emails pour épuiser le quota SMTP.
@@ -79,6 +78,10 @@ export async function POST(req: NextRequest) {
         }
 
         const actionLink = linkData.properties.action_link
+        // Code à 8 chiffres saisi dans l'app (vérifié via verifyOtp — l'écran
+        // mobile essaie le type 'magiclink' en plus de 'signup').
+        const emailOtp = linkData.properties.email_otp || ''
+        const existingPrenom = (existingUser.user_metadata?.prenom as string) || (existingUser.user_metadata?.nom as string) || ''
 
         // Config SMTP depuis Supabase settings
         const { data: settingsData } = await supabase
@@ -105,19 +108,16 @@ export async function POST(req: NextRequest) {
         const fromEmail = settings.smtp_from_email || settings.smtp_user
         const fromString = '"' + fromName + '" <' + fromEmail + '>'
 
-        let htmlContent = '<a href="' + actionLink + '">Confirmer mon email</a>'
-        try {
-            const templatePath = path.join(process.cwd(), 'public', 'email_confirm_template.html')
-            const rawTemplate = fsNode.readFileSync(templatePath, 'utf8')
-            htmlContent = rawTemplate.replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, actionLink)
-        } catch {
-            // Template non trouvé → fallback HTML simple
-        }
+        const htmlContent = buildConfirmEmail({
+            prenom: existingPrenom,
+            code: emailOtp,
+            confirmUrl: actionLink,
+        })
 
         await transporter.sendMail({
             from: fromString,
             to: normalizedEmail,
-            subject: 'Confirmez votre email — Retour Gagnant Bénin',
+            subject: `Votre code de confirmation : ${emailOtp} — Retour Gagnant Bénin`,
             html: htmlContent
         })
 

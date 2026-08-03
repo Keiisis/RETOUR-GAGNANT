@@ -10,6 +10,7 @@ import {
     ExternalLink, Upload, Image as ImageIcon, Sparkles, GripVertical, FileDown
 } from 'lucide-react'
 import { Price } from '@/components/ui/Price'
+import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
 
 interface ProposalItem {
     id: string
@@ -80,6 +81,25 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
     }, [id, router])
 
     useEffect(() => { fetchData() }, [fetchData])
+
+    // Charge les taux de change réels (DB) au montage pour que la conversion
+    // de devise soit exacte dès le premier changement (USD/GBP viennent de la DB).
+    useEffect(() => { void refreshRates() }, [])
+
+    // Changement de devise = re-libellé RÉEL, pas cosmétique. On convertit
+    // chaque prix (indicatif + client) de l'ancienne devise vers la nouvelle
+    // afin que la VALEUR reste identique : 150 000 XOF → 229 € (et non « 150 000 € »).
+    const handleCurrencyChange = (next: string) => {
+        const from = currency as CurrencyCode
+        const to = next as CurrencyCode
+        if (from === to) return
+        setItems(prev => prev.map(it => ({
+            ...it,
+            original_price: convertCurrency(Number(it.original_price) || 0, from, to),
+            selling_price: convertCurrency(Number(it.selling_price) || 0, from, to),
+        })))
+        setCurrency(next)
+    }
 
     const updateItem = (itemId: string, field: keyof ProposalItem, value: string | number | string[]) => {
         setItems(prev => prev.map(item =>
@@ -246,7 +266,7 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
                         <select
                             title="Devise"
                             value={currency}
-                            onChange={e => setCurrency(e.target.value)}
+                            onChange={e => handleCurrencyChange(e.target.value)}
                             className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:border-[#FCD116] focus:outline-none"
                         >
                             <option value="XOF">FCFA (XOF)</option>
@@ -301,12 +321,15 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
 
                                     {item.image_url && (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={item.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                                        <img src={item.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-800" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                     )}
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-white font-bold text-sm truncate">{item.title}</p>
-                                        <p className="text-slate-500 text-xs">{typeOpt?.label}</p>
+                                        {/* text-slate-100 (et non text-white) : immunisé contre l'override
+                                            globals.css qui assombrit .text-white en thème clair et rendait
+                                            le titre invisible sur ces cartes sombres. */}
+                                        <p className="text-slate-100 font-bold text-sm truncate">{item.title}</p>
+                                        <p className="text-slate-400 text-xs">{typeOpt?.label}</p>
                                     </div>
 
                                     {item.selling_price > 0 && (
@@ -373,7 +396,7 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
                                                         {item.image_url ? (
                                                             <div className="relative group rounded-xl overflow-hidden border border-slate-800">
                                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                <img src={item.image_url} alt={item.title} className="w-full h-32 object-cover" />
+                                                                <img src={item.image_url} alt={item.title} className="w-full h-32 object-cover bg-slate-800" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                                                                     <button title="Changer" onClick={() => fileInputRefs.current[item.id]?.click()} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 text-white"><Upload className="w-4 h-4" /></button>
                                                                     <button title="Supprimer" onClick={() => updateItem(item.id, 'image_url', '')} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400"><Trash2 className="w-4 h-4" /></button>

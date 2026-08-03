@@ -70,6 +70,9 @@ export default function AgentPresentationsPage() {
     const [scrapedCategories, setScrapedCategories] = useState<Record<string, ScrapedItem[]>>({})
     const [, setScrapedImages] = useState<ScrapedImage[]>([])
     const [activeCategory, setActiveCategory] = useState('hotel')
+    // Images de scraping cassées (URL Google morte / hotlink bloqué) : on bascule
+    // sur la tuile d'icône plutôt que d'afficher un cadre « flou » d'image brisée.
+    const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
 
     useEffect(() => { fetchProposals() }, [])
 
@@ -449,16 +452,23 @@ export default function AgentPresentationsPage() {
                                                         onClick={() => toggleItem(catKey, item.id)}
                                                         className={`text-left p-4 rounded-xl border transition-all flex gap-3 ${item.selected ? 'bg-[#FCD116]/10 border-[#FCD116]/50 ring-2 ring-[#FCD116]/20' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
                                                     >
-                                                        {item.image_url ? (
+                                                        {item.image_url && !brokenImages.has(item.id) ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={item.image_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                                                            <img
+                                                                src={item.image_url}
+                                                                alt=""
+                                                                className="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-slate-800"
+                                                                onError={() => setBrokenImages(prev => new Set(prev).add(item.id))}
+                                                            />
                                                         ) : (
-                                                            <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 text-2xl">
+                                                            <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 text-slate-400">
                                                                 {CATEGORY_META[activeCategory]?.icon}
                                                             </div>
                                                         )}
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-white font-bold text-sm truncate">{item.title}</p>
+                                                            {/* text-slate-100 : immunisé contre l'override globals.css qui
+                                                                assombrit .text-white en thème clair (invisible sur carte sélectionnée). */}
+                                                            <p className="text-slate-100 font-bold text-sm truncate">{item.title || item.address || '—'}</p>
                                                             {item.address && <p className="text-slate-400 text-xs truncate flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{item.address}</p>}
                                                             {item.rating > 0 && (
                                                                 <p className="text-[#FCD116] text-xs font-bold mt-1 flex items-center gap-1">

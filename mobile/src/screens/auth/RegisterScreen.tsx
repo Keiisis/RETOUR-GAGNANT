@@ -121,8 +121,8 @@ export default function RegisterScreen({ navigation }: any) {
                 toast(t('Erreur'), json.error || t('Inscription impossible. Réessayez.'))
                 return
             }
-            toast(t('Bienvenue'), t('Veuillez vérifier votre email pour activer votre compte.'), 'success')
-            navigation.navigate('Login')
+            toast(t('Bienvenue'), t('Un code de confirmation vient de partir vers votre e-mail.'), 'success')
+            navigation.navigate('ConfirmEmail', { email: email.trim().toLowerCase() })
         } catch {
             setLoading(false)
             toast(t('Erreur'), t('Erreur de connexion. Réessayez.'))

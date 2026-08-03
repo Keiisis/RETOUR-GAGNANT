@@ -175,6 +175,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                 })
         }
 
+        // Formatage des montants. toLocaleString('fr-FR') sépare les milliers
+        // avec une espace fine insécable (U+202F) absente des polices standard
+        // de jsPDF : elle se rendait « / » (« 98/393/550 ») et élargissait les
+        // colonnes au point de tronquer le total. On la remplace par une espace
+        // normale, seul séparateur fiable dans le PDF.
+        const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR').replace(/[    ]/g, ' ')
+
         const PW = 210, PH = 297
         const ML = 14, MR = 14, CW = PW - ML - MR  // 182mm
 
@@ -356,9 +363,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             const midY = y + rowH / 2 + 2
             const otherData = [
                 { text: '1', w: cols[1].w, align: 'center' as const, xStart: cols[0].w },
-                { text: htFCFA.toLocaleString('fr-FR'), w: cols[2].w, align: 'right' as const, xStart: cols[0].w + cols[1].w },
-                { text: ttcFCFA.toLocaleString('fr-FR'), w: cols[3].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w },
-                { text: ttcEUR.toLocaleString('fr-FR'), w: cols[4].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w + cols[3].w },
+                { text: fmt(htFCFA), w: cols[2].w, align: 'right' as const, xStart: cols[0].w + cols[1].w },
+                { text: fmt(ttcFCFA), w: cols[3].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w },
+                { text: fmt(ttcEUR), w: cols[4].w, align: 'right' as const, xStart: cols[0].w + cols[1].w + cols[2].w + cols[3].w },
             ]
             for (const cell of otherData) {
                 const cellX = ML + cell.xStart
@@ -392,8 +399,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             pdf.setFont('helvetica', bold ? 'bold' : 'normal')
             pdf.setFontSize(bold ? 9 : 8)
             pdf.text(label, totX, y + 6)
-            pdf.text(`${fcfa.toLocaleString('fr-FR')} FCFA`, PW - MR - 28, y + 6, { align: 'right' })
-            pdf.text(`${eur.toLocaleString('fr-FR')} €`, PW - MR, y + 6, { align: 'right' })
+            pdf.text(`${fmt(fcfa)} FCFA`, PW - MR - 28, y + 6, { align: 'right' })
+            pdf.text(`${fmt(eur)} €`, PW - MR, y + 6, { align: 'right' })
             y += 10
         }
 
@@ -410,7 +417,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const montantLettre = toWordsFr(totalTTC_XOF)
         const montantEurLettres = toWordsFr(totalTTC_EUR)
         const legalText = pdf.splitTextToSize(
-            `Arrêté le présent devis à la somme de ${montantLettre} (${totalTTC_XOF.toLocaleString('fr-FR')}) Francs CFA TTC, soit ${montantEurLettres} (${totalTTC_EUR.toLocaleString('fr-FR')}) Euros TTC.`,
+            `Arrêté le présent devis à la somme de ${montantLettre} (${fmt(totalTTC_XOF)}) Francs CFA TTC, soit ${montantEurLettres} (${fmt(totalTTC_EUR)}) Euros TTC.`,
             CW - 4
         )
 
