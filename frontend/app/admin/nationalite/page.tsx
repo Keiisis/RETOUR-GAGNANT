@@ -9,7 +9,7 @@ import {
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
     Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy,
-    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft
+    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft, Landmark
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -30,6 +30,7 @@ interface Application {
     documents_uploaded: string[]
     created_at: string; submitted_at: string; assigned_agent: string; agent_notes: string
     amount: number; currency: string; payment_status: string; payment_method: string; payment_ref: string
+    recherche_ancestrale_payee?: boolean
 }
 
 // `color` = pastille de statut (badge). `solid` = bouton d'action plein, à fort
@@ -298,6 +299,18 @@ export default function AdminNationalitePage() {
         } catch { alert('Erreur réseau.') }
     }
 
+    // Recherche ancestrale payée ? (pilote l'option 250 € de la fiche d'analyse)
+    const [ancestralBusy, setAncestralBusy] = useState<string | null>(null)
+    const toggleAncestral = async (a: Application) => {
+        const next = !a.recherche_ancestrale_payee
+        setAncestralBusy(a.id)
+        try {
+            const { error } = await supabase.from('nationality_applications').update({ recherche_ancestrale_payee: next }).eq('id', a.id)
+            if (error) { alert('Champ indisponible — exécutez la migration 20260804_recherche_ancestrale_payee.sql'); return }
+            setApps(prev => prev.map(x => x.id === a.id ? { ...x, recherche_ancestrale_payee: next } : x))
+        } finally { setAncestralBusy(null) }
+    }
+
     // ══ FICHE D'ANALYSE (auto / manuel → prévisualisation → envoi email) ══
     type FPiece = { document: string; statut: string; motif: string; filiation?: string }
     type FBox = { title: string; body: string; tone?: 'blue' | 'yellow' }
@@ -338,6 +351,7 @@ export default function AdminNationalitePage() {
         nextStepsTitle: 'PROCHAINES ÉTAPES & RENDEZ-VOUS',
         nextStepsIntro: 'Afin de vous accompagner dans la mise en conformité de votre dossier :',
         nextStepsBoxes: [{ title: "Proposition d'échange téléphonique", body: 'Nous vous suggérons d\'organiser un rendez-vous téléphonique selon vos disponibilités.', tone: 'blue' }],
+        finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue afin de poursuivre l'instruction de votre dossier.",
     })
     const openFiche = (a: Application) => { setFicheApp(a); setFicheStep('choose'); setFicheData(null); setFichePdf(null) }
 
@@ -576,6 +590,12 @@ export default function AdminNationalitePage() {
                                             <button onClick={() => openEdit(a)} className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Pencil size={13} /> <T>Éditer</T></button>
                                             <button onClick={() => openAddDocs(a)} className="bg-[#008751] hover:bg-[#00643C] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><FilePlus size={13} /> <T>Ajouter des documents</T></button>
                                             <button onClick={() => openFiche(a)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><ClipboardList size={13} /> <T>Fiche d&apos;analyse</T></button>
+                                            <button onClick={() => toggleAncestral(a)} disabled={ancestralBusy === a.id}
+                                                title={t('Recherche ancestrale (généalogie) payée par le client ? Pilote l\'option 250 € de la fiche.')}
+                                                className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50 ${a.recherche_ancestrale_payee ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-300 text-slate-700 hover:bg-slate-400'}`}>
+                                                {ancestralBusy === a.id ? <Loader2 size={13} className="animate-spin" /> : a.recherche_ancestrale_payee ? <Check size={13} /> : <Landmark size={13} />}
+                                                {a.recherche_ancestrale_payee ? <T>Recherche ancestrale : payée</T> : <T>Recherche ancestrale : non payée</T>}
+                                            </button>
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} disabled={zipEnCours === a.id}
                                                 className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
                                                 {zipEnCours === a.id ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} <T>Télécharger ZIP</T></button>
@@ -841,7 +861,7 @@ export default function AdminNationalitePage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Statut (badge)</label>
                                             <select value={ficheData.statutBadge} onChange={e => setF({ statutBadge: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15">
-                                                <option>NON CONFORME - ACTION REQUISE</option><option>DOSSIER INCOMPLET</option><option>DOSSIER A VERIFIER</option>
+                                                <option>NON CONFORME - ACTION REQUISE</option><option>DOSSIER INCOMPLET</option><option>DOSSIER A VERIFIER</option><option>DOSSIER COMPLET</option>
                                             </select></div>
                                         <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Type de tableau</label>
                                             <select value={ficheData.piecesColMode || 'motif'} onChange={e => setF({ piecesColMode: e.target.value as 'motif' | 'filiation' })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15">

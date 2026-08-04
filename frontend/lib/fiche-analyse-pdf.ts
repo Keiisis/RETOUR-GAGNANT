@@ -59,6 +59,18 @@ const CO = {
     inkFaint: [140, 140, 140] as [number, number, number],
     line: [225, 228, 226] as [number, number, number],
     boxBg: [248, 249, 248] as [number, number, number],
+    headerLight: [241, 248, 244] as [number, number, number],  // vert très clair (en-tête)
+    grey: [120, 120, 120] as [number, number, number],
+}
+
+// Couleur du badge de statut selon le mot-clé.
+function badgeColor(statut: string): [number, number, number] {
+    const s = statut.toLowerCase()
+    if (s.includes('complet')) return CO.green
+    if (s.includes('non conforme')) return CO.red
+    if (s.includes('incomplet')) return CO.orange
+    if (s.includes('requise') || s.includes('action')) return CO.red
+    return [90, 100, 96]
 }
 
 // Conserve les accents français (Latin-1) ; ne neutralise que les caractères
@@ -102,30 +114,36 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
         return y
     }
 
-    // ── BANDEAU EN-TÊTE (vert profond) ──────────────────────────────
-    const headH = 26
-    pdf.setFillColor(...CO.headerBg)
+    // ── EN-TÊTE CLAIR (vert très pâle, plus de fond sombre) ─────────
+    const headH = 28
+    pdf.setFillColor(...CO.headerLight)
     pdf.rect(0, 0, PW, headH, 'F')
-    try { pdf.addImage(LOGO_BASE64, 'PNG', ML, 5, 16, 16) } catch { /* logo absent */ }
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(19); pdf.setTextColor(255, 255, 255)
-    pdf.text('AGENCE RGB', ML + 20, 12)
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(200, 214, 205)
-    pdf.text(safe("FICHE D'ANALYSE DE DOSSIER CLIENT"), ML + 20, 18)
-    // Badge statut (rouge) à droite
+    try { pdf.addImage(LOGO_BASE64, 'PNG', ML, 5, 18, 18) } catch { /* logo absent */ }
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(20)
+    pdf.setTextColor(...CO.greenDeep)
+    pdf.text('AGENCE ', ML + 22, 13)
+    const aw = pdf.getTextWidth('AGENCE ')
+    pdf.setTextColor(...CO.red)
+    pdf.text('RGB', ML + 22 + aw, 13)
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(...CO.grey)
+    pdf.text(safe("FICHE D'ANALYSE DE DOSSIER CLIENT"), ML + 22, 19.5)
+    // Badge statut (coloré selon le statut) à droite
     if (data.statutBadge) {
+        const bc = badgeColor(data.statutBadge)
         pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5)
-        const bw = pdf.getTextWidth(safe(data.statutBadge)) + 10
-        pdf.setFillColor(...CO.red)
-        pdf.roundedRect(PW - MR - bw, 9, bw, 8, 1.5, 1.5, 'F')
+        const bw = pdf.getTextWidth(safe(data.statutBadge)) + 12
+        pdf.setFillColor(...bc)
+        pdf.roundedRect(PW - MR - bw, 8.5, bw, 9, 2, 2, 'F')
         pdf.setTextColor(255, 255, 255)
         pdf.text(safe(data.statutBadge), PW - MR - bw / 2, 14.3, { align: 'center' })
     }
-    // Liseré tricolore
-    pdf.setFillColor(...CO.green); pdf.rect(0, headH, PW / 3, 2, 'F')
-    pdf.setFillColor(...CO.yellow); pdf.rect(PW / 3, headH, PW / 3, 2, 'F')
-    pdf.setFillColor(...CO.red); pdf.rect((PW * 2) / 3, headH, PW / 3, 2, 'F')
+    // Filet gris + liseré tricolore
+    pdf.setDrawColor(...CO.line); pdf.setLineWidth(0.3); pdf.line(0, headH, PW, headH)
+    pdf.setFillColor(...CO.green); pdf.rect(0, headH, PW / 3, 1.8, 'F')
+    pdf.setFillColor(...CO.yellow); pdf.rect(PW / 3, headH, PW / 3, 1.8, 'F')
+    pdf.setFillColor(...CO.red); pdf.rect((PW * 2) / 3, headH, PW / 3, 1.8, 'F')
 
-    let y = headH + 10
+    let y = headH + 11
 
     // ── BLOC INFOS CLIENT ───────────────────────────────────────────
     const infoH = 24
@@ -184,44 +202,47 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
     heading('2', data.piecesTitle || 'DETAIL DES PIECES A REGULARISER')
     const useFiliation = data.piecesColMode === 'filiation'
     const cols = useFiliation
-        ? [{ w: 62, label: 'PIECE REQUISE' }, { w: 78, label: 'LIEN DE FILIATION' }, { w: CW - 140, label: 'STATUT' }]
-        : [{ w: 52, label: 'DOCUMENT' }, { w: 34, label: 'STATUT ACTUEL' }, { w: CW - 86, label: 'MOTIF & EXIGENCE' }]
-    // En-tête tableau
-    y = ensure(12, y)
-    pdf.setFillColor(...CO.greenDeep); pdf.rect(ML, y, CW, 8, 'F')
+        ? [{ w: 58, label: "PIÈCE D'ÉTAT CIVIL REQUISE" }, { w: 84, label: 'LIEN DE FILIATION' }, { w: CW - 142, label: 'STATUT' }]
+        : [{ w: 50, label: 'DOCUMENT' }, { w: 34, label: 'STATUT ACTUEL' }, { w: CW - 84, label: 'MOTIF & EXIGENCE' }]
+    // En-tête tableau (multiligne, vert foncé, coins arrondis en haut)
+    const headerLines = cols.map(c => pdf.splitTextToSize(safe(c.label), c.w - 5))
+    const hh = Math.max(9, Math.max(...headerLines.map(l => l.length)) * 3.6 + 3.5)
+    y = ensure(hh + 12, y)
+    pdf.setFillColor(...CO.greenDeep); pdf.rect(ML, y, CW, hh, 'F')
     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(255, 255, 255)
     let cx = ML
-    for (const c of cols) { pdf.text(safe(c.label), cx + 2, y + 5.3); cx += c.w }
-    y += 8
+    cols.forEach((c, ci) => {
+        const startY = y + (hh - headerLines[ci].length * 3.6) / 2 + 3
+        headerLines[ci].forEach((ln: string, li: number) => pdf.text(ln, cx + 2.5, startY + li * 3.6))
+        cx += c.w
+    })
+    y += hh
     // Lignes
     data.pieces.forEach((p, i) => {
         const c0 = pdf.splitTextToSize(safe(p.document), cols[0].w - 4)
-        const c2txt = useFiliation ? '' : safe(p.motif)
-        const c2 = useFiliation ? [] : pdf.splitTextToSize(c2txt, cols[2].w - 4)
-        const c1fil = useFiliation ? pdf.splitTextToSize(safe(p.filiation || p.motif), cols[1].w - 4) : []
-        const rowH = Math.max(9, c0.length * 4, c2.length * 4, c1fil.length * 4) + 4
+        const c2 = useFiliation ? [] : pdf.splitTextToSize(safe(p.motif), cols[2].w - 4)
+        const c1fil = useFiliation ? pdf.splitTextToSize(safe(p.filiation || ''), cols[1].w - 4) : []
+        const rowH = Math.max(11, c0.length * 4, c2.length * 4, c1fil.length * 4) + 4
         y = ensure(rowH, y)
-        if (i % 2 === 1) { pdf.setFillColor(247, 249, 247); pdf.rect(ML, y, CW, rowH, 'F') }
+        if (i % 2 === 1) { pdf.setFillColor(247, 250, 248); pdf.rect(ML, y, CW, rowH, 'F') }
         pdf.setDrawColor(...CO.line); pdf.setLineWidth(0.2); pdf.line(ML, y + rowH, ML + CW, y + rowH)
         // Col 1 : nom pièce (gras)
-        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(...CO.ink)
-        pdf.text(c0, ML + 2, y + 5)
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(...CO.ink)
+        pdf.text(c0, ML + 3, y + 5.5)
         if (useFiliation) {
-            // Col 2 : filiation
-            pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...CO.inkMuted)
-            pdf.text(c1fil, ML + cols[0].w + 2, y + 5)
-            // Col 3 : pastille statut
-            drawBadge(pdf, p.statut, ML + cols[0].w + cols[1].w + 2, y + rowH / 2 - 2)
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(...CO.inkMuted)
+            pdf.text(c1fil, ML + cols[0].w + 3, y + 5.5)
+            drawBadge(pdf, p.statut, ML + cols[0].w + cols[1].w + 3, y + rowH / 2 - 2.2)
         } else {
-            // Col 2 : pastille statut
-            drawBadge(pdf, p.statut, ML + cols[0].w + 2, y + rowH / 2 - 2)
-            // Col 3 : motif
-            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(...CO.inkMuted)
-            pdf.text(c2, ML + cols[0].w + cols[1].w + 2, y + 5)
+            drawBadge(pdf, p.statut, ML + cols[0].w + 3, y + rowH / 2 - 2.2)
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(...CO.inkMuted)
+            pdf.text(c2, ML + cols[0].w + cols[1].w + 3, y + 5.5)
         }
         y += rowH
     })
-    y += 8
+    // Filet de clôture vert
+    pdf.setDrawColor(...CO.green); pdf.setLineWidth(0.6); pdf.line(ML, y, ML + CW, y)
+    y += 9
 
     // ── SECTION 3 — PROCHAINES ÉTAPES ───────────────────────────────
     if (data.nextStepsBoxes?.length || data.nextStepsIntro) {
@@ -284,17 +305,21 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
     return Buffer.from(pdf.output('arraybuffer')).toString('base64')
 }
 
-// Pastille de statut colorée (contour + texte de la couleur).
+// Pastille de statut : fond teinté clair + bordure + texte de la couleur.
 function drawBadge(pdf: jsPDF, statut: string, x: number, y: number) {
     const col = statutColor(statut)
+    // Teinte claire du même ton (mélange avec du blanc à ~88 %).
+    const tint: [number, number, number] = [
+        Math.round(col[0] + (255 - col[0]) * 0.88),
+        Math.round(col[1] + (255 - col[1]) * 0.88),
+        Math.round(col[2] + (255 - col[2]) * 0.88),
+    ]
     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7)
-    const w = pdf.getTextWidth(safe(statut)) + 5
-    pdf.setDrawColor(...col); pdf.setLineWidth(0.4)
-    pdf.setFillColor(col[0], col[1], col[2])
-    // fond très clair : on simule par un contour + texte coloré (lisible sur blanc)
-    pdf.roundedRect(x, y, w, 5, 1.2, 1.2, 'S')
+    const w = pdf.getTextWidth(safe(statut)) + 6
+    pdf.setFillColor(...tint); pdf.setDrawColor(...col); pdf.setLineWidth(0.35)
+    pdf.roundedRect(x, y, w, 5.4, 1.4, 1.4, 'FD')
     pdf.setTextColor(...col)
-    pdf.text(safe(statut), x + w / 2, y + 3.4, { align: 'center' })
+    pdf.text(safe(statut), x + w / 2, y + 3.6, { align: 'center' })
 }
 
 function drawInfoBox(pdf: jsPDF, b: FicheBox, x: number, y: number, w: number, h: number) {

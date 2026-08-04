@@ -36,7 +36,7 @@ interface AppRow {
 
 // Analyse automatique : compare les pièces requises aux pièces déposées et
 // détecte les formats « photo » (non conformes). Renvoie une FicheAnalyseData.
-function buildAutoFiche(app: AppRow): FicheAnalyseData {
+function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
     const uploaded = (app.documents_uploaded || []).map(line => {
         const idx = line.indexOf(': ')
         if (idx === -1) return null
@@ -92,12 +92,21 @@ function buildAutoFiche(app: AppRow): FicheAnalyseData {
             piecesColMode: 'filiation' as const,
             pieces: GENEALOGY.map(g => ({ document: g.document, filiation: g.filiation, statut: 'Manquant', motif: g.filiation })),
             nextStepsTitle: 'MODALITÉS DE RÉGULARISATION',
-            nextStepsIntro: "Pour permettre le traitement et la validation finale de votre dossier, deux options s'offrent à vous :",
-            nextStepsBoxes: [
-                { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' as const },
-                { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' as const },
-            ],
-            finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue (fourniture directe des pièces ou souscription au service de recherche généalogique à 250 €) afin de poursuivre l'instruction de votre dossier.",
+            // Si la recherche ancestrale est DÉJÀ payée, on ne propose plus le
+            // forfait 250 € : RGB s'occupe de la recherche, le client n'a qu'à
+            // patienter / transmettre ce qu'il possède.
+            nextStepsIntro: ancestralPaid
+                ? "Votre forfait de recherche généalogique étant déjà réglé, nos équipes prennent en charge l'obtention des actes ci-dessus."
+                : "Pour permettre le traitement et la validation finale de votre dossier, deux options s'offrent à vous :",
+            nextStepsBoxes: ancestralPaid
+                ? [{ title: 'Recherche généalogique en cours', body: "Votre forfait de recherche ayant été réglé, RGB réalise pour vous la recherche complète des extraits d'acte de naissance manquants. Vous pouvez également nous transmettre toute pièce déjà en votre possession pour accélérer l'instruction.", tone: 'blue' as const }]
+                : [
+                    { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' as const },
+                    { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' as const },
+                ],
+            finalNote: ancestralPaid
+                ? "Notre équipe reste à votre disposition et vous tiendra informé de l'avancement de la recherche généalogique afin de poursuivre l'instruction de votre dossier."
+                : "Merci de bien vouloir informer l'équipe RGB de l'option retenue (fourniture directe des pièces ou souscription au service de recherche généalogique à 250 €) afin de poursuivre l'instruction de votre dossier.",
         }
     }
 
@@ -204,10 +213,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (error || !app) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
     const a = app as AppRow
 
+    // Recherche ancestrale déjà payée ? Lecture tolérante : si la colonne n'existe
+    // pas encore (migration non exécutée), on retombe simplement sur « non payée ».
+    let ancestralPaid = false
+    try {
+        const { data: extra } = await supabase
+            .from('nationality_applications')
+            .select('recherche_ancestrale_payee')
+            .eq('id', id).maybeSingle()
+        ancestralPaid = !!(extra as { recherche_ancestrale_payee?: boolean } | null)?.recherche_ancestrale_payee
+    } catch { ancestralPaid = false }
+
     // Données de la fiche : calculées (auto) ou fournies par l'admin (manuel/send).
     const fiche: FicheAnalyseData = (mode === 'manual' || action === 'send') && body.data
         ? (body.data as FicheAnalyseData)
-        : buildAutoFiche(a)
+        : buildAutoFiche(a, ancestralPaid)
 
     let pdfBase64: string
     try {
