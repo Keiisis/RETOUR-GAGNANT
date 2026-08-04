@@ -354,6 +354,30 @@ export default function AdminNationalitePage() {
         finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue afin de poursuivre l'instruction de votre dossier.",
     })
     const openFiche = (a: Application) => { setFicheApp(a); setFicheStep('choose'); setFicheData(null); setFichePdf(null) }
+    // Pré-remplit le modèle « Modalités de régularisation » (généalogie, 2 options).
+    const fillGenealogie = () => setFicheData(d => d ? ({
+        ...d,
+        objet: "Preuve d'Afro-descendance",
+        statutBadge: 'DOSSIER INCOMPLET',
+        formatWarning: '',
+        diagnostic: "Constat de vérification : après étude attentive des pièces fournies, le dossier présente une absence des actes d'état civil requis pour constituer la filiation ascendante nécessaire à l'établissement de la preuve d'afro-descendance.",
+        piecesTitle: 'INVENTAIRE DES PIÈCES MANQUANTES',
+        piecesColMode: 'filiation',
+        pieces: [
+            { document: "Extrait d'acte de naissance", filiation: 'Titulaire du dossier (Client)', statut: 'Manquant', motif: '' },
+            { document: "Extrait d'acte de naissance", filiation: "Père de l'intéressé", statut: 'Manquant', motif: '' },
+            { document: "Extrait d'acte de naissance", filiation: "Mère de l'intéressé", statut: 'Manquant', motif: '' },
+            { document: "Extraits d'acte de naissance", filiation: 'Grands-parents paternels (grand-père & grand-mère)', statut: 'Manquants', motif: '' },
+            { document: "Extraits d'acte de naissance", filiation: 'Grands-parents maternels (grand-père & grand-mère)', statut: 'Manquants', motif: '' },
+        ],
+        nextStepsTitle: 'MODALITÉS DE RÉGULARISATION',
+        nextStepsIntro: "Pour permettre le traitement et la validation finale de votre dossier, deux options s'offrent à vous :",
+        nextStepsBoxes: [
+            { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' },
+            { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' },
+        ],
+        finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue (fourniture directe des pièces ou souscription au service de recherche généalogique à 250 €) afin de poursuivre l'instruction de votre dossier.",
+    }) : d)
 
     const callFiche = async (payload: Record<string, unknown>) => {
         const res = await fetch(`/api/admin/nationalite/${ficheApp!.id}/fiche-analyse`, {
@@ -868,6 +892,7 @@ export default function AdminNationalitePage() {
                                                 <option value="motif">Conformité (Document · Statut · Motif)</option><option value="filiation">Généalogie (Pièce · Filiation · Statut)</option>
                                             </select></div>
                                     </div>
+                                    <button type="button" onClick={fillGenealogie} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"><Wand2 size={13} /> Pré-remplir « Modalités de régularisation » (généalogie, 2 options)</button>
                                     <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Objet</label>
                                         <input value={ficheData.objet} onChange={e => setF({ objet: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" /></div>
                                     <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Encadré exigence de format <span className="text-slate-400 normal-case font-medium">(vide = masqué)</span></label>

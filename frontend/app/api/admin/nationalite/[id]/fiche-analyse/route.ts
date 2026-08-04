@@ -68,10 +68,10 @@ function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
         gestionnaire: 'Pôle Instruction RGB',
     }
 
-    // Est-ce un dossier bloqué UNIQUEMENT sur la généalogie (aucun problème de
-    // format) ? Alors on propose l'option payante recherche généalogique (250 €).
-    const parentsMissing = missing.some(p => norm(p.document).includes('parent'))
-    const genealogieMode = !hasPhoto && parentsMissing
+    // Dossier incomplet SANS problème de format → fiche « Modalités de
+    // régularisation » (inventaire d'état civil + options). C'est le cas
+    // standard et indispensable ; le forfait 250 € dépend du paiement.
+    const genealogieMode = !hasPhoto && missing.length > 0
 
     if (genealogieMode) {
         // Fiche « dossier incomplet » — inventaire d'état civil + 2 options.

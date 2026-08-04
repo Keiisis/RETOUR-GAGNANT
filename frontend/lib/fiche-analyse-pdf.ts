@@ -280,24 +280,27 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
 
     // ── ENCADRÉ FINAL ÉPINGLÉ ───────────────────────────────────────
     if (data.finalNote) {
-        const label = 'Prochaine etape : '
-        const full = safe(data.finalNote)
-        const lines = pdf.splitTextToSize(label + full, CW - 14)
-        const h = lines.length * 4.4 + 8
+        const label = 'Prochaine étape : '
+        const body = safe(data.finalNote)
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9)
+        const labelW = pdf.getTextWidth(label)
+        // Première ligne : le reste du texte tient après le label (largeur réduite) ;
+        // la suite passe en pleine largeur. Aucune troncature.
+        const firstWrap = pdf.splitTextToSize(body, CW - 12 - labelW)
+        const firstLine = firstWrap[0] || ''
+        const remaining = body.substring(firstLine.length).trim()
+        const restLines = remaining ? pdf.splitTextToSize(remaining, CW - 12) : []
+        const totalLines = 1 + restLines.length
+        const h = totalLines * 4.6 + 7
         y = ensure(h, y + 2)
         pdf.setFillColor(239, 246, 252); pdf.setDrawColor(70, 130, 190); pdf.setLineWidth(0.35)
         pdf.roundedRect(ML, y, CW, h, 2, 2, 'FD')
         pdf.setFillColor(...CO.red); pdf.rect(ML, y, 1.8, h, 'F')
         pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(30, 80, 130)
         pdf.text(label, ML + 6, y + 6)
-        const indent = pdf.getTextWidth(label)
         pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...CO.inkMuted)
-        // Première ligne alignée après le label, suite en pleine largeur
-        const firstRest = safe(data.finalNote)
-        const wrapped = pdf.splitTextToSize(firstRest, CW - 12 - indent)
-        pdf.text(wrapped[0] || '', ML + 6 + indent, y + 6)
-        const rest = pdf.splitTextToSize(firstRest, CW - 12)
-        if (rest.length > 1) pdf.text(rest.slice(1), ML + 6, y + 10.5)
+        pdf.text(firstLine, ML + 6 + labelW, y + 6)
+        if (restLines.length) pdf.text(restLines, ML + 6, y + 11)
         y += h + 6
     }
 
