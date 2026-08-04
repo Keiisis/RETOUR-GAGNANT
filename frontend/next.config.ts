@@ -55,8 +55,9 @@ const securityHeaders = [
         " https://api.fedapay.com https://sandbox-api.fedapay.com https://checkout.fedapay.com" +
         " https://api-m.paypal.com https://api-m.sandbox.paypal.com" +
         " https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://tiles.openfreemap.org",
-      // iframes widgets de paiement
-      "frame-src 'self'" +
+      // iframes widgets de paiement + aperçu PDF local (blob same-origin, ex :
+      // prévisualisation de la fiche d'analyse avant envoi)
+      "frame-src 'self' blob:" +
         " https://js.stripe.com https://hooks.stripe.com" +
         " https://www.paypal.com https://www.sandbox.paypal.com" +
         " https://*.kkiapay.me" +

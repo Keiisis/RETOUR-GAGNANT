@@ -9,7 +9,7 @@ import {
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
     Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy,
-    FilePlus, Send, Plus, UploadCloud
+    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -298,6 +298,86 @@ export default function AdminNationalitePage() {
         } catch { alert('Erreur réseau.') }
     }
 
+    // ══ FICHE D'ANALYSE (auto / manuel → prévisualisation → envoi email) ══
+    type FPiece = { document: string; statut: string; motif: string }
+    type FBox = { title: string; body: string; tone?: 'blue' | 'yellow' }
+    interface FData {
+        clientName: string; civilite?: string; date: string; objet: string; gestionnaire?: string
+        statutBadge: string; formatWarning?: string | null; diagnostic: string
+        piecesTitle?: string; pieces: FPiece[]
+        nextStepsTitle?: string; nextStepsIntro?: string; nextStepsBoxes?: FBox[]
+    }
+    const [ficheApp, setFicheApp] = useState<Application | null>(null)
+    const [ficheStep, setFicheStep] = useState<'choose' | 'form' | 'preview'>('choose')
+    const [ficheData, setFicheData] = useState<FData | null>(null)
+    const [fichePdf, setFichePdf] = useState<string | null>(null)
+    const [ficheEmail, setFicheEmail] = useState<{ subject: string; body: string }>({ subject: '', body: '' })
+    const [ficheBusy, setFicheBusy] = useState(false)
+    // Le PDF (base64) est exposé à l'iframe via un blob same-origin — la CSP
+    // interdit les data: en frame-src, mais autorise blob:.
+    const [fichePdfUrl, setFichePdfUrl] = useState<string | null>(null)
+    useEffect(() => {
+        if (!fichePdf) { setFichePdfUrl(null); return }
+        const bytes = Uint8Array.from(atob(fichePdf), c => c.charCodeAt(0))
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+        setFichePdfUrl(url)
+        return () => URL.revokeObjectURL(url)
+    }, [fichePdf])
+
+    const defaultFiche = (a: Application): FData => ({
+        clientName: `${a.prenom || ''} ${a.nom || ''}`.trim().toUpperCase() || 'Client',
+        civilite: (a.genre || '').toLowerCase().startsWith('f') ? 'Mme' : 'M.',
+        date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        objet: "Preuve d'Afro-descendance & Conformité",
+        gestionnaire: 'Pôle Instruction RGB',
+        statutBadge: 'NON CONFORME - ACTION REQUISE',
+        formatWarning: '',
+        diagnostic: '',
+        piecesTitle: 'DÉTAIL DES PIÈCES À RÉGULARISER',
+        pieces: [{ document: '', statut: 'Manquant', motif: '' }],
+        nextStepsTitle: 'PROCHAINES ÉTAPES & RENDEZ-VOUS',
+        nextStepsIntro: 'Afin de vous accompagner dans la mise en conformité de votre dossier :',
+        nextStepsBoxes: [{ title: "Proposition d'échange téléphonique", body: 'Nous vous suggérons d\'organiser un rendez-vous téléphonique selon vos disponibilités.', tone: 'blue' }],
+    })
+    const openFiche = (a: Application) => { setFicheApp(a); setFicheStep('choose'); setFicheData(null); setFichePdf(null) }
+
+    const callFiche = async (payload: Record<string, unknown>) => {
+        const res = await fetch(`/api/admin/nationalite/${ficheApp!.id}/fiche-analyse`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        })
+        const j = await res.json().catch(() => ({}))
+        if (!res.ok || !j.success) throw new Error(j.error || 'Erreur.')
+        return j
+    }
+    const runAuto = async () => {
+        setFicheBusy(true)
+        try {
+            const j = await callFiche({ action: 'preview', mode: 'auto' })
+            setFicheData(j.fiche); setFichePdf(j.pdfBase64); setFicheEmail(j.email); setFicheStep('preview')
+        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setFicheBusy(false) }
+    }
+    const startManual = () => { setFicheData(defaultFiche(ficheApp!)); setFicheStep('form') }
+    const previewManual = async () => {
+        if (!ficheData) return
+        setFicheBusy(true)
+        try {
+            const j = await callFiche({ action: 'preview', mode: 'manual', data: ficheData })
+            setFichePdf(j.pdfBase64); setFicheEmail(j.email); setFicheStep('preview')
+        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setFicheBusy(false) }
+    }
+    const sendFiche = async () => {
+        if (!ficheData) return
+        if (!ficheApp?.email) { alert('Ce dossier n\'a pas d\'e-mail client.'); return }
+        if (!confirm(`Envoyer la fiche d'analyse à ${ficheApp.email} ?`)) return
+        setFicheBusy(true)
+        try {
+            await callFiche({ action: 'send', mode: 'manual', data: ficheData, email: ficheEmail })
+            setFicheApp(null)
+            alert('Fiche d\'analyse envoyée au client.')
+        } catch (e) { alert(e instanceof Error ? e.message : 'Envoi impossible.') } finally { setFicheBusy(false) }
+    }
+    const setF = (patch: Partial<FData>) => setFicheData(d => d ? { ...d, ...patch } : d)
+
     // ── Édition d'une demande ──
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
@@ -455,6 +535,7 @@ export default function AdminNationalitePage() {
                                             )}
                                             <button onClick={() => openEdit(a)} className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Pencil size={13} /> <T>Éditer</T></button>
                                             <button onClick={() => openAddDocs(a)} className="bg-[#008751] hover:bg-[#00643C] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><FilePlus size={13} /> <T>Ajouter des documents</T></button>
+                                            <button onClick={() => openFiche(a)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><ClipboardList size={13} /> <T>Fiche d&apos;analyse</T></button>
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} disabled={zipEnCours === a.id}
                                                 className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
                                                 {zipEnCours === a.id ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} <T>Télécharger ZIP</T></button>
@@ -650,6 +731,132 @@ export default function AdminNationalitePage() {
                                 {addingDocs ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer les pièces
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ MODAL FICHE D'ANALYSE ═══ */}
+            {ficheApp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" onClick={() => !ficheBusy && setFicheApp(null)}>
+                    <div className="w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                {ficheStep !== 'choose' && (
+                                    <button onClick={() => setFicheStep(ficheData ? 'form' : 'choose')} title="Retour" className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400"><ArrowLeft size={16} /></button>
+                                )}
+                                <div>
+                                    <h3 className="text-lg font-black text-white flex items-center gap-2"><ClipboardList size={18} className="text-indigo-400" /> Fiche d&apos;analyse</h3>
+                                    <p className="text-[11px] text-gray-500">{ficheApp.prenom} {ficheApp.nom} — {ficheApp.application_ref}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => !ficheBusy && setFicheApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
+                        </div>
+
+                        {/* STEP CHOOSE */}
+                        {ficheStep === 'choose' && (
+                            <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button onClick={runAuto} disabled={ficheBusy} className="text-left p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-indigo-500/50 hover:bg-white/[0.05] transition-all group disabled:opacity-60">
+                                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center mb-4 text-indigo-400">{ficheBusy ? <Loader2 size={22} className="animate-spin" /> : <Wand2 size={22} />}</div>
+                                    <h4 className="text-white font-black text-base mb-1">Automatique</h4>
+                                    <p className="text-xs text-gray-400 leading-relaxed">Le système détecte les pièces manquantes et les formats non conformes (photos), génère la fiche et rédige l&apos;e-mail par IA.</p>
+                                </button>
+                                <button onClick={startManual} disabled={ficheBusy} className="text-left p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#008751]/50 hover:bg-white/[0.05] transition-all disabled:opacity-60">
+                                    <div className="w-12 h-12 rounded-xl bg-[#008751]/15 flex items-center justify-center mb-4 text-[#008751]"><PenLine size={22} /></div>
+                                    <h4 className="text-white font-black text-base mb-1">Manuelle</h4>
+                                    <p className="text-xs text-gray-400 leading-relaxed">Vous composez la fiche champ par champ (diagnostic, pièces, statuts, prochaines étapes), puis prévisualisez avant l&apos;envoi.</p>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* STEP FORM (manuel) */}
+                        {ficheStep === 'form' && ficheData && (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Statut (badge)</label>
+                                            <select value={ficheData.statutBadge} onChange={e => setF({ statutBadge: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                                                <option>NON CONFORME - ACTION REQUISE</option><option>DOSSIER INCOMPLET</option><option>DOSSIER A VERIFIER</option>
+                                            </select></div>
+                                        <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Objet</label>
+                                            <input value={ficheData.objet} onChange={e => setF({ objet: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
+                                    </div>
+                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Encadré exigence de format (laisser vide pour masquer)</label>
+                                        <textarea rows={2} value={ficheData.formatWarning || ''} onChange={e => setF({ formatWarning: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none" placeholder="Ex : Tout document en mode photo n'est pas utilisable — format PDF obligatoire." /></div>
+                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Diagnostic général</label>
+                                        <textarea rows={3} value={ficheData.diagnostic} onChange={e => setF({ diagnostic: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none" /></div>
+                                    {/* Pièces */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pièces à régulariser</label>
+                                        <div className="space-y-2">
+                                            {ficheData.pieces.map((p, i) => (
+                                                <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                                                    <input value={p.document} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, document: e.target.value } : x) })} placeholder="Document" className="col-span-4 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none" />
+                                                    <select value={p.statut} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, statut: e.target.value } : x) })} className="col-span-3 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
+                                                        <option>Manquant</option><option>Absent</option><option>Format Photo</option><option>Non conforme</option><option>Illisible</option><option>À vérifier</option>
+                                                    </select>
+                                                    <input value={p.motif} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, motif: e.target.value } : x) })} placeholder="Motif / exigence" className="col-span-4 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none" />
+                                                    <button onClick={() => setF({ pieces: ficheData.pieces.filter((_, k) => k !== i) })} title="Retirer" className="col-span-1 p-2 rounded-lg text-red-400 hover:bg-red-500/10 justify-self-center"><Trash2 size={14} /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => setF({ pieces: [...ficheData.pieces, { document: '', statut: 'Manquant', motif: '' }] })} className="mt-2 flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300"><Plus size={14} /> Ajouter une pièce</button>
+                                    </div>
+                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Intro « prochaines étapes »</label>
+                                        <input value={ficheData.nextStepsIntro || ''} onChange={e => setF({ nextStepsIntro: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
+                                    {/* Encadrés étapes */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Encadrés (options / RDV)</label>
+                                        <div className="space-y-2">
+                                            {(ficheData.nextStepsBoxes || []).map((b, i) => (
+                                                <div key={i} className="bg-white/[0.03] border border-white/10 rounded-lg p-3 space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <input value={b.title} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, title: e.target.value } : x) })} placeholder="Titre de l'encadré" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none" />
+                                                        <select value={b.tone || 'blue'} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, tone: e.target.value as 'blue' | 'yellow' } : x) })} className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none"><option value="blue">Bleu</option><option value="yellow">Jaune</option></select>
+                                                        <button onClick={() => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).filter((_, k) => k !== i) })} title="Retirer" className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"><Trash2 size={14} /></button>
+                                                    </div>
+                                                    <textarea rows={2} value={b.body} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, body: e.target.value } : x) })} placeholder="Contenu" className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none resize-none" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {(ficheData.nextStepsBoxes || []).length < 2 && (
+                                            <button onClick={() => setF({ nextStepsBoxes: [...(ficheData.nextStepsBoxes || []), { title: '', body: '', tone: 'yellow' }] })} className="mt-2 flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300"><Plus size={14} /> Ajouter un encadré</button>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
+                                    <button onClick={() => setFicheStep('choose')} className="px-4 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5">Retour</button>
+                                    <button onClick={previewManual} disabled={ficheBusy} className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">
+                                        {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />} Prévisualiser
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {/* STEP PREVIEW */}
+                        {ficheStep === 'preview' && (
+                            <>
+                                <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[300px]">
+                                    <div className="p-4 border-b lg:border-b-0 lg:border-r border-white/10">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Aperçu de la fiche (PDF)</p>
+                                        {fichePdfUrl
+                                            ? <iframe title="Aperçu fiche" src={fichePdfUrl} className="w-full h-[440px] rounded-lg bg-white border border-white/10" />
+                                            : <div className="h-[440px] flex items-center justify-center text-gray-500"><Loader2 className="animate-spin" /></div>}
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">E-mail au client {ficheApp.email ? <span className="text-gray-400 normal-case font-normal">→ {ficheApp.email}</span> : <span className="text-red-400 normal-case font-normal">(aucun e-mail !)</span>}</p>
+                                        <input value={ficheEmail.subject} onChange={e => setFicheEmail(v => ({ ...v, subject: e.target.value }))} placeholder="Objet de l'e-mail" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+                                        <textarea rows={14} value={ficheEmail.body} onChange={e => setFicheEmail(v => ({ ...v, body: e.target.value }))} placeholder="Message (rédigé par l'IA, modifiable)" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none leading-relaxed" />
+                                        <p className="text-[11px] text-gray-500">Message rédigé par l&apos;assistant IA — ajustez-le librement avant l&apos;envoi.</p>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-4 border-t border-white/10 flex justify-between gap-3">
+                                    <a href={fichePdfUrl || '#'} download={`Fiche-Analyse-${ficheApp.nom || 'client'}.pdf`} className="px-4 py-2 rounded-xl border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/5 flex items-center gap-2"><Download size={15} /> Télécharger</a>
+                                    <button onClick={sendFiche} disabled={ficheBusy || !ficheApp.email} className="px-5 py-2 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-50">
+                                        {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer au client
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

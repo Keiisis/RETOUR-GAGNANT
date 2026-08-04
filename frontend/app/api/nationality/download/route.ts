@@ -50,6 +50,30 @@ async function verifierAcces(req: NextRequest): Promise<NextResponse | null> {
     }
 }
 
+// Devine la vraie extension d'un fichier à partir de ses octets magiques.
+// Corrige rétroactivement les pièces déposées AVANT l'élargissement des
+// formats (un tableur Excel stocké en « .bin » redevient .xls/.xlsx au ZIP).
+async function sniffExt(buf: ArrayBuffer, fallback: string): Promise<string> {
+    const head = new Uint8Array(buf).subarray(0, 8)
+    const hex = Array.from(head.subarray(0, 4)).map(x => x.toString(16).padStart(2, '0')).join('')
+    if (hex.startsWith('25504446')) return 'pdf'
+    if (hex.startsWith('89504e47')) return 'png'
+    if (hex.startsWith('ffd8ff')) return 'jpg'
+    if (hex.startsWith('474946')) return 'gif'
+    if (hex.startsWith('d0cf11e0')) return 'xls'   // OLE2 (Office 97-2003 : xls/doc/ppt)
+    if (hex.startsWith('504b0304')) {              // conteneur ZIP → OOXML
+        try {
+            const z = await JSZip.loadAsync(buf)
+            const names = Object.keys(z.files)
+            if (names.some(n => n.startsWith('xl/'))) return 'xlsx'
+            if (names.some(n => n.startsWith('word/'))) return 'docx'
+            if (names.some(n => n.startsWith('ppt/'))) return 'pptx'
+            return 'zip'
+        } catch { return 'zip' }
+    }
+    return fallback
+}
+
 export async function GET(req: NextRequest) {
     try {
         const refus = await verifierAcces(req);
@@ -193,7 +217,9 @@ Généré par Retour Gagnant Bénin le ${new Date().toLocaleString('fr-FR')}
                     if (data && !dlError) {
                         const buffer = await data.arrayBuffer();
                         // Use label as filename prefix for clarity
-                        const ext = storagePath.split('.').pop() || 'pdf';
+                        let ext = (storagePath.split('.').pop() || 'pdf').toLowerCase();
+                        // Extension perdue (« bin ») → on la reconstitue par sniff.
+                        if (!ext || ext === 'bin') ext = await sniffExt(buffer, 'bin');
                         const safeLabel = label.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçÀÂÄÉÈÊËÏÎÔÙÛÜŸÇ ]/g, '_').substring(0, 60);
                         docsFolder.file(`${safeLabel}.${ext}`, buffer);
                         docsIncluded++;
