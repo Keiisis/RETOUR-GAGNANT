@@ -8,7 +8,8 @@ import {
     Globe2, CheckCircle2, Clock, Download,
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
-    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy
+    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy,
+    FilePlus, Send, Plus, UploadCloud
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -31,13 +32,22 @@ interface Application {
     amount: number; currency: string; payment_status: string; payment_method: string; payment_ref: string
 }
 
-const statusMap: Record<string, { label: string; color: string }> = {
-    brouillon: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400' },
-    soumis: { label: 'Soumis', color: 'bg-blue-500/20 text-blue-400' },
-    en_traitement: { label: 'En traitement', color: 'bg-amber-500/20 text-amber-400' },
-    verification: { label: 'Vérification', color: 'bg-purple-500/20 text-purple-400' },
-    approuve: { label: 'Approuvé', color: 'bg-emerald-500/20 text-emerald-400' },
-    rejete: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400' },
+// `color` = pastille de statut (badge). `solid` = bouton d'action plein, à fort
+// contraste, lisible en thème clair ET sombre (l'ancien bg-X/20 + text-X-400
+// était illisible sur fond clair).
+const statusMap: Record<string, { label: string; color: string; solid: string }> = {
+    brouillon: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400', solid: 'bg-slate-500 hover:bg-slate-600 text-white' },
+    soumis: { label: 'Soumis', color: 'bg-blue-500/20 text-blue-400', solid: 'bg-blue-600 hover:bg-blue-700 text-white' },
+    en_traitement: { label: 'En traitement', color: 'bg-amber-500/20 text-amber-400', solid: 'bg-amber-500 hover:bg-amber-600 text-white' },
+    verification: { label: 'Vérification', color: 'bg-purple-500/20 text-purple-400', solid: 'bg-purple-600 hover:bg-purple-700 text-white' },
+    approuve: { label: 'Approuvé', color: 'bg-emerald-500/20 text-emerald-400', solid: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+    rejete: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400', solid: 'bg-red-600 hover:bg-red-700 text-white' },
+}
+
+// Statut de paiement « payé » (tolère les variantes accents/webhooks).
+const isPaidStatus = (s?: string | null) => {
+    const v = String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok'].includes(v)
 }
 
 export default function AdminNationalitePage() {
@@ -234,6 +244,60 @@ export default function AdminNationalitePage() {
         } catch { setPreviewDocs([]) } finally { setPreviewLoading(false) }
     }
 
+    // ── Ajout de documents par l'admin (nommage libre) ──
+    const [addDocsApp, setAddDocsApp] = useState<Application | null>(null)
+    const [docRows, setDocRows] = useState<{ id: string; label: string; file: File | null }[]>([])
+    const [addingDocs, setAddingDocs] = useState(false)
+    const newRow = () => ({ id: Math.random().toString(36).slice(2), label: '', file: null as File | null })
+    const openAddDocs = (a: Application) => { setAddDocsApp(a); setDocRows([newRow()]) }
+    const submitAddDocs = async () => {
+        if (!addDocsApp) return
+        const ready = docRows.filter(r => r.file && r.label.trim())
+        if (ready.length === 0) { alert('Ajoutez au moins un fichier avec un nom.'); return }
+        setAddingDocs(true)
+        try {
+            const docs: { label: string; path: string }[] = []
+            for (const r of ready) {
+                const ext = (r.file!.name.split('.').pop() || 'bin').toLowerCase()
+                const fd = new FormData()
+                fd.append('file', r.file!)
+                fd.append('key', r.label.trim())
+                fd.append('ext', ext)
+                const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+                const uj = await up.json().catch(() => ({}))
+                if (!up.ok || !uj.path) throw new Error(uj.error || `Échec de l'envoi de « ${r.label} »`)
+                docs.push({ label: r.label.trim(), path: uj.path })
+            }
+            const res = await fetch(`/api/admin/nationalite/${addDocsApp.id}/add-documents`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ docs }),
+            })
+            const j = await res.json().catch(() => ({}))
+            if (!res.ok || !j.success) throw new Error(j.error || 'Enregistrement impossible.')
+            setAddDocsApp(null)
+            await fetchApps()
+            alert(`${docs.length} document(s) ajouté(s) au dossier.`)
+        } catch (e) {
+            alert(e instanceof Error ? e.message : 'Erreur.')
+        } finally { setAddingDocs(false) }
+    }
+
+    // ── Lien de dépôt client (nommage libre) — dossiers payés uniquement ──
+    const [depotCopiedId, setDepotCopiedId] = useState<string | null>(null)
+    const copyDepotLink = async (id: string) => {
+        try {
+            const res = await fetch('/api/admin/nationalite/depot-link', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (res.ok && data.link) {
+                try { await navigator.clipboard.writeText(data.link); setDepotCopiedId(id); setTimeout(() => setDepotCopiedId(null), 2500) }
+                catch { prompt('Lien de dépôt client :', data.link) }
+            } else alert(data.error || 'Impossible de générer le lien.')
+        } catch { alert('Erreur réseau.') }
+    }
+
     // ── Édition d'une demande ──
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
@@ -384,56 +448,67 @@ export default function AdminNationalitePage() {
                                         )}
                                         {/* Notes agent */}
                                         <div><span className="text-[10px] text-gray-600 block mb-1"><T>Notes agent</T></span><textarea defaultValue={a.agent_notes || ''} onBlur={e => updateNotes(a.id, e.target.value)} className="w-full bg-white/[0.03] border border-white/5 rounded-lg p-3 text-xs text-white focus:outline-none resize-none" rows={2} placeholder={t("Notes...")} /></div>
-                                        {/* Actions */}
+                                        {/* Actions — boutons PLEINS, fort contraste (lisibles en clair ET sombre) */}
                                         <div className="flex gap-2 flex-wrap">
                                             {a.documents_uploaded && (a.documents_uploaded as string[]).length > 0 && (
-                                                <button onClick={() => openPreview(a)} className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Eye size={12} /> <T>Prévisualiser</T></button>
+                                                <button onClick={() => openPreview(a)} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Eye size={13} /> <T>Prévisualiser</T></button>
                                             )}
-                                            <button onClick={() => openEdit(a)} className="bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1"><Pencil size={12} /> <T>Éditer</T></button>
+                                            <button onClick={() => openEdit(a)} className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Pencil size={13} /> <T>Éditer</T></button>
+                                            <button onClick={() => openAddDocs(a)} className="bg-[#008751] hover:bg-[#00643C] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><FilePlus size={13} /> <T>Ajouter des documents</T></button>
                                             <button onClick={() => downloadZip(a.id, a.application_ref)} disabled={zipEnCours === a.id}
-                                                className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1">
-                                                {zipEnCours === a.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} <T>Télécharger ZIP</T></button>
+                                                className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                                {zipEnCours === a.id ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} <T>Télécharger ZIP</T></button>
                                             <button onClick={() => resetDocs(a)} disabled={resettingId === a.id}
                                                 title={t('Efface toutes les pièces jointes (garde le dossier + paiement) pour permettre un nouveau dépôt propre via relance')}
-                                                className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1">
-                                                {resettingId === a.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />} <T>Réinitialiser les pièces</T>
+                                                className="bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50 font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                                {resettingId === a.id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} <T>Réinitialiser les pièces</T>
                                             </button>
                                             <button
                                                 onClick={() => sendRelance(a.id, 'docs')}
                                                 disabled={relanceState[`${a.id}:docs`] === 'sending'}
                                                 title={t('Écran léger : le client re-dépose uniquement les pièces manquantes (sans nouveau paiement)')}
-                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[`${a.id}:docs`] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
+                                                className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white transition-colors ${relanceState[`${a.id}:docs`] === 'sent' ? 'bg-emerald-600' : 'bg-amber-500 hover:bg-amber-600'}`}
                                             >
                                                 {relanceState[`${a.id}:docs`] === 'sending'
-                                                    ? <><Loader2 size={12} className="animate-spin" /> <T>Envoi…</T></>
+                                                    ? <><Loader2 size={13} className="animate-spin" /> <T>Envoi…</T></>
                                                     : relanceState[`${a.id}:docs`] === 'sent'
-                                                        ? <><Check size={12} /> <T>Relance envoyée</T></>
-                                                        : <><Mail size={12} /> <T>Relancer (documents)</T></>}
+                                                        ? <><Check size={13} /> <T>Relance envoyée</T></>
+                                                        : <><Mail size={13} /> <T>Relancer (documents)</T></>}
                                             </button>
                                             <button
                                                 onClick={() => copyResumeLink(a.id)}
                                                 title={t('Copie le lien de reprise (pièces) pour l\'envoyer par WhatsApp si l\'email ne passe pas')}
-                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${copiedId === a.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30'}`}
+                                                className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white transition-colors ${copiedId === a.id ? 'bg-emerald-600' : 'bg-teal-600 hover:bg-teal-700'}`}
                                             >
-                                                {copiedId === a.id ? <><Check size={12} /> <T>Lien copié</T></> : <><Copy size={12} /> <T>Copier le lien</T></>}
+                                                {copiedId === a.id ? <><Check size={13} /> <T>Lien copié</T></> : <><Copy size={13} /> <T>Copier le lien</T></>}
                                             </button>
+                                            {/* Dépôt client à nommage libre — RÉSERVÉ aux dossiers payés */}
+                                            {isPaidStatus(a.payment_status) && (
+                                                <button
+                                                    onClick={() => copyDepotLink(a.id)}
+                                                    title={t('Envoie au client un lien pour déposer LUI-MÊME des pièces qu\'il nomme (dossier payé)')}
+                                                    className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white transition-colors ${depotCopiedId === a.id ? 'bg-emerald-600' : 'bg-[#008751] hover:bg-[#00643C]'}`}
+                                                >
+                                                    {depotCopiedId === a.id ? <><Check size={13} /> <T>Lien dépôt copié</T></> : <><Send size={13} /> <T>Demander des pièces au client</T></>}
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => sendRelance(a.id, 'full')}
                                                 disabled={relanceState[`${a.id}:full`] === 'sending'}
                                                 title={t('Formulaire complet pré-rempli : à utiliser si des informations aussi doivent être corrigées (sans nouveau paiement)')}
-                                                className={`font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${relanceState[`${a.id}:full`] === 'sent' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-300 hover:bg-slate-500/30'}`}
+                                                className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white transition-colors ${relanceState[`${a.id}:full`] === 'sent' ? 'bg-emerald-600' : 'bg-slate-600 hover:bg-slate-700'}`}
                                             >
                                                 {relanceState[`${a.id}:full`] === 'sending'
-                                                    ? <><Loader2 size={12} className="animate-spin" /> <T>Envoi…</T></>
+                                                    ? <><Loader2 size={13} className="animate-spin" /> <T>Envoi…</T></>
                                                     : relanceState[`${a.id}:full`] === 'sent'
-                                                        ? <><Check size={12} /> <T>Relance envoyée</T></>
-                                                        : <><Mail size={12} /> <T>Relancer (dossier complet)</T></>}
+                                                        ? <><Check size={13} /> <T>Relance envoyée</T></>
+                                                        : <><Mail size={13} /> <T>Relancer (dossier complet)</T></>}
                                             </button>
                                             {['soumis', 'en_traitement', 'verification', 'approuve', 'rejete'].filter(s => s !== a.status).map(s => (
-                                                <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${statusMap[s]?.color}`}>{statusMap[s]?.label}</button>
+                                                <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors ${statusMap[s]?.solid}`}>{statusMap[s]?.label}</button>
                                             ))}
-                                            <button onClick={() => deleteApp(a)} disabled={deletingId === a.id} className="ml-auto bg-red-500/15 text-red-400 hover:bg-red-500/25 font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50">
-                                                {deletingId === a.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} <T>Supprimer</T>
+                                            <button onClick={() => deleteApp(a)} disabled={deletingId === a.id} className="ml-auto bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 disabled:opacity-50">
+                                                {deletingId === a.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />} <T>Supprimer</T>
                                             </button>
                                         </div>
                                     </motion.div>
@@ -529,6 +604,50 @@ export default function AdminNationalitePage() {
                             <button onClick={() => setEditApp(null)} className="px-4 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5">Annuler</button>
                             <button onClick={saveEdit} disabled={savingEdit} className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">
                                 {savingEdit ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ MODAL AJOUT DE DOCUMENTS (admin, nommage libre) ═══ */}
+            {addDocsApp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" onClick={() => !addingDocs && setAddDocsApp(null)}>
+                    <div className="w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                            <div>
+                                <h3 className="text-lg font-black text-white flex items-center gap-2"><FilePlus size={18} className="text-[#008751]" /> Ajouter des documents</h3>
+                                <p className="text-[11px] text-gray-500">{addDocsApp.prenom} {addDocsApp.nom} — {addDocsApp.application_ref}</p>
+                            </div>
+                            <button onClick={() => !addingDocs && setAddDocsApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                            <p className="text-xs text-gray-400">Nommez chaque pièce vous-même, puis choisissez le fichier. Formats : PDF, image, Word.</p>
+                            {docRows.map((r, i) => (
+                                <div key={r.id} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                                    <input
+                                        type="text" value={r.label}
+                                        onChange={e => setDocRows(prev => prev.map(x => x.id === r.id ? { ...x, label: e.target.value } : x))}
+                                        placeholder="Nom de la pièce (ex : Acte de naissance)"
+                                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#008751]/60"
+                                    />
+                                    <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 cursor-pointer hover:bg-white/10 whitespace-nowrap">
+                                        <UploadCloud size={14} className="text-[#008751]" />
+                                        <span className="truncate max-w-[150px]">{r.file ? r.file.name : 'Choisir un fichier'}</span>
+                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx" className="hidden"
+                                            onChange={e => { const f = e.target.files?.[0] || null; setDocRows(prev => prev.map(x => x.id === r.id ? { ...x, file: f } : x)) }} />
+                                    </label>
+                                    {docRows.length > 1 && (
+                                        <button onClick={() => setDocRows(prev => prev.filter(x => x.id !== r.id))} title="Retirer" className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 self-center"><Trash2 size={15} /></button>
+                                    )}
+                                </div>
+                            ))}
+                            <button onClick={() => setDocRows(prev => [...prev, newRow()])} className="flex items-center gap-1.5 text-xs font-bold text-[#008751] hover:text-[#00643C]"><Plus size={14} /> Ajouter une autre pièce</button>
+                        </div>
+                        <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
+                            <button onClick={() => setAddDocsApp(null)} disabled={addingDocs} className="px-4 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 disabled:opacity-50">Annuler</button>
+                            <button onClick={submitAddDocs} disabled={addingDocs} className="px-5 py-2 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">
+                                {addingDocs ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer les pièces
                             </button>
                         </div>
                     </div>
