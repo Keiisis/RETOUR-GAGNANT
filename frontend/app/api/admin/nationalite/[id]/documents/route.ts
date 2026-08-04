@@ -100,6 +100,38 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ documents: docs })
 }
 
+// PATCH — remplace le FICHIER d'une pièce en conservant son libellé + sa
+// position ; { oldPath, newPath }. L'ancien fichier storage est supprimé.
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+    const { id } = await params
+    const body = await request.json().catch(() => ({}))
+    const oldPath = String(body.oldPath || '')
+    const newPath = String(body.newPath || '')
+    if (!oldPath.startsWith('nat-') || !newPath.startsWith('nat-')) {
+        return NextResponse.json({ error: 'Chemins invalides' }, { status: 400 })
+    }
+
+    const { data: app } = await supabase
+        .from('nationality_applications')
+        .select('documents_uploaded')
+        .eq('id', id).maybeSingle()
+    if (!app) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
+
+    const lines = Array.isArray(app.documents_uploaded) ? (app.documents_uploaded as string[]) : []
+    let replaced = false
+    const updated = lines.map(l => {
+        if (l.includes(oldPath)) { replaced = true; return l.replace(oldPath, newPath) }
+        return l
+    })
+    if (!replaced) return NextResponse.json({ error: 'Pièce introuvable' }, { status: 404 })
+
+    await supabase.storage.from(BUCKET).remove([oldPath]).catch(() => {})
+    await supabase.from('nationality_applications').update({ documents_uploaded: updated }).eq('id', id)
+    return NextResponse.json({ success: true })
+}
+
 // DELETE ?path=… — retire une pièce (storage + ligne DB).
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')

@@ -9,7 +9,7 @@ import {
     Mail, Search, ChevronDown, ChevronUp, MapPin,
     CreditCard, ExternalLink, Check, Loader2,
     Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy,
-    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft, Landmark
+    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft, Landmark, Replace
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -31,6 +31,8 @@ interface Application {
     created_at: string; submitted_at: string; assigned_agent: string; agent_notes: string
     amount: number; currency: string; payment_status: string; payment_method: string; payment_ref: string
     recherche_ancestrale_payee?: boolean
+    recherche_ancestrale_montant?: number
+    recherche_ancestrale_devise?: string
 }
 
 // `color` = pastille de statut (badge). `solid` = bouton d'action plein, à fort
@@ -303,11 +305,21 @@ export default function AdminNationalitePage() {
     const [ancestralBusy, setAncestralBusy] = useState<string | null>(null)
     const toggleAncestral = async (a: Application) => {
         const next = !a.recherche_ancestrale_payee
+        let montant = a.recherche_ancestrale_montant ?? 250
+        const devise = a.recherche_ancestrale_devise || 'EUR'
+        if (next) {
+            const input = prompt(`Montant du forfait recherche ancestrale payé (${devise}) :`, String(montant))
+            if (input === null) return // annulé
+            const parsed = parseFloat(input.replace(',', '.'))
+            if (!isNaN(parsed) && parsed >= 0) montant = parsed
+        }
         setAncestralBusy(a.id)
         try {
-            const { error } = await supabase.from('nationality_applications').update({ recherche_ancestrale_payee: next }).eq('id', a.id)
-            if (error) { alert('Champ indisponible — exécutez la migration 20260804_recherche_ancestrale_payee.sql'); return }
-            setApps(prev => prev.map(x => x.id === a.id ? { ...x, recherche_ancestrale_payee: next } : x))
+            const { error } = await supabase.from('nationality_applications')
+                .update({ recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise })
+                .eq('id', a.id)
+            if (error) { alert('Champs indisponibles — exécutez les migrations 20260804_recherche_ancestrale_payee.sql et 20260804b_recherche_ancestrale_montant.sql'); return }
+            setApps(prev => prev.map(x => x.id === a.id ? { ...x, recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise } : x))
         } finally { setAncestralBusy(null) }
     }
 
@@ -459,6 +471,23 @@ export default function AdminNationalitePage() {
             await loadEditDocs(editApp.id)
         } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setEditDocBusy(false) }
     }
+    // Remplace le fichier d'une pièce existante (même libellé, même place).
+    const replaceEditDoc = async (oldPath: string, file: File) => {
+        if (!editApp) return
+        setEditDocBusy(true)
+        try {
+            const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+            const fd = new FormData(); fd.append('file', file); fd.append('key', file.name.replace(/\.[^.]+$/, '') || 'doc'); fd.append('ext', ext)
+            const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+            const uj = await up.json().catch(() => ({}))
+            if (!up.ok || !uj.path) throw new Error(uj.error || 'Envoi impossible.')
+            const res = await fetch(`/api/admin/nationalite/${editApp.id}/documents`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oldPath, newPath: uj.path }),
+            })
+            if (!res.ok) throw new Error('Remplacement impossible.')
+            await loadEditDocs(editApp.id)
+        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setEditDocBusy(false) }
+    }
     const openEdit = (a: Application) => {
         setEditApp(a)
         setEditDocs([]); loadEditDocs(a.id)
@@ -584,14 +613,50 @@ export default function AdminNationalitePage() {
                                         </div>
                                         {/* Afro-descendance */}
                                         {a.afro_descendant_description && <div><span className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] block mb-1"><T>Description afro-descendance</T></span><p className="text-xs text-gray-400 bg-white/[0.02] rounded-lg p-3">{a.afro_descendant_description}</p></div>}
-                                        {/* Paiement */}
+                                        {/* Paiement — scindé : nationalité / recherche ancestrale + total */}
                                         <div>
                                             <h4 className="text-[9px] font-black text-[#FCD116] uppercase tracking-[0.2em] mb-2"><T>Paiement</T></h4>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                                {[['Montant', `${a.amount || 0} ${a.currency || 'USD'}`], ['Statut paiement', a.payment_status], ['Passerelle', a.payment_method], ['Réf. transaction', a.payment_ref]].map(([k, v], j) => v && (
-                                                    <div key={j}><span className="text-gray-600 block text-[10px]">{k}</span><span className="text-white font-bold">{v}</span></div>
-                                                ))}
-                                            </div>
+                                            {(() => {
+                                                const natPaid = isPaidStatus(a.payment_status)
+                                                const natCur = a.currency || 'EUR'
+                                                const natAmt = Number(a.amount) || 0
+                                                const ancPaid = !!a.recherche_ancestrale_payee
+                                                const ancCur = a.recherche_ancestrale_devise || 'EUR'
+                                                const ancAmt = ancPaid ? (Number(a.recherche_ancestrale_montant ?? 250)) : 0
+                                                const total = (natPaid ? natAmt : 0) + (natCur === ancCur ? ancAmt : 0)
+                                                const totalStr = natCur === ancCur
+                                                    ? `${total} ${natCur}`
+                                                    : `${natPaid ? natAmt : 0} ${natCur}${ancPaid ? ` + ${ancAmt} ${ancCur}` : ''}`
+                                                return (
+                                                    <div className="space-y-2">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            {/* Nationalité */}
+                                                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                                                                <div className="flex items-center justify-between mb-1.5">
+                                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><T>Demande de nationalité</T></span>
+                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
+                                                                </div>
+                                                                <p className="text-lg font-black text-white">{natAmt} {natCur}</p>
+                                                                <p className="text-[10px] text-gray-500">{[a.payment_method, a.payment_ref].filter(Boolean).join(' · ') || '—'}</p>
+                                                            </div>
+                                                            {/* Recherche ancestrale */}
+                                                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                                                                <div className="flex items-center justify-between mb-1.5">
+                                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><T>Recherche ancestrale</T></span>
+                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${ancPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>{ancPaid ? 'PAYÉE' : 'NON PAYÉE'}</span>
+                                                                </div>
+                                                                <p className={`text-lg font-black ${ancPaid ? 'text-white' : 'text-gray-600'}`}>{ancPaid ? `${ancAmt} ${ancCur}` : '—'}</p>
+                                                                <p className="text-[10px] text-gray-500"><T>Forfait recherche généalogique</T></p>
+                                                            </div>
+                                                        </div>
+                                                        {/* Total */}
+                                                        <div className="flex items-center justify-between bg-[#008751]/10 border border-[#008751]/25 rounded-xl px-3 py-2">
+                                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider"><T>Total encaissé</T></span>
+                                                            <span className="text-base font-black text-[#008751]">{totalStr}</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
                                         </div>
                                         {/* Pièces jointes */}
                                         {a.documents_uploaded && (a.documents_uploaded as string[]).length > 0 && (
@@ -777,6 +842,11 @@ export default function AdminNationalitePage() {
                                             <div className="w-8 h-8 rounded-lg bg-slate-700/60 flex items-center justify-center text-slate-300 shrink-0">{d.type === 'image' ? <ImageIcon size={15} /> : <FileText size={15} />}</div>
                                             <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-slate-100 truncate">{d.label}</p><p className="text-[10px] text-slate-400 uppercase tracking-wide">{d.ext || 'fichier'}</p></div>
                                             {d.url && <a href={d.url} target="_blank" rel="noreferrer" title="Voir" className="p-1.5 rounded-lg text-slate-300 hover:bg-white/10 transition-colors"><Eye size={15} /></a>}
+                                            <label title="Modifier / remplacer ce fichier" className={`p-1.5 rounded-lg text-[#008751] hover:bg-[#008751]/10 transition-colors ${editDocBusy ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
+                                                <Replace size={15} />
+                                                <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.ods,.odt,.rtf,.txt" className="hidden" disabled={editDocBusy}
+                                                    onChange={e => { const f = e.target.files?.[0]; if (f) replaceEditDoc(d.path, f); e.currentTarget.value = '' }} />
+                                            </label>
                                             <button onClick={() => deleteEditDoc(d.path)} disabled={editDocBusy} title="Supprimer" className="p-1.5 rounded-lg text-[#E8112D] hover:bg-[#E8112D]/10 disabled:opacity-50 transition-colors"><Trash2 size={15} /></button>
                                         </div>
                                     ))}
