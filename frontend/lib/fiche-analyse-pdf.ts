@@ -42,6 +42,8 @@ export interface FicheAnalyseData {
     nextStepsTitle?: string
     nextStepsIntro?: string
     nextStepsBoxes?: FicheBox[]
+    /** Encadré final épinglé (« Prochaine étape : … »). */
+    finalNote?: string | null
 }
 
 // Palette (charte Bénin, ton professionnel)
@@ -253,6 +255,29 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
                 y += h + 6
             }
         }
+    }
+
+    // ── ENCADRÉ FINAL ÉPINGLÉ ───────────────────────────────────────
+    if (data.finalNote) {
+        const label = 'Prochaine etape : '
+        const full = safe(data.finalNote)
+        const lines = pdf.splitTextToSize(label + full, CW - 14)
+        const h = lines.length * 4.4 + 8
+        y = ensure(h, y + 2)
+        pdf.setFillColor(239, 246, 252); pdf.setDrawColor(70, 130, 190); pdf.setLineWidth(0.35)
+        pdf.roundedRect(ML, y, CW, h, 2, 2, 'FD')
+        pdf.setFillColor(...CO.red); pdf.rect(ML, y, 1.8, h, 'F')
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(30, 80, 130)
+        pdf.text(label, ML + 6, y + 6)
+        const indent = pdf.getTextWidth(label)
+        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...CO.inkMuted)
+        // Première ligne alignée après le label, suite en pleine largeur
+        const firstRest = safe(data.finalNote)
+        const wrapped = pdf.splitTextToSize(firstRest, CW - 12 - indent)
+        pdf.text(wrapped[0] || '', ML + 6 + indent, y + 6)
+        const rest = pdf.splitTextToSize(firstRest, CW - 12)
+        if (rest.length > 1) pdf.text(rest.slice(1), ML + 6, y + 10.5)
+        y += h + 6
     }
 
     footer()

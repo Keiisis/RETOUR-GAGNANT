@@ -299,13 +299,13 @@ export default function AdminNationalitePage() {
     }
 
     // ══ FICHE D'ANALYSE (auto / manuel → prévisualisation → envoi email) ══
-    type FPiece = { document: string; statut: string; motif: string }
+    type FPiece = { document: string; statut: string; motif: string; filiation?: string }
     type FBox = { title: string; body: string; tone?: 'blue' | 'yellow' }
     interface FData {
         clientName: string; civilite?: string; date: string; objet: string; gestionnaire?: string
         statutBadge: string; formatWarning?: string | null; diagnostic: string
-        piecesTitle?: string; pieces: FPiece[]
-        nextStepsTitle?: string; nextStepsIntro?: string; nextStepsBoxes?: FBox[]
+        piecesTitle?: string; piecesColMode?: 'motif' | 'filiation'; pieces: FPiece[]
+        nextStepsTitle?: string; nextStepsIntro?: string; nextStepsBoxes?: FBox[]; finalNote?: string | null
     }
     const [ficheApp, setFicheApp] = useState<Application | null>(null)
     const [ficheStep, setFicheStep] = useState<'choose' | 'form' | 'preview'>('choose')
@@ -382,8 +382,48 @@ export default function AdminNationalitePage() {
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
     const [savingEdit, setSavingEdit] = useState(false)
+    // Gestionnaire de fichiers de l'édition (liste + suppression + ajout).
+    type EditDoc = { index: number; label: string; path: string; ext: string; type: string; url: string | null }
+    const [editDocs, setEditDocs] = useState<EditDoc[]>([])
+    const [editDocsLoading, setEditDocsLoading] = useState(false)
+    const [editDocBusy, setEditDocBusy] = useState(false)
+    const loadEditDocs = async (id: string) => {
+        setEditDocsLoading(true)
+        try {
+            const res = await fetch(`/api/admin/nationalite/${id}/documents`)
+            const j = await res.json().catch(() => ({}))
+            setEditDocs(res.ok ? (j.documents || []) : [])
+        } catch { setEditDocs([]) } finally { setEditDocsLoading(false) }
+    }
+    const deleteEditDoc = async (path: string) => {
+        if (!editApp || !confirm('Supprimer ce fichier définitivement ?')) return
+        setEditDocBusy(true)
+        try {
+            const res = await fetch(`/api/admin/nationalite/${editApp.id}/documents?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
+            if (res.ok) await loadEditDocs(editApp.id)
+            else { const j = await res.json().catch(() => ({})); alert(j.error || 'Suppression impossible.') }
+        } finally { setEditDocBusy(false) }
+    }
+    const addEditDoc = async (file: File) => {
+        if (!editApp) return
+        setEditDocBusy(true)
+        try {
+            const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+            const label = file.name.replace(/\.[^.]+$/, '') || 'Document'
+            const fd = new FormData(); fd.append('file', file); fd.append('key', label); fd.append('ext', ext)
+            const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+            const uj = await up.json().catch(() => ({}))
+            if (!up.ok || !uj.path) throw new Error(uj.error || 'Envoi impossible.')
+            const add = await fetch(`/api/admin/nationalite/${editApp.id}/add-documents`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ docs: [{ label, path: uj.path }] }),
+            })
+            if (!add.ok) throw new Error('Enregistrement impossible.')
+            await loadEditDocs(editApp.id)
+        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setEditDocBusy(false) }
+    }
     const openEdit = (a: Application) => {
         setEditApp(a)
+        setEditDocs([]); loadEditDocs(a.id)
         setEditForm({
             nom: a.nom, prenom: a.prenom, email: a.email, telephone: a.telephone,
             genre: a.genre, date_naissance: a.date_naissance, pays_naissance: a.pays_naissance,
@@ -680,6 +720,29 @@ export default function AdminNationalitePage() {
                                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Description afro-descendance</label>
                                 <textarea rows={3} value={String(editForm.afro_descendant_description ?? '')} onChange={e => setEditForm(f => ({ ...f, afro_descendant_description: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500/50 resize-none" />
                             </div>
+                            {/* Gestionnaire de fichiers — voir / supprimer / ajouter (couleurs slate immunisées) */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documents du client ({editDocs.length})</label>
+                                <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3 space-y-2">
+                                    {editDocsLoading ? (
+                                        <div className="flex items-center gap-2 text-slate-400 text-xs py-2"><Loader2 size={14} className="animate-spin" /> Chargement des fichiers…</div>
+                                    ) : editDocs.length === 0 ? (
+                                        <p className="text-xs text-slate-500 py-2">Aucun fichier pour ce dossier.</p>
+                                    ) : editDocs.map(d => (
+                                        <div key={d.path} className="flex items-center gap-3 bg-slate-800/60 border border-white/5 rounded-lg px-3 py-2">
+                                            <div className="w-8 h-8 rounded-lg bg-slate-700/60 flex items-center justify-center text-slate-300 shrink-0">{d.type === 'image' ? <ImageIcon size={15} /> : <FileText size={15} />}</div>
+                                            <div className="flex-1 min-w-0"><p className="text-[13px] font-semibold text-slate-100 truncate">{d.label}</p><p className="text-[10px] text-slate-400 uppercase tracking-wide">{d.ext || 'fichier'}</p></div>
+                                            {d.url && <a href={d.url} target="_blank" rel="noreferrer" title="Voir" className="p-1.5 rounded-lg text-slate-300 hover:bg-white/10 transition-colors"><Eye size={15} /></a>}
+                                            <button onClick={() => deleteEditDoc(d.path)} disabled={editDocBusy} title="Supprimer" className="p-1.5 rounded-lg text-[#E8112D] hover:bg-[#E8112D]/10 disabled:opacity-50 transition-colors"><Trash2 size={15} /></button>
+                                        </div>
+                                    ))}
+                                    <label className="mt-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-white/20 text-slate-300 text-xs font-bold cursor-pointer hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                        {editDocBusy ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={15} />} Ajouter un fichier depuis l&apos;ordinateur
+                                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.ods,.odt,.rtf,.txt" className="hidden" disabled={editDocBusy}
+                                            onChange={e => { const f = e.target.files?.[0]; if (f) addEditDoc(f); e.currentTarget.value = '' }} />
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                         <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
                             <button onClick={() => setEditApp(null)} className="px-4 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5">Annuler</button>
@@ -735,97 +798,106 @@ export default function AdminNationalitePage() {
                 </div>
             )}
 
-            {/* ═══ MODAL FICHE D'ANALYSE ═══ */}
+            {/* ═══ MODAL FICHE D'ANALYSE (light premium) ═══ */}
             {ficheApp && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" onClick={() => !ficheBusy && setFicheApp(null)}>
-                    <div className="w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => !ficheBusy && setFicheApp(null)}>
+                    <div className="w-full max-w-5xl max-h-[93vh] overflow-hidden flex flex-col bg-white rounded-3xl border border-slate-200 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)]" onClick={e => e.stopPropagation()}>
+                        {/* Liseré tricolore + header */}
+                        <div className="h-1 flex"><span className="flex-[46] bg-[#008751]" /><span className="flex-[27] bg-[#FCD116]" /><span className="flex-[27] bg-[#E8112D]" /></div>
+                        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
                             <div className="flex items-center gap-3">
                                 {ficheStep !== 'choose' && (
-                                    <button onClick={() => setFicheStep(ficheData ? 'form' : 'choose')} title="Retour" className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400"><ArrowLeft size={16} /></button>
+                                    <button onClick={() => setFicheStep(ficheData ? 'form' : 'choose')} title="Retour" className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors"><ArrowLeft size={17} /></button>
                                 )}
+                                <div className="w-10 h-10 rounded-2xl bg-[#E6F3ED] flex items-center justify-center text-[#008751]"><ClipboardList size={19} /></div>
                                 <div>
-                                    <h3 className="text-lg font-black text-white flex items-center gap-2"><ClipboardList size={18} className="text-indigo-400" /> Fiche d&apos;analyse</h3>
-                                    <p className="text-[11px] text-gray-500">{ficheApp.prenom} {ficheApp.nom} — {ficheApp.application_ref}</p>
+                                    <h3 className="text-[17px] font-extrabold text-slate-900 tracking-tight">Fiche d&apos;analyse</h3>
+                                    <p className="text-[12px] text-slate-500 font-medium">{ficheApp.prenom} {ficheApp.nom} · <span className="font-mono text-slate-400">{ficheApp.application_ref}</span></p>
                                 </div>
                             </div>
-                            <button onClick={() => !ficheBusy && setFicheApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
+                            <button onClick={() => !ficheBusy && setFicheApp(null)} title="Fermer" className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"><X size={18} /></button>
                         </div>
 
                         {/* STEP CHOOSE */}
                         {ficheStep === 'choose' && (
-                            <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button onClick={runAuto} disabled={ficheBusy} className="text-left p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-indigo-500/50 hover:bg-white/[0.05] transition-all group disabled:opacity-60">
-                                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center mb-4 text-indigo-400">{ficheBusy ? <Loader2 size={22} className="animate-spin" /> : <Wand2 size={22} />}</div>
-                                    <h4 className="text-white font-black text-base mb-1">Automatique</h4>
-                                    <p className="text-xs text-gray-400 leading-relaxed">Le système détecte les pièces manquantes et les formats non conformes (photos), génère la fiche et rédige l&apos;e-mail par IA.</p>
+                            <div className="p-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button onClick={runAuto} disabled={ficheBusy} className="text-left p-6 rounded-2xl border border-slate-200 hover:border-[#008751] hover:shadow-[0_12px_30px_-12px_rgba(0,135,81,0.4)] transition-all disabled:opacity-60 group">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#E6F3ED] flex items-center justify-center mb-4 text-[#008751] group-hover:scale-105 transition-transform">{ficheBusy ? <Loader2 size={22} className="animate-spin" /> : <Wand2 size={22} />}</div>
+                                    <h4 className="text-slate-900 font-extrabold text-[15px] mb-1.5">Automatique</h4>
+                                    <p className="text-[13px] text-slate-500 leading-relaxed">Le système détecte les pièces manquantes et les formats non conformes, génère la fiche et rédige l&apos;e-mail par IA.</p>
                                 </button>
-                                <button onClick={startManual} disabled={ficheBusy} className="text-left p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#008751]/50 hover:bg-white/[0.05] transition-all disabled:opacity-60">
-                                    <div className="w-12 h-12 rounded-xl bg-[#008751]/15 flex items-center justify-center mb-4 text-[#008751]"><PenLine size={22} /></div>
-                                    <h4 className="text-white font-black text-base mb-1">Manuelle</h4>
-                                    <p className="text-xs text-gray-400 leading-relaxed">Vous composez la fiche champ par champ (diagnostic, pièces, statuts, prochaines étapes), puis prévisualisez avant l&apos;envoi.</p>
+                                <button onClick={startManual} disabled={ficheBusy} className="text-left p-6 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-[0_12px_30px_-12px_rgba(79,70,229,0.4)] transition-all disabled:opacity-60 group">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4 text-indigo-600 group-hover:scale-105 transition-transform"><PenLine size={22} /></div>
+                                    <h4 className="text-slate-900 font-extrabold text-[15px] mb-1.5">Manuelle</h4>
+                                    <p className="text-[13px] text-slate-500 leading-relaxed">Vous composez la fiche champ par champ (diagnostic, pièces, statuts, prochaines étapes), puis prévisualisez avant l&apos;envoi.</p>
                                 </button>
                             </div>
                         )}
 
-                        {/* STEP FORM (manuel) */}
+                        {/* STEP FORM */}
                         {ficheStep === 'form' && ficheData && (
                             <>
-                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Statut (badge)</label>
-                                            <select value={ficheData.statutBadge} onChange={e => setF({ statutBadge: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                                <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Statut (badge)</label>
+                                            <select value={ficheData.statutBadge} onChange={e => setF({ statutBadge: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15">
                                                 <option>NON CONFORME - ACTION REQUISE</option><option>DOSSIER INCOMPLET</option><option>DOSSIER A VERIFIER</option>
                                             </select></div>
-                                        <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Objet</label>
-                                            <input value={ficheData.objet} onChange={e => setF({ objet: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
+                                        <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Type de tableau</label>
+                                            <select value={ficheData.piecesColMode || 'motif'} onChange={e => setF({ piecesColMode: e.target.value as 'motif' | 'filiation' })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15">
+                                                <option value="motif">Conformité (Document · Statut · Motif)</option><option value="filiation">Généalogie (Pièce · Filiation · Statut)</option>
+                                            </select></div>
                                     </div>
-                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Encadré exigence de format (laisser vide pour masquer)</label>
-                                        <textarea rows={2} value={ficheData.formatWarning || ''} onChange={e => setF({ formatWarning: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none" placeholder="Ex : Tout document en mode photo n'est pas utilisable — format PDF obligatoire." /></div>
-                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Diagnostic général</label>
-                                        <textarea rows={3} value={ficheData.diagnostic} onChange={e => setF({ diagnostic: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none" /></div>
-                                    {/* Pièces */}
+                                    <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Objet</label>
+                                        <input value={ficheData.objet} onChange={e => setF({ objet: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" /></div>
+                                    <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Encadré exigence de format <span className="text-slate-400 normal-case font-medium">(vide = masqué)</span></label>
+                                        <textarea rows={2} value={ficheData.formatWarning || ''} onChange={e => setF({ formatWarning: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" placeholder="Ex : Tout document en mode photo n'est pas utilisable — format PDF obligatoire." /></div>
+                                    <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Diagnostic général</label>
+                                        <textarea rows={3} value={ficheData.diagnostic} onChange={e => setF({ diagnostic: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" /></div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pièces à régulariser</label>
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{(ficheData.piecesColMode === 'filiation') ? 'Pièces manquantes' : 'Pièces à régulariser'}</label>
                                         <div className="space-y-2">
                                             {ficheData.pieces.map((p, i) => (
                                                 <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                                                    <input value={p.document} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, document: e.target.value } : x) })} placeholder="Document" className="col-span-4 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none" />
-                                                    <select value={p.statut} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, statut: e.target.value } : x) })} className="col-span-3 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
-                                                        <option>Manquant</option><option>Absent</option><option>Format Photo</option><option>Non conforme</option><option>Illisible</option><option>À vérifier</option>
+                                                    <input value={p.document} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, document: e.target.value } : x) })} placeholder={ficheData.piecesColMode === 'filiation' ? 'Pièce requise' : 'Document'} className="col-span-4 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]" />
+                                                    {ficheData.piecesColMode === 'filiation'
+                                                        ? <input value={p.filiation || ''} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, filiation: e.target.value } : x) })} placeholder="Lien de filiation" className="col-span-4 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]" />
+                                                        : <input value={p.motif} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, motif: e.target.value } : x) })} placeholder="Motif / exigence" className="col-span-4 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]" />}
+                                                    <select value={p.statut} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, statut: e.target.value } : x) })} className="col-span-3 bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]">
+                                                        <option>Manquant</option><option>Manquants</option><option>Absent</option><option>Absents</option><option>Format Photo</option><option>Non conforme</option><option>Illisible</option><option>À vérifier</option>
                                                     </select>
-                                                    <input value={p.motif} onChange={e => setF({ pieces: ficheData.pieces.map((x, k) => k === i ? { ...x, motif: e.target.value } : x) })} placeholder="Motif / exigence" className="col-span-4 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none" />
-                                                    <button onClick={() => setF({ pieces: ficheData.pieces.filter((_, k) => k !== i) })} title="Retirer" className="col-span-1 p-2 rounded-lg text-red-400 hover:bg-red-500/10 justify-self-center"><Trash2 size={14} /></button>
+                                                    <button onClick={() => setF({ pieces: ficheData.pieces.filter((_, k) => k !== i) })} title="Retirer" className="col-span-1 p-2 rounded-lg text-[#E8112D] hover:bg-[#FDECEA] justify-self-center transition-colors"><Trash2 size={15} /></button>
                                                 </div>
                                             ))}
                                         </div>
-                                        <button onClick={() => setF({ pieces: [...ficheData.pieces, { document: '', statut: 'Manquant', motif: '' }] })} className="mt-2 flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300"><Plus size={14} /> Ajouter une pièce</button>
+                                        <button onClick={() => setF({ pieces: [...ficheData.pieces, { document: '', statut: 'Manquant', motif: '', filiation: '' }] })} className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#008751] hover:text-[#00643C] transition-colors"><Plus size={15} /> Ajouter une pièce</button>
                                     </div>
-                                    <div><label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Intro « prochaines étapes »</label>
-                                        <input value={ficheData.nextStepsIntro || ''} onChange={e => setF({ nextStepsIntro: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" /></div>
-                                    {/* Encadrés étapes */}
+                                    <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Intro « prochaines étapes »</label>
+                                        <input value={ficheData.nextStepsIntro || ''} onChange={e => setF({ nextStepsIntro: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" /></div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Encadrés (options / RDV)</label>
-                                        <div className="space-y-2">
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Encadrés (options / RDV)</label>
+                                        <div className="space-y-2.5">
                                             {(ficheData.nextStepsBoxes || []).map((b, i) => (
-                                                <div key={i} className="bg-white/[0.03] border border-white/10 rounded-lg p-3 space-y-2">
+                                                <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
                                                     <div className="flex gap-2">
-                                                        <input value={b.title} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, title: e.target.value } : x) })} placeholder="Titre de l'encadré" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none" />
-                                                        <select value={b.tone || 'blue'} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, tone: e.target.value as 'blue' | 'yellow' } : x) })} className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none"><option value="blue">Bleu</option><option value="yellow">Jaune</option></select>
-                                                        <button onClick={() => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).filter((_, k) => k !== i) })} title="Retirer" className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"><Trash2 size={14} /></button>
+                                                        <input value={b.title} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, title: e.target.value } : x) })} placeholder="Titre de l'encadré" className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]" />
+                                                        <select value={b.tone || 'blue'} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, tone: e.target.value as 'blue' | 'yellow' } : x) })} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751]"><option value="blue">Bleu</option><option value="yellow">Jaune</option></select>
+                                                        <button onClick={() => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).filter((_, k) => k !== i) })} title="Retirer" className="p-1.5 rounded-lg text-[#E8112D] hover:bg-[#FDECEA] transition-colors"><Trash2 size={15} /></button>
                                                     </div>
-                                                    <textarea rows={2} value={b.body} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, body: e.target.value } : x) })} placeholder="Contenu" className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none resize-none" />
+                                                    <textarea rows={2} value={b.body} onChange={e => setF({ nextStepsBoxes: (ficheData.nextStepsBoxes || []).map((x, k) => k === i ? { ...x, body: e.target.value } : x) })} placeholder="Contenu (ex : Forfait recherche généalogique 250 €)" className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[13px] text-slate-900 focus:outline-none focus:border-[#008751] resize-none" />
                                                 </div>
                                             ))}
                                         </div>
                                         {(ficheData.nextStepsBoxes || []).length < 2 && (
-                                            <button onClick={() => setF({ nextStepsBoxes: [...(ficheData.nextStepsBoxes || []), { title: '', body: '', tone: 'yellow' }] })} className="mt-2 flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300"><Plus size={14} /> Ajouter un encadré</button>
+                                            <button onClick={() => setF({ nextStepsBoxes: [...(ficheData.nextStepsBoxes || []), { title: '', body: '', tone: 'yellow' }] })} className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#008751] hover:text-[#00643C] transition-colors"><Plus size={15} /> Ajouter un encadré</button>
                                         )}
                                     </div>
+                                    <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Note finale épinglée <span className="text-slate-400 normal-case font-medium">(vide = masquée)</span></label>
+                                        <textarea rows={2} value={ficheData.finalNote || ''} onChange={e => setF({ finalNote: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" placeholder="Ex : Merci d'informer l'équipe RGB de l'option retenue…" /></div>
                                 </div>
-                                <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
-                                    <button onClick={() => setFicheStep('choose')} className="px-4 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5">Retour</button>
-                                    <button onClick={previewManual} disabled={ficheBusy} className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">
+                                <div className="px-7 py-4 border-t border-slate-100 flex justify-end gap-3">
+                                    <button onClick={() => setFicheStep('choose')} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors">Retour</button>
+                                    <button onClick={previewManual} disabled={ficheBusy} className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold flex items-center gap-2 disabled:opacity-60 transition-colors shadow-[0_10px_24px_-10px_rgba(79,70,229,0.6)]">
                                         {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />} Prévisualiser
                                     </button>
                                 </div>
@@ -835,23 +907,23 @@ export default function AdminNationalitePage() {
                         {/* STEP PREVIEW */}
                         {ficheStep === 'preview' && (
                             <>
-                                <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[300px]">
-                                    <div className="p-4 border-b lg:border-b-0 lg:border-r border-white/10">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Aperçu de la fiche (PDF)</p>
+                                <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 min-h-[320px]">
+                                    <div className="p-5 border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50/50">
+                                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">Aperçu de la fiche</p>
                                         {fichePdfUrl
-                                            ? <iframe title="Aperçu fiche" src={fichePdfUrl} className="w-full h-[440px] rounded-lg bg-white border border-white/10" />
-                                            : <div className="h-[440px] flex items-center justify-center text-gray-500"><Loader2 className="animate-spin" /></div>}
+                                            ? <iframe title="Aperçu fiche" src={fichePdfUrl} className="w-full h-[460px] rounded-xl bg-white border border-slate-200 shadow-sm" />
+                                            : <div className="h-[460px] flex items-center justify-center text-slate-400"><Loader2 className="animate-spin" /></div>}
                                     </div>
-                                    <div className="p-4 space-y-3">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">E-mail au client {ficheApp.email ? <span className="text-gray-400 normal-case font-normal">→ {ficheApp.email}</span> : <span className="text-red-400 normal-case font-normal">(aucun e-mail !)</span>}</p>
-                                        <input value={ficheEmail.subject} onChange={e => setFicheEmail(v => ({ ...v, subject: e.target.value }))} placeholder="Objet de l'e-mail" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
-                                        <textarea rows={14} value={ficheEmail.body} onChange={e => setFicheEmail(v => ({ ...v, body: e.target.value }))} placeholder="Message (rédigé par l'IA, modifiable)" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none resize-none leading-relaxed" />
-                                        <p className="text-[11px] text-gray-500">Message rédigé par l&apos;assistant IA — ajustez-le librement avant l&apos;envoi.</p>
+                                    <div className="p-5 space-y-3">
+                                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">E-mail au client {ficheApp.email ? <span className="text-slate-400 normal-case font-medium">→ {ficheApp.email}</span> : <span className="text-[#E8112D] normal-case font-semibold">(aucun e-mail !)</span>}</p>
+                                        <input value={ficheEmail.subject} onChange={e => setFicheEmail(v => ({ ...v, subject: e.target.value }))} placeholder="Objet de l'e-mail" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" />
+                                        <textarea rows={15} value={ficheEmail.body} onChange={e => setFicheEmail(v => ({ ...v, body: e.target.value }))} placeholder="Message (rédigé par l'IA, modifiable)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none leading-relaxed" />
+                                        <p className="inline-flex items-center gap-1.5 text-[12px] text-slate-500"><Wand2 size={13} className="text-indigo-500" /> Message rédigé par l&apos;assistant IA — ajustable avant l&apos;envoi.</p>
                                     </div>
                                 </div>
-                                <div className="px-6 py-4 border-t border-white/10 flex justify-between gap-3">
-                                    <a href={fichePdfUrl || '#'} download={`Fiche-Analyse-${ficheApp.nom || 'client'}.pdf`} className="px-4 py-2 rounded-xl border border-white/10 text-gray-300 text-sm font-bold hover:bg-white/5 flex items-center gap-2"><Download size={15} /> Télécharger</a>
-                                    <button onClick={sendFiche} disabled={ficheBusy || !ficheApp.email} className="px-5 py-2 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-50">
+                                <div className="px-7 py-4 border-t border-slate-100 flex justify-between gap-3">
+                                    <a href={fichePdfUrl || '#'} download={`Fiche-Analyse-${ficheApp.nom || 'client'}.pdf`} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors"><Download size={15} /> Télécharger</a>
+                                    <button onClick={sendFiche} disabled={ficheBusy || !ficheApp.email} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.65)]">
                                         {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer au client
                                     </button>
                                 </div>
@@ -860,6 +932,7 @@ export default function AdminNationalitePage() {
                     </div>
                 </div>
             )}
+
         </div>
     )
 }

@@ -696,8 +696,17 @@
 }
 [data-theme="light"] .bg-slate-900 .text-white,
 [data-theme="light"] .bg-slate-950 .text-white,
-[data-theme="light"] .bg-slate-800 .text-white {
+[data-theme="light"] .bg-slate-800 .text-white,
+/* Modals sombres codés en dur (îlots volontaires) : le blanc doit rester blanc. */
+[data-theme="light"] .bg-\[\#0d1424\] .text-white,
+[data-theme="light"] .bg-\[\#0d1424\] .text-gray-300,
+[data-theme="light"] .bg-\[\#0d1424\] .text-gray-400,
+[data-theme="light"] .bg-\[\#0d1424\] .text-gray-500 {
   color: #ffffff !important;
+}
+[data-theme="light"] .bg-\[\#0d1424\] .text-gray-400,
+[data-theme="light"] .bg-\[\#0d1424\] .text-gray-500 {
+  color: #94a3b8 !important;
 }
 [data-theme="light"] .text-gray-200 {
   color: var(--panel-text) !important;

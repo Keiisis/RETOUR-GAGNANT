@@ -59,26 +59,63 @@ function buildAutoFiche(app: AppRow): FicheAnalyseData {
         // pièce présente et déjà en PDF → conforme, non listée
     }
 
-    const missing = pieces.filter(p => p.statut === 'Manquant').length
-    const statutBadge = hasPhoto ? 'NON CONFORME - ACTION REQUISE' : (missing > 0 ? 'DOSSIER INCOMPLET' : 'DOSSIER A VERIFIER')
+    const missing = pieces.filter(p => p.statut === 'Manquant')
     const civ = (app.genre || '').toLowerCase().startsWith('f') ? 'Mme' : 'M.'
+    const clientName = `${app.prenom || ''} ${app.nom || ''}`.trim().toUpperCase() || 'Client'
+    const base = {
+        clientName, civilite: civ,
+        date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        gestionnaire: 'Pôle Instruction RGB',
+    }
 
+    // Est-ce un dossier bloqué UNIQUEMENT sur la généalogie (aucun problème de
+    // format) ? Alors on propose l'option payante recherche généalogique (250 €).
+    const parentsMissing = missing.some(p => norm(p.document).includes('parent'))
+    const genealogieMode = !hasPhoto && parentsMissing
+
+    if (genealogieMode) {
+        // Fiche « dossier incomplet » — inventaire d'état civil + 2 options.
+        const GENEALOGY = [
+            { document: "Extrait d'acte de naissance", filiation: 'Titulaire du dossier (Client)' },
+            { document: "Extrait d'acte de naissance", filiation: "Père de l'intéressé" },
+            { document: "Extrait d'acte de naissance", filiation: "Mère de l'intéressé" },
+            { document: "Extraits d'acte de naissance", filiation: 'Grands-parents paternels (grand-père & grand-mère)' },
+            { document: "Extraits d'acte de naissance", filiation: 'Grands-parents maternels (grand-père & grand-mère)' },
+        ]
+        return {
+            ...base,
+            objet: "Preuve d'Afro-descendance",
+            statutBadge: 'DOSSIER INCOMPLET',
+            formatWarning: null,
+            diagnostic: "Constat de vérification : après étude attentive des pièces fournies, le dossier présente une absence des actes d'état civil requis pour constituer la filiation ascendante nécessaire à l'établissement formel de la preuve d'afro-descendance.",
+            piecesTitle: 'INVENTAIRE DES PIÈCES MANQUANTES',
+            piecesColMode: 'filiation' as const,
+            pieces: GENEALOGY.map(g => ({ document: g.document, filiation: g.filiation, statut: 'Manquant', motif: g.filiation })),
+            nextStepsTitle: 'MODALITÉS DE RÉGULARISATION',
+            nextStepsIntro: "Pour permettre le traitement et la validation finale de votre dossier, deux options s'offrent à vous :",
+            nextStepsBoxes: [
+                { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' as const },
+                { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' as const },
+            ],
+            finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue (fourniture directe des pièces ou souscription au service de recherche généalogique à 250 €) afin de poursuivre l'instruction de votre dossier.",
+        }
+    }
+
+    // Fiche « conformité » — non-conformités de format / pièces manquantes + RDV.
     const diagParts: string[] = ['Après vérification des pièces transmises, votre dossier ne peut être validé en l\'état.']
     if (hasPhoto) diagParts.push('Certains documents ont été fournis au format photo, non exploitable par nos services : ils doivent être transmis en PDF officiel.')
-    if (missing > 0) diagParts.push('Plusieurs pièces indispensables à la preuve d\'afro-descendance sont manquantes (notamment les actes d\'état civil).')
+    if (missing.length > 0) diagParts.push('Plusieurs pièces indispensables à la preuve d\'afro-descendance sont manquantes.')
 
     return {
-        clientName: `${app.prenom || ''} ${app.nom || ''}`.trim().toUpperCase() || 'Client',
-        civilite: civ,
-        date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        ...base,
         objet: "Preuve d'Afro-descendance & Conformité",
-        gestionnaire: 'Pôle Instruction RGB',
-        statutBadge,
+        statutBadge: hasPhoto ? 'NON CONFORME - ACTION REQUISE' : (missing.length > 0 ? 'DOSSIER INCOMPLET' : 'DOSSIER A VERIFIER'),
         formatWarning: hasPhoto
             ? 'Exigence impérative de format : tout document transmis en mode « photo » n\'est pas utilisable. Chaque pièce doit être fournie au format PDF officiel.'
             : null,
         diagnostic: diagParts.join(' '),
         piecesTitle: 'DÉTAIL DES PIÈCES À RÉGULARISER',
+        piecesColMode: 'motif' as const,
         pieces: pieces.length > 0 ? pieces : [{ document: 'Dossier', statut: 'À vérifier', motif: 'Aucune non-conformité automatique détectée.' }],
         nextStepsTitle: 'PROCHAINES ÉTAPES & RENDEZ-VOUS',
         nextStepsIntro: 'Afin de vous accompagner dans la mise en conformité de votre dossier :',
