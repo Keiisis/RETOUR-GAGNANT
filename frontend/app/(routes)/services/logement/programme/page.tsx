@@ -178,6 +178,41 @@ export default function ProgrammeLogementsPage() {
                     )}
                 </section>
 
+                {/* ═══ POURQUOI RGB (contraste solo vs accompagné) ═══ */}
+                <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
+                    <div className="text-center max-w-2xl mx-auto mb-10">
+                        <h2 className="font-display text-3xl md:text-4xl font-bold">Le logement est ouvert à tous. <span className="text-[#008751]">L'acceptation, non.</span></h2>
+                        <p className="mt-3 text-slate-600">Un dossier incomplet ou mal monté est recalé — et la place part à un autre. C'est précisément là que nous intervenons.</p>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
+                        <div className="rounded-3xl border border-slate-200 bg-slate-50/60 p-6">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-4">En solo</p>
+                            <ul className="space-y-3">
+                                {['Pièces manquantes ou non conformes = dossier recalé', 'Allers-retours administratifs depuis l\'étranger', 'Critères stricts mal interprétés', 'Délais qui s\'allongent, place qui s\'envole'].map((t, i) => (
+                                    <li key={i} className="flex gap-2.5 text-sm text-slate-500"><span className="w-5 h-5 rounded-full bg-[#FDECEA] text-[#E8112D] flex items-center justify-center shrink-0"><X size={12} /></span> {t}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="rounded-3xl border-2 border-[#008751]/25 bg-[#E6F3ED]/40 p-6 shadow-[0_18px_50px_-28px_rgba(0,135,81,0.5)]">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-[#008751] mb-4">Avec Retour Gagnant</p>
+                            <ul className="space-y-3">
+                                {['Dossier vérifié et fiabilisé, pièce par pièce', 'Tout géré localement — zéro déplacement pour la diaspora', 'Éligibilité confirmée avant de déposer', 'Transmission de votre demande pour une acceptation rapide'].map((t, i) => (
+                                    <li key={i} className="flex gap-2.5 text-sm text-slate-700 font-medium"><span className="w-5 h-5 rounded-full bg-[#008751] text-white flex items-center justify-center shrink-0"><Check size={12} /></span> {t}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-5">
+                        {[[ShieldCheck, 'Éligibilité confirmée', 'On valide votre profil avant tout dépôt.'], [FileCheck2, 'Pièces fiabilisées', 'Chaque document contrôlé et conforme.'], [Send, 'Transmission assurée', 'Nous portons votre demande au programme.']].map(([Ic, t, d], i) => (
+                            <div key={i} className="rounded-2xl border border-slate-200 p-5 text-center">
+                                <div className="w-11 h-11 rounded-2xl bg-[#E6F3ED] text-[#008751] flex items-center justify-center mx-auto mb-3">{(() => { const I = Ic as typeof ShieldCheck; return <I size={19} /> })()}</div>
+                                <p className="font-bold text-slate-900 text-sm">{t as string}</p>
+                                <p className="text-xs text-slate-500 mt-1">{d as string}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
                 {/* ═══ CONDITIONS & ÉLIGIBILITÉ ═══ */}
                 <section id="eligibilite" className="bg-gradient-to-b from-[#F7F9F8] to-white border-y border-slate-100 py-16 scroll-mt-16">
                     <div className="max-w-6xl mx-auto px-5 md:px-8">
@@ -213,11 +248,11 @@ export default function ProgrammeLogementsPage() {
                     <div className="rounded-[2rem] bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white p-8 md:p-12 relative overflow-hidden">
                         <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-[#FCD116]/15 blur-3xl" />
                         <div className="relative max-w-2xl">
-                            <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier prêt-à-accepter, c'est notre métier.</h2>
-                            <p className="mt-3 text-white/85">Nous vérifions votre éligibilité, réunissons vos pièces et transmettons votre demande au programme.</p>
-                            <div className="mt-7 flex flex-wrap gap-3">
-                                <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors"><Send size={17} /> Composer mon dossier</button>
-                                <a href="https://programmelogements.bj/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white/10 border border-white/25 text-white font-bold hover:bg-white/15 transition-colors">Portail officiel <ExternalLink size={15} /></a>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier recalé, c'est une place perdue.</h2>
+                            <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande — pour qu'elle passe du premier coup.</p>
+                            <div className="mt-7">
+                                <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors text-lg"><Send size={18} /> Composer mon dossier</button>
+                                <p className="mt-3 text-white/70 text-sm">Sans engagement · réponse sous 48 h · nous transmettons pour vous.</p>
                             </div>
                         </div>
                     </div>

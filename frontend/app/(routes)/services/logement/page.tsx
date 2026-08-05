@@ -101,7 +101,8 @@ export default function LogementTremplin() {
                         <div className="mt-6 grid sm:grid-cols-3 gap-3 max-w-2xl">
                             {['Éligibilité vérifiée', 'Pièces fiabilisées', 'Transmission au programme'].map(x => <div key={x} className="flex items-center gap-2 text-sm font-semibold"><Check size={16} className="text-[#FCD116]" /> {x}</div>)}
                         </div>
-                        <Link href="/services/logement/programme" className="mt-8 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors"><Send size={17} /> Composer mon dossier <ArrowRight size={17} /></Link>
+                        <Link href="/services/logement/programme" className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors text-lg"><Send size={18} /> Composer mon dossier <ArrowRight size={18} /></Link>
+                        <p className="mt-3 text-white/70 text-sm">Sans engagement · réponse sous 48 h · nous transmettons pour vous.</p>
                     </div>
                 </div>
             </section>
