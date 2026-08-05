@@ -12,7 +12,7 @@ import {
     ShoppingBag, Receipt, UserCog, Tag, Calculator,
     Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
     BarChart3, FileSignature, FolderOpen, Palette, Calendar, Star,
-    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark,
+    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark, Building2,
     ShieldAlert, KeyRound, GitFork, Send, Search
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -161,6 +161,7 @@ function AdminLayoutContent({
         { title: 'Liens de Paiement', icon: Send, href: '/admin/liens-paiement' },
         { title: 'Inventaire', icon: Box, href: '/admin/inventory' },
         { title: 'Boutique', icon: ShoppingBag, href: '/admin/boutique' },
+        { title: 'Logements', icon: Building2, href: '/admin/logements' },
         { title: 'Commandes', icon: Receipt, href: '/admin/orders' },
         { title: 'Coupons', icon: Tag, href: '/admin/coupons' },
         { title: 'Messages', icon: MessageSquare, href: '/admin/messages', badge: unreadMessages },
