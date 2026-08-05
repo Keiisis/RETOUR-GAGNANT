@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Building3D from '@/components/logements/Building3D'
+import TransitionLink from '@/components/TransitionLink'
 import {
     Home, ArrowRight, ShieldCheck, Send, MapPin, Ruler, Handshake, Check, ChevronRight,
 } from 'lucide-react'
@@ -40,12 +41,12 @@ export default function LogementTremplin() {
                         Accédez aux logements économiques et sociaux du <strong className="text-slate-900">Programme national</strong>. Retour Gagnant ne vend pas les logements : nous <strong className="text-[#008751]">composons votre dossier</strong> pour qu'il soit viable et rapidement accepté.
                     </p>
                     <div className="mt-7 flex flex-wrap gap-3">
-                        <Link href="/services/logement/programme" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_14px_34px_-12px_rgba(0,135,81,0.7)]"><Home size={18} /> Découvrir les logements <ArrowRight size={17} /></Link>
-                        <Link href="/services/logement/programme#eligibilite" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> Vérifier mon éligibilité</Link>
+                        <TransitionLink href="/services/logement/programme" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_14px_34px_-12px_rgba(0,135,81,0.7)]"><Home size={18} /> Découvrir les logements <ArrowRight size={17} /></TransitionLink>
+                        <TransitionLink href="/services/logement/programme#eligibilite" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> Vérifier mon éligibilité</TransitionLink>
                     </div>
                   </div>
-                  {/* Élément 3D — tour de logements qui pivote au scroll (GSAP) */}
-                  <Building3D className="mt-4 lg:mt-0" />
+                  {/* Élément 3D — tour transportée d'une page à l'autre (View Transitions) + scroll (GSAP) */}
+                  <Building3D className="mt-4 lg:mt-0" transitionName="logement-tower" />
                 </div>
             </section>
 

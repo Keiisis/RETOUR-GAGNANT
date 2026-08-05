@@ -12,6 +12,7 @@ import {
 import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
 import Building3D from '@/components/logements/Building3D'
+import TransitionLink from '@/components/TransitionLink'
 import type { SitePoint } from '@/components/logements/SitesMap'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
@@ -106,7 +107,7 @@ export default function ProgrammeLogementsPage() {
                       <div>
                         <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
                             <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
-                            <Link href="/services/logement" className="hover:text-[#008751]">Logement</Link><ChevronRight size={13} />
+                            <TransitionLink href="/services/logement" className="hover:text-[#008751]">Logement</TransitionLink><ChevronRight size={13} />
                             <span className="text-slate-600 font-medium">Programme national</span>
                         </nav>
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Building2 size={13} /> En partenariat — Programme national</div>
@@ -129,8 +130,8 @@ export default function ProgrammeLogementsPage() {
                             </div>
                         )}
                       </div>
-                      {/* Élément 3D — tour de logements qui pivote au scroll (GSAP) */}
-                      <Building3D className="mt-4 lg:mt-0" />
+                      {/* Élément 3D — tour transportée d'une page à l'autre (View Transitions) + scroll (GSAP) */}
+                      <Building3D className="mt-4 lg:mt-0" transitionName="logement-tower" />
                     </div>
                 </section>
 
