@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion, Reorder } from 'framer-motion'
 import {
     Home, Plus, Loader2, Save, Trash2, X, GripVertical, Eye, EyeOff,
-    UploadCloud, Image as ImageIcon, MapPin, Check, Building2,
+    UploadCloud, Image as ImageIcon, MapPin, Check, Building2, Megaphone,
 } from 'lucide-react'
 
 interface Logement {
@@ -33,6 +33,12 @@ interface Logement {
     is_active: boolean
 }
 
+type Stat = { value: string; suffix: string; label: string }
+type Temoignage = { nom: string; ville: string; texte: string }
+type Faq = { q: string; r: string }
+interface Content { stats: Stat[]; temoignages: Temoignage[]; faq: Faq[]; rarete_active: boolean; rarete_texte: string }
+const emptyContent: Content = { stats: [], temoignages: [], faq: [], rarete_active: false, rarete_texte: '' }
+
 const PROGRAMMES = [{ v: '20000', l: 'Programme 20 000 logements' }, { v: 'residences', l: 'Résidences (Palétuviers…)' }]
 const TYPES = ['F3', 'F4', 'Villa sociale', 'Villa', 'Appartement', 'Studio', 'Duplex']
 const DISPOS = [{ v: 'disponible', l: 'Disponible' }, { v: 'bientot', l: 'Bientôt' }, { v: 'epuise', l: 'Épuisé' }]
@@ -54,6 +60,19 @@ export default function AdminLogementsPage() {
     const [saving, setSaving] = useState(false)
     const [busyId, setBusyId] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
+    const [content, setContent] = useState<Content>(emptyContent)
+    const [contentOpen, setContentOpen] = useState(false)
+    const [savingContent, setSavingContent] = useState(false)
+    useEffect(() => { fetch('/api/logements/content').then(r => r.json()).then(j => setContent({ ...emptyContent, ...(j.content || {}) })).catch(() => { }) }, [])
+    const setC = (patch: Partial<Content>) => setContent(c => ({ ...c, ...patch }))
+    const saveContent = async () => {
+        setSavingContent(true)
+        try {
+            const res = await fetch('/api/logements/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(content) })
+            if (!res.ok) throw new Error('Échec de l\'enregistrement.')
+            setContentOpen(false)
+        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setSavingContent(false) }
+    }
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -134,7 +153,10 @@ export default function AdminLogementsPage() {
                         <p className="text-sm text-slate-500">Programme national · Résidences — 100 % éditable</p>
                     </div>
                 </div>
-                <button onClick={() => setEditing(blank())} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.6)]"><Plus size={17} /> Nouveau logement</button>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setContentOpen(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"><Megaphone size={16} /> Contenu marketing</button>
+                    <button onClick={() => setEditing(blank())} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.6)]"><Plus size={17} /> Nouveau logement</button>
+                </div>
             </div>
 
             {loading ? (
@@ -257,6 +279,87 @@ export default function AdminLogementsPage() {
                     </motion.div>
                 </div>
             )}
+
+            {/* ═══ CONTENU MARKETING (preuve / témoignages / FAQ / rareté) ═══ */}
+            {contentOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => !savingContent && setContentOpen(false)}>
+                    <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-3xl max-h-[93vh] overflow-hidden flex flex-col bg-white rounded-3xl border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="h-1 flex"><span className="flex-[46] bg-[#008751]" /><span className="flex-[27] bg-[#FCD116]" /><span className="flex-[27] bg-[#E8112D]" /></div>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2"><Megaphone size={18} className="text-[#008751]" /> Contenu marketing de la page</h3>
+                            <button onClick={() => !savingContent && setContentOpen(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={18} /></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {/* Rareté */}
+                            <div>
+                                <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-2"><input type="checkbox" checked={content.rarete_active} onChange={e => setC({ rarete_active: e.target.checked })} className="w-4 h-4 accent-[#008751]" /> Bandeau de rareté / urgence</label>
+                                <input value={content.rarete_texte} onChange={e => setC({ rarete_texte: e.target.value })} className={inp} placeholder="Ex : Commercialisation en cours — les meilleurs lots partent vite." />
+                            </div>
+                            {/* Stats de preuve */}
+                            <ListEditor<Stat>
+                                title="Chiffres de preuve (RGB)" items={content.stats}
+                                onChange={v => setC({ stats: v })} empty={{ value: '', suffix: '', label: '' }}
+                                render={(it, up) => (
+                                    <div className="grid grid-cols-12 gap-2">
+                                        <input value={it.value} onChange={e => up({ value: e.target.value })} placeholder="Valeur" className={inp + ' col-span-3'} />
+                                        <input value={it.suffix} onChange={e => up({ suffix: e.target.value })} placeholder="Suffixe (%, +…)" className={inp + ' col-span-3'} />
+                                        <input value={it.label} onChange={e => up({ label: e.target.value })} placeholder="Libellé (ex : dossiers montés)" className={inp + ' col-span-6'} />
+                                    </div>
+                                )}
+                            />
+                            {/* Témoignages */}
+                            <ListEditor<Temoignage>
+                                title="Témoignages" items={content.temoignages}
+                                onChange={v => setC({ temoignages: v })} empty={{ nom: '', ville: '', texte: '' }}
+                                render={(it, up) => (
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input value={it.nom} onChange={e => up({ nom: e.target.value })} placeholder="Prénom / initiale" className={inp} />
+                                            <input value={it.ville} onChange={e => up({ ville: e.target.value })} placeholder="Ville / pays" className={inp} />
+                                        </div>
+                                        <textarea rows={2} value={it.texte} onChange={e => up({ texte: e.target.value })} placeholder="Verbatim du client" className={inp + ' resize-none'} />
+                                    </div>
+                                )}
+                            />
+                            {/* FAQ */}
+                            <ListEditor<Faq>
+                                title="FAQ (objections)" items={content.faq}
+                                onChange={v => setC({ faq: v })} empty={{ q: '', r: '' }}
+                                render={(it, up) => (
+                                    <div className="space-y-2">
+                                        <input value={it.q} onChange={e => up({ q: e.target.value })} placeholder="Question" className={inp + ' font-semibold'} />
+                                        <textarea rows={2} value={it.r} onChange={e => up({ r: e.target.value })} placeholder="Réponse" className={inp + ' resize-none'} />
+                                    </div>
+                                )}
+                            />
+                        </div>
+                        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+                            <button onClick={() => setContentOpen(false)} disabled={savingContent} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50">Annuler</button>
+                            <button onClick={saveContent} disabled={savingContent} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">{savingContent ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Enregistrer</button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+// Éditeur de liste générique (ajout / suppression de lignes).
+function ListEditor<T>({ title, items, onChange, empty, render }: {
+    title: string; items: T[]; onChange: (v: T[]) => void; empty: T; render: (it: T, up: (patch: Partial<T>) => void) => React.ReactNode
+}) {
+    return (
+        <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">{title}</p>
+            <div className="space-y-2">
+                {items.map((it, i) => (
+                    <div key={i} className="flex gap-2 items-start bg-slate-50/70 border border-slate-200 rounded-xl p-3">
+                        <div className="flex-1">{render(it, patch => onChange(items.map((x, k) => k === i ? { ...x, ...patch } : x)))}</div>
+                        <button onClick={() => onChange(items.filter((_, k) => k !== i))} title="Retirer" className="p-1.5 rounded-lg text-[#E8112D] hover:bg-[#FDECEA]"><Trash2 size={15} /></button>
+                    </div>
+                ))}
+            </div>
+            <button onClick={() => onChange([...items, { ...empty }])} className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-bold text-[#008751] hover:text-[#00643C]"><Plus size={14} /> Ajouter</button>
         </div>
     )
 }

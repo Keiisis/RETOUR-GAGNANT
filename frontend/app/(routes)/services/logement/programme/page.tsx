@@ -6,8 +6,8 @@ import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, LayoutGroup, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import {
     ChevronRight, MapPin, Ruler, BedDouble, Building2, Check, X, ShieldCheck,
-    FileCheck2, Home, ExternalLink, Loader2, Send, Landmark, Layers, KeyRound, ClipboardCheck,
-    Building, MapPinned, CalendarClock, Wallet,
+    FileCheck2, Home, Loader2, Send, Landmark, Layers, KeyRound, ClipboardCheck,
+    Building, MapPinned, CalendarClock, Wallet, Flame, ChevronDown, Quote, ExternalLink,
 } from 'lucide-react'
 import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
@@ -24,6 +24,15 @@ interface Logement {
     duree_annees: number; formules: string[]; description: string; atouts: string[]; images: string[]
     plan_url: string | null; visite_url: string | null; disponibilite: string; lat: number | null; lng: number | null
 }
+
+interface Content {
+    stats: { value: string; suffix: string; label: string }[]
+    temoignages: { nom: string; ville: string; texte: string }[]
+    faq: { q: string; r: string }[]
+    rarete_active: boolean
+    rarete_texte: string
+}
+const emptyContent: Content = { stats: [], temoignages: [], faq: [], rarete_active: false, rarete_texte: '' }
 
 const money = (n: number, d = 'XOF') => `${Math.round(n).toLocaleString('fr-FR')} ${d === 'XOF' ? 'FCFA' : d}`
 
@@ -46,6 +55,7 @@ export default function ProgrammeLogementsPage() {
     const [formule, setFormule] = useState('')
     const [detail, setDetail] = useState<Logement | null>(null)
     const [leadFor, setLeadFor] = useState<Logement | null | 'general'>(null)
+    const [content, setContent] = useState<Content>(emptyContent)
 
     // Parallax doux du décor du hero (Framer, SSR-safe). Désactivé si
     // l'utilisateur préfère moins d'animations.
@@ -55,6 +65,7 @@ export default function ProgrammeLogementsPage() {
 
     useEffect(() => {
         fetch('/api/logements').then(r => r.json()).then(j => setAll(j.logements || [])).catch(() => setAll([])).finally(() => setLoading(false))
+        fetch('/api/logements/content').then(r => r.json()).then(j => setContent({ ...emptyContent, ...(j.content || {}) })).catch(() => { })
     }, [])
 
     const inProg = useMemo(() => all.filter(l => l.programme === prog), [all, prog])
@@ -82,7 +93,11 @@ export default function ProgrammeLogementsPage() {
 
     return (
         <LayoutGroup>
-            <div className="bg-white text-slate-900">
+            <div className="bg-white text-slate-900 pb-16 md:pb-0">
+                {/* Bandeau rareté (éditable en admin) */}
+                {content.rarete_active && content.rarete_texte && (
+                    <div className="bg-[#E8112D] text-white text-center text-[13px] md:text-sm font-bold py-2.5 px-4 flex items-center justify-center gap-2"><Flame size={15} /> {content.rarete_texte}</div>
+                )}
                 {/* ═══ HERO ═══ */}
                 <section className="relative overflow-hidden">
                     <motion.div style={{ y: heroY }} className="absolute -inset-x-8 -top-24 h-[135%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.14),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
@@ -241,6 +256,37 @@ export default function ProgrammeLogementsPage() {
                     </div>
                 </section>
 
+                {/* ═══ PREUVE (stats + témoignages, éditable en admin) ═══ */}
+                {(content.stats.length > 0 || content.temoignages.length > 0) && (
+                    <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
+                        <div className="text-center max-w-2xl mx-auto mb-9">
+                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">La preuve</p>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold">Ils nous ont confié leur dossier.</h2>
+                        </div>
+                        {content.stats.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-11">
+                                {content.stats.map((s, i) => (
+                                    <div key={i} className="text-center">
+                                        <p className="font-display text-3xl md:text-4xl font-bold text-[#008751]">{s.value}<span className="text-2xl">{s.suffix}</span></p>
+                                        <p className="text-sm text-slate-500 mt-1 leading-snug">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {content.temoignages.length > 0 && (
+                            <div className="grid md:grid-cols-3 gap-5">
+                                {content.temoignages.map((t, i) => (
+                                    <motion.div key={i} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 3) * 0.06 }} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.3)]">
+                                        <Quote size={24} className="text-[#008751]/25 mb-3" />
+                                        <p className="text-slate-700 leading-relaxed">« {t.texte} »</p>
+                                        <p className="mt-4 text-sm font-bold text-slate-900">{t.nom}{t.ville && <span className="text-slate-400 font-normal"> · {t.ville}</span>}</p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 {/* ═══ CONDITIONS & ÉLIGIBILITÉ ═══ */}
                 <section id="eligibilite" className="bg-gradient-to-b from-[#F7F9F8] to-white border-y border-slate-100 py-16 scroll-mt-16">
                     <div className="max-w-6xl mx-auto px-5 md:px-8">
@@ -271,6 +317,20 @@ export default function ProgrammeLogementsPage() {
                     </div>
                 </section>
 
+                {/* ═══ FAQ (accordéon, éditable en admin) ═══ */}
+                {content.faq.length > 0 && (
+                    <section className="max-w-3xl mx-auto px-5 md:px-8 py-14">
+                        <div className="text-center mb-9">
+                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">On répond avant que vous demandiez</p>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold">Questions fréquentes</h2>
+                        </div>
+                        <div className="space-y-3">{content.faq.map((f, i) => <FaqItem key={i} q={f.q} r={f.r} />)}</div>
+                        <div className="text-center mt-8">
+                            <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#008751] text-white font-bold hover:bg-[#00643C] transition-colors">Une autre question ? Parlons de votre dossier <ChevronRight size={16} /></button>
+                        </div>
+                    </section>
+                )}
+
                 {/* ═══ CTA final ═══ */}
                 <section className="max-w-6xl mx-auto px-5 md:px-8 py-16">
                     <div className="rounded-[2rem] bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white p-8 md:p-12 relative overflow-hidden">
@@ -285,6 +345,15 @@ export default function ProgrammeLogementsPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* Barre CTA sticky (mobile) — toujours visible, conversion */}
+                <div className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 flex items-center gap-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-black text-slate-900 leading-tight truncate">Prêt à devenir propriétaire ?</p>
+                        <p className="text-[11px] text-slate-500 truncate">On monte et on transmet votre dossier.</p>
+                    </div>
+                    <button onClick={() => setLeadFor('general')} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-[#008751] text-white font-black text-sm active:scale-95 transition-transform"><Send size={15} /> Composer</button>
+                </div>
 
                 <AnimatePresence>{detail && <DetailModal l={detail} onClose={() => setDetail(null)} onLead={() => { setLeadFor(detail); setDetail(null) }} />}</AnimatePresence>
                 <AnimatePresence>{leadFor && <LeadModal logement={leadFor === 'general' ? null : leadFor} onClose={() => setLeadFor(null)} />}</AnimatePresence>
@@ -417,5 +486,25 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 )}
             </motion.div>
         </motion.div>
+    )
+}
+
+/* ── FAQ (accordéon) ── */
+function FaqItem({ q, r }: { q: string; r: string }) {
+    const [open, setOpen] = useState(false)
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+            <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left">
+                <span className="font-bold text-slate-900 text-[15px]">{q}</span>
+                <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+                        <p className="px-5 pb-4 text-slate-600 leading-relaxed text-sm whitespace-pre-line">{r}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     )
 }
