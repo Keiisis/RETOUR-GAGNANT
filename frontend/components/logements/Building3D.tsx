@@ -17,7 +17,7 @@ import { useReducedMotion } from 'framer-motion'
  * Charte Bénin uniquement : verre vert (#008751), hall jaune (#FCD116),
  * accents rouge (#E8112D) + clé/drapeau dorés.
  */
-export default function Building3D({ className = '', transitionName }: { className?: string; transitionName?: string }) {
+export default function Building3D({ className = '', transitionName, animateOnScroll = true }: { className?: string; transitionName?: string; animateOnScroll?: boolean }) {
     const ref = useRef<HTMLDivElement>(null)
     const reduce = useReducedMotion()
 
@@ -28,21 +28,22 @@ export default function Building3D({ className = '', transitionName }: { classNa
 
         ;(async () => {
             const gsapMod = await import('gsap')
-            const stMod = await import('gsap/ScrollTrigger')
-            if (cancelled || !ref.current) return
             const gsap = gsapMod.default
-            const ScrollTrigger = stMod.ScrollTrigger
-            gsap.registerPlugin(ScrollTrigger)
+            if (animateOnScroll) {
+                const stMod = await import('gsap/ScrollTrigger')
+                gsap.registerPlugin(stMod.ScrollTrigger)
+            }
+            if (cancelled || !ref.current) return
 
             const ctx = gsap.context((self) => {
                 const q = self.selector!
-                // Descente pilotée par le défilement : ~680px de scroll = la tour
-                // glisse vers le bas (scrub). Élément dédié `.b3d-move` (aucun
-                // transform CSS concurrent) pour que le y ne soit jamais écrasé.
-                const st = { trigger: ref.current, start: 'top 78%', end: '+=680', scrub: 1 }
-                gsap.fromTo(q('.b3d-move'), { y: -18 }, { y: 128, ease: 'none', scrollTrigger: st })
-                // Rotation synchronisée sur le même défilement.
-                gsap.fromTo(q('.b3d-spin'), { rotateY: -32 }, { rotateY: 34, ease: 'none', scrollTrigger: { ...st } })
+                // Descente au scroll (seulement hors mode « journey », où le
+                // parent TowerJourney pilote lui-même la position sur toute la page).
+                if (animateOnScroll) {
+                    const st = { trigger: ref.current, start: 'top 78%', end: '+=680', scrub: 1 }
+                    gsap.fromTo(q('.b3d-move'), { y: -18 }, { y: 128, ease: 'none', scrollTrigger: st })
+                    gsap.fromTo(q('.b3d-spin'), { rotateY: -32 }, { rotateY: 34, ease: 'none', scrollTrigger: { ...st } })
+                }
                 // Flottement d'inactivité (indépendant du scroll).
                 gsap.to(q('.b3d-tilt'), { y: -12, duration: 2.8, ease: 'sine.inOut', yoyo: true, repeat: -1 })
                 // Clé dorée qui respire.
@@ -57,7 +58,7 @@ export default function Building3D({ className = '', transitionName }: { classNa
         })()
 
         return () => { cancelled = true; cleanup() }
-    }, [reduce])
+    }, [reduce, animateOnScroll])
 
     return (
         <div ref={ref} className={`b3d-stage ${className}`} aria-hidden="true" style={transitionName ? { viewTransitionName: transitionName } : undefined}>
