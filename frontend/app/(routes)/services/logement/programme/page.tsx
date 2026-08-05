@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import {
     ChevronRight, MapPin, Ruler, BedDouble, Building2, Check, X, ShieldCheck,
     FileCheck2, Home, ExternalLink, Loader2, Send, Landmark, Layers, KeyRound, ClipboardCheck,
+    Building, MapPinned, CalendarClock, Wallet,
 } from 'lucide-react'
 import Gallery from '@/components/logements/Gallery'
+import CountUp from '@/components/logements/CountUp'
 import type { SitePoint } from '@/components/logements/SitesMap'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
@@ -45,6 +47,12 @@ export default function ProgrammeLogementsPage() {
     const [detail, setDetail] = useState<Logement | null>(null)
     const [leadFor, setLeadFor] = useState<Logement | null | 'general'>(null)
 
+    // Parallax doux du décor du hero (Framer, SSR-safe). Désactivé si
+    // l'utilisateur préfère moins d'animations.
+    const reduce = useReducedMotion()
+    const { scrollY } = useScroll()
+    const heroY = useTransform(scrollY, [0, 600], reduce ? [0, 0] : [0, 110])
+
     useEffect(() => {
         fetch('/api/logements').then(r => r.json()).then(j => setAll(j.logements || [])).catch(() => setAll([])).finally(() => setLoading(false))
     }, [])
@@ -77,7 +85,7 @@ export default function ProgrammeLogementsPage() {
             <div className="bg-white text-slate-900">
                 {/* ═══ HERO ═══ */}
                 <section className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_12%_-5%,rgba(0,135,81,0.14),transparent),radial-gradient(45%_45%_at_92%_0%,rgba(252,209,22,0.12),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
+                    <motion.div style={{ y: heroY }} className="absolute -inset-x-8 -top-24 h-[135%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.14),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
                     <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-14">
                         <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
                             <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
@@ -97,12 +105,32 @@ export default function ProgrammeLogementsPage() {
                         </div>
                         {!loading && stats.total > 0 && (
                             <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
-                                {[[stats.total, 'logements'], [stats.villes, 'villes'], ['2', 'formules']].map(([n, l], i) => (
-                                    <div key={i} className="flex items-baseline gap-2"><span className="font-display text-2xl font-bold text-[#008751]">{n}</span><span className="text-sm text-slate-500">{l}</span></div>
-                                ))}
-                                {stats.min > 0 && <div className="flex items-baseline gap-2"><span className="text-sm text-slate-500">dès</span><span className="font-display text-2xl font-bold text-slate-900">{money(stats.min)}</span></div>}
+                                <div className="flex items-baseline gap-2"><CountUp to={stats.total} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500">logements</span></div>
+                                <div className="flex items-baseline gap-2"><CountUp to={stats.villes} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500">villes</span></div>
+                                <div className="flex items-baseline gap-2"><span className="font-display text-2xl font-bold text-[#008751]">2</span><span className="text-sm text-slate-500">formules</span></div>
+                                {stats.min > 0 && <div className="flex items-baseline gap-2"><span className="text-sm text-slate-500">dès</span><span className="font-display text-2xl font-bold text-slate-900"><CountUp to={stats.min} suffix=" FCFA" /></span></div>}
                             </div>
                         )}
+                    </div>
+                </section>
+
+                {/* ═══ CHIFFRES CLÉS DU PROGRAMME (faits réels, animés) ═══ */}
+                <section className="relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white">
+                        <div className="max-w-6xl mx-auto px-5 md:px-8 py-9 grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { Ic: Building, to: 20000, suffix: '', label: 'logements économiques & sociaux' },
+                                { Ic: MapPinned, to: 14, suffix: '', label: 'villes couvertes au Bénin' },
+                                { Ic: CalendarClock, to: 25, suffix: ' ans', label: 'durée max en location-accession' },
+                                { Ic: Wallet, to: 22.88, dec: 2, suffix: ' M', label: 'FCFA — dès la villa sociale' },
+                            ].map((k, i) => (
+                                <div key={i} className="flex flex-col">
+                                    <k.Ic size={20} className="text-[#FCD116] mb-2" />
+                                    <span className="font-display text-3xl md:text-4xl font-bold leading-none"><CountUp to={k.to} decimals={k.dec || 0} suffix={k.suffix} /></span>
+                                    <span className="text-[13px] text-white/75 mt-1.5 leading-snug">{k.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
