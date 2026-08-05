@@ -36,21 +36,13 @@ export default function Building3D({ className = '', transitionName }: { classNa
 
             const ctx = gsap.context((self) => {
                 const q = self.selector!
-                // La tour pivote ET descend au fil du défilement (scrub lié au scroll).
-                gsap.fromTo(q('.b3d-spin'),
-                    { rotateY: -34 },
-                    {
-                        rotateY: 30, ease: 'none',
-                        scrollTrigger: { trigger: ref.current, start: 'top 80%', end: 'bottom top', scrub: 1 },
-                    },
-                )
-                gsap.fromTo(q('.b3d-scale'),
-                    { y: -26 },
-                    {
-                        y: 72, ease: 'none',
-                        scrollTrigger: { trigger: ref.current, start: 'top 80%', end: 'bottom top', scrub: 1.2 },
-                    },
-                )
+                // Descente pilotée par le défilement : ~680px de scroll = la tour
+                // glisse vers le bas (scrub). Élément dédié `.b3d-move` (aucun
+                // transform CSS concurrent) pour que le y ne soit jamais écrasé.
+                const st = { trigger: ref.current, start: 'top 78%', end: '+=680', scrub: 1 }
+                gsap.fromTo(q('.b3d-move'), { y: -18 }, { y: 128, ease: 'none', scrollTrigger: st })
+                // Rotation synchronisée sur le même défilement.
+                gsap.fromTo(q('.b3d-spin'), { rotateY: -32 }, { rotateY: 34, ease: 'none', scrollTrigger: { ...st } })
                 // Flottement d'inactivité (indépendant du scroll).
                 gsap.to(q('.b3d-tilt'), { y: -12, duration: 2.8, ease: 'sine.inOut', yoyo: true, repeat: -1 })
                 // Clé dorée qui respire.
@@ -69,6 +61,7 @@ export default function Building3D({ className = '', transitionName }: { classNa
 
     return (
         <div ref={ref} className={`b3d-stage ${className}`} aria-hidden="true" style={transitionName ? { viewTransitionName: transitionName } : undefined}>
+          <div className="b3d-move">
             <div className="b3d-scale">
                 <div className="b3d-tilt">
                     <div className="b3d-spin">
@@ -107,6 +100,7 @@ export default function Building3D({ className = '', transitionName }: { classNa
                 </div>
                 <div className="b3d-shadow" />
             </div>
+          </div>
 
             <style jsx>{`
                 .b3d-stage {
@@ -117,7 +111,9 @@ export default function Building3D({ className = '', transitionName }: { classNa
                     width: 100%;
                     min-height: 320px;
                     perspective: 1100px;
+                    pointer-events: none;
                 }
+                .b3d-move { will-change: transform; }
                 .b3d-scale { transform: scale(0.82); }
                 @media (min-width: 640px) { .b3d-scale { transform: scale(1); } }
                 @media (min-width: 1024px) { .b3d-scale { transform: scale(1.1); } }

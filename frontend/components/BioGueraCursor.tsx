@@ -43,7 +43,18 @@ export default function BioGueraCursor() {
         root.classList.add('bg-cursor-active')
 
         const onMove = (e: PointerEvent) => { target.current = { x: e.clientX, y: e.clientY } }
-        const onDown = (e: PointerEvent) => { if (e.button === 0) throwSpear(e.clientX, e.clientY) }
+        let throwTO = 0
+        const onDown = (e: PointerEvent) => {
+            if (e.button !== 0) return
+            throwSpear(e.clientX, e.clientY)
+            // Geste de lancer : le bras se détend vers l'avant brièvement.
+            const rider = riderRef.current
+            if (rider) {
+                rider.classList.add('bg-throw')
+                clearTimeout(throwTO)
+                throwTO = window.setTimeout(() => rider.classList.remove('bg-throw'), 300)
+            }
+        }
         window.addEventListener('pointermove', onMove, { passive: true })
         window.addEventListener('pointerdown', onDown, { passive: true })
 
@@ -105,6 +116,7 @@ export default function BioGueraCursor() {
 
         return () => {
             cancelAnimationFrame(raf)
+            clearTimeout(throwTO)
             window.removeEventListener('pointermove', onMove)
             window.removeEventListener('pointerdown', onDown)
             root.classList.remove('bg-cursor-active')
@@ -140,10 +152,12 @@ export default function BioGueraCursor() {
                     <path d="M34 20 Q36 30 40 31 L34 31 Q30 26 31 20 Z" fill="#0b2a1c" />
                     {/* cape tricolore */}
                     <path d="M31 21 Q24 24 26 32 L31 28 Z" fill="#008751" />
-                    {/* bras + lance levée */}
-                    <line x1="37" y1="21" x2="52" y2="10" stroke="#0b2a1c" strokeWidth="2.6" strokeLinecap="round" />
-                    <line x1="46" y1="16" x2="64" y2="8" stroke="#b9922f" strokeWidth="2.2" strokeLinecap="round" />
-                    <path d="M64 8 l5 -2 -3 4 Z" fill="#FCD116" />
+                    {/* bras + lance levée — groupe animé (pivot à l'épaule) */}
+                    <g className="bg-arm">
+                        <line x1="37" y1="21" x2="52" y2="10" stroke="#0b2a1c" strokeWidth="2.6" strokeLinecap="round" />
+                        <line x1="46" y1="16" x2="64" y2="8" stroke="#b9922f" strokeWidth="2.2" strokeLinecap="round" />
+                        <path d="M64 8 l5 -2 -3 4 Z" fill="#FCD116" />
+                    </g>
                 </svg>
             </div>
 
@@ -171,6 +185,25 @@ export default function BioGueraCursor() {
                 @keyframes bg-gallop {
                     0%, 100% { transform: rotate(-16deg); }
                     50% { transform: rotate(18deg); }
+                }
+                /* Bras + lance qui pompent au rythme du galop (pivot à l'épaule) */
+                .bg-arm {
+                    transform-box: fill-box;
+                    transform-origin: 0% 65%;
+                    animation: bg-arm 0.34s ease-in-out infinite;
+                }
+                @keyframes bg-arm {
+                    0%, 100% { transform: rotate(-9deg); }
+                    50% { transform: rotate(11deg); }
+                }
+                /* Geste de lancer (au clic) : détente franche vers l'avant */
+                .bg-rider.bg-throw .bg-arm {
+                    animation: bg-throw 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                @keyframes bg-throw {
+                    0% { transform: rotate(-24deg); }
+                    45% { transform: rotate(-24deg); }
+                    100% { transform: rotate(34deg); }
                 }
 
                 .bg-spear {
