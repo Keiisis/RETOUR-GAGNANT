@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
+import Building3D from '@/components/logements/Building3D'
 import type { SitePoint } from '@/components/logements/SitesMap'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
@@ -101,7 +102,8 @@ export default function ProgrammeLogementsPage() {
                 {/* ═══ HERO ═══ */}
                 <section className="relative overflow-hidden">
                     <motion.div style={{ y: heroY }} className="absolute -inset-x-8 -top-24 h-[135%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.14),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
-                    <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-14">
+                    <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-14 grid lg:grid-cols-[1.12fr_0.88fr] gap-6 lg:gap-8 items-center">
+                      <div>
                         <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
                             <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
                             <Link href="/services/logement" className="hover:text-[#008751]">Logement</Link><ChevronRight size={13} />
@@ -126,6 +128,9 @@ export default function ProgrammeLogementsPage() {
                                 {stats.min > 0 && <div className="flex items-baseline gap-2"><span className="text-sm text-slate-500">dès</span><span className="font-display text-2xl font-bold text-slate-900"><CountUp to={stats.min} suffix=" FCFA" /></span></div>}
                             </div>
                         )}
+                      </div>
+                      {/* Élément 3D — tour de logements qui pivote au scroll (GSAP) */}
+                      <Building3D className="mt-4 lg:mt-0" />
                     </div>
                 </section>
 
@@ -205,7 +210,7 @@ export default function ProgrammeLogementsPage() {
 
                     {/* Carte + sites */}
                     {points.length > 0 && (
-                        <div className="mt-14 grid lg:grid-cols-[1.4fr,1fr] gap-6 items-start">
+                        <div className="mt-14 grid lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
                             <SitesMap points={points} onSelect={v => { setVille(v); document.getElementById('catalogue')?.scrollIntoView({ behavior: 'smooth' }) }} />
                             <div>
                                 <h2 className="font-display text-2xl font-bold mb-4">Sites du programme</h2>

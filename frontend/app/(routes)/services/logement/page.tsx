@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import Building3D from '@/components/logements/Building3D'
 import {
     Home, ArrowRight, ShieldCheck, Send, MapPin, Ruler, Handshake, Check, ChevronRight,
 } from 'lucide-react'
@@ -25,7 +26,8 @@ export default function LogementTremplin() {
             {/* HERO */}
             <section className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_12%_-5%,rgba(0,135,81,0.14),transparent),radial-gradient(45%_45%_at_92%_0%,rgba(252,209,22,0.12),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
-                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-16">
+                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-16 grid lg:grid-cols-[1.12fr_0.88fr] gap-6 lg:gap-8 items-center">
+                  <div>
                     <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
                         <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
                         <span className="text-slate-600 font-medium">Logement</span>
@@ -41,6 +43,9 @@ export default function LogementTremplin() {
                         <Link href="/services/logement/programme" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_14px_34px_-12px_rgba(0,135,81,0.7)]"><Home size={18} /> Découvrir les logements <ArrowRight size={17} /></Link>
                         <Link href="/services/logement/programme#eligibilite" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> Vérifier mon éligibilité</Link>
                     </div>
+                  </div>
+                  {/* Élément 3D — tour de logements qui pivote au scroll (GSAP) */}
+                  <Building3D className="mt-4 lg:mt-0" />
                 </div>
             </section>
 
