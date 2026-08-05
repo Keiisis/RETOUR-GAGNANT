@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
-    Home, ArrowRight, ShieldCheck, Send, MapPin, Ruler, Handshake, Check, Sparkles,
+    Home, ArrowRight, ShieldCheck, Send, MapPin, Ruler, Handshake, Check, ChevronRight,
 } from 'lucide-react'
 
 interface Logement { id: string; nom: string; type: string; ville: string; site: string; surface_m2: number; prix_comptant: number; devise: string; mensualite: number; images: string[] }
@@ -24,11 +24,15 @@ export default function LogementTremplin() {
         <div className="bg-white text-slate-900">
             {/* HERO */}
             <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_15%_0%,rgba(0,135,81,0.13),transparent),radial-gradient(ellipse_50%_40%_at_95%_5%,rgba(232,17,45,0.08),transparent)]" />
-                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-28 md:pt-36 pb-16">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#008751] text-[11px] font-black uppercase tracking-widest mb-5"><Handshake size={13} /> Partenariat immobilier</div>
-                    <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight max-w-3xl">
-                        Votre <span className="bg-gradient-to-r from-[#008751] to-[#E8112D] bg-clip-text text-transparent">logement</span> au Bénin, un dossier bien monté.
+                <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_12%_-5%,rgba(0,135,81,0.14),transparent),radial-gradient(45%_45%_at_92%_0%,rgba(252,209,22,0.12),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
+                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-16">
+                    <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
+                        <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
+                        <span className="text-slate-600 font-medium">Logement</span>
+                    </nav>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Handshake size={13} /> Partenariat immobilier</div>
+                    <h1 className="font-display text-4xl md:text-[3.7rem] font-bold leading-[1.03] tracking-[-0.02em] max-w-3xl">
+                        Votre <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent">logement</span> au Bénin, un dossier bien monté.
                     </h1>
                     <p className="mt-5 text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed">
                         Accédez aux logements économiques et sociaux du <strong className="text-slate-900">Programme national</strong>. Retour Gagnant ne vend pas les logements : nous <strong className="text-[#008751]">composons votre dossier</strong> pour qu'il soit viable et rapidement accepté.
@@ -92,7 +96,6 @@ export default function LogementTremplin() {
                 <div className="rounded-[2rem] bg-gradient-to-br from-[#008751] to-[#00643C] text-white p-8 md:p-12 relative overflow-hidden">
                     <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl" />
                     <div className="relative">
-                        <Sparkles size={28} className="mb-4 text-[#FCD116]" />
                         <h2 className="font-display text-3xl md:text-4xl font-bold max-w-2xl">Un dossier viable, c'est une acceptation rapide.</h2>
                         <p className="mt-3 text-white/85 max-w-xl">Les critères sont stricts (nationalité, non-propriété, revenus, pièces d'état civil). Notre métier : rendre votre dossier impeccable et le transmettre.</p>
                         <div className="mt-6 grid sm:grid-cols-3 gap-3 max-w-2xl">
