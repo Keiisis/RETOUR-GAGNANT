@@ -41,7 +41,7 @@ export default function Home() {
               <ArrowRight size={15} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-          <ServicesGrid />
+          <ServicesGrid featuredSlug="nationalite-vip" limit={6} />
         </div>
       </section>
 

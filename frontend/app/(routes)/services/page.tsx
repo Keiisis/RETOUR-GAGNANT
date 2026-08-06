@@ -3,15 +3,18 @@ import ServicesGrid from "@/components/home/ServicesGrid";
 
 export default function ServicesPage() {
     return (
-        <div className="container mx-auto px-4 py-12">
-            <div className="text-center mb-16 space-y-4">
-                <h1 className="text-4xl md:text-5xl font-bold font-heading text-primary"><T>Nos Services</T></h1>
-                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                    <T>Découvrez comment nous pouvons faciliter votre retour et votre installation au Bénin grâce à nos solutions sur mesure.</T>
-                </p>
-                <div className="w-24 h-1.5 bg-secondary mx-auto rounded-full mt-4" />
+        <div className="bg-[#FBFAF7] pt-28 pb-24 md:pt-32">
+            <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+                <div className="mb-14 max-w-2xl">
+                    <h1 className="font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-6xl">
+                        <T>Nos services</T>
+                    </h1>
+                    <p className="mt-4 font-geist text-lg leading-relaxed text-[#4a5751]">
+                        <T>Chaque étape de votre retour et de votre installation au Bénin, prise en charge par une équipe qui connaît le terrain.</T>
+                    </p>
+                </div>
+                <ServicesGrid featuredSlug="nationalite-vip" />
             </div>
-            <ServicesGrid />
         </div>
     );
 }
