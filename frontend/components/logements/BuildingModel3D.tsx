@@ -15,6 +15,11 @@ function Model() {
     // l'environnement (blanc) au lieu d'afficher sa texture. On le passe en
     // diélectrique mat pour révéler les couleurs (brique / fenêtres / murs).
     useMemo(() => {
+        // Le modèle est un PBR MÉTALLIQUE (metalness=1 piloté par la texture
+        // metallicRoughness) : sa couleur (murs saumon, colonnes orange, comme
+        // sur Meshy) vient du reflet de l'ENVIRONNEMENT sur une surface rugueuse,
+        // pas de l'albédo (gris). On PRÉSERVE ce workflow et on laisse
+        // l'environnement (chaud, plus bas) faire la couleur.
         scene.traverse((child) => {
             const mesh = child as THREE.Mesh;
             if (!mesh.isMesh) return;
@@ -22,13 +27,8 @@ function Model() {
             for (const mm of mats) {
                 const m = mm as THREE.MeshStandardMaterial;
                 if ("metalness" in m) {
-                    m.metalness = 0;
-                    m.roughness = Math.max(m.roughness ?? 1, 0.7);
-                    m.envMapIntensity = 0.25; // reflets d'env. faibles → la texture domine
-                    // La texture baseColor est assez désaturée (béton) : on la fait
-                    // ressortir légèrement via un léger boost de teinte chaude.
                     if (m.map) m.map.colorSpace = "srgb" as THREE.ColorSpace;
-                    m.color.setRGB(1.06, 1.02, 0.98); // réchauffe/éclaircit à peine
+                    m.envMapIntensity = 1.0; // reflets d'env. → la couleur du bâtiment
                     m.needsUpdate = true;
                 }
             }
@@ -67,24 +67,24 @@ export default function BuildingModel3D({ className = "" }: { className?: string
     return (
         <div className={`relative ${className}`} aria-hidden="true">
             <Canvas
-                flat /* NoToneMapping → couleurs fidèles à la texture (pas de délavage ACES) */
                 dpr={[1, 1.75]}
                 camera={{ position: [0, 0.4, 7], fov: 40 }}
-                gl={{ antialias: true, alpha: true }}
+                gl={{ antialias: true, alpha: true, toneMappingExposure: 0.9 }}
                 style={{ background: "transparent" }}
             >
-                <ambientLight intensity={0.75} />
-                <hemisphereLight args={["#ffffff", "#b9c4bd", 0.35]} />
-                <directionalLight position={[5, 8, 5]} intensity={0.85} />
-                <directionalLight position={[-6, 3, -4]} intensity={0.3} />
+                {/* Surface métallique : seule l'ENVIRONNEMENT la colore (les lumières
+                    directes n'affectent quasi pas un métal). Fill ambiant minimal. */}
+                <ambientLight intensity={0.15} />
                 <Suspense fallback={null}>
-                    {/* Environnement LOCAL (aucun fetch externe → CSP-safe), intensités
-                        faibles : sert de fill léger sans délaver la texture. */}
-                    <Environment resolution={128}>
-                        <Lightformer intensity={0.8} position={[0, 4, 5]} scale={[12, 12, 1]} color="#ffffff" />
-                        <Lightformer intensity={0.5} position={[-5, 2, -3]} scale={[8, 8, 1]} color="#e6efe9" />
-                        <Lightformer intensity={0.6} position={[5, 2, -2]} scale={[8, 8, 1]} color="#fff4d6" />
-                        <Lightformer intensity={0.3} position={[0, -3, 2]} scale={[10, 6, 1]} color="#dfe6e2" />
+                    {/* Environnement studio CHAUD (local → CSP-safe) : reproduit le
+                        rendu Meshy (murs saumon, colonnes orange) via reflet sur métal
+                        rugueux. Intensités modérées pour éviter la surexposition. */}
+                    <Environment resolution={256}>
+                        <Lightformer intensity={1.6} position={[0, 3, 6]} scale={[14, 10, 1]} color="#fff2e0" />
+                        <Lightformer intensity={1.0} position={[-6, 1, -2]} scale={[9, 9, 1]} color="#ffe4c4" />
+                        <Lightformer intensity={1.2} position={[6, 2, -1]} scale={[9, 9, 1]} color="#ffd9a8" />
+                        <Lightformer intensity={0.7} position={[0, 5, -4]} scale={[12, 6, 1]} color="#f5f7ff" />
+                        <Lightformer intensity={0.4} position={[0, -4, 3]} scale={[12, 6, 1]} color="#e8ded2" />
                     </Environment>
                     <Bounds fit clip margin={1.15}>
                         <Spin reduce={reduce}>
