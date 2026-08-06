@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Quotes, Star, PaperPlaneTilt, CheckCircle, X, Camera } from "@phosphor-icons/react";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +37,7 @@ function Stars({ n }: { n: number }) {
 function Card({ item }: { item: Testimonial }) {
     const { t } = useTranslation();
     return (
-        <figure className="flex h-full flex-col rounded-[1.4rem] border border-[#e7e4db] bg-white p-7">
+        <figure className="mx-3 flex w-[340px] shrink-0 flex-col rounded-[1.4rem] border border-[#e7e4db] bg-white p-7 sm:w-[380px]">
             <Quotes size={28} weight="fill" className="text-[#008751]/25" />
             <blockquote className="mt-4 flex-1 font-geist text-[15px] leading-relaxed text-[#3a453f] line-clamp-3">
                 {t(item.text)}
@@ -150,9 +150,9 @@ function SubmissionModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function TestimonialsCarousel() {
-    const reduce = useReducedMotion();
     const [items, setItems] = useState<Testimonial[]>(fallbackTestimonials);
     const [open, setOpen] = useState(false);
+    const [paused, setPaused] = useState(false);
 
     useEffect(() => {
         fetch("/api/testimonials")
@@ -175,10 +175,16 @@ export default function TestimonialsCarousel() {
             .catch(() => { });
     }, []);
 
+    const half = Math.ceil(items.length / 2);
+    const rowA = items.length > 3 ? items.slice(0, half) : items;
+    const rowB = items.length > 3 ? items.slice(half) : items;
+    const trackA = [...rowA, ...rowA, ...rowA];
+    const trackB = [...rowB, ...rowB, ...rowB];
+
     return (
-        <section className="bg-white py-20 md:py-28">
-            <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-                <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <section className="overflow-hidden bg-white py-20 md:py-28">
+            <div className="mx-auto mb-12 max-w-[1400px] px-5 md:px-8">
+                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
                     <h2 className="max-w-2xl font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-5xl">
                         <T>Ils sont rentrés avec nous.</T>
                     </h2>
@@ -186,19 +192,19 @@ export default function TestimonialsCarousel() {
                         <PaperPlaneTilt size={16} weight="bold" /> <T>Partager votre expérience</T>
                     </button>
                 </div>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    {items.slice(0, 6).map((item, i) => (
-                        <motion.div
-                            key={item.id}
-                            initial={reduce ? false : { opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ duration: 0.6, delay: (i % 3) * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                            <Card item={item} />
-                        </motion.div>
-                    ))}
+            </div>
+
+            <div className="relative flex flex-col gap-5" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white to-transparent" />
+                <div className="flex w-max animate-marquee-left" style={{ animationPlayState: paused ? "paused" : "running" }}>
+                    {trackA.map((item, i) => <Card key={`a-${item.id}-${i}`} item={item} />)}
                 </div>
+                {rowB.length > 0 && (
+                    <div className="flex w-max animate-marquee-right" style={{ animationPlayState: paused ? "paused" : "running" }}>
+                        {trackB.map((item, i) => <Card key={`b-${item.id}-${i}`} item={item} />)}
+                    </div>
+                )}
             </div>
             <AnimatePresence>{open && <SubmissionModal onClose={() => setOpen(false)} />}</AnimatePresence>
         </section>

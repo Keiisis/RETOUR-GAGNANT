@@ -102,8 +102,8 @@ export default function HeritageCarousel() {
                 </p>
             </div>
 
-            <div className="flex" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-                <div className="flex gap-5 whitespace-nowrap px-5 animate-marquee md:px-8" style={{ animationPlayState: paused ? "paused" : "running" }}>
+            <div className="flex overflow-hidden" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+                <div className="flex w-max gap-5 px-2.5 animate-marquee-left" style={{ animationPlayState: paused ? "paused" : "running" }}>
                     {track.map((item, index) => (
                         <HeritageCard key={`${item.id}-${index}`} item={item} />
                     ))}

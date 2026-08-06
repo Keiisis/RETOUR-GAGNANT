@@ -1,27 +1,25 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
-import { useState, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CalendarBlank } from "@phosphor-icons/react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation, T } from "@/lib/translation";
 import { supabase } from "@/lib/supabase";
 
 /**
- * Hero — direction éditoriale asymétrique, palette CLAIRE (ivoire), titre
- * cinétique Fraunces (révélation par mots). Un seul CTA primaire. Filet
- * tricolore fin (pas d'aplat patriotique). Image réelle du Bénin en duotone
- * vert-or. Titre/sous-titre restent éditables via `settings` (Supabase).
+ * Hero — vidéo plein écran (direction d'origine conservée). Seule la
+ * typographie évolue : titre en Fraunces, corps en Geist. Titre/sous-titre/
+ * vidéo restent éditables via `settings` (Supabase).
  */
 export default function HeroSection() {
     const { t, lang } = useTranslation();
-    const reduce = useReducedMotion();
+    const [isVideoLoaded, setIsVideoLoaded] = useState(false);
     const [content, setContent] = useState({
         title: "VOTRE RETOUR GAGNANT",
-        subtitle:
-            "Réalisez vos ambitions au cœur du Bénin : là où vos racines deviennent des héritages d'exception.",
+        subtitle: "Réalisez vos ambitions au cœur du Bénin : là où vos racines deviennent des héritages d'exception.",
+        video: "/videos/hero.mp4",
     });
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     const SLOGAN_VALS: Record<string, string> = {
         en: "YOUR WINNING RETURN",
@@ -33,166 +31,163 @@ export default function HeroSection() {
     };
 
     useEffect(() => {
-        const fetchHero = async () => {
-            const { data, error } = await supabase
-                .from("settings")
-                .select("key, value")
-                .or("key.eq.frontend_hero_title,key.eq.frontend_hero_subtitle");
-            if (data && !error) {
-                setContent((prev) => {
-                    const next = { ...prev };
-                    data.forEach((item) => {
-                        if (item.key === "frontend_hero_title") next.title = item.value;
-                        if (item.key === "frontend_hero_subtitle") next.subtitle = item.value;
+        const fetchHeroContent = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("settings")
+                    .select("key, value")
+                    .or("key.eq.frontend_hero_title,key.eq.frontend_hero_subtitle,key.eq.frontend_hero_video");
+                if (data && !error) {
+                    setContent((prev) => {
+                        const next = { ...prev };
+                        data.forEach((item) => {
+                            if (item.key === "frontend_hero_title") next.title = item.value;
+                            if (item.key === "frontend_hero_subtitle") next.subtitle = item.value;
+                            if (item.key === "frontend_hero_video") next.video = item.value;
+                        });
+                        return next;
                     });
-                    return next;
-                });
+                }
+            } catch (err) {
+                console.error("Error fetching hero content:", err);
             }
         };
-        fetchHero();
+        fetchHeroContent();
         const channel = supabase
             .channel("hero_settings_changes")
-            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings" }, fetchHero)
+            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings" }, fetchHeroContent)
             .subscribe();
         return () => {
             supabase.removeChannel(channel);
         };
     }, []);
 
-    // Titre → mots (le slogan principal a une traduction précise dédiée).
-    const rawTitle = (() => {
-        const isMain =
-            content.title.toUpperCase().includes("VOTRE RETOUR GAGNANT") ||
-            t(content.title).toUpperCase() === "VOTRE RETOUR GAGNANT";
-        return isMain ? SLOGAN_VALS[lang] || t(content.title) : t(content.title);
-    })();
-    const words = rawTitle.split(" ").filter(Boolean);
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const handleReady = () => setIsVideoLoaded(true);
+        video.addEventListener("loadeddata", handleReady);
+        video.addEventListener("canplay", handleReady);
+        video.addEventListener("playing", handleReady);
+        if (video.readyState >= 2) handleReady();
+        const timeout = setTimeout(() => setIsVideoLoaded(true), 2000);
+        return () => {
+            video.removeEventListener("loadeddata", handleReady);
+            video.removeEventListener("canplay", handleReady);
+            video.removeEventListener("playing", handleReady);
+            clearTimeout(timeout);
+        };
+    }, [content.video]);
 
-    const container = {
-        hidden: {},
-        show: { transition: { staggerChildren: 0.09, delayChildren: 0.08 } },
-    };
-    const wordV = {
-        hidden: { y: "115%" },
-        show: { y: 0, transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const } },
-    };
-    const fade = {
-        hidden: { opacity: 0, y: 18 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const } },
+    const renderTitle = (title: string) => {
+        let translated = t(title);
+        const isMainSlogan =
+            title.toUpperCase().includes("VOTRE RETOUR GAGNANT") ||
+            translated.toUpperCase() === "VOTRE RETOUR GAGNANT";
+        if (isMainSlogan) {
+            translated = SLOGAN_VALS[lang] || translated;
+            const words = translated.split(" ");
+            return (
+                <>
+                    {words.map((word, i) => {
+                        let className = "text-white/90";
+                        if (i === 0) className = "text-[#008751]";
+                        else if (i === 1) className = "text-[#FCD116] drop-shadow-[0_0_30px_rgba(252,209,22,0.4)] italic";
+                        else if (i === 2) className = "text-[#E8112D]";
+                        return (
+                            <span key={i} className={className}>
+                                {word}
+                                {i < words.length - 1 ? " " : ""}
+                            </span>
+                        );
+                    })}
+                </>
+            );
+        }
+        return <>{translated}</>;
     };
 
     return (
-        <section className="relative overflow-hidden bg-[#FBFAF7] -mt-20 pt-28 md:pt-32 pb-16 md:pb-20 min-h-[100dvh] flex items-center">
-            {/* halo clair très doux (ivoire/menthe/or), aucun fond sombre */}
-            <div aria-hidden className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -left-24 h-[520px] w-[520px] rounded-full bg-[#008751]/[0.06] blur-[120px]" />
-                <div className="absolute -bottom-32 right-[8%] h-[440px] w-[440px] rounded-full bg-[#FCD116]/[0.10] blur-[120px]" />
+        <section className="relative -mt-20 flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#0a1628]">
+            {/* Vidéo plein écran */}
+            <div key={content.video} className={`absolute inset-0 z-[1] transition-all duration-[2000ms] ease-out will-change-[opacity] ${isVideoLoaded ? "scale-100 opacity-100" : "scale-105 opacity-0"}`}>
+                <video ref={videoRef} autoPlay loop muted playsInline preload="none" poster="/images/hero-bg.jpg" className="h-full w-full object-cover">
+                    <source src={content.video} type="video/mp4" />
+                </video>
             </div>
 
-            <div className="relative z-10 mx-auto grid w-full max-w-[1400px] grid-cols-1 items-center gap-10 px-5 md:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-                {/* ── Colonne texte ── */}
-                <div>
-                    <motion.p
-                        initial={reduce ? false : "hidden"}
-                        animate="show"
-                        variants={fade}
-                        className="mb-6 font-geistmono text-[11px] font-medium uppercase tracking-[0.32em] text-[#008751]"
-                    >
-                        <T>Diaspora · Bénin</T>
-                    </motion.p>
+            {/* Repli statique */}
+            <div className={`absolute inset-0 z-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center transition-opacity duration-1000 ${isVideoLoaded ? "opacity-0" : "opacity-100"}`} />
 
-                    <motion.h1
-                        initial={reduce ? false : "hidden"}
-                        animate="show"
-                        variants={container}
-                        className="font-fraunces text-[3.2rem] font-semibold leading-[0.98] tracking-[-0.02em] text-[#0d1a12] sm:text-6xl md:text-7xl lg:text-[5.1rem]"
-                    >
-                        {words.map((w, i) => (
-                            <span key={i} className="inline-block overflow-hidden pb-[0.12em] align-bottom">
-                                <motion.span
-                                    variants={wordV}
-                                    className={`inline-block ${i === words.length - 1 ? "italic text-[#008751]" : ""}`}
-                                >
-                                    {w}
-                                </motion.span>
-                                {i < words.length - 1 ? " " : ""}
-                            </span>
-                        ))}
-                    </motion.h1>
+            {/* Voiles cinématiques */}
+            <div className="pointer-events-none absolute inset-0 z-[2]">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#008751]/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.5)_100%)]" />
+            </div>
 
-                    {/* filet tricolore fin (accent, pas d'aplat) */}
-                    <motion.div
-                        initial={reduce ? false : "hidden"}
-                        animate="show"
-                        variants={fade}
-                        className="mt-7 flex h-[3px] w-40 overflow-hidden rounded-full"
-                    >
-                        <span className="flex-[46] bg-[#008751]" />
-                        <span className="flex-[27] bg-[#FCD116]" />
-                        <span className="flex-[27] bg-[#E8112D]" />
-                    </motion.div>
+            {/* Particules */}
+            <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
+                <div className="animate-spin-slow absolute -top-1/2 -right-1/2 h-full w-full rounded-full bg-[#FCD116]/5 blur-[120px]" />
+                <div className="animate-float absolute left-[15%] top-[20%] h-2 w-2 rounded-full bg-[#FCD116] opacity-40" />
+                <div className="animate-float-delayed absolute right-[20%] top-[70%] h-3 w-3 rounded-full bg-[#E8112D] opacity-30" />
+                <div className="animate-float absolute left-[70%] top-[40%] h-1.5 w-1.5 rounded-full bg-white opacity-50" />
+                <div className="animate-float-delayed absolute left-[30%] top-[60%] h-2 w-2 rounded-full bg-[#008751] opacity-35" />
+            </div>
 
-                    <motion.p
-                        initial={reduce ? false : "hidden"}
-                        animate="show"
-                        variants={fade}
-                        className="mt-6 max-w-[46ch] font-geist text-lg leading-relaxed text-[#4a5751]"
-                    >
-                        {t(content.subtitle)}
-                    </motion.p>
+            {/* Contenu */}
+            <div className="container relative z-10 px-4 text-center">
+                <h1 className="animate-in zoom-in-95 mb-6 font-fraunces text-5xl font-semibold leading-[1.02] tracking-[-0.02em] drop-shadow-2xl duration-1000 sm:text-6xl md:mb-8 md:text-7xl lg:text-8xl">
+                    {renderTitle(content.title)}
+                </h1>
 
-                    <motion.div
-                        initial={reduce ? false : "hidden"}
-                        animate="show"
-                        variants={fade}
-                        className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
-                    >
-                        <Link
-                            href="/rendez-vous"
-                            className="group inline-flex items-center gap-2.5 rounded-full bg-[#008751] px-7 py-4 font-geist text-[15px] font-semibold text-white shadow-[0_16px_40px_-14px_rgba(0,135,81,0.6)] transition-all hover:bg-[#00693f] active:scale-[0.98]"
-                        >
-                            <CalendarBlank size={18} weight="bold" />
-                            <T>Prendre rendez-vous</T>
-                            <ArrowRight size={16} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
-                        </Link>
-                        <Link
-                            href="/services"
-                            className="group inline-flex items-center gap-2 font-geist text-[15px] font-semibold text-[#0d1a12] underline decoration-[#FCD116] decoration-2 underline-offset-[6px] transition-colors hover:text-[#008751]"
-                        >
-                            <T>Découvrir nos services</T>
-                            <ArrowRight size={15} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
-                        </Link>
-                    </motion.div>
+                <p className="animate-in fade-in mx-auto mb-8 max-w-2xl font-geist text-base leading-relaxed text-white/85 duration-1000 md:text-lg">
+                    {t(content.subtitle)}
+                </p>
+
+                <div className="animate-in fade-in slide-in-from-bottom-10 mx-auto flex w-full max-w-4xl flex-col flex-wrap items-center justify-center gap-4 delay-700 duration-1000 md:flex-row">
+                    <Link href="/nationalite">
+                        <Button size="lg" className="h-14 w-full rounded-full bg-[#008751] px-8 font-geist text-base font-semibold text-white shadow-[0_8px_32px_rgba(0,135,81,0.4)] transition-all duration-300 hover:scale-105 hover:bg-[#006e42] md:h-16 md:w-auto md:text-lg">
+                            <T>Obtenez la nationalité Béninoise</T>
+                        </Button>
+                    </Link>
+                    <Link href="/services/culture">
+                        <Button size="lg" className="h-14 w-full rounded-full border border-yellow-400/50 bg-[#FCD116] px-8 font-geist text-base font-bold text-[#0d1a12] shadow-[0_8px_32px_rgba(252,209,22,0.4)] transition-all duration-300 hover:scale-105 hover:bg-[#e5bc14] md:h-16 md:w-auto md:text-lg">
+                            <T>Visitez le Bénin</T>
+                        </Button>
+                    </Link>
+                    <Link href="/services/investissement">
+                        <Button size="lg" className="h-14 w-full rounded-full bg-[#E8112D] px-8 font-geist text-base font-semibold text-white shadow-[0_8px_32px_rgba(232,17,45,0.4)] transition-all duration-300 hover:scale-105 hover:bg-[#c40e25] md:h-16 md:w-auto md:text-lg">
+                            <T>Investir &amp; S&apos;installer au Bénin</T>
+                        </Button>
+                    </Link>
                 </div>
-
-                {/* ── Colonne image (Bénin, duotone vert-or) ── */}
-                <motion.div
-                    initial={reduce ? false : { opacity: 0, scale: 1.04 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative"
-                >
-                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.6rem] shadow-[0_40px_80px_-40px_rgba(13,26,18,0.4)] sm:aspect-[5/5] lg:aspect-[4/5]">
-                        <Image
-                            src="/images/hero-bg.jpg"
-                            alt={t("Retour au Bénin")}
-                            fill
-                            priority
-                            sizes="(max-width: 1024px) 100vw, 45vw"
-                            className="object-cover"
-                        />
-                        {/* duotone léger vert-or pour la cohérence */}
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-[#00432a]/45 via-[#008751]/10 to-[#FCD116]/20 mix-blend-multiply" />
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0d1a12]/30 to-transparent" />
-                    </div>
-                    {/* filet tricolore d'ancrage bas */}
-                    <div className="absolute -bottom-3 left-8 right-8 flex h-1.5 overflow-hidden rounded-full shadow-lg">
-                        <span className="flex-[46] bg-[#008751]" />
-                        <span className="flex-[27] bg-[#FCD116]" />
-                        <span className="flex-[27] bg-[#E8112D]" />
-                    </div>
-                </motion.div>
             </div>
+
+            {/* Indicateur de défilement */}
+            <div className="animate-bounce absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
+                <span className="font-geistmono text-xs uppercase tracking-widest text-white/50"><T>Défiler</T></span>
+                <div className="h-10 w-px bg-gradient-to-b from-white/60 to-transparent" />
+            </div>
+
+            <style jsx>{`
+                @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) translateX(0px); }
+                    25% { transform: translateY(-20px) translateX(10px); }
+                    50% { transform: translateY(-10px) translateX(-5px); }
+                    75% { transform: translateY(-25px) translateX(15px); }
+                }
+                @keyframes float-delayed {
+                    0%, 100% { transform: translateY(0px) translateX(0px); }
+                    25% { transform: translateY(15px) translateX(-10px); }
+                    50% { transform: translateY(-15px) translateX(8px); }
+                    75% { transform: translateY(10px) translateX(-12px); }
+                }
+                .animate-spin-slow { animation: spin-slow 60s linear infinite; }
+                .animate-float { animation: float 8s ease-in-out infinite; }
+                .animate-float-delayed { animation: float-delayed 10s ease-in-out infinite; }
+            `}</style>
         </section>
     );
 }

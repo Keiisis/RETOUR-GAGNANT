@@ -4,9 +4,9 @@ import SmoothScroll from "@/components/home/SmoothScroll";
 import HeroSection from "@/components/home/HeroSection";
 import ServicesGrid from "@/components/home/ServicesGrid";
 import AboutUsSection from "@/components/home/AboutUsSection";
-import StatsBand from "@/components/home/StatsBand";
 import ProcessSteps from "@/components/home/ProcessSteps";
 import HeritageCarousel from "@/components/home/HeritageCarousel";
+import ImmersiveGallery from "@/components/home/ImmersiveGallery";
 import TestimonialsCarousel from "@/components/home/TestimonialsCarousel";
 import PartnersSection from "@/components/home/PartnersSection";
 import FinalCta from "@/components/home/FinalCta";
@@ -48,16 +48,16 @@ export default function Home() {
       {/* Qui sommes-nous — éditorial image + prose */}
       <AboutUsSection />
 
-      {/* Preuve — bande de faits réels */}
-      <StatsBand />
-
       {/* Notre démarche — timeline verticale */}
       <ProcessSteps />
 
-      {/* Patrimoine — galerie (seul marquee de la page) */}
+      {/* Patrimoine — galerie défilante */}
       <HeritageCarousel />
 
-      {/* Témoignages — grille de citations */}
+      {/* Immersion visuelle — bloc noir cinématique (galerie photos) */}
+      <ImmersiveGallery />
+
+      {/* Témoignages — défilement de citations */}
       <TestimonialsCarousel />
 
       {/* Partenaires — logo wall */}

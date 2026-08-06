@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { X, CaretLeft, CaretRight, Pause, Play } from "@phosphor-icons/react";
 import { useTranslation, T } from "@/lib/translation";
 
 interface GalleryImage {
@@ -142,14 +142,11 @@ export default function ImmersiveGallery() {
                     style={{ y: headerY, opacity: headerOpacity }}
                     className="absolute top-16 left-0 right-0 z-10 text-center px-4"
                 >
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-[#FCD116] text-sm font-semibold tracking-widest uppercase mb-4 border border-white/10">
-                        <T>Immersion Visuelle</T>
+                    <span className="mb-4 inline-block font-geistmono text-[11px] font-medium uppercase tracking-[0.28em] text-[#FCD116]">
+                        <T>Immersion visuelle</T>
                     </span>
-                    <h2 className="text-5xl md:text-7xl font-bold font-heading text-white drop-shadow-2xl">
-                        <T>Vision du</T>{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]">
-                            <T>Bénin</T>
-                        </span>
+                    <h2 className="font-fraunces text-5xl font-semibold text-white drop-shadow-2xl md:text-7xl">
+                        <T>Vision du</T> <span className="italic text-[#FCD116]"><T>Bénin</T></span>
                     </h2>
                 </motion.div>
 
@@ -160,7 +157,7 @@ export default function ImmersiveGallery() {
                         aria-label={t('Image précédente')}
                         className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
                     >
-                        <ChevronLeft size={22} />
+                        <CaretLeft size={22} />
                     </button>
 
                     {/* Progress bar */}
@@ -195,7 +192,7 @@ export default function ImmersiveGallery() {
                         aria-label={t('Image suivante')}
                         className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
                     >
-                        <ChevronRight size={22} />
+                        <CaretRight size={22} />
                     </button>
                 </div>
 
@@ -295,9 +292,9 @@ export default function ImmersiveGallery() {
                                     sizes="(max-width: 768px) 50vw, 25vw"
                                 />
                                 {/* Hover overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                                    <span className="text-white text-sm font-semibold drop-shadow-lg">
-                                        🇧🇯 <T>Découvrir</T>
+                                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                    <span className="font-geist text-sm font-semibold text-white drop-shadow-lg">
+                                        <T>Découvrir</T>
                                     </span>
                                 </div>
                             </motion.div>
@@ -305,23 +302,6 @@ export default function ImmersiveGallery() {
                     })}
                 </div>
 
-                {/* Stats bar */}
-                <div className="flex justify-center items-center gap-8 mt-12 pt-8 border-t border-white/10">
-                    <div className="text-center">
-                        <span className="text-3xl font-bold text-[#FCD116]">{images.length}</span>
-                        <p className="text-white/40 text-xs mt-1 uppercase tracking-wider"><T>Photos</T></p>
-                    </div>
-                    <div className="w-px h-10 bg-white/10" />
-                    <div className="text-center">
-                        <span className="text-3xl font-bold text-[#008751]">∞</span>
-                        <p className="text-white/40 text-xs mt-1 uppercase tracking-wider"><T>Souvenirs</T></p>
-                    </div>
-                    <div className="w-px h-10 bg-white/10" />
-                    <div className="text-center">
-                        <span className="text-3xl font-bold text-[#E8112D]">1</span>
-                        <p className="text-white/40 text-xs mt-1 uppercase tracking-wider"><T>Bénin</T></p>
-                    </div>
-                </div>
             </div>
 
             {/* ═══════════════════════════════════════════ */}
@@ -357,7 +337,7 @@ export default function ImmersiveGallery() {
                             aria-label={t('Photo précédente')}
                             className="absolute left-4 md:left-8 z-50 w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all"
                         >
-                            <ChevronLeft size={28} />
+                            <CaretLeft size={28} />
                         </button>
 
                         {/* Image */}
@@ -391,7 +371,7 @@ export default function ImmersiveGallery() {
                             aria-label={t('Photo suivante')}
                             className="absolute right-4 md:right-8 z-50 w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all"
                         >
-                            <ChevronRight size={28} />
+                            <CaretRight size={28} />
                         </button>
 
                         {/* Counter */}
