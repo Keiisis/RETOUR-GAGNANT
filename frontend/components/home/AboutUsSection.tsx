@@ -63,11 +63,6 @@ export default function AboutUsSection() {
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.6rem] border border-[#ece9e0] bg-[#f6f4ee] shadow-[0_36px_70px_-40px_rgba(13,26,18,0.35)]">
                         <video src={content.video} autoPlay loop muted playsInline className="h-full w-full object-cover" />
                     </div>
-                    <div className="absolute -bottom-3 left-8 right-8 flex h-1.5 overflow-hidden rounded-full shadow-lg">
-                        <span className="flex-[46] bg-[#008751]" />
-                        <span className="flex-[27] bg-[#FCD116]" />
-                        <span className="flex-[27] bg-[#E8112D]" />
-                    </div>
                 </motion.div>
 
                 {/* Prose */}

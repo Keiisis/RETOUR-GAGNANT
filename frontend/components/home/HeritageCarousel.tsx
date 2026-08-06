@@ -49,13 +49,6 @@ function HeritageCard({ item }: { item: HeritageItem }) {
                 <h3 className="mt-1.5 font-fraunces text-xl font-semibold leading-tight">{t(item.title)}</h3>
                 <p className="mt-1 font-geist text-[13px] leading-snug text-white/70 line-clamp-2">{t(item.description)}</p>
             </div>
-            <span className="absolute left-0 top-0 h-1 w-full">
-                <span className="flex h-full w-full">
-                    <span className="flex-[46] bg-[#008751]" />
-                    <span className="flex-[27] bg-[#FCD116]" />
-                    <span className="flex-[27] bg-[#E8112D]" />
-                </span>
-            </span>
         </div>
     );
 }

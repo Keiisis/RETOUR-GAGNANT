@@ -179,7 +179,7 @@ function SubmissionForm() {
                         <CheckCircle size={48} className="text-[#008751]" />
                     </div>
                 </div>
-                <h3 className="text-3xl font-bold text-[#1a2332] mb-3 font-heading"><T>Merci ! 🇧🇯</T></h3>
+                <h3 className="text-3xl font-bold text-[#1a2332] mb-3 font-fraunces"><T>Merci !</T></h3>
                 <p className="text-gray-600 max-w-xs mx-auto"><T>Votre témoignage a été reçu. Il sera publié après validation.</T></p>
                 <Button
                     variant="ghost"
@@ -204,7 +204,7 @@ function SubmissionForm() {
                 className="relative z-10 p-8 md:p-10 space-y-6"
             >
                 <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold font-heading bg-clip-text text-transparent bg-gradient-to-r from-[#008751] to-[#1a2332]">
+                    <h3 className="text-2xl font-bold font-fraunces bg-clip-text text-transparent bg-gradient-to-r from-[#008751] to-[#1a2332]">
                         <T>Partagez votre expérience</T>
                     </h3>
                     <p className="text-gray-500 text-sm mt-2"><T>Rejoignez la communauté du Retour Gagnant</T></p>
@@ -373,7 +373,7 @@ export default function TestimonialsCarousel() {
     const displayItems = testimonials.length < 5 ? [...testimonials, ...testimonials, ...testimonials] : [...testimonials, ...testimonials];
 
     return (
-        <section className="py-24 bg-[#fafbfc] overflow-hidden relative">
+        <section className="py-24 bg-[#fafbfc] overflow-hidden relative font-geist">
             <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
                 <div className="absolute top-20 right-[-10%] w-[500px] h-[500px] bg-[#FCD116]/10 rounded-full blur-3xl" />
                 <div className="absolute bottom-20 left-[-10%] w-[500px] h-[500px] bg-[#008751]/5 rounded-full blur-3xl" />
@@ -389,7 +389,7 @@ export default function TestimonialsCarousel() {
                     <span className="inline-block px-4 py-1.5 rounded-full bg-[#E8112D]/5 text-[#E8112D] text-sm font-bold tracking-widest uppercase mb-4 border border-[#E8112D]/10">
                         <T>La Voix de la Diaspora</T>
                     </span>
-                    <h2 className="text-4xl md:text-6xl font-bold font-heading text-[#1a2332] mb-6">
+                    <h2 className="text-4xl md:text-6xl font-bold font-fraunces text-[#1a2332] mb-6">
                         <T>Ils ont osé le</T> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]"><T>Retour Gagnant</T></span>
                     </h2>
                     <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">

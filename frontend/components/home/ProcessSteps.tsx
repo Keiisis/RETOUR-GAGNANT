@@ -53,9 +53,9 @@ export default function ProcessSteps() {
     }, []);
 
     return (
-        <section className="bg-white py-20 md:py-28">
+        <section className="bg-[#FBFAF7] py-20 md:py-28">
             <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-                <div className="mb-14 max-w-2xl">
+                <div className="mb-16 max-w-2xl">
                     <h2 className="font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-5xl">
                         <T>Un parcours en quatre temps.</T>
                     </h2>
@@ -64,32 +64,32 @@ export default function ProcessSteps() {
                     </p>
                 </div>
 
-                <ol className="relative mx-auto max-w-3xl">
-                    {/* rail vertical */}
-                    <span aria-hidden className="absolute left-[27px] top-2 bottom-2 w-px bg-[#e7e4db] md:left-[31px]" />
-                    {steps.map((step, i) => (
-                        <motion.li
-                            key={step.id}
-                            initial={reduce ? false : { opacity: 0, x: 18 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true, amount: 0.6 }}
-                            transition={{ duration: 0.6, delay: (i % 4) * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative flex gap-6 pb-12 last:pb-0 md:gap-8"
-                        >
-                            <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#ece9e0] bg-[#FBFAF7] shadow-sm md:h-16 md:w-16">
-                                {/* @ts-ignore GoldenIcon accepte un type union, ici string dynamique */}
-                                <GoldenIcon type={step.icon_type} size={26} />
-                            </div>
-                            <div className="pt-1.5">
-                                <span className="font-geistmono text-xs font-medium tracking-widest text-[#c0a53a]">
-                                    {String(i + 1).padStart(2, "0")}
-                                </span>
-                                <h3 className="mt-1 font-fraunces text-2xl font-semibold text-[#0d1a12]">{t(step.title)}</h3>
-                                <p className="mt-2 max-w-md font-geist text-[15px] leading-relaxed text-[#6b756e]">{t(step.description)}</p>
-                            </div>
-                        </motion.li>
-                    ))}
-                </ol>
+                <div className="relative">
+                    {/* ligne de liaison */}
+                    <span aria-hidden className="absolute left-[12%] right-[12%] top-11 hidden h-px bg-[#e2ded3] md:block" />
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-4">
+                        {steps.map((step, i) => (
+                            <motion.div
+                                key={step.id}
+                                initial={reduce ? false : { opacity: 0, y: 22 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.4 }}
+                                transition={{ duration: 0.6, delay: (i % 4) * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                                className="relative flex flex-col items-center text-center"
+                            >
+                                <div className="relative z-10 flex h-[88px] w-[88px] items-center justify-center rounded-full border border-[#ece9e0] bg-white shadow-[0_14px_30px_-16px_rgba(13,26,18,0.35)]">
+                                    {/* @ts-ignore GoldenIcon accepte un type union, ici string dynamique */}
+                                    <GoldenIcon type={step.icon_type} size={34} />
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#008751] font-geistmono text-xs font-semibold text-white shadow">
+                                        {i + 1}
+                                    </span>
+                                </div>
+                                <h3 className="mt-6 font-fraunces text-xl font-semibold text-[#0d1a12]">{t(step.title)}</h3>
+                                <p className="mt-2 max-w-[26ch] font-geist text-[14px] leading-relaxed text-[#6b756e]">{t(step.description)}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </section>
     );
