@@ -20,6 +20,8 @@ const BuildingModel3D = dynamic(() => import('@/components/logements/BuildingMod
     ssr: false,
     loading: () => <div className="h-[340px] w-full animate-pulse rounded-[1.6rem] bg-slate-100 lg:h-[460px]" />,
 })
+// Voyage du modèle (hero → bande verte du CTA), desktop large uniquement.
+const ModelJourney = dynamic(() => import('@/components/logements/ModelJourney'), { ssr: false })
 
 interface Logement {
     id: string; programme: string; nom: string; type: string; ville: string; site: string
@@ -59,6 +61,9 @@ export default function ProgrammeLogementsPage() {
     const [detail, setDetail] = useState<Logement | null>(null)
     const [leadFor, setLeadFor] = useState<Logement | null | 'general'>(null)
     const [content, setContent] = useState<Content>(emptyContent)
+    // >= 1280px : le modèle 3D voyage (ModelJourney) ; sinon il est embarqué
+    // dans le héros. Un seul contexte WebGL à la fois.
+    const [isXl, setIsXl] = useState(false)
 
     // Parallax doux du décor du hero (Framer, SSR-safe). Désactivé si
     // l'utilisateur préfère moins d'animations.
@@ -69,6 +74,10 @@ export default function ProgrammeLogementsPage() {
     useEffect(() => {
         fetch('/api/logements').then(r => r.json()).then(j => setAll(j.logements || [])).catch(() => setAll([])).finally(() => setLoading(false))
         fetch('/api/logements/content').then(r => r.json()).then(j => setContent({ ...emptyContent, ...(j.content || {}) })).catch(() => { })
+        const mq = window.matchMedia('(min-width: 1280px)')
+        const u = () => setIsXl(mq.matches)
+        u(); mq.addEventListener('change', u)
+        return () => mq.removeEventListener('change', u)
     }, [])
 
     const inProg = useMemo(() => all.filter(l => l.programme === prog), [all, prog])
@@ -97,6 +106,8 @@ export default function ProgrammeLogementsPage() {
     return (
         <LayoutGroup>
             <div className="bg-white text-slate-900 pb-16 md:pb-0">
+                {/* Modèle 3D qui voyage du héros jusqu'au CTA final (desktop large) */}
+                <ModelJourney />
                 {/* Bandeau rareté (éditable en admin) */}
                 {content.rarete_active && content.rarete_texte && (
                     <div className="bg-[#E8112D] text-white text-center text-[13px] md:text-sm font-bold py-2.5 px-4 flex items-center justify-center gap-2"><Flame size={15} /> {content.rarete_texte}</div>
@@ -131,8 +142,11 @@ export default function ProgrammeLogementsPage() {
                             </div>
                         )}
                       </div>
-                      {/* Modèle 3D réaliste du bâtiment (WebGL, lazy) */}
-                      <BuildingModel3D className="mt-4 h-[340px] w-full lg:mt-0 lg:h-[460px]" />
+                      {/* Ancre héros : le modèle 3D s'y pose au départ (voir ModelJourney) */}
+                      <div id="model-hero-slot" className="relative mt-4 h-[340px] w-full lg:mt-0 lg:h-[500px]">
+                        {/* < xl : modèle embarqué (monté uniquement hors xl → 1 seul contexte WebGL) */}
+                        {!isXl && <BuildingModel3D className="h-full w-full" />}
+                      </div>
                     </div>
                 </section>
 
@@ -342,6 +356,8 @@ export default function ProgrammeLogementsPage() {
                 <section className="max-w-6xl mx-auto px-5 md:px-8 py-16">
                     <div className="rounded-[2rem] bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white p-8 md:p-12 relative overflow-hidden">
                         <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-[#FCD116]/15 blur-3xl" />
+                        {/* Ancre d'arrivée : le modèle 3D vient se déposer ici (desktop large) */}
+                        <div id="model-cta-slot" aria-hidden="true" className="hidden xl:block absolute right-8 top-1/2 h-[420px] w-[380px] -translate-y-1/2 pointer-events-none" />
                         <div className="relative max-w-2xl">
                             <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier recalé, c'est une place perdue.</h2>
                             <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande — pour qu'elle passe du premier coup.</p>

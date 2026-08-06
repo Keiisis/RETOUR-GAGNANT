@@ -2,7 +2,7 @@
 
 import { Suspense, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, Center, ContactShadows, Bounds } from "@react-three/drei";
+import { useGLTF, Center, ContactShadows, Bounds, Environment, Lightformer } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import type * as THREE from "three";
 
@@ -49,11 +49,19 @@ export default function BuildingModel3D({ className = "" }: { className?: string
                 gl={{ antialias: true, alpha: true }}
                 style={{ background: "transparent" }}
             >
-                <ambientLight intensity={0.8} />
-                <hemisphereLight args={["#ffffff", "#b9c6bf", 0.5]} />
-                <directionalLight position={[5, 8, 5]} intensity={1.6} />
-                <directionalLight position={[-6, 3, -4]} intensity={0.45} />
+                <ambientLight intensity={0.55} />
+                <hemisphereLight args={["#ffffff", "#c2cdc6", 0.45]} />
+                <directionalLight position={[5, 8, 5]} intensity={1.4} />
+                <directionalLight position={[-6, 3, -4]} intensity={0.4} />
                 <Suspense fallback={null}>
+                    {/* Environnement LOCAL (aucun fetch externe → CSP-safe) : révèle les
+                        couleurs/reflets des matériaux PBR. */}
+                    <Environment resolution={256}>
+                        <Lightformer intensity={2.2} position={[0, 4, 5]} scale={[12, 12, 1]} color="#ffffff" />
+                        <Lightformer intensity={1.1} position={[-5, 2, -3]} scale={[8, 8, 1]} color="#e6efe9" />
+                        <Lightformer intensity={1.3} position={[5, 2, -2]} scale={[8, 8, 1]} color="#fff4d6" />
+                        <Lightformer intensity={0.6} position={[0, -3, 2]} scale={[10, 6, 1]} color="#dfe6e2" />
+                    </Environment>
                     <Bounds fit clip margin={1.15}>
                         <Spin reduce={reduce}>
                             <Model />
