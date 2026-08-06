@@ -2,9 +2,11 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, type MotionValue } from "framer-motion";
-import { GoldenIcon } from "@/components/ui/GoldenIcon";
+import Step3DIcon, { type StepKind } from "@/components/home/Step3DIcon";
 import { supabase } from "@/lib/supabase";
 import { useTranslation, T } from "@/lib/translation";
+
+const KINDS: StepKind[] = ["contact", "plan", "build", "install"];
 
 interface Step {
     id: number;
@@ -41,8 +43,7 @@ function StepNode({ step, i, count, progress, reduce }: { step: Step; i: number;
                     style={reduce ? {} : { scale }}
                     className="relative z-10 flex h-[88px] w-[88px] items-center justify-center rounded-full border border-[#ece9e0] bg-white shadow-[0_16px_32px_-16px_rgba(13,26,18,0.4)]"
                 >
-                    {/* @ts-ignore GoldenIcon accepte un type union, ici string dynamique */}
-                    <GoldenIcon type={step.icon_type} size={34} />
+                    <Step3DIcon kind={KINDS[i] ?? "build"} />
                     {/* anneau qui pulse au moment de l'activation */}
                     {!reduce && (
                         <motion.span style={{ opacity: ring }} className="pointer-events-none absolute inset-[-6px] rounded-full ring-2 ring-[#008751]" />
