@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import { FacebookLogo, InstagramLogo, LinkedinLogo, XLogo, Envelope, Phone, MapPin } from "@phosphor-icons/react";
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from "@/lib/translation";
 
@@ -10,8 +10,12 @@ export default function Footer() {
         <footer className="bg-[#0f141e] text-white pt-20 pb-10 relative overflow-hidden">
             {/* Cultural Pattern Overlay */}
             <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay"></div>
-            {/* Flag Accent Top Border */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]"></div>
+            {/* Filet tricolore (segmenté, pas de dégradé) */}
+            <div className="absolute top-0 left-0 flex h-1 w-full">
+                <span className="flex-[46] bg-[#008751]" />
+                <span className="flex-[27] bg-[#FCD116]" />
+                <span className="flex-[27] bg-[#E8112D]" />
+            </div>
 
             <div className="container mx-auto px-6 md:px-4 relative z-10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-16">
@@ -40,10 +44,10 @@ export default function Footer() {
                         </p>
                         <div className="flex gap-4">
                             {[
-                                { Icon: Facebook, label: 'Facebook', href: COMPANY_INFO.socials.facebook },
-                                { Icon: Instagram, label: 'Instagram', href: COMPANY_INFO.socials.instagram },
-                                { Icon: Linkedin, label: 'LinkedIn', href: COMPANY_INFO.socials.linkedin },
-                                { Icon: Twitter, label: 'X (Twitter)', href: COMPANY_INFO.socials.twitter },
+                                { Icon: FacebookLogo, label: 'Facebook', href: COMPANY_INFO.socials.facebook },
+                                { Icon: InstagramLogo, label: 'Instagram', href: COMPANY_INFO.socials.instagram },
+                                { Icon: LinkedinLogo, label: 'LinkedIn', href: COMPANY_INFO.socials.linkedin },
+                                { Icon: XLogo, label: 'X (Twitter)', href: COMPANY_INFO.socials.twitter },
                             ].map(({ Icon, label, href }) => (
                                 <a key={label} href={href} aria-label={label} className="w-10 h-10 rounded-full bg-[#1a2332] flex items-center justify-center hover:bg-[#FCD116] hover:text-[#1a2332] transition-all duration-300 border border-white/5 group">
                                     <Icon size={18} className="group-hover:scale-110 transition-transform" />
@@ -54,7 +58,7 @@ export default function Footer() {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 className="text-lg font-bold font-heading mb-6 text-[#FCD116]"><T>Navigation</T></h4>
+                        <h4 className="text-xl font-semibold font-fraunces mb-6 text-[#FCD116]"><T>Navigation</T></h4>
                         <ul className="space-y-4 text-gray-300">
                             {[
                                 { name: 'Accueil', href: '/' },
@@ -76,7 +80,7 @@ export default function Footer() {
 
                     {/* Services */}
                     <div>
-                        <h4 className="text-lg font-bold font-heading mb-6 text-[#FCD116]"><T>Services Clés</T></h4>
+                        <h4 className="text-xl font-semibold font-fraunces mb-6 text-[#FCD116]"><T>Services Clés</T></h4>
                         <ul className="space-y-4 text-gray-300">
                             {[
                                 { name: 'Obtention Passeport', href: '/services/passeport' },
@@ -97,7 +101,7 @@ export default function Footer() {
 
                     {/* Contact */}
                     <div>
-                        <h4 className="text-lg font-bold font-heading mb-6 text-[#FCD116]"><T>Contact</T></h4>
+                        <h4 className="text-xl font-semibold font-fraunces mb-6 text-[#FCD116]"><T>Contact</T></h4>
 
                         <ul className="space-y-6 text-gray-300">
                             <li className="flex gap-4 items-start">
@@ -116,7 +120,7 @@ export default function Footer() {
                                 </div>
                             </li>
                             <li className="flex gap-4 items-center">
-                                <Mail className="text-[#008751] shrink-0" size={20} />
+                                <Envelope className="text-[#008751] shrink-0" size={20} />
                                 <a href={`mailto:${COMPANY_INFO.email}`} className="hover:text-white transition-colors">
                                     {COMPANY_INFO.email}
                                 </a>

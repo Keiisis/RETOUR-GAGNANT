@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
-import { Menu, X, ShoppingBag } from 'lucide-react';
+import { List, X, ShoppingBag } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -78,9 +78,7 @@ export default function Header() {
 
                     {/* Desktop Nav - Centered Menu Pill */}
                     <nav className="hidden lg:flex flex-1 items-center justify-center px-4 xl:px-8">
-                        <div className="flex items-center gap-6 xl:gap-8 bg-white/[0.02] border border-white/5 px-6 xl:px-8 py-3 rounded-full backdrop-blur-2xl shadow-2xl relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
-
+                        <div className="flex items-center gap-6 xl:gap-8 bg-white/[0.03] border border-white/5 px-6 xl:px-8 py-3 rounded-full backdrop-blur-2xl shadow-2xl relative">
                             {navLinks.map((link) => {
                                 const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
                                 return (
@@ -88,7 +86,7 @@ export default function Header() {
                                         key={link.label}
                                         href={link.href}
                                         className={cn(
-                                            "text-[11px] xl:text-[13px] font-bold uppercase tracking-widest transition-colors duration-300 relative group font-sans whitespace-nowrap z-10",
+                                            "text-[11px] xl:text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 relative group font-geist whitespace-nowrap z-10",
                                             isActive ? "text-[#FCD116]" : "text-gray-400 hover:text-white"
                                         )}
                                     >
@@ -159,7 +157,7 @@ export default function Header() {
                         >
                             {isMobileMenuOpen ?
                                 <X size={26} className="text-white" /> :
-                                <Menu size={26} className="text-white" />
+                                <List size={26} className="text-white" />
                             }
                         </button>
                     </div>
@@ -189,7 +187,7 @@ export default function Header() {
                                         href={link.href}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className={cn(
-                                            "text-2xl font-bold transition-all w-full text-center block py-3 border-b border-white/5",
+                                            "text-2xl font-semibold font-geist transition-all w-full text-center block py-3 border-b border-white/5",
                                             pathname === link.href ? "text-[#FCD116]" : "text-white/70 hover:text-white"
                                         )}
                                     >
