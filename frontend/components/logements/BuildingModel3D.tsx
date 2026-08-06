@@ -22,9 +22,13 @@ function Model() {
             for (const mm of mats) {
                 const m = mm as THREE.MeshStandardMaterial;
                 if ("metalness" in m) {
-                    m.metalness = 0.05;
-                    m.roughness = Math.max(m.roughness ?? 1, 0.65);
-                    m.envMapIntensity = 0.55;
+                    m.metalness = 0;
+                    m.roughness = Math.max(m.roughness ?? 1, 0.7);
+                    m.envMapIntensity = 0.25; // reflets d'env. faibles → la texture domine
+                    // La texture baseColor est assez désaturée (béton) : on la fait
+                    // ressortir légèrement via un léger boost de teinte chaude.
+                    if (m.map) m.map.colorSpace = "srgb" as THREE.ColorSpace;
+                    m.color.setRGB(1.06, 1.02, 0.98); // réchauffe/éclaircit à peine
                     m.needsUpdate = true;
                 }
             }
@@ -63,23 +67,24 @@ export default function BuildingModel3D({ className = "" }: { className?: string
     return (
         <div className={`relative ${className}`} aria-hidden="true">
             <Canvas
+                flat /* NoToneMapping → couleurs fidèles à la texture (pas de délavage ACES) */
                 dpr={[1, 1.75]}
                 camera={{ position: [0, 0.4, 7], fov: 40 }}
                 gl={{ antialias: true, alpha: true }}
                 style={{ background: "transparent" }}
             >
-                <ambientLight intensity={0.55} />
-                <hemisphereLight args={["#ffffff", "#c2cdc6", 0.45]} />
-                <directionalLight position={[5, 8, 5]} intensity={1.4} />
-                <directionalLight position={[-6, 3, -4]} intensity={0.4} />
+                <ambientLight intensity={0.75} />
+                <hemisphereLight args={["#ffffff", "#b9c4bd", 0.35]} />
+                <directionalLight position={[5, 8, 5]} intensity={0.85} />
+                <directionalLight position={[-6, 3, -4]} intensity={0.3} />
                 <Suspense fallback={null}>
-                    {/* Environnement LOCAL (aucun fetch externe → CSP-safe) : révèle les
-                        couleurs/reflets des matériaux PBR. */}
-                    <Environment resolution={256}>
-                        <Lightformer intensity={2.2} position={[0, 4, 5]} scale={[12, 12, 1]} color="#ffffff" />
-                        <Lightformer intensity={1.1} position={[-5, 2, -3]} scale={[8, 8, 1]} color="#e6efe9" />
-                        <Lightformer intensity={1.3} position={[5, 2, -2]} scale={[8, 8, 1]} color="#fff4d6" />
-                        <Lightformer intensity={0.6} position={[0, -3, 2]} scale={[10, 6, 1]} color="#dfe6e2" />
+                    {/* Environnement LOCAL (aucun fetch externe → CSP-safe), intensités
+                        faibles : sert de fill léger sans délaver la texture. */}
+                    <Environment resolution={128}>
+                        <Lightformer intensity={0.8} position={[0, 4, 5]} scale={[12, 12, 1]} color="#ffffff" />
+                        <Lightformer intensity={0.5} position={[-5, 2, -3]} scale={[8, 8, 1]} color="#e6efe9" />
+                        <Lightformer intensity={0.6} position={[5, 2, -2]} scale={[8, 8, 1]} color="#fff4d6" />
+                        <Lightformer intensity={0.3} position={[0, -3, 2]} scale={[10, 6, 1]} color="#dfe6e2" />
                     </Environment>
                     <Bounds fit clip margin={1.15}>
                         <Spin reduce={reduce}>
