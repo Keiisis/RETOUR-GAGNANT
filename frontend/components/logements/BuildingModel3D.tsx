@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF, Center, ContactShadows, Bounds, Environment, Lightformer } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
@@ -11,6 +11,25 @@ const MODEL = "/models/logement-batiment.glb";
 function Model() {
     // GLB optimisé (meshopt + textures 1024 JPEG). useDraco=false, meshopt auto.
     const { scene } = useGLTF(MODEL, false);
+    // Le matériau exporté est 100% métallique (metalness=1) → il reflète
+    // l'environnement (blanc) au lieu d'afficher sa texture. On le passe en
+    // diélectrique mat pour révéler les couleurs (brique / fenêtres / murs).
+    useMemo(() => {
+        scene.traverse((child) => {
+            const mesh = child as THREE.Mesh;
+            if (!mesh.isMesh) return;
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mm of mats) {
+                const m = mm as THREE.MeshStandardMaterial;
+                if ("metalness" in m) {
+                    m.metalness = 0.05;
+                    m.roughness = Math.max(m.roughness ?? 1, 0.65);
+                    m.envMapIntensity = 0.55;
+                    m.needsUpdate = true;
+                }
+            }
+        });
+    }, [scene]);
     return (
         <Center>
             <primitive object={scene} />
