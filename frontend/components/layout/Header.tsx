@@ -90,24 +90,17 @@ export default function Header() {
                                         href={link.href}
                                         className={cn(
                                             "relative rounded-full px-3.5 py-1.5 text-[11px] xl:text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 font-geist whitespace-nowrap",
-                                            isActive ? "text-[#FCD116]" : "text-gray-400 hover:text-white"
+                                            isActive ? "text-white" : "text-gray-400 hover:text-white"
                                         )}
                                     >
                                         {isActive && (
                                             <motion.span
-                                                layoutId="navPill"
-                                                className="absolute inset-0 -z-10 rounded-full bg-white/[0.08] ring-1 ring-[#FCD116]/25"
+                                                layoutId="navCrystal"
+                                                className="absolute inset-0 -z-10 rounded-full border border-white/25 bg-gradient-to-b from-white/[0.20] to-white/[0.05] backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_18px_-6px_rgba(255,255,255,0.25)]"
                                                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                             />
                                         )}
                                         <span className="relative">{link.label}</span>
-                                        {isActive && (
-                                            <motion.span
-                                                layoutId="navDot"
-                                                className="absolute -bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#FCD116] shadow-[0_0_10px_rgba(252,209,22,0.85)]"
-                                                transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                                            />
-                                        )}
                                     </Link>
                                 )
                             })}
