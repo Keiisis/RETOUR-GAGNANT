@@ -1,27 +1,19 @@
 "use client"
 
-import { GoldenIcon } from "@/components/ui/GoldenIcon"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
-import { LucideIcon } from "lucide-react"
+import { ArrowUpRight, ArrowRight } from "@phosphor-icons/react"
 import { useTranslation, T } from "@/lib/translation"
-
-type GoldenIconType = "passport" | "tata" | "drum" | "cowrie" | "assin" | "tree" | "recade" | "standard"
 
 interface ServiceItem {
     id: string | number
     title: string
     description: string
-    icon?: LucideIcon
-    iconType?: GoldenIconType
     slug: string
     imageUrl: string
 }
 
-// Fallback images par slug (si la DB n'a pas d'image)
 const IMG_BY_SLUG: Record<string, string> = {
     passeport: '/assets/icones/icone_Passeport_Documents.png',
     logement: '/assets/icones/icone_Acheter_ou_louer.png',
@@ -36,169 +28,104 @@ const IMG_BY_SLUG: Record<string, string> = {
     autres: '/assets/icones/Autres Services.png',
 }
 
-// Contenu de référence affiché si la DB est inaccessible ou vide
 const FALLBACK_SERVICES: ServiceItem[] = [
-    {
-        id: 'f-1', slug: 'passeport', iconType: 'passport',
-        title: 'Passeport & Documents',
-        description: 'Obtention et renouvellement de passeport, acte de naissance, légalisation et apostille — accompagnement complet pour vos démarches officielles.',
-        imageUrl: '/assets/icones/icone_Passeport_Documents.png',
-    },
-    {
-        id: 'f-2', slug: 'logement', iconType: 'tata',
-        title: 'Acheter ou Louer',
-        description: 'Acquisition immobilière, location longue durée, sécurisation foncière et vérification juridique de vos biens au Bénin.',
-        imageUrl: '/assets/icones/icone_Acheter_ou_louer.png',
-    },
-    {
-        id: 'f-3', slug: 'business', iconType: 'cowrie',
-        title: "Création d'Entreprise",
-        description: "Immatriculation RCCM, ouverture de compte professionnel, conseils fiscaux et accompagnement des formalités de création.",
-        imageUrl: '/assets/icones/icone_Creation_d_Entreprise.png',
-    },
-    {
-        id: 'f-4', slug: 'culture', iconType: 'drum',
-        title: 'Tourisme & Culture',
-        description: 'Circuits touristiques, visites patrimoniales, organisation de séjours et découverte du Bénin authentique.',
-        imageUrl: '/assets/icones/icone_Guide_culturel.png',
-    },
-    {
-        id: 'f-5', slug: 'construction', iconType: 'assin',
-        title: 'Suivi de Chantier',
-        description: "Maîtrise d'ouvrage déléguée, contrôle des travaux et coordination des entreprises locales pour votre construction.",
-        imageUrl: '/assets/icones/icone_Construction.png',
-    },
-    {
-        id: 'f-6', slug: 'investissement', iconType: 'tree',
-        title: 'Investissement',
-        description: "Identification d'opportunités d'affaires, partenariats locaux et accompagnement stratégique pour vos projets d'investissement au Bénin.",
-        imageUrl: '/assets/icones/icone_Investissement.png',
-    },
-    {
-        id: 'f-7', slug: 'nationalite-vip', iconType: 'recade',
-        title: 'Nationalité VIP',
-        description: "Accompagnement personnalisé pour l'obtention de la nationalité béninoise — dossier complet, suivi administratif et prise en charge prioritaire.",
-        imageUrl: '/assets/icones/Nationalité Béninoise VIP.png',
-    },
-    {
-        id: 'f-7b', slug: 'recherche-ancestrale', iconType: 'cowrie',
-        title: 'Recherche Ancestrale',
-        description: "Retrouvez la trace de vos ancêtres réduits en esclavage — archives, bases de données spécialisées et accompagnement généalogique pour reconstituer votre lignée africaine.",
-        imageUrl: '/assets/icones/Recherche Ancestrale.png',
-    },
-    {
-        id: 'f-7c', slug: 'consultation-fa-racines', iconType: 'cowrie',
-        title: 'Consultation Fa & Racines',
-        description: "Mise en relation avec un Bokonon (prêtre Fa) pour une consultation traditionnelle — en présentiel au Bénin ou à distance en visioconférence, dans un cadre organisé et respectueux.",
-        imageUrl: '/assets/icones/icone_Consultation_Fa_Racines.png',
-    },
-    {
-        id: 'f-7d', slug: 'langues-racines', iconType: 'drum',
-        title: 'Langues & Racines',
-        description: "Apprenez les langues de vos ancêtres — fon, yoruba, goun, mina — avec des locuteurs natifs, en présentiel ou en visio. La langue est la première porte du retour aux racines.",
-        imageUrl: '/assets/icones/icone_Langues_Racines.png',
-    },
-    {
-        id: 'f-8', slug: 'autres', iconType: 'standard',
-        title: 'Autres Services',
-        description: 'Transport, santé, scolarité et démarches administratives — des solutions complémentaires pour faciliter votre installation au Bénin.',
-        imageUrl: '/assets/icones/Autres Services.png',
-    },
+    { id: 'f-1', slug: 'passeport', title: 'Passeport & Documents', description: "Passeport, acte de naissance, légalisation et apostille : vos démarches officielles prises en charge de bout en bout.", imageUrl: '/assets/icones/icone_Passeport_Documents.png' },
+    { id: 'f-2', slug: 'logement', title: 'Acheter ou Louer', description: "Acquisition, location longue durée et sécurisation foncière de vos biens au Bénin.", imageUrl: '/assets/icones/icone_Acheter_ou_louer.png' },
+    { id: 'f-3', slug: 'business', title: "Création d'Entreprise", description: "Immatriculation RCCM, compte professionnel et formalités de création.", imageUrl: '/assets/icones/icone_Creation_d_Entreprise.png' },
+    { id: 'f-4', slug: 'culture', title: 'Tourisme & Culture', description: "Circuits, visites patrimoniales et séjours dans le Bénin authentique.", imageUrl: '/assets/icones/icone_Guide_culturel.png' },
+    { id: 'f-6', slug: 'investissement', title: 'Investissement', description: "Opportunités d'affaires, partenariats locaux et accompagnement stratégique.", imageUrl: '/assets/icones/icone_Investissement.png' },
+    { id: 'f-7', slug: 'nationalite-vip', title: 'Nationalité VIP', description: "Obtention de la nationalité béninoise : dossier complet, suivi prioritaire.", imageUrl: '/assets/icones/Nationalité Béninoise VIP.png' },
 ]
 
 export default function ServicesGrid() {
     const { t } = useTranslation()
-    const [servicesList, setServicesList] = useState<ServiceItem[]>([])
+    const [list, setList] = useState<ServiceItem[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchServices = async () => {
+        const run = async () => {
             try {
-                // Appel via l'API serveur (service role key) — contourne le RLS Supabase
                 const res = await fetch('/api/services')
                 const json = await res.json()
-
                 if (json.services && json.services.length > 0) {
-                    const mappedServices: ServiceItem[] = json.services.map((item: Record<string, unknown>) => {
+                    const mapped: ServiceItem[] = json.services.map((item: Record<string, unknown>) => {
                         const slug = (item.slug as string) || String(item.title).toLowerCase().replace(/\s+/g, '-')
                         return {
                             id: item.id,
                             title: item.title as string,
                             description: (item.description as string) || 'Découvrez ce service',
-                            iconType: ((item.icon_type as string) || 'standard') as GoldenIconType,
                             slug,
                             imageUrl: (item.image_url as string) || IMG_BY_SLUG[slug] || '',
                         }
                     })
-                    setServicesList(mappedServices)
-                } else {
-                    // API retourne vide : afficher le contenu de référence
-                    setServicesList(FALLBACK_SERVICES)
-                }
-            } catch (err) {
-                console.warn('ServicesGrid: Erreur API, affichage du contenu par défaut.', err)
-                setServicesList(FALLBACK_SERVICES)
+                    setList(mapped)
+                } else setList(FALLBACK_SERVICES)
+            } catch {
+                setList(FALLBACK_SERVICES)
             } finally {
                 setLoading(false)
             }
         }
-
-        fetchServices()
+        run()
     }, [])
 
     if (loading) {
         return (
-            <div className="flex justify-center py-20">
-                <Loader2 className="animate-spin text-[#008751]" size={36} />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:auto-rows-[minmax(184px,auto)]">
+                <div className="animate-pulse rounded-[1.6rem] bg-[#eceae3] md:col-span-2 md:row-span-2 md:min-h-[300px]" />
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-44 animate-pulse rounded-[1.25rem] bg-[#eceae3]" />
+                ))}
             </div>
         )
     }
 
+    const featured = list[0]
+    const rest = list.slice(1, 6)
+    const tints = ['bg-white', 'bg-[#f2f6f3]', 'bg-white', 'bg-[#fdf8ea]', 'bg-white']
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {servicesList.map((service: ServiceItem) => (
-                <div
-                    key={service.id}
-                    className="group relative glass-card-premium hover:border-[#FCD116] rounded-2xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-flag bg-white"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:auto-rows-[minmax(184px,auto)]">
+            {/* ── Service phare ── */}
+            {featured && (
+                <Link
+                    href={`/services/${featured.slug}`}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-[1.6rem] bg-gradient-to-br from-[#00532f] via-[#008751] to-[#0a7d52] p-8 text-white md:col-span-2 md:row-span-2 md:min-h-[300px]"
                 >
-                    <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight className="text-[#008751] w-6 h-6 -rotate-45 group-hover:rotate-0 transition-transform duration-500" />
+                    <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-56 w-56 rounded-full bg-[#FCD116]/20 blur-3xl" />
+                    {featured.imageUrl && (
+                        <Image src={featured.imageUrl} alt="" width={128} height={128} className="absolute right-6 top-6 h-24 w-24 object-contain opacity-90 drop-shadow-[0_14px_28px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105" />
+                    )}
+                    <span className="relative font-geistmono text-[11px] uppercase tracking-[0.28em] text-[#FCD116]"><T>Service phare</T></span>
+                    <div className="relative mt-auto max-w-md">
+                        <h3 className="font-fraunces text-3xl font-semibold leading-tight md:text-[2.4rem]">{t(featured.title)}</h3>
+                        <p className="mt-3 font-geist text-[15px] leading-relaxed text-white/80 line-clamp-3">{t(featured.description)}</p>
+                        <span className="mt-6 inline-flex items-center gap-2 font-geist text-sm font-semibold">
+                            <T>Explorer ce service</T>
+                            <ArrowRight size={16} weight="bold" className="transition-transform group-hover:translate-x-1" />
+                        </span>
                     </div>
+                </Link>
+            )}
 
-                    <div className="mb-6 flex justify-center md:justify-start">
-                        {service.imageUrl ? (
-                            <div className="w-24 h-24 flex items-center justify-center relative">
-                                <Image
-                                    src={service.imageUrl}
-                                    alt={t(service.title)}
-                                    fill
-                                    className="object-contain bg-transparent group-hover:scale-110 group-hover:-translate-y-2 group-hover:drop-shadow-[0_12px_25px_rgba(252,209,22,0.4)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-500"
-                                    sizes="96px"
-                                />
-                            </div>
-                        ) : (
-                            <GoldenIcon
-                                icon={service.icon}
-                                type={service.iconType}
-                                className="group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-500"
-                            />
-                        )}
+            {/* ── Tuiles ── */}
+            {rest.map((s, i) => (
+                <Link
+                    key={s.id}
+                    href={`/services/${s.slug}`}
+                    className={`group flex flex-col justify-between rounded-[1.25rem] border border-[#e7e4db] ${tints[i] || 'bg-white'} p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#008751]/40 hover:shadow-[0_24px_50px_-30px_rgba(13,26,18,0.5)]`}
+                >
+                    <div className="flex items-start justify-between">
+                        {s.imageUrl ? (
+                            <Image src={s.imageUrl} alt="" width={52} height={52} className="h-[52px] w-[52px] object-contain transition-transform duration-300 group-hover:scale-110" />
+                        ) : <span className="h-[52px] w-[52px]" />}
+                        <ArrowUpRight size={20} weight="bold" className="text-[#c8c3b6] transition-colors group-hover:text-[#008751]" />
                     </div>
-
-                    <h3 className="text-xl font-bold font-heading text-[#1a2332] mb-3 group-hover:text-[#008751] transition-colors">
-                        {t(service.title)}
-                    </h3>
-
-                    <p className="text-gray-600 font-medium mb-6 line-clamp-3">
-                        {t(service.description)}
-                    </p>
-
-                    <Link href={`/services/${service.slug}`} className="block w-full">
-                        <Button variant="outline" className="w-full border-[#008751]/20 text-[#008751] hover:bg-[#008751] hover:text-white transition-colors rounded-xl font-semibold">
-                            <T>En savoir plus</T>
-                        </Button>
-                    </Link>
-                </div>
+                    <div className="mt-5">
+                        <h3 className="font-geist text-[17px] font-semibold text-[#0d1a12] transition-colors group-hover:text-[#008751]">{t(s.title)}</h3>
+                        <p className="mt-1.5 font-geist text-sm leading-relaxed text-[#6b756e] line-clamp-2">{t(s.description)}</p>
+                    </div>
+                </Link>
             ))}
         </div>
     )

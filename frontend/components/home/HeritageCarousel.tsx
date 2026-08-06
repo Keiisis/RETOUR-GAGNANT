@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
+import { MapPin } from "@phosphor-icons/react";
 import { useTranslation, T } from "@/lib/translation";
 import { supabase } from "@/lib/supabase";
 
@@ -16,238 +16,99 @@ interface HeritageItem {
 }
 
 const fallbackItems: HeritageItem[] = [
-    {
-        id: 1,
-        title: "Porte du Non-Retour",
-        description: "Symbole mémoriel historique de la traite transatlantique.",
-        imageName: "Porte du Non-Retour.jpg",
-        location: "Ouidah",
-        color: "#E8112D"
-    },
-    {
-        id: 2,
-        title: "Palais Royaux d'Abomey",
-        description: "Vestiges de la puissance du Royaume de Dahomey.",
-        imageName: "Palais Royaux Abomey.jpg",
-        location: "Abomey",
-        color: "#FCD116"
-    },
-    {
-        id: 3,
-        title: "Cité Lacustre de Ganvié",
-        description: "La Venise de l'Afrique, entièrement bâtie sur l'eau.",
-        imageName: "Cité Lacustre Ganvié.jpg",
-        location: "Ganvié",
-        color: "#008751"
-    },
-    {
-        id: 4,
-        title: "Tata Somba",
-        description: "Architecture forteresse unique au monde.",
-        imageName: "TATA SOMBA.jpg",
-        location: "Atacora",
-        color: "#E8112D"
-    },
-    {
-        id: 5,
-        title: "Zangbeto",
-        description: "Gardien de la nuit et police traditionnelle vaudou.",
-        imageName: "Zangpeto.jpg",
-        location: "Sud Bénin",
-        color: "#008751"
-    },
-    {
-        id: 6,
-        title: "Chutes de Kota",
-        description: "Un havre de fraîcheur et de nature préservée.",
-        imageName: "Chutes de Kota.jpg",
-        location: "Natitingou",
-        color: "#FCD116"
-    },
-    {
-        id: 7,
-        title: "Place de l'Amazone",
-        description: "Hommage aux guerrières Agoodjié du Dahomey.",
-        imageName: "place-amazone.jpg",
-        location: "Cotonou",
-        color: "#E8112D"
-    },
-    {
-        id: 8,
-        title: "Monument Bio Guerra",
-        description: "Héros de la résistance nationale.",
-        imageName: "bio-guera.jpg",
-        location: "Parakou",
-        color: "#FCD116"
-    },
-    {
-        id: 9,
-        title: "Temple des Pythons",
-        description: "Site sacré et culturel emblématique.",
-        imageName: "ouidah-temple-python-3.jpg",
-        location: "Ouidah",
-        color: "#008751"
-    },
-    {
-        id: 10,
-        title: "Grand-Popo",
-        description: "Cité balnéaire entre mer et fleuve.",
-        imageName: "Grand-Popo.jpg",
-        location: "Mono",
-        color: "#E8112D"
-    },
-    {
-        id: 11,
-        title: "Mur de Fresques",
-        description: "Art urbain retraçant l'histoire du Bénin.",
-        imageName: "Mur de Fresque de Cotonou.jpg",
-        location: "Cotonou",
-        color: "#FCD116"
-    },
-    {
-        id: 12,
-        title: "Parc de la Pendjari",
-        description: "Sanctuaire sauvage de la biodiversité.",
-        imageName: "Parc Pendjari.jpg",
-        location: "Tanguiéta",
-        color: "#008751"
-    }
+    { id: 1, title: "Porte du Non-Retour", description: "Symbole mémoriel de la traite transatlantique.", imageName: "Porte du Non-Retour.jpg", location: "Ouidah" },
+    { id: 2, title: "Palais Royaux d'Abomey", description: "Vestiges du Royaume de Dahomey.", imageName: "Palais Royaux Abomey.jpg", location: "Abomey" },
+    { id: 3, title: "Cité Lacustre de Ganvié", description: "La Venise de l'Afrique, bâtie sur l'eau.", imageName: "Cité Lacustre Ganvié.jpg", location: "Ganvié" },
+    { id: 4, title: "Tata Somba", description: "Architecture forteresse unique au monde.", imageName: "TATA SOMBA.jpg", location: "Atacora" },
+    { id: 5, title: "Zangbeto", description: "Gardien de la nuit, police traditionnelle vodun.", imageName: "Zangpeto.jpg", location: "Sud Bénin" },
+    { id: 6, title: "Chutes de Kota", description: "Un havre de fraîcheur et de nature préservée.", imageName: "Chutes de Kota.jpg", location: "Natitingou" },
+    { id: 7, title: "Place de l'Amazone", description: "Hommage aux guerrières Agoodjié du Dahomey.", imageName: "place-amazone.jpg", location: "Cotonou" },
+    { id: 8, title: "Monument Bio Guéra", description: "Héros de la résistance nationale.", imageName: "bio-guera.jpg", location: "Parakou" },
+    { id: 9, title: "Temple des Pythons", description: "Site sacré et culturel emblématique.", imageName: "ouidah-temple-python-3.jpg", location: "Ouidah" },
+    { id: 10, title: "Grand-Popo", description: "Cité balnéaire entre mer et fleuve.", imageName: "Grand-Popo.jpg", location: "Mono" },
+    { id: 11, title: "Mur de Fresques", description: "Art urbain retraçant l'histoire du Bénin.", imageName: "Mur de Fresque de Cotonou.jpg", location: "Cotonou" },
+    { id: 12, title: "Parc de la Pendjari", description: "Sanctuaire sauvage de la biodiversité.", imageName: "Parc Pendjari.jpg", location: "Tanguiéta" },
 ];
-
-const colorPalette = ["#E8112D", "#FCD116", "#008751", "#E8112D", "#008751", "#FCD116"];
-
-export default function HeritageCarousel() {
-    const { t } = useTranslation();
-    const [items, setItems] = useState<HeritageItem[]>(fallbackItems);
-    const [loading, setLoading] = useState(true);
-
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('patrimoine')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                if (data && data.length > 0) {
-                    const mappedItems = data.map((item: {
-                        id: number;
-                        title: string;
-                        description: string;
-                        imagename?: string;
-                        imageName?: string;
-                        image_url?: string;
-                        location?: string;
-                    }, index: number) => ({
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        imageName: item.imagename || item.imageName || item.image_url || "",
-                        location: item.location || "Bénin",
-                        color: colorPalette[index % colorPalette.length]
-                    }));
-                    setItems(mappedItems);
-                }
-            } catch {
-                console.warn('Heritage items using fallback data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    // Duplicate list for infinite scroll effect
-    const displayItems = items.length > 0 ? [...items, ...items] : [];
-
-    if (loading) return <div className="py-24 text-center">{t("Chargement du patrimoine...")}</div>;
-    if (items.length === 0) return null;
-
-    return (
-        <section className="py-24 bg-[#fafafa] overflow-hidden relative">
-            {/* Section Title */}
-            <div className="container mx-auto px-4 mb-16 text-center">
-                <span className="text-[#008751] font-semibold tracking-widest uppercase text-sm mb-2 block">
-                    <T>Découverte & Racines</T>
-                </span>
-                <h2 className="text-4xl md:text-5xl font-bold font-heading text-[#1a2332] mb-4">
-                    <T>Patrimoine</T> & <span className="text-benin-gradient"><T>Culture</T></span>
-                </h2>
-                <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                    <T>Plongez au cœur de l&apos;histoire et des traditions qui font la fierté du Bénin. Un héritage vivant à préserver et à transmettre.</T>
-                </p>
-            </div>
-
-            {/* Infinite Marquee */}
-            <div className="flex relative">
-                <div className="flex gap-8 animate-marquee whitespace-nowrap px-4">
-                    {displayItems.map((item, index) => (
-                        <HeritageCard key={`${item.id}-${index}`} item={item} />
-                    ))}
-                </div>
-
-                {/* Gradients to fade edges */}
-                <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-[#fafafa] to-transparent z-10" />
-                <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[#fafafa] to-transparent z-10" />
-            </div>
-
-            <style jsx global>{`
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-          animation: marquee 40s linear infinite;
-        }
-        .animate-marquee:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
-        </section>
-    );
-}
 
 function HeritageCard({ item }: { item: HeritageItem }) {
     const { t } = useTranslation();
     return (
-        <div className="relative group w-[350px] h-[450px] flex-shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-100 shadow-flag bg-white">
-            <div className={`absolute inset-0 bg-gray-200 transition-transform duration-700 group-hover:scale-110`}>
-                <Image
-                    src={`/assets/patrimoine/${item.imageName}`}
-                    alt={t(item.title)}
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                        // Fallback placeholder
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerText = item.title;
-                    }}
-                />
+        <div className="group relative h-[380px] w-[300px] shrink-0 overflow-hidden rounded-[1.4rem]">
+            <Image
+                src={`/assets/patrimoine/${item.imageName}`}
+                alt={t(item.title)}
+                fill
+                sizes="300px"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0d1a12]/85 via-[#0d1a12]/10 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                <span className="inline-flex items-center gap-1.5 font-geistmono text-[11px] uppercase tracking-[0.16em] text-[#FCD116]">
+                    <MapPin size={12} weight="fill" /> {t(item.location || "Bénin")}
+                </span>
+                <h3 className="mt-1.5 font-fraunces text-xl font-semibold leading-tight">{t(item.title)}</h3>
+                <p className="mt-1 font-geist text-[13px] leading-snug text-white/70 line-clamp-2">{t(item.description)}</p>
             </div>
-
-            {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
-
-            {/* Content */}
-            <div className="absolute bottom-0 left-0 w-full p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                <div className="flex items-center gap-2 mb-2">
-                    <MapPin size={16} className="text-white/80" />
-                    <span className="text-white/90 text-sm font-medium uppercase tracking-wide">{t(item.location || "")}</span>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2 font-heading leading-tight whitespace-normal">
-                    {t(item.title)}
-                </h3>
-                <p className="text-white/80 text-sm line-clamp-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100 whitespace-normal">
-                    {t(item.description)}
-                </p>
-
-                {/* Accent Bar */}
-                <div className="h-1 w-12 mt-4 rounded-full transition-all duration-300 group-hover:w-full" style={{ backgroundColor: item.color }} />
-            </div>
+            <span className="absolute left-0 top-0 h-1 w-full">
+                <span className="flex h-full w-full">
+                    <span className="flex-[46] bg-[#008751]" />
+                    <span className="flex-[27] bg-[#FCD116]" />
+                    <span className="flex-[27] bg-[#E8112D]" />
+                </span>
+            </span>
         </div>
+    );
+}
+
+export default function HeritageCarousel() {
+    const { t } = useTranslation();
+    const [items, setItems] = useState<HeritageItem[]>(fallbackItems);
+    const [paused, setPaused] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const { data, error } = await supabase.from("patrimoine").select("*").order("created_at", { ascending: false });
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    setItems(
+                        data.map((item: { id: number; title: string; description: string; imagename?: string; imageName?: string; image_url?: string; location?: string }) => ({
+                            id: item.id,
+                            title: item.title,
+                            description: item.description,
+                            imageName: item.imagename || item.imageName || item.image_url || "",
+                            location: item.location || "Bénin",
+                        })),
+                    );
+                }
+            } catch {
+                // fallback conservé
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (items.length === 0) return null;
+    const track = [...items, ...items];
+
+    return (
+        <section className="overflow-hidden bg-[#FBFAF7] py-20 md:py-28">
+            <div className="mx-auto mb-12 max-w-[1400px] px-5 md:px-8">
+                <h2 className="max-w-2xl font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-5xl">
+                    <T>Patrimoine &amp; culture</T>
+                </h2>
+                <p className="mt-4 max-w-xl font-geist text-lg leading-relaxed text-[#4a5751]">
+                    <T>L&apos;histoire et les traditions qui font la fierté du Bénin. Un héritage vivant, à retrouver.</T>
+                </p>
+            </div>
+
+            <div className="flex" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+                <div className="flex gap-5 whitespace-nowrap px-5 animate-marquee md:px-8" style={{ animationPlayState: paused ? "paused" : "running" }}>
+                    {track.map((item, index) => (
+                        <HeritageCard key={`${item.id}-${index}`} item={item} />
+                    ))}
+                </div>
+            </div>
+        </section>
     );
 }

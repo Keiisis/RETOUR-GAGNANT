@@ -23,6 +23,10 @@ const config = {
                 heading: ['var(--font-poppins)'],
                 display: ['var(--font-playfair)', 'Georgia', 'serif'],
                 mono: ['JetBrains Mono', 'monospace'],
+                // Refonte accueil (Phase 1)
+                fraunces: ['var(--font-fraunces)', 'Georgia', 'serif'],
+                geist: ['var(--font-geist)', 'system-ui', 'sans-serif'],
+                geistmono: ['var(--font-geist-mono)', 'monospace'],
             },
             colors: {
                 border: 'hsl(var(--border))',

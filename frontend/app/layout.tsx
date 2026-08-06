@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Inter, Montserrat, Playfair_Display } from "next/font/google";
+import { Poppins, Inter, Montserrat, Playfair_Display, Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { TranslationProvider } from "@/lib/translation";
 import BioGueraCursor from "@/components/BioGueraCursor";
@@ -28,6 +28,25 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-playfair",
+});
+
+// Refonte accueil (Phase 1) — titres cinétiques Fraunces (serif variable
+// haute-contraste), corps Geist, chiffres Geist Mono.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+});
+const geist = Geist({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-geist",
+});
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
@@ -167,7 +186,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className="scroll-smooth">
       <body
-        className={`${poppins.variable} ${inter.variable} ${montserrat.variable} ${playfair.variable} font-sans bg-background text-foreground antialiased`}
+        className={`${poppins.variable} ${inter.variable} ${montserrat.variable} ${playfair.variable} ${fraunces.variable} ${geist.variable} ${geistMono.variable} font-sans bg-background text-foreground antialiased`}
         suppressHydrationWarning={true}
       >
         <script
