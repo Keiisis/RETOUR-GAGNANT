@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, CheckCircle2, ShieldAlert, ArrowRight } from 'lucide-react'
+import { Bell, CheckCircle, ShieldWarning, ArrowRight } from '@phosphor-icons/react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { useTranslation, T } from '@/lib/translation'
@@ -137,8 +137,8 @@ export default function ClientBell() {
                                     >
                                         <div className="flex gap-3">
                                             <div className="shrink-0 mt-0.5">
-                                                {notif.type === 'success' ? <CheckCircle2 size={16} className="text-emerald-500" />
-                                                    : notif.type === 'warning' ? <ShieldAlert size={16} className="text-amber-500" />
+                                                {notif.type === 'success' ? <CheckCircle size={16} className="text-emerald-500" />
+                                                    : notif.type === 'warning' ? <ShieldWarning size={16} className="text-amber-500" />
                                                         : <Bell size={16} className="text-blue-500" />}
                                             </div>
                                             <div className="flex-1">

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from '@/lib/translation';
-import { VolumeX } from 'lucide-react';
+import { SpeakerSlash } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 
 export default function AudioPlayer() {
@@ -115,7 +115,7 @@ export default function AudioPlayer() {
                 title={isMuted ? ` ${t("Activer l'ambiance sonore")}` : ` ${t("Couper le son")}` }
             >
                 {isMuted ? (
-                    <VolumeX size={18} className="text-white/70" />
+                    <SpeakerSlash size={18} className="text-white/70" />
                 ) : (
                     <div className="flex gap-0.5 items-end h-4">
                         {[1, 2, 3].map((i) => (

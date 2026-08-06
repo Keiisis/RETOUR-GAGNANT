@@ -4,9 +4,9 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    X, ShoppingBag, CreditCard, Phone, User, Mail,
-    CheckCircle2, AlertCircle, Loader2, Shield, ChevronRight, Lock
-} from 'lucide-react'
+    X, ShoppingBag, CreditCard, Phone, User, Envelope,
+    CheckCircle, WarningCircle, CircleNotch, Shield, CaretRight, Lock
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Product } from './ProductCard'
 import { Price } from '@/components/ui/Price'
@@ -1009,7 +1009,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                         Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>— pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+                                        <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
                                         <input
                                             type="email"
                                             value={customerEmail}
@@ -1065,14 +1065,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
                                 {errorMessage && (
                                     <p className="text-xs text-[#E8112D] font-bold flex items-center gap-2">
-                                        <AlertCircle size={14} /> {errorMessage}
+                                        <WarningCircle size={14} /> {errorMessage}
                                     </p>
                                 )}
                                 <Button
                                     onClick={handleSubmitInfo}
                                     className="w-full h-14 rounded-xl bg-[#FCD116] text-[#0f141e] font-black text-sm hover:bg-[#008751] hover:text-white transition-all"
                                 >
-                                    Choisir le mode de paiement <ChevronRight size={18} className="ml-2" />
+                                    Choisir le mode de paiement <CaretRight size={18} className="ml-2" />
                                 </Button>
                             </motion.div>
                         )}
@@ -1111,7 +1111,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                                 <p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p>
                                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p>
                                             </div>
-                                            <ChevronRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                                            <CaretRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                                         </motion.button>
                                     ))
                                 )}
@@ -1166,7 +1166,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     {stripeReady ? (
                                         <span className="flex justify-center items-center gap-1"><T>Payer</T> <Price amount={totalAmount} currency="XOF" noConvert /> <Lock size={14} className="ml-2" /></span>
                                     ) : (
-                                        <><Loader2 size={16} className="animate-spin mr-2" /> <T>Chargement...</T></>
+                                        <><CircleNotch size={16} className="animate-spin mr-2" /> <T>Chargement...</T></>
                                     )}
                                 </Button>
 
@@ -1195,7 +1195,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
                                 <div className="bg-white/5 rounded-2xl p-4">
                                     <div id="paypal-button-container" className="min-h-[50px] flex items-center justify-center">
-                                        <Loader2 size={24} className="animate-spin text-[#009CDE]" />
+                                        <CircleNotch size={24} className="animate-spin text-[#009CDE]" />
                                     </div>
                                 </div>
 
@@ -1221,7 +1221,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 className="flex flex-col items-center justify-center py-10 space-y-6"
                             >
                                 <div className="relative">
-                                    <Loader2 size={48} className="animate-spin text-[#FCD116]" />
+                                    <CircleNotch size={48} className="animate-spin text-[#FCD116]" />
                                     <div className="absolute inset-0 blur-xl bg-[#FCD116]/20 animate-pulse" />
                                 </div>
                                 <div className="text-center">
@@ -1239,7 +1239,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 className="flex flex-col items-center justify-center py-10 space-y-6"
                             >
                                 <div className="w-20 h-20 rounded-full bg-[#008751]/20 border-2 border-[#008751] flex items-center justify-center">
-                                    <CheckCircle2 size={40} className="text-[#008751]" />
+                                    <CheckCircle size={40} className="text-[#008751]" />
                                 </div>
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Paiement reçu</T></h4>
@@ -1269,7 +1269,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 className="flex flex-col items-center justify-center py-10 space-y-6"
                             >
                                 <div className="w-20 h-20 rounded-full bg-[#E8112D]/20 border-2 border-[#E8112D] flex items-center justify-center">
-                                    <AlertCircle size={40} className="text-[#E8112D]" />
+                                    <WarningCircle size={40} className="text-[#E8112D]" />
                                 </div>
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Erreur</T></h4>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Home } from 'lucide-react'
+import { CaretRight, House } from '@phosphor-icons/react'
 
 const ROUTE_LABELS: Record<string, string> = {
     'services': 'Services',
@@ -46,7 +46,7 @@ export default function Breadcrumbs() {
             <ol className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap" itemScope itemType="https://schema.org/BreadcrumbList">
                 <li className="flex items-center gap-1.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
                     <Link href="/" className="hover:text-[#008751] transition-colors flex items-center gap-1" itemProp="item">
-                        <Home size={12} />
+                        <House size={12} />
                         <span itemProp="name">Accueil</span>
                     </Link>
                     <meta itemProp="position" content="1" />
@@ -65,7 +65,7 @@ export default function Breadcrumbs() {
                             itemScope
                             itemType="https://schema.org/ListItem"
                         >
-                            <ChevronRight size={10} className="text-gray-300" />
+                            <CaretRight size={10} className="text-gray-300" />
                             {isLast ? (
                                 <span className="font-semibold text-gray-800 truncate max-w-[200px]" itemProp="name">
                                     {label}

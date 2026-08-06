@@ -3,8 +3,8 @@
 import { useTranslation, T } from '@/lib/translation';
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    X, ShoppingCart, Trash2, Plus, Minus, ShoppingBag, ArrowRight
-} from 'lucide-react'
+    X, ShoppingCart, Trash, Plus, Minus, ShoppingBag, ArrowRight
+} from '@phosphor-icons/react'
 import { useCart } from '@/lib/store/cartStore'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
@@ -123,7 +123,7 @@ export function CartDrawer() {
                                                         className="p-1.5 rounded-lg text-gray-600 hover:text-[#E8112D] hover:bg-[#E8112D]/10 transition-colors"
                                                         title={t("Supprimer du panier")}
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash size={14} />
                                                     </button>
                                                     <p className="text-xs font-bold text-gray-400">
                                                         <Price amount={unitPrice * item.quantity} currency={item.currency as CurrencyCode} />

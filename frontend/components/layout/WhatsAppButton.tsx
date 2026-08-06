@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X } from 'lucide-react'
+import { WhatsappLogo, X } from '@phosphor-icons/react'
 import { COMPANY_INFO } from '@/lib/constants/company-info'
 
 export default function WhatsAppButton() {
@@ -63,7 +63,7 @@ export default function WhatsAppButton() {
             >
                 {/* Pulse ring */}
                 <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />
-                <MessageCircle size={26} className="relative z-10 fill-white" />
+                <WhatsappLogo size={26} className="relative z-10 fill-white" />
             </motion.button>
         </div>
     )

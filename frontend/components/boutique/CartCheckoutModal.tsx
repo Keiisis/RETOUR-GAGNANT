@@ -4,9 +4,9 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    X, ShoppingBag, CreditCard, Phone, User, Mail,
-    CheckCircle2, AlertCircle, Loader2, Shield, ChevronRight, Tag, Lock, MapPin
-} from 'lucide-react'
+    X, ShoppingBag, CreditCard, Phone, User, Envelope,
+    CheckCircle, WarningCircle, CircleNotch, Shield, CaretRight, Tag, Lock, MapPin
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/lib/store/cartStore'
 import { Price } from '@/components/ui/Price'
@@ -1023,7 +1023,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                         Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>— pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
+                                        <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
                                         <input id="cart-email" type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder={t("votre@email.com")} className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:outline-none focus:border-[#FCD116]/30 transition-colors" />
                                     </div>
                                 </div>
@@ -1091,7 +1091,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                                 disabled={couponLoading || !couponCode}
                                                 className="h-full px-6 bg-white/10 hover:bg-white/20 text-white rounded-xl"
                                             >
-                                                {couponLoading ? <Loader2 size={16} className="animate-spin" /> : 'Appliquer'}
+                                                {couponLoading ? <CircleNotch size={16} className="animate-spin" /> : 'Appliquer'}
                                             </Button>
                                         </div>
                                         {couponError && <p className="text-[10px] text-[#E8112D] font-bold mt-1.5 ml-1">{couponError}</p>}
@@ -1100,7 +1100,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
 
                                 {errorMessage && (
                                     <p className="text-xs text-[#E8112D] font-bold flex items-center gap-2">
-                                        <AlertCircle size={14} /> {errorMessage}
+                                        <WarningCircle size={14} /> {errorMessage}
                                     </p>
                                 )}
                                 <Button
@@ -1108,7 +1108,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     onClick={handleSubmitInfo}
                                     className="w-full h-14 rounded-xl bg-[#FCD116] text-[#0f141e] font-black text-sm hover:bg-[#008751] hover:text-white transition-all"
                                 >
-                                    Choisir le mode de paiement <ChevronRight size={18} className="ml-2" />
+                                    Choisir le mode de paiement <CaretRight size={18} className="ml-2" />
                                 </Button>
                             </motion.div>
                         )}
@@ -1144,7 +1144,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                             <p className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{p.name}</p>
                                             <p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p>
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                                        <CaretRight size={18} className="text-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                                     </motion.button>
                                 ))}
                                 <PaymentPrivacyNotice className="mt-3" />
@@ -1196,7 +1196,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     {stripeReady ? (
                                         <span className="flex items-center gap-1 justify-center"><T>Payer</T> {selectedCurrency === 'XOF' ? <Price amount={finalTotal} currency="XOF" noConvert /> : <span>{formatPrice(displayAmount, selectedCurrency)}</span>} <Lock size={14} className="ml-2" /></span>
                                     ) : (
-                                        <><Loader2 size={16} className="animate-spin mr-2" /> <T>Chargement...</T></>
+                                        <><CircleNotch size={16} className="animate-spin mr-2" /> <T>Chargement...</T></>
                                     )}
                                 </Button>
                                 <button
@@ -1223,7 +1223,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-4">
                                     <div id="cart-paypal-button-container" className="min-h-[50px] flex items-center justify-center">
-                                        <Loader2 size={24} className="animate-spin text-[#009CDE]" />
+                                        <CircleNotch size={24} className="animate-spin text-[#009CDE]" />
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-gray-600 text-center">
@@ -1242,7 +1242,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {/* STEP: Processing */}
                         {step === 'processing' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-10 space-y-6">
-                                <Loader2 size={48} className="animate-spin text-[#FCD116]" />
+                                <CircleNotch size={48} className="animate-spin text-[#FCD116]" />
                                 <div className="text-center">
                                     <p className="text-white font-bold"><T>Traitement en cours</T></p>
                                     <p className="text-xs text-gray-500 mt-1"><T>Ne fermez pas cette fenêtre...</T></p>
@@ -1254,7 +1254,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {step === 'success' && (
                             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-10 space-y-6">
                                 <div className="w-20 h-20 rounded-full bg-[#008751]/20 border-2 border-[#008751] flex items-center justify-center">
-                                    <CheckCircle2 size={40} className="text-[#008751]" />
+                                    <CheckCircle size={40} className="text-[#008751]" />
                                 </div>
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Paiement reçu</T></h4>
@@ -1275,7 +1275,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {step === 'error' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-10 space-y-6">
                                 <div className="w-20 h-20 rounded-full bg-[#E8112D]/20 border-2 border-[#E8112D] flex items-center justify-center">
-                                    <AlertCircle size={40} className="text-[#E8112D]" />
+                                    <WarningCircle size={40} className="text-[#E8112D]" />
                                 </div>
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Erreur</T></h4>

@@ -2,7 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart } from '@phosphor-icons/react'
 import { useCart } from '@/lib/store/cartStore'
 
 export function CartFloatingButton() {

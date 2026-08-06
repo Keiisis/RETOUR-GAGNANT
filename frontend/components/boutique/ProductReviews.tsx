@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Send, User, MessageSquare, Loader2, CheckCircle2 } from 'lucide-react'
+import { Star, PaperPlaneTilt, User, ChatText, CircleNotch, CheckCircle } from '@phosphor-icons/react'
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 
 interface Review {
@@ -146,7 +146,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                         onClick={() => setShowForm(!showForm)}
                         className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] text-xs font-black uppercase tracking-widest hover:bg-[#FCD116]/20 transition-all"
                     >
-                        <MessageSquare size={16} />
+                        <ChatText size={16} />
                         {showForm ? 'Fermer' : 'Laisser un avis'}
                     </button>
                 </div>
@@ -185,7 +185,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                         >
                             {submitted ? (
                                 <div className="flex flex-col items-center justify-center py-10 space-y-3">
-                                    <CheckCircle2 size={48} className="text-[#008751]" />
+                                    <CheckCircle size={48} className="text-[#008751]" />
                                     <p className="text-lg font-black text-white"><T>Merci pour votre avis !</T></p>
                                     <p className="text-xs text-gray-500"><T>Votre retour nous aide à nous améliorer.</T></p>
                                 </div>
@@ -263,7 +263,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                         disabled={submitting}
                                         className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#FCD116] text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50"
                                     >
-                                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                        {submitting ? <CircleNotch size={16} className="animate-spin" /> : <PaperPlaneTilt size={16} />}
                                         {submitting ? 'Envoi...' : 'Publier mon avis'}
                                     </button>
                                 </form>
@@ -275,7 +275,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 {/* Reviews List */}
                 {loading ? (
                     <div className="flex items-center justify-center py-16">
-                        <Loader2 size={32} className="animate-spin text-[#FCD116]" />
+                        <CircleNotch size={32} className="animate-spin text-[#FCD116]" />
                     </div>
                 ) : reviews.length === 0 ? (
                     <div className="text-center py-16 space-y-4">

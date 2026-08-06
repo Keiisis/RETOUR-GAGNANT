@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { CaretDown } from '@phosphor-icons/react'
 import { type CurrencyCode, convertCurrency, formatPrice, getAllowedCurrencies } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'
 
@@ -54,7 +54,7 @@ export default function CurrencySelector({ value, onChange, baseAmountXOF, class
             >
                 <span>{current.flag}</span>
                 <span>{current.label}</span>
-                <ChevronDown size={11} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+                <CaretDown size={11} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (

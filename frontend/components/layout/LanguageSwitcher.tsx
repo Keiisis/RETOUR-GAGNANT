@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Globe } from 'lucide-react'
+import { CaretDown, Globe } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useTranslation, SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
 
@@ -47,7 +47,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
                         {currentLang.code}
                     </span>
                 </div>
-                <ChevronDown
+                <CaretDown
                     size={14}
                     className={cn(
                         "text-white/50 transition-transform duration-300",

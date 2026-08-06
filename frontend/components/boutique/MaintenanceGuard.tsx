@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Wrench, Clock, ArrowLeft } from 'lucide-react'
+import { Wrench, Clock, ArrowLeft } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
