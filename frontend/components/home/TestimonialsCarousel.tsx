@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
-import { Quotes, Star, PaperPlaneTilt, CheckCircle, X, Camera } from "@phosphor-icons/react";
-import { supabase } from "@/lib/supabase";
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Quote, Star, Send, CheckCircle, MapPin, User, Briefcase, MessageSquare, Camera } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 import { useTranslation, T } from "@/lib/translation";
 
 interface Testimonial {
@@ -19,194 +20,418 @@ interface Testimonial {
 }
 
 const fallbackTestimonials: Testimonial[] = [
-    { id: 1, name: "Jean-Marc K.", role: "Investisseur immobilier", text: "J'ai pu sécuriser un terrain à Calavi en moins de deux semaines. Leur professionnalisme est rassurant.", location: "Paris, France", rating: 5, service: "Immobilier" },
-    { id: 2, name: "Sarah D.", role: "Entrepreneure", text: "L'accompagnement pour la création de ma société a été exemplaire. Je recommande pour tout projet de retour.", location: "Montréal, Canada", rating: 5, service: "Business" },
-    { id: 3, name: "Famille Togbé", role: "Installation définitive", text: "Une transition en douceur pour toute la famille : école des enfants, logement, tout a été géré.", location: "Bruxelles, Belgique", rating: 5, service: "Logement" },
+    {
+        id: 1,
+        name: "Jean-Marc K.",
+        role: "Investisseur Immobilier",
+        text: "Grâce à RETOUR GAGNANT, j'ai pu sécuriser un terrain à Calavi en moins de 2 semaines. Leur professionnalisme est rassurant.",
+        location: "Paris, France",
+        rating: 5,
+        service: "Immobilier",
+    },
+    {
+        id: 2,
+        name: "Sarah D.",
+        role: "Entrepreneur",
+        text: "L'accompagnement pour la création de ma société a été exemplaire. Je recommande vivement pour tout projet de retour.",
+        location: "Montréal, Canada",
+        rating: 5,
+        service: "Business",
+    },
+    {
+        id: 3,
+        name: "Famille Togbé",
+        role: "Installation Définitive",
+        text: "Une transition en douceur pour toute la famille. De l'école des enfants au logement, tout a été géré parfaitement.",
+        location: "Bruxelles, Belgique",
+        rating: 5,
+        service: "Logement",
+    },
 ];
 
-function Stars({ n }: { n: number }) {
+
+
+function TestimonialCard({ item }: { item: Testimonial }) {
+    const { t } = useTranslation();
     return (
-        <div className="flex gap-0.5" aria-label={`${n} / 5`}>
-            {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={15} weight="fill" className={i < n ? "text-[#FCD116]" : "text-[#e2ded3]"} />
-            ))}
+        <div className="flex-shrink-0 w-[380px] p-6 mx-3">
+            <div className="relative bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/20 hover:border-[#FCD116]/50 transition-all duration-300 h-full group overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
+                <div className="absolute top-6 right-6 opacity-10">
+                    <Quote size={60} className="text-[#008751]" />
+                </div>
+                <div className="flex items-center gap-4 mb-6 relative z-10">
+                    <div className="w-14 h-14 rounded-full border-2 border-[#FCD116] p-0.5 shadow-sm overflow-hidden bg-gray-50 flex-shrink-0">
+                        {item.photoUrl ? (
+                            <Image
+                                src={item.photoUrl}
+                                alt={item.name}
+                                width={56}
+                                height={56}
+                                className="w-full h-full object-cover rounded-full"
+                            />
+                        ) : (
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-[#008751] to-[#006039] flex items-center justify-center text-white font-bold text-lg">
+                                {item.name.charAt(0)}
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-[#1a2332] text-lg leading-tight">{item.name}</h4>
+                        <p className="text-xs text-[#E8112D] font-medium flex items-center gap-1 uppercase tracking-wider mt-0.5">
+                            {t(item.role)}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-1 mb-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                            key={i}
+                            size={14}
+                            className={`${i < item.rating ? "text-[#FCD116] fill-[#FCD116]" : "text-gray-200"} transition-colors`}
+                        />
+                    ))}
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-6 text-[15px] relative z-10">
+                    &ldquo;{t(item.text)}&rdquo;
+                </p>
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
+                    <div className="flex items-center gap-1.5 text-gray-500 text-xs">
+                        <MapPin size={12} />
+                        <span>{item.location}</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#008751]/10 text-[#008751] uppercase tracking-wide">
+                        {t(item.service)}
+                    </span>
+                </div>
+            </div>
         </div>
     );
 }
 
-function Card({ item }: { item: Testimonial }) {
+function SubmissionForm() {
     const { t } = useTranslation();
-    return (
-        <figure className="mx-3 flex w-[340px] shrink-0 flex-col rounded-[1.4rem] border border-[#e7e4db] bg-white p-7 sm:w-[380px]">
-            <Quotes size={28} weight="fill" className="text-[#008751]/25" />
-            <blockquote className="mt-4 flex-1 font-geist text-[15px] leading-relaxed text-[#3a453f] line-clamp-3">
-                {t(item.text)}
-            </blockquote>
-            <div className="mt-5"><Stars n={item.rating} /></div>
-            <figcaption className="mt-4 flex items-center gap-3 border-t border-[#f0ede4] pt-4">
-                {item.photoUrl ? (
-                    <Image src={item.photoUrl} alt={item.name} width={40} height={40} className="h-10 w-10 rounded-full object-cover" unoptimized />
-                ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#008751] to-[#0a7d52] font-geist text-sm font-bold text-white">
-                        {item.name.charAt(0)}
-                    </span>
-                )}
-                <div className="min-w-0">
-                    <p className="truncate font-geist text-sm font-semibold text-[#0d1a12]">{item.name}</p>
-                    <p className="truncate font-geist text-xs text-[#8a938c]">{t(item.role)}{item.location ? ` · ${item.location}` : ""}</p>
-                </div>
-            </figcaption>
-        </figure>
-    );
-}
-
-function SubmissionModal({ onClose }: { onClose: () => void }) {
-    const [form, setForm] = useState({ name: "", role: "", location: "", text: "", service: "", rating: 5 });
+    const [formData, setFormData] = useState({ name: '', role: '', location: '', text: '', service: '', rating: 5 });
     const [photo, setPhoto] = useState<File | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [done, setDone] = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const submit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!form.name.trim() || !form.text.trim()) { alert("Nom et témoignage requis."); return; }
-        setLoading(true);
-        try {
-            let photo_url: string | null = null;
-            if (photo) {
-                const ext = photo.name.split(".").pop();
-                const fileName = `${Math.random()}.${ext}`;
-                const { error } = await supabase.storage.from("testimonials").upload(fileName, photo);
-                if (!error) photo_url = supabase.storage.from("testimonials").getPublicUrl(fileName).data.publicUrl;
-            }
-            const res = await fetch("/api/testimonials", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, photo_url }),
-            });
-            if (!res.ok) throw new Error();
-            setDone(true);
-        } catch {
-            alert("Erreur lors de l'envoi. Réessayez.");
-        } finally {
-            setLoading(false);
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setPhoto(e.target.files[0]);
         }
     };
 
-    const inp = "w-full rounded-xl border border-[#e2ded3] bg-[#faf9f5] px-3.5 py-2.5 font-geist text-sm text-[#0d1a12] focus:border-[#008751] focus:outline-none focus:ring-2 focus:ring-[#008751]/15";
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            let photoUrl = null;
+            if (photo) {
+                const fileExt = photo.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('testimonials')
+                    .upload(fileName, photo);
+
+                if (!uploadError) {
+                    const { data: { publicUrl } } = supabase.storage.from('testimonials').getPublicUrl(fileName);
+                    photoUrl = publicUrl;
+                }
+                // Photo upload failure is non-blocking — testimonial still submits
+            }
+
+            const res = await fetch('/api/testimonials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    photo_url: photoUrl,
+                }),
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Erreur serveur');
+            }
+
+            setIsSubmitted(true);
+        } catch (error) {
+            console.error("Submission failed", error);
+            alert("Erreur lors de l'envoi. Veuillez réessayer.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    if (isSubmitted) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-16 px-8 bg-white/80 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl"
+            >
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-tr from-[#008751] to-[#FCD116] p-1 shadow-lg animate-pulse">
+                    <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                        <CheckCircle size={48} className="text-[#008751]" />
+                    </div>
+                </div>
+                <h3 className="text-3xl font-bold text-[#1a2332] mb-3 font-heading"><T>Merci ! 🇧🇯</T></h3>
+                <p className="text-gray-600 max-w-xs mx-auto"><T>Votre témoignage a été reçu. Il sera publié après validation.</T></p>
+                <Button
+                    variant="ghost"
+                    className="mt-8 text-[#008751] hover:bg-[#008751]/10"
+                    onClick={() => { setIsSubmitted(false); setFormData({ name: '', role: '', location: '', text: '', service: '', rating: 5 }); setPhoto(null); }}
+                >
+                    <T>Envoyer un autre avis</T>
+                </Button>
+            </motion.div>
+        );
+    }
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0d1a12]/50 p-4 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-                <div className="flex h-1"><span className="flex-[46] bg-[#008751]" /><span className="flex-[27] bg-[#FCD116]" /><span className="flex-[27] bg-[#E8112D]" /></div>
-                {done ? (
-                    <div className="px-10 py-12 text-center">
-                        <CheckCircle size={52} weight="fill" className="mx-auto text-[#008751]" />
-                        <h3 className="mt-4 font-fraunces text-2xl font-semibold text-[#0d1a12]">Merci !</h3>
-                        <p className="mt-1 font-geist text-sm text-[#6b756e]">Votre témoignage sera publié après vérification.</p>
-                        <button onClick={onClose} className="mt-6 rounded-full bg-[#008751] px-6 py-2.5 font-geist text-sm font-semibold text-white">Fermer</button>
+        <div className="relative">
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/40 shadow-2xl z-0" />
+            <motion.form
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                onSubmit={handleSubmit}
+                className="relative z-10 p-8 md:p-10 space-y-6"
+            >
+                <div className="text-center mb-8">
+                    <h3 className="text-2xl font-bold font-heading bg-clip-text text-transparent bg-gradient-to-r from-[#008751] to-[#1a2332]">
+                        <T>Partagez votre expérience</T>
+                    </h3>
+                    <p className="text-gray-500 text-sm mt-2"><T>Rejoignez la communauté du Retour Gagnant</T></p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-5">
+                        <div className="relative group">
+                            <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#008751] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t("Votre nom")}
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#008751] focus:ring-4 focus:ring-[#008751]/10 transition-all font-medium text-gray-700 placeholder:text-gray-400"
+                            />
+                        </div>
+                        <div className="relative group">
+                            <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#FCD116] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t("Votre rôle (ex: Entrepreneur)")}
+                                required
+                                value={formData.role}
+                                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                                className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#FCD116] focus:ring-4 focus:ring-[#FCD116]/10 transition-all font-medium text-gray-700 placeholder:text-gray-400"
+                            />
+                        </div>
                     </div>
-                ) : (
-                    <form onSubmit={submit}>
-                        <div className="flex items-center justify-between border-b border-[#f0ede4] px-6 py-4">
-                            <h3 className="font-fraunces text-xl font-semibold text-[#0d1a12]">Partager votre expérience</h3>
-                            <button type="button" onClick={onClose} className="rounded-lg p-2 text-[#8a938c] hover:bg-[#f3f1ea]"><X size={18} /></button>
+                    <div className="space-y-5">
+                        <div className="relative group">
+                            <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#E8112D] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t("Ville, Pays")}
+                                required
+                                value={formData.location}
+                                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                                className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#E8112D] focus:ring-4 focus:ring-[#E8112D]/10 transition-all font-medium text-gray-700 placeholder:text-gray-400"
+                            />
                         </div>
-                        <div className="space-y-3 p-6">
-                            <div className="grid grid-cols-2 gap-3">
-                                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nom *" className={inp} />
-                                <input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Rôle (ex. Entrepreneur)" className={inp} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ville, pays" className={inp} />
-                                <input value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} placeholder="Service concerné" className={inp} />
-                            </div>
-                            <textarea rows={3} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} placeholder="Votre témoignage *" className={`${inp} resize-none`} />
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1">
-                                    {[1, 2, 3, 4, 5].map((n) => (
-                                        <button type="button" key={n} onClick={() => setForm({ ...form, rating: n })}>
-                                            <Star size={22} weight="fill" className={n <= form.rating ? "text-[#FCD116]" : "text-[#e2ded3]"} />
-                                        </button>
-                                    ))}
-                                </div>
-                                <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 rounded-full border border-[#e2ded3] px-4 py-2 font-geist text-xs font-semibold text-[#6b756e] hover:border-[#008751]/40">
-                                    <Camera size={15} /> {photo ? "Photo ajoutée" : "Photo (option)"}
+                        <select
+                            required
+                            aria-label={t("Service utilisé")}
+                            value={formData.service}
+                            onChange={(e) => setFormData(prev => ({ ...prev, service: e.target.value }))}
+                            className="w-full px-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#008751] focus:ring-4 focus:ring-[#008751]/10 transition-all text-gray-600 font-medium cursor-pointer"
+                        >
+                            <option value=""><T>Service utilisé</T></option>
+                            <option value="Administratif"><T>Passeport & Administratif</T></option>
+                            <option value="Immobilier"><T>Logement Premium</T></option>
+                            <option value="Business"><T>Création d&apos;Entreprise</T></option>
+                            <option value="Culture"><T>Guide Culturel</T></option>
+                            <option value="Construction"><T>Construction</T></option>
+                            <option value="Investissement"><T>Investissement</T></option>
+                        </select>
+                    </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-5 items-center justify-between p-4 bg-white/40 rounded-2xl border border-white/60">
+                    <div className="flex flex-col items-center md:items-start gap-2">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest"><T>Votre Note</T></span>
+                        <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, rating: star }))}
+                                    aria-label={t("Note de {star} sur 5", { star })}
+                                    className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
+                                >
+                                    <Star
+                                        size={28}
+                                        className={star <= formData.rating ? "text-[#FCD116] fill-[#FCD116] drop-shadow-sm" : "text-gray-300"}
+                                    />
                                 </button>
-                                <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files && setPhoto(e.target.files[0])} />
-                            </div>
+                            ))}
                         </div>
-                        <div className="flex justify-end gap-3 border-t border-[#f0ede4] px-6 py-4">
-                            <button type="button" onClick={onClose} className="rounded-xl border border-[#e2ded3] px-4 py-2.5 font-geist text-sm font-semibold text-[#6b756e] hover:bg-[#f7f5f0]">Annuler</button>
-                            <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-[#008751] px-5 py-2.5 font-geist text-sm font-semibold text-white hover:bg-[#00693f] disabled:opacity-60">
-                                <PaperPlaneTilt size={15} weight="bold" /> {loading ? "Envoi..." : "Envoyer"}
-                            </button>
-                        </div>
-                    </form>
-                )}
-            </motion.div>
-        </motion.div>
+                    </div>
+                    <div className="flex flex-col items-center md:items-end gap-2 w-full md:w-auto">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest"><T>Votre Photo (Optionnel)</T></span>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            aria-label={t("Sélectionner une photo")}
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handlePhotoChange}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-3 px-5 py-2.5 rounded-xl border border-dashed border-gray-400 hover:border-[#008751] hover:bg-[#008751]/5 transition-all w-full md:w-auto justify-center"
+                        >
+                            {photo ? (
+                                <>
+                                    <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 relative">
+                                        <Image src={URL.createObjectURL(photo)} alt={t("Preview")} fill className="object-cover" />
+                                    </div>
+                                    <span className="text-sm font-medium text-[#008751] truncate max-w-[120px]">{photo.name}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Camera size={18} className="text-gray-400" />
+                                    <span className="text-sm font-medium text-gray-500"><T>Ajouter une photo</T></span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+                <div className="relative group">
+                    <MessageSquare size={18} className="absolute left-4 top-5 text-gray-400 group-focus-within:text-[#008751] transition-colors" />
+                    <textarea
+                        placeholder={t("Racontez-nous votre histoire...")}
+                        required
+                        rows={4}
+                        value={formData.text}
+                        onChange={(e) => setFormData(prev => ({ ...prev, text: e.target.value }))}
+                        className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200/50 bg-white/50 text-sm focus:outline-none focus:border-[#008751] focus:ring-4 focus:ring-[#008751]/10 transition-all resize-none font-medium text-gray-700 placeholder:text-gray-400"
+                    />
+                </div>
+                <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-[#008751] to-[#006039] text-white hover:shadow-lg hover:from-[#009b5e] hover:to-[#00754a] rounded-xl h-14 text-lg font-bold shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
+                >
+                    {isLoading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            {t('Publication en cours...')}
+                        </span>
+                    ) : (
+                        <span className="flex items-center gap-2">
+                            <Send size={20} />
+                            <T>Envoyer mon avis</T>
+                        </span>
+                    )}
+                </Button>
+            </motion.form>
+        </div>
     );
 }
 
 export default function TestimonialsCarousel() {
-    const [items, setItems] = useState<Testimonial[]>(fallbackTestimonials);
-    const [open, setOpen] = useState(false);
-    const [paused, setPaused] = useState(false);
+    const [testimonials, setTestimonials] = useState<Testimonial[]>(fallbackTestimonials);
+
 
     useEffect(() => {
-        fetch("/api/testimonials")
-            .then((r) => r.json())
-            .then((j) => {
-                const arr = (j.testimonials || j || []) as Record<string, unknown>[];
-                if (Array.isArray(arr) && arr.length > 0) {
-                    setItems(arr.map((x) => ({
-                        id: (x.id as string) ?? Math.random(),
-                        name: (x.name as string) || "",
-                        role: (x.role as string) || "",
-                        text: (x.text as string) || "",
-                        location: (x.location as string) || "",
-                        rating: Number(x.rating) || 5,
-                        service: (x.service as string) || "",
-                        photoUrl: (x.photoUrl as string) || (x.photo_url as string) || undefined,
-                    })));
+        const fetchTestimonials = async () => {
+            try {
+                const res = await fetch('/api/testimonials');
+                if (!res.ok) throw new Error('Erreur API');
+                const json = await res.json();
+
+                if (json.testimonials && json.testimonials.length > 0) {
+                    setTestimonials(json.testimonials);
                 }
-            })
-            .catch(() => { });
+            } catch {
+                console.warn('Testimonials using fallback data');
+            }
+        };
+
+        fetchTestimonials();
     }, []);
 
-    const half = Math.ceil(items.length / 2);
-    const rowA = items.length > 3 ? items.slice(0, half) : items;
-    const rowB = items.length > 3 ? items.slice(half) : items;
-    const trackA = [...rowA, ...rowA, ...rowA];
-    const trackB = [...rowB, ...rowB, ...rowB];
+
+    const displayItems = testimonials.length < 5 ? [...testimonials, ...testimonials, ...testimonials] : [...testimonials, ...testimonials];
 
     return (
-        <section className="overflow-hidden bg-white py-20 md:py-28">
-            <div className="mx-auto mb-12 max-w-[1400px] px-5 md:px-8">
-                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                    <h2 className="max-w-2xl font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-5xl">
-                        <T>Ils sont rentrés avec nous.</T>
+        <section className="py-24 bg-[#fafbfc] overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+                <div className="absolute top-20 right-[-10%] w-[500px] h-[500px] bg-[#FCD116]/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 left-[-10%] w-[500px] h-[500px] bg-[#008751]/5 rounded-full blur-3xl" />
+            </div>
+            <div className="container mx-auto px-4 mb-20">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7 }}
+                    className="text-center relative z-10"
+                >
+                    <span className="inline-block px-4 py-1.5 rounded-full bg-[#E8112D]/5 text-[#E8112D] text-sm font-bold tracking-widest uppercase mb-4 border border-[#E8112D]/10">
+                        <T>La Voix de la Diaspora</T>
+                    </span>
+                    <h2 className="text-4xl md:text-6xl font-bold font-heading text-[#1a2332] mb-6">
+                        <T>Ils ont osé le</T> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]"><T>Retour Gagnant</T></span>
                     </h2>
-                    <button onClick={() => setOpen(true)} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#0d1a12] px-6 py-3 font-geist text-[14px] font-semibold text-white transition-colors hover:bg-[#008751]">
-                        <PaperPlaneTilt size={16} weight="bold" /> <T>Partager votre expérience</T>
-                    </button>
-                </div>
+                    <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
+                        <T>Découvrez les histoires inspirantes de ceux qui ont franchi le pas.</T>
+                    </p>
+                </motion.div>
             </div>
-
-            <div className="relative flex flex-col gap-5" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-white to-transparent" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-white to-transparent" />
-                <div className="flex w-max animate-marquee-left" style={{ animationPlayState: paused ? "paused" : "running" }}>
-                    {trackA.map((item, i) => <Card key={`a-${item.id}-${i}`} item={item} />)}
-                </div>
-                {rowB.length > 0 && (
-                    <div className="flex w-max animate-marquee-right" style={{ animationPlayState: paused ? "paused" : "running" }}>
-                        {trackB.map((item, i) => <Card key={`b-${item.id}-${i}`} item={item} />)}
-                    </div>
-                )}
+            <div className="relative mb-8 group">
+                <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#fafbfc] to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#fafbfc] to-transparent z-10 pointer-events-none" />
+                <motion.div
+                    className="flex gap-4"
+                    animate={{ x: [0, -1500] }}
+                    transition={{
+                        x: { repeat: Infinity, repeatType: "loop", duration: 50, ease: "linear" },
+                    }}
+                    style={{ width: 'max-content' }}
+                >
+                    {[...displayItems, ...displayItems].map((item, i) => (
+                        <TestimonialCard key={`row1-${i}`} item={item} />
+                    ))}
+                </motion.div>
             </div>
-            <AnimatePresence>{open && <SubmissionModal onClose={() => setOpen(false)} />}</AnimatePresence>
+            <div className="relative mb-20 group">
+                <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#fafbfc] to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#fafbfc] to-transparent z-10 pointer-events-none" />
+                <motion.div
+                    className="flex gap-4"
+                    animate={{ x: [-1500, 0] }}
+                    transition={{
+                        x: { repeat: Infinity, repeatType: "loop", duration: 55, ease: "linear" },
+                    }}
+                    style={{ width: 'max-content' }}
+                >
+                    {[...displayItems, ...displayItems].reverse().map((item, i) => (
+                        <TestimonialCard key={`row2-${i}`} item={item} />
+                    ))}
+                </motion.div>
+            </div>
+            <div className="container mx-auto px-4 max-w-3xl relative z-20">
+                <SubmissionForm />
+            </div>
         </section>
     );
 }

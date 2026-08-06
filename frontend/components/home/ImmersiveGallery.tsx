@@ -103,7 +103,7 @@ export default function ImmersiveGallery() {
 
     return (
         <section
-            className="relative bg-[#0f141e] overflow-hidden"
+            className="relative bg-[#FBFAF7] overflow-hidden"
         >
             {/* ═══════════════════════════════════════════ */}
             {/* PART 1: Cinematic Hero Slideshow */}
@@ -133,7 +133,7 @@ export default function ImmersiveGallery() {
 
                 {/* Cinematic overlays */}
                 <div className="absolute inset-0 z-[1] pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f141e] via-transparent to-[#0f141e]/40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#FBFAF7] via-transparent to-[#FBFAF7]/40" />
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(15,20,30,0.6)_100%)]" />
                 </div>
 
@@ -225,8 +225,8 @@ export default function ImmersiveGallery() {
             {/* PART 2: Infinite Scroll Marquee */}
             {/* ═══════════════════════════════════════════ */}
             <div className="py-12 relative">
-                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#0f141e] to-transparent z-10" />
-                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#0f141e] to-transparent z-10" />
+                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#FBFAF7] to-transparent z-10" />
+                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#FBFAF7] to-transparent z-10" />
 
                 <motion.div
                     className="flex gap-4"

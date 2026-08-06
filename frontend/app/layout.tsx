@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Inter, Montserrat, Playfair_Display, Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { TranslationProvider } from "@/lib/translation";
-import BioGueraCursor from "@/components/BioGueraCursor";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -196,7 +195,6 @@ export default async function RootLayout({
         <TranslationProvider>
           <LayoutShell>{children}</LayoutShell>
         </TranslationProvider>
-        <BioGueraCursor />
       </body>
     </html>
   );
