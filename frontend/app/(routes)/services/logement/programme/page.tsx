@@ -7,14 +7,18 @@ import { motion, AnimatePresence, LayoutGroup, useScroll, useTransform, useReduc
 import { CaretRight as ChevronRight, MapPin, Ruler, Bed as BedDouble, Buildings as Building2, Check, X, ShieldCheck, FileText as FileCheck2, House as Home, CircleNotch as Loader2, PaperPlaneTilt as Send, Bank as Landmark, StackSimple as Layers, Key as KeyRound, ClipboardText as ClipboardCheck, Buildings as Building, MapPinLine as MapPinned, CalendarDots as CalendarClock, Wallet, Flame, CaretDown as ChevronDown, Quotes as Quote, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
-import Building3D from '@/components/logements/Building3D'
-import TowerJourney from '@/components/logements/TowerJourney'
 import TransitionLink from '@/components/TransitionLink'
 import type { SitePoint } from '@/components/logements/SitesMap'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
     ssr: false,
     loading: () => <div className="h-[380px] rounded-3xl bg-slate-100 animate-pulse" />,
+})
+
+// Modèle 3D réaliste (WebGL) chargé en lazy, désactivé côté SSR.
+const BuildingModel3D = dynamic(() => import('@/components/logements/BuildingModel3D'), {
+    ssr: false,
+    loading: () => <div className="h-[340px] w-full animate-pulse rounded-[1.6rem] bg-slate-100 lg:h-[460px]" />,
 })
 
 interface Logement {
@@ -93,8 +97,6 @@ export default function ProgrammeLogementsPage() {
     return (
         <LayoutGroup>
             <div className="bg-white text-slate-900 pb-16 md:pb-0">
-                {/* Tour 3D qui voyage du héros jusqu'au CTA final (desktop large) */}
-                <TowerJourney />
                 {/* Bandeau rareté (éditable en admin) */}
                 {content.rarete_active && content.rarete_texte && (
                     <div className="bg-[#E8112D] text-white text-center text-[13px] md:text-sm font-bold py-2.5 px-4 flex items-center justify-center gap-2"><Flame size={15} /> {content.rarete_texte}</div>
@@ -129,11 +131,8 @@ export default function ProgrammeLogementsPage() {
                             </div>
                         )}
                       </div>
-                      {/* Ancre héros : la tour s'y pose au départ (voir TowerJourney). */}
-                      <div id="tower-hero-slot" className="relative min-h-[300px] lg:min-h-[360px] mt-4 lg:mt-0">
-                        {/* < xl : tour statique embarquée (le voyage fixed est réservé au desktop large). */}
-                        <div className="xl:hidden"><Building3D transitionName="logement-tower" /></div>
-                      </div>
+                      {/* Modèle 3D réaliste du bâtiment (WebGL, lazy) */}
+                      <BuildingModel3D className="mt-4 h-[340px] w-full lg:mt-0 lg:h-[460px]" />
                     </div>
                 </section>
 
@@ -343,8 +342,6 @@ export default function ProgrammeLogementsPage() {
                 <section className="max-w-6xl mx-auto px-5 md:px-8 py-16">
                     <div className="rounded-[2rem] bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white p-8 md:p-12 relative overflow-hidden">
                         <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-[#FCD116]/15 blur-3xl" />
-                        {/* Ancre d'arrivée : la tour vient se déposer ici (desktop large). */}
-                        <div id="tower-cta-slot" aria-hidden="true" className="hidden xl:block absolute right-10 top-1/2 -translate-y-1/2 w-[300px] h-[340px] pointer-events-none" />
                         <div className="relative max-w-2xl">
                             <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier recalé, c'est une place perdue.</h2>
                             <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande — pour qu'elle passe du premier coup.</p>

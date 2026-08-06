@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import Building3D from '@/components/logements/Building3D'
 import TransitionLink from '@/components/TransitionLink'
+
+// Modèle 3D réaliste (WebGL) chargé en lazy, désactivé côté SSR.
+const BuildingModel3D = dynamic(() => import('@/components/logements/BuildingModel3D'), {
+    ssr: false,
+    loading: () => <div className="h-[340px] w-full animate-pulse rounded-[1.6rem] bg-slate-100 lg:h-[460px]" />,
+})
 import { House as Home, ArrowRight, ShieldCheck, PaperPlaneTilt as Send, MapPin, Ruler, Handshake, Check, CaretRight as ChevronRight } from '@phosphor-icons/react';
 
 interface Logement { id: string; nom: string; type: string; ville: string; site: string; surface_m2: number; prix_comptant: number; devise: string; mensualite: number; images: string[] }
@@ -44,7 +50,7 @@ export default function LogementTremplin() {
                     </div>
                   </div>
                   {/* Élément 3D — tour transportée d'une page à l'autre (View Transitions) + scroll (GSAP) */}
-                  <Building3D className="mt-4 lg:mt-0" transitionName="logement-tower" />
+                  <BuildingModel3D className="mt-4 h-[340px] w-full lg:mt-0 lg:h-[460px]" />
                 </div>
             </section>
 

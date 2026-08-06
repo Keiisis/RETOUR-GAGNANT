@@ -1,0 +1,69 @@
+"use client";
+
+import { Suspense, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useGLTF, Center, ContactShadows, Bounds } from "@react-three/drei";
+import { useReducedMotion } from "framer-motion";
+import type * as THREE from "three";
+
+const MODEL = "/models/logement-batiment.glb";
+
+function Model() {
+    // GLB optimisé (meshopt + textures 1024 JPEG). useDraco=false, meshopt auto.
+    const { scene } = useGLTF(MODEL, false);
+    return (
+        <Center>
+            <primitive object={scene} />
+        </Center>
+    );
+}
+
+function Spin({ reduce, children }: { reduce: boolean; children: React.ReactNode }) {
+    const ref = useRef<THREE.Group>(null);
+    useFrame((state) => {
+        const g = ref.current;
+        if (!g) return;
+        if (reduce) {
+            g.rotation.y = 0.4;
+            g.rotation.x = 0;
+            return;
+        }
+        const t = state.clock.elapsedTime;
+        const baseY = Math.sin(t * 0.32) * 0.55;
+        // parallaxe douce vers la souris
+        const targetY = baseY + state.pointer.x * 0.4;
+        const targetX = -state.pointer.y * 0.12;
+        g.rotation.y += (targetY - g.rotation.y) * 0.06;
+        g.rotation.x += (targetX - g.rotation.x) * 0.06;
+    });
+    return <group ref={ref}>{children}</group>;
+}
+
+export default function BuildingModel3D({ className = "" }: { className?: string }) {
+    const reduce = useReducedMotion() ?? false;
+    return (
+        <div className={`relative ${className}`} aria-hidden="true">
+            <Canvas
+                dpr={[1, 1.75]}
+                camera={{ position: [0, 0.4, 7], fov: 40 }}
+                gl={{ antialias: true, alpha: true }}
+                style={{ background: "transparent" }}
+            >
+                <ambientLight intensity={0.8} />
+                <hemisphereLight args={["#ffffff", "#b9c6bf", 0.5]} />
+                <directionalLight position={[5, 8, 5]} intensity={1.6} />
+                <directionalLight position={[-6, 3, -4]} intensity={0.45} />
+                <Suspense fallback={null}>
+                    <Bounds fit clip margin={1.15}>
+                        <Spin reduce={reduce}>
+                            <Model />
+                        </Spin>
+                    </Bounds>
+                    <ContactShadows position={[0, -1.35, 0]} opacity={0.4} scale={14} blur={2.6} far={5} resolution={512} color="#0d1a12" />
+                </Suspense>
+            </Canvas>
+        </div>
+    );
+}
+
+useGLTF.preload(MODEL, false);
