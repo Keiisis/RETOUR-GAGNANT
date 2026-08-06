@@ -4,12 +4,17 @@ import { FacebookLogo, InstagramLogo, LinkedinLogo, XLogo, Envelope, Phone, MapP
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from "@/lib/translation";
 
+// Motif traditionnel bespoke (losanges kente/bogolan) — data URI.
+const MOTIF = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='%23FCD116' stroke-width='1.2' opacity='0.7'%3E%3Cpath d='M28 3 L53 28 L28 53 L3 28 Z'/%3E%3Cpath d='M28 17 L39 28 L28 39 L17 28 Z' fill='%23FCD116' stroke='none' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E";
+
 export default function Footer() {
     const { t } = useTranslation();
     return (
         <footer className="bg-[#0f141e] text-white pt-20 pb-10 relative overflow-hidden">
-            {/* Cultural Pattern Overlay */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none mix-blend-overlay"></div>
+            {/* Décor : motif traditionnel + halo + filigrane */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.045]" style={{ backgroundImage: `url("${MOTIF}")`, backgroundSize: "52px 52px" }} />
+            <div aria-hidden className="pointer-events-none absolute -left-24 top-6 h-80 w-80 rounded-full bg-[#008751]/15 blur-[130px]" />
+            <div aria-hidden className="pointer-events-none absolute right-4 -bottom-8 select-none font-fraunces text-[20vw] font-semibold leading-none text-white/[0.02] md:text-[15vw]">Bénin</div>
             {/* Filet tricolore (segmenté, pas de dégradé) */}
             <div className="absolute top-0 left-0 flex h-1 w-full">
                 <span className="flex-[46] bg-[#008751]" />
@@ -49,7 +54,7 @@ export default function Footer() {
                                 { Icon: LinkedinLogo, label: 'LinkedIn', href: COMPANY_INFO.socials.linkedin },
                                 { Icon: XLogo, label: 'X (Twitter)', href: COMPANY_INFO.socials.twitter },
                             ].map(({ Icon, label, href }) => (
-                                <a key={label} href={href} aria-label={label} className="w-10 h-10 rounded-full bg-[#1a2332] flex items-center justify-center hover:bg-[#FCD116] hover:text-[#1a2332] transition-all duration-300 border border-white/5 group">
+                                <a key={label} href={href} aria-label={label} className="w-10 h-10 rounded-full bg-[#1a2332] flex items-center justify-center hover:bg-[#FCD116] hover:text-[#1a2332] hover:-translate-y-1 hover:shadow-[0_12px_26px_-8px_rgba(252,209,22,0.55)] transition-all duration-300 border border-white/5 group">
                                     <Icon size={18} className="group-hover:scale-110 transition-transform" />
                                 </a>
                             ))}
@@ -69,7 +74,7 @@ export default function Footer() {
                                 { name: 'Rendez-vous', href: '/rendez-vous' }
                             ].map((item) => (
                                 <li key={t(item.name)}>
-                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
+                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#FCD116] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}
                                     </Link>
@@ -90,7 +95,7 @@ export default function Footer() {
                                 { name: 'Suivi de Chantier', href: '/services/construction' }
                             ].map((item) => (
                                 <li key={t(item.name)}>
-                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-colors flex items-center gap-2 group">
+                                    <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#008751] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}
                                     </Link>

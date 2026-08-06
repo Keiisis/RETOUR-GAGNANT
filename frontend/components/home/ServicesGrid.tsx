@@ -126,6 +126,23 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
                     tile.addEventListener('mousemove', move)
                     tile.addEventListener('mouseleave', leave)
                 })
+                // Parallaxe à la souris sur la carte phare (couches à profondeurs différentes)
+                const feat = ref.current!.querySelector<HTMLElement>('.svc-featured')
+                if (feat) {
+                    const qt = (sel: string, prop: string) => gsap.quickTo(q(sel), prop, { duration: 0.7, ease: 'power3' })
+                    const mX = qt('.svc-motif', 'x'), mY = qt('.svc-motif', 'y')
+                    const fX = qt('.svc-flag', 'x'), fY = qt('.svc-flag', 'y')
+                    const gX = qt('.svc-glow', 'x'), gY = qt('.svc-glow', 'y')
+                    const onMove = (e: MouseEvent) => {
+                        const r = feat.getBoundingClientRect()
+                        const px = (e.clientX - r.left) / r.width - 0.5
+                        const py = (e.clientY - r.top) / r.height - 0.5
+                        mX(px * 22); mY(py * 16); fX(px * -16); fY(py * -12); gX(px * 28); gY(py * 20)
+                    }
+                    const onLeave = () => { mX(0); mY(0); fX(0); fY(0); gX(0); gY(0) }
+                    feat.addEventListener('mousemove', onMove)
+                    feat.addEventListener('mouseleave', onLeave)
+                }
             }, ref)
             cleanup = () => ctx.revert()
         })()
@@ -152,9 +169,12 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
                 <div className="svc-cell md:col-span-2 md:row-span-2">
                     <Link
                         href={`/services/${featured.slug}`}
-                        className="group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[1.75rem] bg-[#00351f] p-8 text-white md:min-h-[420px] md:p-10"
+                        className="svc-featured group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[1.75rem] bg-[#00351f] p-8 text-white md:min-h-[420px] md:p-10"
                     >
                         <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_100%_0%,#0a8a55_0%,#00623a_45%,#00301c_100%)]" />
+                        {/* mesh vivant + reflet qui balaie (animation continue) */}
+                        <div className="svc-mesh pointer-events-none absolute inset-0" />
+                        <div className="svc-sheen pointer-events-none absolute inset-0" />
                         {/* motif traditionnel qui dérive + parallaxe */}
                         <div className="svc-motif pointer-events-none absolute -inset-y-16 inset-x-0 opacity-[0.16] mix-blend-screen" style={{ backgroundImage: `url("${MOTIF}")`, backgroundSize: '64px 64px' }} />
                         <div className="svc-glow pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full bg-[#FCD116]/25 blur-3xl" />
@@ -194,6 +214,31 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
                     </Link>
                 </div>
             ))}
+
+            <style jsx>{`
+                .svc-mesh {
+                    background:
+                        radial-gradient(55% 55% at 18% 22%, rgba(15,191,122,0.38), transparent 62%),
+                        radial-gradient(50% 55% at 82% 78%, rgba(0,135,81,0.42), transparent 62%);
+                    mix-blend-mode: screen;
+                    animation: svc-mesh 11s ease-in-out infinite alternate;
+                }
+                @keyframes svc-mesh { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(4%,-4%) scale(1.1); } }
+                .svc-sheen {
+                    background: linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.10) 46%, rgba(255,255,255,0.04) 54%, transparent 66%);
+                    background-size: 220% 100%;
+                    animation: svc-sheen 7.5s ease-in-out infinite;
+                }
+                @keyframes svc-sheen { 0% { background-position: 160% 0; } 55%,100% { background-position: -60% 0; } }
+                .svc-tile::after {
+                    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+                    background: linear-gradient(115deg, transparent 40%, rgba(0,135,81,0.10) 50%, transparent 60%);
+                    background-size: 220% 100%; background-position: 160% 0;
+                    transition: background-position 0.8s ease;
+                }
+                .svc-tile:hover::after { background-position: -60% 0; }
+                @media (prefers-reduced-motion: reduce) { .svc-mesh, .svc-sheen { animation: none; } }
+            `}</style>
         </div>
     )
 }

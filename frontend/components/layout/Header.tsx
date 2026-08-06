@@ -40,10 +40,13 @@ export default function Header() {
     return (
         <>
             {/* Header - Premium Ultra Max UI */}
-            <header
+            <motion.header
                 id="main-header"
+                initial={{ y: -28, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                    "fixed top-0 left-0 w-full z-50 transition-all duration-500",
+                    "fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow,border-color] duration-500",
                     isScrolled
                         ? "bg-[#05080a]/80 backdrop-blur-xl shadow-2xl py-3 border-b border-white/5"
                         : "bg-transparent py-6 lg:py-8"
@@ -53,7 +56,7 @@ export default function Header() {
                     {/* Logo Section & Mobile Language Switcher */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <Link prefetch={false} href="/" className="flex items-center gap-2 sm:gap-4 group shrink-0">
-                            <div className="relative w-10 h-10 sm:w-14 sm:h-14 xl:w-20 xl:h-20 overflow-hidden rounded-full border border-white/10 group-hover:border-[#FCD116]/50 transition-colors bg-white shadow-lg">
+                            <div className="relative w-10 h-10 sm:w-14 sm:h-14 xl:w-20 xl:h-20 overflow-hidden rounded-full border border-white/10 group-hover:border-[#FCD116]/60 group-hover:shadow-[0_0_28px_rgba(252,209,22,0.4)] group-hover:scale-[1.04] transition-all duration-500 bg-white shadow-lg">
                                 <Image
                                     src="/images/logo.jpg"
                                     alt={t("Retour Gagnant Logo")}
@@ -86,21 +89,25 @@ export default function Header() {
                                         key={link.label}
                                         href={link.href}
                                         className={cn(
-                                            "text-[11px] xl:text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 relative group font-geist whitespace-nowrap z-10",
+                                            "relative rounded-full px-3.5 py-1.5 text-[11px] xl:text-[13px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 font-geist whitespace-nowrap",
                                             isActive ? "text-[#FCD116]" : "text-gray-400 hover:text-white"
                                         )}
                                     >
-                                        {link.label}
-                                        <motion.span
-                                            className={cn(
-                                                "absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#FCD116] shadow-[0_0_10px_rgba(252,209,22,0.8)]",
-                                            )}
-                                            initial={false}
-                                            animate={{
-                                                opacity: isActive ? 1 : 0,
-                                                scale: isActive ? 1 : 0
-                                            }}
-                                        />
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="navPill"
+                                                className="absolute inset-0 -z-10 rounded-full bg-white/[0.08] ring-1 ring-[#FCD116]/25"
+                                                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                            />
+                                        )}
+                                        <span className="relative">{link.label}</span>
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="navDot"
+                                                className="absolute -bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#FCD116] shadow-[0_0_10px_rgba(252,209,22,0.85)]"
+                                                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                            />
+                                        )}
                                     </Link>
                                 )
                             })}
@@ -162,7 +169,7 @@ export default function Header() {
                         </button>
                     </div>
                 </div>
-            </header>
+            </motion.header>
 
             {/* Mobile Menu */}
             <AnimatePresence>
