@@ -4,11 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import {
-    Save, ExternalLink, ChevronRight, Image as ImageIcon, Plus, Trash2,
-    Film, Users, Quote, Layers, Star, Shield, ArrowRight, CheckCircle, AlertCircle, Loader2,
-    type LucideIcon
-} from 'lucide-react'
+import { FloppyDisk as Save, ArrowSquareOut as ExternalLink, CaretRight as ChevronRight, Image as ImageIcon, Plus, Trash as Trash2, FilmStrip as Film, Users, Quotes as Quote, StackSimple as Layers, Star, Shield, ArrowRight, CheckCircle, WarningCircle as AlertCircle, CircleNotch as Loader2, type Icon as LucideIcon } from '@phosphor-icons/react';
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES & DEFAULTS

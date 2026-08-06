@@ -4,11 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    BarChart3, TrendingUp, Users, MessageSquare,
-    Globe2, Calendar, ArrowUpRight, ArrowDownRight, FileText,
-    Sparkles, Mail, Target
-} from 'lucide-react'
+import { ChartBar as BarChart3, TrendUp as TrendingUp, Users, ChatText as MessageSquare, Globe as Globe2, Calendar, ArrowUpRight, ArrowDownRight, FileText, Sparkle as Sparkles, Envelope as Mail, Target } from '@phosphor-icons/react';
 
 const formatDate = (val: string | null | undefined) => {
     if (!val) return '—'

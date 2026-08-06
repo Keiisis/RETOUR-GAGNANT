@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    CalendarDays, Plus, Clock, MapPin, User, Video, Phone, Mail,
-    ChevronLeft, ChevronRight, X, Loader2, ExternalLink, Trash2,
-    Send, CheckCircle
-} from 'lucide-react'
+import { CalendarDots as CalendarDays, Plus, Clock, MapPin, User, VideoCamera as Video, Phone, Envelope as Mail, CaretLeft as ChevronLeft, CaretRight as ChevronRight, X, CircleNotch as Loader2, ArrowSquareOut as ExternalLink, Trash as Trash2, PaperPlaneTilt as Send, CheckCircle } from '@phosphor-icons/react';
 
 interface Event {
     id: string

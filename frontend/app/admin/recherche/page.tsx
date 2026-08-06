@@ -12,9 +12,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import {
-    Search, Loader2, FolderOpen, Receipt, MessageSquare, User, Phone, Mail,
-} from 'lucide-react'
+import { MagnifyingGlass as Search, CircleNotch as Loader2, FolderOpen, Receipt, ChatText as MessageSquare, User, Phone, Envelope as Mail } from '@phosphor-icons/react';
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 
 interface Resultat {

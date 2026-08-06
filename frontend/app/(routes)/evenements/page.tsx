@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-    Calendar, MapPin, Users, Ticket, Crown,
-    ArrowRight, Star, Search,
-} from 'lucide-react'
+import { Calendar, MapPin, Users, Ticket, Crown, ArrowRight, Star, MagnifyingGlass as Search } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { ttcFromHt } from '@/lib/tax'
 

@@ -4,13 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Globe2, CheckCircle2, Clock, Download,
-    Mail, Search, ChevronDown, ChevronUp, MapPin,
-    CreditCard, ExternalLink, Check, Loader2,
-    Eye, Pencil, Trash2, X, FileText, Image as ImageIcon, RotateCcw, Copy,
-    FilePlus, Send, Plus, UploadCloud, ClipboardList, Wand2, PenLine, ArrowLeft, Landmark, Replace
-} from 'lucide-react'
+import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace } from '@phosphor-icons/react';
 import Link from 'next/link'
 
 interface Application {

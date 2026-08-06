@@ -3,12 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Download, Activity, CheckCircle2,
-    BarChart3, Landmark, ArrowRight, FileText, X, TrendingDown, Zap, MessageCircle,
-    RefreshCw, Plus, AlertTriangle, Banknote, CreditCard, Bell, ChevronLeft, ChevronRight,
-    Receipt, ShoppingBag, Users, Pencil, Trash2
-} from 'lucide-react'
+import { Wallet, TrendUp as TrendingUp, ArrowUpRight, ArrowDownRight, Download, Pulse as Activity, CheckCircle as CheckCircle2, ChartBar as BarChart3, Bank as Landmark, ArrowRight, FileText, X, TrendDown as TrendingDown, Lightning as Zap, ChatCircle as MessageCircle, ArrowClockwise as RefreshCw, Plus, Warning as AlertTriangle, Money as Banknote, CreditCard, Bell, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Receipt, ShoppingBag, Users, Pencil, Trash as Trash2 } from '@phosphor-icons/react';
 import { EXPENSE_CATEGORIES, agentHasComptaAccess, expenseCategoryLabel } from '@/lib/constants/compta'
 import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'

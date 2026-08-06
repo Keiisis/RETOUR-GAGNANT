@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState } from 'react';
 import { useLogin, useForgotPassword } from '@refinedev/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Mail, Lock, Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Envelope as Mail, Lock, CircleNotch as Loader2, ArrowRight, ArrowLeft, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import AuthBackdrop, { BrandSeal } from '@/components/auth/AuthBackdrop';
 
 type View = 'login' | 'forgot' | 'forgot-sent';

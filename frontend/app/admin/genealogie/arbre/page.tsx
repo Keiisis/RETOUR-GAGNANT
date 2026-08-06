@@ -33,12 +33,7 @@ import { downloadGedcom } from '@/lib/genealogy/gedcom';
 import { findSiblings, buildTreeStats } from '@/lib/genealogy/siblings';
 import { buildFamilyTimeline, getUpcomingAnniversaries } from '@/lib/genealogy/timeline';
 import { useTheme } from '@/lib/theme/ThemeContext';
-import { 
-  ChevronLeft, ZoomIn, ZoomOut, Maximize2, Loader2,
-  Trash2, FileText, Upload, X, Download,
-  Map, BarChart3, TreeDeciduous, Share2, Users,
-  Clock, Calendar, Search
-} from 'lucide-react';
+import { CaretLeft as ChevronLeft, MagnifyingGlassPlus as ZoomIn, MagnifyingGlassMinus as ZoomOut, ArrowsOut as Maximize2, CircleNotch as Loader2, Trash as Trash2, FileText, Upload, X, Download, MapTrifold as Map, ChartBar as BarChart3, Tree as TreeDeciduous, ShareNetwork as Share2, Users, Clock, Calendar, MagnifyingGlass as Search } from '@phosphor-icons/react';
 
 // Lazy load the map component (Leaflet is heavy)
 const FamilyMap = lazy(() => import('@/components/admin/genealogy/FamilyMap'));

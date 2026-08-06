@@ -3,10 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { getProposalBySecret } from '@/app/actions/ai-proposals'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    ArrowLeft, CreditCard, Phone, User, Mail,
-    CheckCircle2, AlertCircle, Loader2, Shield, Lock
-} from 'lucide-react'
+import { ArrowLeft, CreditCard, Phone, User, Envelope as Mail, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, CircleNotch as Loader2, Shield, Lock } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin, convertCurrency, refreshRates } from '@/lib/currency'

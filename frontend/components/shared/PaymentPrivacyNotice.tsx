@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from '@phosphor-icons/react';
 
 // ══════════════════════════════════════════════════════════════
 // Notice RGPD pour les étapes de paiement.

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, QrCode, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { Shield, QrCode, CheckCircle as CheckCircle2, XCircle, CircleNotch as Loader2, Eye, EyeSlash as EyeOff, Trash as Trash2 } from '@phosphor-icons/react';
 import Image from 'next/image'
 
 type Status = 'idle' | 'loading' | 'setup' | 'enabled' | 'error'

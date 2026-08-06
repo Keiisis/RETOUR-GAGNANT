@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import { Icon as LucideIcon } from '@phosphor-icons/react';
 
 interface GoldenIconProps {
     icon?: LucideIcon;

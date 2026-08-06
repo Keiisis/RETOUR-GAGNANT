@@ -3,12 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Sparkles, Mail, Phone, CheckCircle2, Clock, Search,
-    Globe, Briefcase, Star, ChevronDown, ChevronUp,
-    MapPin, Target, FileText, Zap, MessageSquare,
-    RefreshCw, Trash2, Filter, TrendingUp
-} from 'lucide-react'
+import { Sparkle as Sparkles, Envelope as Mail, Phone, CheckCircle as CheckCircle2, Clock, MagnifyingGlass as Search, Globe, Briefcase, Star, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, Target, FileText, Lightning as Zap, ChatText as MessageSquare, ArrowClockwise as RefreshCw, Trash as Trash2, Funnel as Filter, TrendUp as TrendingUp } from '@phosphor-icons/react';
 import LeadReplyDrawer from '@/components/agent/LeadReplyDrawer'
 import { Lead } from '@/types/lead'
 import { cn } from '@/lib/utils'

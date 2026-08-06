@@ -3,10 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    MessageSquare, Search, Mail, Clock, CheckCircle2,
-    Send, Reply, User, AlertCircle, Bot, Languages, Loader2
-} from 'lucide-react'
+import { ChatText as MessageSquare, MagnifyingGlass as Search, Envelope as Mail, Clock, CheckCircle as CheckCircle2, PaperPlaneTilt as Send, ArrowBendUpLeft as Reply, User, WarningCircle as AlertCircle, Robot as Bot, Translate as Languages, CircleNotch as Loader2 } from '@phosphor-icons/react';
 
 interface Message {
     id: string

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon as LucideIcon } from '@phosphor-icons/react';
 
 /* ═══════════════════════════════════════════════════════════
    États partagés des panels (vide / chargement).

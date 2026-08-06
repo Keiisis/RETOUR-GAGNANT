@@ -5,10 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import {
-    ArrowLeft, CreditCard, Loader2, CheckCircle2, AlertCircle,
-    Receipt, Shield, Lock, Smartphone, Globe, ChevronRight
-} from 'lucide-react'
+import { ArrowLeft, CreditCard, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Receipt, Shield, Lock, DeviceMobile as Smartphone, Globe, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { type CurrencyCode, getCurrencyForLang, formatPriceWithMargin, formatPrice } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'

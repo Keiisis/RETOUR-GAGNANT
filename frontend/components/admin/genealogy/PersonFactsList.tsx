@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ShieldCheck, Plus, Trash2, Loader2, FileText, X, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, Plus, Trash as Trash2, CircleNotch as Loader2, FileText, X, Warning as AlertTriangle } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 type Confidence = 'proven' | 'probable' | 'possible' | 'unverified' | 'disputed'

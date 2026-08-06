@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { DocType } from '@/lib/genealogy/types';
 import { EXPIRABLE_DOC_TYPES } from '@/lib/genealogy/expiry';
-import { Upload, FileText, Calendar, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, Calendar, Check, WarningCircle as AlertCircle, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 const DOC_TYPES: { value: DocType; label: string }[] = [

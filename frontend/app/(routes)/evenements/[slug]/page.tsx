@@ -6,11 +6,7 @@ import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import {
-    Calendar, MapPin, Clock, Users, Ticket, Crown,
-    ArrowLeft, CheckCircle2, X, Share2, ChevronLeft, ChevronRight,
-    Phone, Mail, User, CreditCard, ExternalLink,
-} from 'lucide-react'
+import { Calendar, MapPin, Clock, Users, Ticket, Crown, ArrowLeft, CheckCircle as CheckCircle2, X, ShareNetwork as Share2, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Phone, Envelope as Mail, User, CreditCard, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, formatPrice as fmtCurrency } from '@/lib/currency'

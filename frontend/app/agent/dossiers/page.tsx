@@ -3,14 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FileText, Search, Plus, Clock,
-    CheckCircle2, Loader2, Eye,
-    X, Calendar, Mail, Phone, StickyNote,
-    ArrowRight, AlertCircle, FileWarning, Send, MessageSquare, User,
-    Download, Trash2
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { FileText, MagnifyingGlass as Search, Plus, Clock, CheckCircle as CheckCircle2, CircleNotch as Loader2, Eye, X, Calendar, Envelope as Mail, Phone, Note as StickyNote, ArrowRight, WarningCircle as AlertCircle, FileText as FileWarning, PaperPlaneTilt as Send, ChatText as MessageSquare, User, Download, Trash as Trash2 } from '@phosphor-icons/react';
+import type { Icon as LucideIcon } from '@phosphor-icons/react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 type DossierStatus = 'reception' | 'verification' | 'traitement' | 'validation' | 'finalisation' | 'termine'

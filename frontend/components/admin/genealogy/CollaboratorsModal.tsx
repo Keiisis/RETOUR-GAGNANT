@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Users, X, UserPlus, Trash2, Check, Loader2, ShieldCheck, Eye } from 'lucide-react'
+import { Users, X, UserPlus, Trash as Trash2, Check, CircleNotch as Loader2, ShieldCheck, Eye } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface Collaborator {

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, MapPin, Phone, Send, CheckCircle } from 'lucide-react';
+import { Envelope as Mail, MapPin, Phone, PaperPlaneTilt as Send, CheckCircle } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from '@/lib/translation';

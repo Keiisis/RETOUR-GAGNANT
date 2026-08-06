@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Megaphone, Users, Send, Loader2, CheckCircle2, AlertTriangle, Mail } from 'lucide-react'
+import { Megaphone, Users, PaperPlaneTilt as Send, CircleNotch as Loader2, CheckCircle as CheckCircle2, Warning as AlertTriangle, Envelope as Mail } from '@phosphor-icons/react';
 
 interface Campaign {
     id: string

@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring }
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, ChevronDown } from 'lucide-react'
+import { ArrowRight, CaretDown as ChevronDown } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import { T, useTranslation } from '@/lib/translation'
 import { usePageSections } from '@/lib/hooks/usePageSections'

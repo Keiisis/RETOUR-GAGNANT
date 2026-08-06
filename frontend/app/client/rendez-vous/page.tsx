@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Calendar, Clock, Plus, Loader2, CheckCircle2, AlertCircle, MapPin, Video, Phone, User, X } from 'lucide-react'
+import { Calendar, Clock, Plus, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, MapPin, VideoCamera as Video, Phone, User, X } from '@phosphor-icons/react';
 import { RowSkeleton } from '@/components/panel/PanelStates'
 
 interface Rdv {

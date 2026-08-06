@@ -6,11 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Script from 'next/script'
-import { 
-    CheckCircle2, Receipt, Download, Loader2, 
-    PenTool, ShieldCheck, Mail, Phone, Calendar,
-    CreditCard, X, ChevronRight, AlertCircle, Shield
-} from 'lucide-react'
+import { CheckCircle as CheckCircle2, Receipt, Download, CircleNotch as Loader2, PenNib as PenTool, ShieldCheck, Envelope as Mail, Phone, Calendar, CreditCard, X, CaretRight as ChevronRight, WarningCircle as AlertCircle, Shield } from '@phosphor-icons/react';
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, refreshRates, type CurrencyCode } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'

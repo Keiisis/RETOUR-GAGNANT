@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { FileText, Receipt, Search, Download, Eye, ArrowRight, Filter, CreditCard } from 'lucide-react'
+import { FileText, Receipt, MagnifyingGlass as Search, Download, Eye, ArrowRight, Funnel as Filter, CreditCard } from '@phosphor-icons/react';
 import { EmptyState, RowSkeleton } from '@/components/panel/PanelStates'
 
 interface Doc {

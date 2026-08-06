@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Headphones, Search, Clock, CheckCircle2, Volume2,
-    Calendar, Mail, User, PhoneCall, AlertCircle
-} from 'lucide-react'
+import { Headphones, MagnifyingGlass as Search, Clock, CheckCircle as CheckCircle2, SpeakerHigh as Volume2, Calendar, Envelope as Mail, User, PhoneCall, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 
 interface VoiceMessage {
     id: string

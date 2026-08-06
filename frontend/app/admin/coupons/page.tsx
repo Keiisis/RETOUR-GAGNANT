@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import {
-    Tag, Plus, Trash2, Loader2, Search,
-    CheckCircle2, AlertCircle, Save, Copy,
-    ArrowLeft, Calendar, Percent, Hash
-} from 'lucide-react'
+import { Tag, Plus, Trash as Trash2, CircleNotch as Loader2, MagnifyingGlass as Search, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, FloppyDisk as Save, Copy, ArrowLeft, Calendar, Percent, Hash } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

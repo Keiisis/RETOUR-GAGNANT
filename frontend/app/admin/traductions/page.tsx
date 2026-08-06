@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Languages, RefreshCw, AlertTriangle, CheckCircle, Search,
-    Pencil, Trash2, X, Save, ChevronLeft, ChevronRight,
-    Globe, Sparkles, Database, Filter, Loader2, Check,
-} from 'lucide-react'
+import { Translate as Languages, ArrowClockwise as RefreshCw, Warning as AlertTriangle, CheckCircle, MagnifyingGlass as Search, Pencil, Trash as Trash2, X, FloppyDisk as Save, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Globe, Sparkle as Sparkles, Database, Funnel as Filter, CircleNotch as Loader2, Check } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import { SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
 

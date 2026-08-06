@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react'
+import { House as Home, ArrowLeft, MagnifyingGlass as Search, Question as HelpCircle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 
 export default function NotFound() {

@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useOne, useUpdate, useNavigation } from '@refinedev/core'
 import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Save, ShoppingBag, Plus, Loader2 } from 'lucide-react'
+import { ArrowLeft, FloppyDisk as Save, ShoppingBag, Plus, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ImageUpload } from '@/components/admin/ImageUpload'

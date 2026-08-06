@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Wallet, TrendingDown, ArrowUpRight, ArrowDownRight, Download,
-    BarChart3, FileText, RefreshCw, Users, ShoppingBag,
-    AlertTriangle, Award, Search, Target, Activity, Star,
-    Calculator, Landmark, Receipt, ChevronLeft, ChevronRight,
-    Zap, PieChart, CheckCircle2, Clock, TrendingUp, X,
-    Shield, Mail, Phone, MapPin, Hash, Package,
-    EyeOff, Eye, ExternalLink, Banknote, CreditCard, Bell, Pencil, Trash2
-} from 'lucide-react'
+import { Wallet, TrendDown as TrendingDown, ArrowUpRight, ArrowDownRight, Download, ChartBar as BarChart3, FileText, ArrowClockwise as RefreshCw, Users, ShoppingBag, Warning as AlertTriangle, Medal as Award, MagnifyingGlass as Search, Target, Pulse as Activity, Star, Calculator, Bank as Landmark, Receipt, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Lightning as Zap, ChartPie as PieChart, CheckCircle as CheckCircle2, Clock, TrendUp as TrendingUp, X, Shield, Envelope as Mail, Phone, MapPin, Hash, Package, EyeSlash as EyeOff, Eye, ArrowSquareOut as ExternalLink, Money as Banknote, CreditCard, Bell, Pencil, Trash as Trash2 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import { expenseCategoryLabel, EXPENSE_CATEGORIES } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'

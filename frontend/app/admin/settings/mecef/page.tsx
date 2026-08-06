@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck, Save, Loader2, CheckCircle2, AlertCircle, Plug } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, FloppyDisk as Save, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Plug } from '@phosphor-icons/react';
 
 type MecefForm = {
     mecef_enabled: string

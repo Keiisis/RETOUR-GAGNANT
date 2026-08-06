@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-    Calendar, MapPin, DollarSign, Users, Crown,
-    Save, ArrowLeft, Type, AlignLeft, Globe, Tag,
-} from 'lucide-react'
+import { Calendar, MapPin, CurrencyDollar as DollarSign, Users, Crown, FloppyDisk as Save, ArrowLeft, TextT as Type, TextAlignLeft as AlignLeft, Globe, Tag } from '@phosphor-icons/react';
 import EventImageUpload from '@/components/events/EventImageUpload'
 
 const CATEGORIES = [

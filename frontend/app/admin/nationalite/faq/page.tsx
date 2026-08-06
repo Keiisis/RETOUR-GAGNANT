@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Trash2, Save, ChevronUp, ChevronDown, Edit3, X, HelpCircle } from 'lucide-react'
+import { Plus, Trash as Trash2, FloppyDisk as Save, CaretUp as ChevronUp, CaretDown as ChevronDown, PencilLine as Edit3, X, Question as HelpCircle } from '@phosphor-icons/react';
 
 interface FAQ { id: string; question_fr: string; answer_fr: string; sort_order: number; is_active: boolean }
 

@@ -2,7 +2,7 @@
 
 import { DossierReport } from '@/lib/genealogy/types';
 import { DOSSIER_LABELS } from '@/lib/genealogy/requirements';
-import { FileText, CheckCircle } from 'lucide-react';
+import { FileText, CheckCircle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface DossierProgressProps {

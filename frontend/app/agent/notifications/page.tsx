@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Bell, Search, Clock, ShieldCheck, Mail, Map, Archive, Loader2, ShoppingCart, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Bell, MagnifyingGlass as Search, Clock, ShieldCheck, Envelope as Mail, MapTrifold as Map, Archive, CircleNotch as Loader2, ShoppingCart, Warning as AlertTriangle, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import { T } from '@/lib/translation'
 
 // Notification unifiée (messages de nationalité + alertes de commandes)

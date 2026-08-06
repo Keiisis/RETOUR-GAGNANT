@@ -2,14 +2,7 @@
 
 import { useShow, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowLeft, Mail, Phone, Calendar, Clock,
-    Trash2, User, MoreVertical, ShieldCheck,
-    MessageSquare, Reply, ExternalLink, Globe,
-    Download, Printer, AlertCircle, CheckCircle2,
-    Inbox, HardDrive, Share2, Sparkles, Loader2, Send,
-    Languages
-} from "lucide-react";
+import { ArrowLeft, Envelope as Mail, Phone, Calendar, Clock, Trash as Trash2, User, DotsThreeVertical as MoreVertical, ShieldCheck, ChatText as MessageSquare, ArrowBendUpLeft as Reply, ArrowSquareOut as ExternalLink, Globe, Download, Printer, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Tray as Inbox, HardDrive, ShareNetwork as Share2, Sparkle as Sparkles, CircleNotch as Loader2, PaperPlaneTilt as Send, Translate as Languages } from '@phosphor-icons/react';
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";

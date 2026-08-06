@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useNavigation, useDelete, useUpdate } from '@refinedev/core'
 import { useState } from 'react'
-import {
-    Plus, Trash2, Edit2, ArrowUpDown, GripVertical,
-    Loader2, Sparkles, CheckCircle2
-} from 'lucide-react'
+import { Plus, Trash as Trash2, Pencil as Edit2, ArrowsDownUp as ArrowUpDown, DotsSixVertical as GripVertical, CircleNotch as Loader2, Sparkle as Sparkles, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, FileText, Calendar, Archive, Database, Users } from 'lucide-react';
+import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, FileText, Calendar, Archive, Database, Users } from '@phosphor-icons/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';

@@ -3,13 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import {
-    Plus, Trash2, Edit2, User, Star, Quote,
-    CheckCircle, Search, Loader2, MessageSquareQuote,
-    MapPin, X, Save, Eye, EyeOff, RefreshCw,
-    ThumbsUp, ThumbsDown, AlertTriangle, Briefcase,
-    Link2
-} from 'lucide-react'
+import { Plus, Trash as Trash2, Pencil as Edit2, User, Star, Quotes as Quote, CheckCircle, MagnifyingGlass as Search, CircleNotch as Loader2, Quotes as MessageSquareQuote, MapPin, X, FloppyDisk as Save, Eye, EyeSlash as EyeOff, ArrowClockwise as RefreshCw, ThumbsUp, ThumbsDown, Warning as AlertTriangle, Briefcase, Link as Link2 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

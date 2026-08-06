@@ -3,12 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    Plus, Edit2, Trash2, MapPin, Search,
-    Filter, Loader2, BookOpen, Layers,
-    Sparkles, ArrowRight, Star, ImageIcon,
-    Settings2, ChevronRight, Globe, ScrollText
-} from "lucide-react";
+import { Plus, Pencil as Edit2, Trash as Trash2, MapPin, MagnifyingGlass as Search, Funnel as Filter, CircleNotch as Loader2, BookOpen, StackSimple as Layers, Sparkle as Sparkles, ArrowRight, Star, Image as ImageIcon, GearSix as Settings2, CaretRight as ChevronRight, Globe, Scroll as ScrollText } from '@phosphor-icons/react';
 import Image from "next/image";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

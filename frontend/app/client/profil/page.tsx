@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { User, Mail, Phone, MapPin, Lock, Loader2, CheckCircle2, AlertCircle, Save, LogOut, Shield, Eye, EyeOff } from 'lucide-react'
+import { User, Envelope as Mail, Phone, MapPin, Lock, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, FloppyDisk as Save, SignOut as LogOut, Shield, Eye, EyeSlash as EyeOff } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation'
 
 interface Profile {

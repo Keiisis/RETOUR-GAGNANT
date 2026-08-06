@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import {
-    PenLine, Trash2, CheckCircle2, AlertCircle, Loader2,
-    Shield, Zap, Bell, BellOff, Info, Clock,
-    FileText, FileSignature, History, Settings2,
-    ChevronRight, RefreshCw, Lock
-} from 'lucide-react'
+import { PencilLine as PenLine, Trash as Trash2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, CircleNotch as Loader2, Shield, Lightning as Zap, Bell, BellSlash as BellOff, Info, Clock, FileText, FileText as FileSignature, ClockCounterClockwise as History, GearSix as Settings2, CaretRight as ChevronRight, ArrowClockwise as RefreshCw, Lock } from '@phosphor-icons/react';
 import SignaturePad from '@/components/client/SignaturePad'
 import { cn } from '@/lib/utils'
 

@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    ShieldCheck, FileText, FileDown, Loader2, AlertTriangle, ScrollText,
-    CheckCircle2, Clock, Scale, Trash2, Info,
-} from 'lucide-react'
+import { ShieldCheck, FileText, FileArrowDown as FileDown, CircleNotch as Loader2, Warning as AlertTriangle, Scroll as ScrollText, CheckCircle as CheckCircle2, Clock, Scales as Scale, Trash as Trash2, Info } from '@phosphor-icons/react';
 
 const DOCS = [
     { id: 'registre', title: 'Registre des traitements', desc: 'Article 30 — fiches, sous-traitants, durées (interne)', icon: ScrollText },

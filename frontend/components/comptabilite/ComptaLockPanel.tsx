@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, Unlock, ShieldCheck, AlertTriangle, CheckCircle2, X } from 'lucide-react'
+import { Lock, LockOpen as Unlock, ShieldCheck, Warning as AlertTriangle, CheckCircle as CheckCircle2, X } from '@phosphor-icons/react';
 
 export interface ClotureRow {
     id: string

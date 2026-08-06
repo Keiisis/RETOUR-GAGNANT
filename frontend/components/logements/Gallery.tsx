@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { ChevronLeft, ChevronRight, Home } from 'lucide-react'
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, House as Home } from '@phosphor-icons/react';
 
 // Galerie photo Embla : swipe tactile, flèches, pastilles. Repli élégant si
 // aucune image.

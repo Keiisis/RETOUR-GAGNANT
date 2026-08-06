@@ -7,11 +7,7 @@ import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { Document, Packer, Paragraph, ImageRun, AlignmentType } from 'docx'
 import { saveAs } from 'file-saver'
-import {
-    CreditCard, Download, FileImage, FileType, User, Plus, Trash2,
-    CheckCircle, AlertCircle, Loader2, Eye, UserCheck, RefreshCw,
-    Search, ExternalLink, BookOpen, ChevronRight, Building2, Compass
-} from 'lucide-react'
+import { CreditCard, Download, FileImage, FileText as FileType, User, Plus, Trash as Trash2, CheckCircle, WarningCircle as AlertCircle, CircleNotch as Loader2, Eye, UserCircleCheck as UserCheck, ArrowClockwise as RefreshCw, MagnifyingGlass as Search, ArrowSquareOut as ExternalLink, BookOpen, CaretRight as ChevronRight, Buildings as Building2, Compass } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { CardRecto as RGBRecto, CardVerso as RGBVerso, type CardData } from '@/components/business-card/BusinessCard'
 import { CardRecto as OuidahRecto, CardVerso as OuidahVerso } from '@/components/business-card/OuidahCard'

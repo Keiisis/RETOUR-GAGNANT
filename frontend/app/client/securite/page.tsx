@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ShieldCheck, ShieldAlert, Loader2, CheckCircle2, AlertCircle, KeyRound, Smartphone } from 'lucide-react'
+import { ShieldCheck, ShieldWarning as ShieldAlert, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Key as KeyRound, DeviceMobile as Smartphone } from '@phosphor-icons/react';
 
 type Step = 'idle' | 'enrolling' | 'disabling'
 

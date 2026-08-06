@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import DashboardNav from '@/components/dashboard/ui/DashboardNav';
 import Link from 'next/link';
-import { LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { SignOut as LogOut, ShieldCheck, List as Menu, X } from '@phosphor-icons/react';
 import { SkeletonLoader } from '@/components/ui/skeleton-loader';
 import { motion, AnimatePresence } from 'framer-motion';
 

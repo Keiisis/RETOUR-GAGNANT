@@ -5,10 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-    CheckCircle2, ChevronRight, Archive, Database, Users,
-    CreditCard, Loader2, AlertCircle, Shield, ArrowLeft, X, FileText
-} from 'lucide-react'
+import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, Archive, Database, Users, CreditCard, CircleNotch as Loader2, WarningCircle as AlertCircle, Shield, ArrowLeft, X, FileText } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'

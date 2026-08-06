@@ -5,16 +5,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { MediaUpload } from '@/components/admin/MediaUpload'
-import {
-    BookOpen, Plus, Edit3, Trash2, Eye, EyeOff,
-    Save, X, Globe2, Calendar, Search, ArrowLeft,
-    Bold, Italic, Heading1, Heading2, Heading3,
-    List, ListOrdered, Quote, Code, Link2, Minus,
-    ImageIcon, Film, AlignLeft, Sparkles, Clock,
-    Tag, FileText, ChevronDown, CheckCircle2, Type,
-    LayoutGrid, LayoutList, Maximize2, Minimize2,
-    Undo2, Redo2, Copy, Loader2
-} from 'lucide-react'
+import { BookOpen, Plus, PencilLine as Edit3, Trash as Trash2, Eye, EyeSlash as EyeOff, FloppyDisk as Save, X, Globe as Globe2, Calendar, MagnifyingGlass as Search, ArrowLeft, TextB as Bold, TextItalic as Italic, TextHOne as Heading1, TextHTwo as Heading2, TextHThree as Heading3, List, ListNumbers as ListOrdered, Quotes as Quote, Code, Link as Link2, Minus, Image as ImageIcon, FilmStrip as Film, TextAlignLeft as AlignLeft, Sparkle as Sparkles, Clock, Tag, FileText, CaretDown as ChevronDown, CheckCircle as CheckCircle2, TextT as Type, GridFour as LayoutGrid, ListDashes as LayoutList, ArrowsOut as Maximize2, ArrowsIn as Minimize2, ArrowCounterClockwise as Undo2, ArrowClockwise as Redo2, Copy, CircleNotch as Loader2 } from '@phosphor-icons/react';
 
 interface BlogPost {
     id: string

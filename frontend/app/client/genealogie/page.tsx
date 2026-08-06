@@ -8,11 +8,7 @@ import { ROLE_LABELS } from '@/lib/genealogy/requirements';
 import { findSiblings, buildTreeStats } from '@/lib/genealogy/siblings';
 import { buildFamilyTimeline, getUpcomingAnniversaries } from '@/lib/genealogy/timeline';
 import { useTheme } from '@/lib/theme/ThemeContext';
-import { 
-  GitFork, ZoomIn, ZoomOut, Maximize2, Loader2, User, 
-  FileText, X, ShieldCheck, Clock, Calendar, Search,
-  Map, BarChart3, TreeDeciduous, Users
-} from 'lucide-react';
+import { GitFork, MagnifyingGlassPlus as ZoomIn, MagnifyingGlassMinus as ZoomOut, ArrowsOut as Maximize2, CircleNotch as Loader2, User, FileText, X, ShieldCheck, Clock, Calendar, MagnifyingGlass as Search, MapTrifold as Map, ChartBar as BarChart3, Tree as TreeDeciduous, Users } from '@phosphor-icons/react';
 
 // Lazy load the map component (Leaflet is heavy)
 const FamilyMap = lazy(() => import('@/components/admin/genealogy/FamilyMap'));

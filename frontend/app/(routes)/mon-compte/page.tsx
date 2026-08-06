@@ -4,10 +4,7 @@ import { useState, useCallback, useMemo } from "react"
 import { useTranslation, T } from "@/lib/translation"
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Mail, ArrowRight, Loader2, Shield, Sparkles, FileText,
-    MessageSquare, CalendarCheck, CheckCircle2, Receipt, HeadphonesIcon, LogOut
-} from 'lucide-react'
+import { Envelope as Mail, ArrowRight, CircleNotch as Loader2, Shield, Sparkle as Sparkles, FileText, ChatText as MessageSquare, CalendarCheck, CheckCircle as CheckCircle2, Receipt, Headphones as HeadphonesIcon, SignOut as LogOut } from '@phosphor-icons/react';
 import LiveSupportChat from '@/components/chat/LiveSupportChat'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

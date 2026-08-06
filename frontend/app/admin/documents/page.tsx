@@ -4,12 +4,7 @@ import { T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FolderOpen, CheckCircle2, XCircle, Clock, FileText,
-    User, Mail, Calendar, LucideIcon, Trash2,
-    FolderInput, Link2, Copy, Check, Loader2, Download, Eye,
-    ArrowRight, X, Image as ImageIcon, ShieldCheck, Users,
-} from 'lucide-react'
+import { FolderOpen, CheckCircle as CheckCircle2, XCircle, Clock, FileText, User, Envelope as Mail, Calendar, Icon as LucideIcon, Trash as Trash2, FolderSimplePlus as FolderInput, Link as Link2, Copy, Check, CircleNotch as Loader2, Download, Eye, ArrowRight, X, Image as ImageIcon, ShieldCheck, Users } from '@phosphor-icons/react';
 
 interface ClientDocument {
     id: string

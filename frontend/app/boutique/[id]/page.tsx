@@ -5,11 +5,7 @@ import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    ArrowLeft, Minus, Plus, ShoppingBag,
-    ChevronLeft, ChevronRight, Shield, Truck,
-    RefreshCcw, Loader2, ShoppingCart
-} from 'lucide-react'
+import { ArrowLeft, Minus, Plus, ShoppingBag, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Shield, Truck, ArrowCounterClockwise as RefreshCcw, CircleNotch as Loader2, ShoppingCart } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import { Product, ProductCard } from '@/components/boutique/ProductCard'
 import { PaymentModal } from '@/components/boutique/PaymentModal'

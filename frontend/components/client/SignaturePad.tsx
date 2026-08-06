@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { RotateCcw, Check, PenLine } from 'lucide-react'
+import { ArrowCounterClockwise as RotateCcw, Check, PencilLine as PenLine } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 interface SignaturePadProps {

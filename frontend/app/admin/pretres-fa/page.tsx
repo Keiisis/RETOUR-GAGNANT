@@ -9,12 +9,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Sparkles, Plus, Search, X, Star, MapPin, Trash2, Pencil, Save,
-    Image as ImageIcon, Award, Briefcase, MessageSquare, Loader2,
-    Eye, EyeOff, RefreshCw, GripVertical, Languages, Phone, Mail,
-    CheckCircle2, AlertTriangle, UserRound, UploadCloud,
-} from 'lucide-react'
+import { Sparkle as Sparkles, Plus, MagnifyingGlass as Search, X, Star, MapPin, Trash as Trash2, Pencil, FloppyDisk as Save, Image as ImageIcon, Medal as Award, Briefcase, ChatText as MessageSquare, CircleNotch as Loader2, Eye, EyeSlash as EyeOff, ArrowClockwise as RefreshCw, DotsSixVertical as GripVertical, Translate as Languages, Phone, Envelope as Mail, CheckCircle as CheckCircle2, Warning as AlertTriangle, User as UserRound, CloudArrowUp as UploadCloud } from '@phosphor-icons/react';
 
 // ─── Types ────────────────────────────────────────────────────
 interface Prestation { label: string; description?: string; price?: string; [k: string]: string | undefined }

@@ -2,7 +2,7 @@
 
 import PartnerDirectory from "@/components/partners/PartnerDirectory";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from '@phosphor-icons/react';
 import Link from "next/link";
 import { T } from "@/lib/translation";
 

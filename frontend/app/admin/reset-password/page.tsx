@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Lock, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Lock, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Eye, EyeSlash as EyeOff } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 
 export default function ResetPasswordPage() {

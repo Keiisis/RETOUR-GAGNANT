@@ -2,10 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Plus, Trash2, Search, ShoppingBag,
-    Loader2, Edit3, Eye, EyeOff, Star, RefreshCw, AlertTriangle, PackageX
-} from 'lucide-react'
+import { Plus, Trash as Trash2, MagnifyingGlass as Search, ShoppingBag, CircleNotch as Loader2, PencilLine as Edit3, Eye, EyeSlash as EyeOff, Star, ArrowClockwise as RefreshCw, Warning as AlertTriangle, Package as PackageX } from '@phosphor-icons/react';
 import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'

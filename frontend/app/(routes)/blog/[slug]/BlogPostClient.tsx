@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Clock, Eye, BookOpen, Tag } from 'lucide-react'
+import { ArrowLeft, Clock, Eye, BookOpen, Tag } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import ShareButtons from '@/components/blog/ShareButtons'
 

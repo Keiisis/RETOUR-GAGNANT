@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Loader2, ShoppingBag } from 'lucide-react'
+import { CheckCircle as CheckCircle2, WarningCircle as AlertCircle, CircleNotch as Loader2, ShoppingBag } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 

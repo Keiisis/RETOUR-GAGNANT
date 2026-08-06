@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { History, X, Loader2, RefreshCw, ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ClockCounterClockwise as History, X, CircleNotch as Loader2, ArrowClockwise as RefreshCw, CaretDown as ChevronDown, CaretRight as ChevronRight, Plus, Pencil, Trash as Trash2 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface AuditEntry {

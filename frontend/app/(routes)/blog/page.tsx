@@ -5,10 +5,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-    BookOpen, Search, Clock, ArrowRight, Eye,
-    TrendingUp, Building2, Globe2, Briefcase, Landmark
-} from 'lucide-react'
+import { BookOpen, MagnifyingGlass as Search, Clock, ArrowRight, Eye, TrendUp as TrendingUp, Buildings as Building2, Globe as Globe2, Briefcase, Bank as Landmark } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 
 interface BlogPost {

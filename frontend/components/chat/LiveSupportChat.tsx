@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { visibleInterval } from "@/lib/visible-interval";
-import { Send, HeadphonesIcon, Loader2, User } from "lucide-react";
+import { PaperPlaneTilt as Send, Headphones as HeadphonesIcon, CircleNotch as Loader2, User } from '@phosphor-icons/react';
 
 interface LiveSupportChatProps {
     email: string;

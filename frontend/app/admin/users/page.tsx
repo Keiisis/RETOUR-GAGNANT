@@ -3,12 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    UserCog, Search, Loader2, Plus, Trash2, Shield, User,
-    Eye, EyeOff, Mail, RefreshCw, CheckCircle2, XCircle,
-    Clock, Edit2, X, KeyRound, AlertTriangle, Wifi, WifiOff,
-    Users, Crown, UserCheck, Lock
-} from 'lucide-react'
+import { UserGear as UserCog, MagnifyingGlass as Search, CircleNotch as Loader2, Plus, Trash as Trash2, Shield, User, Eye, EyeSlash as EyeOff, Envelope as Mail, ArrowClockwise as RefreshCw, CheckCircle as CheckCircle2, XCircle, Clock, Pencil as Edit2, X, Key as KeyRound, Warning as AlertTriangle, WifiHigh as Wifi, WifiSlash as WifiOff, Users, Crown, UserCircleCheck as UserCheck, Lock } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import { visibleInterval } from '@/lib/visible-interval'
 

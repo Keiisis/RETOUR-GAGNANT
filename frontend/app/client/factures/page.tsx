@@ -5,10 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
-import {
-    Receipt, ShoppingBag, CreditCard, CheckCircle2, Clock, Loader2,
-    Package, ChevronRight, Inbox,
-} from 'lucide-react'
+import { Receipt, ShoppingBag, CreditCard, CheckCircle as CheckCircle2, Clock, CircleNotch as Loader2, Package, CaretRight as ChevronRight, Tray as Inbox } from '@phosphor-icons/react';
 import { EmptyState } from '@/components/panel/PanelStates'
 
 interface Facture {

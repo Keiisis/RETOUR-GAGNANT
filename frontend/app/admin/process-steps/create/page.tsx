@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useForm, useNavigation } from '@refinedev/core'
 import { useState } from 'react'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, FloppyDisk as Save, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'

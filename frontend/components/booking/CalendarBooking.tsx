@@ -5,10 +5,7 @@ import { useState, useEffect } from 'react'
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    CalendarDays, Clock, ChevronLeft, ChevronRight,
-    CheckCircle2, User, Mail, Phone, MessageSquare, Loader2
-} from 'lucide-react'
+import { CalendarDots as CalendarDays, Clock, CaretLeft as ChevronLeft, CaretRight as ChevronRight, CheckCircle as CheckCircle2, User, Envelope as Mail, Phone, ChatText as MessageSquare, CircleNotch as Loader2 } from '@phosphor-icons/react';
 
 const SERVICES = [
     'Passeport & Documents',

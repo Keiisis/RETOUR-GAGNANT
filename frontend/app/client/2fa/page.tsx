@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
+import { ShieldCheck, CircleNotch as Loader2, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 
 function Challenge() {
     const params = useSearchParams()

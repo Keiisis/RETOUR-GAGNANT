@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import PartnerCard, { Partner } from './PartnerCard'
 import PartnerProfileModal from './PartnerProfileModal'
 import { Button } from '@/components/ui/button'
-import { Search, Loader2 } from 'lucide-react'
+import { MagnifyingGlass as Search, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 

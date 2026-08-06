@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Mail, Edit2, Eye, EyeOff, Loader2, Save, Code,
-    CheckCircle2, AlertCircle, Plus, Trash2, RefreshCw,
-    X, Hash, ChevronDown, ChevronUp
-} from 'lucide-react'
+import { Envelope as Mail, Pencil as Edit2, Eye, EyeSlash as EyeOff, CircleNotch as Loader2, FloppyDisk as Save, Code, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Plus, Trash as Trash2, ArrowClockwise as RefreshCw, X, Hash, CaretDown as ChevronDown, CaretUp as ChevronUp } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 interface EmailTemplate {

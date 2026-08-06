@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Send, Loader2, Bot, BrainCircuit, Terminal } from "lucide-react";
+import { Sparkle as Sparkles, PaperPlaneTilt as Send, CircleNotch as Loader2, Robot as Bot, Brain as BrainCircuit, Terminal } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from "framer-motion";
 
 export const AIAssistant = () => {

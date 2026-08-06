@@ -2,10 +2,7 @@
 
 import React, { forwardRef, useState, useEffect } from 'react'
 import QRCode from 'react-qr-code'
-import {
-    BookOpen, Home, Briefcase, Landmark,
-    Hammer, TrendingUp, Users, BadgeCheck, LayoutGrid
-} from 'lucide-react'
+import { BookOpen, House as Home, Briefcase, Bank as Landmark, Hammer, TrendUp as TrendingUp, Users, SealCheck as BadgeCheck, GridFour as LayoutGrid } from '@phosphor-icons/react';
 
 /* ══════════════════════════════════════════════════════════════
    PALETTE — Bleu cobalt eclatant + Or vibrant + drapeau Benin

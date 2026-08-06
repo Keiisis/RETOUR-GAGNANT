@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { MessageCircle, Send, Check, Trash2, Loader2 } from 'lucide-react'
+import { ChatCircle as MessageCircle, PaperPlaneTilt as Send, Check, Trash as Trash2, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface Comment {

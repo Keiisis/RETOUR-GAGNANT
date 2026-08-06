@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, User, Phone, ShieldCheck } from 'lucide-react'
+import { Envelope as Mail, Lock, CircleNotch as Loader2, ArrowRight, Eye, EyeSlash as EyeOff, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, User, Phone, ShieldCheck } from '@phosphor-icons/react';
 
 // ── Critères de sécurité du mot de passe ──────────────────────────────────────
 const PWD_CRITERIA = [

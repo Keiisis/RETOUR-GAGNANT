@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    X, Mail, Pencil, AlignLeft, Send, Sparkles,
-    CheckCircle2, AlertCircle, User, Briefcase,
-    Calendar, ChevronRight, Loader2, RotateCcw
-} from 'lucide-react'
+import { X, Envelope as Mail, Pencil, TextAlignLeft as AlignLeft, PaperPlaneTilt as Send, Sparkle as Sparkles, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, User, Briefcase, Calendar, CaretRight as ChevronRight, CircleNotch as Loader2, ArrowCounterClockwise as RotateCcw } from '@phosphor-icons/react';
 
 import { Lead } from '@/types/lead'
 

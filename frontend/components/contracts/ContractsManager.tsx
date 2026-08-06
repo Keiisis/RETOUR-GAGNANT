@@ -11,11 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useTranslation, T } from '@/lib/translation'
-import {
-    FileSignature, Plus, Send, CheckCircle2, Clock, X, Save, User,
-    Mail, FileText, Search, Eye, Download, Pencil, Trash2, History,
-    Loader2, ShieldCheck, Link2, AlertTriangle, Undo2, LucideIcon, Lock
-} from 'lucide-react'
+import { FileText as FileSignature, Plus, PaperPlaneTilt as Send, CheckCircle as CheckCircle2, Clock, X, FloppyDisk as Save, User, Envelope as Mail, FileText, MagnifyingGlass as Search, Eye, Download, Pencil, Trash as Trash2, ClockCounterClockwise as History, CircleNotch as Loader2, ShieldCheck, Link as Link2, Warning as AlertTriangle, ArrowCounterClockwise as Undo2, Icon as LucideIcon, Lock } from '@phosphor-icons/react';
 
 interface AuditEntry { at: string; action: string; actor: string; details?: string }
 

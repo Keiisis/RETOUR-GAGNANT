@@ -3,12 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FileText, MessageSquare, Compass, ArrowUpRight,
-    TrendingUp, Headphones, Calendar, Users,
-    ChevronRight, BarChart3, Phone, Mail,
-    Activity, Clock, Target, Sparkles, Globe
-} from 'lucide-react'
+import { FileText, ChatText as MessageSquare, Compass, ArrowUpRight, TrendUp as TrendingUp, Headphones, Calendar, Users, CaretRight as ChevronRight, ChartBar as BarChart3, Phone, Envelope as Mail, Pulse as Activity, Clock, Target, Sparkle as Sparkles, Globe } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useTranslation, T } from '@/lib/translation'
 import { AnyRecord } from '@/types'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Upload, Loader2, CheckCircle2, AlertTriangle, X } from 'lucide-react'
+import { Upload, CircleNotch as Loader2, CheckCircle as CheckCircle2, Warning as AlertTriangle, X } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface Props {

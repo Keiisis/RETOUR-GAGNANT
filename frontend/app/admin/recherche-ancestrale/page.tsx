@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    Save, Loader2, CheckCircle2, ArrowLeft,
-    Plus, Trash2, Layout, FileText,
-} from 'lucide-react'
+import { FloppyDisk as Save, CircleNotch as Loader2, CheckCircle as CheckCircle2, ArrowLeft, Plus, Trash as Trash2, Layout, FileText } from '@phosphor-icons/react';
 import Link from 'next/link'
 
 interface PageContent {

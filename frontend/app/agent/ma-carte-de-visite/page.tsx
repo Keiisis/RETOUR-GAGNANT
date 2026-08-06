@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
-import { CreditCard, Download, FileImage, FileType, Loader2, RotateCcw, Info, Building2, Compass } from 'lucide-react'
+import { CreditCard, Download, FileImage, FileText as FileType, CircleNotch as Loader2, ArrowCounterClockwise as RotateCcw, Info, Buildings as Building2, Compass } from '@phosphor-icons/react';
 import { CardRecto as RGBRecto, CardVerso as RGBVerso, type CardData } from '@/components/business-card/BusinessCard'
 import { CardRecto as OuidahRecto, CardVerso as OuidahVerso } from '@/components/business-card/OuidahCard'
 import { downloadSVGCard } from '@/lib/svg-card-generator'

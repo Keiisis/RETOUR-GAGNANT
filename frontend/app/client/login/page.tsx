@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2, User, RefreshCw } from 'lucide-react'
+import { Envelope as Mail, Lock, CircleNotch as Loader2, ArrowRight, Eye, EyeSlash as EyeOff, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, User, ArrowClockwise as RefreshCw } from '@phosphor-icons/react';
 import AuthBackdrop, { BrandSeal } from '@/components/auth/AuthBackdrop'
 
 export default function ClientLoginPage() {

@@ -3,11 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FolderOpen, CheckCircle2, Clock, AlertCircle, ChevronRight, Calendar,
-    Upload, FileUp, Trash2, Paperclip, Loader2, ShoppingBag, Package,
-    CheckSquare, Square, RefreshCw, XCircle, ChevronDown,
-} from 'lucide-react'
+import { FolderOpen, CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle, CaretRight as ChevronRight, Calendar, Upload, FileArrowUp as FileUp, Trash as Trash2, Paperclip, CircleNotch as Loader2, ShoppingBag, Package, CheckSquare, Square, ArrowClockwise as RefreshCw, XCircle, CaretDown as ChevronDown } from '@phosphor-icons/react';
 
 // ── Types ─────────────────────────────────────────────────────────
 

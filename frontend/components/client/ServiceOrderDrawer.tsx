@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import {
-    X, CheckCircle2, Loader2, ArrowRight, Phone, MessageSquare,
-    Send, AlertCircle, Star, ChevronRight, Sparkles,
-} from 'lucide-react'
+import { X, CheckCircle as CheckCircle2, CircleNotch as Loader2, ArrowRight, Phone, ChatText as MessageSquare, PaperPlaneTilt as Send, WarningCircle as AlertCircle, Star, CaretRight as ChevronRight, Sparkle as Sparkles } from '@phosphor-icons/react';
 import PricingCalculator3D from '@/components/services/PricingCalculator3D'
 
 // ── Types ─────────────────────────────────────────────────────────

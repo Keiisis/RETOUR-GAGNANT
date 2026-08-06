@@ -12,7 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Download, FileText, ShoppingBag, Loader2, CheckCircle2, Clock } from 'lucide-react'
+import { Download, FileText, ShoppingBag, CircleNotch as Loader2, CheckCircle as CheckCircle2, Clock } from '@phosphor-icons/react';
 import { EmptyState, RowSkeleton } from '@/components/panel/PanelStates'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 

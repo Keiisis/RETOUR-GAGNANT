@@ -4,15 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { visibleInterval } from '@/lib/visible-interval'
-import {
-    Activity, Globe, Monitor, Smartphone, Tablet,
-    TrendingUp, Users, Eye, MapPin, Clock,
-    Wifi, RefreshCw, ChevronRight, BarChart2,
-    Chrome, AlertCircle, Zap, Radio,
-    MousePointer2, Heart, ShieldAlert, Network,
-    Languages, Gauge, Repeat2, ArrowDownToLine,
-    type LucideIcon,
-} from 'lucide-react'
+import { Pulse as Activity, Globe, Monitor, DeviceMobile as Smartphone, DeviceTablet as Tablet, TrendUp as TrendingUp, Users, Eye, MapPin, Clock, WifiHigh as Wifi, ArrowClockwise as RefreshCw, CaretRight as ChevronRight, ChartBar as BarChart2, GoogleChromeLogo as Chrome, WarningCircle as AlertCircle, Lightning as Zap, Radio, Cursor as MousePointer2, Heart, ShieldWarning as ShieldAlert, TreeStructure as Network, Translate as Languages, Gauge, Repeat as Repeat2, ArrowLineDown as ArrowDownToLine, type Icon as LucideIcon } from '@phosphor-icons/react';
 
 // ── World Map (CSR only — react-simple-maps requiert le DOM) ─
 const WorldMapDynamic = dynamic(() => import('./WorldMap'), { ssr: false, loading: () => (

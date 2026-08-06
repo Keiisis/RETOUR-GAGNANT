@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Users, Search, RefreshCw, Loader2, AlertCircle, Clock, BellRing,
-    ChevronDown, Save, Phone, Mail, DownloadCloud, CheckCircle2, Inbox,
-    UserPlus, X, Sparkles, FileSpreadsheet, LayoutGrid, FileText, Home,
-    Briefcase, Globe, HardHat, TrendingUp, Award, Dna, Trash2, type LucideIcon,
-} from 'lucide-react'
+import { Users, MagnifyingGlass as Search, ArrowClockwise as RefreshCw, CircleNotch as Loader2, WarningCircle as AlertCircle, Clock, BellRinging as BellRing, CaretDown as ChevronDown, FloppyDisk as Save, Phone, Envelope as Mail, CloudArrowDown as DownloadCloud, CheckCircle as CheckCircle2, Tray as Inbox, UserPlus, X, Sparkle as Sparkles, FileText as FileSpreadsheet, GridFour as LayoutGrid, FileText, House as Home, Briefcase, Globe, HardHat, TrendUp as TrendingUp, Medal as Award, Dna, Trash as Trash2, type Icon as LucideIcon } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 import {
     SERVICE_CATEGORIES, CLIENT_STATUSES, getCategory, getStatus,

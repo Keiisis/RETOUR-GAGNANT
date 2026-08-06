@@ -2,7 +2,7 @@
 
 import { RESEARCH_RESOURCES } from '@/lib/genealogy/resources';
 import { Alert } from '@/lib/genealogy/types';
-import { Search, Globe, Library, Compass, ArrowUpRight } from 'lucide-react';
+import { MagnifyingGlass as Search, Globe, Books as Library, Compass, ArrowUpRight } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface ResearchAssistantProps {

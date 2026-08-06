@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
-import { Search, Tag, MoveRight } from 'lucide-react'
+import { MagnifyingGlass as Search, Tag, ArrowRight as MoveRight } from '@phosphor-icons/react';
 import { ProductCard, type Product } from '@/components/boutique/ProductCard'
 import { useTranslation } from '@/lib/translation'
 import { useIsMobile } from '@/lib/hooks/useMediaQuery'

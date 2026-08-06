@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { UploadCloud, Plus, Trash2, Loader2, Check, ShieldCheck, FileText } from 'lucide-react'
+import { CloudArrowUp as UploadCloud, Plus, Trash as Trash2, CircleNotch as Loader2, Check, ShieldCheck, FileText } from '@phosphor-icons/react';
 
 export const dynamic = 'force-dynamic'
 

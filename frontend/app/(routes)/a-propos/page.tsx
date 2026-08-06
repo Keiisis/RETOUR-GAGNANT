@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Target, Heart, Globe, Users, Award, ArrowRight, type LucideIcon } from 'lucide-react';
+import { Target, Heart, Globe, Users, Medal as Award, ArrowRight, type Icon as LucideIcon } from '@phosphor-icons/react';
 import { usePageSections } from '@/lib/hooks/usePageSections';
 import { useTranslation, T } from '@/lib/translation';
 

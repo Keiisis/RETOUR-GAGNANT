@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, Shield, ArrowRight, AlertCircle } from 'lucide-react'
+import { CheckCircle as CheckCircle2, CircleNotch as Loader2, Shield, ArrowRight, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 
 export default function AuthConfirmPage() {
     const [status, setStatus] = useState<'loading' | 'verified' | 'no_session' | 'error'>('loading')

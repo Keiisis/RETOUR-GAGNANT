@@ -4,10 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/lib/translation'
-import {
-    FolderOpen, Upload, Search, Trash2, Download, X, Loader2,
-    FileText, Image, File, Plus, Eye, Filter
-} from 'lucide-react'
+import { FolderOpen, Upload, MagnifyingGlass as Search, Trash as Trash2, Download, X, CircleNotch as Loader2, FileText, Image, File, Plus, Eye, Funnel as Filter } from '@phosphor-icons/react';
 
 interface Document {
     id: string

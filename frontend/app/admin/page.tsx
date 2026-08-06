@@ -3,13 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-    Users, Eye, MessageSquare, Map, ShieldCheck,
-    TrendingUp, AlertCircle, Sparkles, Loader2,
-    Activity, Clock, Globe, Zap, ArrowUpRight,
-    ShoppingBag, Receipt, CreditCard, Package,
-    Image as ImageIcon, Settings
-} from "lucide-react";
+import { Users, Eye, ChatText as MessageSquare, MapTrifold as Map, ShieldCheck, TrendUp as TrendingUp, WarningCircle as AlertCircle, Sparkle as Sparkles, CircleNotch as Loader2, Pulse as Activity, Clock, Globe, Lightning as Zap, ArrowUpRight, ShoppingBag, Receipt, CreditCard, Package, Image as ImageIcon, Gear as Settings } from '@phosphor-icons/react';
 import { AIAssistant } from "@/components/admin/ai-assistant";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";

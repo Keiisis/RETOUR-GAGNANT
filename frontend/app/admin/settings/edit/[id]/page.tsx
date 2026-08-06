@@ -2,9 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useForm, useNavigation, useOne } from "@refinedev/core";
-import {
-    ArrowLeft, Save, ShieldCheck, Database, LayoutGrid, Loader2
-} from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save, ShieldCheck, Database, GridFour as LayoutGrid, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

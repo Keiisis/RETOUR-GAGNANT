@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { 
-    Calculator, FileText, Save, Loader2, RefreshCw, 
-    Percent, ShieldCheck, Mail
-} from 'lucide-react'
+import { Calculator, FileText, FloppyDisk as Save, CircleNotch as Loader2, ArrowClockwise as RefreshCw, Percent, ShieldCheck, Envelope as Mail } from '@phosphor-icons/react';
 
 export default function ERPSettingsPage() {
     const [loading, setLoading] = useState(true)

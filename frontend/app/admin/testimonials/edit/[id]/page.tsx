@@ -2,10 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useForm, useNavigation } from "@refinedev/core";
-import {
-    ArrowLeft, Save, User, Quote, Star,
-    Loader2, Sparkles, ShieldCheck
-} from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save, User, Quotes as Quote, Star, CircleNotch as Loader2, Sparkle as Sparkles, ShieldCheck } from '@phosphor-icons/react';
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";

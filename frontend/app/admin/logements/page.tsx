@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, Reorder } from 'framer-motion'
-import {
-    Home, Plus, Loader2, Save, Trash2, X, GripVertical, Eye, EyeOff,
-    UploadCloud, Image as ImageIcon, MapPin, Check, Building2, Megaphone,
-} from 'lucide-react'
+import { House as Home, Plus, CircleNotch as Loader2, FloppyDisk as Save, Trash as Trash2, X, DotsSixVertical as GripVertical, Eye, EyeSlash as EyeOff, CloudArrowUp as UploadCloud, Image as ImageIcon, MapPin, Check, Buildings as Building2, Megaphone } from '@phosphor-icons/react';
 
 interface Logement {
     id: string

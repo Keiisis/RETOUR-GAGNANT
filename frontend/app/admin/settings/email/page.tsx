@@ -4,9 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from "@refinedev/core";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowLeft, Save, Mail, Server, Fingerprint, Send, Loader2, CheckCircle2, AlertCircle
-} from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save, Envelope as Mail, HardDrives as Server, Fingerprint, PaperPlaneTilt as Send, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

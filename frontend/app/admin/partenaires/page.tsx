@@ -4,12 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Plus, Pencil, Trash2, Save, X, Loader2, Star, CheckCircle2,
-    AlertCircle, Globe, Mail, Phone, MapPin, ExternalLink,
-    Building2, Users, Eye, MessageSquare, RefreshCw,
-    ChevronDown, ChevronUp, Handshake, Clock, Ban, GalleryHorizontal, ImagePlus
-} from 'lucide-react'
+import { Plus, Pencil, Trash as Trash2, FloppyDisk as Save, X, CircleNotch as Loader2, Star, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Globe, Envelope as Mail, Phone, MapPin, ArrowSquareOut as ExternalLink, Buildings as Building2, Users, Eye, ChatText as MessageSquare, ArrowClockwise as RefreshCw, CaretDown as ChevronDown, CaretUp as ChevronUp, Handshake, Clock, Prohibit as Ban, Images as GalleryHorizontal, ImageSquare as ImagePlus } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import FileUpload from '@/components/ui/FileUpload'
 

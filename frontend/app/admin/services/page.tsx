@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Plus, Trash2, Edit2, Search, Loader2,
-    Layers, RefreshCw, ToggleLeft, ToggleRight,
-} from 'lucide-react'
+import { Plus, Trash as Trash2, Pencil as Edit2, MagnifyingGlass as Search, CircleNotch as Loader2, StackSimple as Layers, ArrowClockwise as RefreshCw, ToggleLeft, ToggleRight } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'

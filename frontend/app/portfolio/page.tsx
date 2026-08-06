@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowUpRight, Phone, Mail, MapPin, Globe, CheckCircle2, ChevronRight, Languages } from 'lucide-react'
+import { ArrowUpRight, Phone, Envelope as Mail, MapPin, Globe, CheckCircle as CheckCircle2, CaretRight as ChevronRight, Translate as Languages } from '@phosphor-icons/react';
 import { useTranslation } from '@/lib/translation/useTranslation'
 import { SUPPORTED_LANGUAGES } from '@/lib/translation/constants'
 

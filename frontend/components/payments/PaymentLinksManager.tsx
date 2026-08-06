@@ -11,10 +11,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useTranslation, T } from '@/lib/translation'
-import {
-    Link2, Plus, Copy, ExternalLink, Trash2, CheckCircle2, Clock,
-    Loader2, Mail, User, Phone, Tag, AlertTriangle, Send, ShieldCheck
-} from 'lucide-react'
+import { Link as Link2, Plus, Copy, ArrowSquareOut as ExternalLink, Trash as Trash2, CheckCircle as CheckCircle2, Clock, CircleNotch as Loader2, Envelope as Mail, User, Phone, Tag, Warning as AlertTriangle, PaperPlaneTilt as Send, ShieldCheck } from '@phosphor-icons/react';
 
 interface PaymentLink {
     id: string

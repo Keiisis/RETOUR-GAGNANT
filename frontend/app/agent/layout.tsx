@@ -7,14 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { AgentCallCenter } from '@/components/agent/AgentCallCenter'
-import {
-    LayoutDashboard, FileText, MessageSquare, Users as UsersIcon,
-    Compass, CalendarDays, FolderOpen, Send, LogOut,
-    Menu, Bell, Search, Headphones, X,
-    TrendingUp, BookOpen, CircleDot, ChevronRight,
-    Shield, PanelLeftClose, PanelLeft,
-    Command, UserCog, Globe, Handshake, Radar, MonitorPlay, Landmark, CreditCard, Mail
-} from 'lucide-react'
+import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'

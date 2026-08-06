@@ -2,10 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import {
-    ShieldCheck, Mail, Loader2, Search, Trash2, FileLock2, CheckCircle2,
-    AlertTriangle, Database, Inbox, RefreshCw,
-} from 'lucide-react'
+import { ShieldCheck, Envelope as Mail, CircleNotch as Loader2, MagnifyingGlass as Search, Trash as Trash2, FileLock as FileLock2, CheckCircle as CheckCircle2, Warning as AlertTriangle, Database, Tray as Inbox, ArrowClockwise as RefreshCw } from '@phosphor-icons/react';
 
 interface PreviewSection {
     table: string

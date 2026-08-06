@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Settings, Save, Loader2, CheckCircle2, AlertCircle,
-    Palette, Share2, Globe, CreditCard, Mail, MonitorPlay,
-    Edit2, X, RefreshCw, Database, ShieldCheck
-} from 'lucide-react'
+import { Gear as Settings, FloppyDisk as Save, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Palette, ShareNetwork as Share2, Globe, CreditCard, Envelope as Mail, MonitorPlay, Pencil as Edit2, X, ArrowClockwise as RefreshCw, Database, ShieldCheck } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 

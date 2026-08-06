@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Loader2, AlertTriangle, X } from 'lucide-react'
+import { FileText, CircleNotch as Loader2, Warning as AlertTriangle, X } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface Props {

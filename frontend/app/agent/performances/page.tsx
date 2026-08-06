@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    TrendingUp, FileText, MessageSquare, Clock,
-    CheckCircle2, BarChart3, Target, Award,
-    Users, Compass, Briefcase, Edit3, X, Save, Star
-} from 'lucide-react'
+import { TrendUp as TrendingUp, FileText, ChatText as MessageSquare, Clock, CheckCircle as CheckCircle2, ChartBar as BarChart3, Target, Medal as Award, Users, Compass, Briefcase, PencilLine as Edit3, X, FloppyDisk as Save, Star } from '@phosphor-icons/react';
 
 interface PerformanceData {
     totalDossiers: number

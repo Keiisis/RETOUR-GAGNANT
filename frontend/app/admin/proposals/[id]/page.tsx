@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getProposalById, updateProposalAndItems } from '@/app/actions/ai-proposals'
 import SlideGalleryEditor, { type SlideImage } from '@/components/proposals/SlideGalleryEditor'
 import { motion, Reorder } from 'framer-motion'
-import {
-    ArrowLeft, Save, Loader2, Eye, Trash2, Plus, Copy, Check,
-    ExternalLink, Upload, Image as ImageIcon, Sparkles, GripVertical, FileDown
-} from 'lucide-react'
+import { ArrowLeft, FloppyDisk as Save, CircleNotch as Loader2, Eye, Trash as Trash2, Plus, Copy, Check, ArrowSquareOut as ExternalLink, Upload, Image as ImageIcon, Sparkle as Sparkles, DotsSixVertical as GripVertical, FileArrowDown as FileDown } from '@phosphor-icons/react';
 import { Price } from '@/components/ui/Price'
 import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
 

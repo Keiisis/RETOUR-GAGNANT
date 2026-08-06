@@ -2,7 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation'
 import { useState, useRef, useCallback } from 'react'
-import { Upload, X, Loader2, ImageIcon, Film, CheckCircle2 } from 'lucide-react'
+import { Upload, X, CircleNotch as Loader2, Image as ImageIcon, FilmStrip as Film, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'

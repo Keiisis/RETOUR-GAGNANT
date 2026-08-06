@@ -2,10 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    Bell, Trash2, Search, Mail, Clock,
-    ChevronRight, Map, Loader2, AlertCircle, ShoppingCart, CheckCircle2, AlertTriangle
-} from "lucide-react";
+import { Bell, Trash as Trash2, MagnifyingGlass as Search, Envelope as Mail, Clock, CaretRight as ChevronRight, MapTrifold as Map, CircleNotch as Loader2, WarningCircle as AlertCircle, ShoppingCart, CheckCircle as CheckCircle2, Warning as AlertTriangle } from '@phosphor-icons/react';
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";

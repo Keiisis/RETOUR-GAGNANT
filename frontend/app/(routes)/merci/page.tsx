@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { CheckCircle, ArrowRight, BookOpen, Calendar } from 'lucide-react'
+import { CheckCircle, ArrowRight, BookOpen, Calendar } from '@phosphor-icons/react/dist/ssr';
 
 export const metadata: Metadata = {
     title: 'Merci !',

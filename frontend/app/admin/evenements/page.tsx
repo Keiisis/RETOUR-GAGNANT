@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import {
-    Calendar, Plus, Trash2, Edit, Users,
-    CheckCircle2, XCircle, Clock, Crown, Search,
-    ChevronDown, ExternalLink,
-} from 'lucide-react'
+import { Calendar, Plus, Trash as Trash2, PencilSimple as Edit, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 
 interface EventData {
     id: string; title: string; slug: string; status: string

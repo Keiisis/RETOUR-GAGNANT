@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProposalsList } from '@/app/actions/ai-proposals'
 import { deleteProposal } from '@/app/actions/ai-proposals'
-import {
-    Plus, FileText, Globe, ArrowRight, Loader2, Play, Wand2, X,
-    Search, Check, Star, MapPin, Hotel, UtensilsCrossed, Car, Compass,
-    Trash2, Copy, Sparkles
-} from 'lucide-react'
+import { Plus, FileText, Globe, ArrowRight, CircleNotch as Loader2, Play, MagicWand as Wand2, X, MagnifyingGlass as Search, Check, Star, MapPin, Buildings as Hotel, ForkKnife as UtensilsCrossed, Car, Compass, Trash as Trash2, Copy, Sparkle as Sparkles } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation'
 import { formatCurrencySync, type CurrencyCode } from '@/lib/currency'
 

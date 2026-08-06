@@ -3,12 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { getProposalBySecret } from '@/app/actions/ai-proposals'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import {
-    Loader2, ChevronRight, ChevronLeft, MapPin,
-    CreditCard, Calendar, CheckCircle, Sparkles, BookOpen,
-    HandIcon, FileDown, MessageCircle, Wifi, Waves, Car, UserCheck,
-    Mountain, UtensilsCrossed, Shield, Landmark, Download, Hotel
-} from 'lucide-react'
+import { CircleNotch as Loader2, CaretRight as ChevronRight, CaretLeft as ChevronLeft, MapPin, CreditCard, Calendar, CheckCircle, Sparkle as Sparkles, BookOpen, Hand as HandIcon, FileArrowDown as FileDown, ChatCircle as MessageCircle, WifiHigh as Wifi, Waves, Car, UserCircleCheck as UserCheck, Mountains as Mountain, ForkKnife as UtensilsCrossed, Shield, Bank as Landmark, Download, Buildings as Hotel } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode } from '@/lib/currency'

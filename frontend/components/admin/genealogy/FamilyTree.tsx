@@ -3,7 +3,7 @@
 import { Person, DocumentItem } from '@/lib/genealogy/types';
 import { ROLE_LABELS } from '@/lib/genealogy/requirements';
 import PersonCard from './PersonCard';
-import { Plus, UserPlus, Users, Baby } from 'lucide-react';
+import { Plus, UserPlus, Users, Baby } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useTheme } from '@/lib/theme/ThemeContext';

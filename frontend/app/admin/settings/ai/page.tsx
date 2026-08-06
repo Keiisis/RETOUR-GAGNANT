@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from '@refinedev/core'
 import { useState, useEffect } from 'react'
-import {
-    Brain, Key, MessageSquare, Sliders, Save,
-    Loader2, Eye, EyeOff, RefreshCw, Sparkles,
-    CheckCircle2, AlertTriangle, Cpu, Zap
-} from 'lucide-react'
+import { Brain, Key, ChatText as MessageSquare, Sliders, FloppyDisk as Save, CircleNotch as Loader2, Eye, EyeSlash as EyeOff, ArrowClockwise as RefreshCw, Sparkle as Sparkles, CheckCircle as CheckCircle2, Warning as AlertTriangle, Cpu, Lightning as Zap } from '@phosphor-icons/react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

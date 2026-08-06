@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe, Search, Filter, Download, Clock, X, Eye, Loader2, FileDown, Mail, Check } from 'lucide-react'
+import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 
 interface NationalityApplication {

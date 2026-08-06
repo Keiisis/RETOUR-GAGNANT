@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Shield, Loader2, KeyRound } from 'lucide-react'
+import { Shield, CircleNotch as Loader2, Key as KeyRound } from '@phosphor-icons/react';
 
 export default function Admin2FAPage() {
     const router = useRouter()

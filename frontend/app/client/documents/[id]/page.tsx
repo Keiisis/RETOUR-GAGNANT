@@ -5,11 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import {
-    ArrowLeft, FileText, Receipt, ExternalLink, Download, PenTool,
-    CreditCard, CheckCircle2, Clock, AlertCircle, Shield, Zap, BellOff,
-    X, Pen, AlertTriangle
-} from 'lucide-react'
+import { ArrowLeft, FileText, Receipt, ArrowSquareOut as ExternalLink, Download, PenNib as PenTool, CreditCard, CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle, Shield, Lightning as Zap, BellSlash as BellOff, X, Pen, Warning as AlertTriangle } from '@phosphor-icons/react';
 import Image from 'next/image'
 
 interface Doc {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Alert } from '@/lib/genealogy/types';
-import { AlertCircle, AlertTriangle, CheckCircle, Info, ChevronRight } from 'lucide-react';
+import { WarningCircle as AlertCircle, Warning as AlertTriangle, CheckCircle, Info, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 const levelStyles: Record<string, { bg: string; border: string; text: string; icon: any }> = {

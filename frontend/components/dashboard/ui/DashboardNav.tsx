@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, Folder, CreditCard, User, MessageCircle } from 'lucide-react';
+import { House as Home, Folder, CreditCard, User, ChatCircle as MessageCircle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { CLIENT_THEME } from '@/lib/theme/client-theme';
 

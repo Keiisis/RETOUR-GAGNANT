@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import {
-    Globe2, FileCheck, Shield, Clock, ChevronDown, ChevronUp,
-    ArrowRight, CheckCircle2, Users, Scale, Fingerprint, MapPin
-} from 'lucide-react'
+import { Globe as Globe2, FileText as FileCheck, Shield, Clock, CaretDown as ChevronDown, CaretUp as ChevronUp, ArrowRight, CheckCircle as CheckCircle2, Users, Scales as Scale, Fingerprint, MapPin } from '@phosphor-icons/react';
 import { useTranslation } from '@/lib/translation'
 import { CurrencyCode } from '@/lib/currency'
 import { Price } from '@/components/ui/Price'

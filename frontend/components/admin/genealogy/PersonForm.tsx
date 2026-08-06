@@ -5,10 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { RelationRole, Gender, Person } from '@/lib/genealogy/types';
 import { ROLE_LABELS } from '@/lib/genealogy/requirements';
 import { useTheme } from '@/lib/theme/ThemeContext';
-import {
-  UserPlus, Save, UserCheck, Loader2, X, Calendar,
-  MapPin, ScrollText, Mars, Venus, CircleUser, Sparkles,
-} from 'lucide-react';
+import { UserPlus, FloppyDisk as Save, UserCircleCheck as UserCheck, CircleNotch as Loader2, X, Calendar, MapPin, Scroll as ScrollText, GenderMale as Mars, GenderFemale as Venus, UserCircle as CircleUser, Sparkle as Sparkles } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 interface PersonFormProps {

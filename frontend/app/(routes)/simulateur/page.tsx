@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useTranslation, T } from "@/lib/translation"
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Sparkles, Globe, Target, Calendar, Wallet, Award, Loader2, ArrowRight } from 'lucide-react'
+import { CaretLeft as ChevronLeft, Sparkle as Sparkles, Globe, Target, Calendar, Wallet, Medal as Award, CircleNotch as Loader2, ArrowRight } from '@phosphor-icons/react';
 import Link from 'next/link'
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
 

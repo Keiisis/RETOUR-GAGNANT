@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FileText, Plus, Trash2, Loader2, Send, Save, ArrowLeft,
-    Calculator, Receipt, User, Eye
-} from 'lucide-react'
+import { FileText, Plus, Trash as Trash2, CircleNotch as Loader2, PaperPlaneTilt as Send, FloppyDisk as Save, ArrowLeft, Calculator, Receipt, User, Eye } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'

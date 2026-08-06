@@ -3,10 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Bell, CheckCheck, FolderOpen, MessageSquare, CalendarDays,
-    Receipt, Inbox, Loader2, Circle,
-} from 'lucide-react'
+import { Bell, Checks as CheckCheck, FolderOpen, ChatText as MessageSquare, CalendarDots as CalendarDays, Receipt, Tray as Inbox, CircleNotch as Loader2, Circle } from '@phosphor-icons/react';
 import { EmptyState } from '@/components/panel/PanelStates'
 
 interface Notif {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link'
 
 /**

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, MessageCircle, Calculator, ChevronDown, Check } from "lucide-react";
+import { CheckCircle as CheckCircle2, ChatCircle as MessageCircle, Calculator, CaretDown as ChevronDown, Check } from '@phosphor-icons/react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslation, T } from "@/lib/translation";

@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Handshake, Building2, Mail, Phone, Globe, MapPin,
-    CheckCircle2, Clock, MessageSquare, Ban, ChevronDown, ChevronUp,
-    RefreshCw, Users, Star, Sparkles, Eye, Plus, Pencil,
-    Trash2, Save, X, Loader2, ExternalLink,
-} from 'lucide-react'
+import { Handshake, Buildings as Building2, Envelope as Mail, Phone, Globe, MapPin, CheckCircle as CheckCircle2, Clock, ChatText as MessageSquare, Prohibit as Ban, CaretDown as ChevronDown, CaretUp as ChevronUp, ArrowClockwise as RefreshCw, Users, Star, Sparkle as Sparkles, Eye, Plus, Pencil, Trash as Trash2, FloppyDisk as Save, X, CircleNotch as Loader2, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import FileUpload from '@/components/ui/FileUpload'
 

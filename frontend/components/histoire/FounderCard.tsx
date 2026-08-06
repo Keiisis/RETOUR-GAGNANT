@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Quote } from 'lucide-react'
+import { Quotes as Quote } from '@phosphor-icons/react';
 import Image from 'next/image'
 import { useTranslation } from '@/lib/translation'
 

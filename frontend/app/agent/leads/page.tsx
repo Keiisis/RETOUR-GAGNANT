@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Compass, Search, Phone, Mail,
-    CheckCircle2, Globe, Briefcase, Star,
-    ChevronDown, ChevronUp, MapPin, Target, Clock,
-    MessageSquare, FileText, Zap, RefreshCw
-} from 'lucide-react'
+import { Compass, MagnifyingGlass as Search, Phone, Envelope as Mail, CheckCircle as CheckCircle2, Globe, Briefcase, Star, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, Target, Clock, ChatText as MessageSquare, FileText, Lightning as Zap, ArrowClockwise as RefreshCw } from '@phosphor-icons/react';
 import LeadReplyDrawer from '@/components/agent/LeadReplyDrawer'
 import { Lead } from '@/types/lead'
 

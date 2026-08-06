@@ -3,12 +3,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    BookOpen, Search, ChevronRight, FileText, Globe,
-    Building2, Landmark, Users, Scale, Banknote,
-    Plus, X, Trash2, Edit3, Save, Loader2, Sparkles, Send
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { BookOpen, MagnifyingGlass as Search, CaretRight as ChevronRight, FileText, Globe, Buildings as Building2, Bank as Landmark, Users, Scales as Scale, Money as Banknote, Plus, X, Trash as Trash2, PencilLine as Edit3, FloppyDisk as Save, CircleNotch as Loader2, Sparkle as Sparkles, PaperPlaneTilt as Send } from '@phosphor-icons/react';
+import type { Icon as LucideIcon } from '@phosphor-icons/react';
 
 interface WikiArticle {
     id: string

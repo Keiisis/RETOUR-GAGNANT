@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Calendar, Plus, Edit, Eye, Users, CheckCircle2, XCircle,
-    Clock, Crown, Ticket, Search, ChevronDown, ExternalLink,
-    Save, ArrowLeft, Type, AlignLeft, MapPin, DollarSign,
-    Tag, Loader2, QrCode, ShieldCheck, AlertTriangle,
-    X,
-} from 'lucide-react'
+import { Calendar, Plus, PencilSimple as Edit, Eye, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, Ticket, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink, FloppyDisk as Save, ArrowLeft, TextT as Type, TextAlignLeft as AlignLeft, MapPin, CurrencyDollar as DollarSign, Tag, CircleNotch as Loader2, QrCode, ShieldCheck, Warning as AlertTriangle, X } from '@phosphor-icons/react';
 import Link from 'next/link'
 import EventImageUpload from '@/components/events/EventImageUpload'
 

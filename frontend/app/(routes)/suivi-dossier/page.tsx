@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FileCheck, Clock, AlertTriangle, CheckCircle2, Loader2, ArrowLeft, Shield, Zap, Sparkles, Upload, FileWarning } from 'lucide-react'
+import { MagnifyingGlass as Search, FileText as FileCheck, Clock, Warning as AlertTriangle, CheckCircle as CheckCircle2, CircleNotch as Loader2, ArrowLeft, Shield, Lightning as Zap, Sparkle as Sparkles, Upload, FileText as FileWarning } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { supabase } from '@/lib/supabase'
 

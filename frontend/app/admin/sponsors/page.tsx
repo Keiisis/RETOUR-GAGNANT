@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Star, Plus, Edit, Trash2, Eye, EyeOff,
-    Save, X, Type, Globe, ArrowUp, ArrowDown,
-    Loader2, CheckCircle2, AlertCircle,
-} from 'lucide-react'
+import { Star, Plus, PencilSimple as Edit, Trash as Trash2, Eye, EyeSlash as EyeOff, FloppyDisk as Save, X, TextT as Type, Globe, ArrowUp, ArrowDown, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 import Image from 'next/image'
 import EventImageUpload from '@/components/events/EventImageUpload'
 

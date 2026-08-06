@@ -2,7 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useState } from 'react'
-import { ArrowLeft, UserPlus, Loader2, Shield, User, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, UserPlus, CircleNotch as Loader2, Shield, User, Eye, EyeSlash as EyeOff, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'

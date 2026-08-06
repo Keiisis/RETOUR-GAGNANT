@@ -2,10 +2,7 @@
 
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    X, MapPin, Mail, MessageCircle, Globe, Store,
-    Star, Phone, ExternalLink, Clock, Sparkles,
-} from 'lucide-react'
+import { X, MapPin, Envelope as Mail, ChatCircle as MessageCircle, Globe, Storefront as Store, Star, Phone, ArrowSquareOut as ExternalLink, Clock, Sparkle as Sparkles } from '@phosphor-icons/react';
 
 // Brand icons (lucide deprecated these — inline SVGs instead)
 const IconFacebook = ({ size = 13 }: { size?: number }) => (

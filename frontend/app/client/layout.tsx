@@ -5,11 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    LayoutDashboard, FileText, FolderOpen, MessageSquare,
-    CalendarDays, UserCircle, LogOut, Menu, X, Bell,
-    ChevronRight, CircleDot, Shield, Briefcase, FileSignature, GitFork, Receipt, Download
-} from 'lucide-react'
+import { SquaresFour as LayoutDashboard, FileText, FolderOpen, ChatText as MessageSquare, CalendarDots as CalendarDays, UserCircle, SignOut as LogOut, List as Menu, X, Bell, CaretRight as ChevronRight, Circle as CircleDot, Shield, Briefcase, FileText as FileSignature, GitFork, Receipt, Download } from '@phosphor-icons/react';
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 

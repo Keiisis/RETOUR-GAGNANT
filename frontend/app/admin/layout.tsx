@@ -5,16 +5,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Authenticated, useLogout, useGetIdentity } from '@refinedev/core'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-    LayoutDashboard, Settings, MessageSquare,
-    ShieldCheck, LogOut, Bell,
-    Menu, Globe, Sparkles, User, HelpCircle,
-    ShoppingBag, Receipt, UserCog, Tag, Calculator,
-    Mail, FileText, Compass, X, PanelLeftClose, PanelLeft,
-    BarChart3, FileSignature, FolderOpen, Palette, Calendar, Star,
-    Languages, Radar, Box, Coins, Megaphone, Activity, Layers, Landmark, Building2,
-    ShieldAlert, KeyRound, GitFork, Send, Search
-} from 'lucide-react'
+import { SquaresFour as LayoutDashboard, Gear as Settings, ChatText as MessageSquare, ShieldCheck, SignOut as LogOut, Bell, List as Menu, Globe, Sparkle as Sparkles, User, Question as HelpCircle, ShoppingBag, Receipt, UserGear as UserCog, Tag, Calculator, Envelope as Mail, FileText, Compass, X, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, ChartBar as BarChart3, FileText as FileSignature, FolderOpen, Palette, Calendar, Star, Translate as Languages, Crosshair as Radar, Cube as Box, Coins, Megaphone, Pulse as Activity, StackSimple as Layers, Bank as Landmark, Buildings as Building2, ShieldWarning as ShieldAlert, Key as KeyRound, GitFork, PaperPlaneTilt as Send, MagnifyingGlass as Search } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'

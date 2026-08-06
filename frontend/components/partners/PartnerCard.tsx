@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { MapPin, Mail, MessageCircle, Star, Globe, Store, ChevronRight, Phone } from 'lucide-react'
+import { MapPin, Envelope as Mail, ChatCircle as MessageCircle, Star, Globe, Storefront as Store, CaretRight as ChevronRight, Phone } from '@phosphor-icons/react';
 import Image from 'next/image'
 import { useTranslation, T } from '@/lib/translation'
 

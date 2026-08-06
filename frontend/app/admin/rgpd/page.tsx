@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    ShieldCheck, FileText, FileDown, Loader2, Search, Trash2, Database,
-    FileLock2, CheckCircle2, AlertTriangle, Scale, Clock, ScrollText,
-} from 'lucide-react'
+import { ShieldCheck, FileText, FileArrowDown as FileDown, CircleNotch as Loader2, MagnifyingGlass as Search, Trash as Trash2, Database, FileLock as FileLock2, CheckCircle as CheckCircle2, Warning as AlertTriangle, Scales as Scale, Clock, Scroll as ScrollText } from '@phosphor-icons/react';
 
 interface PreviewSection { table: string; label: string; kind: 'data' | 'document'; count: number; rows: Record<string, unknown>[] }
 interface Preview { email: string; found: boolean; totalRecords: number; documentCount: number; sections: PreviewSection[] }

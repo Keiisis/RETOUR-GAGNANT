@@ -3,10 +3,7 @@
 import { useState, useRef } from 'react'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
-import {
-    CreditCard, Download, FileImage, Plus, Trash2,
-    CheckCircle, AlertCircle, Loader2, Eye, BookOpen, ChevronRight
-} from 'lucide-react'
+import { CreditCard, Download, FileImage, Plus, Trash as Trash2, CheckCircle, WarningCircle as AlertCircle, CircleNotch as Loader2, Eye, BookOpen, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { RollUp, type RollUpData } from '@/components/roll-up/RollUp'
 

@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import {
-    Shield, Ban, Activity, RefreshCw, Trash2, Plus, Save,
-    AlertTriangle, CheckCircle2, Clock, Globe, Zap, Settings,
-    ChevronLeft, ChevronRight, Search, Filter, ToggleLeft,
-    ToggleRight, BookOpen, Sliders, Eye, EyeOff, XCircle
-} from 'lucide-react'
+import { Shield, Prohibit as Ban, Pulse as Activity, ArrowClockwise as RefreshCw, Trash as Trash2, Plus, FloppyDisk as Save, Warning as AlertTriangle, CheckCircle as CheckCircle2, Clock, Globe, Lightning as Zap, Gear as Settings, CaretLeft as ChevronLeft, CaretRight as ChevronRight, MagnifyingGlass as Search, Funnel as Filter, ToggleLeft, ToggleRight, BookOpen, Sliders, Eye, EyeSlash as EyeOff, XCircle } from '@phosphor-icons/react';
 
 // ── Types ─────────────────────────────────────────────────────
 interface IpBlock {

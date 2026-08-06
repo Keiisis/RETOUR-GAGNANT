@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import {
-    Globe, Map, ShieldCheck, Sparkles, Users,
-    Image as ImageIcon, Flag, BookOpen, ArrowRight,
-    FileText, Palette, CreditCard
-} from 'lucide-react'
+import { Globe, MapTrifold as Map, ShieldCheck, Sparkle as Sparkles, Users, Image as ImageIcon, Flag, BookOpen, ArrowRight, FileText, Palette, CreditCard } from '@phosphor-icons/react';
 
 const frontendSections = [
     {

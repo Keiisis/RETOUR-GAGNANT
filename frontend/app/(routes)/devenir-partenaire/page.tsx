@@ -3,14 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import {
-    ArrowLeft, ArrowRight, CheckCircle2, Loader2, Building2, MapPin,
-    Mail, Phone, Globe, Instagram, Facebook, Linkedin, Handshake,
-    Home, Leaf, Palette, Cpu, Gem, Plane, HeartPulse, TrendingUp,
-    GraduationCap, ShoppingBag, LayoutGrid, Package, Wrench,
-    Megaphone, PiggyBank, Users, BarChart3, Camera, Send, Star,
-    Shield, Zap, Network, ChevronRight,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, CircleNotch as Loader2, Buildings as Building2, MapPin, Envelope as Mail, Phone, Globe, InstagramLogo as Instagram, FacebookLogo as Facebook, LinkedinLogo as Linkedin, Handshake, House as Home, Leaf, Palette, Cpu, Diamond as Gem, Airplane as Plane, Heartbeat as HeartPulse, TrendUp as TrendingUp, GraduationCap, ShoppingBag, GridFour as LayoutGrid, Package, Wrench, Megaphone, PiggyBank, Users, ChartBar as BarChart3, Camera, PaperPlaneTilt as Send, Star, Shield, Lightning as Zap, TreeStructure as Network, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import FileUpload from '@/components/ui/FileUpload'
 import { useTranslation, T } from '@/lib/translation'

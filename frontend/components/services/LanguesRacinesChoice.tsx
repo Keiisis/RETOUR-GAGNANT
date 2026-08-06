@@ -9,7 +9,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { MapPin, Video, Calendar, ArrowRight, MessageCircleHeart } from 'lucide-react'
+import { MapPin, VideoCamera as Video, Calendar, ArrowRight, ChatCircleDots as MessageCircleHeart } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 
 const OPTIONS = [

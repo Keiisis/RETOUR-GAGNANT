@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { ClientCallButton } from '@/components/client/ClientCallButton'
-import { MessageSquare, Send, Loader2, CheckCircle2, AlertCircle, Clock, ChevronRight, User } from 'lucide-react'
+import { ChatText as MessageSquare, PaperPlaneTilt as Send, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Clock, CaretRight as ChevronRight, User } from '@phosphor-icons/react';
 
 interface Message {
     id: string

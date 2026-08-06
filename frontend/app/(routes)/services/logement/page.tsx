@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Building3D from '@/components/logements/Building3D'
 import TransitionLink from '@/components/TransitionLink'
-import {
-    Home, ArrowRight, ShieldCheck, Send, MapPin, Ruler, Handshake, Check, ChevronRight,
-} from 'lucide-react'
+import { House as Home, ArrowRight, ShieldCheck, PaperPlaneTilt as Send, MapPin, Ruler, Handshake, Check, CaretRight as ChevronRight } from '@phosphor-icons/react';
 
 interface Logement { id: string; nom: string; type: string; ville: string; site: string; surface_m2: number; prix_comptant: number; devise: string; mensualite: number; images: string[] }
 const money = (n: number, d = 'XOF') => `${Math.round(n).toLocaleString('fr-FR')} ${d === 'XOF' ? 'FCFA' : d}`

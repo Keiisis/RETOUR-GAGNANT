@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    FileText, Plus, Trash2, X, Loader2, Search,
-    Download, Eye, Calculator, Receipt, Send,
-    Phone, Mail, CheckCircle2, AlertCircle, Link as LinkIcon,
-    AlertTriangle, Bell, Clock, BadgeDollarSign, ExternalLink
-} from 'lucide-react'
+import { FileText, Plus, Trash as Trash2, X, CircleNotch as Loader2, MagnifyingGlass as Search, Download, Eye, Calculator, Receipt, PaperPlaneTilt as Send, Phone, Envelope as Mail, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Link as LinkIcon, Warning as AlertTriangle, Bell, Clock, CurrencyCircleDollar as BadgeDollarSign, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'

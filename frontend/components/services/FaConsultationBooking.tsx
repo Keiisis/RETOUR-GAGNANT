@@ -10,10 +10,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Handshake, MapPin, Video, Check, ShieldAlert, Loader2,
-    CreditCard, CheckCircle2, AlertCircle, FileSignature,
-} from 'lucide-react'
+import { Handshake, MapPin, VideoCamera as Video, Check, ShieldWarning as ShieldAlert, CircleNotch as Loader2, CreditCard, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, FileText as FileSignature } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { convertCurrency } from '@/lib/currency'
 import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'

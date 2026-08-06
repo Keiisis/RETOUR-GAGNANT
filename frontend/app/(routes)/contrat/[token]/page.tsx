@@ -9,10 +9,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
-import {
-    FileSignature, Download, CheckCircle2, ShieldCheck,
-    Loader2, AlertCircle, PenLine, Clock
-} from 'lucide-react'
+import { FileText as FileSignature, Download, CheckCircle as CheckCircle2, ShieldCheck, CircleNotch as Loader2, WarningCircle as AlertCircle, PencilLine as PenLine, Clock } from '@phosphor-icons/react';
 import { T, useTranslation } from '@/lib/translation'
 
 interface PublicContract {

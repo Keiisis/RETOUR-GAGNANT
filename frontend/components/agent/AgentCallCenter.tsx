@@ -11,7 +11,7 @@
 ══════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Phone, PhoneOff, Mic, MicOff, User } from 'lucide-react'
+import { Phone, PhoneSlash as PhoneOff, Microphone as Mic, MicrophoneSlash as MicOff, User } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 import { CallEngine, formatDuree } from '@/lib/webrtc-call'
 

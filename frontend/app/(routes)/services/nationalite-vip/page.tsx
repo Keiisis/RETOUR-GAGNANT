@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, ChevronRight, FileText, Calendar } from 'lucide-react';
+import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, FileText, Calendar } from '@phosphor-icons/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';

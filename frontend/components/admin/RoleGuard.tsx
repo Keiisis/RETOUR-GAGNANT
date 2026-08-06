@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Shield } from 'lucide-react'
+import { Shield } from '@phosphor-icons/react';
 
 interface RoleGuardProps {
     allowedRoles: ('superadmin' | 'agent')[]

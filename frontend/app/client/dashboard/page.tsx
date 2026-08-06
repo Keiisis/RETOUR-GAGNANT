@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import {
-    FileText, FolderOpen, MessageSquare, CalendarDays,
-    ArrowRight, CheckCircle2, Clock, AlertCircle,
-    CreditCard, Receipt, TrendingUp, Sparkles
-, ShoppingBag } from 'lucide-react'
+import { FileText, FolderOpen, ChatText as MessageSquare, CalendarDots as CalendarDays, ArrowRight, CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle, CreditCard, Receipt, TrendUp as TrendingUp, Sparkle as Sparkles, ShoppingBag } from '@phosphor-icons/react';
 
 interface Stats {
     devisEnAttente: number

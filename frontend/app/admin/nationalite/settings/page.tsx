@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    Settings2, Save, Loader2, Plus, Trash2,
-    DollarSign, FileText, Globe2, CheckCircle2,
-    ArrowLeft, CreditCard, Info
-} from 'lucide-react'
+import { GearSix as Settings2, FloppyDisk as Save, CircleNotch as Loader2, Plus, Trash as Trash2, CurrencyDollar as DollarSign, FileText, Globe as Globe2, CheckCircle as CheckCircle2, ArrowLeft, CreditCard, Info } from '@phosphor-icons/react';
 import Link from 'next/link'
 
 interface RequiredDoc {

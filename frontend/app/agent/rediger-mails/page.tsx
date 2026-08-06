@@ -3,13 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Mail, Send, X, Search, User,
-    Trash2, Eye, Edit3, Clock, CheckCircle2, AlertCircle,
-    Bold, Italic, Underline, Link2, List, ListOrdered,
-    AlignLeft, AlignCenter, Image, Sparkles,
-    FileText, RefreshCw, Inbox, Star, Paperclip, Wand2
-} from 'lucide-react'
+import { Envelope as Mail, PaperPlaneTilt as Send, X, MagnifyingGlass as Search, User, Trash as Trash2, Eye, PencilLine as Edit3, Clock, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, TextB as Bold, TextItalic as Italic, TextUnderline as Underline, Link as Link2, List, ListNumbers as ListOrdered, TextAlignLeft as AlignLeft, TextAlignCenter as AlignCenter, Image, Sparkle as Sparkles, FileText, ArrowClockwise as RefreshCw, Tray as Inbox, Star, Paperclip, MagicWand as Wand2 } from '@phosphor-icons/react';
 
 // ═══════════════════════════════════════════
 // Types

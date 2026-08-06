@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    ChevronRight, Car, HeartPulse, GraduationCap, FileCheck,
-    Plane, Home, Building2, Stethoscope, BookOpen, Briefcase,
-    Globe, Map, Truck, Heart, School, Clipboard, LucideIcon
-} from 'lucide-react';
+import { CaretRight as ChevronRight, Car, Heartbeat as HeartPulse, GraduationCap, FileText as FileCheck, Airplane as Plane, House as Home, Buildings as Building2, Stethoscope, BookOpen, Briefcase, Globe, MapTrifold as Map, Truck, Heart, GraduationCap as School, Clipboard, Icon as LucideIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';

@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    PackageSearch, Plus, Search, Filter, AlertTriangle,
-    ArrowUpRight, Edit2, Box, Euro, ShoppingBag, CheckCircle, X
-} from 'lucide-react'
+import { Package as PackageSearch, Plus, MagnifyingGlass as Search, Funnel as Filter, Warning as AlertTriangle, ArrowUpRight, Pencil as Edit2, Cube as Box, CurrencyEur as Euro, ShoppingBag, CheckCircle, X } from '@phosphor-icons/react';
 import { formatCurrencySync } from '@/lib/currency'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

@@ -13,10 +13,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import {
-    Calendar, Clock, User, Phone, Mail, Video, MapPin,
-    CheckCircle, XCircle, CheckCheck, Loader2, Search,
-} from 'lucide-react'
+import { Calendar, Clock, User, Phone, Envelope as Mail, VideoCamera as Video, MapPin, CheckCircle, XCircle, Checks as CheckCheck, CircleNotch as Loader2, MagnifyingGlass as Search } from '@phosphor-icons/react';
 
 interface RDV {
     id: string

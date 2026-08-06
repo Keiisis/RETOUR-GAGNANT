@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from '@refinedev/core'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Receipt, Search, Loader2,
-    CheckCircle2, Clock, XCircle, RefreshCcw, Truck, X
-} from 'lucide-react'
+import { Receipt, MagnifyingGlass as Search, CircleNotch as Loader2, CheckCircle as CheckCircle2, Clock, XCircle, ArrowCounterClockwise as RefreshCcw, Truck, X } from '@phosphor-icons/react';
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'

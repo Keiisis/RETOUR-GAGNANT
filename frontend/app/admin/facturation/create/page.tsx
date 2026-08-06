@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { nextDocumentNumber } from '@/lib/document-numbering'
-import {
-    FileText, Plus, Trash2, Loader2, ArrowLeft, User, Save, CheckCircle2,
-    Calculator, Receipt
-} from 'lucide-react'
+import { FileText, Plus, Trash as Trash2, CircleNotch as Loader2, ArrowLeft, User, FloppyDisk as Save, CheckCircle as CheckCircle2, Calculator, Receipt } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { convertFromBaseSync, getCurrentRates, formatCurrencySync, refreshRates } from '@/lib/currency'

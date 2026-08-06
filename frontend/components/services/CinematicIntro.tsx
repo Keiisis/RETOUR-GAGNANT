@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-import { Plane, Compass, MapPin } from "lucide-react";
+import { Airplane as Plane, Compass, MapPin } from '@phosphor-icons/react';
 
 
 // --- SVG PATHS (High Fidelity) ---

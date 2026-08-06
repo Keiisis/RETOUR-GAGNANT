@@ -5,10 +5,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
-import {
-    ArrowLeft, Download, FileImage, Loader2, Info,
-    BookOpen, CheckCircle, AlertCircle, Globe, Languages
-} from 'lucide-react'
+import { ArrowLeft, Download, FileImage, CircleNotch as Loader2, Info, BookOpen, CheckCircle, WarningCircle as AlertCircle, Globe, Translate as Languages } from '@phosphor-icons/react';
 import {
     Panel1Recto, Panel1Verso, Panel2Verso, Panel2Recto,
     FullPageVersoFR, FullPageVersoEN,

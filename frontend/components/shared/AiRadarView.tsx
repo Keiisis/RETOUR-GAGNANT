@@ -2,12 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Search, MapPin, Radar, Building2, Phone, Star, ArrowRight,
-    ExternalLink, Heart, Download, History, BarChart3, Filter,
-    ArrowUpDown, MessageSquare, UserPlus, ChevronDown, X, Check,
-    Clock, Sparkles, TrendingUp, Zap, RefreshCw, Copy, Send
-} from 'lucide-react'
+import { MagnifyingGlass as Search, MapPin, Crosshair as Radar, Buildings as Building2, Phone, Star, ArrowRight, ArrowSquareOut as ExternalLink, Heart, Download, ClockCounterClockwise as History, ChartBar as BarChart3, Funnel as Filter, ArrowsDownUp as ArrowUpDown, ChatText as MessageSquare, UserPlus, CaretDown as ChevronDown, X, Check, Clock, Sparkle as Sparkles, TrendUp as TrendingUp, Lightning as Zap, ArrowClockwise as RefreshCw, Copy, PaperPlaneTilt as Send } from '@phosphor-icons/react';
 import Image from 'next/image'
 
 // ═══════════════════════════════════════════════════════

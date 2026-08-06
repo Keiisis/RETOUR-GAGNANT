@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Download, Loader2, RefreshCw, ArrowLeft, Eye, Maximize2, Minimize2 } from 'lucide-react'
+import { Download, CircleNotch as Loader2, ArrowClockwise as RefreshCw, ArrowLeft, Eye, ArrowsOut as Maximize2, ArrowsIn as Minimize2 } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { generatePlexiglasSVG, downloadPlexiglasSVG } from '@/lib/svg-plexiglas-generator'
 

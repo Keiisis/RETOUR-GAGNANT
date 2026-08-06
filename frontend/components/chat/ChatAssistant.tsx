@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Bot, Headphones, Loader2, CheckCircle, ArrowLeft, Mic, MicOff } from "lucide-react";
+import { ChatCircle as MessageCircle, X, PaperPlaneTilt as Send, Robot as Bot, Headphones, CircleNotch as Loader2, CheckCircle, ArrowLeft, Microphone as Mic, MicrophoneSlash as MicOff } from '@phosphor-icons/react';
 import { supabase } from "@/lib/supabase";
 
 interface Message {

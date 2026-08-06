@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, LayoutGroup, useScroll, useTransform, useReducedMotion } from 'framer-motion'
-import {
-    ChevronRight, MapPin, Ruler, BedDouble, Building2, Check, X, ShieldCheck,
-    FileCheck2, Home, Loader2, Send, Landmark, Layers, KeyRound, ClipboardCheck,
-    Building, MapPinned, CalendarClock, Wallet, Flame, ChevronDown, Quote, ExternalLink,
-} from 'lucide-react'
+import { CaretRight as ChevronRight, MapPin, Ruler, Bed as BedDouble, Buildings as Building2, Check, X, ShieldCheck, FileText as FileCheck2, House as Home, CircleNotch as Loader2, PaperPlaneTilt as Send, Bank as Landmark, StackSimple as Layers, Key as KeyRound, ClipboardText as ClipboardCheck, Buildings as Building, MapPinLine as MapPinned, CalendarDots as CalendarClock, Wallet, Flame, CaretDown as ChevronDown, Quotes as Quote, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
 import Building3D from '@/components/logements/Building3D'

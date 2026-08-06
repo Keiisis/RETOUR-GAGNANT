@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, HelpCircle, Search, MessageCircle } from 'lucide-react'
+import { CaretDown as ChevronDown, Question as HelpCircle, MagnifyingGlass as Search, ChatCircle as MessageCircle } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { useTranslation, T } from '@/lib/translation'
 

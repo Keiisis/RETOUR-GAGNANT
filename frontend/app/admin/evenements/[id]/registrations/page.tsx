@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import {
-    Users, QrCode, CheckCircle2, Ticket, Search,
-    Download, ArrowLeft, Mail, Phone, Crown, AlertTriangle, ShieldCheck
-} from 'lucide-react'
+import { Users, QrCode, CheckCircle as CheckCircle2, Ticket, MagnifyingGlass as Search, Download, ArrowLeft, Envelope as Mail, Phone, Crown, Warning as AlertTriangle, ShieldCheck } from '@phosphor-icons/react';
 
 // Dummy dynamic import placeholder for a hypothetical QR scanner
 // import { Html5QrcodeScanner } from 'html5-qrcode'

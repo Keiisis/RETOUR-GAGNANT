@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { GitMerge, X, Loader2, AlertTriangle, ArrowRight, RefreshCw, Check } from 'lucide-react'
+import { GitMerge, X, CircleNotch as Loader2, Warning as AlertTriangle, ArrowRight, ArrowClockwise as RefreshCw, Check } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface PersonStub {

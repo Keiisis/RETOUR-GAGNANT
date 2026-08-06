@@ -3,11 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useForm, useNavigation } from "@refinedev/core";
 import { motion } from "framer-motion";
-import {
-    ArrowLeft, Save, User, Quote, Star,
-    MapPin, ShieldCheck, MessageSquareQuote,
-    Loader2, Sparkles, Plus, Camera
-} from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save, User, Quotes as Quote, Star, MapPin, ShieldCheck, Quotes as MessageSquareQuote, CircleNotch as Loader2, Sparkle as Sparkles, Plus, Camera } from '@phosphor-icons/react';
 import Image from "next/image";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

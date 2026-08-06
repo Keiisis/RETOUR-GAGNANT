@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Megaphone, Eye, Palette, Zap, Star, StarOff, Copy, Check,
-    Plus, Trash2, Search, ExternalLink, Save,
-    Globe, Loader2, ChevronRight,
-    TrendingUp, MessageCircle, ThumbsUp, Share2, BookOpen,
-    AlertTriangle, Sparkles, Target, ArrowRight,
-    Brain, Download, Calendar, FileJson, BarChart2,
-    Trophy, Lightbulb, Swords, Clock, Hash, Film,
-    Shield, Users, Flame, Gauge
-} from 'lucide-react'
+import { Megaphone, Eye, Palette, Lightning as Zap, Star, Star as StarOff, Copy, Check, Plus, Trash as Trash2, MagnifyingGlass as Search, ArrowSquareOut as ExternalLink, FloppyDisk as Save, Globe, CircleNotch as Loader2, CaretRight as ChevronRight, TrendUp as TrendingUp, ChatCircle as MessageCircle, ThumbsUp, ShareNetwork as Share2, BookOpen, Warning as AlertTriangle, Sparkle as Sparkles, Target, ArrowRight, Brain, Download, Calendar, FileCode as FileJson, ChartBar as BarChart2, Trophy, Lightbulb, Sword as Swords, Clock, Hash, FilmStrip as Film, Shield, Users, Flame, Gauge } from '@phosphor-icons/react';
 // Toutes les opérations DB passent par les API routes (service role, bypass RLS)
 
 // ── Types ────────────────────────────────────────────────

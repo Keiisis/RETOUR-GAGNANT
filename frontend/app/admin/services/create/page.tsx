@@ -3,12 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-    ArrowLeft, Save, Loader2, Plus, Trash2,
-    Layers, Type, AlignLeft, Palette, Hash,
-    CheckCircle2, DollarSign, Image as ImageIcon,
-    GripVertical, Sparkles,
-} from 'lucide-react'
+import { ArrowLeft, FloppyDisk as Save, CircleNotch as Loader2, Plus, Trash as Trash2, StackSimple as Layers, TextT as Type, TextAlignLeft as AlignLeft, Palette, Hash, CheckCircle as CheckCircle2, CurrencyDollar as DollarSign, Image as ImageIcon, DotsSixVertical as GripVertical, Sparkle as Sparkles } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 interface PricingOption {

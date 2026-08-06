@@ -8,7 +8,7 @@
 // ══════════════════════════════════════════════════════════════
 
 import { useState, useRef } from 'react'
-import { ImagePlus, Trash2, Loader2, GripVertical, Link2 } from 'lucide-react'
+import { ImageSquare as ImagePlus, Trash as Trash2, CircleNotch as Loader2, DotsSixVertical as GripVertical, Link as Link2 } from '@phosphor-icons/react';
 
 export interface SlideImage { url: string; caption?: string }
 

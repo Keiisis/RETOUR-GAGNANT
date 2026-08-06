@@ -3,12 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import {
-    CreditCard, Shield, Save, Loader2, ArrowLeft,
-    CheckCircle2, AlertCircle, Eye, EyeOff,
-    ToggleLeft, ToggleRight, ExternalLink, Zap,
-    Key, Globe, TestTube2, Rocket
-} from 'lucide-react'
+import { CreditCard, Shield, FloppyDisk as Save, CircleNotch as Loader2, ArrowLeft, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Eye, EyeSlash as EyeOff, ToggleLeft, ToggleRight, ArrowSquareOut as ExternalLink, Lightning as Zap, Key, Globe, TestTube as TestTube2, Rocket } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'

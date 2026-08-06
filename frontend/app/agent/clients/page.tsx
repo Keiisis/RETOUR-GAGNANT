@@ -3,12 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    Users, Search, Mail, Phone, Edit3, Trash2, X,
-    Save, Loader2, Calendar, FileText, ChevronRight,
-    Star, Globe, MessageSquare, FolderOpen, Wand2, Languages, Send,
-    Flame, TrendingUp, Wallet, Briefcase, Activity
-} from 'lucide-react'
+import { Users, MagnifyingGlass as Search, Envelope as Mail, Phone, PencilLine as Edit3, Trash as Trash2, X, FloppyDisk as Save, CircleNotch as Loader2, Calendar, FileText, CaretRight as ChevronRight, Star, Globe, ChatText as MessageSquare, FolderOpen, MagicWand as Wand2, Translate as Languages, PaperPlaneTilt as Send, Flame, TrendUp as TrendingUp, Wallet, Briefcase, Pulse as Activity } from '@phosphor-icons/react';
 
 type ClientSource = 'dossier' | 'message' | 'eligibilite' | 'nationalite'
 

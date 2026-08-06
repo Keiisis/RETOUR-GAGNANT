@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from '@refinedev/core'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FileText, Clock, CheckCircle2, Zap, AlertTriangle, ChevronDown, ChevronUp, Save, Plus, X, Download, RefreshCw, MessageSquare, Send, User, Mail, Loader2, Trash2 } from 'lucide-react'
+import { MagnifyingGlass as Search, FileText, Clock, CheckCircle as CheckCircle2, Lightning as Zap, Warning as AlertTriangle, CaretDown as ChevronDown, CaretUp as ChevronUp, FloppyDisk as Save, Plus, X, Download, ArrowClockwise as RefreshCw, ChatText as MessageSquare, PaperPlaneTilt as Send, User, Envelope as Mail, CircleNotch as Loader2, Trash as Trash2 } from '@phosphor-icons/react';
 import { exportToExcel } from '@/lib/exportExcel'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'

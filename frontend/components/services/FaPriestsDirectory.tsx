@@ -9,10 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Star, MapPin, Award, Briefcase, Languages, X, Loader2,
-    MessageSquare, ChevronRight, UserRound, CheckCircle2, Quote,
-} from 'lucide-react'
+import { Star, MapPin, Medal as Award, Briefcase, Translate as Languages, X, CircleNotch as Loader2, ChatText as MessageSquare, CaretRight as ChevronRight, User as UserRound, CheckCircle as CheckCircle2, Quotes as Quote } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 
 const ACCENT = '#7C5CCA'

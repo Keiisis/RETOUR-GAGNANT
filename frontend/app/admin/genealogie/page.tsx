@@ -9,10 +9,7 @@ import SmartAlerts from '@/components/admin/genealogy/SmartAlerts';
 import ResearchAssistant from '@/components/admin/genealogy/ResearchAssistant';
 import DocumentUploader from '@/components/admin/genealogy/DocumentUploader';
 import PersonForm from '@/components/admin/genealogy/PersonForm';
-import { 
-  GitFork, Activity, Clock, Zap, Loader2, Plus, Search,
-  Trash2, User, Globe, FileText, HelpCircle, RefreshCw, ChevronLeft, Link2, UserCheck, Eye
-} from 'lucide-react';
+import { GitFork, Pulse as Activity, Clock, Lightning as Zap, CircleNotch as Loader2, Plus, MagnifyingGlass as Search, Trash as Trash2, User, Globe, FileText, Question as HelpCircle, ArrowClockwise as RefreshCw, CaretLeft as ChevronLeft, Link as Link2, UserCircleCheck as UserCheck, Eye } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 

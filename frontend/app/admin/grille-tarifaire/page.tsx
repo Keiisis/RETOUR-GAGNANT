@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    FileText, Save, Loader2, Plus, Trash2, ArrowUp, ArrowDown,
-    Download, Printer, AlertCircle, CheckCircle2, Landmark, RefreshCw
-} from 'lucide-react'
+import { FileText, FloppyDisk as Save, CircleNotch as Loader2, Plus, Trash as Trash2, ArrowUp, ArrowDown, Download, Printer, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Bank as Landmark, ArrowClockwise as RefreshCw } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 interface TariffRowOption {

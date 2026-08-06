@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Save, Loader2, ChevronDown, ChevronRight, Pencil, Check } from 'lucide-react'
+import { FloppyDisk as Save, CircleNotch as Loader2, CaretDown as ChevronDown, CaretRight as ChevronRight, Pencil, Check } from '@phosphor-icons/react';
 
 interface PageSection {
     id: string

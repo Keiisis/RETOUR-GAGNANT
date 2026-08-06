@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Lightbulb, X, Loader2, AlertCircle, Info, ChevronRight, RefreshCw, FileText } from 'lucide-react'
+import { Lightbulb, X, CircleNotch as Loader2, WarningCircle as AlertCircle, Info, CaretRight as ChevronRight, ArrowClockwise as RefreshCw, FileText } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 
 interface Suggestion {

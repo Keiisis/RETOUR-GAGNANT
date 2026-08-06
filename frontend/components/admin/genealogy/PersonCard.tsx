@@ -2,7 +2,7 @@
 
 import { Person } from '@/lib/genealogy/types';
 import { getRoleLabel } from '@/lib/genealogy/requirements';
-import { CheckCircle2, AlertTriangle, AlertCircle, Crown, MapPin, Calendar } from 'lucide-react';
+import { CheckCircle as CheckCircle2, Warning as AlertTriangle, WarningCircle as AlertCircle, Crown, MapPin, Calendar } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/theme/ThemeContext';
 

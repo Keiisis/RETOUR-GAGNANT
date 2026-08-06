@@ -3,10 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useList, useNavigation, useDelete, useUpdate } from "@refinedev/core";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    MessageSquare, Trash2, Search, Mail, Calendar, Clock,
-    ChevronRight, User, Loader2, Inbox, AlertCircle, LucideIcon
-} from "lucide-react";
+import { ChatText as MessageSquare, Trash as Trash2, MagnifyingGlass as Search, Envelope as Mail, Calendar, Clock, CaretRight as ChevronRight, User, CircleNotch as Loader2, Tray as Inbox, WarningCircle as AlertCircle, Icon as LucideIcon } from '@phosphor-icons/react';
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";

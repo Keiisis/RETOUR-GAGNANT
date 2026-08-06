@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { forceRefreshRates } from '@/lib/currency'
-import { ArrowLeft, RefreshCw, Save, DollarSign, Euro, Coins, Info, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, ArrowClockwise as RefreshCw, FloppyDisk as Save, CurrencyDollar as DollarSign, CurrencyEur as Euro, Coins, Info, CheckCircle, Warning as AlertTriangle } from '@phosphor-icons/react';
 import Link from 'next/link'
 
 interface Currency {

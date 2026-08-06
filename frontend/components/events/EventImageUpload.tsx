@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Upload, X, ImageIcon, Loader2, Link as LinkIcon } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, CircleNotch as Loader2, Link as LinkIcon } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 
 interface EventImageUploadProps {

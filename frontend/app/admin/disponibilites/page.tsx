@@ -9,10 +9,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    CalendarDays, Plus, Trash2, Loader2, RefreshCw, AlertTriangle,
-    Clock, Eye, EyeOff, CalendarX2, CalendarCheck2, Users,
-} from 'lucide-react'
+import { CalendarDots as CalendarDays, Plus, Trash as Trash2, CircleNotch as Loader2, ArrowClockwise as RefreshCw, Warning as AlertTriangle, Clock, Eye, EyeSlash as EyeOff, CalendarX as CalendarX2, CalendarCheck as CalendarCheck2, Users } from '@phosphor-icons/react';
 
 const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 const ACCENT = '#008751'

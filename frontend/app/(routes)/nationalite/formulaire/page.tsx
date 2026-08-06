@@ -5,11 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { compressImage } from '@/lib/compress-image'
 import Script from 'next/script'
-import {
-    ArrowLeft, ArrowRight, CheckCircle2,
-    FileText, Send, ChevronLeft, Loader2, AlertCircle,
-    CreditCard, Heart, Shield, ChevronRight, X, User, Mail, Phone, MapPin, Globe2, Calendar
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, FileText, PaperPlaneTilt as Send, CaretLeft as ChevronLeft, CircleNotch as Loader2, WarningCircle as AlertCircle, CreditCard, Heart, Shield, CaretRight as ChevronRight, X, User, Envelope as Mail, Phone, MapPin, Globe as Globe2, Calendar } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { Price, useCurrency } from '@/components/ui/Price'
 import { CurrencyCode, convertCurrency } from '@/lib/currency'

@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Upload, X, Loader2, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
+import { Upload, X, CircleNotch as Loader2, Image as ImageIcon, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 
 interface FileUploadProps {

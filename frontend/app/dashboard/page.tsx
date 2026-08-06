@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Clock, CheckCircle, AlertTriangle, ArrowRight, FileText } from 'lucide-react';
+import { Clock, CheckCircle, Warning as AlertTriangle, ArrowRight, FileText } from '@phosphor-icons/react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 

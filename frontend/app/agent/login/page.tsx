@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslation, T } from '@/lib/translation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Shield, Envelope as Mail, Lock, CircleNotch as Loader2, ArrowRight, Eye, EyeSlash as EyeOff, WarningCircle as AlertCircle, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import AuthBackdrop, { BrandSeal } from '@/components/auth/AuthBackdrop'
 
 import { supabase } from '@/lib/supabase'

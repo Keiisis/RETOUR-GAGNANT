@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Home, RotateCcw } from 'lucide-react'
+import { Warning as AlertTriangle, House as Home, ArrowCounterClockwise as RotateCcw } from '@phosphor-icons/react';
 
 export default function GlobalError({
     error,

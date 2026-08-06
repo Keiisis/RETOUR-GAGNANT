@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import {
-    User, Mail, Lock, Save, CheckCircle2,
-    AlertCircle, Eye, EyeOff, Shield, Loader2
-} from 'lucide-react'
+import { User, Envelope as Mail, Lock, FloppyDisk as Save, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Eye, EyeSlash as EyeOff, Shield, CircleNotch as Loader2 } from '@phosphor-icons/react';
 
 export default function AgentProfilePage() {
     const [loading, setLoading] = useState(true)

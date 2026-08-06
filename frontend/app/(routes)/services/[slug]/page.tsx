@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle2, ChevronRight, Calendar, Loader2, Sparkles } from 'lucide-react'
+import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, Calendar, CircleNotch as Loader2, Sparkle as Sparkles } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'

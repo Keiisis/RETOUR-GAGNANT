@@ -4,12 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import {
-    Briefcase, CheckCircle2, Clock, AlertCircle, ChevronRight,
-    ArrowRight, ExternalLink, Loader2, RefreshCw, ShoppingBag,
-    Globe, Users, Award, FileSearch, Package, ChevronDown, ChevronUp,
-    Calendar, TrendingUp, Sparkles, Star, Zap
-} from 'lucide-react'
+import { Briefcase, CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle, CaretRight as ChevronRight, ArrowRight, ArrowSquareOut as ExternalLink, CircleNotch as Loader2, ArrowClockwise as RefreshCw, ShoppingBag, Globe, Users, Medal as Award, FileMagnifyingGlass as FileSearch, Package, CaretDown as ChevronDown, CaretUp as ChevronUp, Calendar, TrendUp as TrendingUp, Sparkle as Sparkles, Star, Lightning as Zap } from '@phosphor-icons/react';
 import { ServiceOrderDrawer, type OrderableService } from '@/components/client/ServiceOrderDrawer'
 
 // ── Types ─────────────────────────────────────────────────────────

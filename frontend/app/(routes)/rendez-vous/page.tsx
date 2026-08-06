@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { MapPin, CheckCircle, Calendar, Phone, Video, MessagesSquare, MessageCircle } from 'lucide-react';
+import { MapPin, CheckCircle, Calendar, Phone, VideoCamera as Video, Chats as MessagesSquare, ChatCircle as MessageCircle } from '@phosphor-icons/react';
 import { COMPANY_INFO } from '@/lib/constants/company-info';
 import { useTranslation, T } from '@/lib/translation';
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
