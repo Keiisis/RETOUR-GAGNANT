@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useSpring, useTransform, useReducedMotion, type MotionValue } from "framer-motion";
 import { GoldenIcon } from "@/components/ui/GoldenIcon";
 import { supabase } from "@/lib/supabase";
 import { useTranslation, T } from "@/lib/translation";
@@ -21,10 +21,55 @@ const fallbackSteps: Step[] = [
     { id: 4, title: "Installation", description: "Accueil à Cotonou et remise des clés et documents.", icon_type: "tata", order: 4 },
 ];
 
-export default function ProcessSteps() {
+const SPAN = 0.82; // portée de la révélation dans la progression [0..1]
+
+function StepNode({ step, i, count, progress, reduce }: { step: Step; i: number; count: number; progress: MotionValue<number>; reduce: boolean }) {
     const { t } = useTranslation();
-    const reduce = useReducedMotion();
+    const seg = SPAN / count;
+    const s = i * seg;
+    const opacity = useTransform(progress, [s, s + 0.12], [0, 1]);
+    const y = useTransform(progress, [s, s + 0.18], [22, 0]);
+    const scale = useTransform(progress, [s, s + 0.18], [0.82, 1]);
+    const badge = useTransform(progress, [s + 0.05, s + 0.2], [0, 1]);
+    const ring = useTransform(progress, [s, s + 0.08, s + 0.26], [0, 0.55, 0]);
+
+    const staticStyle = reduce ? {} : { opacity, y };
+    return (
+        <motion.div style={staticStyle} className="relative flex flex-col items-center text-center">
+            <div className="relative">
+                <motion.div
+                    style={reduce ? {} : { scale }}
+                    className="relative z-10 flex h-[88px] w-[88px] items-center justify-center rounded-full border border-[#ece9e0] bg-white shadow-[0_16px_32px_-16px_rgba(13,26,18,0.4)]"
+                >
+                    {/* @ts-ignore GoldenIcon accepte un type union, ici string dynamique */}
+                    <GoldenIcon type={step.icon_type} size={34} />
+                    {/* anneau qui pulse au moment de l'activation */}
+                    {!reduce && (
+                        <motion.span style={{ opacity: ring }} className="pointer-events-none absolute inset-[-6px] rounded-full ring-2 ring-[#008751]" />
+                    )}
+                    <motion.span
+                        style={reduce ? {} : { scale: badge }}
+                        className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#008751] font-geistmono text-xs font-semibold text-white shadow"
+                    >
+                        {i + 1}
+                    </motion.span>
+                </motion.div>
+            </div>
+            <h3 className="mt-6 font-fraunces text-xl font-semibold text-[#0d1a12]">{t(step.title)}</h3>
+            <p className="mt-2 max-w-[26ch] font-geist text-[14px] leading-relaxed text-[#6b756e]">{t(step.description)}</p>
+        </motion.div>
+    );
+}
+
+export default function ProcessSteps() {
+    const reduce = useReducedMotion() ?? false;
     const [steps, setSteps] = useState<Step[]>(fallbackSteps);
+    const ref = useRef<HTMLDivElement>(null);
+
+    // Progression liée au défilement, LISSÉE par un ressort → très fluide.
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.85", "end 0.5"] });
+    const progress = useSpring(scrollYProgress, { stiffness: 70, damping: 20, mass: 0.45, restDelta: 0.0005 });
+    const lineWidth = useTransform(progress, [0, SPAN], ["0%", "100%"]);
 
     useEffect(() => {
         const fetchSteps = async () => {
@@ -54,7 +99,7 @@ export default function ProcessSteps() {
 
     return (
         <section className="bg-[#FBFAF7] py-20 md:py-28">
-            <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+            <div ref={ref} className="mx-auto max-w-[1400px] px-5 md:px-8">
                 <div className="mb-16 max-w-2xl">
                     <h2 className="font-fraunces text-4xl font-semibold leading-[1.05] tracking-[-0.02em] text-[#0d1a12] md:text-5xl">
                         <T>Un parcours en quatre temps.</T>
@@ -65,28 +110,16 @@ export default function ProcessSteps() {
                 </div>
 
                 <div className="relative">
-                    {/* ligne de liaison */}
-                    <span aria-hidden className="absolute left-[12%] right-[12%] top-11 hidden h-px bg-[#e2ded3] md:block" />
-                    <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-4">
+                    {/* ligne de liaison : base grise + remplissage vert piloté au scroll */}
+                    <div className="absolute left-[12%] right-[12%] top-11 hidden h-[2px] overflow-hidden rounded-full bg-[#e2ded3] md:block">
+                        <motion.span
+                            style={{ width: reduce ? "100%" : lineWidth }}
+                            className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-[#008751] to-[#0a9d63]"
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 md:grid-cols-4">
                         {steps.map((step, i) => (
-                            <motion.div
-                                key={step.id}
-                                initial={reduce ? false : { opacity: 0, y: 22 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.4 }}
-                                transition={{ duration: 0.6, delay: (i % 4) * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                                className="relative flex flex-col items-center text-center"
-                            >
-                                <div className="relative z-10 flex h-[88px] w-[88px] items-center justify-center rounded-full border border-[#ece9e0] bg-white shadow-[0_14px_30px_-16px_rgba(13,26,18,0.35)]">
-                                    {/* @ts-ignore GoldenIcon accepte un type union, ici string dynamique */}
-                                    <GoldenIcon type={step.icon_type} size={34} />
-                                    <span className="absolute -right-1.5 -top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#008751] font-geistmono text-xs font-semibold text-white shadow">
-                                        {i + 1}
-                                    </span>
-                                </div>
-                                <h3 className="mt-6 font-fraunces text-xl font-semibold text-[#0d1a12]">{t(step.title)}</h3>
-                                <p className="mt-2 max-w-[26ch] font-geist text-[14px] leading-relaxed text-[#6b756e]">{t(step.description)}</p>
-                            </motion.div>
+                            <StepNode key={step.id} step={step} i={i} count={steps.length} progress={progress} reduce={reduce} />
                         ))}
                     </div>
                 </div>
