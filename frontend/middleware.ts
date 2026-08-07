@@ -1135,6 +1135,6 @@ export const config = {
          * - favicon.ico, sw.js, robots.txt, sitemap.xml
          * - Fichiers statiques publics (images, fonts, icons)
          */
-        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|icons/|images/|fonts/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm|mp3|pdf)$).*)',
+        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|icons/|images/|fonts/|models/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm|mp3|pdf|glb|gltf|bin)$).*)',
     ],
 }

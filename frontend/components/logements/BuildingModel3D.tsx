@@ -7,7 +7,7 @@ import { useReducedMotion } from "framer-motion";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-const MODEL = "/models/logement-batiment.glb";
+const MODEL = "/models/logement-batiment-v2.glb";
 
 /**
  * Environnement studio NEUTRE procédural (RoomEnvironment de three.js) → PMREM.
