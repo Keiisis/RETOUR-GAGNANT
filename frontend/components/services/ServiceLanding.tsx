@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'framer-motion';
@@ -17,7 +17,7 @@ const PILIER_ICONS = [Sparkle, UsersThree, ShieldCheck, Clock];
 const CHIP_ICONS = [ShieldCheck, UsersThree, Globe, Clock];
 const REASSURE_ICONS = [ShieldCheck, UsersThree, Certificate];
 
-export default function ServiceLanding({ content: c }: { content: ServiceLandingContent }) {
+export default function ServiceLanding({ content: c, slotAfterFeatures, slotBeforeFinal }: { content: ServiceLandingContent; slotAfterFeatures?: ReactNode; slotBeforeFinal?: ReactNode }) {
     const { t } = useTranslation();
     const reduce = useReducedMotion();
     const { scrollY } = useScroll();
@@ -156,6 +156,9 @@ export default function ServiceLanding({ content: c }: { content: ServiceLanding
                 </section>
             )}
 
+            {/* Slot outil (ex : annuaire prêtres Fa) injecté après la liste */}
+            {slotAfterFeatures}
+
             {/* ═══ RÉASSURANCE ═══ */}
             {c.reassurance.length > 0 && (
                 <section className="bg-gradient-to-b from-white to-[#F7F9F8] border-y border-slate-100 py-14">
@@ -183,6 +186,9 @@ export default function ServiceLanding({ content: c }: { content: ServiceLanding
                     <div className="space-y-3">{c.faq.map((f, i) => <FaqItem key={i} q={t(f.q)} r={t(f.r)} />)}</div>
                 </section>
             )}
+
+            {/* Slot outil (ex : réservation Fa, choix Langues) injecté avant le CTA final */}
+            {slotBeforeFinal}
 
             {/* ═══ CTA FINAL ═══ */}
             <section className="max-w-6xl mx-auto px-5 md:px-8 py-16">

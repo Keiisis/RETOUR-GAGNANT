@@ -82,8 +82,10 @@ export default function AdminServicesPage() {
         if (service.slug === 'culture') return '/admin/services/culture/content'
         if (service.slug === 'construction') return '/admin/services/construction/content'
         if (service.slug === 'investissement') return '/admin/services/investissement/content'
-        if (service.slug === 'recherche-ancestrale') return '/admin/recherche-ancestrale'
-        if (service.slug === 'autres') return '/admin/autres-services'
+        if (service.slug === 'consultation-fa-racines') return '/admin/services/consultation-fa-racines/content'
+        if (service.slug === 'langues-racines') return '/admin/services/langues-racines/content'
+        if (service.slug === 'recherche-ancestrale') return '/admin/services/recherche-ancestrale/content'
+        if (service.slug === 'autres') return '/admin/services/autres/content'
         return `/admin/services/edit/${service.id}`
     }
 
