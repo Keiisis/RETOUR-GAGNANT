@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BookOpen, MagnifyingGlass as Search, Clock, ArrowRight, Eye, TrendUp as TrendingUp, Buildings as Building2, Globe as Globe2, Briefcase, Bank as Landmark } from '@phosphor-icons/react';
+import { BookOpen, MagnifyingGlass as Search, Clock, ArrowRight, Eye, TrendUp as TrendingUp, Buildings as Building2, Globe as Globe2, Briefcase, Bank as Landmark, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 
 interface BlogPost {
@@ -67,21 +67,21 @@ export default function BlogPage() {
     const paginated = filtered.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE)
 
     return (
-        <div className="min-h-screen bg-[#fafbfc]">
-            {/* Hero */}
-            <section className="relative py-20 px-4 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
-                <div className="max-w-6xl mx-auto relative z-10 text-center">
+        <div className="min-h-screen bg-white text-slate-900">
+            {/* Hero — clair, charte Bénin, Playfair */}
+            <section className="relative overflow-hidden">
+                <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
+                <div className="max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 relative z-10 text-center">
+                    <nav className="flex items-center justify-center gap-1.5 text-[13px] text-slate-400 mb-6">
+                        <Link href="/" className="hover:text-[#008751]"><T>Accueil</T></Link><ChevronRight size={13} />
+                        <span className="text-slate-600 font-medium"><T>Blog</T></span>
+                    </nav>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.4em] flex items-center justify-center gap-2 mb-4">
-                            <BookOpen size={14} /> <T>Centre de Ressources</T>
-                        </span>
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
-                            <T>Le</T> <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-amber-500"><T>Blog</T></span>
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><BookOpen size={13} weight="fill" /> <T>Centre de ressources</T></span>
+                        <h1 className="font-display text-4xl md:text-[3.4rem] font-bold leading-[1.05] tracking-[-0.02em]">
+                            <T>Le</T> <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent italic"><T>Blog</T></span>
                         </h1>
-                        <p className="text-slate-600 max-w-xl mx-auto text-sm md:text-base">
-                            <T>Guides, conseils et actualités pour réussir votre retour au Bénin</T>
-                        </p>
+                        <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Guides, conseils et actualités pour réussir votre retour au Bénin.</T></p>
                     </motion.div>
 
                     {/* Search */}
@@ -92,7 +92,7 @@ export default function BlogPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t("Rechercher un article...")}
-                            className="w-full bg-white border border-slate-200 shadow-sm rounded-2xl py-3.5 pl-12 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm"
+                            className="w-full bg-white border border-slate-200 shadow-sm rounded-2xl py-3.5 pl-12 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#008751] focus:ring-1 focus:ring-[#008751] text-sm"
                         />
                     </div>
 
@@ -103,8 +103,8 @@ export default function BlogPage() {
                                 key={cat.key}
                                 onClick={() => setCategory(cat.key)}
                                 className={`text-xs font-bold px-4 py-2 rounded-full transition-all flex items-center gap-1.5 border shadow-sm ${category === cat.key
-                                    ? 'bg-emerald-600 text-white border-emerald-600'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+                                    ? 'bg-[#008751] text-white border-[#008751]'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-[#008751]/40 hover:text-slate-900'
                                     }`}
                             >
                                 <cat.icon size={12} /> {t(cat.label)}
@@ -136,7 +136,7 @@ export default function BlogPage() {
                                     transition={{ delay: i * 0.05 }}
                                 >
                                     <Link href={`/blog/${post.slug}`} className="group block">
-                                        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-emerald-500/20 hover:shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+                                        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#FCD116] hover:-translate-y-1 hover:shadow-[0_26px_60px_-30px_rgba(0,135,81,0.5)] transition-all duration-300">
                                             {/* Cover */}
                                             <div className="relative h-48 overflow-hidden bg-slate-50">
                                                 {post.cover_image ? (
@@ -152,20 +152,20 @@ export default function BlogPage() {
                                                     </div>
                                                 )}
                                                 <div className="absolute top-3 left-3">
-                                                    <span className="text-[10px] font-bold uppercase bg-white/90 backdrop-blur-md text-emerald-700 px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">
+                                                    <span className="text-[10px] font-black uppercase tracking-wide bg-white/90 backdrop-blur-md text-[#00643C] px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">
                                                         {t(post.category)}
                                                     </span>
                                                 </div>
                                             </div>
                                             {/* Content */}
                                             <div className="p-5">
-                                                <h2 className="text-base font-bold text-slate-800 group-hover:text-emerald-600 transition-colors line-clamp-2 mb-2">{t(post.title)}</h2>
-                                                <p className="text-xs text-slate-500 line-clamp-3 mb-4">{t(post.excerpt)}</p>
+                                                <h2 className="font-display text-lg font-bold text-[#111a15] group-hover:text-[#008751] transition-colors line-clamp-2 mb-2 leading-snug">{t(post.title)}</h2>
+                                                <p className="text-[13px] text-slate-500 line-clamp-3 mb-4 leading-relaxed">{t(post.excerpt)}</p>
                                                 <div className="flex items-center justify-between text-[10px] text-slate-400">
                                                     <span className="flex items-center gap-1"><Clock size={10} /> {new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                                     <span className="flex items-center gap-1"><Eye size={10} /> {post.views} {t("vues")}</span>
                                                 </div>
-                                                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-600 group-hover:gap-2 transition-all">
+                                                <div className="mt-4 flex items-center gap-1 text-xs font-bold text-[#008751] group-hover:gap-2 transition-all">
                                                     <T>Lire l&apos;article</T> <ArrowRight size={12} />
                                                 </div>
                                             </div>

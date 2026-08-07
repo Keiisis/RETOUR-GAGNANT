@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { MapPin, CheckCircle, Calendar, Phone, VideoCamera as Video, Chats as MessagesSquare, ChatCircle as MessageCircle } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { MapPin, CheckCircle, Calendar, Phone, VideoCamera as Video, Chats as MessagesSquare, ChatCircle as MessageCircle, ShieldCheck, Clock, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import { COMPANY_INFO } from '@/lib/constants/company-info';
 import { useTranslation, T } from '@/lib/translation';
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
@@ -83,18 +84,25 @@ function RendezVousContent() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hero */}
-            {/* Hero */}
-            <section className="py-12 md:py-20 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white">
-                <div className="container mx-auto px-4 text-center">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <Calendar className="mx-auto mb-4 text-[#FCD116]" size={40} />
-                        <h1 className="text-3xl md:text-5xl font-bold font-heading mb-4"><T>Prendre Rendez-vous</T></h1>
-                        <p className="text-white/60 text-base md:text-lg max-w-xl mx-auto">
-                            <T>Planifiez une consultation gratuite avec nos experts.</T>
-                        </p>
-                    </motion.div>
+        <div className="min-h-screen bg-white text-slate-900">
+            {/* Hero — clair, charte Bénin, Playfair */}
+            <section className="relative overflow-hidden">
+                <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
+                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 text-center">
+                    <nav className="flex items-center justify-center gap-1.5 text-[13px] text-slate-400 mb-6">
+                        <Link href="/" className="hover:text-[#008751]"><T>Accueil</T></Link><ChevronRight size={13} />
+                        <span className="text-slate-600 font-medium"><T>Rendez-vous</T></span>
+                    </nav>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Calendar size={13} weight="fill" /> <T>Consultation gratuite</T></div>
+                    <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-display text-4xl md:text-[3.4rem] font-bold leading-[1.05] tracking-[-0.02em]">
+                        <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent"><T>Prenez rendez-vous avec un expert</T></span>
+                    </motion.h1>
+                    <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Planifiez une consultation gratuite — premier appel de 15 min offert, réponse sous 24 h.</T></p>
+                    <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+                        {([['Sans engagement', ShieldCheck], ['Réponse sous 24 h', Clock], ['Présentiel ou à distance', Video]] as const).map(([label, Ic], i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5"><Ic size={15} className="text-[#008751]" /> <T>{label}</T></span>
+                        ))}
+                    </div>
                 </div>
             </section>
 
@@ -107,7 +115,7 @@ function RendezVousContent() {
                         className="relative"
                     >
                         <div className="sticky top-24">
-                            <h3 className="text-xl font-bold text-[#1a2332] mb-4 flex items-center gap-2">
+                            <h3 className="font-display text-2xl font-bold text-[#111a15] mb-4 flex items-center gap-2">
                                 <MapPin className="text-[#008751]" size={22} />
                                 <T>Notre présence au Bénin</T>
                             </h3>
@@ -210,10 +218,10 @@ function RendezVousContent() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                     >
-                        <Card className="border-0 shadow-xl overflow-hidden">
+                        <Card className="border border-slate-200 shadow-[0_28px_64px_-28px_rgba(15,23,42,0.35)] rounded-3xl overflow-hidden">
                             <div className="h-1.5 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <CardHeader>
-                                <CardTitle className="text-2xl"><T>Planifier une consultation</T></CardTitle>
+                                <CardTitle className="font-display text-2xl"><T>Planifier une consultation</T></CardTitle>
                                 <CardDescription><T>Remplissez ce formulaire — premier appel de 15 min gratuit.</T></CardDescription>
                             </CardHeader>
                             <CardContent>
