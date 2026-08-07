@@ -47,7 +47,10 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://unpkg.com",
       // connexions API paiement — CRITIQUE : kkiapay init via XHR avant d'exposer openKkiapayWidget
-      "connect-src 'self'" +
+      // blob: requis pour les textures embarquées du modèle 3D (GLTFLoader/ImageBitmap
+      // fetch les images du GLB via des URL blob: same-origin) — sinon textures bloquées
+      // par la CSP → bâtiment blanc sans couleur.
+      "connect-src 'self' blob:" +
         " https://*.supabase.co wss://*.supabase.co" +
         " https://api.groq.com" +
         " https://api.stripe.com https://m.stripe.com https://m.stripe.network" +
