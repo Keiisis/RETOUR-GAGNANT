@@ -76,6 +76,9 @@ export default function AdminServicesPage() {
 
     const getEditHref = (service: Service) => {
         if (service.slug === 'nationalite-vip') return '/admin/nationalite/content'
+        // Landings dédiées (contenu 100% éditable, style logement/VIP)
+        if (service.slug === 'passeport') return '/admin/services/passeport/content'
+        if (service.slug === 'business') return '/admin/services/business/content'
         if (service.slug === 'recherche-ancestrale') return '/admin/recherche-ancestrale'
         if (service.slug === 'autres') return '/admin/autres-services'
         return `/admin/services/edit/${service.id}`
