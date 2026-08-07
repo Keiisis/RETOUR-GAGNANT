@@ -254,7 +254,15 @@ export default function BoutiquePage() {
                 <div className="text-center space-y-8 relative z-10 w-full max-w-4xl mx-auto" style={{ perspective: 1000 }}>
                     {pageReady && (
                         <>
-                            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black font-heading tracking-tighter leading-none text-gray-900">
+                            <motion.span
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15, duration: 0.6 }}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.2em] mb-2"
+                            >
+                                <Tag size={13} weight="fill" /> {t("Collection Bénin")}
+                            </motion.span>
+                            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold font-display tracking-tight leading-[0.95] text-gray-900">
                                 <SplitText text={t("Notre")} delay={0.2} />{' '}
                                 <span className="relative inline-block">
                                     <SplitText

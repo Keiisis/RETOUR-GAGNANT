@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Calendar, MapPin, Users, Ticket, Crown, ArrowRight, Star, MagnifyingGlass as Search } from '@phosphor-icons/react';
+import { Calendar, MapPin, Users, Ticket, Crown, ArrowRight, Star, MagnifyingGlass as Search, CaretRight as ChevronRight } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { ttcFromHt } from '@/lib/tax'
 
@@ -37,12 +37,14 @@ const CATEGORIES = [
     { value: 'cultural', label: 'Culturel' },
 ]
 
+// Palette STRICTEMENT charte Bénin (vert / or / rouge + neutre) — aucune
+// couleur hors-charte (plus de bleu/violet/rose).
 const CAT_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-    conference: { bg: 'bg-blue-50', text: 'text-blue-700', dot: '#3b82f6' },
-    gala: { bg: 'bg-amber-50', text: 'text-amber-700', dot: '#f59e0b' },
-    workshop: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: '#008751' },
-    networking: { bg: 'bg-purple-50', text: 'text-purple-700', dot: '#8b5cf6' },
-    cultural: { bg: 'bg-rose-50', text: 'text-rose-700', dot: '#E8112D' },
+    conference: { bg: 'bg-[#E6F3ED]', text: 'text-[#00643C]', dot: '#008751' },
+    gala: { bg: 'bg-[#FDF6D8]', text: 'text-[#7a5c00]', dot: '#FCD116' },
+    workshop: { bg: 'bg-[#E6F3ED]', text: 'text-[#0a7d52]', dot: '#0a7d52' },
+    networking: { bg: 'bg-[#FDECEA]', text: 'text-[#E8112D]', dot: '#E8112D' },
+    cultural: { bg: 'bg-[#FDF6D8]', text: 'text-[#8a3b12]', dot: '#E8112D' },
     other: { bg: 'bg-gray-100', text: 'text-gray-600', dot: '#6b7280' },
 }
 
@@ -98,14 +100,24 @@ export default function EvenementsPage() {
                 </div>
 
                 <div className="relative max-w-6xl mx-auto px-4 text-center">
+                    <nav className="flex items-center justify-center gap-1.5 text-[13px] text-slate-400 mb-6">
+                        <Link href="/" className="hover:text-[#008751]"><T>Accueil</T></Link><ChevronRight size={13} />
+                        <span className="text-slate-600 font-medium"><T>Événements</T></span>
+                    </nav>
+                    <motion.span
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"
+                    >
+                        <Ticket size={13} weight="fill" /> <T>Galas · Conférences · Networking</T>
+                    </motion.span>
                     <motion.h1
                         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                        className="text-5xl md:text-7xl font-black font-heading tracking-tighter leading-none text-[#1a2332] mb-5"
+                        className="font-display text-5xl md:text-[4rem] font-bold tracking-tight leading-[0.98] text-[#111a15] mb-5"
                     >
                         <T>Nos</T>{' '}
                         <span className="relative inline-block">
-                            <span className="relative z-10 text-transparent bg-clip-text"
-                                style={{ backgroundImage: 'linear-gradient(135deg, #008751 0%, #FCD116 55%, #E8112D 100%)' }}>
+                            <span className="relative z-10 text-transparent bg-clip-text italic"
+                                style={{ backgroundImage: 'linear-gradient(135deg, #008751 0%, #0a7d52 55%, #00643C 100%)' }}>
                                 <T>Événements</T>
                             </span>
                             <span className="absolute -bottom-2 left-0 right-0 h-[5px] rounded-full"
@@ -221,7 +233,7 @@ export default function EvenementsPage() {
                                             </span>
                                         )
                                     })()}
-                                    <h2 className="text-2xl md:text-3xl font-black font-heading tracking-tight text-[#1a2332] group-hover:text-[#008751] transition-colors leading-tight">
+                                    <h2 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-[#111a15] group-hover:text-[#008751] transition-colors leading-tight">
                                         {t(evt.title)}
                                     </h2>
                                     <p className="text-gray-500 text-sm leading-relaxed line-clamp-3">
@@ -334,7 +346,7 @@ export default function EvenementsPage() {
                                                 )}
                                             </div>
                                             <div className="p-5 flex-1 flex flex-col gap-3">
-                                                <h3 className="text-[15px] font-black text-[#1a2332] group-hover:text-[#008751] transition-colors leading-snug line-clamp-2 font-heading">
+                                                <h3 className="font-display text-[17px] font-bold text-[#111a15] group-hover:text-[#008751] transition-colors leading-snug line-clamp-2">
                                                     {t(evt.title)}
                                                 </h3>
                                                 <div className="flex flex-col gap-1.5 text-xs text-gray-400">
@@ -383,7 +395,7 @@ export default function EvenementsPage() {
             <div className="relative overflow-hidden">
                 <div className="h-[6px]" style={{ background: 'linear-gradient(90deg, #008751 33%, #FCD116 33% 66%, #E8112D 66%)' }} />
                 <div className="bg-gradient-to-br from-[#f0fdf4] via-white to-[#fef9c3] py-16 text-center px-4">
-                    <h2 className="text-2xl font-black text-[#1a2332] mb-2 font-heading"><T>Vous organisez un événement ?</T></h2>
+                    <h2 className="font-display text-3xl font-bold text-[#111a15] mb-2"><T>Vous organisez un événement ?</T></h2>
                     <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto"><T>Rejoignez le réseau RGB et touchez la diaspora béninoise.</T></p>
                     <Link href="/devenir-partenaire"
                         className="inline-flex items-center gap-2 px-7 py-4 rounded-full font-black text-sm text-white transition-all hover:scale-[1.03] active:scale-[0.98]"
