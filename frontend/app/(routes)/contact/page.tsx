@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Envelope as Mail, MapPin, Phone, PaperPlaneTilt as Send, CheckCircle } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { Envelope as Mail, MapPin, Phone, PaperPlaneTilt as Send, CheckCircle, CaretRight as ChevronRight, Clock } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from '@/lib/translation';
@@ -37,18 +38,25 @@ export default function ContactPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hero */}
-            <section className="py-12 md:py-20 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white">
-                <div className="container mx-auto px-4 text-center">
+        <div className="min-h-screen bg-white text-slate-900">
+            {/* Hero — clair, charte Bénin, Playfair */}
+            <section className="relative overflow-hidden">
+                <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
+                <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 text-center">
+                    <nav className="flex items-center justify-center gap-1.5 text-[13px] text-slate-400 mb-6">
+                        <Link href="/" className="hover:text-[#008751]"><T>Accueil</T></Link><ChevronRight size={13} />
+                        <span className="text-slate-600 font-medium"><T>Contact</T></span>
+                    </nav>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 text-[#FCD116] text-sm font-semibold tracking-widest uppercase mb-4 md:mb-6 border border-white/10">
-                            <T>Contact</T>
-                        </span>
-                        <h1 className="text-3xl md:text-5xl font-bold font-heading mb-4"><T>Contactez-nous</T></h1>
-                        <p className="text-white/60 text-base md:text-lg max-w-xl mx-auto">
-                            <T>Une question ? Un projet ? Notre équipe est à votre écoute.</T>
-                        </p>
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Mail size={13} weight="fill" /> <T>Contact</T></span>
+                        <h1 className="font-display text-4xl md:text-[3.4rem] font-bold leading-[1.05] tracking-[-0.02em]">
+                            <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent"><T>Contactez-nous</T></span>
+                        </h1>
+                        <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Une question ? Un projet ? Notre équipe est à votre écoute — réponse sous 24 h.</T></p>
+                        <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+                            <span className="inline-flex items-center gap-1.5"><Clock size={15} className="text-[#008751]" /> <T>Réponse sous 24 h</T></span>
+                            <span className="inline-flex items-center gap-1.5"><Phone size={15} className="text-[#008751]" /> <T>WhatsApp disponible</T></span>
+                        </div>
                     </motion.div>
                 </div>
             </section>
@@ -126,10 +134,10 @@ export default function ContactPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <Card className="border-0 shadow-xl overflow-hidden">
+                        <Card className="border border-slate-200 shadow-[0_28px_64px_-28px_rgba(15,23,42,0.35)] rounded-3xl overflow-hidden">
                             <div className="h-1.5 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <CardHeader>
-                                <CardTitle className="text-xl"><T>Envoyez-nous un message</T></CardTitle>
+                                <CardTitle className="font-display text-2xl"><T>Envoyez-nous un message</T></CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <AnimatePresence mode="wait">

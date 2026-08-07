@@ -154,7 +154,7 @@ export default function SimulateurPage() {
                         <Sparkles size={14} className="text-[#FCD116]" />
                         <span className="text-[11px] uppercase tracking-[4px] font-bold text-[#FCD116]"><T>L&apos;Oracle</T></span>
                     </div>
-                    <h1 className="text-3xl md:text-5xl font-black font-heading mb-4 tracking-tight">
+                    <h1 className="text-3xl md:text-5xl font-black font-display mb-4 tracking-tight">
                         Trouvez votre <span className="bg-gradient-to-r from-[#FCD116] to-[#E8112D] bg-clip-text text-transparent"><T>voie</T></span>
                     </h1>
                     <p className="text-gray-500 max-w-xl mx-auto">
@@ -198,7 +198,7 @@ export default function SimulateurPage() {
                                             <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/5 border border-gray-200 flex items-center justify-center">
                                                 <StepIcon size={28} className="text-[#FCD116]" />
                                             </div>
-                                            <h2 className="text-2xl font-black font-heading mb-2">{t(step.title)}</h2>
+                                            <h2 className="text-2xl font-black font-display mb-2">{t(step.title)}</h2>
                                             <p className="text-gray-500 mb-8">{t(step.subtitle)}</p>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -234,7 +234,7 @@ export default function SimulateurPage() {
                                     <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#FCD116]/10 border border-[#FCD116]/20 flex items-center justify-center">
                                         <contactStep.icon size={28} className="text-[#FCD116]" />
                                     </div>
-                                    <h2 className="text-2xl font-black font-heading mb-2">{t(contactStep.title)}</h2>
+                                    <h2 className="text-2xl font-black font-display mb-2">{t(contactStep.title)}</h2>
                                     <p className="text-gray-500">{t(contactStep.subtitle)}</p>
                                 </div>
 
@@ -316,14 +316,14 @@ export default function SimulateurPage() {
                                     </div>
                                 </div>
 
-                                <h2 className="text-3xl font-black font-heading mb-4">
+                                <h2 className="text-3xl font-black font-display mb-4">
                                     Votre recommandation
                                 </h2>
 
                                 {/* Recommendation Card */}
                                 <div className="bg-gradient-to-br from-[#008751]/10 to-[#008751]/5 border border-[#008751]/20 rounded-3xl p-8 mb-8 backdrop-blur-xl max-w-lg mx-auto shadow-sm">
                                     <Sparkles size={32} className="text-[#A68B3C] mx-auto mb-4" />
-                                    <h3 className="text-2xl font-black font-heading text-[#008751] mb-2">{t(result.service)}</h3>
+                                    <h3 className="text-2xl font-black font-display text-[#008751] mb-2">{t(result.service)}</h3>
                                     <p className="text-gray-500 text-sm leading-relaxed">
                                         {result.hasOrigins
                                             ? t('Vos origines béninoises renforcent votre éligibilité. Notre équipe est prête à vous accompagner dans cette démarche.')

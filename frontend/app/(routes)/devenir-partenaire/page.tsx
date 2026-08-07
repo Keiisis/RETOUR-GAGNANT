@@ -292,7 +292,7 @@ export default function DevenirPartenairePage() {
                             </motion.div>
 
                             <div className="space-y-3">
-                                <h1 className="text-3xl font-black text-gray-900 font-heading tracking-tighter">
+                                <h1 className="text-3xl font-black text-gray-900 font-display tracking-tighter">
                                     <T>Candidature envoyée !</T>
                                 </h1>
                                 <p className="text-gray-600 leading-relaxed text-[15px]">
@@ -371,7 +371,7 @@ export default function DevenirPartenairePage() {
                         </div>
                     </div>
 
-                    <h1 className="text-5xl md:text-6xl font-black font-heading tracking-tighter leading-none">
+                    <h1 className="text-5xl md:text-6xl font-black font-display tracking-tighter leading-none">
                         <T>Devenir</T>{' '}
                         <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#FCD116] to-[#008751]">
                             <T>Partenaire</T>

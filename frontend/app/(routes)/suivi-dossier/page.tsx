@@ -152,7 +152,7 @@ export default function SuiviDossierPage() {
                             <Shield size={14} className="text-[#008751]" />
                             <span className="text-[11px] uppercase tracking-[4px] font-bold text-[#008751]"><T>Nexus Tracker</T></span>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black font-heading mb-6 tracking-tight">
+                        <h1 className="text-4xl md:text-6xl font-black font-display mb-6 tracking-tight">
                             <T>Suivi de</T> <span className="bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] bg-clip-text text-transparent"><T>Dossier</T></span>
                         </h1>
                         <p className="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
