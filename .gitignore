@@ -67,3 +67,6 @@ Thumbs.db
 
 # Sorties d'outils d'analyse (Strix) — pas du code source
 strix_runs/
+
+# Modele 3D source (40MB) garde local, non deploye
+frontend/public/models/51782cae-*.glb
