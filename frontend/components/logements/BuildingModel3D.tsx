@@ -1,25 +1,41 @@
 "use client";
 
-import { Suspense, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, Center, ContactShadows, Bounds, Environment, Lightformer } from "@react-three/drei";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useGLTF, Center, ContactShadows, Bounds } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
-import type * as THREE from "three";
+import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 const MODEL = "/models/logement-batiment.glb";
 
+/**
+ * Environnement studio NEUTRE procédural (RoomEnvironment de three.js) → PMREM.
+ * Aucun fetch externe (CSP-safe) et reproduit fidèlement le rendu Meshy :
+ * le bâtiment est un PBR MÉTALLIQUE, sa couleur (murs blancs, panneaux
+ * terracotta, vitres vertes) vient du reflet de cet environnement, pas de
+ * l'albédo. Vérifié par rendu headless (Chrome) avant intégration.
+ */
+function StudioEnv() {
+    const { scene, gl } = useThree();
+    useEffect(() => {
+        const pmrem = new THREE.PMREMGenerator(gl);
+        const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+        scene.environment = envRT.texture;
+        return () => {
+            scene.environment = null;
+            envRT.texture.dispose();
+            pmrem.dispose();
+        };
+    }, [scene, gl]);
+    return null;
+}
+
 function Model() {
-    // GLB optimisé (meshopt + textures 1024 JPEG). useDraco=false, meshopt auto.
     const { scene } = useGLTF(MODEL, false);
-    // Le matériau exporté est 100% métallique (metalness=1) → il reflète
-    // l'environnement (blanc) au lieu d'afficher sa texture. On le passe en
-    // diélectrique mat pour révéler les couleurs (brique / fenêtres / murs).
+    // PBR métallique d'origine PRÉSERVÉ (metalness=1 piloté par metallicRoughness).
+    // On corrige juste le colorSpace de la texture et l'intensité d'env.
     useMemo(() => {
-        // Le modèle est un PBR MÉTALLIQUE (metalness=1 piloté par la texture
-        // metallicRoughness) : sa couleur (murs saumon, colonnes orange, comme
-        // sur Meshy) vient du reflet de l'ENVIRONNEMENT sur une surface rugueuse,
-        // pas de l'albédo (gris). On PRÉSERVE ce workflow et on laisse
-        // l'environnement (chaud, plus bas) faire la couleur.
         scene.traverse((child) => {
             const mesh = child as THREE.Mesh;
             if (!mesh.isMesh) return;
@@ -27,8 +43,8 @@ function Model() {
             for (const mm of mats) {
                 const m = mm as THREE.MeshStandardMaterial;
                 if ("metalness" in m) {
-                    if (m.map) m.map.colorSpace = "srgb" as THREE.ColorSpace;
-                    m.envMapIntensity = 1.0; // reflets d'env. → la couleur du bâtiment
+                    if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+                    m.envMapIntensity = 1.0;
                     m.needsUpdate = true;
                 }
             }
@@ -69,23 +85,14 @@ export default function BuildingModel3D({ className = "" }: { className?: string
             <Canvas
                 dpr={[1, 1.75]}
                 camera={{ position: [0, 0.4, 7], fov: 40 }}
-                gl={{ antialias: true, alpha: true, toneMappingExposure: 0.9 }}
+                gl={{ antialias: true, alpha: true, toneMappingExposure: 1.0 }}
                 style={{ background: "transparent" }}
             >
-                {/* Surface métallique : seule l'ENVIRONNEMENT la colore (les lumières
-                    directes n'affectent quasi pas un métal). Fill ambiant minimal. */}
+                {/* Fill léger ; la couleur vient de l'environnement studio (métal). */}
                 <ambientLight intensity={0.15} />
+                <directionalLight position={[5, 8, 5]} intensity={0.6} />
                 <Suspense fallback={null}>
-                    {/* Environnement studio CHAUD (local → CSP-safe) : reproduit le
-                        rendu Meshy (murs saumon, colonnes orange) via reflet sur métal
-                        rugueux. Intensités modérées pour éviter la surexposition. */}
-                    <Environment resolution={256}>
-                        <Lightformer intensity={1.6} position={[0, 3, 6]} scale={[14, 10, 1]} color="#fff2e0" />
-                        <Lightformer intensity={1.0} position={[-6, 1, -2]} scale={[9, 9, 1]} color="#ffe4c4" />
-                        <Lightformer intensity={1.2} position={[6, 2, -1]} scale={[9, 9, 1]} color="#ffd9a8" />
-                        <Lightformer intensity={0.7} position={[0, 5, -4]} scale={[12, 6, 1]} color="#f5f7ff" />
-                        <Lightformer intensity={0.4} position={[0, -4, 3]} scale={[12, 6, 1]} color="#e8ded2" />
-                    </Environment>
+                    <StudioEnv />
                     <Bounds fit clip margin={1.15}>
                         <Spin reduce={reduce}>
                             <Model />
