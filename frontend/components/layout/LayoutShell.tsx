@@ -28,11 +28,15 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     // Routes publiques : Header + Footer + AudioPlayer + Chat + WhatsApp + Cookies
     return (
         <>
+            {/* A11y : lien d'évitement (visible au focus clavier) */}
+            <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[#008751] focus:text-white focus:font-bold focus:shadow-lg">
+                Aller au contenu
+            </a>
             <VisitorTracker />
             <Header />
             <AudioPlayer />
             <CartDrawer />
-            <main className="min-h-screen pt-20">
+            <main id="contenu" tabIndex={-1} className="min-h-screen pt-20 outline-none">
                 <Breadcrumbs />
                 {children}
             </main>

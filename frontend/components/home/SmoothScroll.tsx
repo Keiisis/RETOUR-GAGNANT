@@ -11,6 +11,9 @@ import Lenis from "lenis";
 export default function SmoothScroll() {
     useEffect(() => {
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        // Perf mobile : pas de smooth-scroll sur tactile/petits écrans → scroll
+        // natif fluide, aucune boucle rAF inutile (économie CPU/batterie).
+        if (window.matchMedia("(max-width: 767px), (pointer: coarse)").matches) return;
         const lenis = new Lenis({ duration: 1.05, smoothWheel: true });
         let raf = 0;
         const frame = (time: number) => {

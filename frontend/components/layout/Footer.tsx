@@ -3,6 +3,7 @@ import Image from "next/image";
 import { FacebookLogo, InstagramLogo, LinkedinLogo, XLogo, Envelope, Phone, MapPin } from "@phosphor-icons/react";
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from "@/lib/translation";
+import NewsletterCapture from "@/components/shared/NewsletterCapture";
 
 // Motif traditionnel bespoke (losanges kente/bogolan) — data URI.
 const MOTIF = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='%23FCD116' stroke-width='1.2' opacity='0.7'%3E%3Cpath d='M28 3 L53 28 L28 53 L3 28 Z'/%3E%3Cpath d='M28 17 L39 28 L28 39 L17 28 Z' fill='%23FCD116' stroke='none' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E";
@@ -47,6 +48,7 @@ export default function Footer() {
                         <p className="text-gray-400 leading-relaxed text-sm">
                             <T>Votre partenaire de confiance pour un retour réussi et des investissements sécurisés au Bénin. Tradition, Modernité, Et Excellence.</T>
                         </p>
+                        <div className="pt-1"><NewsletterCapture /></div>
                         <div className="flex gap-4">
                             {[
                                 { Icon: FacebookLogo, label: 'Facebook', href: COMPANY_INFO.socials.facebook },
