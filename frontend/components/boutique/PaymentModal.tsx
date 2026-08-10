@@ -2,6 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { trackEvent } from '@/lib/analytics'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, ShoppingBag, CreditCard, Phone, User, Envelope,
@@ -156,6 +157,8 @@ const ALL_COUNTRIES = [
 export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModalProps) {
     const { t, lang } = useTranslation();
     const [step, setStep] = useState<Step>('info')
+    // Conversion : achat confirmé (couvre tous les moyens de paiement).
+    useEffect(() => { if (step === 'success') trackEvent('purchase', { type: 'produit' }) }, [step])
     const [provider, setProvider] = useState<PaymentProvider | null>(null)
     const [customerName, setCustomerName] = useState('')
     const [customerEmail, setCustomerEmail] = useState('')

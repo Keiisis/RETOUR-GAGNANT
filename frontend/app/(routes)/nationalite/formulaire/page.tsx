@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { compressImage } from '@/lib/compress-image'
+import { trackEvent } from '@/lib/analytics'
 import Script from 'next/script'
 import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, FileText, PaperPlaneTilt as Send, CaretLeft as ChevronLeft, CircleNotch as Loader2, WarningCircle as AlertCircle, CreditCard, Heart, Shield, CaretRight as ChevronRight, X, User, Envelope as Mail, Phone, MapPin, Globe as Globe2, Calendar } from '@phosphor-icons/react';
 import Link from 'next/link'
@@ -649,6 +650,7 @@ export default function NationaliteFormPage() {
             if (res.ok && result.success) {
                 setAppRef(result.reference)
                 setUploadProgress(100)
+                trackEvent('nationalite_submit', { reference: result.reference || null })
                 // Déclencher l'analyse des documents manquants en arrière-plan
                 const uploadedKeys = rawDocs.map(d => d.key)
                 fetch('/api/nationality/analyze', {

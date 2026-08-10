@@ -2,6 +2,7 @@
 
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { trackEvent } from '@/lib/analytics'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     X, ShoppingBag, CreditCard, Phone, User, Envelope,
@@ -146,6 +147,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const { t, lang } = useTranslation();
     const { items, totalAmount, clearCart } = useCart()
     const [step, setStep] = useState<Step>('info')
+    // Conversion : achat panier confirmé (couvre tous les moyens de paiement).
+    useEffect(() => { if (step === 'success') trackEvent('purchase', { type: 'panier' }) }, [step])
     const [provider, setProvider] = useState<PaymentProvider | null>(null)
     const [customerName, setCustomerName] = useState('')
     const [customerEmail, setCustomerEmail] = useState('')
