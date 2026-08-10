@@ -25,6 +25,7 @@ import {
     type RateLimitConfig,
 } from '@/lib/rate-limit'
 import { scanRequestBody } from '@/lib/waf'
+import { isLogementAgent } from '@/lib/logement-access'
 
 // ─── Profils de débit pour les routes publiques ───────────────
 // Calibrés sur l'usage humain réel, pas sur une valeur ronde :
@@ -190,6 +191,21 @@ export async function requireStaff(
         userId: auth.userId,
         role: auth.role,
         isAdmin: !!auth.role && ADMIN_ROLES.includes(auth.role),
+    }
+}
+
+/**
+ * Garde de la gestion Logement : accepte les administrateurs OU l'agent
+ * nommément autorisé (voir lib/logement-access). Tout autre agent est refusé.
+ */
+export async function requireLogementManager(request: Request): Promise<StaffGuard> {
+    const g = await requireStaff(request, 'agent') // admins + agents authentifiés
+    if (!g.ok) return g
+    if (g.isAdmin || isLogementAgent(g.userId)) return g
+    return {
+        ok: false,
+        isAdmin: false,
+        response: NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 }),
     }
 }
 

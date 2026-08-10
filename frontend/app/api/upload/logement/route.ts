@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanUpload } from '@/lib/waf'
-import { requireStaff } from '@/lib/api-guard'
+import { requireLogementManager } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -12,7 +12,7 @@ const BUCKET = 'partner-assets'
 
 // Upload d'une image de logement (catalogue). Staff only, scanné par le WAF.
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
 
     try {

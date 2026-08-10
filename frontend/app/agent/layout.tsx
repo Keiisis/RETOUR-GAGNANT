@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { isLogementAgent } from '@/lib/logement-access'
 import { AgentCallCenter } from '@/components/agent/AgentCallCenter'
-import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail } from '@phosphor-icons/react';
+import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail, Buildings as Building2 } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
@@ -386,6 +387,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Mes Dossiers'), icon: FileText, href: '/agent/dossiers' },
                 { title: t('Leads Oracle'), icon: Compass, href: '/agent/leads' },
                 { title: t('Demandes Nat.'), icon: Globe, href: '/agent/nationalite' },
+                // Onglet Logement — réservé à l'agent nommément autorisé
+                ...(isLogementAgent(agent?.id) ? [{ title: t('Logement'), icon: Building2, href: '/agent/logements' }] : []),
             ],
         },
         {

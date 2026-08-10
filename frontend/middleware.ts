@@ -46,6 +46,7 @@ import {
     reportCanaryTriggered,
     type ThreatType,
 } from '@/lib/waf'
+import { isLogementAgent } from '@/lib/logement-access'
 
 // ═══════════════════════════════════════════════════════════════
 // 🛡️ MIDDLEWARE — WAF ULTIME · Défense Active · Cyber-Déception
@@ -963,9 +964,13 @@ export async function middleware(request: NextRequest) {
                 .from('user_profiles').select('role').eq('id', apiUser.id).maybeSingle()
             const apiRole = prof?.role || ''
             const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+            // Exception ciblée : la gestion Logement (/api/admin/logements) est
+            // aussi ouverte à l'agent nommément autorisé (Justamielle), en plus
+            // des admins. Aucune autre route /api/admin n'est concernée.
+            const isLogementMgrPath = isAdminApi && pathname.startsWith('/api/admin/logements')
             const apiOk = isAgentApi
                 ? (apiRole === 'agent' || ADMIN_ROLES.includes(apiRole))
-                : ADMIN_ROLES.includes(apiRole)
+                : ADMIN_ROLES.includes(apiRole) || (isLogementMgrPath && isLogementAgent(apiUser.id))
             if (!apiOk) {
                 return new NextResponse(JSON.stringify({ error: 'Accès non autorisé' }), {
                     status: 403, headers: { 'Content-Type': 'application/json' },

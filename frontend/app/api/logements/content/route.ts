@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireLogementManager } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -17,7 +17,7 @@ export async function GET() {
 
 // PATCH — mise à jour (admin). { stats?, temoignages?, faq?, rarete_active?, rarete_texte? }
 export async function PATCH(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
     const body = await request.json().catch(() => ({}))
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
