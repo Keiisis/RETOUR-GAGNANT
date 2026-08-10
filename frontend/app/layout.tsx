@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     description: "Passeport, immobilier, entreprise, investissement — tous les services pour réussir votre retour au Bénin.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/images/hero-bg.jpg",
         width: 1200,
         height: 630,
         alt: "Retour Gagnant Bénin",
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Retour Gagnant Bénin — Accompagnement Premium",
     description: "Passeport, immobilier, entreprise, investissement pour la diaspora béninoise.",
-    images: ["/og-image.jpg"],
+    images: ["/images/hero-bg.jpg"],
   },
   robots: {
     index: true,
