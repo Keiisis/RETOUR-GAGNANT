@@ -47,6 +47,16 @@ export default function EventDetailPage() {
     const [error, setError] = useState('')
     const [galleryIdx, setGalleryIdx] = useState(0)
     const [form, setForm] = useState({ full_name: '', email: '', phone: '', whatsapp: '', payment_method: '' })
+    // Autres événements à venir (contenu lié)
+    const [others, setOthers] = useState<EventData[]>([])
+    useEffect(() => {
+        fetch('/api/events').then(r => r.json()).then(d => {
+            const min = Date.now() - 864e5
+            setOthers(((d.events || []) as EventData[])
+                .filter(e => e.slug !== slug && new Date(e.start_date).getTime() >= min)
+                .slice(0, 3))
+        }).catch(() => { })
+    }, [slug])
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
     useEffect(() => { setSelectedCurrency(getCurrencyForLang(lang)) }, [lang])
 
@@ -477,6 +487,32 @@ export default function EventDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ── AUTRES ÉVÉNEMENTS À VENIR (contenu lié) ───────────── */}
+            {others.length > 0 && (
+                <section className="max-w-6xl mx-auto px-4 pb-20">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="flex-1 h-px bg-slate-100" />
+                        <span className="font-display text-2xl font-bold text-[#111a15]"><T>Autres événements à venir</T></span>
+                        <div className="flex-1 h-px bg-slate-100" />
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {others.map(o => (
+                            <Link key={o.id} href={`/evenements/${o.slug}`} className="group block bg-white rounded-2xl border border-slate-200 overflow-hidden hover:-translate-y-1 hover:border-[#FCD116] hover:shadow-[0_20px_50px_-24px_rgba(0,135,81,0.4)] transition-all">
+                                <div className="relative h-40 bg-slate-100 overflow-hidden">
+                                    {o.cover_image_url
+                                        ? <Image src={o.cover_image_url} alt={o.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        : <div className="w-full h-full bg-gradient-to-br from-[#f0fdf4] to-[#fef9c3]" />}
+                                </div>
+                                <div className="p-4">
+                                    <h3 className="font-display font-bold text-[#111a15] group-hover:text-[#008751] transition-colors line-clamp-2 leading-snug">{t(o.title)}</h3>
+                                    <p className="text-xs text-slate-500 mt-1.5">{new Date(o.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}{o.location ? ' · ' + t(o.location) : ''}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* ── MODAL INSCRIPTION ─────────────────────────────────── */}
             <AnimatePresence>
