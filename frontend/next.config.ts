@@ -37,7 +37,8 @@ const securityHeaders = [
         " https://cdn.kkiapay.me https://sandbox.kkiapay.me" +
         " https://cdn.fedapay.com https://checkout.fedapay.com" +
         " https://js.stripe.com" +
-        " https://www.paypal.com https://www.paypalobjects.com",
+        " https://www.paypal.com https://www.paypalobjects.com" +
+        " https://www.googletagmanager.com https://www.google-analytics.com",
       // Durcissement (gains sans risque de casse) :
       "object-src 'none'",
       "base-uri 'self'",
@@ -45,7 +46,7 @@ const securityHeaders = [
       "frame-ancestors 'none'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://unpkg.com",
+      "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.kkiapay.me https://*.fedapay.com https://www.paypalobjects.com https://*.paypal.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://unpkg.com https://www.google-analytics.com https://www.googletagmanager.com",
       // connexions API paiement — CRITIQUE : kkiapay init via XHR avant d'exposer openKkiapayWidget
       // blob: requis pour les textures embarquées du modèle 3D (GLTFLoader/ImageBitmap
       // fetch les images du GLB via des URL blob: same-origin) — sinon textures bloquées
@@ -57,7 +58,8 @@ const securityHeaders = [
         " https://*.kkiapay.me wss://*.kkiapay.me" +
         " https://api.fedapay.com https://sandbox-api.fedapay.com https://checkout.fedapay.com" +
         " https://api-m.paypal.com https://api-m.sandbox.paypal.com" +
-        " https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://tiles.openfreemap.org",
+        " https://*.basemaps.cartocdn.com https://*.openstreetmap.org https://tiles.openfreemap.org" +
+        " https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com",
       // iframes widgets de paiement + aperçu PDF local (blob same-origin, ex :
       // prévisualisation de la fiche d'analyse avant envoi)
       "frame-src 'self' blob:" +

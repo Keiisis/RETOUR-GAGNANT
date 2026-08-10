@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { COMPANY_INFO } from "@/lib/constants/company-info";
 import { useTranslation, T } from '@/lib/translation';
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
+import { trackEvent } from '@/lib/analytics';
 
 export default function ContactPage() {
     const { t } = useTranslation();
@@ -28,6 +29,7 @@ export default function ContactPage() {
 
             if (res.ok) {
                 setStatus('success');
+                trackEvent('contact_submit');
                 setForm({ nom: '', prenom: '', email: '', sujet: '', message: '' });
             } else {
                 setStatus('error');

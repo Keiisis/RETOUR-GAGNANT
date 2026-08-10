@@ -12,6 +12,7 @@ import { COMPANY_INFO } from '@/lib/constants/company-info';
 import { useTranslation, T } from '@/lib/translation';
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
 import { RDV_SERVICES, serviceSlugToLabel, DEFAULT_RDV_SERVICE } from '@/lib/constants/rdv-services';
+import { trackEvent } from '@/lib/analytics';
 
 // Benin cities — real positions on viewBox 0 0 1000 1000
 const beninCities = [
@@ -75,6 +76,7 @@ function RendezVousContent() {
             });
             if (res.ok) {
                 setStatus('success');
+                trackEvent('rdv_submit', { service: form.service, contactMethod: form.contactMethod });
             } else {
                 setStatus('error');
             }

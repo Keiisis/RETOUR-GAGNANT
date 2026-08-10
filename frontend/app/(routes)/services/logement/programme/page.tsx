@@ -9,6 +9,7 @@ import Gallery from '@/components/logements/Gallery'
 import CountUp from '@/components/logements/CountUp'
 import TransitionLink from '@/components/TransitionLink'
 import type { SitePoint } from '@/components/logements/SitesMap'
+import { trackEvent } from '@/lib/analytics'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
     ssr: false,
@@ -469,6 +470,7 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             const j = await res.json().catch(() => ({}))
             if (!res.ok || !j.success) throw new Error(j.error || 'Envoi impossible.')
             setDone(true)
+            trackEvent('logement_lead', { programme: logement?.programme || 'general', logement: logement?.nom || null })
         } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setSending(false) }
     }
     const inp = 'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15'
