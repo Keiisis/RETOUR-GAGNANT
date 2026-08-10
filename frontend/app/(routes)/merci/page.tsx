@@ -20,7 +20,7 @@ export default function MerciPage() {
                         <CheckCircle className="text-[#008751]" size={42} />
                     </div>
 
-                    <h1 className="text-2xl md:text-3xl font-bold text-[#1a2332] mb-3">
+                    <h1 className="font-display text-3xl md:text-4xl font-bold text-[#1a2332] mb-3">
                         Merci pour votre message !
                     </h1>
                     <p className="text-gray-500 mb-8 leading-relaxed">

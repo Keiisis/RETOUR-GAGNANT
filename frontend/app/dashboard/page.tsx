@@ -15,7 +15,7 @@ export default function DashboardHome() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
             >
-                <h1 className="text-4xl md:text-5xl font-heading font-bold mb-2">
+                <h1 className="text-4xl md:text-5xl font-display font-bold mb-2">
                     Heureçux de vous revoir, <span className="text-[#FCD116]">Roi.</span>
                 </h1>
                 <p className="text-gray-400 text-lg max-w-2xl">

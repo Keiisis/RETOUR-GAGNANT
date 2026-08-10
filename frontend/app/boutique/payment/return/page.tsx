@@ -109,7 +109,7 @@ function ZeyowReturnContent() {
                     <CheckCircle2 size={56} className="text-[#008751]" />
                 </div>
                 <div className="text-center space-y-3">
-                    <h1 className="text-4xl font-black text-white font-heading">Paiement confirmé !</h1>
+                    <h1 className="text-4xl font-black text-white font-display">Paiement confirmé !</h1>
                     <p className="text-gray-400 text-base max-w-md">
                         Votre commande a été validée avec succès. Vous recevrez les détails par téléphone ou email.
                     </p>
@@ -146,7 +146,7 @@ function ZeyowReturnContent() {
                 <AlertCircle size={56} className="text-[#E8112D]" />
             </div>
             <div className="text-center space-y-3">
-                <h1 className="text-4xl font-black text-white font-heading">Paiement échoué</h1>
+                <h1 className="text-4xl font-black text-white font-display">Paiement échoué</h1>
                 <p className="text-gray-400 text-base max-w-md">
                     {errorMsg || 'Une erreur est survenue lors du traitement de votre paiement.'}
                 </p>

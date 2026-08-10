@@ -295,7 +295,7 @@ export default function EventDetailPage() {
                                 </button>
                             </div>
 
-                            <h1 className="text-3xl md:text-4xl font-black font-heading tracking-tight text-[#1a2332] leading-tight">
+                            <h1 className="text-3xl md:text-4xl font-black font-display tracking-tight text-[#1a2332] leading-tight">
                                 {t(event.title)}
                             </h1>
 

@@ -66,16 +66,16 @@ export default function FAQClient({ items }: { items: FAQItem[] }) {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Hero */}
-            <section className="py-16 md:py-24 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white">
+            <section className="py-16 md:py-24 bg-gradient-to-b from-[#FBFDFC] to-white text-slate-900 border-b border-slate-100">
                 <div className="container mx-auto px-4 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-6 border border-white/10">
                             <HelpCircle className="text-[#FCD116]" size={30} />
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-bold font-heading mb-4">
+                        <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-[-0.02em] text-[#008751]">
                             <T>Questions Fréquentes</T>
                         </h1>
-                        <p className="text-white/60 max-w-xl mx-auto text-base md:text-lg">
+                        <p className="text-slate-500 max-w-xl mx-auto text-base md:text-lg">
                             <T>Trouvez rapidement les réponses à vos questions sur nos services</T>
                         </p>
                     </motion.div>

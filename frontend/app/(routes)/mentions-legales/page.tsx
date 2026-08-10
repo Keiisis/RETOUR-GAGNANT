@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 export default function MentionsLegalesPage() {
     return (
         <div className="min-h-screen bg-gray-50">
-            <section className="py-16 md:py-24 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white">
+            <section className="py-16 md:py-24 bg-gradient-to-b from-[#FBFDFC] to-white text-slate-900 border-b border-slate-100">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="text-3xl md:text-5xl font-bold font-heading mb-4">Mentions Légales</h1>
-                    <p className="text-white/60 max-w-xl mx-auto">Informations légales relatives au site retourgagnantbenin.bj</p>
+                    <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-[-0.02em] text-[#008751]">Mentions Légales</h1>
+                    <p className="text-slate-500 max-w-xl mx-auto">Informations légales relatives au site retourgagnantbenin.bj</p>
                 </div>
             </section>
 

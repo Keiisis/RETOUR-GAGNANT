@@ -213,7 +213,7 @@ function ComplementAncestralContent() {
             <div id="fedapay-ancestral-btn" className="hidden" />
 
             {/* Hero */}
-            <section className="relative py-16 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white overflow-hidden">
+            <section className="relative py-16 bg-gradient-to-b from-[#FBFDFC] to-white text-slate-900 border-b border-slate-100 overflow-hidden">
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-10 right-20 w-64 h-64 rounded-full blur-[100px] bg-[#FCD116]" />
                     <div className="absolute bottom-10 left-20 w-48 h-48 rounded-full blur-[80px] bg-[#008751]" />
@@ -247,13 +247,13 @@ function ComplementAncestralContent() {
                             <div className="flex items-center gap-2 mb-3">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FCD116]/70">Complément de dossier</span>
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-bold font-heading mb-3">
+                            <h1 className="text-3xl md:text-4xl font-bold font-display mb-3">
                                 Déléguer ma{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#008751]">
                                     Recherche Ancestrale
                                 </span>
                             </h1>
-                            <p className="text-white/70 leading-relaxed max-w-xl">
+                            <p className="text-slate-600 leading-relaxed max-w-xl">
                                 Notre équipe mobilise archives officielles, bases de données spécialisées et associations expertes pour retrouver les actes manquants à votre dossier.
                             </p>
                         </div>

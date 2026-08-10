@@ -229,7 +229,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                         {t(post.category || 'Général')}
                     </span>
 
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 mt-4 mb-4 leading-tight">{post.title}</h1>
+                    <h1 className="font-display text-3xl md:text-4xl font-bold text-slate-900 mt-4 mb-4 leading-tight">{post.title}</h1>
 
                     {post.excerpt && (
                         <p className="text-base text-slate-600 mb-6 leading-relaxed italic border-l-2 border-emerald-500 pl-4 bg-slate-50/50 py-1.5 pr-2">

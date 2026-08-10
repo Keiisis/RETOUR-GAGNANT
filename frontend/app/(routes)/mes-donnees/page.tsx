@@ -304,13 +304,13 @@ function MesDonneesInner() {
 export default function MesDonneesPage() {
     return (
         <div className="min-h-screen bg-gray-50">
-            <section className="py-14 md:py-20 bg-gradient-to-br from-[#0f141e] via-[#1a2a3a] to-[#0f141e] text-white">
+            <section className="py-14 md:py-20 bg-gradient-to-b from-[#FBFDFC] to-white text-slate-900 border-b border-slate-100">
                 <div className="container mx-auto px-4 text-center">
                     <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/20 flex items-center justify-center mb-4">
                         <ShieldCheck className="w-6 h-6 text-emerald-400" />
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold font-heading mb-3">Mes données personnelles</h1>
-                    <p className="text-white/60 max-w-xl mx-auto text-sm md:text-base">
+                    <h1 className="text-3xl md:text-4xl font-bold font-display mb-3">Mes données personnelles</h1>
+                    <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
                         Consultez et supprimez vous-même, en toute autonomie, les données que nous détenons sur vous (RGPD).
                     </p>
                 </div>

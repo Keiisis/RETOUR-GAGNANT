@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
             <main className="bg-white min-h-screen flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <ShoppingBag size={48} className="text-gray-300 mx-auto" />
-                    <h2 className="text-2xl font-black font-heading text-gray-900"><T>Produit introuvable</T></h2>
+                    <h2 className="text-2xl font-black font-display text-gray-900"><T>Produit introuvable</T></h2>
                     <Link href="/boutique" className="text-[#008751] text-sm font-bold underline">
                         <T>Retour à la boutique</T>
                     </Link>
@@ -217,7 +217,7 @@ export default function ProductDetailPage() {
                                     {product.category}
                                 </span>
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-black font-heading tracking-tight text-gray-900 mb-4 leading-tight">
+                            <h1 className="text-3xl md:text-4xl font-black font-display tracking-tight text-gray-900 mb-4 leading-tight">
                                 {product.title}
                             </h1>
                             <p className="text-gray-500 text-base leading-relaxed">
@@ -232,7 +232,7 @@ export default function ProductDetailPage() {
                             transition={{ delay: 0.35, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                             className="flex items-baseline gap-4"
                         >
-                            <span className="text-4xl font-black text-gray-900 font-heading tracking-tighter">
+                            <span className="text-4xl font-black text-gray-900 font-display tracking-tighter">
                                 <Price amount={displayPrice} currency={product.currency as CurrencyCode} showSelector />
                             </span>
                             {hasDiscount && (

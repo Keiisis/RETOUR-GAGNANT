@@ -234,7 +234,7 @@ function HeroSection({ data }: { data: SectionData['hero'] }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 1.5 }}
-                    className="text-4xl sm:text-5xl md:text-7xl font-black font-heading tracking-tight leading-[1.05] text-gray-900 mb-8"
+                    className="text-4xl sm:text-5xl md:text-7xl font-black font-display tracking-tight leading-[1.05] text-gray-900 mb-8"
                 >
                     <TypewriterText text={t(data.title_line1)} delay={1800} />
                     <br />
@@ -321,7 +321,7 @@ function ChapitreRencontre({ data }: { data: SectionData['rencontre'] }) {
                             transition={{ duration: 0.8, ease: 'easeOut' as const }}
                             className="ml-8 lg:ml-16 p-8 md:p-12 bg-white border border-gray-100 shadow-xl shadow-gray-200/30"
                         >
-                            <h2 className="text-3xl md:text-5xl font-black font-heading text-gray-900 leading-tight mb-8">
+                            <h2 className="text-3xl md:text-5xl font-black font-display text-gray-900 leading-tight mb-8">
                                 {t(data.block1_heading).split(',').map((part, i, arr) => (
                                     <span key={i}>
                                         {part.trim()}{i < arr.length - 1 ? ',' : ''}
@@ -381,7 +381,7 @@ function ChapitreFondatrice({ data }: { data: SectionData['fondatrice'] }) {
                     <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-gray-900/60 to-transparent" />
                     <div className="absolute bottom-8 left-8 lg:bottom-12 lg:left-12">
                         <div className="text-white">
-                            <p className="font-black text-2xl font-heading mb-1">{data.name}</p>
+                            <p className="font-black text-2xl font-display mb-1">{data.name}</p>
                             <p className="text-[#D4A017] text-xs font-bold uppercase tracking-widest">{t(data.title_label)}</p>
                         </div>
                     </div>
@@ -395,7 +395,7 @@ function ChapitreFondatrice({ data }: { data: SectionData['fondatrice'] }) {
                         transition={{ duration: 1, ease: 'easeOut' as const }}
                         className="max-w-lg"
                     >
-                        <h3 className="text-3xl md:text-4xl lg:text-5xl font-black font-heading text-gray-900 mb-8 md:mb-12 leading-tight">
+                        <h3 className="text-3xl md:text-4xl lg:text-5xl font-black font-display text-gray-900 mb-8 md:mb-12 leading-tight">
                             {t(data.section_heading)}
                         </h3>
                         <div className="relative">
@@ -408,7 +408,7 @@ function ChapitreFondatrice({ data }: { data: SectionData['fondatrice'] }) {
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' as const }}
-                            className="mt-8 md:mt-12 text-xl md:text-2xl font-black text-[#008751] font-heading"
+                            className="mt-8 md:mt-12 text-xl md:text-2xl font-black text-[#008751] font-display"
                         >
                             {t(data.closing)}
                         </motion.p>
@@ -435,7 +435,7 @@ function ChapitreArchitectes({ data }: { data: SectionData['architectes'] }) {
                     transition={{ duration: 0.8, ease: 'easeOut' as const }}
                     className="text-center mb-10 md:mb-20"
                 >
-                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-heading text-gray-900">
+                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-display text-gray-900">
                         {t(data.heading).split(' ').map((word, i, arr) => {
                             const isLast = i === arr.length - 1
                             return isLast
@@ -464,7 +464,7 @@ function ChapitreArchitectes({ data }: { data: SectionData['architectes'] }) {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-700" />
                             <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10 lg:translate-y-[20%] lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 transition-all duration-700 ease-out z-20">
                                 <p className="text-[#D4A017] text-xs font-bold uppercase tracking-[0.2em] mb-2 lg:mb-3">{t(p.phrase)}</p>
-                                <p className="text-white text-lg md:text-2xl lg:text-3xl font-black font-heading leading-tight mb-1">{p.name}</p>
+                                <p className="text-white text-lg md:text-2xl lg:text-3xl font-black font-display leading-tight mb-1">{p.name}</p>
                                 <p className="text-white/80 text-xs sm:text-sm font-medium">{t(p.role)}</p>
                             </div>
                         </motion.div>
@@ -491,7 +491,7 @@ function ChapitreLogo({ data }: { data: SectionData['logo'] }) {
                     transition={{ duration: 0.8, ease: 'easeOut' as const }}
                     className="text-center mb-12 md:mb-24"
                 >
-                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-heading text-gray-900 leading-tight">
+                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-display text-gray-900 leading-tight">
                         {t(data.heading)}
                     </h2>
                 </motion.div>
@@ -523,7 +523,7 @@ function ChapitreLogo({ data }: { data: SectionData['logo'] }) {
                                 transition={{ duration: 0.8, delay: i * 0.2, ease: 'easeOut' as const }}
                                 className="pl-6 border-l-[3px] border-gray-200 hover:border-[#D4A017] transition-colors duration-500"
                             >
-                                <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-3 font-heading">{t(s.title)}</h3>
+                                <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-3 font-display">{t(s.title)}</h3>
                                 <p className="text-gray-600 text-base md:text-lg leading-relaxed">{t(s.text)}</p>
                             </motion.div>
                         ))}
@@ -552,7 +552,7 @@ function ChapitreConfiance({ data }: { data: SectionData['confiance'] }) {
                     transition={{ duration: 0.8, ease: 'easeOut' as const }}
                     className="text-center mb-10 md:mb-20"
                 >
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black font-heading text-gray-900">
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black font-display text-gray-900">
                         {t(data.heading)}
                     </h2>
                     <p className="text-gray-500 max-w-2xl mx-auto mt-4 md:mt-6 text-base md:text-lg leading-relaxed">
@@ -571,7 +571,7 @@ function ChapitreConfiance({ data }: { data: SectionData['confiance'] }) {
                         <Image src={data.main_image} alt="Document officiel" fill className="object-cover" />
                     </div>
                     <div>
-                        <p className="text-xl md:text-2xl lg:text-3xl text-gray-900 font-heading font-black leading-snug mb-4 md:mb-6">
+                        <p className="text-xl md:text-2xl lg:text-3xl text-gray-900 font-display font-black leading-snug mb-4 md:mb-6">
                             {t(data.main_title)}
                         </p>
                         <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-4 md:mb-6">{t(data.main_text1)}</p>
@@ -638,7 +638,7 @@ function CTAFinal({ data }: { data: SectionData['cta'] }) {
                     viewport={{ once: true }}
                     transition={{ duration: 1, ease: 'easeOut' as const }}
                 >
-                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-heading text-gray-900 leading-tight mb-6 md:mb-8">
+                    <h2 className="text-3xl md:text-4xl lg:text-6xl font-black font-display text-gray-900 leading-tight mb-6 md:mb-8">
                         {t(data.heading_line1)}<br />
                         <span className="text-[#008751]">{t(data.heading_line2)}</span>
                     </h2>
