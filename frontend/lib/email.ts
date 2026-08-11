@@ -153,6 +153,7 @@ interface EmailTranslations {
     footer: string
     autoSent: string
     hello: string
+    newMessage: string
 }
 
 const EMAIL_I18N: Record<string, EmailTranslations> = {
@@ -173,6 +174,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         replyTo: 'Pour toute réponse, envoyez un email à',
         footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradition, Modernité, Excellence`,
         autoSent: 'Cet email a été envoyé automatiquement. Ne pas répondre directement.',
+        newMessage: 'Un message de votre conseiller',
     },
     en: {
         greeting: 'Hello',
@@ -191,6 +193,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         replyTo: 'To reply, send an email to',
         footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradition, Modernity, Excellence`,
         autoSent: 'This email was sent automatically. Do not reply directly.',
+        newMessage: 'A message from your advisor',
     },
     es: {
         greeting: 'Hola',
@@ -209,6 +212,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         replyTo: 'Para responder, envíe un email a',
         footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradición, Modernidad, Excelencia`,
         autoSent: 'Este email fue enviado automáticamente. No responda directamente.',
+        newMessage: 'Un mensaje de su asesor',
     },
     pt: {
         greeting: 'Olá',
@@ -227,6 +231,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         replyTo: 'Para responder, envie um email para',
         footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradição, Modernidade, Excelência`,
         autoSent: 'Este email foi enviado automaticamente. Não responda diretamente.',
+        newMessage: 'Uma mensagem do seu consultor',
     },
     ar: {
         greeting: 'مرحبا',
@@ -245,6 +250,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         replyTo: 'للرد، أرسل بريدًا إلكترونيًا إلى',
         footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — التقاليد، الحداثة، التميز`,
         autoSent: 'تم إرسال هذا البريد تلقائيًا. لا ترد مباشرة.',
+        newMessage: 'رسالة من مستشارك',
     },
 }
 
@@ -515,7 +521,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         /** Notification to agents/admin for new lead */
         newLeadNotification: (leadName: string, leadEmail: string, score: number, service: string, source: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">🔔 ${t.newLead} — ${source}</h2>
+        <p style="margin:0 0 18px;font-size:14px;color:#5A6680;line-height:1.6;">Source : <strong style="color:#1B2A4A;">${source}</strong></p>
         <table style="width:100%;border-collapse:collapse;margin:0 0 26px;">
             <tr>
               <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);width:110px;">${t.name}</td>
@@ -534,18 +540,11 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
               <td style="padding:11px 0;color:#1B2A4A;font-size:13.5px;font-weight:700;">${service}</td>
             </tr>
         </table>
-        <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-          <tr><td>
-            <a href="${SITE_URL}/agent/leads" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B89538);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 6px 18px rgba(201,168,76,0.32);">
-              ${t.viewDashboard}
-            </a>
-          </td></tr>
-        </table>
-    `, 'fr'),
+        ${emailButton(`${SITE_URL}/agent/leads`, t.viewDashboard, '#C9A84C')}
+    `, 'fr', { heroEmoji: '🔔', heroTitle: `${t.newLead} — ${score}%`, accent: score >= 70 ? '#008751' : '#C9A84C', preheader: `${leadName} · ${service} · score ${score}%` }),
 
         /** Notification admin — nouvelle demande de RDV (sans score Oracle) */
         rdvAdminNotification: (clientName: string, clientEmail: string, service: string, date: string | null, timeSlot: string, contactMethod: string, telephone: string = '', clientMessage: string = '', aiReply: string = '') => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">📅 Nouvelle demande de RDV</h2>
         <table style="width:100%;border-collapse:collapse;margin:0 0 22px;">
             <tr>
               <td style="padding:11px 0;color:#8B94A6;font-size:13px;border-bottom:1px solid rgba(27,42,74,0.08);width:140px;">Client</td>
@@ -584,25 +583,19 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             <p style="margin:0 0 6px;font-size:11px;font-weight:800;color:#008751;text-transform:uppercase;letter-spacing:0.15em;">🤖 Réponse automatique déjà envoyée au client</p>
             <p style="margin:0;font-size:12.5px;color:#3E4A65;line-height:1.7;white-space:pre-wrap;">${aiReply.trim().replace(/</g, '&lt;')}</p>
         </div>` : ''}
-        <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-          <tr><td>
-            <a href="${SITE_URL}/agent/agenda" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B89538);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 6px 18px rgba(201,168,76,0.32);">
-              Voir dans l'Agenda
-            </a>
-          </td></tr>
-        </table>
-    `, 'fr'),
+        ${emailButton(`${SITE_URL}/agent/agenda`, "Voir dans l'Agenda", '#C9A84C')}
+    `, 'fr', { heroEmoji: '📅', heroTitle: 'Nouvelle demande de RDV', accent: '#C9A84C', preheader: `${clientName} · ${service}${date ? ' · ' + date : ''}` }),
 
         /** Agent reply email — sent from chat console */
         agentReply: (clientName: string, agentMessage: string, language: string = 'fr') => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 22px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${getI18n(language).hello} ${clientName},</h2>
+        <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">${getI18n(language).hello} <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <div style="color:#2D3A55;font-size:14.5px;line-height:1.9;margin:0 0 20px;white-space:pre-wrap;">${agentMessage}</div>
         <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);margin:28px 0 20px;"></div>
         <p style="margin:0;font-size:12.5px;color:#5A6680;line-height:1.7;">
             Cordialement,<br/>
             <strong style="color:#1B2A4A;">L'équipe Retour Gagnant Bénin</strong>
         </p>
-    `, language),
+    `, language, { heroEmoji: '💬', heroTitle: getI18n(language).newMessage, preheader: agentMessage.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 100), accent: '#008751' }),
 
         /** Invitation à créer un compte — après capture d'un prospect nationalité */
         accountInvite: (clientName: string, registerUrl: string) => EMAIL_WRAPPER(`
