@@ -306,9 +306,34 @@ async function getEmailTemplate(): Promise<{ header: string; footer: string }> {
     return { header: '', footer: '' }
 }
 
-const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
+/** Bouton CTA « bulletproof » (rendu correct jusque dans Outlook via VML). */
+export function emailButton(href: string, label: string, color: string = '#008751'): string {
+    return `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px auto 6px;"><tr><td align="center" bgcolor="${color}" style="border-radius:14px;">
+      <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:48px;v-text-anchor:middle;width:300px;" arcsize="28%" fillcolor="${color}" stroke="f"><w:anchorlock/><center style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;">${label}</center></v:roundrect><![endif]-->
+      <!--[if !mso]><!-- --><a href="${href}" style="display:inline-block;padding:14px 34px;border-radius:14px;background:${color};color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;">${label}</a><!--<![endif]-->
+    </td></tr></table>`
+}
+
+/** Carte récapitulative / reçu : lignes [libellé, valeur]. */
+export function emailInfoCard(rows: Array<[string, string]>): string {
+    const trs = rows.map(([k, v]) => `<tr><td style="padding:9px 0;font-size:13px;color:#5A6680;border-bottom:1px solid #EEF1F6;">${k}</td><td style="padding:9px 0;font-size:13px;color:#1B2A4A;font-weight:700;text-align:right;border-bottom:1px solid #EEF1F6;">${v}</td></tr>`).join('')
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F9FC;border:1px solid #E8ECF3;border-radius:14px;margin:18px 0;padding:6px 18px;">${trs}</table>`
+}
+
+const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?: { preheader?: string; accent?: string; heroTitle?: string; heroEmoji?: string }) => {
     const t = getI18n(lang)
     const isRtl = resolveLocale(lang) === 'ar'
+    const accent = opts?.accent || '#008751'
+    const preheaderHtml = opts?.preheader
+        ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;opacity:0;font-size:1px;line-height:1px;color:#FFFFFF;">${opts.preheader}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>`
+        : ''
+    const heroBand = opts?.heroTitle
+        ? `<tr><td bgcolor="${accent}" style="background:${accent};padding:30px 44px;text-align:center;">
+            ${opts.heroEmoji ? `<div style="font-size:34px;line-height:1;margin-bottom:8px;">${opts.heroEmoji}</div>` : ''}
+            <h2 style="margin:0;font-family:'Playfair Display',Georgia,serif;font-size:23px;font-weight:800;color:#FFFFFF;letter-spacing:0.3px;">${opts.heroTitle}</h2>
+          </td></tr>`
+        : ''
 
     // Fetch dynamic email template from ERP settings
     const emailTpl = await getEmailTemplate()
@@ -324,14 +349,17 @@ const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Retour Gagnant Bénin</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
 </head>
 <body style="margin:0;padding:0;background:#FFFFFF;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-font-smoothing:antialiased;color:#1B2A4A;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;padding:32px 16px;">
+  ${preheaderHtml}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;padding:32px 16px;">
     <tr><td align="center">
       <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(27,42,74,0.10),0 4px 16px rgba(27,42,74,0.05);border:1px solid rgba(27,42,74,0.06);">
 
         <!-- ══════ FLAG STRIPE TOP ══════ -->
-        <tr><td style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
+        <tr><td bgcolor="#008751" style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
 
         <!-- ══════ HEADER BLANC — Logo à gauche + Nom à droite ══════ -->
         <tr><td style="padding:44px 44px 36px;background:#FFFFFF;">
@@ -360,6 +388,8 @@ const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
           <!-- Accent or en bas du header -->
           <div style="margin:28px auto 0;height:2px;width:140px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);"></div>
         </td></tr>
+
+        ${heroBand}
 
         <!-- ══════ CONTENT ══════ -->
         <tr><td style="padding:24px 44px 40px;background:#FFFFFF;color:#1B2A4A;">
@@ -396,7 +426,7 @@ const EMAIL_WRAPPER = async (content: string, lang: string = 'fr') => {
         </td></tr>
 
         <!-- ══════ FLAG STRIPE BOTTOM ══════ -->
-        <tr><td style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
+        <tr><td bgcolor="#008751" style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
 
       </table>
 
@@ -449,7 +479,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         /** Confirmation de demande de RDV — sans CTA "réserver" (redondant et illogique) */
         rdvConfirmation: (clientName: string, service: string, date: string | null, timeSlot: string, contactMethod: string, aiMessage: string, clientMessage: string = '') => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">✅ Demande reçue, ${clientName} !</h2>
+        <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 22px;">
             Votre demande de rendez-vous a bien été enregistrée. Votre agent va l'examiner et vous confirmera le créneau très prochainement.
         </p>
@@ -487,7 +517,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
                 Vous recevrez un email de confirmation avec tous les détails.
             </p>
         </div>
-    `, locale),
+    `, locale, { heroEmoji: '✅', heroTitle: 'Demande de rendez-vous reçue', preheader: 'Votre demande a bien été enregistrée — un agent vous confirme le créneau sous 24 h.', accent: '#008751' }),
 
         /** Notification to agents/admin for new lead */
         newLeadNotification: (leadName: string, leadEmail: string, score: number, service: string, source: string) => EMAIL_WRAPPER(`
