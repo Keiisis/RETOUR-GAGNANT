@@ -5,6 +5,7 @@ import HeroSection from "@/components/home/HeroSection";
 import ServicesGrid from "@/components/home/ServicesGrid";
 import AboutUsSection from "@/components/home/AboutUsSection";
 import ProcessSteps from "@/components/home/ProcessSteps";
+import BehanzinHeritage from "@/components/home/BehanzinHeritage";
 import HeritageCarousel from "@/components/home/HeritageCarousel";
 import ImmersiveGallery from "@/components/home/ImmersiveGallery";
 import TestimonialsCarousel from "@/components/home/TestimonialsCarousel";
@@ -50,6 +51,9 @@ export default function Home() {
 
       {/* Notre démarche — timeline verticale */}
       <ProcessSteps />
+
+      {/* L'Héritage — ouverture cinématique : Le Roi Béhanzin marche (3D) */}
+      <BehanzinHeritage />
 
       {/* Patrimoine — galerie défilante */}
       <HeritageCarousel />
