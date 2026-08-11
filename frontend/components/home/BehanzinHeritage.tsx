@@ -7,19 +7,20 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import { ArrowRight } from "@phosphor-icons/react";
 import { T } from "@/lib/translation";
 
-// Canvas 3D chargé côté client uniquement, et seulement quand la section
-// approche du viewport (cf. IntersectionObserver) → 0 coût au 1er paint.
+// Canvas 3D chargé côté client uniquement, monté à la volée (IO) → 0 coût 1er paint.
 const BehanzinWalk = dynamic(() => import("./BehanzinWalk"), { ssr: false });
 
 /**
- * L'Héritage — section cinématique « Le Roi Béhanzin marche encore ».
- * Ouverture du chapitre patrimoine : le dernier roi indépendant du Dahomey
- * marche en boucle pendant qu'un léger travelling avant (scroll) rapproche
- * la caméra et que le récit se dévoile ligne par ligne.
+ * L'Héritage — « Le Roi Béhanzin marche encore ».
+ * Parti pris ANTI-AI-SLOP : fond BLANC, traitement éditorial façon exposition
+ * de musée (aucun dégradé/halo/glow). La mémorabilité vient de la typographie
+ * (Fraunces géant en filigrane), d'une chronologie RÉELLE en cartel, et d'un
+ * cercle « Porte du Retour » tracé plat (pas de lueur). Le roi marche sur une
+ * scène blanche, ancré par une ombre portée réelle.
  *
- * - h-[300vh] + intérieur sticky : 3 écrans de scroll pilotent le récit.
- * - Le Canvas est monté à la volée (IO) puis alimenté par un ref de scroll
- *   (progressRef) lu dans useFrame → aucune re-render React à chaque frame.
+ * - h-[300vh] + intérieur sticky : 3 écrans de scroll pilotent caméra + récit.
+ * - Layout responsive : desktop = texte à gauche / roi à droite ; mobile = texte
+ *   en haut / roi en bas (plus aucun chevauchement).
  * - prefers-reduced-motion : pose figée, texte affiché d'emblée.
  */
 export default function BehanzinHeritage() {
@@ -40,7 +41,6 @@ export default function BehanzinHeritage() {
         return () => unsub();
     }, [scrollYProgress]);
 
-    // Monter le Canvas quand la section arrive à ~1 écran de distance.
     useEffect(() => {
         const el = sectionRef.current;
         if (!el) return;
@@ -57,76 +57,67 @@ export default function BehanzinHeritage() {
         return () => io.disconnect();
     }, []);
 
-    // Révélations séquentielles du récit (restent visibles une fois apparues).
-    const l1 = useTransform(scrollYProgress, [0.08, 0.20], [0, 1]);
-    const l1y = useTransform(scrollYProgress, [0.08, 0.20], [24, 0]);
-    const l2 = useTransform(scrollYProgress, [0.30, 0.42], [0, 1]);
-    const l2y = useTransform(scrollYProgress, [0.30, 0.42], [24, 0]);
-    const l3 = useTransform(scrollYProgress, [0.52, 0.64], [0, 1]);
-    const l3y = useTransform(scrollYProgress, [0.52, 0.64], [24, 0]);
-    const cta = useTransform(scrollYProgress, [0.72, 0.84], [0, 1]);
-    const ctay = useTransform(scrollYProgress, [0.72, 0.84], [24, 0]);
-    // Halo « Porte du Retour » qui s'ouvre légèrement à l'approche.
-    const arch = useTransform(scrollYProgress, [0, 1], [0.92, 1.12]);
+    // Révélations séquentielles (restent visibles une fois apparues).
+    const l1 = useTransform(scrollYProgress, [0.08, 0.19], [0, 1]);
+    const l1y = useTransform(scrollYProgress, [0.08, 0.19], [22, 0]);
+    const l2 = useTransform(scrollYProgress, [0.26, 0.37], [0, 1]);
+    const l2y = useTransform(scrollYProgress, [0.26, 0.37], [22, 0]);
+    const l3 = useTransform(scrollYProgress, [0.44, 0.55], [0, 1]);
+    const l3y = useTransform(scrollYProgress, [0.44, 0.55], [22, 0]);
+    const plaque = useTransform(scrollYProgress, [0.60, 0.70], [0, 1]);
+    const cta = useTransform(scrollYProgress, [0.74, 0.84], [0, 1]);
+    const ctay = useTransform(scrollYProgress, [0.74, 0.84], [18, 0]);
+    // Filigrane « DAHOMEY » qui dérive lentement (parallaxe discrète).
+    const wordX = useTransform(scrollYProgress, [0, 1], [0, -60]);
 
-    const st = (mv: unknown, fallback = 1) => (reduce ? fallback : (mv as never));
+    const st = (mv: unknown, fb = 1) => (reduce ? fb : (mv as never));
 
     return (
-        <section ref={sectionRef} className="relative h-[300vh] bg-[#04140d]">
-            <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-                {/* Fond : émeraude radial profond + voile tricolore + grain d'or */}
-                <div
+        <section ref={sectionRef} className="relative h-[300vh] bg-white">
+            <div className="sticky top-0 h-screen overflow-hidden">
+                {/* Filigrane typographique — DAHOMEY, le royaume ancestral (bleed). */}
+                <motion.span
                     aria-hidden
-                    className="absolute inset-0"
-                    style={{
-                        background:
-                            "radial-gradient(120% 90% at 50% 78%, #0a3b26 0%, #072a1b 42%, #04140d 78%)",
-                    }}
-                />
-                {/* Arche « Porte du Retour » — cerne d'or diffus derrière la silhouette */}
-                <motion.div
-                    aria-hidden
-                    className="absolute left-1/2 top-1/2 -z-0 h-[86vh] w-[52vh] -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        scale: st(arch, 1),
-                        borderRadius: "50% 50% 8% 8% / 62% 62% 8% 8%",
-                        border: "1.5px solid rgba(252,209,22,0.28)",
-                        boxShadow:
-                            "0 0 120px 20px rgba(0,135,81,0.28), inset 0 0 90px rgba(252,209,22,0.06)",
-                        background:
-                            "radial-gradient(60% 55% at 50% 45%, rgba(11,178,104,0.18), transparent 70%)",
-                    }}
-                />
-                {/* Liseré tricolore vertical, discret */}
-                <div
-                    aria-hidden
-                    className="absolute right-8 top-1/2 hidden h-40 w-[3px] -translate-y-1/2 rounded-full md:block"
-                    style={{
-                        background:
-                            "linear-gradient(180deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)",
-                        opacity: 0.55,
-                    }}
-                />
+                    style={{ x: st(wordX, 0) }}
+                    className="pointer-events-none absolute right-[-4vw] top-1/2 -translate-y-1/2 select-none font-fraunces text-[26vw] font-semibold leading-none tracking-[-0.03em] text-[#0d1a12] opacity-[0.035] md:text-[18vw]"
+                >
+                    DAHOMEY
+                </motion.span>
 
-                {/* Personnage 3D — pleine hauteur, centré */}
-                <div className="absolute inset-0">
-                    {mounted && <BehanzinWalk progressRef={progressRef} className="!h-full !w-full" />}
+                {/* Roi 3D — zone dédiée : desktop à droite, mobile en bas. */}
+                <div className="absolute inset-x-0 bottom-0 h-[56%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[56%]">
+                    {/* Cercle « Porte du Retour » — tracé PLAT (aucune lueur). */}
+                    <div
+                        aria-hidden
+                        className="absolute left-1/2 top-1/2 aspect-square h-[80%] max-h-[62vh] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#9A7B2E]/35 md:h-[86%]"
+                    />
+                    <div
+                        aria-hidden
+                        className="absolute left-1/2 top-1/2 aspect-square h-[68%] max-h-[52vh] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#9A7B2E]/15 md:h-[72%]"
+                    />
+                    <div className="absolute inset-0">
+                        {mounted && <BehanzinWalk progressRef={progressRef} className="!h-full !w-full" />}
+                    </div>
                 </div>
 
-                {/* Récit — colonne éditoriale à gauche */}
-                <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] px-6 md:px-10">
+                {/* Colonne éditoriale — desktop à gauche, mobile en haut. */}
+                <div className="absolute inset-x-0 top-0 px-6 pt-[calc(env(safe-area-inset-top)+5.5rem)] md:inset-y-0 md:right-auto md:left-0 md:flex md:w-[52%] md:items-center md:px-12 md:pt-0 lg:px-20">
                     <div className="max-w-xl">
-                        <p className="mb-5 font-geist text-[12px] font-semibold uppercase tracking-[0.32em] text-[#FCD116]">
-                            <T>L&apos;Héritage</T>
-                        </p>
-                        <h2 className="font-fraunces text-4xl font-semibold leading-[1.04] tracking-[-0.02em] text-white md:text-6xl">
+                        <div className="mb-5 flex items-center gap-3">
+                            <span className="h-px w-8 bg-[#9A7B2E]/50" />
+                            <p className="font-geist text-[11.5px] font-semibold uppercase tracking-[0.34em] text-[#9A7B2E]">
+                                <T>L&apos;Héritage</T>
+                            </p>
+                        </div>
+
+                        <h2 className="font-fraunces text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.02em] text-[#0d1a12] sm:text-5xl md:text-6xl">
                             <T>Le Roi Béhanzin</T>{" "}
-                            <span className="italic text-[#0bb268]">
+                            <span className="italic text-[#008751]">
                                 <T>marche encore.</T>
                             </span>
                         </h2>
 
-                        <div className="mt-8 space-y-5 font-geist text-lg leading-relaxed text-[#d7e4dd] md:text-xl">
+                        <div className="mt-7 space-y-4 font-geist text-[1.02rem] leading-relaxed text-[#4a5751] md:text-lg">
                             <motion.p style={{ opacity: st(l1), y: st(l1y, 0) }}>
                                 <T>
                                     Dernier souverain indépendant du Dahomey, il refusa de plier
@@ -141,7 +132,7 @@ export default function BehanzinHeritage() {
                             </motion.p>
                             <motion.p
                                 style={{ opacity: st(l3), y: st(l3y, 0) }}
-                                className="font-medium text-white"
+                                className="font-medium text-[#0d1a12]"
                             >
                                 <T>
                                     Aujourd&apos;hui, ses enfants reviennent. Et vous êtes des
@@ -150,14 +141,35 @@ export default function BehanzinHeritage() {
                             </motion.p>
                         </div>
 
-                        <motion.div style={{ opacity: st(cta), y: st(ctay, 0) }} className="mt-10">
+                        {/* Cartel — chronologie RÉELLE (justifie la structure datée). */}
+                        <motion.dl
+                            style={{ opacity: st(plaque) }}
+                            className="mt-8 hidden gap-x-8 gap-y-3 border-t border-[#E7E2D6] pt-5 font-geist sm:grid sm:grid-cols-[auto_auto_auto]"
+                        >
+                            {[
+                                ["Titre", "Roi du Dahomey"],
+                                ["Règne", "1889 – 1894"],
+                                ["Exil", "1894 – 1906"],
+                            ].map(([k, v]) => (
+                                <div key={k}>
+                                    <dt className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-[#9A7B2E]">
+                                        <T>{k}</T>
+                                    </dt>
+                                    <dd className="mt-1 text-[13.5px] font-medium text-[#0d1a12]">
+                                        {v}
+                                    </dd>
+                                </div>
+                            ))}
+                        </motion.dl>
+
+                        <motion.div style={{ opacity: st(cta), y: st(ctay, 0) }} className="mt-8">
                             <Link
                                 href="/patrimoine"
-                                className="pointer-events-auto group inline-flex items-center gap-2 rounded-full border border-[#FCD116]/40 bg-[#FCD116]/5 px-6 py-3 font-geist text-[15px] font-semibold text-[#FCD116] backdrop-blur-sm transition-colors hover:bg-[#FCD116]/12"
+                                className="group inline-flex items-center gap-2 font-geist text-[15px] font-semibold text-[#0d1a12] underline decoration-[#FCD116] decoration-2 underline-offset-[6px] transition-colors hover:text-[#008751]"
                             >
                                 <T>Découvrir notre patrimoine</T>
                                 <ArrowRight
-                                    size={16}
+                                    size={15}
                                     weight="bold"
                                     className="transition-transform group-hover:translate-x-0.5"
                                 />
@@ -165,12 +177,6 @@ export default function BehanzinHeritage() {
                         </motion.div>
                     </div>
                 </div>
-
-                {/* Dégradé bas pour ancrer les pieds dans le sol sombre */}
-                <div
-                    aria-hidden
-                    className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#04140d] to-transparent"
-                />
             </div>
         </section>
     );

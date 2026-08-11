@@ -121,22 +121,25 @@ export default function BehanzinWalk({
             style={{ background: "transparent" }}
             aria-hidden="true"
         >
-            <ambientLight intensity={0.4} />
-            {/* Key chaud (soleil) */}
-            <directionalLight position={[4, 9, 5]} intensity={1.15} color="#fff3d6" />
-            {/* Rim vert Bénin, pour détacher la silhouette du fond sombre */}
-            <directionalLight position={[-6, 4, -5]} intensity={0.6} color="#0bb268" />
+            {/* Éclairage galerie sur fond BLANC : lumière douce et neutre,
+                pas de rim coloré (slop). La couleur vient du PBR + env studio. */}
+            <ambientLight intensity={0.65} />
+            {/* Key chaud discret (modelé du visage / du pagne) */}
+            <directionalLight position={[4, 9, 6]} intensity={1.05} color="#fff4e2" />
+            {/* Fill froid léger à gauche, pour sculpter sans colorer */}
+            <directionalLight position={[-7, 5, 2]} intensity={0.45} color="#eef2f6" />
             <Suspense fallback={null}>
                 <StudioEnv />
                 <King reduce={reduce} />
+                {/* Ombre portée RÉELLE, visible sur blanc → ancre les pieds au sol. */}
                 <ContactShadows
                     position={[0, 0, 0]}
-                    opacity={0.55}
-                    scale={9}
-                    blur={2.6}
-                    far={4}
-                    resolution={512}
-                    color="#010d07"
+                    opacity={0.32}
+                    scale={7.5}
+                    blur={2.4}
+                    far={3.5}
+                    resolution={1024}
+                    color="#2a2018"
                 />
                 <Rig progressRef={progressRef} reduce={reduce} />
             </Suspense>
