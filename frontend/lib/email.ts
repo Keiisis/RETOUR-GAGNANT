@@ -670,7 +670,6 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
                 : ''
 
             return EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${emoji} ${title}</h2>
         ${urgencyBadge}
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 10px;">
             Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,
@@ -700,14 +699,8 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             ${closing}
         </p>
 
-        ${portalUrl ? `<table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-          <tr><td>
-            <a href="${portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${level === 'formal' ? '#b91c1c' : (level === 'firm' ? '#b45309' : '#B89538')});color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(27,42,74,0.15);">
-              Consulter ma facture →
-            </a>
-          </td></tr>
-        </table>` : ''}
-    `, 'fr')
+        ${portalUrl ? emailButton(portalUrl, 'Consulter ma facture', accentColor) : ''}
+    `, 'fr', { heroEmoji: emoji, heroTitle: title, accent: accentColor, preheader: intro })
         },
 
         /** Dossier status update & Document Request */
@@ -736,8 +729,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             }
 
             return EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 18px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${icon} ${title}</h2>
-        <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 18px;">
+        <p style="color:#3E4A65;font-size:15px;line-height:1.7;margin:0 0 18px;">
             Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,
         </p>
         <p style="color:#3E4A65;font-size:14px;line-height:1.8;margin:0 0 22px;">
@@ -759,14 +751,8 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         ${docsHtml}
 
-        <table cellpadding="0" cellspacing="0" style="margin:30px auto 0;">
-          <tr><td>
-            <a href="${trackerUrl}" style="display:inline-block;background:linear-gradient(135deg,${accentColor},${hasMissingDocs ? '#b91c1c' : '#00a664'});color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(${hasMissingDocs ? '220,38,38' : '0,135,81'},0.28);">
-              ${hasMissingDocs ? 'Fournir les documents →' : 'Suivre mon dossier →'}
-            </a>
-          </td></tr>
-        </table>
-    `, 'fr')
+        ${emailButton(trackerUrl, hasMissingDocs ? 'Fournir les documents' : 'Suivre mon dossier', accentColor)}
+    `, 'fr', { heroEmoji: icon, heroTitle: title, accent: accentColor, preheader: hasMissingDocs ? 'Des documents sont requis pour faire avancer votre dossier.' : 'Votre dossier a été mis à jour.' })
         },
     }
 }
