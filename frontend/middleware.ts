@@ -273,9 +273,22 @@ export async function middleware(request: NextRequest) {
     //  • /api/documents/confirm-payment : l'autorisation EST la vérification
     //    de la transaction chez le provider
     const isTokenAuthedPublic = (
+        // ── Flux « demande de nationalité » COMPLET ─────────────────
+        // Pages + TOUTE l'API /api/nationality (lead, upload-url, upload-file,
+        // analyze, depot, complete, resume, recherche-ancestrale, soumission).
+        // Motif : ces endpoints publics étaient soumis au scoring de réputation
+        // IP + rate-limit. Sur IP PARTAGÉE (mobile CGNAT, VPN, réseau d'entreprise)
+        // la confiance chutait → 403 « Accès refusé » à la soumission, et surtout
+        // une action `deceive` renvoyait un FAUX succès sur /upload-file → le
+        // fichier n'atteignait jamais Storage (« pièces manquantes »).
+        // L'exemption les sort du blocage IP (trust/rate/geo/deceive/tarpit) tout
+        // en gardant la détection d'attaque protocolaire + honeypot + entêtes.
+        // Chaque route garde SA propre garde applicative (débit plafonné par
+        // dossier, cf. lib/api-guard) : « public » ne veut pas dire « illimité ».
         pathname === '/nationalite/formulaire' ||
-        pathname.startsWith('/api/nationality/resume') ||
-        pathname.startsWith('/api/nationality/complete') ||
+        pathname === '/nationalite/depot' ||
+        pathname === '/nationalite/complement-ancestral' ||
+        pathname.startsWith('/api/nationality') ||
         pathname.startsWith('/api/webhooks/') ||
         pathname.startsWith('/portail/') ||
         pathname.startsWith('/p/') ||
@@ -372,16 +385,28 @@ export async function middleware(request: NextRequest) {
                         },
                         supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
                     })
-                    // Trust decay : marque l'IP comme suspecte (escalade progressive)
-                    updateIpMemory({
-                        ip, isAttack: true,
-                        attackType: robot.usurpation ? 'crawler_spoofing' : 'headless_browser',
-                        supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
-                    })
+                    // ── Trust decay UNIQUEMENT sur USURPATION de crawler ────
+                    // (se déclarer Googlebot depuis une IP hors de ses plages =
+                    // preuve forte). Le simple « headless » ne dégrade PLUS la
+                    // confiance : c'est un FAUX POSITIF massif (webviews in-app,
+                    // navigateurs mobiles/privés, WebView Android/iOS). Il
+                    // enfermait dehors des clients légitimes — 1273 IP avaient été
+                    // dégradées ainsi, dont des utilisateurs du formulaire mobile.
+                    // Les vrais bots restent attrapés par honeypot/CRS/RPC dès
+                    // qu'ils touchent un chemin malveillant.
+                    if (robot.usurpation) {
+                        updateIpMemory({
+                            ip, isAttack: true,
+                            attackType: 'crawler_spoofing',
+                            supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                        })
+                    }
                 }
-                // Tarpit léger (1.2s) — coûteux pour un bot qui scanne en masse,
-                // imperceptible pour un crawler légitime occasionnel.
-                await applyTarpit(1200)
+                // Tarpit léger réservé à l'usurpation. Un tarpit de 1,2 s à CHAQUE
+                // page pénalisait les navigateurs mobiles faussement détectés.
+                if (robot.usurpation) {
+                    await applyTarpit(1200)
+                }
             }
         } catch { /* fingerprint extraction non-critique */ }
     }

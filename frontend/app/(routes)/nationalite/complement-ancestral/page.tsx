@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { ttcFromHt, fromHt } from '@/lib/tax'
+import { natFetch } from '@/lib/nationality-flow'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -147,7 +148,7 @@ function ComplementAncestralContent() {
         if (!paymentDone) { setError(t('Veuillez effectuer le paiement')); return }
         setSubmitting(true); setError('')
         try {
-            const res = await fetch('/api/nationality/recherche-ancestrale', {
+            const res = await natFetch('/api/nationality/recherche-ancestrale', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

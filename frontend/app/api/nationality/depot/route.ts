@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyResumeToken } from '@/lib/nationality-token'
 import { isPaidNationality } from '@/lib/nationality-paid'
-import { guardPublic, UPLOAD_LIMIT } from '@/lib/api-guard'
+import { guardPublic, UPLOAD_LIMIT, flowKey } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 // POST /api/nationality/depot  { token, docs: [{label, path}] }
 // Le client ajoute lui-même des pièces qu'il a nommées.
 export async function POST(request: NextRequest) {
-    const trop = guardPublic(request, 'nationality-depot', UPLOAD_LIMIT)
+    const trop = guardPublic(request, 'nationality-depot', UPLOAD_LIMIT, flowKey(request))
     if (trop) return trop
 
     const body = await request.json().catch(() => ({}))

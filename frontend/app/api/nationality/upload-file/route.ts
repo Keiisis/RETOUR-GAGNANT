@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { guardPublic, UPLOAD_LIMIT } from '@/lib/api-guard'
+import { guardPublic, UPLOAD_LIMIT, flowKey } from '@/lib/api-guard'
 
 // ══════════════════════════════════════════════════════════════
 //  UPLOAD CÔTÉ SERVEUR — PIÈCES JOINTES NATIONALITÉ
@@ -33,7 +33,7 @@ const sanitizeKey = (key: unknown): string =>
     String(key ?? 'doc').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40) || 'doc'
 
 export async function POST(request: Request) {
-    const trop = guardPublic(request, 'nationality-upload-file', UPLOAD_LIMIT)
+    const trop = guardPublic(request, 'nationality-upload-file', UPLOAD_LIMIT, flowKey(request))
     if (trop) return trop
 
     if (!serviceKey) {

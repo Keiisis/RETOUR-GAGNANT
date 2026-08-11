@@ -116,9 +116,16 @@ export function guardPublic(
     request: Request,
     route: string,
     config: RateLimitConfig = PUBLIC_FORM_LIMIT,
+    identifier?: string,
 ): NextResponse | null {
-    const ip = getClientIp(request)
-    const result = rateLimit(`${route}:${ip}`, config)
+    // Clé de débit : un identifiant de flux (dossier/e-mail/jeton) quand la route
+    // en fournit un, sinon l'IP. Indispensable pour les flux publics multi-pièces
+    // (dépôt nationalité) : sur IP PARTAGÉE (mobile CGNAT, VPN, réseau d'entreprise),
+    // plusieurs clients derrière la même IP épuisaient le quota et se bloquaient
+    // mutuellement. Clé par dossier → chacun a son propre compteur, jamais bloqué
+    // « par IP ». La détection d'attaque reste assurée par le WAF (middleware).
+    const key = identifier && identifier.trim() ? identifier.trim().slice(0, 80) : getClientIp(request)
+    const result = rateLimit(`${route}:${key}`, config)
     if (result.allowed) return null
 
     return NextResponse.json(
@@ -137,12 +144,25 @@ export function guardPublic(
  * déjà parsé — la route NE DOIT PAS refaire `request.json()`, le flux
  * ayant été consommé.
  */
+/**
+ * Identifiant de flux transmis par le client sur les parcours publics
+ * multi-requêtes (formulaire + dépôt de pièces nationalité) via l'en-tête
+ * `x-rgb-flow`. Permet de plafonner le débit PAR DOSSIER plutôt que par IP,
+ * pour ne jamais bloquer un client légitime derrière une IP partagée
+ * (mobile CGNAT / VPN). Retourne `undefined` si absent → repli sur l'IP.
+ */
+export function flowKey(request: Request): string | undefined {
+    const v = request.headers.get('x-rgb-flow')?.trim()
+    return v && v.length >= 6 ? v.slice(0, 80) : undefined
+}
+
 export async function guardPublicBody(
     request: Request,
     route: string,
     config: RateLimitConfig = PUBLIC_FORM_LIMIT,
+    identifier?: string,
 ): Promise<{ body: unknown; rejection: NextResponse | null }> {
-    const trop = guardPublic(request, route, config)
+    const trop = guardPublic(request, route, config, identifier)
     if (trop) return { body: undefined, rejection: trop }
 
     const { body, rejection } = await scanRequestBody(request)

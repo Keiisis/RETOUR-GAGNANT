@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CloudArrowUp as UploadCloud, Plus, Trash as Trash2, CircleNotch as Loader2, Check, ShieldCheck, FileText } from '@phosphor-icons/react';
+import { natFetch } from '@/lib/nationality-flow'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,7 @@ function DepotInner() {
 
     useEffect(() => {
         if (!token) { setState('error'); setErrorMsg('Lien invalide.'); return }
-        fetch(`/api/nationality/depot?token=${encodeURIComponent(token)}`)
+        natFetch(`/api/nationality/depot?token=${encodeURIComponent(token)}`)
             .then(r => r.json().then(j => ({ ok: r.ok, j })))
             .then(({ ok, j }) => {
                 if (ok && j.ok) { setRef(j.ref || ''); setPrenom(j.prenom || ''); setState('ok') }
@@ -44,12 +45,12 @@ function DepotInner() {
                 fd.append('file', r.file!)
                 fd.append('key', r.label.trim())
                 fd.append('ext', ext)
-                const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+                const up = await natFetch('/api/nationality/upload-file', { method: 'POST', body: fd })
                 const uj = await up.json().catch(() => ({}))
                 if (!up.ok || !uj.path) throw new Error(uj.error || `Échec de l'envoi de « ${r.label} »`)
                 docs.push({ label: r.label.trim(), path: uj.path })
             }
-            const res = await fetch('/api/nationality/depot', {
+            const res = await natFetch('/api/nationality/depot', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, docs }),
             })

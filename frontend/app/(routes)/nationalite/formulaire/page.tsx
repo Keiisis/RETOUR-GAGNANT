@@ -13,6 +13,7 @@ import { CurrencyCode, convertCurrency } from '@/lib/currency'
 import { ttcFromHt, fromHt } from '@/lib/tax'
 import { useTranslation, T } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
+import { natFetch } from '@/lib/nationality-flow'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -273,7 +274,7 @@ export default function NationaliteFormPage() {
         const wantDocsOnly = params.get('mode') === 'docs'
         ;(async () => {
             try {
-                const res = await fetch(`/api/nationality/resume?token=${encodeURIComponent(token)}`)
+                const res = await natFetch(`/api/nationality/resume?token=${encodeURIComponent(token)}`)
                 const data = await res.json()
                 if (res.ok && data?.ok && data.prefill) {
                     resumeTokenRef.current = token
@@ -314,7 +315,7 @@ export default function NationaliteFormPage() {
         } catch { /* quota ignoré */ }
 
         // API non bloquante : on continue la démarche même si la requête échoue
-        fetch('/api/nationality/lead', {
+        natFetch('/api/nationality/lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...preInscription, lang: 'fr' }),
@@ -516,7 +517,7 @@ export default function NationaliteFormPage() {
         // dépendance. Le transfert du fichier reste direct navigateur → Storage.
         let signed: { key: string; path: string; token: string }[] = []
         try {
-            const r = await fetch('/api/nationality/upload-url', {
+            const r = await natFetch('/api/nationality/upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -545,7 +546,7 @@ export default function NationaliteFormPage() {
                 fd.append('file', doc.file)
                 fd.append('key', doc.key)
                 fd.append('ext', doc.file.name.split('.').pop() || 'bin')
-                const r = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+                const r = await natFetch('/api/nationality/upload-file', { method: 'POST', body: fd })
                 const j = await r.json().catch(() => ({}))
                 if (r.ok && j.path) return String(j.path)
                 lastUploadError = j?.error || `serveur HTTP ${r.status}`
@@ -613,7 +614,7 @@ export default function NationaliteFormPage() {
         // via /api/nationality/complete (jeton signé, aucun paiement redemandé).
         try {
             const res = resumeMode
-                ? await fetch('/api/nationality/complete', {
+                ? await natFetch('/api/nationality/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -626,7 +627,7 @@ export default function NationaliteFormPage() {
                         merge: docsOnly,
                     })
                 })
-                : await fetch('/api/nationality', {
+                : await natFetch('/api/nationality', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -653,7 +654,7 @@ export default function NationaliteFormPage() {
                 trackEvent('nationalite_submit', { reference: result.reference || null })
                 // Déclencher l'analyse des documents manquants en arrière-plan
                 const uploadedKeys = rawDocs.map(d => d.key)
-                fetch('/api/nationality/analyze', {
+                natFetch('/api/nationality/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

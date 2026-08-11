@@ -3,13 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email'
 import { sendWhatsAppNotification } from '@/lib/whatsapp'
 import { trackClient } from '@/lib/classement/track'
-import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { guardPublic, PUBLIC_FORM_LIMIT, flowKey } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export async function POST(req: NextRequest) {
-    const trop = guardPublic(req, 'nationality/lead', PUBLIC_FORM_LIMIT)
+    const trop = guardPublic(req, 'nationality/lead', PUBLIC_FORM_LIMIT, flowKey(req))
     if (trop) return trop
 
     try {
