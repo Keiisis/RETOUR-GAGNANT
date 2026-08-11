@@ -57,23 +57,45 @@ export default function BehanzinHeritage() {
         return () => io.disconnect();
     }, []);
 
-    // Révélations séquentielles (restent visibles une fois apparues).
-    const l1 = useTransform(scrollYProgress, [0.08, 0.19], [0, 1]);
-    const l1y = useTransform(scrollYProgress, [0.08, 0.19], [22, 0]);
-    const l2 = useTransform(scrollYProgress, [0.26, 0.37], [0, 1]);
-    const l2y = useTransform(scrollYProgress, [0.26, 0.37], [22, 0]);
-    const l3 = useTransform(scrollYProgress, [0.44, 0.55], [0, 1]);
-    const l3y = useTransform(scrollYProgress, [0.44, 0.55], [22, 0]);
-    const plaque = useTransform(scrollYProgress, [0.60, 0.70], [0, 1]);
-    const cta = useTransform(scrollYProgress, [0.74, 0.84], [0, 1]);
-    const ctay = useTransform(scrollYProgress, [0.74, 0.84], [18, 0]);
+    // ── Récit en « beats » cinématiques (fondu enchaîné) ──────────
+    // Chaque beat apparaît, se tient, puis s'efface pendant que le suivant
+    // monte — un seul visible à la fois, comme un générique sur le roi qui
+    // marche. Permet un texte long et émouvant sans jamais surcharger l'écran
+    // (essentiel sur mobile). Le bloc final (ligne de clôture + cartel + CTA)
+    // reste, lui, affiché jusqu'au bout.
+    const b1o = useTransform(scrollYProgress, [0.05, 0.10, 0.16, 0.21], [0, 1, 1, 0]);
+    const b1y = useTransform(scrollYProgress, [0.05, 0.10], [20, 0]);
+    const b2o = useTransform(scrollYProgress, [0.19, 0.24, 0.30, 0.35], [0, 1, 1, 0]);
+    const b2y = useTransform(scrollYProgress, [0.19, 0.24], [20, 0]);
+    const b3o = useTransform(scrollYProgress, [0.33, 0.38, 0.44, 0.49], [0, 1, 1, 0]);
+    const b3y = useTransform(scrollYProgress, [0.33, 0.38], [20, 0]);
+    const b4o = useTransform(scrollYProgress, [0.47, 0.52, 0.58, 0.63], [0, 1, 1, 0]);
+    const b4y = useTransform(scrollYProgress, [0.47, 0.52], [20, 0]);
+    const b5o = useTransform(scrollYProgress, [0.61, 0.66, 0.72, 0.77], [0, 1, 1, 0]);
+    const b5y = useTransform(scrollYProgress, [0.61, 0.66], [20, 0]);
+    const beats = [
+        { o: b1o, y: b1y }, { o: b2o, y: b2y }, { o: b3o, y: b3y },
+        { o: b4o, y: b4y }, { o: b5o, y: b5y },
+    ];
+    const finalO = useTransform(scrollYProgress, [0.80, 0.88], [0, 1]);
+    const finalY = useTransform(scrollYProgress, [0.80, 0.88], [20, 0]);
     // Filigrane « DAHOMEY » qui dérive lentement (parallaxe discrète).
     const wordX = useTransform(scrollYProgress, [0, 1], [0, -60]);
 
     const st = (mv: unknown, fb = 1) => (reduce ? fb : (mv as never));
 
+    // Texte du récit — expressif, incarné, factuel (Abomey, emblème du requin,
+    // Amazones du Dahomey, exil Martinique puis Algérie, mort en 1906).
+    const RECIT = [
+        "À Abomey, il y a plus d'un siècle, un roi refusa de courber l'échine. Sous son emblème — le requin qui trouble les eaux — Béhanzin défia l'empire le plus puissant de son temps.",
+        "À ses côtés, les Amazones du Dahomey combattirent jusqu'au dernier souffle. Pas pour un trône : pour une terre, une langue, une dignité que nul ne devait leur arracher.",
+        "On finit par l'emmener loin des siens. Déporté au-delà des mers — la Martinique, puis l'Algérie — il s'éteignit en exil, le regard tourné vers le Bénin. Son corps partit. Jamais son âme.",
+        "Comme lui, des millions d'enfants d'Afrique furent séparés de leur terre. Comme lui, ils n'ont jamais cessé de lui appartenir. Ce fil que l'exil n'a pas rompu, c'est le vôtre.",
+        "Le jour où vous poserez le pied sur cette terre rouge, où l'on prononcera votre nom dans la langue de vos aïeux, vous le sentirez au fond de la poitrine : vous n'êtes pas un visiteur. Vous rentrez chez vous.",
+    ];
+
     return (
-        <section ref={sectionRef} className="relative h-[300vh] bg-white">
+        <section ref={sectionRef} className="relative h-[400vh] bg-white">
             <div className="sticky top-0 h-screen overflow-hidden">
                 {/* Filigrane typographique — DAHOMEY, le royaume ancestral (bleed). */}
                 <motion.span
@@ -117,67 +139,75 @@ export default function BehanzinHeritage() {
                             </span>
                         </h2>
 
-                        <div className="mt-7 space-y-4 font-geist text-[1.02rem] leading-relaxed text-[#4a5751] md:text-lg">
-                            <motion.p style={{ opacity: st(l1), y: st(l1y, 0) }}>
-                                <T>
-                                    Dernier souverain indépendant du Dahomey, il refusa de plier
-                                    devant l&apos;empire.
-                                </T>
-                            </motion.p>
-                            <motion.p style={{ opacity: st(l2), y: st(l2y, 0) }}>
-                                <T>
-                                    On l&apos;exila de force, loin de sa terre — jamais de son
-                                    peuple.
-                                </T>
-                            </motion.p>
-                            <motion.p
-                                style={{ opacity: st(l3), y: st(l3y, 0) }}
-                                className="font-medium text-[#0d1a12]"
-                            >
-                                <T>
-                                    Aujourd&apos;hui, ses enfants reviennent. Et vous êtes des
-                                    leurs.
-                                </T>
-                            </motion.p>
-                        </div>
-
-                        {/* Cartel — chronologie RÉELLE (justifie la structure datée). */}
-                        <motion.dl
-                            style={{ opacity: st(plaque) }}
-                            className="mt-8 hidden gap-x-8 gap-y-3 border-t border-[#E7E2D6] pt-5 font-geist sm:grid sm:grid-cols-[auto_auto_auto]"
-                        >
-                            {[
-                                ["Titre", "Roi du Dahomey"],
-                                ["Règne", "1889 – 1894"],
-                                ["Exil", "1894 – 1906"],
-                            ].map(([k, v]) => (
-                                <div key={k}>
-                                    <dt className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-[#9A7B2E]">
-                                        <T>{k}</T>
-                                    </dt>
-                                    <dd className="mt-1 text-[13.5px] font-medium text-[#0d1a12]">
-                                        {v}
-                                    </dd>
-                                </div>
-                            ))}
-                        </motion.dl>
-
-                        <motion.div style={{ opacity: st(cta), y: st(ctay, 0) }} className="mt-8">
-                            <Link
-                                href="/patrimoine"
-                                className="group inline-flex items-center gap-2 font-geist text-[15px] font-semibold text-[#0d1a12] underline decoration-[#FCD116] decoration-2 underline-offset-[6px] transition-colors hover:text-[#008751]"
-                            >
-                                <T>Découvrir notre patrimoine</T>
-                                <ArrowRight
-                                    size={15}
-                                    weight="bold"
-                                    className="transition-transform group-hover:translate-x-0.5"
-                                />
-                            </Link>
-                        </motion.div>
+                        {/* ── Récit ──────────────────────────────────────────
+                            Mouvement : beats en fondu enchaîné (un à la fois).
+                            Reduced-motion : pile statique, tout lisible d'emblée. */}
+                        {reduce ? (
+                            <div className="mt-7 space-y-4 font-geist text-[1.02rem] leading-relaxed text-[#4a5751] md:text-lg">
+                                {RECIT.map((txt, i) => (
+                                    <p key={i} className={i === 4 ? 'font-medium text-[#0d1a12]' : ''}>
+                                        <T>{txt}</T>
+                                    </p>
+                                ))}
+                                <p className="pt-2 font-fraunces text-xl italic leading-snug text-[#008751]">
+                                    <T>Béhanzin marche encore — dans chacun de ses enfants qui revient.</T>{" "}
+                                    <span className="not-italic font-medium text-[#0d1a12]"><T>Et vous êtes des leurs.</T></span>
+                                </p>
+                                <ChronoCta />
+                            </div>
+                        ) : (
+                            <div className="relative mt-7 min-h-[48vh] md:min-h-[19rem]">
+                                {beats.map((b, i) => (
+                                    <motion.p
+                                        key={i}
+                                        style={{ opacity: b.o, y: b.y }}
+                                        className={`absolute inset-x-0 top-0 font-geist text-[1.08rem] leading-relaxed md:text-xl ${i === 4 ? 'font-medium text-[#0d1a12]' : 'text-[#4a5751]'}`}
+                                    >
+                                        <T>{RECIT[i]}</T>
+                                    </motion.p>
+                                ))}
+                                {/* Clôture persistante : ligne finale + cartel + CTA */}
+                                <motion.div style={{ opacity: finalO, y: finalY }} className="absolute inset-x-0 top-0">
+                                    <p className="font-fraunces text-2xl italic leading-snug text-[#008751] md:text-[1.9rem]">
+                                        <T>Béhanzin marche encore — dans chacun de ses enfants qui revient.</T>{" "}
+                                        <span className="not-italic font-medium text-[#0d1a12]"><T>Et vous êtes des leurs.</T></span>
+                                    </p>
+                                    <ChronoCta />
+                                </motion.div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </section>
+    );
+}
+
+/** Cartel chronologique RÉEL + appel à l'action patrimoine. */
+function ChronoCta() {
+    return (
+        <>
+            <dl className="mt-7 grid grid-cols-3 gap-x-6 gap-y-3 border-t border-[#E7E2D6] pt-5 font-geist">
+                {[
+                    ["Titre", "Roi du Dahomey"],
+                    ["Règne", "1889 – 1894"],
+                    ["Exil", "1894 – 1906"],
+                ].map(([k, v]) => (
+                    <div key={k}>
+                        <dt className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-[#9A7B2E]">
+                            <T>{k}</T>
+                        </dt>
+                        <dd className="mt-1 text-[13px] font-medium text-[#0d1a12] md:text-[13.5px]">{v}</dd>
+                    </div>
+                ))}
+            </dl>
+            <Link
+                href="/patrimoine"
+                className="group mt-7 inline-flex items-center gap-2 font-geist text-[15px] font-semibold text-[#0d1a12] underline decoration-[#FCD116] decoration-2 underline-offset-[6px] transition-colors hover:text-[#008751]"
+            >
+                <T>Découvrir notre patrimoine</T>
+                <ArrowRight size={15} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+        </>
     );
 }
