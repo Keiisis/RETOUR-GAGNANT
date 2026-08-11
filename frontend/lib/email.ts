@@ -458,7 +458,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
     return {
         /** Auto-reply to client after form submission */
         autoReply: (clientName: string, aiMessage: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:22px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">${t.thankYou} ${clientName} 🤝</h2>
+        <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 22px;">
             ${t.received}
         </p>
@@ -468,14 +468,8 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         <p style="color:#5A6680;font-size:13.5px;line-height:1.75;margin:0 0 28px;">
             ${t.expertContact}
         </p>
-        <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-          <tr><td>
-            <a href="${SITE_URL}/rendez-vous" style="display:inline-block;background:linear-gradient(135deg,#008751,#00a664);color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:13px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,135,81,0.28);">
-              ${t.bookBtn}
-            </a>
-          </td></tr>
-        </table>
-    `, locale),
+        ${emailButton(`${SITE_URL}/rendez-vous`, t.bookBtn)}
+    `, locale, { heroEmoji: '🤝', heroTitle: t.thankYou, preheader: t.received, accent: '#008751' }),
 
         /** Confirmation de demande de RDV — sans CTA "réserver" (redondant et illogique) */
         rdvConfirmation: (clientName: string, service: string, date: string | null, timeSlot: string, contactMethod: string, aiMessage: string, clientMessage: string = '') => EMAIL_WRAPPER(`
@@ -612,7 +606,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
 
         /** Invitation à créer un compte — après capture d'un prospect nationalité */
         accountInvite: (clientName: string, registerUrl: string) => EMAIL_WRAPPER(`
-        <h2 style="margin:0 0 16px;font-size:24px;color:#1B2A4A;font-weight:800;letter-spacing:-0.3px;">🇧🇯 Bienvenue ${clientName}</h2>
+        <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 20px;">
             Nous avons bien reçu votre intérêt pour la reconnaissance de la nationalité béninoise. Votre dossier est en cours de préparation — vous pouvez <strong style="color:#1B2A4A;">continuer votre démarche</strong> dès maintenant sur notre site.
         </p>
@@ -622,18 +616,12 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
                 Créer votre compte vous permet de suivre l'avancement de votre dossier, d'échanger avec votre conseiller et de téléverser vos pièces en toute sécurité.
             </p>
         </div>
-        <table cellpadding="0" cellspacing="0" style="margin:0 auto 22px;">
-          <tr><td>
-            <a href="${registerUrl}" style="display:inline-block;background:linear-gradient(135deg,#008751,#00a664);color:#FFFFFF;text-decoration:none;padding:15px 40px;border-radius:12px;font-weight:800;font-size:13.5px;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,135,81,0.28);">
-              Créer mon compte sécurisé →
-            </a>
-          </td></tr>
-        </table>
-        <p style="color:#8B94A6;font-size:12.5px;line-height:1.7;margin:0;text-align:center;">
+        ${emailButton(registerUrl, 'Créer mon compte sécurisé')}
+        <p style="color:#8B94A6;font-size:12.5px;line-height:1.7;margin:14px 0 0;text-align:center;">
             Pas de pression — cette invitation ne bloque en rien votre démarche.<br/>
             Vous pouvez créer votre compte avant, pendant, ou après la soumission de votre dossier.
         </p>
-    `, 'fr'),
+    `, 'fr', { heroEmoji: '🇧🇯', heroTitle: 'Bienvenue chez Retour Gagnant', preheader: 'Créez votre espace pour suivre votre dossier et échanger avec votre conseiller.', accent: '#008751' }),
 
         /** Invoice payment reminder — tone escalates with delay */
         invoiceReminder: (
