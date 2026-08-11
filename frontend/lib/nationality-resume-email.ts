@@ -24,7 +24,7 @@ function relanceHtml(prenom: string, nom: string, ref: string, link: string) {
     const civil = prenom ? prenom : nom
     return `
     <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
-        <div style="background:linear-gradient(135deg,#006b40,#008751);padding:30px 40px;text-align:center;">
+        <div style="background:#008751;background:linear-gradient(135deg,#006b40,#008751);padding:30px 40px;text-align:center;">
             <img src="${SITE}/logo.jpg" alt="Retour Gagnant Bénin" width="60" height="60" style="border-radius:14px;object-fit:cover;border:3px solid rgba(255,255,255,0.4);margin-bottom:12px;" />
             <h1 style="color:#fff;font-size:20px;font-weight:700;margin:0;letter-spacing:0.5px;">Retour Gagnant Bénin</h1>
             <p style="color:#FCD116;font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:6px 0 0;font-weight:600;">Reconnaissance de la Nationalité Béninoise</p>

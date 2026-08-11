@@ -321,7 +321,7 @@ export function emailInfoCard(rows: Array<[string, string]>): string {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F9FC;border:1px solid #E8ECF3;border-radius:14px;margin:18px 0;padding:6px 18px;">${trs}</table>`
 }
 
-const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?: { preheader?: string; accent?: string; heroTitle?: string; heroEmoji?: string }) => {
+export const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?: { preheader?: string; accent?: string; heroTitle?: string; heroEmoji?: string }) => {
     const t = getI18n(lang)
     const isRtl = resolveLocale(lang) === 'ar'
     const accent = opts?.accent || '#008751'

@@ -48,7 +48,7 @@ export async function notifyStaffNationalityPayment(p: NationalityPaymentInfo): 
 
         const html = `
         <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #eef2f1;border-radius:14px;overflow:hidden">
-          <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
+          <div style="height:5px;background:#008751;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
           <div style="padding:26px 28px">
             <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin — Alerte Paiement</p>
             <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Paiement reçu — ${esc(p.service || 'Demande de nationalité')}</h1>
@@ -89,7 +89,7 @@ export async function sendNationalityPaymentReceipt(p: NationalityPaymentInfo): 
     try {
         const html = `
         <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
-            <div style="background:linear-gradient(135deg,#006b40,#008751);padding:28px 40px;text-align:center;">
+            <div style="background:#008751;background:linear-gradient(135deg,#006b40,#008751);padding:28px 40px;text-align:center;">
                 <img src="${SITE}/logo.jpg" alt="Retour Gagnant Bénin" width="60" height="60" style="border-radius:14px;object-fit:cover;border:3px solid rgba(255,255,255,0.4);margin-bottom:12px;" />
                 <h1 style="color:#fff;font-size:20px;font-weight:700;margin:0;letter-spacing:0.5px;">Retour Gagnant Bénin</h1>
                 <p style="color:#FCD116;font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:6px 0 0;font-weight:600;">Reçu de paiement</p>
