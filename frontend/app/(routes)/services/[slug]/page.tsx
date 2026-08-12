@@ -11,6 +11,7 @@ import PricingCalculator3D from '@/components/services/PricingCalculator3D'
 import FaConsultationBooking from '@/components/services/FaConsultationBooking'
 import FaPriestsDirectory from '@/components/services/FaPriestsDirectory'
 import LanguesRacinesChoice from '@/components/services/LanguesRacinesChoice'
+import PermisBooking from '@/components/services/PermisBooking'
 
 import { useTranslation, T } from '@/lib/translation'
 
@@ -228,6 +229,25 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
             { label: 'Consultation en Présentiel — accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
             { label: 'Consultation en Visio — assistance et veille à distance de bout en bout', price: '780 €' },
         ],
+    },
+    'permis-conduire': {
+        title: 'Permis de Conduire Béninois',
+        subtitle: 'Conduisez au Bénin en toute légalité — un permis officiel, sans tracas administratif',
+        description: "Vous êtes afro-descendant et vous vous installez ou séjournez au Bénin ? Obtenez un permis de conduire béninois officiel, en règle, pour circuler l'esprit tranquille et éviter tout problème administratif. Nous vous mettons en relation avec une auto-école partenaire agréée, près de chez vous, et nous coordonnons l'ensemble de votre parcours : inscription, cours de code, heures de conduite et présentation à l'examen. Vous choisissez votre auto-école ; nous veillons à ce que tout se déroule proprement, de bout en bout.",
+        features: [
+            "Mise en relation avec une auto-école partenaire agréée",
+            "Vous choisissez votre auto-école (ville, prix, durée)",
+            "Inscription et constitution du dossier prises en charge",
+            "Cours de code et heures de conduite avec des moniteurs qualifiés",
+            "Présentation à l'examen officiel du permis béninois",
+            "Accompagnement administratif complet jusqu'à l'obtention",
+            "Un cadre clair et un suivi dédié tout au long du parcours",
+        ],
+        price: "Selon l'auto-école choisie",
+        color: '#008751',
+        icon_type: 'shield',
+        image_url: '/assets/icones/Permis de Conduire Service.png',
+        pricing_options: [],
     },
     'langues-racines': {
         title: 'Langues & Racines',
@@ -518,6 +538,15 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     </motion.div>
                                 )}
 
+                                {/* Section réservation — uniquement Permis de Conduire */}
+                                {slug === 'permis-conduire' && (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+                                        <h2 className="text-2xl font-bold text-[#1a2332] mb-2"><T>Choisir mon auto-école et lancer mon permis</T></h2>
+                                        <p className="text-sm text-gray-500 mb-6"><T>Sélectionnez une auto-école partenaire : son prix et sa durée s'affichent, puis réglez en ligne. Notre équipe prend le relais sous 24 h.</T></p>
+                                        <PermisBooking />
+                                    </motion.div>
+                                )}
+
                                 {/* Section choix de format — uniquement Langues & Racines */}
                                 {slug === 'langues-racines' && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
@@ -538,7 +567,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     {/* Exception : le calculateur reste affiché pour la Consultation Fa
                                         (décision boss 2026-07-03 : prix 550/780 € montrés directement),
                                         même quand le toggle global services_show_calculator est désactivé. */}
-                                    {(showCalculator || slug === 'consultation-fa-racines') && (
+                                    {/* Permis : prix PAR auto-école → pas de calculateur global (options vides). */}
+                                    {((showCalculator && slug !== 'permis-conduire') || slug === 'consultation-fa-racines') && (
                                         <PricingCalculator3D
                                             options={service.pricing_options}
                                             baseColor={service.color}

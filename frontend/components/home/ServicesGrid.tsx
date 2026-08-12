@@ -27,6 +27,7 @@ const IMG_BY_SLUG: Record<string, string> = {
     'recherche-ancestrale': '/assets/icones/Recherche Ancestrale.png',
     'consultation-fa-racines': '/assets/icones/icone_Consultation_Fa_Racines.png',
     'langues-racines': '/assets/icones/icone_Langues_Racines.png',
+    'permis-conduire': '/assets/icones/Permis de Conduire Service.png',
     autres: '/assets/icones/Autres Services.png',
 }
 
@@ -42,6 +43,7 @@ const FALLBACK_SERVICES: ServiceItem[] = [
     { id: 'f-8', slug: 'recherche-ancestrale', title: 'Recherche Ancestrale', description: "Retrouvez la trace de vos ancêtres : archives, bases spécialisées et accompagnement généalogique.", imageUrl: IMG_BY_SLUG['recherche-ancestrale'] },
     { id: 'f-9', slug: 'consultation-fa-racines', title: 'Consultation Fa & Racines', description: "Mise en relation avec un Bokonon pour une consultation traditionnelle, en présentiel ou à distance.", imageUrl: IMG_BY_SLUG['consultation-fa-racines'] },
     { id: 'f-10', slug: 'langues-racines', title: 'Langues & Racines', description: "Apprenez fon, yoruba, goun ou mina avec des locuteurs natifs, en présentiel ou en visio.", imageUrl: IMG_BY_SLUG['langues-racines'] },
+    { id: 'f-12', slug: 'permis-conduire', title: 'Permis de Conduire Béninois', description: "Obtenez un permis béninois officiel via une auto-école partenaire : vous choisissez l'école, nous coordonnons tout le parcours.", imageUrl: IMG_BY_SLUG['permis-conduire'] },
     { id: 'f-11', slug: 'autres', title: 'Autres Services', description: "Transport, santé, scolarité et démarches complémentaires pour faciliter votre installation.", imageUrl: IMG_BY_SLUG.autres },
 ]
 
