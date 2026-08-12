@@ -50,6 +50,27 @@ function normalize(scene: THREE.Object3D, targetHeight: number) {
     scene.position.y -= box.min.y;
 }
 
+function prepMaterials(scene: THREE.Object3D, transparent: boolean, out?: THREE.MeshStandardMaterial[]) {
+    scene.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.frustumCulled = false;
+        const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const mm of list) {
+            const m = mm as THREE.MeshStandardMaterial;
+            if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+            if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+            if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
+            if (transparent) {
+                m.transparent = true;
+                m.opacity = 0;
+            }
+            m.needsUpdate = true;
+            out?.push(m);
+        }
+    });
+}
+
 /** Le Roi Béhanzin — mesh skinné + clip « Casual_Walk » (marche en place). */
 function King({ reduce, x }: { reduce: boolean; x: number }) {
     const group = useRef<THREE.Group>(null);
@@ -58,19 +79,7 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 
     useMemo(() => {
         normalize(scene, 2.15);
-        scene.traverse((child) => {
-            const mesh = child as THREE.Mesh;
-            if (!mesh.isMesh) return;
-            mesh.frustumCulled = false;
-            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            for (const mm of mats) {
-                const m = mm as THREE.MeshStandardMaterial;
-                if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
-                if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
-                m.needsUpdate = true;
-            }
-        });
+        prepMaterials(scene, false);
     }, [scene]);
 
     useEffect(() => {
@@ -92,58 +101,87 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 }
 
 /**
- * L'Amazone du Dahomey — mesh skinné + clip de danse. Elle APPARAÎT au beat des
- * Amazones : opacité + montée pilotées par la progression du scroll (progressRef),
- * puis reste dansante aux côtés du Roi jusqu'à la fin.
+ * L'Amazone du Dahomey — mesh skinné + clip de danse en BOUCLE SANS COUTURE.
+ *
+ * Le problème d'une boucle brute : à chaque fin de clip la pose « claque » vers
+ * la pose de début — on « sent » la répétition. Solution : deux actions du MÊME
+ * clip (l'un cloné) sur un mixer dédié ; à l'approche de la fin, on FOND l'action
+ * courante dans l'autre relancée à 0 (crossFade). La transition fin→début est
+ * lissée : le mouvement paraît continu, jamais redémarré.
+ *
+ * Elle APPARAÎT au beat des Amazones (opacité + montée pilotées par progressRef)
+ * puis reste dansante aux côtés du Roi.
  */
 function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progressRef: MutableRefObject<number> }) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_AMAZONE);
-    const { actions, names } = useAnimations(animations, group);
     const mats = useRef<THREE.MeshStandardMaterial[]>([]);
+    const anim = useRef<{
+        mixer: THREE.AnimationMixer;
+        cur: THREE.AnimationAction;
+        nxt: THREE.AnimationAction;
+        dur: number;
+        fade: number;
+        swapping: boolean;
+    } | null>(null);
 
     useMemo(() => {
         normalize(scene, 1.98);
         mats.current = [];
-        scene.traverse((child) => {
-            const mesh = child as THREE.Mesh;
-            if (!mesh.isMesh) return;
-            mesh.frustumCulled = false;
-            const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            for (const mm of list) {
-                const m = mm as THREE.MeshStandardMaterial;
-                if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
-                if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-                if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
-                // Transparence pour le fondu d'apparition.
-                m.transparent = true;
-                m.opacity = reduce ? 1 : 0;
-                m.depthWrite = true;
-                m.needsUpdate = true;
-                mats.current.push(m);
-            }
-        });
-    }, [scene, reduce]);
+        prepMaterials(scene, true, mats.current);
+    }, [scene]);
 
     useEffect(() => {
-        const key = names[0];
-        if (!key) return;
-        const action = actions[key];
-        if (!action) return;
-        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
-        action.setEffectiveTimeScale(reduce ? 0 : 1);
-        if (reduce) action.time = action.getClip().duration * 0.35;
-        return () => { action.stop(); };
-    }, [actions, names, reduce]);
+        const root = group.current;
+        if (!root || !animations.length) return;
+        const mixer = new THREE.AnimationMixer(root);
+        const clip = animations[0];
+        const clipB = clip.clone();
+        const cur = mixer.clipAction(clip);
+        const nxt = mixer.clipAction(clipB);
+        for (const a of [cur, nxt]) {
+            a.setLoop(THREE.LoopRepeat, Infinity);
+            a.enabled = true;
+            a.setEffectiveTimeScale(reduce ? 0 : 1);
+        }
+        cur.setEffectiveWeight(1).play();
+        nxt.setEffectiveWeight(0).play();
+        if (reduce) {
+            cur.time = clip.duration * 0.35;
+            mixer.update(0); // applique la pose figée
+        }
+        // Fondu ~0,7 s (env. 10 % d'un clip de 7 s) : assez pour lisser la couture,
+        // assez court pour ne pas « doubler » le mouvement.
+        anim.current = { mixer, cur, nxt, dur: clip.duration, fade: 0.7, swapping: false };
+        return () => { mixer.stopAllAction(); mixer.uncacheRoot(root); anim.current = null; };
+    }, [animations, reduce]);
 
-    useFrame(() => {
+    useFrame((_, delta) => {
         const g = group.current;
+        const A = anim.current;
+
+        // ── Boucle sans couture ──────────────────────────────────
+        if (A && !reduce) {
+            A.mixer.update(delta);
+            if (!A.swapping && A.cur.time > A.dur - A.fade) {
+                A.swapping = true;
+                A.nxt.reset();
+                A.nxt.time = 0;
+                A.nxt.setEffectiveWeight(0).play();
+                A.cur.crossFadeTo(A.nxt, A.fade, false);
+                const tmp = A.cur; A.cur = A.nxt; A.nxt = tmp; // l'entrant devient courant
+            } else if (A.swapping && A.cur.time > A.fade) {
+                A.swapping = false;
+            }
+        }
+
+        // ── Apparition (fondu + légère montée) au beat des Amazones ─
         if (!g) return;
         const p = reduce ? 1 : progressRef.current;
         const t = THREE.MathUtils.clamp((p - AMAZONE_IN) / (AMAZONE_FULL - AMAZONE_IN), 0, 1);
         const eased = t * t * (3 - 2 * t); // smoothstep
-        g.visible = eased > 0.002 || reduce;
-        g.position.y = (1 - eased) * -0.28; // légère montée à l'apparition
+        g.visible = reduce || eased > 0.002;
+        g.position.y = (1 - eased) * -0.28;
         for (const m of mats.current) m.opacity = eased;
     });
 
@@ -155,23 +193,24 @@ function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progr
 }
 
 /**
- * Travelling avant piloté par le scroll (0 → 1). Distance ADAPTÉE au ratio du
- * canvas : sur un cadre étroit/portrait (mobile), on recule pour garder les DEUX
- * figures (Roi + Amazone) entièrement dans le champ.
+ * Travelling AVANT piloté par le scroll (0 → 1) : plus on descend, plus la caméra
+ * se rapproche → les DEUX figures grandissent (« zoom »). Distance ADAPTÉE au
+ * ratio du canvas (recul sur cadre étroit/mobile) pour ne jamais couper.
  */
 function Rig({ progressRef, reduce }: { progressRef: MutableRefObject<number>; reduce: boolean }) {
     const { camera, size } = useThree();
     useFrame(() => {
-        const p = reduce ? 0.4 : progressRef.current;
+        const p = reduce ? 0.35 : progressRef.current;
         const aspect = size.width / Math.max(1, size.height);
         const narrow = aspect < 0.95;
-        const zNear = narrow ? 9.8 : 7.8;
-        const zFar = narrow ? 8.6 : 6.5;
-        const z = THREE.MathUtils.lerp(zNear, zFar, p);
-        const y = THREE.MathUtils.lerp(1.0, 1.26, p);
-        camera.position.z += (z - camera.position.z) * 0.07;
-        camera.position.y += (y - camera.position.y) * 0.07;
-        camera.lookAt(-0.1, 1.05, 0);
+        const zStart = narrow ? 10.8 : 8.6; // départ : les deux figures cadrées
+        const zEnd = narrow ? 7.6 : 5.7;    // fin : zoom marqué, elles grandissent
+        const z = THREE.MathUtils.lerp(zStart, zEnd, p);
+        const y = THREE.MathUtils.lerp(1.0, 1.3, p);
+        // lissage fort = mouvement de caméra très fluide
+        camera.position.z += (z - camera.position.z) * 0.06;
+        camera.position.y += (y - camera.position.y) * 0.06;
+        camera.lookAt(-0.05, 1.05, 0);
     });
     return null;
 }
@@ -187,8 +226,8 @@ export default function BehanzinWalk({
     return (
         <Canvas
             className={className}
-            dpr={[1, 1.75]}
-            camera={{ position: [0, 1.0, 8.1], fov: 40 }}
+            dpr={[1, 2]}
+            camera={{ position: [0, 1.0, 8.6], fov: 40 }}
             gl={{ antialias: true, alpha: true, toneMappingExposure: 1.05 }}
             style={{ background: "transparent" }}
             aria-hidden="true"
@@ -199,9 +238,9 @@ export default function BehanzinWalk({
             <directionalLight position={[-7, 5, 2]} intensity={0.45} color="#eef2f6" />
             <Suspense fallback={null}>
                 <StudioEnv />
-                {/* Le Roi à droite, l'Amazone dansante à sa gauche. */}
-                <King reduce={reduce} x={0.85} />
-                <Amazone reduce={reduce} x={-1.15} progressRef={progressRef} />
+                {/* Le Roi à GAUCHE, l'Amazone dansante à DROITE. */}
+                <King reduce={reduce} x={-1.1} />
+                <Amazone reduce={reduce} x={0.95} progressRef={progressRef} />
                 <ContactShadows
                     position={[0, 0, 0]}
                     opacity={0.3}
