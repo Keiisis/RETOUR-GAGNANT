@@ -101,13 +101,13 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 }
 
 /**
- * L'Amazone du Dahomey — mesh skinné + clip de danse en BOUCLE SANS COUTURE.
+ * L'Amazone du Dahomey — mesh skinné + clip de danse en BOUCLE CONTINUE.
  *
- * Le problème d'une boucle brute : à chaque fin de clip la pose « claque » vers
- * la pose de début — on « sent » la répétition. Solution : deux actions du MÊME
- * clip (l'un cloné) sur un mixer dédié ; à l'approche de la fin, on FOND l'action
- * courante dans l'autre relancée à 0 (crossFade). La transition fin→début est
- * lissée : le mouvement paraît continu, jamais redémarré.
+ * Boucle assurée par `useAnimations` (`LoopRepeat`, ∞), poids constant à 1 :
+ * l'action ne se « termine » jamais et sa pose ne s'efface jamais → AUCUN retour
+ * à la pose bind (les bras écartés en T). La danse est ralentie à 0,85× pour la
+ * fluidité. (Ne PAS baisser le poids en boucle : avec une action unique, réduire
+ * le poids fait ré-apparaître partiellement la pose bind — l'effet inverse.)
  *
  * Elle APPARAÎT au beat des Amazones (opacité + montée pilotées par progressRef)
  * puis reste dansante aux côtés du Roi.
@@ -115,67 +115,30 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progressRef: MutableRefObject<number> }) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_AMAZONE);
+    const { actions, names } = useAnimations(animations, group);
     const mats = useRef<THREE.MeshStandardMaterial[]>([]);
-    const anim = useRef<{
-        mixer: THREE.AnimationMixer;
-        cur: THREE.AnimationAction;
-        nxt: THREE.AnimationAction;
-        dur: number;
-        fade: number;
-        swapping: boolean;
-    } | null>(null);
 
     useMemo(() => {
-        normalize(scene, 1.98);
+        normalize(scene, 2.0);
         mats.current = [];
         prepMaterials(scene, true, mats.current);
     }, [scene]);
 
     useEffect(() => {
-        const root = group.current;
-        if (!root || !animations.length) return;
-        const mixer = new THREE.AnimationMixer(root);
-        const clip = animations[0];
-        const clipB = clip.clone();
-        const cur = mixer.clipAction(clip);
-        const nxt = mixer.clipAction(clipB);
-        for (const a of [cur, nxt]) {
-            a.setLoop(THREE.LoopRepeat, Infinity);
-            a.enabled = true;
-            a.setEffectiveTimeScale(reduce ? 0 : 1);
-        }
-        cur.setEffectiveWeight(1).play();
-        nxt.setEffectiveWeight(0).play();
-        if (reduce) {
-            cur.time = clip.duration * 0.35;
-            mixer.update(0); // applique la pose figée
-        }
-        // Fondu ~0,7 s (env. 10 % d'un clip de 7 s) : assez pour lisser la couture,
-        // assez court pour ne pas « doubler » le mouvement.
-        anim.current = { mixer, cur, nxt, dur: clip.duration, fade: 0.7, swapping: false };
-        return () => { mixer.stopAllAction(); mixer.uncacheRoot(root); anim.current = null; };
-    }, [animations, reduce]);
+        const key = names[0];
+        if (!key) return;
+        const action = actions[key];
+        if (!action) return;
+        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+        action.setEffectiveWeight(1);
+        action.setEffectiveTimeScale(reduce ? 0 : 0.85);
+        action.clampWhenFinished = false;
+        if (reduce) action.time = action.getClip().duration * 0.35;
+        return () => { action.stop(); };
+    }, [actions, names, reduce]);
 
-    useFrame((_, delta) => {
+    useFrame(() => {
         const g = group.current;
-        const A = anim.current;
-
-        // ── Boucle sans couture ──────────────────────────────────
-        if (A && !reduce) {
-            A.mixer.update(delta);
-            if (!A.swapping && A.cur.time > A.dur - A.fade) {
-                A.swapping = true;
-                A.nxt.reset();
-                A.nxt.time = 0;
-                A.nxt.setEffectiveWeight(0).play();
-                A.cur.crossFadeTo(A.nxt, A.fade, false);
-                const tmp = A.cur; A.cur = A.nxt; A.nxt = tmp; // l'entrant devient courant
-            } else if (A.swapping && A.cur.time > A.fade) {
-                A.swapping = false;
-            }
-        }
-
-        // ── Apparition (fondu + légère montée) au beat des Amazones ─
         if (!g) return;
         const p = reduce ? 1 : progressRef.current;
         const t = THREE.MathUtils.clamp((p - AMAZONE_IN) / (AMAZONE_FULL - AMAZONE_IN), 0, 1);
