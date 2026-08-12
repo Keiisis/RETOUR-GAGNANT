@@ -6,20 +6,17 @@ import { useGLTF, useAnimations, ContactShadows } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 const MODEL_KING = "/models/behanzin-walk.glb";
 const MODEL_AMAZONE = "/models/amazone-dance.glb";
 
-// Progression (scrollYProgress de la section) à laquelle l'Amazone apparaît :
-// exactement au beat « les Amazones du Dahomey » (2e paragraphe, fenêtre ~0,19).
+// Progression (scrollYProgress de la section) à laquelle les Amazones apparaissent :
+// exactement au beat « les Amazones du Dahomey » (2e paragraphe).
 const AMAZONE_IN = 0.17;
 const AMAZONE_FULL = 0.25;
 
-/**
- * Environnement studio NEUTRE procédural (RoomEnvironment three.js) → PMREM.
- * Aucun fetch externe (CSP-safe). Éclaire les PBR texturés sans écraser leur
- * couleur d'origine.
- */
+/** Environnement studio NEUTRE procédural (RoomEnvironment three.js) → PMREM (CSP-safe). */
 function StudioEnv() {
     const { scene, gl } = useThree();
     useEffect(() => {
@@ -35,7 +32,7 @@ function StudioEnv() {
     return null;
 }
 
-/** Normalise un modèle authoré à une échelle arbitraire → hauteur cible, pieds au sol. */
+/** Normalise un modèle → hauteur cible, pieds au sol (y=0), centré en X/Z. */
 function normalize(scene: THREE.Object3D, targetHeight: number) {
     scene.updateWorldMatrix(true, true);
     let box = new THREE.Box3().setFromObject(scene);
@@ -50,36 +47,41 @@ function normalize(scene: THREE.Object3D, targetHeight: number) {
     scene.position.y -= box.min.y;
 }
 
-function prepMaterials(scene: THREE.Object3D, transparent: boolean, out?: THREE.MeshStandardMaterial[]) {
+/**
+ * Prépare les matériaux PBR. CLONE chaque matériau pour que chaque instance
+ * possède les siens (opacité de fondu indépendante, side propre au miroir).
+ */
+function prepMaterials(scene: THREE.Object3D, transparent: boolean, out: THREE.MeshStandardMaterial[], doubleSide = false) {
     scene.traverse((child) => {
         const mesh = child as THREE.Mesh;
         if (!mesh.isMesh) return;
         mesh.frustumCulled = false;
         const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const mm of list) {
-            const m = mm as THREE.MeshStandardMaterial;
+        const cloned = list.map((mm) => {
+            const m = (mm as THREE.MeshStandardMaterial).clone();
             if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
             if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
             if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
-            if (transparent) {
-                m.transparent = true;
-                m.opacity = 0;
-            }
+            // Miroir (scale.x=-1) : les triangles s'inversent → DoubleSide pour rester visible.
+            if (doubleSide) m.side = THREE.DoubleSide;
+            if (transparent) { m.transparent = true; m.opacity = 0; }
             m.needsUpdate = true;
-            out?.push(m);
-        }
+            out.push(m);
+            return m;
+        });
+        mesh.material = Array.isArray(mesh.material) ? cloned : cloned[0];
     });
 }
 
-/** Le Roi Béhanzin — mesh skinné + clip « Casual_Walk » (marche en place). */
+/** Le Roi Béhanzin — au centre, majestueux ; clip « Casual_Walk » en boucle. */
 function King({ reduce, x }: { reduce: boolean; x: number }) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_KING);
     const { actions, names } = useAnimations(animations, group);
 
     useMemo(() => {
-        normalize(scene, 2.15);
-        prepMaterials(scene, false);
+        normalize(scene, 2.35);
+        prepMaterials(scene, false, []);
     }, [scene]);
 
     useEffect(() => {
@@ -101,23 +103,20 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 }
 
 /**
- * L'Amazone du Dahomey — clip de danse en BOUCLE VRAIMENT SANS COUTURE.
- *
- * Deux actions du MÊME clip (l'un cloné) sur un mixer dédié. À l'approche de la
- * fin (fenêtre F), on relance l'AUTRE à t=0 et on fond l'une dans l'autre avec des
- * poids EXPLICITES dont la somme vaut TOUJOURS 1 : `sortante = 1-blend`,
- * `entrante = blend`, où `blend = tempsEntrante / F` (0→1, sans wrap). La pose
- * affichée est donc en permanence une pose valide de la danse → JAMAIS de retour
- * à la pose bind (les bras en T), et la jointure fin→début est morphée en douceur :
- * on ne « sent » plus l'action recommencer. Filet de sécurité : si les deux poids
- * tombaient sous 0,4 (désync improbable), on force la meneuse à 1.
- *
- * Elle APPARAÎT au beat des Amazones (opacité + montée pilotées par progressRef)
- * puis reste dansante aux côtés du Roi. Danse ralentie à 0,85× pour la fluidité.
+ * Une Amazone dansante (instance INDÉPENDANTE clonée du GLB partagé).
+ * `mirror` la retourne en MIROIR (scale.x=-1) → reflet exact de l'autre.
+ * Danse en BOUCLE SANS COUTURE : deux actions du même clip, poids explicites de
+ * somme TOUJOURS = 1 (jamais de pose bind / T-pose ; jointure fin→début morphée).
+ * Apparition au beat des Amazones (opacité + montée pilotées par progressRef).
  */
-function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progressRef: MutableRefObject<number> }) {
+function DancingAmazone({
+    x, mirror, reduce, progressRef,
+}: {
+    x: number; mirror: boolean; reduce: boolean; progressRef: MutableRefObject<number>;
+}) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_AMAZONE);
+    const inst = useMemo(() => cloneSkinned(scene), [scene]);
     const mats = useRef<THREE.MeshStandardMaterial[]>([]);
     const st = useRef<{
         mixer: THREE.AnimationMixer;
@@ -130,33 +129,32 @@ function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progr
     } | null>(null);
 
     useMemo(() => {
-        normalize(scene, 2.0);
+        normalize(inst, 2.0);
         mats.current = [];
-        prepMaterials(scene, true, mats.current);
-    }, [scene]);
+        prepMaterials(inst, true, mats.current, mirror);
+    }, [inst, mirror]);
 
     useEffect(() => {
-        const root = group.current;
-        if (!root || !animations.length) return;
-        const mixer = new THREE.AnimationMixer(root);
+        if (!animations.length) return;
+        const mixer = new THREE.AnimationMixer(inst);
         const clip = animations[0];
-        const a = mixer.clipAction(clip);
+        const a = mixer.clipAction(clip.clone());
         const b = mixer.clipAction(clip.clone());
         const ts = reduce ? 0 : 0.85;
-        for (const x2 of [a, b]) {
-            x2.setLoop(THREE.LoopRepeat, Infinity);
-            x2.enabled = true;
-            x2.clampWhenFinished = false;
-            x2.setEffectiveTimeScale(ts);
-            x2.play();
+        for (const act of [a, b]) {
+            act.setLoop(THREE.LoopRepeat, Infinity);
+            act.enabled = true;
+            act.clampWhenFinished = false;
+            act.setEffectiveTimeScale(ts);
+            act.play();
         }
         a.setEffectiveWeight(1);
         b.setEffectiveWeight(0);
-        if (reduce) { a.time = clip.duration * 0.35; }
+        if (reduce) a.time = clip.duration * 0.35;
         mixer.update(0);
         st.current = { mixer, a, b, lead: "a", dur: clip.duration, F: 0.9, trans: false };
         return () => { mixer.stopAllAction(); st.current = null; };
-    }, [animations, reduce]);
+    }, [inst, animations, reduce]);
 
     useFrame((_, delta) => {
         const s = st.current;
@@ -184,7 +182,6 @@ function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progr
                 lead.setEffectiveWeight(1);
                 follow.setEffectiveWeight(0);
             }
-            // Filet de sécurité : jamais deux poids nuls → jamais de pose bind.
             if (s.a.getEffectiveWeight() + s.b.getEffectiveWeight() < 0.4) {
                 (s.lead === "a" ? s.a : s.b).setEffectiveWeight(1);
             }
@@ -194,23 +191,23 @@ function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progr
         if (!g) return;
         const p = reduce ? 1 : progressRef.current;
         const t = THREE.MathUtils.clamp((p - AMAZONE_IN) / (AMAZONE_FULL - AMAZONE_IN), 0, 1);
-        const eased = t * t * (3 - 2 * t); // smoothstep
+        const eased = t * t * (3 - 2 * t);
         g.visible = reduce || eased > 0.002;
         g.position.y = (1 - eased) * -0.28;
         for (const m of mats.current) m.opacity = eased;
     });
 
     return (
-        <group ref={group} position={[x, 0, 0]}>
-            <primitive object={scene} />
+        <group ref={group} position={[x, 0, 0]} scale={mirror ? [-1, 1, 1] : [1, 1, 1]}>
+            <primitive object={inst} />
         </group>
     );
 }
 
 /**
  * Travelling AVANT piloté par le scroll (0 → 1) : plus on descend, plus la caméra
- * se rapproche → les DEUX figures grandissent (« zoom »). Distance ADAPTÉE au
- * ratio du canvas (recul sur cadre étroit/mobile) pour ne jamais couper.
+ * se rapproche → les figures grandissent. Distance ADAPTÉE au ratio (recul sur
+ * cadre étroit) pour garder les TROIS figures dans le champ.
  */
 function Rig({ progressRef, reduce }: { progressRef: MutableRefObject<number>; reduce: boolean }) {
     const { camera, size } = useThree();
@@ -218,14 +215,13 @@ function Rig({ progressRef, reduce }: { progressRef: MutableRefObject<number>; r
         const p = reduce ? 0.35 : progressRef.current;
         const aspect = size.width / Math.max(1, size.height);
         const narrow = aspect < 0.95;
-        const zStart = narrow ? 10.8 : 8.6; // départ : les deux figures cadrées
-        const zEnd = narrow ? 7.6 : 5.7;    // fin : zoom marqué, elles grandissent
+        const zStart = narrow ? 14.5 : 11.4;
+        const zEnd = narrow ? 11.2 : 8.4;
         const z = THREE.MathUtils.lerp(zStart, zEnd, p);
-        const y = THREE.MathUtils.lerp(1.0, 1.3, p);
-        // lissage fort = mouvement de caméra très fluide
+        const y = THREE.MathUtils.lerp(1.0, 1.28, p);
         camera.position.z += (z - camera.position.z) * 0.06;
         camera.position.y += (y - camera.position.y) * 0.06;
-        camera.lookAt(-0.05, 1.05, 0);
+        camera.lookAt(0, 1.08, 0);
     });
     return null;
 }
@@ -242,25 +238,25 @@ export default function BehanzinWalk({
         <Canvas
             className={className}
             dpr={[1, 2]}
-            camera={{ position: [0, 1.0, 8.6], fov: 40 }}
+            camera={{ position: [0, 1.0, 11.4], fov: 40 }}
             gl={{ antialias: true, alpha: true, toneMappingExposure: 1.05 }}
             style={{ background: "transparent" }}
             aria-hidden="true"
         >
-            {/* Éclairage galerie sur fond BLANC : doux et neutre, pas de rim coloré. */}
             <ambientLight intensity={0.65} />
             <directionalLight position={[4, 9, 6]} intensity={1.05} color="#fff4e2" />
             <directionalLight position={[-7, 5, 2]} intensity={0.45} color="#eef2f6" />
             <Suspense fallback={null}>
                 <StudioEnv />
-                {/* Le Roi à GAUCHE, l'Amazone dansante à DROITE. */}
-                <King reduce={reduce} x={-1.1} />
-                <Amazone reduce={reduce} x={0.95} progressRef={progressRef} />
+                {/* Le Roi au CENTRE ; une Amazone à gauche, une à droite EN MIROIR. */}
+                <DancingAmazone x={-2.0} mirror={false} reduce={reduce} progressRef={progressRef} />
+                <King reduce={reduce} x={0} />
+                <DancingAmazone x={2.0} mirror={true} reduce={reduce} progressRef={progressRef} />
                 <ContactShadows
                     position={[0, 0, 0]}
                     opacity={0.3}
-                    scale={12}
-                    blur={2.6}
+                    scale={16}
+                    blur={2.8}
                     far={4}
                     resolution={1024}
                     color="#2a2018"
