@@ -107,7 +107,7 @@ export default function BehanzinHeritage() {
                 </motion.span>
 
                 {/* Roi 3D — zone dédiée : desktop à droite, mobile en bas. */}
-                <div className="absolute inset-x-0 bottom-0 h-[56%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[56%]">
+                <div className="absolute inset-x-0 bottom-0 h-[58%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[60%]">
                     {/* Cercle « Porte du Retour » — tracé PLAT (aucune lueur). */}
                     <div
                         aria-hidden

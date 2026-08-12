@@ -7,12 +7,18 @@ import { useReducedMotion } from "framer-motion";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-const MODEL = "/models/behanzin-walk.glb";
+const MODEL_KING = "/models/behanzin-walk.glb";
+const MODEL_AMAZONE = "/models/amazone-dance.glb";
+
+// Progression (scrollYProgress de la section) à laquelle l'Amazone apparaît :
+// exactement au beat « les Amazones du Dahomey » (2e paragraphe, fenêtre ~0,19).
+const AMAZONE_IN = 0.17;
+const AMAZONE_FULL = 0.25;
 
 /**
  * Environnement studio NEUTRE procédural (RoomEnvironment three.js) → PMREM.
- * Aucun fetch externe (CSP-safe). Éclaire le PBR texturé du personnage sans
- * écraser sa couleur d'origine (Meshy : baseColor + emissive).
+ * Aucun fetch externe (CSP-safe). Éclaire les PBR texturés sans écraser leur
+ * couleur d'origine.
  */
 function StudioEnv() {
     const { scene, gl } = useThree();
@@ -29,35 +35,32 @@ function StudioEnv() {
     return null;
 }
 
-/**
- * Le Roi Béhanzin — mesh skinné + clip « Casual_Walk » (marche en place).
- * Le modèle est authoré à ~0,017 unité de haut : on le normalise à ~2,3 u,
- * pieds au sol (y=0), centré en X/Z. La marche boucle en continu ; le scroll
- * ne pilote QUE la caméra (cf. Rig) — jamais le clip, pour éviter le moonwalk
- * au scroll inversé.
- */
-function King({ reduce }: { reduce: boolean }) {
+/** Normalise un modèle authoré à une échelle arbitraire → hauteur cible, pieds au sol. */
+function normalize(scene: THREE.Object3D, targetHeight: number) {
+    scene.updateWorldMatrix(true, true);
+    let box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const s = size.y > 0 ? targetHeight / size.y : 1;
+    scene.scale.setScalar(s);
+    scene.updateWorldMatrix(true, true);
+    box = new THREE.Box3().setFromObject(scene);
+    scene.position.x -= (box.min.x + box.max.x) / 2;
+    scene.position.z -= (box.min.z + box.max.z) / 2;
+    scene.position.y -= box.min.y;
+}
+
+/** Le Roi Béhanzin — mesh skinné + clip « Casual_Walk » (marche en place). */
+function King({ reduce, x }: { reduce: boolean; x: number }) {
     const group = useRef<THREE.Group>(null);
-    const { scene, animations } = useGLTF(MODEL);
+    const { scene, animations } = useGLTF(MODEL_KING);
     const { actions, names } = useAnimations(animations, group);
 
     useMemo(() => {
-        scene.updateWorldMatrix(true, true);
-        let box = new THREE.Box3().setFromObject(scene);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const s = size.y > 0 ? 2.3 / size.y : 1;
-        scene.scale.setScalar(s);
-        scene.updateWorldMatrix(true, true);
-        box = new THREE.Box3().setFromObject(scene);
-        scene.position.x -= (box.min.x + box.max.x) / 2;
-        scene.position.z -= (box.min.z + box.max.z) / 2;
-        scene.position.y -= box.min.y;
-
+        normalize(scene, 2.15);
         scene.traverse((child) => {
             const mesh = child as THREE.Mesh;
             if (!mesh.isMesh) return;
-            // Le mesh skinné se déforme hors de sa bbox de repos → pas de cull.
             mesh.frustumCulled = false;
             const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
             for (const mm of mats) {
@@ -77,29 +80,98 @@ function King({ reduce }: { reduce: boolean }) {
         if (!action) return;
         action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
         action.setEffectiveTimeScale(reduce ? 0 : 1);
-        if (reduce) action.time = action.getClip().duration * 0.4; // pose figée, en plein pas
-        return () => {
-            action.stop();
-        };
+        if (reduce) action.time = action.getClip().duration * 0.4;
+        return () => { action.stop(); };
     }, [actions, names, reduce]);
 
     return (
-        <group ref={group}>
+        <group ref={group} position={[x, 0, 0]}>
             <primitive object={scene} />
         </group>
     );
 }
 
-/** Léger travelling avant piloté par le scroll (0 → 1). */
+/**
+ * L'Amazone du Dahomey — mesh skinné + clip de danse. Elle APPARAÎT au beat des
+ * Amazones : opacité + montée pilotées par la progression du scroll (progressRef),
+ * puis reste dansante aux côtés du Roi jusqu'à la fin.
+ */
+function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progressRef: MutableRefObject<number> }) {
+    const group = useRef<THREE.Group>(null);
+    const { scene, animations } = useGLTF(MODEL_AMAZONE);
+    const { actions, names } = useAnimations(animations, group);
+    const mats = useRef<THREE.MeshStandardMaterial[]>([]);
+
+    useMemo(() => {
+        normalize(scene, 1.98);
+        mats.current = [];
+        scene.traverse((child) => {
+            const mesh = child as THREE.Mesh;
+            if (!mesh.isMesh) return;
+            mesh.frustumCulled = false;
+            const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mm of list) {
+                const m = mm as THREE.MeshStandardMaterial;
+                if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+                if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+                if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
+                // Transparence pour le fondu d'apparition.
+                m.transparent = true;
+                m.opacity = reduce ? 1 : 0;
+                m.depthWrite = true;
+                m.needsUpdate = true;
+                mats.current.push(m);
+            }
+        });
+    }, [scene, reduce]);
+
+    useEffect(() => {
+        const key = names[0];
+        if (!key) return;
+        const action = actions[key];
+        if (!action) return;
+        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+        action.setEffectiveTimeScale(reduce ? 0 : 1);
+        if (reduce) action.time = action.getClip().duration * 0.35;
+        return () => { action.stop(); };
+    }, [actions, names, reduce]);
+
+    useFrame(() => {
+        const g = group.current;
+        if (!g) return;
+        const p = reduce ? 1 : progressRef.current;
+        const t = THREE.MathUtils.clamp((p - AMAZONE_IN) / (AMAZONE_FULL - AMAZONE_IN), 0, 1);
+        const eased = t * t * (3 - 2 * t); // smoothstep
+        g.visible = eased > 0.002 || reduce;
+        g.position.y = (1 - eased) * -0.28; // légère montée à l'apparition
+        for (const m of mats.current) m.opacity = eased;
+    });
+
+    return (
+        <group ref={group} position={[x, 0, 0]}>
+            <primitive object={scene} />
+        </group>
+    );
+}
+
+/**
+ * Travelling avant piloté par le scroll (0 → 1). Distance ADAPTÉE au ratio du
+ * canvas : sur un cadre étroit/portrait (mobile), on recule pour garder les DEUX
+ * figures (Roi + Amazone) entièrement dans le champ.
+ */
 function Rig({ progressRef, reduce }: { progressRef: MutableRefObject<number>; reduce: boolean }) {
-    const { camera } = useThree();
+    const { camera, size } = useThree();
     useFrame(() => {
         const p = reduce ? 0.4 : progressRef.current;
-        const z = THREE.MathUtils.lerp(6.4, 4.7, p);
-        const y = THREE.MathUtils.lerp(0.95, 1.3, p);
+        const aspect = size.width / Math.max(1, size.height);
+        const narrow = aspect < 0.95;
+        const zNear = narrow ? 9.8 : 7.8;
+        const zFar = narrow ? 8.6 : 6.5;
+        const z = THREE.MathUtils.lerp(zNear, zFar, p);
+        const y = THREE.MathUtils.lerp(1.0, 1.26, p);
         camera.position.z += (z - camera.position.z) * 0.07;
         camera.position.y += (y - camera.position.y) * 0.07;
-        camera.lookAt(0, 1.15, 0);
+        camera.lookAt(-0.1, 1.05, 0);
     });
     return null;
 }
@@ -116,28 +188,26 @@ export default function BehanzinWalk({
         <Canvas
             className={className}
             dpr={[1, 1.75]}
-            camera={{ position: [0.5, 1.0, 6.4], fov: 38 }}
+            camera={{ position: [0, 1.0, 8.1], fov: 40 }}
             gl={{ antialias: true, alpha: true, toneMappingExposure: 1.05 }}
             style={{ background: "transparent" }}
             aria-hidden="true"
         >
-            {/* Éclairage galerie sur fond BLANC : lumière douce et neutre,
-                pas de rim coloré (slop). La couleur vient du PBR + env studio. */}
+            {/* Éclairage galerie sur fond BLANC : doux et neutre, pas de rim coloré. */}
             <ambientLight intensity={0.65} />
-            {/* Key chaud discret (modelé du visage / du pagne) */}
             <directionalLight position={[4, 9, 6]} intensity={1.05} color="#fff4e2" />
-            {/* Fill froid léger à gauche, pour sculpter sans colorer */}
             <directionalLight position={[-7, 5, 2]} intensity={0.45} color="#eef2f6" />
             <Suspense fallback={null}>
                 <StudioEnv />
-                <King reduce={reduce} />
-                {/* Ombre portée RÉELLE, visible sur blanc → ancre les pieds au sol. */}
+                {/* Le Roi à droite, l'Amazone dansante à sa gauche. */}
+                <King reduce={reduce} x={0.85} />
+                <Amazone reduce={reduce} x={-1.15} progressRef={progressRef} />
                 <ContactShadows
                     position={[0, 0, 0]}
-                    opacity={0.32}
-                    scale={7.5}
-                    blur={2.4}
-                    far={3.5}
+                    opacity={0.3}
+                    scale={12}
+                    blur={2.6}
+                    far={4}
                     resolution={1024}
                     color="#2a2018"
                 />
@@ -147,4 +217,5 @@ export default function BehanzinWalk({
     );
 }
 
-useGLTF.preload(MODEL);
+useGLTF.preload(MODEL_KING);
+useGLTF.preload(MODEL_AMAZONE);
