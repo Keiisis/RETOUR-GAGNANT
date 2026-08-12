@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, useAnimations, ContactShadows } from "@react-three/drei";
+import { useGLTF, ContactShadows } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -73,27 +73,85 @@ function prepMaterials(scene: THREE.Object3D, transparent: boolean, out: THREE.M
     });
 }
 
-/** Le Roi Béhanzin — au centre, majestueux ; clip « Casual_Walk » en boucle. */
+// Temporaires réutilisés (pas d'alloc par frame).
+const _e = new THREE.Euler();
+const _q = new THREE.Quaternion();
+/** Ajoute une petite rotation locale à un os, PAR-DESSUS sa pose animée. */
+function addRot(bone: THREE.Object3D | undefined, rx: number, ry = 0, rz = 0) {
+    if (!bone) return;
+    _e.set(rx, ry, rz);
+    _q.setFromEuler(_e);
+    bone.quaternion.multiply(_q);
+}
+
+/**
+ * Le Roi Béhanzin — au centre, majestueux ; clip « Casual_Walk » en boucle.
+ *
+ * Les bras du clip sont raides. On ajoute un MOUVEMENT SECONDAIRE PROCÉDURAL,
+ * additif et appliqué APRÈS la mise à jour du mixer (d'où un mixer dédié, pour
+ * garantir l'ordre) : un balancement pendulaire des bras (épaules → coudes en
+ * léger retard = « follow-through »), une respiration d'épaules et un report de
+ * poids du buste. Fonctions sinusoïdales (2 harmoniques) → ultra fluide ; petites
+ * amplitudes → réaliste. La pose animée est réécrite à chaque frame par le mixer,
+ * donc AUCUNE dérive (pas d'accumulation).
+ */
 function King({ reduce, x }: { reduce: boolean; x: number }) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_KING);
-    const { actions, names } = useAnimations(animations, group);
+    const bones = useRef<Record<string, THREE.Object3D>>({});
+    const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+    const tRef = useRef(0);
 
     useMemo(() => {
         normalize(scene, 2.35);
         prepMaterials(scene, false, []);
+        const b: Record<string, THREE.Object3D> = {};
+        scene.traverse((o) => { if (o.name) b[o.name] = o; });
+        bones.current = b;
     }, [scene]);
 
     useEffect(() => {
-        const key = names[0];
-        if (!key) return;
-        const action = actions[key];
-        if (!action) return;
-        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+        if (!animations.length) return;
+        const mixer = new THREE.AnimationMixer(scene);
+        const action = mixer.clipAction(animations[0]);
+        action.setLoop(THREE.LoopRepeat, Infinity).play();
         action.setEffectiveTimeScale(reduce ? 0 : 1);
-        if (reduce) action.time = action.getClip().duration * 0.4;
-        return () => { action.stop(); };
-    }, [actions, names, reduce]);
+        if (reduce) action.time = animations[0].duration * 0.4;
+        mixer.update(0);
+        mixerRef.current = mixer;
+        return () => { mixer.stopAllAction(); mixerRef.current = null; };
+    }, [scene, animations, reduce]);
+
+    useFrame((_, delta) => {
+        const mixer = mixerRef.current;
+        if (!mixer) return;
+        mixer.update(reduce ? 0 : delta); // pose du clip
+        if (reduce) return;
+
+        // ── Mouvement secondaire additif (bras plus vivants) ──────
+        tRef.current += delta;
+        const t = tRef.current;
+        const w = 1.5;                          // pulsation du balancement (~4 s/cycle)
+        const p = t * w;
+        // 2 harmoniques = mouvement organique, jamais mécanique.
+        const swL = Math.sin(p) + 0.22 * Math.sin(p * 2 + 0.6);
+        const swR = Math.sin(p + Math.PI) + 0.22 * Math.sin(p * 2 + Math.PI + 0.6);
+        const lagL = Math.sin(p - 0.55) + 0.18 * Math.sin(p * 2 - 0.2);
+        const lagR = Math.sin(p + Math.PI - 0.55) + 0.18 * Math.sin(p * 2 + Math.PI - 0.2);
+        const B = bones.current;
+
+        // Épaules : léger roulis alterné (respiration).
+        addRot(B.LeftShoulder, 0.05 * swL, 0, 0.035 * swL);
+        addRot(B.RightShoulder, 0.05 * swR, 0, -0.035 * swR);
+        // Bras (épaule) : balancement avant/arrière + très légère ouverture.
+        addRot(B.LeftArm, 0.13 * swL, 0.03 * swL, 0.05);
+        addRot(B.RightArm, 0.13 * swR, -0.03 * swR, -0.05);
+        // Avant-bras : suit avec du retard (follow-through) → coude vivant.
+        addRot(B.LeftForeArm, 0.10 * lagL, 0.04 * lagL, 0);
+        addRot(B.RightForeArm, 0.10 * lagR, -0.04 * lagR, 0);
+        // Buste : report de poids subtil (tout le corps respire).
+        addRot(B.Spine, 0, 0.015 * Math.sin(p), 0.02 * Math.sin(p));
+    });
 
     return (
         <group ref={group} position={[x, 0, 0]}>
