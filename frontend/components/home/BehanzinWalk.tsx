@@ -101,22 +101,33 @@ function King({ reduce, x }: { reduce: boolean; x: number }) {
 }
 
 /**
- * L'Amazone du Dahomey — mesh skinné + clip de danse en BOUCLE CONTINUE.
+ * L'Amazone du Dahomey — clip de danse en BOUCLE VRAIMENT SANS COUTURE.
  *
- * Boucle assurée par `useAnimations` (`LoopRepeat`, ∞), poids constant à 1 :
- * l'action ne se « termine » jamais et sa pose ne s'efface jamais → AUCUN retour
- * à la pose bind (les bras écartés en T). La danse est ralentie à 0,85× pour la
- * fluidité. (Ne PAS baisser le poids en boucle : avec une action unique, réduire
- * le poids fait ré-apparaître partiellement la pose bind — l'effet inverse.)
+ * Deux actions du MÊME clip (l'un cloné) sur un mixer dédié. À l'approche de la
+ * fin (fenêtre F), on relance l'AUTRE à t=0 et on fond l'une dans l'autre avec des
+ * poids EXPLICITES dont la somme vaut TOUJOURS 1 : `sortante = 1-blend`,
+ * `entrante = blend`, où `blend = tempsEntrante / F` (0→1, sans wrap). La pose
+ * affichée est donc en permanence une pose valide de la danse → JAMAIS de retour
+ * à la pose bind (les bras en T), et la jointure fin→début est morphée en douceur :
+ * on ne « sent » plus l'action recommencer. Filet de sécurité : si les deux poids
+ * tombaient sous 0,4 (désync improbable), on force la meneuse à 1.
  *
  * Elle APPARAÎT au beat des Amazones (opacité + montée pilotées par progressRef)
- * puis reste dansante aux côtés du Roi.
+ * puis reste dansante aux côtés du Roi. Danse ralentie à 0,85× pour la fluidité.
  */
 function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progressRef: MutableRefObject<number> }) {
     const group = useRef<THREE.Group>(null);
     const { scene, animations } = useGLTF(MODEL_AMAZONE);
-    const { actions, names } = useAnimations(animations, group);
     const mats = useRef<THREE.MeshStandardMaterial[]>([]);
+    const st = useRef<{
+        mixer: THREE.AnimationMixer;
+        a: THREE.AnimationAction;
+        b: THREE.AnimationAction;
+        lead: "a" | "b";
+        dur: number;
+        F: number;
+        trans: boolean;
+    } | null>(null);
 
     useMemo(() => {
         normalize(scene, 2.0);
@@ -125,19 +136,60 @@ function Amazone({ reduce, x, progressRef }: { reduce: boolean; x: number; progr
     }, [scene]);
 
     useEffect(() => {
-        const key = names[0];
-        if (!key) return;
-        const action = actions[key];
-        if (!action) return;
-        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
-        action.setEffectiveWeight(1);
-        action.setEffectiveTimeScale(reduce ? 0 : 0.85);
-        action.clampWhenFinished = false;
-        if (reduce) action.time = action.getClip().duration * 0.35;
-        return () => { action.stop(); };
-    }, [actions, names, reduce]);
+        const root = group.current;
+        if (!root || !animations.length) return;
+        const mixer = new THREE.AnimationMixer(root);
+        const clip = animations[0];
+        const a = mixer.clipAction(clip);
+        const b = mixer.clipAction(clip.clone());
+        const ts = reduce ? 0 : 0.85;
+        for (const x2 of [a, b]) {
+            x2.setLoop(THREE.LoopRepeat, Infinity);
+            x2.enabled = true;
+            x2.clampWhenFinished = false;
+            x2.setEffectiveTimeScale(ts);
+            x2.play();
+        }
+        a.setEffectiveWeight(1);
+        b.setEffectiveWeight(0);
+        if (reduce) { a.time = clip.duration * 0.35; }
+        mixer.update(0);
+        st.current = { mixer, a, b, lead: "a", dur: clip.duration, F: 0.9, trans: false };
+        return () => { mixer.stopAllAction(); st.current = null; };
+    }, [animations, reduce]);
 
-    useFrame(() => {
+    useFrame((_, delta) => {
+        const s = st.current;
+        if (s && !reduce) {
+            s.mixer.update(delta);
+            const lead = s.lead === "a" ? s.a : s.b;
+            const follow = s.lead === "a" ? s.b : s.a;
+            if (!s.trans && lead.time > s.dur - s.F) {
+                s.trans = true;
+                follow.reset();
+                follow.time = 0;
+                follow.setEffectiveWeight(0);
+                follow.play();
+            }
+            if (s.trans) {
+                const blend = THREE.MathUtils.clamp(follow.time / s.F, 0, 1);
+                lead.setEffectiveWeight(1 - blend);
+                follow.setEffectiveWeight(blend);
+                if (blend >= 1) {
+                    s.trans = false;
+                    lead.setEffectiveWeight(0);
+                    s.lead = s.lead === "a" ? "b" : "a";
+                }
+            } else {
+                lead.setEffectiveWeight(1);
+                follow.setEffectiveWeight(0);
+            }
+            // Filet de sécurité : jamais deux poids nuls → jamais de pose bind.
+            if (s.a.getEffectiveWeight() + s.b.getEffectiveWeight() < 0.4) {
+                (s.lead === "a" ? s.a : s.b).setEffectiveWeight(1);
+            }
+        }
+
         const g = group.current;
         if (!g) return;
         const p = reduce ? 1 : progressRef.current;
