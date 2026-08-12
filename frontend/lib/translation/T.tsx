@@ -1,7 +1,7 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════
-// <T> Component — Inline translation wrapper
+// <T> Component : Inline translation wrapper
 // Usage: <T>Bienvenue chez nous</T>
 // ═══════════════════════════════════════════════════════
 

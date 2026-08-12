@@ -12,7 +12,7 @@ import { toXOFStrict, fromXOFStrict } from '@/lib/server-rates'
  *
  * La commande est libellée dans SA devise (un devis peut être en EUR) :
  * on la ramène d'abord au XOF de tenue, puis vers la devise PayPal.
- * Renvoie `null` si un des deux taux manque — mieux vaut refuser le
+ * Renvoie `null` si un des deux taux manque : mieux vaut refuser le
  * paiement que débiter un montant inventé.
  */
 async function montantPayPal(
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'PayPal non configuré' }, { status: 503 })
         }
 
-        // Récupérer la commande — le montant est TOUJOURS stocké en XOF dans la DB
+        // Récupérer la commande : le montant est TOUJOURS stocké en XOF dans la DB
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('amount, currency, customer_name, customer_email, payment_method, payment_status')
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Commande introuvable' }, { status: 404 })
         }
 
-        // Vérifier que la commande est bien associée à PayPal (non falsifiable — défini côté serveur).
+        // Vérifier que la commande est bien associée à PayPal (non falsifiable : défini côté serveur).
         // Empêche la création d'un PayPal order pour une commande d'un autre gateway.
         if (order.payment_method !== 'paypal') {
             console.warn(`[PayPal Create] Tentative sur commande ${order_id} (méthode: ${order.payment_method})`)
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
             const converti = await montantPayPal(order.amount, order.currency, currency)
             if (converti === null || converti <= 0) {
                 return NextResponse.json(
-                    { error: `Taux de change ${currency} indisponible — commande PayPal non créée.` },
+                    { error: `Taux de change ${currency} indisponible : commande PayPal non créée.` },
                     { status: 503 }
                 )
             }
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
                     {
                         reference_id: order_id,
                         custom_id: order_id,
-                        description: `Retour Gagnant Bénin — ${order_id.slice(0, 8).toUpperCase()}`,
+                        description: `Retour Gagnant Bénin : ${order_id.slice(0, 8).toUpperCase()}`,
                         amount: {
                             currency_code: currency,
                             value: amountStr,

@@ -21,7 +21,7 @@ function pick(body: Record<string, unknown>): Record<string, unknown> {
     return out
 }
 
-// GET — liste complète (staff), triée par ordre.
+// GET : liste complète (staff), triée par ordre.
 export async function GET(request: NextRequest) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ logements: data || [] })
 }
 
-// POST — création.
+// POST : création.
 export async function POST(request: NextRequest) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, logement: data })
 }
 
-// PATCH — mise à jour d'un logement { id, ...champs } OU réordonnancement en lot
+// PATCH : mise à jour d'un logement { id, ...champs } OU réordonnancement en lot
 // { reorder: [{ id, ordre }] }.
 export async function PATCH(request: NextRequest) {
     const garde = await requireStaff(request, 'admin')

@@ -157,7 +157,7 @@ export async function GET(request: Request) {
         doc.setFontSize(11)
         doc.setTextColor(0, 0, 0)
         doc.setFont('helvetica', 'bold')
-        const reportTitle = `RAPPORT FINANCIER — ${monthLabel.toUpperCase()}`
+        const reportTitle = `RAPPORT FINANCIER : ${monthLabel.toUpperCase()}`
         doc.text(reportTitle, w - 15, y + 8, { align: 'right' })
 
         doc.setFontSize(8)
@@ -404,7 +404,7 @@ export async function GET(request: Request) {
             doc.setFontSize(6)
             doc.setTextColor(150)
             doc.setFont('helvetica', 'normal')
-            const footerLine = footerText.split('\n')[0] || 'Retour Gagnant Bénin — Document confidentiel'
+            const footerLine = footerText.split('\n')[0] || 'Retour Gagnant Bénin : Document confidentiel'
             doc.text(footerLine, w / 2, pH - 8, { align: 'center' })
             doc.text(`Page ${p}/${pageCount}`, w - 15, pH - 8, { align: 'right' })
         }

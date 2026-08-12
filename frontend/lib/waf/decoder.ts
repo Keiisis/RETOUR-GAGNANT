@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔍 WAF DECODER — Normalisation multi-couches des entrées
+// 🔍 WAF DECODER : Normalisation multi-couches des entrées
 // Reproduit le moteur de décodage de ModSecurity :
 // URL, double-URL, HTML entities, Unicode, null bytes, commentaires
 // ══════════════════════════════════════════════════════════════
@@ -157,7 +157,7 @@ export function decode(input: string): DecodedInput {
 }
 
 // ══════════════════════════════════════════════════════════════
-// RequestParts — SÉPARATION STRICTE path / query / body
+// RequestParts : SÉPARATION STRICTE path / query / body
 // CRITIQUE : ne jamais mélanger le path URL avec les query params
 // pour éviter les faux positifs sur les routes REST (/create, /update)
 // ══════════════════════════════════════════════════════════════
@@ -171,7 +171,7 @@ export interface RequestParts {
     body:       string
 
     // Agrégats pour les règles multi-cibles
-    // NE CONTIENT PAS urlPath — évite les faux positifs sur mots-clés REST
+    // NE CONTIENT PAS urlPath : évite les faux positifs sur mots-clés REST
     dataDecoded: string  // query + cookie + referer + body
     // Contient tout SAUF le path URL
     allDecoded:  string  // urlPath + query + ua + referer + cookie + body (usage interne seulement)

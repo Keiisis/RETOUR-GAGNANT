@@ -19,7 +19,7 @@ function slugify(text: string): string {
         .slice(0, 80)
 }
 
-// GET /api/events — list events
+// GET /api/events : list events
 export async function GET(req: NextRequest) {
     try {
         const supabase = getSupabase()
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/events — create event
+// POST /api/events : create event
 export async function POST(req: NextRequest) {
     const auth = await verifyApiAuth(req, 'admin')
     if (!auth.authenticated) return auth.error!

@@ -57,7 +57,7 @@ export const DOSSIER_LABELS: Record<DossierType, string> = {
 export const BIRTH_OR_DEATH_KEYS = ['gp_pgf', 'gp_pgm', 'gp_mgf', 'gp_mgm'];
 
 /* ═══════════════════════════════════════════════════════════════
-   ROLE_LABELS — Étiquettes de rôle statiques (non genrées)
+   ROLE_LABELS : Étiquettes de rôle statiques (non genrées)
    Pour les labels genrés dynamiques, utiliser getRoleLabel()
    ═══════════════════════════════════════════════════════════════ */
 export const ROLE_LABELS: Record<string, string> = {
@@ -76,7 +76,7 @@ export const ROLE_LABELS: Record<string, string> = {
   maternal_ggm_1: 'Arr.-grand-mère mat. (Mère du GP mat.)',
   maternal_ggf_2: 'Arr.-grand-père mat. (Père de la GM mat.)',
   maternal_ggm_2: 'Arr.-grand-mère mat. (Mère de la GM mat.)',
-  /* Trisaïeuls — Gen 0: parents des arrière-grands-parents */
+  /* Trisaïeuls : Gen 0: parents des arrière-grands-parents */
   trisaieul_paternal_ggf1_f: 'Arr.-arr.-grand-père (Père de l\'AGP pat. 1)',
   trisaieul_paternal_ggf1_m: 'Arr.-arr.-grand-mère (Mère de l\'AGP pat. 1)',
   trisaieul_paternal_ggm1_f: 'Arr.-arr.-grand-père (Père de l\'AGM pat. 1)',
@@ -128,7 +128,7 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   getRoleLabel() — Label genré dynamique
+   getRoleLabel() : Label genré dynamique
    Adapte le libellé selon le genre de la personne :
    - self → Le demandeur / La demandeuse
    - husband/wife → Époux / Épouse

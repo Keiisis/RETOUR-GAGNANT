@@ -164,7 +164,7 @@ export default function AdminFacturationPage() {
     }
 
     const fetchDocuments = useCallback(async () => {
-        // NB : PAS de join `agent:agent_id(email)` — il n'existe aucune relation
+        // NB : PAS de join `agent:agent_id(email)` : il n'existe aucune relation
         // FK entre documents_financiers.agent_id et une table joignable par
         // PostgREST → la requête échouait et l'admin ne voyait AUCUNE facture
         // (y compris celles émises par les agents comme Ornel). On récupère les
@@ -186,7 +186,7 @@ export default function AdminFacturationPage() {
 
     useEffect(() => { fetchDocuments() }, [fetchDocuments])
 
-    // En-tête d'auth (token session) — les UPDATE/DELETE directs sont bloqués
+    // En-tête d'auth (token session) : les UPDATE/DELETE directs sont bloqués
     // par RLS, on passe par l'API serveur (service key)
     const authHeaders = async (): Promise<Record<string, string>> => {
         const { data: { session } } = await supabase.auth.getSession()
@@ -237,9 +237,9 @@ export default function AdminFacturationPage() {
     // Libellé de devise du DOCUMENT (jamais forcer XOF sur une facture EUR/USD)
     const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'FCFA' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c
     const formatDate = (val: string | null | undefined) => {
-        if (!val) return '—'
+        if (!val) return '-'
         const d = new Date(val)
-        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
     }
 
     const generatePDF = async (doc: DocumentFinancier) => {
@@ -254,7 +254,7 @@ export default function AdminFacturationPage() {
 
             const tpl = templateData?.content || {}
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
+            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes."
             const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
 
             const jsPDF = (await import('jspdf')).default
@@ -345,7 +345,7 @@ export default function AdminFacturationPage() {
             if (doc.type === 'devis') {
                 pdf.setTextColor(180, 120, 0)
             } else if (doc.type === 'avoir') {
-                pdf.setTextColor(200, 90, 20)   // orange — note de crédit
+                pdf.setTextColor(200, 90, 20)   // orange : note de crédit
             } else {
                 pdf.setTextColor(0, 135, 81)
             }
@@ -357,7 +357,7 @@ export default function AdminFacturationPage() {
             pdf.setTextColor(80, 80, 80)
             pdf.text('N. ' + doc.numero, pw - mr, headerTop + 22, { align: 'right' })
             pdf.text('Date : ' + formatDate(doc.created_at), pw - mr, headerTop + 27, { align: 'right' })
-            // Validité uniquement pour les devis — jamais de « Délai » sur une facture
+            // Validité uniquement pour les devis : jamais de « Délai » sur une facture
             if (doc.validite && doc.type === 'devis') {
                 pdf.text(safe('Validite : ' + doc.validite), pw - mr, headerTop + 32, { align: 'right' })
             }
@@ -560,7 +560,7 @@ export default function AdminFacturationPage() {
                 pdf.setLineWidth(0.4)
                 pdf.roundedRect(ml, y, sigW, sigBoxH, 2, 2, 'FD')
                 if (doc.type === 'avoir') {
-                    // AVOIR : note de crédit — référence la facture annulée
+                    // AVOIR : note de crédit : référence la facture annulée
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(7)
                     pdf.setTextColor(200, 90, 20)
@@ -573,7 +573,7 @@ export default function AdminFacturationPage() {
                     pdf.setTextColor(120, 120, 120)
                     pdf.text('Etabli le ' + formatDate(doc.created_at), ml + 4, y + 31)
                 } else if (doc.type === 'facture') {
-                    // FACTURE : preuve de règlement — jamais de « Bon pour accord »
+                    // FACTURE : preuve de règlement : jamais de « Bon pour accord »
                     pdf.setFont('helvetica', 'bold')
                     pdf.setFontSize(7)
                     pdf.setTextColor(0, 100, 60)
@@ -626,7 +626,7 @@ export default function AdminFacturationPage() {
                 pdf.setTextColor(30, 40, 70)
                 pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
 
-                // Signature manuscrite (script) — police times italique, encre bleue
+                // Signature manuscrite (script) : police times italique, encre bleue
                 pdf.setFont('times', 'italic')
                 pdf.setFontSize(15)
                 pdf.setTextColor(20, 40, 110)
@@ -638,9 +638,9 @@ export default function AdminFacturationPage() {
                 pdf.setFont('helvetica', 'normal')
                 pdf.setFontSize(5.8)
                 pdf.setTextColor(90, 95, 130)
-                pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + sigBoxH - 3)
+                pdf.text('Signature et Cachet officiel : Fait a Cotonou, le ' + formatDate(doc.created_at), sig2X + 4, y + sigBoxH - 3)
 
-                // Cachet officiel — grande taille (place liberee), a droite
+                // Cachet officiel : grande taille (place liberee), a droite
                 if (STAMP_BASE64) {
                     try {
                         const stampData = STAMP_BASE64.startsWith('data:') ? STAMP_BASE64 : `data:image/png;base64,${STAMP_BASE64}`
@@ -840,7 +840,7 @@ export default function AdminFacturationPage() {
                                                 {generating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                             </button>
                                             {doc.type === 'facture' && (
-                                                <button onClick={() => toggleFacturePaid(doc)} className={`p-2 rounded-lg transition-all ${doc.status === 'paye' ? 'text-emerald-500 hover:text-amber-500 hover:bg-amber-500/10' : 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/10'}`} title={doc.status === 'paye' ? 'Payée — cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}><BadgeDollarSign size={16} /></button>
+                                                <button onClick={() => toggleFacturePaid(doc)} className={`p-2 rounded-lg transition-all ${doc.status === 'paye' ? 'text-emerald-500 hover:text-amber-500 hover:bg-amber-500/10' : 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/10'}`} title={doc.status === 'paye' ? 'Payée : cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}><BadgeDollarSign size={16} /></button>
                                             )}
                                             {(doc.type === 'facture' || doc.type === 'avoir') && (
                                                 <button onClick={() => openMecef(doc)} className={`p-2 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all ${doc.mecef_code || doc.mecef_nim ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-400'}`} title="Certification fiscale e-MCF (DGI)"><ShieldCheck size={16} /></button>

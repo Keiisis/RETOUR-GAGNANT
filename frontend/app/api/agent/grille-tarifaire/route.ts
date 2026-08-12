@@ -1,8 +1,7 @@
 // ══════════════════════════════════════════════════════════════
-//  AGENT / ADMIN — Grille tarifaire (lecture + modification)
+//  AGENT / ADMIN : Grille tarifaire (lecture + modification)
 //  Route sous /api/agent/* : autorisée aux agents ET aux admins.
-//  Scoped à la SEULE clé `grilles_tarifaires` de la table settings —
-//  contrairement à /api/admin/settings (bloqué aux agents par le
+//  Scoped à la SEULE clé `grilles_tarifaires` de la table settings-//  contrairement à /api/admin/settings (bloqué aux agents par le
 //  middleware ET exposant toutes les clés, dont secrètes).
 // ══════════════════════════════════════════════════════════════
 

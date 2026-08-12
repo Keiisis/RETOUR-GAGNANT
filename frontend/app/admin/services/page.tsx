@@ -102,7 +102,7 @@ export default function AdminServicesPage() {
                         SERVICES <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008751] to-[#FCD116]"><T>PREMIUM</T></span>
                     </h1>
                     <p className="text-sm text-gray-500">
-                        {services.length} service(s) — {services.filter(s => s.is_active).length} actif(s)
+                        {services.length} service(s) : {services.filter(s => s.is_active).length} actif(s)
                     </p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -205,7 +205,7 @@ export default function AdminServicesPage() {
 
                                     {/* Price */}
                                     <div className="col-span-3">
-                                        <p className="text-xs font-bold text-white">{service.price_display || '—'}</p>
+                                        <p className="text-xs font-bold text-white">{service.price_display || '-'}</p>
                                     </div>
 
                                     {/* Pricing options count */}

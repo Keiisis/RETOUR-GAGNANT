@@ -5,7 +5,7 @@ import { validateStrongPassword } from '@/lib/password'
 import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 import { buildConfirmEmail } from '@/lib/emails/confirm-email'
 
-// Service role — bypass RLS pour créer le profil, lier les documents
+// Service role : bypass RLS pour créer le profil, lier les documents
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'email et mot de passe requis' }, { status: 400 })
         }
 
-        // Validation sécurité mot de passe (serveur — ne jamais faire confiance au client seul)
+        // Validation sécurité mot de passe (serveur : ne jamais faire confiance au client seul)
         const pwdErrors = validateStrongPassword(password)
         if (pwdErrors.length > 0) {
             return NextResponse.json({ error: `Mot de passe insuffisant : ${pwdErrors.join(', ')}` }, { status: 400 })
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Créer le compte (non confirmé) + générer le lien de confirmation
         //    generateLink crée l'utilisateur ET retourne un hashed_token qu'on utilise
-        //    dans notre propre endpoint /api/auth/verify-email — aucune dépendance
+        //    dans notre propre endpoint /api/auth/verify-email : aucune dépendance
         //    envers la configuration "Site URL" de Supabase Dashboard.
         const { data: linkData, error: createError } = await supabase.auth.admin.generateLink({
             type: 'signup',
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
             password,
             options: {
                 data: { nom: nom || '', prenom: prenom || '', phone: phone || '' },
-                redirectTo: siteUrl, // requis mais ignoré — on utilise notre propre URL
+                redirectTo: siteUrl, // requis mais ignoré : on utilise notre propre URL
             },
         })
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
                 const fromString = `"${settings.smtp_from_name || 'Retour Gagnant Bénin'}" <${settings.smtp_from_email || settings.smtp_user}>`
 
-                // Email de confirmation « code d'abord » — le client saisit ce
+                // Email de confirmation « code d'abord » : le client saisit ce
                 // code dans l'application mobile. Le lien reste en secours pour
                 // ceux qui préfèrent confirmer depuis un navigateur.
                 // Charte : blanc, accents drapeau (vert #008751), aucune autre couleur.
@@ -94,14 +94,14 @@ export async function POST(req: NextRequest) {
                 await transporter.sendMail({
                     from: fromString,
                     to: email,
-                    subject: `Votre code de confirmation : ${emailOtp} — Retour Gagnant Bénin`,
+                    subject: `Votre code de confirmation : ${emailOtp} : Retour Gagnant Bénin`,
                     html: htmlContent,
                 })
                 emailSent = true
             }
         } catch (mailErr) {
             console.error('Erreur envoi email confirmation :', mailErr)
-            // On ne bloque pas l'inscription si l'email échoue — le compte est créé
+            // On ne bloque pas l'inscription si l'email échoue : le compte est créé
         }
 
         // 3. Créer le profil client

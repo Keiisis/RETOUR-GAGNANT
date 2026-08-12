@@ -26,7 +26,7 @@ async function resolvePaidApp(token: string) {
     return { app }
 }
 
-// GET /api/nationality/depot?token=… — valide le lien et renvoie l'entête du dossier.
+// GET /api/nationality/depot?token=… : valide le lien et renvoie l'entête du dossier.
 export async function GET(request: NextRequest) {
     const token = request.nextUrl.searchParams.get('token') || ''
     const r = await resolvePaidApp(token)

@@ -1,8 +1,8 @@
 // ══════════════════════════════════════════════════════════════
-// 🔐 lib/waf/idor.ts — IDOR / BOLA Detection
+// 🔐 lib/waf/idor.ts : IDOR / BOLA Detection
 // ══════════════════════════════════════════════════════════════
 //
-// Broken Object Level Authorization — l'attaque #1 de l'OWASP API
+// Broken Object Level Authorization : l'attaque #1 de l'OWASP API
 // Un utilisateur légitime (trust 100) qui accède à des objets
 // qui ne lui appartiennent pas.
 //

@@ -30,7 +30,7 @@ declare global {
     }
 }
 
-const RESEARCH_PRICE = 250 // en EUR — converti en XOF pour les passerelles africaines
+const RESEARCH_PRICE = 250 // en EUR : converti en XOF pour les passerelles africaines
 const EUR_TO_XOF = 655.957 // taux fixe FCFA
 
 function ComplementAncestralContent() {
@@ -49,8 +49,7 @@ function ComplementAncestralContent() {
     const [paymentError, setPaymentError] = useState('')
     const kkiapayBound = useRef(false)
     // Garde : enregistrement auto dès paiement confirmé (une seule fois).
-    // Sans ça, la commande n'était créée qu'au clic manuel post-paiement —
-    // perdue si l'onglet fermait (même faille que le formulaire nationalité).
+    // Sans ça, la commande n'était créée qu'au clic manuel post-paiement-// perdue si l'onglet fermait (même faille que le formulaire nationalité).
     const autoSubmitRef = useRef(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
@@ -123,7 +122,7 @@ function ComplementAncestralContent() {
             window.FedaPay.init('#fedapay-ancestral-btn', {
                 public_key: paymentSettings.fedapay_public_key,
                 environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-                transaction: { amount: amountXOF, description: `Recherche Ancestrale — Dossier ${ref}` },
+                transaction: { amount: amountXOF, description: `Recherche Ancestrale : Dossier ${ref}` },
                 onComplete: (resp: Record<string, unknown>) => {
                     const tx = resp.transaction as Record<string, unknown> | undefined
                     if (resp.reason === 'APPROVED' || (tx && tx.status === 'approved')) {
@@ -168,7 +167,7 @@ function ComplementAncestralContent() {
         } catch {
             // Échec APRÈS paiement : réarmer pour permettre un nouvel essai
             autoSubmitRef.current = false
-            setError(t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Réessayez avec le bouton de confirmation — votre paiement est conservé.'))
+            setError(t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Réessayez avec le bouton de confirmation : votre paiement est conservé.'))
         }
         setSubmitting(false)
     }
@@ -300,13 +299,13 @@ function ComplementAncestralContent() {
                             ))}
                         </div>
                         <p className="text-xs text-amber-600 mt-4 leading-relaxed">
-                            Ces documents peuvent être difficiles à obtenir — surtout pour des ancêtres victimes de la traite transatlantique. Notre service prend en charge intégralement cette recherche.
+                            Ces documents peuvent être difficiles à obtenir : surtout pour des ancêtres victimes de la traite transatlantique. Notre service prend en charge intégralement cette recherche.
                         </p>
                     </motion.div>
                 )}
 
                 {/* Pièces à fournir pour la RECHERCHE (liste distincte de la
-                    demande de nationalité — ne pas confondre les deux) */}
+                    demande de nationalité : ne pas confondre les deux) */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -368,7 +367,7 @@ function ComplementAncestralContent() {
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-black text-[#1a2332]">{fromHt(RESEARCH_PRICE, 'EUR').ttc} €</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Recherche complète — archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({RESEARCH_PRICE} € HT)</span></p>
+                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({RESEARCH_PRICE} € HT)</span></p>
                         </div>
 
                         {paymentDone ? (

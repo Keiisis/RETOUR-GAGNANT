@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Route publique — utilise la service role key pour contourner RLS
+// Route publique : utilise la service role key pour contourner RLS
 // Les pages publiques (ServicesGrid, [slug]) appellent cette route au lieu du client anon
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''

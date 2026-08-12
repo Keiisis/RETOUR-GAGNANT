@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🕳️ lib/waf/ssrf.ts — Server-Side Request Forgery Detection
+// 🕳️ lib/waf/ssrf.ts : Server-Side Request Forgery Detection
 // ══════════════════════════════════════════════════════════════
 //
 // Détecte les tentatives d'accéder à des ressources internes :
@@ -106,7 +106,7 @@ export function scanForSSRF(
     // Décoder les couches d'encodage (URL-encode, double-encode)
     const decoded = decodeMultiLayer(surfaces)
 
-    // 1. Cloud Metadata (priorité maximale — confidence 100)
+    // 1. Cloud Metadata (priorité maximale : confidence 100)
     for (const p of CLOUD_METADATA_PATTERNS) {
         if (p.regex.test(decoded) || p.regex.test(surfaces)) {
             return {
@@ -145,7 +145,7 @@ export function scanForSSRF(
         }
     }
 
-    // 4. Obfuscation IP (confidence 85 — tentative d'évasion = très suspect)
+    // 4. Obfuscation IP (confidence 85 : tentative d'évasion = très suspect)
     for (const p of IP_OBFUSCATION) {
         if (p.regex.test(decoded) || p.regex.test(surfaces)) {
             return {

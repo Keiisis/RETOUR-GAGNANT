@@ -20,9 +20,9 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Ch
 }
 
 const formatDate = (d: string) => {
-    if (!d) return '—'
+    if (!d) return '-'
     const dateObj = new Date(d)
-    return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    return isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 const formatPrice = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
@@ -127,7 +127,7 @@ export default function AdminEventsPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white text-xs">{evt.title}</div>
-                                                        <div className="text-[10px] text-gray-600">{evt.location || '—'}</div>
+                                                        <div className="text-[10px] text-gray-600">{evt.location || '-'}</div>
                                                     </div>
                                                 </div>
                                             </td>

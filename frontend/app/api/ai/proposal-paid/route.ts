@@ -97,10 +97,10 @@ export async function POST(req: Request) {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // Email de confirmation VOYAGE — uniquement pour les vraies
+        // Email de confirmation VOYAGE : uniquement pour les vraies
         // propositions de voyage. Pour un LIEN DE PAIEMENT (facturation /
         // encaissement), classifyProposalPayment envoie déjà le reçu RGB
-        // officiel + PDF — on évite ici le doublon et le libellé « voyage ».
+        // officiel + PDF : on évite ici le doublon et le libellé « voyage ».
         // ═══════════════════════════════════════════════════════════
         const isPaymentLink = String(proposal.notes || '').startsWith('LIEN-PAIEMENT')
         if (client_email && proposal && !isPaymentLink) {
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         to: client_email,
- subject: `Confirmation de réservation — Voyage ${proposal.destination}`,
+ subject: `Confirmation de réservation : Voyage ${proposal.destination}`,
                         html: `
                         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #0f141e; color: white; border-radius: 16px; overflow: hidden;">
                             <div style="background: linear-gradient(135deg, #F59E0B, #D97706); padding: 32px; text-align: center;">
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
                                     <p style="color: #F59E0B; font-size: 32px; font-weight: 900; margin: 0;">${displayAmount}</p>
                                 </div>
                                 <p style="color: #94a3b8; line-height: 1.8;">Notre équipe va préparer tous les détails de votre séjour. Un agent vous contactera sous 24h pour finaliser les derniers arrangements.</p>
-                                <p style="color: #64748b; font-size: 12px; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">© ${new Date().getFullYear()} Retour Gagnant — Voyages d'exception au Bénin</p>
+                                <p style="color: #64748b; font-size: 12px; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">© ${new Date().getFullYear()} Retour Gagnant : Voyages d'exception au Bénin</p>
                             </div>
                         </div>`
                     })

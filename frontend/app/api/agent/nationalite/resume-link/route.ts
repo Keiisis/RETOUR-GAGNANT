@@ -1,5 +1,4 @@
-// Retourne le lien de reprise signé d'un dossier (sans envoyer d'email) —
-// pour le copier et l'envoyer par WhatsApp si l'email ne passe pas.
+// Retourne le lien de reprise signé d'un dossier (sans envoyer d'email)-// pour le copier et l'envoyer par WhatsApp si l'email ne passe pas.
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'

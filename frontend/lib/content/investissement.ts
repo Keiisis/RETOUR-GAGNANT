@@ -3,7 +3,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 export const DEFAULT_INVESTISSEMENT: ServiceLandingContent = {
     hero_badge: "Opportunités & investissement",
     hero_title: "Investissez au Bénin, avec une lecture fine du terrain",
-    hero_subtitle: "Le Bénin connaît une dynamique économique réelle. Les opportunités existent — dans l'immobilier, l'agriculture, le commerce et les services — mais elles demandent d'évaluer les risques et de structurer dans le cadre juridique local.",
+    hero_subtitle: "Le Bénin connaît une dynamique économique réelle. Les opportunités existent : dans l'immobilier, l'agriculture, le commerce et les services : mais elles demandent d'évaluer les risques et de structurer dans le cadre juridique local.",
     hero_chips: ["Opportunités vérifiées", "Évaluation des risques", "Cadre juridique local", "Suivi & optimisation"],
     hero_image: "/assets/icones/icone_Investissement.png",
     cta1_label: "Prendre rendez-vous",
@@ -51,7 +51,7 @@ export const DEFAULT_INVESTISSEMENT: ServiceLandingContent = {
         "Vente exclusive de particuliers à particuliers (terrain, immeuble, maison)",
         "Projets agricoles rentables et autres secteurs porteurs",
         "Évaluation approfondie des risques financiers, juridiques et opérationnels",
-        "Veilles d'opportunités — marchés, appels d'offres, partenariats",
+        "Veilles d'opportunités : marchés, appels d'offres, partenariats",
         "Suivi et optimisation de vos investissements au Bénin",
         "Stratégies fiscales adaptées au contexte local",
     ],

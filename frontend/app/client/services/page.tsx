@@ -146,7 +146,7 @@ const FEATURED_SERVICES = [
     },
 ]
 
-const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
 const fmtN = (n: number) => Math.round(n).toLocaleString('fr-FR')
 
 // Ajoute ?back=/client/services à un href (gère les fragments # et les params existants)
@@ -189,7 +189,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
                     </div>
                     <div className="text-right flex-shrink-0">
                         <p className={`text-2xl font-black ${s.color}`}>{dossier.progression}%</p>
-                        <p className="text-gray-600 text-[10px]">{completedSteps}/{etapes.length || '—'} étapes</p>
+                        <p className="text-gray-600 text-[10px]">{completedSteps}/{etapes.length || '-'} étapes</p>
                     </div>
                 </div>
 
@@ -522,7 +522,7 @@ export default function ClientServicesPage() {
                                     {app.recherche_ancestrale_paid && app.recherche_ancestrale_ref && (
                                         <div className="mb-3 p-3 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
                                             <p className="text-emerald-400 text-[11px] font-bold flex items-center gap-1.5">
-                                                <CheckCircle2 size={11} /> Recherche Ancestrale — {app.recherche_ancestrale_ref}
+                                                <CheckCircle2 size={11} /> Recherche Ancestrale : {app.recherche_ancestrale_ref}
                                             </p>
                                         </div>
                                     )}

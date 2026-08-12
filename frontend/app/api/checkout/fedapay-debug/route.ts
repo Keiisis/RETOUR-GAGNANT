@@ -1,5 +1,5 @@
 /**
- * Endpoint de diagnostic FedaPay — USAGE INTERNE UNIQUEMENT
+ * Endpoint de diagnostic FedaPay : USAGE INTERNE UNIQUEMENT
  * GET /api/checkout/fedapay-debug?transaction_id=XXX
  * Retourne la réponse brute de l'API FedaPay pour diagnostiquer les problèmes de vérification.
  */

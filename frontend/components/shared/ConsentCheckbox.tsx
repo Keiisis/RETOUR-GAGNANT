@@ -11,7 +11,7 @@ import Link from 'next/link'
  *
  * - `purpose` : la finalité précise du traitement (ex. « pour traiter votre
  *   demande de rendez-vous »). Obligatoire pour informer l'utilisateur.
- * - `checked`/`onChange` : optionnels — pour les formulaires qui pilotent
+ * - `checked`/`onChange` : optionnels : pour les formulaires qui pilotent
  *   l'état (désactiver le bouton tant que non coché). Sans eux, l'attribut
  *   natif `required` suffit déjà à bloquer l'envoi d'un `<form>`.
  */

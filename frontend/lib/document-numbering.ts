@@ -3,7 +3,7 @@
 //  Séquentielle, chronologique, continue, sans rupture ni doublon
 //  (exigence OHADA / DGI Bénin). Le compteur atomique vit en base
 //  (RPC next_document_number). Format : FAC-2026-0001, DEV-2026-0001,
-//  AV-2026-0001 — remet à 0001 au 1er janvier.
+//  AV-2026-0001 : remet à 0001 au 1er janvier.
 // ══════════════════════════════════════════════════════════════
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -22,7 +22,7 @@ export function formatDocNumber(type: DocType, year: number, seq: number): strin
 // Le compteur en base garantit l'atomicité (aucune collision, aucun
 // doublon même sous créations concurrentes). En cas d'indisponibilité
 // de la RPC (migration non encore appliquée), on bascule sur un numéro
-// temporaire NON séquentiel horodaté — mode dégradé, jamais bloquant.
+// temporaire NON séquentiel horodaté : mode dégradé, jamais bloquant.
 export async function nextDocumentNumber(
     supabase: SupabaseClient,
     type: DocType,
@@ -42,7 +42,7 @@ export async function nextDocumentNumber(
         // dernier numéro de l'année et on incrémente. Ce repli n'est pas
         // atomique : il ne doit servir QUE si la RPC est indisponible.
         console.error(
-            '[numérotation] RPC next_document_number indisponible — repli séquentiel par lecture du dernier numéro. ' +
+            '[numérotation] RPC next_document_number indisponible : repli séquentiel par lecture du dernier numéro. ' +
             'Appliquez/rétablissez la migration 20260720_facturation_conformite.sql :',
             e instanceof Error ? e.message : e,
         )
@@ -59,7 +59,7 @@ export async function nextDocumentNumber(
             const next = (isFinite(lastSeq) && lastSeq > 0 ? lastSeq : 0) + 1
             return formatDocNumber(type, year, next)
         } catch {
-            // Dernier recours : séquence 1 — un doublon éventuel sera visible
+            // Dernier recours : séquence 1 : un doublon éventuel sera visible
             // et corrigeable, contrairement à un numéro aléatoire silencieux.
             return formatDocNumber(type, year, 1)
         }

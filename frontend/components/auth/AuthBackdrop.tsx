@@ -1,13 +1,13 @@
 import Image from 'next/image'
 
 /* ═══════════════════════════════════════════════════════════
-   AuthBackdrop — atmosphère commune aux écrans de connexion
+   AuthBackdrop : atmosphère commune aux écrans de connexion
    (client / agent / admin).
 
    Pourquoi ce composant : les trois pages partageaient le MÊME gabarit
    générique (fond quasi-noir + deux halos radiaux flous + grille « tech »),
    seule la teinte changeant. C'est le gabarit qu'on retrouve sur des
-   milliers d'interfaces générées — il ne raconte rien du métier.
+   milliers d'interfaces générées : il ne raconte rien du métier.
 
    Direction retenue : chaque porte d'entrée s'ouvre sur une image qui dit
    ce que fait la personne qui se connecte. Les trois forment une suite :
@@ -96,7 +96,7 @@ export default function AuthBackdrop({
             {/* Voile chaud : rend le formulaire lisible sans éteindre la photo. */}
             {image ? <div className="absolute inset-0" style={{ background: c.scrim }} /> : null}
 
-            {/* Filet tricolore en pied de page — signature de marque, discrète. */}
+            {/* Filet tricolore en pied de page : signature de marque, discrète. */}
             <div className="absolute bottom-0 inset-x-0 h-[3px] flex">
                 <span className="flex-1 bg-[#008751]" />
                 <span className="w-[18%] bg-[#FCD116]" />
@@ -106,7 +106,7 @@ export default function AuthBackdrop({
     )
 }
 
-/* Sceau de marque circulaire (anneau tricolore) — remplace le badge carré à
+/* Sceau de marque circulaire (anneau tricolore) : remplace le badge carré à
    dégradé + glow néon, identique sur les trois écrans. */
 export function BrandSeal({
     children,

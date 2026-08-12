@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 // ══════════════════════════════════════════════════════════════
-// Auth API mobile — dérive l'identité du client depuis le JETON
+// Auth API mobile : dérive l'identité du client depuis le JETON
 // (Authorization: Bearer <access_token>), jamais depuis un client_id
 // fourni dans la requête. Corrige l'IDOR sur /api/mobile/*.
 // ══════════════════════════════════════════════════════════════

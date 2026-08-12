@@ -18,7 +18,7 @@ export interface NationaliteVipContent {
     hero_title: string
     hero_subtitle: string
     hero_chips: string[]
-    // Piliers (bande verte) — 4 icônes fixes (Couronne / Suivi / Diaspora / Horloge)
+    // Piliers (bande verte) : 4 icônes fixes (Couronne / Suivi / Diaspora / Horloge)
     piliers: Pilier[]
     // Accompagnement
     accompagnement_eyebrow: string
@@ -42,11 +42,11 @@ export interface NationaliteVipContent {
     elig_intro: string
     elig_q1: string
     elig_q2: string
-    // Réassurance — 3 icônes fixes
+    // Réassurance : 3 icônes fixes
     reassurance: Reassurance[]
     // FAQ
     faq: FaqQA[]
-    // Tarifs (calculateur — gardé, gated par les réglages globaux)
+    // Tarifs (calculateur : gardé, gated par les réglages globaux)
     pricing_show_calculator: boolean
     pricing_options: PricingOption[]
     // CTA 1 (formulaire) + CTA 2 (rendez-vous)
@@ -64,8 +64,8 @@ export interface NationaliteVipContent {
 }
 
 export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
-    hero_badge: "Service phare — Nationalité béninoise",
-    hero_title: "Nationalité Béninoise — Accompagnement VIP",
+    hero_badge: "Service phare : Nationalité béninoise",
+    hero_title: "Nationalité Béninoise : Accompagnement VIP",
     hero_subtitle: "Procédure personnalisée et accompagnée de A à Z pour obtenir la nationalité béninoise.",
     hero_chips: ["De A à Z", "Suivi transparent", "Diaspora afro-descendante", "Réponse 48 h"],
 
@@ -80,7 +80,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     accompagnement_title: "Notre accompagnement",
     accompagnement_text: "Nous guidons les membres de la diaspora afro-descendante dans l'ensemble des démarches administratives nécessaires à l'obtention de la nationalité béninoise. De la constitution du dossier à la remise des documents officiels, notre équipe assure un suivi personnalisé et transparent à chaque étape.",
     etapes: [
-        { num: "01", title: "Constitution du dossier", desc: "Nous réunissons et fiabilisons chaque pièce — la vôtre et celle de votre lignée." },
+        { num: "01", title: "Constitution du dossier", desc: "Nous réunissons et fiabilisons chaque pièce : la vôtre et celle de votre lignée." },
         { num: "02", title: "Suivi personnalisé", desc: "Un conseiller dédié vous accompagne, étape par étape, en toute transparence." },
         { num: "03", title: "Remise des documents", desc: "Nous vous accompagnons jusqu'à la remise de vos documents officiels." },
     ],
@@ -97,13 +97,13 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     avec: [
         "On vous dit exactement quoi fournir, pièce par pièce",
         "Dossier vérifié et fiabilisé avant tout dépôt",
-        "Tout géré à distance — zéro déplacement pour la diaspora",
+        "Tout géré à distance : zéro déplacement pour la diaspora",
         "Suivi transparent jusqu'à la remise des documents",
     ],
 
     documents_eyebrow: "On sait exactement quoi réunir",
     documents_title: "Pièces à fournir",
-    documents_intro: "Nous vous guidons pièce par pièce — y compris pour les actes de vos parents, grands-parents et arrière-grands-parents.",
+    documents_intro: "Nous vous guidons pièce par pièce : y compris pour les actes de vos parents, grands-parents et arrière-grands-parents.",
     documents: [
         "Preuve d'afro-descendance",
         "Preuve de profession",
@@ -120,7 +120,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     documents_note: "* Cette liste peut varier selon votre situation individuelle. Nos conseillers vous transmettront la liste définitive lors de votre consultation.",
 
     elig_title: "Suis-je concerné(e) ?",
-    elig_intro: "Deux questions pour une première orientation. Aucune donnée n'est enregistrée — c'est indicatif.",
+    elig_intro: "Deux questions pour une première orientation. Aucune donnée n'est enregistrée : c'est indicatif.",
     elig_q1: "Êtes-vous afro-descendant(e) de la diaspora ?",
     elig_q2: "Pouvez-vous documenter un lien avec le Bénin (ascendance, actes) ?",
 
@@ -141,7 +141,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     pricing_show_calculator: false,
     pricing_options: [
         { label: "Accompagnement dossier standard", price: "150.000 FCFA" },
-        { label: "Pack VIP — suivi prioritaire complet", price: "350.000 FCFA" },
+        { label: "Pack VIP : suivi prioritaire complet", price: "350.000 FCFA" },
         { label: "Consultation initiale", price: "Gratuit" },
     ],
 
@@ -154,6 +154,6 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     cta2_note: "Premier appel de 15 min gratuit",
 
     final_title: "La nationalité se gagne sur un dossier impeccable.",
-    final_text: "Un dossier mal monté, c'est un rejet et des mois perdus. Nous montons le vôtre pour qu'il passe — et nous vous suivons jusqu'à la remise de vos documents.",
+    final_text: "Un dossier mal monté, c'est un rejet et des mois perdus. Nous montons le vôtre pour qu'il passe : et nous vous suivons jusqu'à la remise de vos documents.",
     final_note: "Sans engagement · réponse sous 48 h · premier échange gratuit.",
 }

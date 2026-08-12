@@ -1,5 +1,5 @@
 /**
- * SVG Ouidah Card Generator — Vrai SVG vectoriel natif
+ * SVG Ouidah Card Generator : Vrai SVG vectoriel natif
  */
 
 import { CardData } from '@/components/business-card/BusinessCard'
@@ -103,7 +103,7 @@ ${buildTricolorBand(CARD_H - 5 * S, true)}
       <text x="${cx}" y="${mm(350)}" text-anchor="middle" font-family="${FONT_M}" font-size="${mm(24)}" font-weight="900" fill="${NAVY_DEEP}" letter-spacing="${mm(1.44)}">OUIDAH HERITAGE TOUR</text>
     </g>
     <g id="recto-tagline">
-      <text x="${cx}" y="${mm(390)}" text-anchor="middle" font-family="${FONT_M}" font-size="${mm(21)}" font-weight="900" fill="${TERRACOTTA}" letter-spacing="${mm(0.42)}">Retour aux sources — Voyage dans la mémoire</text>
+      <text x="${cx}" y="${mm(390)}" text-anchor="middle" font-family="${FONT_M}" font-size="${mm(21)}" font-weight="900" fill="${TERRACOTTA}" letter-spacing="${mm(0.42)}">Retour aux sources : Voyage dans la mémoire</text>
     </g>
   </g>`
 }
@@ -214,7 +214,7 @@ function generateRectoSVG(logoBase64: string, fullName: string): string {
 
     return `${svgHeader(pageW, pageH)}
 
-  <!-- ═══ RECTO — ${CARD_W}mm × ${CARD_H}mm ═══ -->
+  <!-- ═══ RECTO : ${CARD_W}mm × ${CARD_H}mm ═══ -->
   <g id="page-recto">
     <text x="${(pageW / 2).toFixed(2)}" y="${(pad + 3.5).toFixed(2)}" text-anchor="middle" font-family="${FONT_M}" font-size="1.75" font-weight="900" fill="${CHARCOAL}" letter-spacing="0.35">RECTO</text>
     ${cropMarks(cardX, cardY, CARD_W, CARD_H)}
@@ -224,7 +224,7 @@ ${buildRectoSVG(logoBase64)}
   </g>
 
   <g id="footer-info">
-    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">RECTO — ${CARD_W}mm × ${CARD_H}mm — ${escXml(fullName)} — Ouidah Heritage Tour</text>
+    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">RECTO : ${CARD_W}mm × ${CARD_H}mm : ${escXml(fullName)} : Ouidah Heritage Tour</text>
   </g>
 </svg>`
 }
@@ -239,7 +239,7 @@ function generateVersoSVG(data: CardData, fullName: string): string {
 
     return `${svgHeader(pageW, pageH)}
 
-  <!-- ═══ VERSO — ${CARD_W}mm × ${CARD_H}mm ═══ -->
+  <!-- ═══ VERSO : ${CARD_W}mm × ${CARD_H}mm ═══ -->
   <g id="page-verso">
     <text x="${(pageW / 2).toFixed(2)}" y="${(pad + 3.5).toFixed(2)}" text-anchor="middle" font-family="${FONT_M}" font-size="1.75" font-weight="900" fill="${CHARCOAL}" letter-spacing="0.35">VERSO</text>
     ${cropMarks(cardX, cardY, CARD_W, CARD_H)}
@@ -249,7 +249,7 @@ ${buildVersoSVG(data)}
   </g>
 
   <g id="footer-info">
-    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">VERSO — ${CARD_W}mm × ${CARD_H}mm — ${escXml(fullName)} — Ouidah Heritage Tour</text>
+    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">VERSO : ${CARD_W}mm × ${CARD_H}mm : ${escXml(fullName)} : Ouidah Heritage Tour</text>
   </g>
 </svg>`
 }

@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
     })
 }
 
-// POST /api/admin/waf — Actions: block_ip, lockdown, maintenance
+// POST /api/admin/waf : Actions: block_ip, lockdown, maintenance
 // Body: { action: "block_ip", ip: "1.2.3.4", reason: "..." }
 //        { action: "lockdown" }
 //        { action: "maintenance" }
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, maintenance: data })
     }
 
-    // ── Nuclear Challenge — Mode Miroir ──────────────────────
+    // ── Nuclear Challenge : Mode Miroir ──────────────────────
     if (action === 'nuclear_challenge') {
         const targetIp = ip || ''
         const { data, error } = await supabase.rpc('waf_trigger_nuclear_challenge', {
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
 }
 
-// DELETE /api/admin/waf?ip=1.2.3.4 — Débloquer une IP
+// DELETE /api/admin/waf?ip=1.2.3.4 : Débloquer une IP
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

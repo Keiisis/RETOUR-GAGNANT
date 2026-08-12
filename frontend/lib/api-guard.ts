@@ -5,9 +5,9 @@
 //  la base ne la protège plus, seule la route le fait. Ce module donne
 //  les deux seules gardes légitimes :
 //
-//   • requireStaff()  — la route pilote l'argent ou les données internes
+//   • requireStaff() : la route pilote l'argent ou les données internes
 //                       → session admin/agent obligatoire
-//   • guardPublic()   — la route est publique PAR CONCEPTION (formulaire,
+//   • guardPublic() : la route est publique PAR CONCEPTION (formulaire,
 //                       avis, traduction) → pas d'identité, mais un débit
 //                       plafonné + analyse de corps, pour que « public »
 //                       ne veuille pas dire « illimité ».
@@ -40,7 +40,7 @@ export const PUBLIC_FORM_LIMIT: RateLimitConfig = {
     maxBlockDuration: 24 * 60 * 60_000,
 }
 
-/** Route consommant un modèle IA payant (Groq, Gemini) — coût par appel. */
+/** Route consommant un modèle IA payant (Groq, Gemini) : coût par appel. */
 export const AI_LIMIT: RateLimitConfig = {
     limit: 20,
     window: 5 * 60_000,
@@ -58,7 +58,7 @@ export const TRANSLATE_LIMIT: RateLimitConfig = {
     maxBlockDuration: 30 * 60_000,
 }
 
-/** Compteur/télémétrie (vues d'article, tracking) — volumineux mais trivial. */
+/** Compteur/télémétrie (vues d'article, tracking) : volumineux mais trivial. */
 export const TELEMETRY_LIMIT: RateLimitConfig = {
     limit: 120,
     window: 60_000,
@@ -91,7 +91,7 @@ export const CHAT_LIMIT: RateLimitConfig = {
     maxBlockDuration: 60 * 60_000,
 }
 
-/** Envoi d'e-mail déclenché par un anonyme — protège le quota SMTP. */
+/** Envoi d'e-mail déclenché par un anonyme : protège le quota SMTP. */
 export const EMAIL_LIMIT: RateLimitConfig = {
     limit: 3,
     window: 15 * 60_000,
@@ -141,7 +141,7 @@ export function guardPublic(
  * Garde publique complète : débit + analyse structurelle du corps.
  *
  * Renvoie `{ rejection }` non nul dès qu'un des deux refuse, et `body`
- * déjà parsé — la route NE DOIT PAS refaire `request.json()`, le flux
+ * déjà parsé : la route NE DOIT PAS refaire `request.json()`, le flux
  * ayant été consommé.
  */
 /**
@@ -246,15 +246,15 @@ export function requireCron(request: Request): NextResponse | null {
         if (process.env.NODE_ENV === 'production') {
             // 503 et non 401 : ce n'est pas un appel illégitime, c'est une
             // variable d'environnement manquante. Un cron muet renvoyait le
-            // même 401 qu'une attaque — impossible à diagnostiquer dans les
+            // même 401 qu'une attaque : impossible à diagnostiquer dans les
             // logs Vercel. Le message dit quoi faire.
             console.error(
-                '[cron] CRON_SECRET absent — tâche planifiée non exécutée. ' +
+                '[cron] CRON_SECRET absent : tâche planifiée non exécutée. ' +
                 'Définissez la variable dans Vercel › Settings › Environment Variables.',
             )
             return NextResponse.json(
                 {
-                    error: 'CRON_SECRET non configuré — exécution refusée.',
+                    error: 'CRON_SECRET non configuré : exécution refusée.',
                     remede: 'Ajoutez CRON_SECRET aux variables d’environnement du projet.',
                 },
                 { status: 503 },

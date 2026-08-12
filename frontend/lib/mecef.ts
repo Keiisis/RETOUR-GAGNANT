@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CLIENT API e-MCF / MECeF — SYGMEF (DGI Bénin)
+//  CLIENT API e-MCF / MECeF : SYGMEF (DGI Bénin)
 //  Normalise une facture directement via l'API DGI au lieu de la saisie
 //  manuelle. Flux standard :
 //    1. POST /invoice          → crée le brouillon, renvoie un identifiant.
@@ -11,10 +11,10 @@
 //       ci-dessous : nim/NIM, code/codeMECeFDGI/signature, qrCode/qr…) ;
 //     - sémantique du prix : ici on envoie le PRIX UNITAIRE TTC (les prix
 //       e-MCF sont taxe-incluse, le groupe encode le taux). À confirmer au
-//       1er appel réel — la config `mecef_price_ttc=false` permet de basculer.
+//       1er appel réel : la config `mecef_price_ttc=false` permet de basculer.
 //
 //  Toute la config (jeton, sandbox, opérateur) vient de la table `settings`
-//  (catégorie `mecef`) — jamais codée en dur.
+//  (catégorie `mecef`) : jamais codée en dur.
 // ══════════════════════════════════════════════════════════════
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -25,7 +25,7 @@ export interface MecefConfig {
     token: string
     operatorId: string
     operatorName: string
-    aib: string          // '', 'A' (1%) ou 'B' (5%) — acompte impôt bénéfices
+    aib: string          // '', 'A' (1%) ou 'B' (5%) : acompte impôt bénéfices
     priceTtc: boolean     // true = on envoie le prix TTC (défaut), false = HT
 }
 
@@ -91,7 +91,7 @@ export async function getInfo(cfg: MecefConfig): Promise<{ sandbox: boolean; inf
     try { info = JSON.parse(txt) } catch { /* non-JSON */ }
     if (!res.ok) {
         const msg = (info && typeof info === 'object' && 'message' in info) ? String((info as Record<string, unknown>).message) : txt.slice(0, 200)
-        throw new Error(`DGI e-MCF (info) : ${res.status} — ${msg}`)
+        throw new Error(`DGI e-MCF (info) : ${res.status} : ${msg}`)
     }
     return { sandbox: cfg.sandbox, info }
 }
@@ -176,7 +176,7 @@ export async function normalizeInvoice(doc: InvoiceDoc, cfg: MecefConfig): Promi
     let created: Record<string, unknown> = {}
     try { created = JSON.parse(createTxt) } catch { /* réponse non-JSON */ }
     if (!createRes.ok) {
-        throw new Error(`DGI e-MCF (création) : ${createRes.status} — ${pick(created, ['message', 'error', 'errorDesc']) || createTxt.slice(0, 200)}`)
+        throw new Error(`DGI e-MCF (création) : ${createRes.status} : ${pick(created, ['message', 'error', 'errorDesc']) || createTxt.slice(0, 200)}`)
     }
 
     const uid = pick(created, ['uid', 'id', 'token', 'invoiceId'])
@@ -194,7 +194,7 @@ export async function normalizeInvoice(doc: InvoiceDoc, cfg: MecefConfig): Promi
         const confTxt = await confRes.text()
         try { confirmed = JSON.parse(confTxt) } catch { confirmed = {} }
         if (!confRes.ok) {
-            throw new Error(`DGI e-MCF (confirmation) : ${confRes.status} — ${pick(confirmed, ['message', 'error', 'errorDesc']) || confTxt.slice(0, 200)}`)
+            throw new Error(`DGI e-MCF (confirmation) : ${confRes.status} : ${pick(confirmed, ['message', 'error', 'errorDesc']) || confTxt.slice(0, 200)}`)
         }
     }
 

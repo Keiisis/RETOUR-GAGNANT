@@ -109,7 +109,7 @@ export default function ClientMessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // Supabase Realtime — reçoit les nouvelles réponses de l'agent en direct
+    // Supabase Realtime : reçoit les nouvelles réponses de l'agent en direct
     useEffect(() => {
         if (!selected) return
 
@@ -225,14 +225,14 @@ export default function ClientMessagesPage() {
 
     const totalUnread = threads.filter(t => t.hasUnread).length
     const fmtTime = (d: string) => {
-        if (!d) return '—'
+        if (!d) return '-'
         const dateObj = new Date(d)
-        return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        return isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     }
     const fmtDate = (d: string) => {
-        if (!d) return '—'
+        if (!d) return '-'
         const dateObj = new Date(d)
-        return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+        return isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
     }
 
     return (
@@ -253,7 +253,7 @@ export default function ClientMessagesPage() {
                 <p className="text-gray-500 text-sm mt-1">Échangez avec votre agent en temps réel.</p>
             </div>
 
-            {/* Appel vocal direct — la voix passe en pair-à-pair, sans serveur intermédiaire. */}
+            {/* Appel vocal direct : la voix passe en pair-à-pair, sans serveur intermédiaire. */}
             <div className="bg-[#0a1221] border border-white/[0.06] rounded-2xl p-5">
                 <h2 className="font-black text-white text-sm mb-1">Parler à un conseiller</h2>
                 <p className="text-gray-500 text-xs mb-4">
@@ -343,7 +343,7 @@ export default function ClientMessagesPage() {
                                 </div>
                             </div>
 
-                            {/* Zone messages — scrollable */}
+                            {/* Zone messages : scrollable */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
 
                                 {/* Message initial du client */}

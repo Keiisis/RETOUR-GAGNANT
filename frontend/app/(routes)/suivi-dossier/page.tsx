@@ -264,7 +264,7 @@ export default function SuiviDossierPage() {
                                             <p className="text-[11px] font-black uppercase tracking-[4px] text-[#008751] mb-2"><T>Dossier N°</T></p>
                                             <h2 className="text-3xl font-black font-mono tracking-wider text-slate-900">{dossier.num_dossier}</h2>
                                             <p className="text-gray-500 mt-2 text-sm">
-                                                {dossier.client_prenom} {dossier.client_nom} — <span className="text-[#A68B3C] font-bold">{dossier.service_type}</span>
+                                                {dossier.client_prenom} {dossier.client_nom} : <span className="text-[#A68B3C] font-bold">{dossier.service_type}</span>
                                             </p>
                                         </div>
                                         <div className="text-center">

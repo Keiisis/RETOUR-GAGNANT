@@ -114,9 +114,9 @@ const generateVirtualAssistantRecap = (apps: MyafroApp[]) => {
 }
 
 const formatDate = (val: string | null | undefined) => {
-    if (!val) return '—'
+    if (!val) return '-'
     const d = new Date(val)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 export default function AdminDocumentsPage() {
@@ -331,7 +331,7 @@ export default function AdminDocumentsPage() {
                 let detail = `HTTP ${res.status}`
                 try {
                     const j = await res.json()
-                    if (j?.error) detail = j.detail ? `${j.error} — ${j.detail}` : j.error
+                    if (j?.error) detail = j.detail ? `${j.error} : ${j.detail}` : j.error
                 } catch { /* réponse non JSON : le code HTTP suffit */ }
                 alert(`Téléchargement impossible : ${detail}`)
                 return
@@ -409,7 +409,7 @@ export default function AdminDocumentsPage() {
                                     <option value="" className="bg-[#0d1424] text-gray-400">-- Choisir une facture --</option>
                                     {invoices.map(inv => (
                                         <option key={inv.id} value={inv.id} className="bg-[#0d1424] text-white">
-                                            {inv.numero} — {`${inv.client_nom || ''} ${inv.client_prenom || ''}`.trim() || 'Sans nom'} ({Number(inv.total || 0).toLocaleString('fr-FR')} {inv.currency === 'EUR' ? '€' : inv.currency === 'USD' ? '$' : 'FCFA'})
+                                            {inv.numero} : {`${inv.client_nom || ''} ${inv.client_prenom || ''}`.trim() || 'Sans nom'} ({Number(inv.total || 0).toLocaleString('fr-FR')} {inv.currency === 'EUR' ? '€' : inv.currency === 'USD' ? '$' : 'FCFA'})
                                         </option>
                                     ))}
                                 </select>
@@ -654,7 +654,7 @@ export default function AdminDocumentsPage() {
                     <div className="w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                             <div>
-                                <h3 className="text-lg font-black text-white">Pièces — {previewApp.prenom} {previewApp.nom}</h3>
+                                <h3 className="text-lg font-black text-white">Pièces : {previewApp.prenom} {previewApp.nom}</h3>
                                 <p className="text-[11px] text-gray-500">{previewApp.application_ref}</p>
                             </div>
                             <button onClick={() => setPreviewApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>

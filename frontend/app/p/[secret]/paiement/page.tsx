@@ -11,7 +11,7 @@ import { fromHt } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
-// Types SDK tiers — les déclarations globales Window sont dans PaymentModal.tsx
+// Types SDK tiers : les déclarations globales Window sont dans PaymentModal.tsx
 // On réutilise les mêmes interfaces locales pour Stripe
 
 interface StripeInstance {
@@ -81,7 +81,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     const cardElementRef = useRef<StripeElement | null>(null)
     const cardMountedRef = useRef(false)
 
-    // Devise d'affichage — FedaPay convertit, KKiapay toujours XOF
+    // Devise d'affichage : FedaPay convertit, KKiapay toujours XOF
     const { lang } = useTranslation()
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
     useEffect(() => { setSelectedCurrency(getCurrencyForLang(lang)) }, [lang])
@@ -278,12 +278,11 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     // total_amount) sont exprimés DANS cette devise.
     const proposalCurrency = ((proposal?.currency || 'XOF').toUpperCase()) as CurrencyCode
 
-    // TVA EN SUS : payableTotal est le prix HORS TAXE. La TVA s'ajoute dessus —
-    // le client paie le TTC. fromHt garantit HT + TVA = TTC.
+    // TVA EN SUS : payableTotal est le prix HORS TAXE. La TVA s'ajoute dessus-// le client paie le TTC. fromHt garantit HT + TVA = TTC.
     const { tva: payableTVA, ttc: payableTTC } = fromHt(payableTotal, proposalCurrency)
 
     // Conversion en XOF (FCFA) pour les passerelles qui n'encaissent QU'EN XOF
-    // (Kkiapay, FedaPay, Zeyow). On convertit le TTC — c'est ce qui est chargé.
+    // (Kkiapay, FedaPay, Zeyow). On convertit le TTC : c'est ce qui est chargé.
     const toXof = (m: number) => proposalCurrency === 'XOF'
         ? Math.round(m) : convertCurrency(m, proposalCurrency, 'XOF')
     const payableXof = toXof(payableTTC)   // TTC en XOF (montant réellement chargé)
@@ -449,7 +448,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
         try { await ensureFedaPay() } catch (err) { cancelOrder(oid); setErrorMessage(err instanceof Error ? err.message : 'Erreur FedaPay'); setStep('error'); return }
 
-        // FedaPay et KKiapay traitent uniquement en XOF — le montant du devis
+        // FedaPay et KKiapay traitent uniquement en XOF : le montant du devis
         // (potentiellement en EUR/USD) est converti dynamiquement en XOF
         const fedaAmountXOF = payableXof
 
@@ -468,7 +467,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                 transaction: {
                     id: fedapayTxId,
                     amount: fedaAmountXOF,
-                    description: `${payLabel} — ${proposal.client_name}`,
+                    description: `${payLabel} : ${proposal.client_name}`,
                     currency: { iso: 'XOF' },
                 },
                 onComplete: async (resp: Record<string, unknown>) => {
@@ -602,7 +601,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                 <p className="text-slate-500 text-sm">{isPaymentLink ? 'Prestation :' : 'Voyage vers'} <span className="text-amber-600 font-semibold">{proposal.destination}</span></p>
                             </div>
 
-                            {/* Recap — sélection à la carte */}
+                            {/* Recap : sélection à la carte */}
                             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-8">
                                 {hasItemSelection && (
                                     <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
@@ -870,7 +869,7 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
 
             {/* Footer */}
             <div className="border-t border-slate-200 py-4 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-                <Shield className="w-3 h-3" /> Paiement sécurisé — Retour Gagnant © {new Date().getFullYear()}
+                <Shield className="w-3 h-3" /> Paiement sécurisé : Retour Gagnant © {new Date().getFullYear()}
             </div>
 
             {/* FedaPay requires a button in the DOM to bind onto. It must not be hidden with display:none */}

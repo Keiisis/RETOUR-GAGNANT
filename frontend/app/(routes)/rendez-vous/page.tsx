@@ -14,7 +14,7 @@ import ConsentCheckbox from '@/components/shared/ConsentCheckbox';
 import { RDV_SERVICES, serviceSlugToLabel, DEFAULT_RDV_SERVICE } from '@/lib/constants/rdv-services';
 import { trackEvent } from '@/lib/analytics';
 
-// Benin cities — real positions on viewBox 0 0 1000 1000
+// Benin cities : real positions on viewBox 0 0 1000 1000
 const beninCities = [
     { name: "Cotonou", x: 490, y: 910, main: true },
     { name: "Porto-Novo", x: 545, y: 900, main: true },
@@ -87,7 +87,7 @@ function RendezVousContent() {
 
     return (
         <div className="min-h-screen bg-white text-slate-900">
-            {/* Hero — clair, charte Bénin, Playfair */}
+            {/* Hero : clair, charte Bénin, Playfair */}
             <section className="relative overflow-hidden">
                 <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
                 <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 text-center">
@@ -99,7 +99,7 @@ function RendezVousContent() {
                     <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-display text-4xl md:text-[3.4rem] font-bold leading-[1.05] tracking-[-0.02em]">
                         <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent"><T>Prenez rendez-vous avec un expert</T></span>
                     </motion.h1>
-                    <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Planifiez une consultation gratuite — premier appel de 15 min offert, réponse sous 24 h.</T></p>
+                    <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Planifiez une consultation gratuite : premier appel de 15 min offert, réponse sous 24 h.</T></p>
                     <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
                         {([['Sans engagement', ShieldCheck], ['Réponse sous 24 h', Clock], ['Présentiel ou à distance', Video]] as const).map(([label, Ic], i) => (
                             <span key={i} className="inline-flex items-center gap-1.5"><Ic size={15} className="text-[#008751]" /> <T>{label}</T></span>
@@ -224,7 +224,7 @@ function RendezVousContent() {
                             <div className="h-1.5 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <CardHeader>
                                 <CardTitle className="font-display text-2xl"><T>Planifier une consultation</T></CardTitle>
-                                <CardDescription><T>Remplissez ce formulaire — premier appel de 15 min gratuit.</T></CardDescription>
+                                <CardDescription><T>Remplissez ce formulaire : premier appel de 15 min gratuit.</T></CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <AnimatePresence mode="wait">
@@ -346,7 +346,7 @@ function RendezVousContent() {
                                                                 </div>
                                                             </>
                                                         ) : jourFerme ? (
-                                                            <p className="text-xs text-amber-600 font-medium">{jourFerme} — <T>choisissez une autre date.</T></p>
+                                                            <p className="text-xs text-amber-600 font-medium">{jourFerme} : <T>choisissez une autre date.</T></p>
                                                         ) : (
                                                             <div className="flex gap-3">
                                                                 {['Matin (09h-13h)', 'Après-midi (14h-17h)'].map(slot => (
@@ -407,7 +407,7 @@ function RendezVousContent() {
                                                         {form.telephone && <p><span className="font-semibold"><T>Tél:</T></span> {form.telephone}</p>}
                                                         <p><span className="font-semibold"><T>Service:</T></span> {form.service}</p>
                                                         <div className="h-px bg-gray-200 my-2" />
-                                                        <p><span className="font-semibold"><T>Date:</T></span> {form.date || t('Non définie')} — {form.timeSlot ? t(form.timeSlot) : t('Non défini')}</p>
+                                                        <p><span className="font-semibold"><T>Date:</T></span> {form.date || t('Non définie')} : {form.timeSlot ? t(form.timeSlot) : t('Non défini')}</p>
                                                         <p><span className="font-semibold"><T>Mode:</T></span> {t(form.contactMethod)}</p>
                                                         {form.message && <p className="mt-2 italic text-gray-600">&quot;{form.message}&quot;</p>}
                                                     </div>

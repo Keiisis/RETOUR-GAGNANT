@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import { visibleInterval } from '@/lib/visible-interval'
 import { Pulse as Activity, Globe, Monitor, DeviceMobile as Smartphone, DeviceTablet as Tablet, TrendUp as TrendingUp, Users, Eye, MapPin, Clock, WifiHigh as Wifi, ArrowClockwise as RefreshCw, CaretRight as ChevronRight, ChartBar as BarChart2, GoogleChromeLogo as Chrome, WarningCircle as AlertCircle, Lightning as Zap, Radio, Cursor as MousePointer2, Heart, ShieldWarning as ShieldAlert, TreeStructure as Network, Translate as Languages, Gauge, Repeat as Repeat2, ArrowLineDown as ArrowDownToLine, type Icon as LucideIcon } from '@phosphor-icons/react';
 
-// ── World Map (CSR only — react-simple-maps requiert le DOM) ─
+// ── World Map (CSR only : react-simple-maps requiert le DOM) ─
 const WorldMapDynamic = dynamic(() => import('./WorldMap'), { ssr: false, loading: () => (
     <div className="w-full h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-gray-600">
@@ -274,12 +274,12 @@ export default function AnalyticsLivePage() {
                     />
                     <KPICard
                         label="Chargement moyen"
-                        value={data.avg_page_load_ms > 0 ? `${(data.avg_page_load_ms / 1000).toFixed(1)}s` : '—'}
+                        value={data.avg_page_load_ms > 0 ? `${(data.avg_page_load_ms / 1000).toFixed(1)}s` : '-'}
                         icon={Gauge} color="#f59e0b"
                     />
                     <KPICard
                         label="Visiteurs fidèles"
-                        value={totalVisitors > 0 ? `${Math.round(((data.returning_stats?.returning ?? 0) / totalVisitors) * 100)}%` : '—'}
+                        value={totalVisitors > 0 ? `${Math.round(((data.returning_stats?.returning ?? 0) / totalVisitors) * 100)}%` : '-'}
                         icon={Repeat2} color="#f43f5e"
                     />
                     <KPICard
@@ -342,7 +342,7 @@ export default function AnalyticsLivePage() {
                             Présence mondiale
                         </p>
                         <span className="text-[10px] text-gray-500">
-                            {data?.country_points?.length || 0} pays (24h) — {uniqueLiveSessions.length} en ligne
+                            {data?.country_points?.length || 0} pays (24h) : {uniqueLiveSessions.length} en ligne
                         </span>
                     </div>
                     <div style={{ height: 300 }}>
@@ -576,7 +576,7 @@ export default function AnalyticsLivePage() {
                                 </div>
                             ))}
                             {(data.top_isp ?? []).length === 0 && (
-                                <p className="text-xs text-gray-700 text-center py-4">—</p>
+                                <p className="text-xs text-gray-700 text-center py-4">-</p>
                             )}
                         </div>
                     </div>
@@ -596,7 +596,7 @@ export default function AnalyticsLivePage() {
                                 </div>
                             ))}
                             {(data.top_languages ?? []).length === 0 && (
-                                <p className="text-xs text-gray-700 text-center py-4">—</p>
+                                <p className="text-xs text-gray-700 text-center py-4">-</p>
                             )}
                         </div>
                     </div>
@@ -618,7 +618,7 @@ export default function AnalyticsLivePage() {
                                     </div>
                                 ))}
                             {Object.keys(data.connection_stats ?? {}).length === 0 && (
-                                <p className="text-xs text-gray-700 text-center py-4">—</p>
+                                <p className="text-xs text-gray-700 text-center py-4">-</p>
                             )}
                         </div>
                         {/* Fidélité en bas */}
@@ -659,7 +659,7 @@ export default function AnalyticsLivePage() {
                                 </div>
                             ))}
                             {(data.top_screens ?? []).length === 0 && (
-                                <p className="text-xs text-gray-700 text-center py-4">—</p>
+                                <p className="text-xs text-gray-700 text-center py-4">-</p>
                             )}
                         </div>
                         {/* Alerte sécurité */}
@@ -708,12 +708,12 @@ export default function AnalyticsLivePage() {
                                             <td className="px-4 py-2.5 whitespace-nowrap">
                                                 <span className="flex items-center gap-1.5">
                                                     <span>{getFlag(s.country_code)}</span>
-                                                    <span className="text-gray-400">{s.country || '—'}</span>
+                                                    <span className="text-gray-400">{s.country || '-'}</span>
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap max-w-[120px] truncate"
-                                                title={(s as unknown as Record<string, string>).isp || '—'}>
-                                                {(s as unknown as Record<string, string>).isp || '—'}
+                                                title={(s as unknown as Record<string, string>).isp || '-'}>
+                                                {(s as unknown as Record<string, string>).isp || '-'}
                                             </td>
                                             <td className="px-4 py-2.5 max-w-[130px] truncate">
                                                 <a href={s.page} target="_blank" rel="noopener noreferrer"
@@ -734,9 +734,9 @@ export default function AnalyticsLivePage() {
                                                     {s.browser} {s.browser_version}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.os || '—'}</td>
+                                            <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.os || '-'}</td>
                                             <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap font-mono text-[10px]">
-                                                {((s as unknown as Record<string, string>).language || '').split('-')[0]?.toUpperCase() || '—'}
+                                                {((s as unknown as Record<string, string>).language || '').split('-')[0]?.toUpperCase() || '-'}
                                             </td>
                                             <td className="px-4 py-2.5 whitespace-nowrap">
                                                 {((s as unknown as Record<string, number>).scroll_depth ?? 0) > 0 ? (
@@ -751,12 +751,12 @@ export default function AnalyticsLivePage() {
                                                             />
                                                         </div>
                                                     </span>
-                                                ) : <span className="text-gray-700 text-[10px]">—</span>}
+                                                ) : <span className="text-gray-700 text-[10px]">-</span>}
                                             </td>
                                             <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap font-mono text-[10px]">
                                                 {((s as unknown as Record<string, number>).page_load_ms ?? 0) > 0
                                                     ? `${((s as unknown as Record<string, number>).page_load_ms / 1000).toFixed(1)}s`
-                                                    : '—'}
+                                                    : '-'}
                                             </td>
                                             <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap font-mono text-[10px]">
                                                 {timeAgo(s.last_seen_at)}

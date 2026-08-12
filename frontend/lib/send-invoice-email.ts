@@ -76,7 +76,7 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
 
         // 4. Construire le body email (le HTML de facture + un wrapper court d'introduction)
         const invoiceRef = invoice?.invoice_ref || `RG-${orderId.slice(0, 8).toUpperCase()}`
-        const subject = `Votre facture ${invoiceRef} — Retour Gagnant Bénin`
+        const subject = `Votre facture ${invoiceRef} : Retour Gagnant Bénin`
 
         const wrapper = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
             body{margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background:#f5f6fa;color:#1a2035}

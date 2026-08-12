@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  RENDEZ-VOUS — mutation centralisée (client + agent + admin)
+//  RENDEZ-VOUS : mutation centralisée (client + agent + admin)
 //
 //  Un seul point d'autorité pour changer le statut d'un rendez-vous,
 //  au lieu de mises à jour Supabase directes éparpillées :
@@ -10,7 +10,7 @@
 //     attente).
 //
 //  Toute transition notifie le client (cloche in-app via la fonction
-//  create_client_notification déjà en place) — un RDV confirmé ou refusé
+//  create_client_notification déjà en place) : un RDV confirmé ou refusé
 //  ne doit jamais rester silencieux.
 // ══════════════════════════════════════════════════════════════
 

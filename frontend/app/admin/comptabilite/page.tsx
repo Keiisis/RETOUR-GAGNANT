@@ -157,15 +157,15 @@ const fmt = (val: number, currency = 'XOF') => {
 }
 
 const fmtDate = (str: string | null | undefined) => {
-    if (!str) return '—'
+    if (!str) return '-'
     const d = new Date(str)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
 }
 
 const formatShortDate = (str: string | null | undefined) => {
-    if (!str) return '—'
+    if (!str) return '-'
     const d = new Date(str)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
 
 // ─── Status maps ────────────────────────────────────────────────────
@@ -265,7 +265,7 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
                             <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-2">Agent responsable</p>
                             {agent ? (
                                 <>
-                                    <p className="text-sm font-bold text-white">{agent.full_name || '—'}</p>
+                                    <p className="text-sm font-bold text-white">{agent.full_name || '-'}</p>
                                     <p className="text-[10px] text-gray-400">{agent.email}</p>
                                     <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#008751]/20 text-[#00c870]">{agent.role}</span>
                                 </>
@@ -314,7 +314,7 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
                         </div>
                         {total_tva > 0 && (
                             <p className="text-[9px] text-gray-600 mt-2">
-                                TVA collectée : {fmt(total_tva, doc.currency)} — Taux effectif : {sous_total > 0 ? ((total_tva / sous_total) * 100).toFixed(1) : 0}%
+                                TVA collectée : {fmt(total_tva, doc.currency)} : Taux effectif : {sous_total > 0 ? ((total_tva / sous_total) * 100).toFixed(1) : 0}%
                             </p>
                         )}
                     </div>
@@ -370,7 +370,7 @@ export default function AdminComptabilitePage() {
     const [commissionRate, setCommissionRate] = useState(0.10)
     const [clotures, setClotures]   = useState<ClotureRow[]>([])
 
-    // Édition d'une dépense (admin) — mêmes droits que l'agent sur ses écritures
+    // Édition d'une dépense (admin) : mêmes droits que l'agent sur ses écritures
     const [editDep, setEditDep] = useState<{ id: string; titre: string; categorie: string; montant: string; date: string; ifu: string } | null>(null)
     const [savingDep, setSavingDep] = useState(false)
 
@@ -382,7 +382,7 @@ export default function AdminComptabilitePage() {
     const [showAllAgents, setShowAllAgents] = useState(false)
     const [detailDoc, setDetailDoc]     = useState<DocRow | null>(null)
     const [alertFilter, setAlertFilter] = useState<string | null>(null)
-    // Paiements manuels (virement/espèces) — map pour UI + tableau complet pour exports
+    // Paiements manuels (virement/espèces) : map pour UI + tableau complet pour exports
     const [paiements, setPaiements] = useState<Record<string, number>>({})
     const [paiementsList, setPaiementsList] = useState<Array<{ id: string; document_id: string; type: string; montant: number; date_paiement: string; reference?: string | null; notes?: string | null; agent_id?: string }>>([])
     const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -419,7 +419,7 @@ export default function AdminComptabilitePage() {
             })
             // COHÉRENCE : une facture au statut « payé » (paiement en ligne vérifié,
             // conversion de devis, facture manuelle) est SOLDÉE même sans ligne
-            // dans paiements_manuels — sinon le journal affiche un faux solde,
+            // dans paiements_manuels : sinon le journal affiche un faux solde,
             // un faux bouton « Encaisser » et de fausses « factures non soldées ».
             for (const d of (erpRes.docs || []) as Array<{ id: string; type: string; status: string; total: number; currency?: string }>) {
                 if (d.type === 'facture' && d.status === 'paye') {
@@ -438,7 +438,7 @@ export default function AdminComptabilitePage() {
     useEffect(() => { fetchAll() }, [fetchAll])
 
     // ── Édition / suppression d'une dépense (route /api/agent/depenses,
-    //    autorisée aux admins) — permet de corriger la DATE EXACTE saisie ──
+    //    autorisée aux admins) : permet de corriger la DATE EXACTE saisie ──
     const openEditDep = (d: DepRow) => {
         let titre = d.titre || ''
         let ifu = ''
@@ -507,7 +507,7 @@ export default function AdminComptabilitePage() {
 
             const encaisseFactu = encaissePaiements + invoicesPayeesSansP
             const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
-            // Devis clients en attente de validation — pipeline introduit
+            // Devis clients en attente de validation : pipeline introduit
             // dynamiquement dans la lecture de trésorerie réelle
             const devisList     = dList.filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
             const devisEnAttente = devisList.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
@@ -527,7 +527,7 @@ export default function AdminComptabilitePage() {
             const nbFactPaye    = invoices.filter(d => d.status === 'paye').length
             const nbFactTotal   = invoices.length
             // Encaissement SUR FACTURES uniquement (pour le taux d'encaissement) :
-            // montant des factures effectivement payées — SANS les paiements
+            // montant des factures effectivement payées : SANS les paiements
             // externes (qui gonflaient le taux à 100% alors que peu de factures
             // sont soldées).
             const encaisseFactures = invoices.filter(d => d.status === 'paye')
@@ -550,7 +550,7 @@ export default function AdminComptabilitePage() {
         }
     }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements])
 
-    // ── Balance âgée des créances (aged receivables) — toutes périodes ─
+    // ── Balance âgée des créances (aged receivables) : toutes périodes ─
     // Feature ERP type-Odoo : qui doit combien, et depuis combien de temps.
     // Montants normalisés XOF. Buckets : 0-30 / 31-60 / 61-90 / 90+ jours.
     const agedBalance = useMemo(() => {
@@ -566,7 +566,7 @@ export default function AdminComptabilitePage() {
             const ageDays = Math.floor((now - new Date(d.created_at).getTime()) / 864e5)
             const bk: Bk = ageDays <= 30 ? 'b0' : ageDays <= 60 ? 'b30' : ageDays <= 90 ? 'b60' : 'b90'
             buckets[bk] += due; buckets.total += due
-            const key = `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() || '—'
+            const key = `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() || '-'
             const row = byClient.get(key) || { client: key, b0: 0, b30: 0, b60: 0, b90: 0, total: 0, oldest: 0 }
             row[bk] += due; row.total += due; row.oldest = Math.max(row.oldest, ageDays)
             byClient.set(key, row)
@@ -577,7 +577,7 @@ export default function AdminComptabilitePage() {
     // ── Score santé financière ────────────────────────────────────
     const scoreSante = useMemo(() => {
         // Plafonné à 100 : les paiements externes (sans facture émise) peuvent
-        // dépasser le CA facturé — un taux > 100 % n'a pas de sens à l'affichage
+        // dépasser le CA facturé : un taux > 100 % n'a pas de sens à l'affichage
         // Taux d'encaissement = montant des FACTURES payées / CA facturé émis
         // (cohérent avec « X/Y factures payées » ; les paiements externes ne
         // gonflent plus ce taux)
@@ -590,12 +590,12 @@ export default function AdminComptabilitePage() {
         const label = capped >= 80 ? 'Excellente' : capped >= 60 ? 'Bonne' : capped >= 40 ? 'Correcte' : 'Critique'
         const color = capped >= 80 ? '#00c870' : capped >= 60 ? '#008751' : capped >= 40 ? '#FCD116' : '#E8112D'
         const recommandation = capped >= 80
-            ? 'Performance excellente — maintenir le rythme actuel'
+            ? 'Performance excellente : maintenir le rythme actuel'
             : capped >= 60
-            ? 'Bonne santé — optimiser les relances factures impayées'
+            ? 'Bonne santé : optimiser les relances factures impayées'
             : capped >= 40
-            ? 'Attention — augmenter le taux d\'encaissement, réduire les dépenses'
-            : 'Critique — relancer en urgence, revoir les dépenses et commissions'
+            ? 'Attention : augmenter le taux d\'encaissement, réduire les dépenses'
+            : 'Critique : relancer en urgence, revoir les dépenses et commissions'
         return { score: capped, label, color, recommandation,
                  tauxEncaissement: tauxEncaissement.toFixed(0),
                  tauxRentabilite:  tauxRentabilite.toFixed(0),
@@ -608,9 +608,9 @@ export default function AdminComptabilitePage() {
         const now = new Date()
         const retard = pDocs.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (retard.length > 0)
-            list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j — ${fmt(retard.reduce((a, d) => a + d.total, 0))} à relancer`, action: 'retard' })
+            list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j : ${fmt(retard.reduce((a, d) => a + d.total, 0))} à relancer`, action: 'retard' })
         if (kpis.benefice < 0)
-            list.push({ type: 'danger', msg: `Bénéfice net négatif (${fmt(kpis.benefice)}) — dépenses supérieures aux encaissements` })
+            list.push({ type: 'danger', msg: `Bénéfice net négatif (${fmt(kpis.benefice)}) : dépenses supérieures aux encaissements` })
         const agentsInactifs = agents.filter(a => a.role === 'agent' && !pDocs.some(d => d.agent_id === a.id && d.type === 'facture' && d.status === 'paye'))
         if (agentsInactifs.length > 0 && agents.filter(a => a.role === 'agent').length > 0)
             list.push({ type: 'info', msg: `${agentsInactifs.length} agent${agentsInactifs.length > 1 ? 's' : ''} sans encaissement sur cette période`, action: 'agents' })
@@ -618,9 +618,9 @@ export default function AdminComptabilitePage() {
         if (commandesRetard.length > 0)
             list.push({ type: 'warning', msg: `${commandesRetard.length} commande${commandesRetard.length > 1 ? 's' : ''} boutique en attente +24h`, action: 'boutique' })
         if (kpis.caEmis > 0 && (kpis.encaisseFactu / kpis.caEmis) < 0.3)
-            list.push({ type: 'danger', msg: `Taux d'encaissement bas (${((kpis.encaisseFactu / kpis.caEmis) * 100).toFixed(0)}%) — plus de 70% du CA émis non encaissé`, action: 'retard' })
+            list.push({ type: 'danger', msg: `Taux d'encaissement bas (${((kpis.encaisseFactu / kpis.caEmis) * 100).toFixed(0)}%) : plus de 70% du CA émis non encaissé`, action: 'retard' })
         // Seules les factures issues d'un devis signé sont censées porter une
-        // signature — les factures manuelles (preuve de paiement) sont exclues
+        // signature : les factures manuelles (preuve de paiement) sont exclues
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const nonSignes = pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !d.signed_at && (d as any).parent_devis_id)
         if (nonSignes.length > 0)
@@ -654,7 +654,7 @@ export default function AdminComptabilitePage() {
             }
             const s = map.get(d.agent_id)!
             if (d.type === 'devis') { s.nbDevis++ } else {
-                // Conversion dynamique en XOF (factures EUR/USD) — sinon on
+                // Conversion dynamique en XOF (factures EUR/USD) : sinon on
                 // additionne des devises différentes (incohérence par agent)
                 s.nbFactures++; s.caEmis += toXOF(d.total, d.currency)
                 s.tvaCollectee += toXOF(Number(d.total_tva) || 0, d.currency)
@@ -736,7 +736,7 @@ export default function AdminComptabilitePage() {
     const now = new Date()
     const jDocs = useMemo(() => {
         // Journal des transactions : factures ET DEVIS (émis par les agents,
-        // ex. Ornel) + avoirs — le devis affiche un solde « — » et aucun
+        // ex. Ornel) + avoirs : le devis affiche un solde « : » et aucun
         // bouton « Encaisser » (géré ligne par ligne selon d.type).
         let list = pDocs.filter(d => ['facture', 'devis', 'avoir'].includes(d.type))
         // Le retard de paiement ne concerne que les FACTURES
@@ -794,7 +794,7 @@ export default function AdminComptabilitePage() {
             const saisi = Number(newPayment.montant)
             const montantXOF = docCur === 'XOF' ? saisi : Math.round(saisi * rateOf(docCur))
             const refNote = docCur === 'XOF' ? (newPayment.reference || null)
-                : `${newPayment.reference ? newPayment.reference + ' — ' : ''}${saisi.toLocaleString('fr-FR')} ${docCur}`
+                : `${newPayment.reference ? newPayment.reference + ' : ' : ''}${saisi.toLocaleString('fr-FR')} ${docCur}`
             const res = await fetch('/api/admin/paiements-manuels', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -857,7 +857,7 @@ export default function AdminComptabilitePage() {
         setExporting(true)
         try {
             const pLabel = periodLabel(period)
-            const subtitle = `Vue Admin (tous agents consolidés)   —   Période : ${pLabel}   —   Commission agents : ${(commissionRate * 100).toFixed(0)}%   —   Document officiel confidentiel`
+            const subtitle = `Vue Admin (tous agents consolidés) : Période : ${pLabel} : Commission agents : ${(commissionRate * 100).toFixed(0)}% : Document officiel confidentiel`
             const agentMap = new Map<string, string>()
             agents.forEach(a => agentMap.set(a.id, a.full_name || a.email || a.id.slice(0, 8)))
 
@@ -899,20 +899,19 @@ export default function AdminComptabilitePage() {
                 ],
                 data: [
                     { label: "Factures émises (montant total)", value: kpis.caEmis, detail: `${pDocs.filter(d => d.type === 'facture').length} factures émises` },
-                    { label: "Encaissé — Facturation (net remises)", value: kpis.encaisseFactu, detail: `${kpis.nbFactPaye} factures payées` },
+                    { label: "Encaissé : Facturation (net remises)", value: kpis.encaisseFactu, detail: `${kpis.nbFactPaye} factures payées` },
                     { label: "Paiements manuels (virement/espèces)", value: pPaiements.reduce((a, p) => a + Number(p.montant || 0), 0), detail: `${pPaiements.length} paiements` },
                     { label: "Revenus boutique", value: kpis.boutique, detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes` },
                     { label: "TOTAL ENCAISSÉ (Entrées)", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
                     { label: "TVA collectée", value: kpis.totalTVA, detail: 'Sur factures émises' },
                     { label: "Factures en attente", value: kpis.enAttente, detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours` },
-                    { label: "Devis en attente de validation", value: kpis.devisEnAttente, detail: `${kpis.nbDevisAttente} devis — pipeline trésorerie` },
-                    // Commission : on affiche le TAUX (0 % si aucune commission) —
-                    // et le montant calculé en détail, pour lever toute ambiguïté.
+                    { label: "Devis en attente de validation", value: kpis.devisEnAttente, detail: `${kpis.nbDevisAttente} devis : pipeline trésorerie` },
+                    // Commission : on affiche le TAUX (0 % si aucune commission)-// et le montant calculé en détail, pour lever toute ambiguïté.
                     { label: "Taux de commission agents", value: `${(commissionRate * 100).toFixed(commissionRate * 100 % 1 === 0 ? 0 : 1)} %`, detail: `Montant : ${fmt(kpis.commission)} (sur encaissements nets)` },
                     { label: "Dépenses totales (Sorties)", value: kpis.totalDeps, detail: `${pDeps.length} dépenses` },
                     { label: "BÉNÉFICE NET", value: kpis.benefice, detail: 'Encaissé − Commissions − Dépenses' },
                     { label: "Projection 30 jours", value: Math.round(kpis.proj30), detail: 'Basée sur rythme actuel' },
-                    { label: "Score santé financière", value: scoreSante.score, detail: `${scoreSante.label} — ${scoreSante.recommandation}` },
+                    { label: "Score santé financière", value: scoreSante.score, detail: `${scoreSante.label} : ${scoreSante.recommandation}` },
                 ],
             }
 
@@ -921,7 +920,7 @@ export default function AdminComptabilitePage() {
             // une SORTIE (dépense) = DÉBIT. C'est un journal de CAISSE : on ne
             // liste QUE les mouvements réels d'argent (encaissements + dépenses),
             // jamais les factures émises non payées (elles figurent dans l'onglet
-            // « Documents ») — sinon double comptage et incohérences.
+            // « Documents ») : sinon double comptage et incohérences.
             type JRow = { date: Date; piece: string; agent: string; libelle: string; mode: string; sens: string; debit: number; credit: number }
             const journalRows: JRow[] = []
 
@@ -934,11 +933,11 @@ export default function AdminComptabilitePage() {
                 const libelleExterne = isExterne ? (p.notes || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() : ''
                 journalRows.push({
                     date: new Date(p.date_paiement),
-                    piece: d?.numero || (isExterne ? 'EXT' : '—'),
-                    agent: p.agent_id ? (agentMap.get(p.agent_id) || '—') : '—',
+                    piece: d?.numero || (isExterne ? 'EXT' : '-'),
+                    agent: p.agent_id ? (agentMap.get(p.agent_id) || '-') : '-',
                     libelle: d
-                        ? `Encaissement — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim()
-                        : isExterne ? `Encaissement externe — ${libelleExterne}` : 'Encaissement',
+                        ? `Encaissement : ${d.client_nom || ''} ${d.client_prenom || ''}`.trim()
+                        : isExterne ? `Encaissement externe : ${libelleExterne}` : 'Encaissement',
                     mode: PAYMENT_LABELS[p.type] || p.type,
                     sens: 'Entrée',
                     debit: 0,
@@ -946,13 +945,13 @@ export default function AdminComptabilitePage() {
                 })
             })
             // 2.b Factures payées SANS ligne de paiement (paiement en ligne
-            //     vérifié / conversion de devis) = CRÉDIT — pour ne rien oublier
+            //     vérifié / conversion de devis) = CRÉDIT : pour ne rien oublier
             pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !paidDocIds.has(d.id)).forEach(d => {
                 journalRows.push({
                     date: new Date(d.created_at),
-                    piece: d.numero || '—',
-                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
-                    libelle: `Encaissement — ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
+                    piece: d.numero || '-',
+                    agent: d.agent_id ? (agentMap.get(d.agent_id) || '-') : '-',
+                    libelle: `Encaissement : ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
                     mode: 'Paiement en ligne',
                     sens: 'Entrée',
                     debit: 0,
@@ -964,9 +963,9 @@ export default function AdminComptabilitePage() {
                 journalRows.push({
                     date: new Date(o.created_at),
                     piece: o.id.slice(0, 8).toUpperCase(),
-                    agent: '—',
-                    libelle: `Vente boutique — ${o.product_title || ''}`.trim(),
-                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    agent: '-',
+                    libelle: `Vente boutique : ${o.product_title || ''}`.trim(),
+                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '-'),
                     sens: 'Entrée',
                     debit: 0,
                     credit: toXOF(Number(o.amount || 0), o.currency),
@@ -976,10 +975,10 @@ export default function AdminComptabilitePage() {
             pDeps.forEach(e => {
                 journalRows.push({
                     date: new Date(e.date_depense),
-                    piece: '—',
-                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
-                    libelle: `Dépense — ${e.titre || ''} (${expenseCategoryLabel(e.categorie)})`,
-                    mode: '—',
+                    piece: '-',
+                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '-') : '-',
+                    libelle: `Dépense : ${e.titre || ''} (${expenseCategoryLabel(e.categorie)})`,
+                    mode: '-',
                     sens: 'Sortie',
                     debit: Number(e.montant || 0),
                     credit: 0,
@@ -1000,8 +999,8 @@ export default function AdminComptabilitePage() {
                     { header: 'Libellé', key: 'libelle', width: 46 },
                     { header: 'Mode', key: 'mode', width: 18 },
                     { header: 'Sens', key: 'sens', width: 12, type: 'status' as const },
-                    { header: 'Débit — Sorties (FCFA)', key: 'debit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
-                    { header: 'Crédit — Entrées (FCFA)', key: 'credit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Débit : Sorties (FCFA)', key: 'debit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
+                    { header: 'Crédit : Entrées (FCFA)', key: 'credit', width: 20, type: 'currency' as const, totalFormula: 'sum' as const },
                 ],
                 data: journalRows,
             }
@@ -1027,8 +1026,8 @@ export default function AdminComptabilitePage() {
                     { header: 'Conv. %', key: 'conv', width: 12 },
                 ],
                 data: sortedAgents.map(s => ({
-                    name: s.agent.full_name || '—',
-                    email: s.agent.email || '—',
+                    name: s.agent.full_name || '-',
+                    email: s.agent.email || '-',
                     caEmis: s.caEmis,
                     encaisse: s.encaisse,
                     commission: s.commission,
@@ -1072,13 +1071,13 @@ export default function AdminComptabilitePage() {
                         numero: d.numero,
                         type: d.type === 'facture' ? 'Facture' : d.type === 'avoir' ? 'Avoir' : 'Devis',
                         date: new Date(d.created_at),
-                        agent: d.agent_id ? (agentMap.get(d.agent_id) || '—') : '—',
+                        agent: d.agent_id ? (agentMap.get(d.agent_id) || '-') : '-',
                         client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
-                        email: d.client_email || '—',
-                        phone: d.client_phone || '—',
+                        email: d.client_email || '-',
+                        phone: d.client_phone || '-',
                         devise: cur,
-                        // Montant d'origine (dans la devise de la facture) — ex. « 337 € »
-                        ttc_origine: isXof ? '—' : fmtCur(d._ttc, cur),
+                        // Montant d'origine (dans la devise de la facture) : ex. « 337 € »
+                        ttc_origine: isXof ? '-' : fmtCur(d._ttc, cur),
                         // Montants TOUJOURS convertis en FCFA (conversion dynamique)
                         ht: toXOF(d._ht, cur),
                         tva: toXOF(d._tva, cur),
@@ -1112,12 +1111,12 @@ export default function AdminComptabilitePage() {
                     const htXof = q * puXof
                     const tvaXof = Math.round(htXof * rate / 100)
                     lignesRows.push({
-                        numero: d.numero || '—',
+                        numero: d.numero || '-',
                         client: `${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
                         date: new Date(d.created_at),
-                        description: it.description || '—',
+                        description: it.description || '-',
                         devise: cur,
-                        pu_origine: isXof ? '—' : fmtCur(puSrc, cur),
+                        pu_origine: isXof ? '-' : fmtCur(puSrc, cur),
                         qty: q,
                         pu: puXof,
                         tva_rate: rate,
@@ -1172,11 +1171,11 @@ export default function AdminComptabilitePage() {
                     const libelleExterne = isExterne ? (p.notes || '').replace(/^\[EXTERNE\]\s*/i, '').split('|')[0].trim() : ''
                     return {
                         date: new Date(p.date_paiement),
-                        numero: d?.numero || (isExterne ? 'EXT' : '—'),
-                        client: d ? `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() : (libelleExterne || '—'),
-                        agent: p.agent_id ? (agentMap.get(p.agent_id) || '—') : '—',
+                        numero: d?.numero || (isExterne ? 'EXT' : '-'),
+                        client: d ? `${d.client_nom || ''} ${d.client_prenom || ''}`.trim() : (libelleExterne || '-'),
+                        agent: p.agent_id ? (agentMap.get(p.agent_id) || '-') : '-',
                         mode: PAYMENT_LABELS[p.type] || p.type,
-                        reference: p.reference || '—',
+                        reference: p.reference || '-',
                         montant: Number(p.montant || 0),
                     }
                 }),
@@ -1199,19 +1198,19 @@ export default function AdminComptabilitePage() {
                 ],
                 data: pDeps.map(e => ({
                     date: new Date(e.date_depense),
-                    titre: e.titre || '—',
+                    titre: e.titre || '-',
                     categorie: expenseCategoryLabel(e.categorie),
-                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
+                    agent: e.agent_id ? (agentMap.get(e.agent_id) || '-') : '-',
                     montant: Number(e.montant || 0),
-                    notes: e.notes || '—',
+                    notes: e.notes || '-',
                 })),
             }
 
             // ── Feuille SALAIRES : suivi RH dédié (dépenses catégorie 'salaires',
-            //    titre encodé « Salaire {mois} — {NOM Prénom} — {poste} ») ──
+            //    titre encodé « Salaire {mois} : {NOM Prénom} : {poste} ») ──
             const parseSalaire = (titre: string) => {
-                const m = titre.match(/^Salaire\s+(\S+)\s+—\s+(.+?)\s+—\s+(.+)$/)
-                return m ? { mois: m[1], personne: m[2], poste: m[3] } : { mois: '—', personne: titre, poste: '—' }
+                const m = titre.match(/^Salaire\s+(\S+)\s+-\s+(.+?)\s+-\s+(.+)$/)
+                return m ? { mois: m[1], personne: m[2], poste: m[3] } : { mois: '-', personne: titre, poste: '-' }
             }
             const salairesSheet = {
                 sheetName: 'Salaires',
@@ -1232,7 +1231,7 @@ export default function AdminComptabilitePage() {
                     return {
                         mois: p.mois, personne: p.personne, poste: p.poste,
                         montant: Number(e.montant || 0),
-                        agent: e.agent_id ? (agentMap.get(e.agent_id) || '—') : '—',
+                        agent: e.agent_id ? (agentMap.get(e.agent_id) || '-') : '-',
                         date: new Date(e.date_depense),
                     }
                 }),
@@ -1241,7 +1240,7 @@ export default function AdminComptabilitePage() {
             // ── Feuille DEVIS EN ATTENTE : pipeline introduit dans la trésorerie ──
             const devisSheet = {
                 sheetName: 'Devis en attente',
-                title: 'DEVIS CLIENTS EN ATTENTE DE VALIDATION — PIPELINE TRÉSORERIE',
+                title: 'DEVIS CLIENTS EN ATTENTE DE VALIDATION : PIPELINE TRÉSORERIE',
                 subtitle,
                 legalHeader: true,
                 totalRow: true,
@@ -1258,7 +1257,7 @@ export default function AdminComptabilitePage() {
                     .filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
                     .map(d => ({
                         numero: d.numero || d.id.slice(0, 8).toUpperCase(),
-                        client: `${d.client_prenom || ''} ${d.client_nom || ''}`.trim() || '—',
+                        client: `${d.client_prenom || ''} ${d.client_nom || ''}`.trim() || '-',
                         statut: d.status,
                         montant: Number(d.total || 0),
                         devise: d.currency || 'XOF',
@@ -1286,11 +1285,11 @@ export default function AdminComptabilitePage() {
                 ],
                 data: pOrders.map(o => ({
                     date: new Date(o.created_at),
-                    client: o.customer_name || '—',
-                    email: o.customer_email || '—',
-                    produit: o.product_title || '—',
+                    client: o.customer_name || '-',
+                    email: o.customer_email || '-',
+                    produit: o.product_title || '-',
                     devise: o.currency || 'XOF',
-                    methode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    methode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '-'),
                     statut: ORDER_STATUS[o.payment_status]?.label || o.payment_status,
                     montant: Number(o.amount || 0),
                 })),
@@ -1304,7 +1303,7 @@ export default function AdminComptabilitePage() {
                 rapprochementRows.push({
                     date: new Date(p.date_paiement),
                     source: d ? `Facture ${d.numero}` : 'Encaissement externe',
-                    reference: p.reference || '—',
+                    reference: p.reference || '-',
                     mode: PAYMENT_LABELS[p.type] || p.type,
                     montant: Number(p.montant || 0),
                 })
@@ -1312,9 +1311,9 @@ export default function AdminComptabilitePage() {
             pOrders.filter(o => o.payment_status === 'completed').forEach(o => {
                 rapprochementRows.push({
                     date: new Date(o.created_at),
-                    source: `Boutique — ${o.product_title || ''}`,
+                    source: `Boutique : ${o.product_title || ''}`,
                     reference: o.id.slice(0, 8).toUpperCase(),
-                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—'),
+                    mode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '-'),
                     montant: Number(o.amount || 0),
                 })
             })
@@ -1340,7 +1339,7 @@ export default function AdminComptabilitePage() {
             await exportToExcelMultiSheet({
                 filename: `RGB_Admin_Compta_${periodSlug(period)}_${new Date().toISOString().split('T')[0]}`,
                 coverTitle: 'Rapport comptable Admin',
-                coverSubtitle: 'À l\'attention du comptable — Synthèse officielle de la période',
+                coverSubtitle: 'À l\'attention du comptable : Synthèse officielle de la période',
                 coverPeriod: pLabel,
                 dashboard: {
                     title: 'DASHBOARD COMPTABLE MENSUEL',
@@ -1352,11 +1351,11 @@ export default function AdminComptabilitePage() {
                         { label: 'Revenus boutique', value: kpis.boutique, type: 'currency', tone: 'accent', detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées` },
                         { label: 'TVA collectée', value: kpis.totalTVA, type: 'currency', tone: 'neutral', detail: 'À déclarer à la DGI' },
                         { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours` },
-                        { label: 'Devis en attente de validation', value: kpis.devisEnAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbDevisAttente} devis — pipeline introduit dans la trésorerie réelle` },
+                        { label: 'Devis en attente de validation', value: kpis.devisEnAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbDevisAttente} devis : pipeline introduit dans la trésorerie réelle` },
                         { label: 'Taux de commission agents', value: commissionRate, type: 'percent', tone: 'warn', detail: `Montant : ${fmt(kpis.commission)} sur encaissements nets` },
                         { label: 'Dépenses totales', value: kpis.totalDeps, type: 'currency', tone: 'bad', detail: `${pDeps.length} dépenses enregistrées` },
                         { label: 'Bénéfice net', value: kpis.benefice, type: 'currency', tone: kpis.benefice >= 0 ? 'good' : 'bad', detail: 'Encaissé − Commissions − Dépenses' },
-                        { label: 'Score santé financière', value: scoreSante.score, type: 'number', tone: scoreSante.score >= 60 ? 'good' : scoreSante.score >= 40 ? 'warn' : 'bad', detail: `${scoreSante.label} / 100 — ${scoreSante.recommandation}` },
+                        { label: 'Score santé financière', value: scoreSante.score, type: 'number', tone: scoreSante.score >= 60 ? 'good' : scoreSante.score >= 40 ? 'warn' : 'bad', detail: `${scoreSante.label} / 100 : ${scoreSante.recommandation}` },
                     ],
                 },
                 sheets: [
@@ -1483,13 +1482,13 @@ export default function AdminComptabilitePage() {
                         Export comptable mensuel
                     </button>
                     <button type="button" onClick={() => handleFecExport('xlsx')} disabled={fecExporting}
-                        title="Export FEC / SYSCOHADA — classeur Excel professionnel (Synthèse + écritures en partie double)"
+                        title="Export FEC / SYSCOHADA : classeur Excel professionnel (Synthèse + écritures en partie double)"
                         className="flex items-center gap-2 bg-white/5 border border-[#008751]/40 text-[#00c870] hover:bg-[#008751]/15 font-black text-xs px-5 py-3 rounded-xl transition-all disabled:opacity-60">
                         {fecExporting ? <div className="w-4 h-4 border-2 border-[#00c870] border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
                         Export FEC (Excel)
                     </button>
                     <button type="button" onClick={() => handleFecExport('txt')} disabled={fecExporting}
-                        title="Format réglementaire tabulé (.txt) — import direct dans un logiciel comptable"
+                        title="Format réglementaire tabulé (.txt) : import direct dans un logiciel comptable"
                         className="flex items-center gap-2 bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300 font-black text-[10px] px-3 py-3 rounded-xl transition-all disabled:opacity-60">
                         .txt
                     </button>
@@ -1548,7 +1547,7 @@ export default function AdminComptabilitePage() {
                     {alertes.length === 0 ? (
                         <div className="flex items-center gap-2 text-[#00c870] bg-[#008751]/10 rounded-xl px-4 py-3">
                             <CheckCircle2 size={14} />
-                            <span className="text-xs font-semibold">Tout est en ordre — aucune alerte sur cette période</span>
+                            <span className="text-xs font-semibold">Tout est en ordre : aucune alerte sur cette période</span>
                         </div>
                     ) : (
                         <div className="space-y-2">
@@ -1578,7 +1577,7 @@ export default function AdminComptabilitePage() {
                 <KpiCard icon={Wallet}        label="Total Caisse Entrant"   value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation + Boutique + Paiements" highlight />
                 <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées`} />
                 <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures`} />
-                <KpiCard icon={FileText} label="Devis en attente" value={fmt(kpis.devisEnAttente)} color="#38bdf8" sub={`${kpis.nbDevisAttente} devis à valider — pipeline trésorerie`} />
+                <KpiCard icon={FileText} label="Devis en attente" value={fmt(kpis.devisEnAttente)} color="#38bdf8" sub={`${kpis.nbDevisAttente} devis à valider : pipeline trésorerie`} />
                 <KpiCard icon={TrendingDown}  label="Dépenses Totales"       value={fmt(kpis.totalDeps)}     color="#E8112D" sub={`${pDeps.length} dépenses`} />
                 <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après dépenses" />
                 <KpiCard icon={Target}        label="Projection 30 jours"    value={fmt(Math.round(kpis.proj30))} color="#FCD116" sub="Basée sur rythme actuel" />
@@ -1587,7 +1586,7 @@ export default function AdminComptabilitePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <KpiCard icon={Calculator}    label="TVA Collectée"          value={fmt(kpis.totalTVA)}      trend={kpis.trends?.tva}       color="#0891b2" sub="Sur factures payées" />
                 <KpiCard icon={Shield}        label="Factures Signées"        value={`${nSigned}`}            color="#9333ea" sub={`sur ${pDocs.filter(d => d.type === 'facture').length} factures`} />
-                <KpiCard icon={Clock}         label="Commandes En Attente"    value={`${nPending}`}           color="#f97316" sub="Boutique — non payées" />
+                <KpiCard icon={Clock}         label="Commandes En Attente"    value={`${nPending}`}           color="#f97316" sub="Boutique : non payées" />
                 <KpiCard icon={Star}          label="Taux Encaissement"       value={`${scoreSante.tauxEncaissement}%`} color={parseInt(scoreSante.tauxEncaissement) >= 70 ? '#00c870' : parseInt(scoreSante.tauxEncaissement) >= 40 ? '#FCD116' : '#E8112D'} sub={`${kpis.nbFactPaye}/${kpis.nbFactTotal} factures payées`} />
             </div>
 
@@ -1755,7 +1754,7 @@ export default function AdminComptabilitePage() {
                                                     {initials}
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-white">{s.agent.full_name || '—'}</p>
+                                                    <p className="text-xs font-bold text-white">{s.agent.full_name || '-'}</p>
                                                     <p className="text-[9px] text-gray-600 truncate max-w-[130px]">{s.agent.email}</p>
                                                 </div>
                                             </div>
@@ -1854,10 +1853,10 @@ export default function AdminComptabilitePage() {
                                 {agedBalance.rows.slice(0, 8).map(r => (
                                     <tr key={r.client} className="border-b border-white/[0.03] hover:bg-white/[0.02]">
                                         <td className="px-5 py-2.5 text-white font-semibold truncate max-w-[200px]">{r.client}</td>
-                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b0 ? fmt(r.b0) : '—'}</td>
-                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b30 ? fmt(r.b30) : '—'}</td>
-                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b60 ? fmt(r.b60) : '—'}</td>
-                                        <td className="px-3 py-2.5 text-right font-mono" style={{ color: r.b90 ? '#EF4444' : '#6b7280' }}>{r.b90 ? fmt(r.b90) : '—'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b0 ? fmt(r.b0) : '-'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b30 ? fmt(r.b30) : '-'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-gray-400">{r.b60 ? fmt(r.b60) : '-'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono" style={{ color: r.b90 ? '#EF4444' : '#6b7280' }}>{r.b90 ? fmt(r.b90) : '-'}</td>
                                         <td className="px-5 py-2.5 text-right font-mono font-black text-[#FCD116]">{fmt(r.total)}</td>
                                     </tr>
                                 ))}
@@ -1865,7 +1864,7 @@ export default function AdminComptabilitePage() {
                         </table>
                     </div>
                     <p className="text-[9px] text-gray-600 px-5 py-2.5 border-t border-white/5">
-                        Créances clients non soldées, par ancienneté de la facture. Au-delà de 90 jours = risque d&apos;impayé — prioriser la relance.
+                        Créances clients non soldées, par ancienneté de la facture. Au-delà de 90 jours = risque d&apos;impayé : prioriser la relance.
                     </p>
                 </div>
             )}
@@ -1946,20 +1945,20 @@ export default function AdminComptabilitePage() {
                                             </td>
                                             <td className="p-4">
                                                 <p className="text-xs text-white">{d.client_nom} {d.client_prenom || ''}</p>
-                                                <p className="text-[9px] text-gray-600 truncate max-w-[140px]">{d.client_email || d.client_phone || '—'}</p>
+                                                <p className="text-[9px] text-gray-600 truncate max-w-[140px]">{d.client_email || d.client_phone || '-'}</p>
                                             </td>
-                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '-'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(d.total, d.currency)}</td>
                                             <td className="p-4 text-right font-mono text-xs">
                                                 {solde !== null ? (
                                                     solde > 0
                                                         ? <span className="text-amber-400 font-bold">{fmt(solde, docCur)}</span>
                                                         : <span className="text-[#00c870]"> Soldé</span>
-                                                ) : <span className="text-gray-600">—</span>}
+                                                ) : <span className="text-gray-600">-</span>}
                                             </td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>
                                             <td className="p-4 text-center">
-                                                {d.signed_at ? <Shield size={11} className="text-purple-400 mx-auto" /> : <span className="text-gray-700">—</span>}
+                                                {d.signed_at ? <Shield size={11} className="text-purple-400 mx-auto" /> : <span className="text-gray-700">-</span>}
                                             </td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.created_at)}</td>
                                             <td className="p-4 pr-5 text-center" onClick={e => e.stopPropagation()}>
@@ -1997,10 +1996,10 @@ export default function AdminComptabilitePage() {
                                     const st = ORDER_STATUS[o.payment_status] || { label: o.payment_status, cls: 'bg-gray-500/20 text-gray-400' }
                                     return (
                                         <tr key={o.id} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="p-4 pl-5"><p className="text-xs text-white">{o.customer_name || '—'}</p><p className="text-[9px] text-gray-600 truncate max-w-[140px]">{o.customer_email || '—'}</p></td>
-                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[180px]">{o.product_title || '—'}</td>
+                                            <td className="p-4 pl-5"><p className="text-xs text-white">{o.customer_name || '-'}</p><p className="text-[9px] text-gray-600 truncate max-w-[140px]">{o.customer_email || '-'}</p></td>
+                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[180px]">{o.product_title || '-'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(o.amount, o.currency)}</td>
-                                            <td className="p-4 text-[10px] text-gray-500 uppercase">{o.payment_method || '—'}</td>
+                                            <td className="p-4 text-[10px] text-gray-500 uppercase">{o.payment_method || '-'}</td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>
                                             <td className="p-4 pr-5 text-right text-[10px] text-gray-500 font-mono">{fmtDate(o.created_at)}</td>
                                         </tr>
@@ -2024,7 +2023,7 @@ export default function AdminComptabilitePage() {
                                         <tr key={d.id} className="group hover:bg-white/[0.02] transition-colors">
                                             <td className="p-4 pl-5 text-xs text-white font-medium">{d.titre}</td>
                                             <td className="p-4"><span className="text-[9px] font-bold bg-white/5 text-gray-400 px-2 py-0.5 rounded-full capitalize">{d.categorie}</span></td>
-                                            <td className="p-4 text-[10px] text-gray-500 truncate max-w-[120px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-[10px] text-gray-500 truncate max-w-[120px]">{ag?.full_name || ag?.email || '-'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-red-400 font-bold">−{fmt(Number(d.montant))}</td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(d.date_depense)}</td>
                                             <td className="p-4 pr-5 text-right">
@@ -2069,14 +2068,14 @@ export default function AdminComptabilitePage() {
                                                 ) : (
                                                     <div>
                                                         <p className="font-bold text-amber-400">Paiement Externe</p>
-                                                        <p className="text-xs text-gray-400">{cleanNotes || '—'}</p>
+                                                        <p className="text-xs text-gray-400">{cleanNotes || '-'}</p>
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '—'}</td>
+                                            <td className="p-4 text-[10px] text-gray-400 truncate max-w-[110px]">{ag?.full_name || ag?.email || '-'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-emerald-400 font-bold">{fmt(p.montant)}</td>
                                             <td className="p-4 text-right text-[10px] text-gray-500 font-mono">{fmtDate(p.date_paiement)}</td>
-                                            <td className="p-4 pr-5 font-mono text-xs text-gray-400">{p.reference || '—'}</td>
+                                            <td className="p-4 pr-5 font-mono text-xs text-gray-400">{p.reference || '-'}</td>
                                         </tr>
                                     )
                                 })}
@@ -2123,7 +2122,7 @@ export default function AdminComptabilitePage() {
                 )}
             </div>
 
-            {/* PAYMENT MODAL — Admin */}
+            {/* PAYMENT MODAL : Admin */}
         <AnimatePresence>
             {showPaymentModal && paymentDoc && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -2135,7 +2134,7 @@ export default function AdminComptabilitePage() {
                         <div className="p-6 border-b border-white/5 flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-black text-white">Enregistrer un Paiement</h3>
-                                <p className="text-xs text-gray-500 mt-0.5">{paymentDoc.numero} — {paymentDoc.client_nom} {paymentDoc.client_prenom || ''}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{paymentDoc.numero} : {paymentDoc.client_nom} {paymentDoc.client_prenom || ''}</p>
                             </div>
                             <button type="button" title="Fermer" onClick={() => setShowPaymentModal(false)} className="text-gray-500 hover:text-white"><X size={20} /></button>
                         </div>

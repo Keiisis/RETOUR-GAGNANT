@@ -3,11 +3,11 @@
 //
 //  Deux contrôles portent tout le poids de cette route :
 //   1. L'IDENTITÉ vient de la session client, jamais du corps de la
-//      requête — sinon « user_id » et « email » sont de simples champs
+//      requête : sinon « user_id » et « email » sont de simples champs
 //      que l'appelant choisit.
 //   2. La session Stripe doit désigner CETTE facture (metadata.doc_id)
 //      et en couvrir le montant. Sans ce lien, n'importe quelle session
-//      payée — y compris de 1 000 F — soldait n'importe quelle facture.
+//      payée : y compris de 1 000 F : soldait n'importe quelle facture.
 // ══════════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'

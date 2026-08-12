@@ -36,9 +36,9 @@ const stepStatuses = [
 ]
 
 const formatDate = (val: string | null | undefined) => {
-    if (!val) return '—'
+    if (!val) return '-'
     const d = new Date(val)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 export default function AdminDossiersPage() {
@@ -465,7 +465,7 @@ export default function AdminDossiersPage() {
         await exportToExcel({
             filename: `RG_Export_Dossiers_${new Date().toISOString().split('T')[0]}`,
             sheetName: 'Suivi Dossiers',
-            title: 'RAPPORT DE SUIVI DES DOSSIERS — RETOUR GAGNANT',
+            title: 'RAPPORT DE SUIVI DES DOSSIERS : RETOUR GAGNANT',
             subtitle: `Synthèse générée le ${new Date().toLocaleDateString('fr-FR')} - Confidentiel`,
             columns,
             data: exportData
@@ -571,7 +571,7 @@ export default function AdminDossiersPage() {
                                         </div>
                                         <div>
                                             <p className="font-mono font-bold text-sm tracking-wider">{dossier.num_dossier as string}</p>
-                                            <p className="text-gray-500 text-xs">{dossier.client_prenom as string} {dossier.client_nom as string} — {dossier.service_type as string}</p>
+                                            <p className="text-gray-500 text-xs">{dossier.client_prenom as string} {dossier.client_nom as string} : {dossier.service_type as string}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
@@ -608,7 +608,7 @@ export default function AdminDossiersPage() {
                                                     </div>
                                                     <div>
                                                         <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1"><T>WhatsApp</T></p>
-                                                        <p className="text-gray-300">{(dossier.client_whatsapp as string) || '—'}</p>
+                                                        <p className="text-gray-300">{(dossier.client_whatsapp as string) || '-'}</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1"><T>Créé le</T></p>
@@ -635,7 +635,7 @@ export default function AdminDossiersPage() {
                                                             title={t("Assigner ce dossier à un agent")}
                                                             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#008751] w-full"
                                                         >
-                                                            <option value="" className="bg-[#0a0f18]">— Non assigné —</option>
+                                                            <option value="" className="bg-[#0a0f18]">-Non assigné-</option>
                                                             {agents.map(a => (
                                                                 <option key={a.id} value={a.id} className="bg-[#0a0f18]">{a.nom}</option>
                                                             ))}
@@ -735,7 +735,7 @@ export default function AdminDossiersPage() {
                                                                 <div className="flex items-center gap-2">
                                                                     <MessageSquare size={14} className="text-blue-400" />
                                                                     <span className="text-xs font-black uppercase tracking-widest text-blue-400">Messagerie client</span>
-                                                                    {!threadId && <span className="text-[10px] text-gray-600 ml-2">(dossier sans fil — créé avant la mise à jour)</span>}
+                                                                    {!threadId && <span className="text-[10px] text-gray-600 ml-2">(dossier sans fil : créé avant la mise à jour)</span>}
                                                                 </div>
                                                                 {/* Bouton envoyer par email séparé */}
                                                                 {threadId && input.trim() && (
@@ -811,7 +811,7 @@ export default function AdminDossiersPage() {
                                                                     </div>
                                                                 </>
                                                             ) : (
-                                                                /* Pas de thread — proposer email direct */
+                                                                /* Pas de thread : proposer email direct */
                                                                 <div className="p-4 space-y-3">
                                                                     <p className="text-xs text-gray-500">Ce dossier n&apos;a pas de fil de messagerie. Envoyez un email directement :</p>
                                                                     <div className="flex gap-2">

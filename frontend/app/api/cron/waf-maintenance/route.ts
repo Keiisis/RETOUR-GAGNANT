@@ -1,10 +1,10 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Maintenance quotidienne du WAF
+//  CRON : Maintenance quotidienne du WAF
 // ──────────────────────────────────────────────────────────────
 // S'exécute chaque nuit via Vercel Cron (voir vercel.json).
 //
 // Appelle la RPC waf_daily_maintenance() qui :
-//   • fait décroître les threat scores (decay) — sinon une IP bannie le reste
+//   • fait décroître les threat scores (decay) : sinon une IP bannie le reste
 //     éternellement et la défense ne se concentre jamais sur les menaces vives
 //   • purge logs/alertes/campagnes/fingerprints/honeypot/IDOR expirés
 //   • réhabilite graduellement les IP inactives + auto-unblock
@@ -40,9 +40,9 @@ async function rafraichirPlagesRobots(
 
     // Aucune plage récupérée : on GARDE la liste existante. Écraser par un
     // tableau vide ferait retomber tous les robots dans l'heuristique
-    // headless — exactement le défaut qu'on corrige.
+    // headless : exactement le défaut qu'on corrige.
     if (plages.length === 0) {
-        return { total: 0, sources, erreurs: [...erreurs, 'aucune plage récupérée — liste conservée'] }
+        return { total: 0, sources, erreurs: [...erreurs, 'aucune plage récupérée : liste conservée'] }
     }
 
     const { error } = await supabase.from('waf_config').upsert(

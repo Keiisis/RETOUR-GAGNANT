@@ -8,7 +8,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
 )
 
-// POST /api/agent/nationalite/relance — bouton « Relancer (documents) » des
+// POST /api/agent/nationalite/relance : bouton « Relancer (documents) » des
 // panels Admin + Agent. Envoie au client le lien signé de complément de dossier
 // (formulaire pré-rempli, sans repaiement). Protégé par le middleware /api/agent/*.
 export async function POST(request: NextRequest) {

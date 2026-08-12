@@ -11,7 +11,6 @@ import PricingCalculator3D from '@/components/services/PricingCalculator3D'
 import FaConsultationBooking from '@/components/services/FaConsultationBooking'
 import FaPriestsDirectory from '@/components/services/FaPriestsDirectory'
 import LanguesRacinesChoice from '@/components/services/LanguesRacinesChoice'
-import PermisBooking from '@/components/services/PermisBooking'
 
 import { useTranslation, T } from '@/lib/translation'
 
@@ -32,13 +31,13 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     passeport: {
         title: 'Passeport & Documents',
         subtitle: 'Documents officiels et accompagnement pour la diaspora béninoise',
-        description: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre — un accompagnement structuré, sans improvisation.",
+        description: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre : un accompagnement structuré, sans improvisation.",
         features: [
             "Copie intégrale du passeport en cours de validité",
             "Acte de naissance certifié conforme délivré par la mairie béninoise",
             "Certificat de nationalité béninoise (Tribunal de Première Instance)",
             "Carte d'Identité Personnelle (CIP A) en cours de validité",
-            "Extrait de casier judiciaire béninois — Bulletin n°3 (moins de 3 mois)",
+            "Extrait de casier judiciaire béninois : Bulletin n°3 (moins de 3 mois)",
             "Justificatif de domicile de moins de 3 mois (quittance ou bail)",
             "4 photos d'identité biométriques (fond blanc, 3,5 × 4,5 cm, sans lunettes)",
             "Formulaire officiel de demande de passeport rempli et signé",
@@ -48,15 +47,15 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         icon_type: 'passport',
         image_url: '/assets/icones/icone_Passeport_Documents.png',
         pricing_options: [
-            { label: 'Pack Standard — Passeport ordinaire', price: '75 000 FCFA' },
-            { label: 'Pack VIP — Traitement express jour-J', price: '350 000 FCFA' },
+            { label: 'Pack Standard : Passeport ordinaire', price: '75 000 FCFA' },
+            { label: 'Pack VIP : Traitement express jour-J', price: '350 000 FCFA' },
             { label: 'Renouvellement accompagné', price: '50 000 FCFA' },
         ],
     },
     logement: {
         title: 'Acheter ou Louer',
         subtitle: 'Vérifiez, informez-vous et Sécurisez vos transactions foncières et immobilières',
-        description: "L'immobilier au Bénin offre de réelles opportunités — à condition de savoir naviguer dans un marché foncier qui requiert vigilance et expertise juridique. Nous vous accompagnons de la sélection du bien à la signature de l'acte notarié, en veillant à chaque étape à la solidité juridique de votre acquisition.",
+        description: "L'immobilier au Bénin offre de réelles opportunités : à condition de savoir naviguer dans un marché foncier qui requiert vigilance et expertise juridique. Nous vous accompagnons de la sélection du bien à la signature de l'acte notarié, en veillant à chaque étape à la solidité juridique de votre acquisition.",
         features: [
             "Vérification du Titre Foncier (TF) et purge des oppositions cadastrales",
             "Bornage et identification parcellaire auprès de l'ANDF",
@@ -84,7 +83,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
             "Immatriculation RCCM et formalités fiscales",
             "Ouverture de compte bancaire professionnel",
             "Domiciliation commerciale à Cotonou",
-            "Cabinet de recrutement — sélection de talents locaux",
+            "Cabinet de recrutement : sélection de talents locaux",
             "Mise en relation avec les acteurs économiques locaux",
         ],
         price: 'À partir de 150 000 FCFA',
@@ -102,14 +101,14 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         subtitle: 'Reconnectez-vous avec vos racines. La richesse des Cauris.',
         description: "Le Bénin est l'un des berceaux les plus vivants de la culture africaine. Loin des circuits touristiques standardisés, nous vous proposons une immersion sincère dans les traditions, les savoirs et les rencontres qui font l'identité profonde de ce pays. Ici, la culture se vit, elle ne se contemple pas de loin.",
         features: [
-            'Consultation du Fa — oracle traditionnel yoruba-fon',
+            'Consultation du Fa : oracle traditionnel yoruba-fon',
             'Cérémonie du Nom et validation à l\'état civil',
             'Soins par les plantes et approche de la médecine ancestrale',
             'Audience privée avec dignitaires et rois traditionnels',
             'Initiation et sensibilisation à la culture vodoun',
             'Programmes de visite : Ganvié, Ouidah, Abomey, Porto-Novo',
             'Guide historien expert et passionné par l\'histoire du Bénin',
-            'Ateliers culinaires — recettes et saveurs béninoises',
+            'Ateliers culinaires : recettes et saveurs béninoises',
             'Découverte de l\'artisanat local et des savoir-faire traditionnels',
         ],
         price: 'À partir de 80 000 FCFA/pers',
@@ -125,13 +124,13 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     construction: {
         title: 'Suivi de Chantier',
         subtitle: 'Bâtissez pour la postérité. Votre chantier, géré avec rigueur.',
-        description: "Construire au Bénin depuis l'étranger, c'est possible — à condition d'être bien entouré. Entre les devis approximatifs, les délais non respectés et les matériaux de qualité variable, les risques sont réels. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
+        description: "Construire au Bénin depuis l'étranger, c'est possible : à condition d'être bien entouré. Entre les devis approximatifs, les délais non respectés et les matériaux de qualité variable, les risques sont réels. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
         features: [
             'Aide à l\'achat et à la location de terrain ou de bien immobilier',
-            'Bureau d\'architecte — conception et plans techniques',
+            'Bureau d\'architecte : conception et plans techniques',
             'Surveillance et contrôle de chantier (visites régulières, tous moyens)',
             'Vérification et validation des factures fournisseurs',
-            'Achats de matériaux — sélection et négociation',
+            'Achats de matériaux : sélection et négociation',
             'Rapports WhatsApp hebdomadaires (photos et vidéos)',
             'Mise en relation et coordination des intervenants du chantier',
             'Livraison et nettoyage du chantier clé en main',
@@ -149,12 +148,12 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     investissement: {
         title: 'Investissement',
         subtitle: 'Opportunités d\'affaires rentables. Faites fructifier votre héritage.',
-        description: "Le Bénin connaît une dynamique économique réelle, portée par des réformes structurelles et des investissements publics soutenus. Les opportunités existent — dans l'immobilier, l'agriculture, le commerce et les services — mais elles demandent une lecture fine du terrain. Nous vous aidons à identifier des projets sérieux, à évaluer les risques réels et à structurer vos investissements dans le respect du cadre juridique local.",
+        description: "Le Bénin connaît une dynamique économique réelle, portée par des réformes structurelles et des investissements publics soutenus. Les opportunités existent : dans l'immobilier, l'agriculture, le commerce et les services : mais elles demandent une lecture fine du terrain. Nous vous aidons à identifier des projets sérieux, à évaluer les risques réels et à structurer vos investissements dans le respect du cadre juridique local.",
         features: [
             'Vente exclusive de particuliers à particuliers (terrain, immeuble, maison)',
             'Projets agricoles rentables et autres secteurs porteurs',
             'Évaluation approfondie des risques financiers, juridiques et opérationnels',
-            'Veilles d\'opportunités — marchés, appels d\'offres, partenariats',
+            'Veilles d\'opportunités : marchés, appels d\'offres, partenariats',
             'Suivi et optimisation de vos investissements au Bénin',
             'Stratégies fiscales adaptées au contexte local',
         ],
@@ -184,7 +183,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         icon_type: 'cowrie',
         image_url: '',
         pricing_options: [
-            { label: 'Recherche complète — archives, bases de données & associations', price: '250 €' },
+            { label: 'Recherche complète : archives, bases de données & associations', price: '250 €' },
         ],
     },
     'nationalite-vip': {
@@ -204,21 +203,21 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         image_url: '',
         pricing_options: [
             { label: 'Accompagnement dossier standard', price: '150 000 FCFA' },
-            { label: 'Pack VIP — suivi prioritaire', price: '350 000 FCFA' },
+            { label: 'Pack VIP : suivi prioritaire', price: '350 000 FCFA' },
             { label: 'Consultation initiale', price: 'Gratuit' },
         ],
     },
     'consultation-fa-racines': {
         title: 'Consultation Fa & Racines',
-        subtitle: 'Rencontrez un Bokonon — la sagesse du Fa, dans un cadre organisé et respectueux',
+        subtitle: 'Rencontrez un Bokonon : la sagesse du Fa, dans un cadre organisé et respectueux',
         description: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un Bokonon (prêtre du Fa) reconnu, pour une consultation traditionnelle menée dans les règles de l'art. En présentiel au Bénin, nous organisons l'intégralité de votre venue ; à distance, nous assurons une assistance de bout en bout pour que la séance se déroule dans les meilleures conditions.",
         features: [
             "Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté",
-            "Présentiel — accueil à l'arrivée et accompagnement sur place",
-            "Présentiel — prise de rendez-vous avec le prêtre Fa et coordination complète",
-            "Présentiel — réservation d'hôtel et change de monnaie sur place",
-            "Visio — organisation de la séance à distance et liaison avec le Bokonon",
-            "Visio — assistance et veille technique pendant toute la consultation",
+            "Présentiel : accueil à l'arrivée et accompagnement sur place",
+            "Présentiel : prise de rendez-vous avec le prêtre Fa et coordination complète",
+            "Présentiel : réservation d'hôtel et change de monnaie sur place",
+            "Visio : organisation de la séance à distance et liaison avec le Bokonon",
+            "Visio : assistance et veille technique pendant toute la consultation",
             "Cadre contractuel clair : un accord de mise en relation est signé avant le début de la procédure",
         ],
         price: 'Présentiel 550 € · Visio 780 €',
@@ -226,42 +225,23 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         icon_type: 'cowrie',
         image_url: '/assets/icones/icone_Consultation_Fa_Racines.png',
         pricing_options: [
-            { label: 'Consultation en Présentiel — accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
-            { label: 'Consultation en Visio — assistance et veille à distance de bout en bout', price: '780 €' },
+            { label: 'Consultation en Présentiel : accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
+            { label: 'Consultation en Visio : assistance et veille à distance de bout en bout', price: '780 €' },
         ],
-    },
-    'permis-conduire': {
-        title: 'Permis de Conduire Béninois',
-        subtitle: 'Conduisez au Bénin en toute légalité — un permis officiel, sans tracas administratif',
-        description: "Vous êtes afro-descendant et vous vous installez ou séjournez au Bénin ? Obtenez un permis de conduire béninois officiel, en règle, pour circuler l'esprit tranquille et éviter tout problème administratif. Nous vous mettons en relation avec une auto-école partenaire agréée, près de chez vous, et nous coordonnons l'ensemble de votre parcours : inscription, cours de code, heures de conduite et présentation à l'examen. Vous choisissez votre auto-école ; nous veillons à ce que tout se déroule proprement, de bout en bout.",
-        features: [
-            "Mise en relation avec une auto-école partenaire agréée",
-            "Vous choisissez votre auto-école (ville, prix, durée)",
-            "Inscription et constitution du dossier prises en charge",
-            "Cours de code et heures de conduite avec des moniteurs qualifiés",
-            "Présentation à l'examen officiel du permis béninois",
-            "Accompagnement administratif complet jusqu'à l'obtention",
-            "Un cadre clair et un suivi dédié tout au long du parcours",
-        ],
-        price: "Selon l'auto-école choisie",
-        color: '#008751',
-        icon_type: 'shield',
-        image_url: '/assets/icones/Permis de Conduire Service.png',
-        pricing_options: [],
     },
     'langues-racines': {
         title: 'Langues & Racines',
         subtitle: 'La langue de vos ancêtres est la première porte du retour',
-        description: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Le fon, le yoruba, le goun ou le mina portent la mémoire, l'humour et la vision du monde de vos ancêtres : les apprendre, c'est renouer le fil que l'histoire a interrompu. Nos parcours sont animés par des locuteurs natifs et pensés pour la diaspora — vocabulaire du quotidien, usages culturels, salutations et codes sociaux — en présentiel au Bénin ou en visioconférence où que vous soyez.",
+        description: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Le fon, le yoruba, le goun ou le mina portent la mémoire, l'humour et la vision du monde de vos ancêtres : les apprendre, c'est renouer le fil que l'histoire a interrompu. Nos parcours sont animés par des locuteurs natifs et pensés pour la diaspora : vocabulaire du quotidien, usages culturels, salutations et codes sociaux : en présentiel au Bénin ou en visioconférence où que vous soyez.",
         features: [
             "Cours animés par des locuteurs natifs qualifiés",
-            "Fon, Yoruba, Goun, Mina — selon votre lignée et votre région d'origine",
+            "Fon, Yoruba, Goun, Mina : selon votre lignée et votre région d'origine",
             "Parcours débutant à avancé, adapté à votre rythme",
             "Immersion culturelle : proverbes, salutations, codes sociaux",
             "En présentiel au Bénin ou en visioconférence depuis l'étranger",
             "Programme personnalisé défini ensemble lors d'un premier rendez-vous",
         ],
-        price: 'Sur devis — premier rendez-vous gratuit',
+        price: 'Sur devis : premier rendez-vous gratuit',
         color: '#0EA5E9',
         icon_type: 'drum',
         image_url: '/assets/icones/icone_Langues_Racines.png',
@@ -270,7 +250,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     autres: {
         title: 'Autres Services',
         subtitle: 'Transport, santé, scolarité et démarches du quotidien',
-        description: "Des solutions complémentaires pour faciliter chaque aspect de votre installation au Bénin — de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
+        description: "Des solutions complémentaires pour faciliter chaque aspect de votre installation au Bénin : de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
         features: [
             'Transfert aéroport et location de véhicule avec chauffeur',
             'Mise en relation avec médecins et cliniques partenaires',
@@ -302,7 +282,7 @@ const PACK_VIP_STEPS = [
     {
         num: '03',
         title: 'Passeport Express Jour-J',
-        desc: "Prise en charge prioritaire de votre demande de passeport biométrique — déposée et traitée le jour même.",
+        desc: "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même.",
     },
 ]
 
@@ -314,7 +294,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
     const [notFound, setNotFound] = useState(false)
     const [showCalculator, setShowCalculator] = useState(true)
 
-    // Chargement du service depuis l'API serveur (service role key — bypass RLS)
+    // Chargement du service depuis l'API serveur (service role key : bypass RLS)
     useEffect(() => {
         const fetchService = async () => {
             if (!slug) return
@@ -434,7 +414,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     </div>
                                 ) : (
                                     <GoldenIcon
-                                        // @ts-expect-error — icon_type is a valid prop but not typed
+                                        // @ts-expect-error : icon_type is a valid prop but not typed
                                         type={service.icon_type}
                                         className="w-32 h-32 md:w-40 md:h-40"
                                     />
@@ -464,7 +444,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     <p className="text-gray-600 leading-relaxed text-lg">{t(service.description)}</p>
                                 </div>
 
-                                {/* Features — renommé "Pièces à fournir" pour le passeport */}
+                                {/* Features : renommé "Pièces à fournir" pour le passeport */}
                                 <div>
                                     <h2 className="text-2xl font-bold text-[#1a2332] mb-6">
                                         {slug === 'passeport'
@@ -488,7 +468,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     </div>
                                 </div>
 
-                                {/* Section Pack VIP — uniquement pour le passeport */}
+                                {/* Section Pack VIP : uniquement pour le passeport */}
                                 {slug === 'passeport' && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
@@ -503,7 +483,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                             </h2>
                                         </div>
                                         <p className="text-gray-500 text-sm mb-6">
-                                            <T>Un accompagnement intégral en une seule journée — de l&apos;état civil à la délivrance de votre passeport.</T>
+                                            <T>Un accompagnement intégral en une seule journée : de l&apos;état civil à la délivrance de votre passeport.</T>
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {PACK_VIP_STEPS.map((step) => (
@@ -520,8 +500,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     </motion.div>
                                 )}
 
-                                {/* Section réservation — uniquement Consultation Fa & Racines */}
-                                {/* Annuaire des Prêtres Fa — alimenté par /api/fa-priests
+                                {/* Section réservation : uniquement Consultation Fa & Racines */}
+                                {/* Annuaire des Prêtres Fa : alimenté par /api/fa-priests
                                     (se masque automatiquement si aucun prêtre publié) */}
                                 {slug === 'consultation-fa-racines' && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
@@ -533,21 +513,12 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                                         <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Réserver votre consultation</T></h2>
                                         {/* Tarifs pilotés depuis l'admin (pricing_options du
-                                            service) — même source que le calculateur */}
+                                            service) : même source que le calculateur */}
                                         <FaConsultationBooking options={service.pricing_options} />
                                     </motion.div>
                                 )}
 
-                                {/* Section réservation — uniquement Permis de Conduire */}
-                                {slug === 'permis-conduire' && (
-                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                                        <h2 className="text-2xl font-bold text-[#1a2332] mb-2"><T>Choisir mon auto-école et lancer mon permis</T></h2>
-                                        <p className="text-sm text-gray-500 mb-6"><T>Sélectionnez une auto-école partenaire : son prix et sa durée s'affichent, puis réglez en ligne. Notre équipe prend le relais sous 24 h.</T></p>
-                                        <PermisBooking />
-                                    </motion.div>
-                                )}
-
-                                {/* Section choix de format — uniquement Langues & Racines */}
+                                {/* Section choix de format : uniquement Langues & Racines */}
                                 {slug === 'langues-racines' && (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                                         <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Commencer votre apprentissage</T></h2>

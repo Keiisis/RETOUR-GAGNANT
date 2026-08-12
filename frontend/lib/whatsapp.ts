@@ -1,11 +1,11 @@
 // ══════════════════════════════════════════════════════════════
 // Notifications WhatsApp via OpenWA (passerelle auto-hébergée)
-// https://github.com/rmyndharis/OpenWA — NestJS + whatsapp-web.js
+// https://github.com/rmyndharis/OpenWA : NestJS + whatsapp-web.js
 //
 // Permet de recevoir AUTOMATIQUEMENT un message WhatsApp à chaque nouveau
 // RDV / prospect nationalité / message de contact, sans qu'un agent soit
 // connecté, et SANS les contraintes de Meta (pas de template, pas de
-// fenêtre 24h — messages libres à tout moment).
+// fenêtre 24h : messages libres à tout moment).
 //
 // ⚠️ ARCHITECTURE : OpenWA tourne en PROCESSUS PERSISTANT (Docker) sur un
 // serveur toujours allumé (VPS / Railway / Render / machine dédiée). Il ne
@@ -15,7 +15,7 @@
 // Configuration (variables d'environnement, côté serveur uniquement) :
 //   WHATSAPP_ENABLED      = "true"
 //   OPENWA_BASE_URL       = URL de la passerelle (ex. https://wa.mon-domaine.com
-//                           ou http://IP:2785) — SANS slash final
+//                           ou http://IP:2785) : SANS slash final
 //   OPENWA_API_KEY        = clé API OpenWA (en-tête X-API-Key)
 //   OPENWA_SESSION_ID     = identifiant de la session WhatsApp (ex. "rgb")
 //   WHATSAPP_NOTIFY_TO    = numéros destinataires séparés par des virgules,

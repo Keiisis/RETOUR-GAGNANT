@@ -41,8 +41,7 @@ function ZeyowReturnContent() {
         }
 
         // Vérifier le statut de la commande côté serveur.
-        // La route /api/checkout/zeyow/confirm NE COMPLÈTE JAMAIS la commande elle-même —
-        // elle lit uniquement le statut défini par le webhook Zeyow (seul flux de confiance).
+        // La route /api/checkout/zeyow/confirm NE COMPLÈTE JAMAIS la commande elle-même-// elle lit uniquement le statut défini par le webhook Zeyow (seul flux de confiance).
         // Si le webhook n'est pas encore arrivé (pending), on réessaie jusqu'à 15 fois (30s max).
         let attempts = 0
         const MAX_ATTEMPTS = 15
@@ -61,7 +60,7 @@ function ZeyowReturnContent() {
                         setRef(orderId.slice(0, 8).toUpperCase())
                         setState('success')
                     } else if (data.pending === true) {
-                        // Webhook pas encore arrivé — réessayer
+                        // Webhook pas encore arrivé : réessayer
                         attempts++
                         if (attempts < MAX_ATTEMPTS) {
                             setTimeout(checkStatus, RETRY_DELAY)

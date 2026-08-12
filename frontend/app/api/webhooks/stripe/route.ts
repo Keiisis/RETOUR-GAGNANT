@@ -3,7 +3,7 @@ import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import Stripe from 'stripe'
 import { supabase } from '@/lib/supabase'
 
-// Next.js App Router — désactiver le body parser pour lire le raw body
+// Next.js App Router : désactiver le body parser pour lire le raw body
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
@@ -31,12 +31,12 @@ export async function POST(request: Request) {
 
         let event: Stripe.Event
 
-        // Vérification de la signature du webhook — OBLIGATOIRE
+        // Vérification de la signature du webhook : OBLIGATOIRE
         // Accepter un webhook non signé serait une porte ouverte à la fraude
         if (!webhookSecret) {
-            console.error('[Stripe Webhook] stripe_webhook_secret non configuré — rejeté')
+            console.error('[Stripe Webhook] stripe_webhook_secret non configuré : rejeté')
             return NextResponse.json(
-                { error: 'Webhook Stripe non configuré — configurez stripe_webhook_secret dans les settings admin' },
+                { error: 'Webhook Stripe non configuré : configurez stripe_webhook_secret dans les settings admin' },
                 { status: 403 }
             )
         }
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
                 if (!order) break
 
-                // Vérifier que c'est bien une commande Stripe (non falsifiable — défini côté serveur).
+                // Vérifier que c'est bien une commande Stripe (non falsifiable : défini côté serveur).
                 // Empêche un PaymentIntent créé avec un order_id arbitraire en metadata de compléter
                 // une commande d'un autre gateway.
                 if (order.payment_method !== 'stripe') {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
             }
 
             default:
-                // Évènement non géré — on répond 200 pour que Stripe ne retry pas
+                // Évènement non géré : on répond 200 pour que Stripe ne retry pas
                 break
         }
 

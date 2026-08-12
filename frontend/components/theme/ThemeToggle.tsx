@@ -4,7 +4,7 @@ import { Sun, Moon } from '@phosphor-icons/react';
 import { useTheme } from '@/lib/theme/ThemeContext'
 
 /* ══════════════════════════════════════════════════════════════
-   THEME TOGGLE — Bouton Sun/Moon compact
+   THEME TOGGLE : Bouton Sun/Moon compact
    A placer dans le header de chaque panel
 ══════════════════════════════════════════════════════════════ */
 

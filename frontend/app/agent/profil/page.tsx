@@ -230,7 +230,7 @@ export default function AgentProfilePage() {
                             Rôle : <strong className="text-white uppercase">{role}</strong>
                         </span>
                         <span>
-                            Membre depuis : {createdAt && !isNaN(new Date(createdAt).getTime()) ? new Date(createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}
+                            Membre depuis : {createdAt && !isNaN(new Date(createdAt).getTime()) ? new Date(createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                         </span>
                     </div>
 

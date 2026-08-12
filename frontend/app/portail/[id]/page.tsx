@@ -14,9 +14,9 @@ import CurrencySelector from '@/components/boutique/CurrencySelector'
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d = new Date(dateStr)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 interface DocumentFinancier {
@@ -80,7 +80,7 @@ export default function ClientPortalPage() {
             setClientSession(session)
         })
         // Taux de change à jour AVANT toute conversion vers XOF (charge Kkiapay/
-        // FedaPay d'une facture EUR/USD) — évite d'utiliser le taux de secours
+        // FedaPay d'une facture EUR/USD) : évite d'utiliser le taux de secours
         // codé (USD=600) et de sur/sous-facturer le client.
         refreshRates().catch(() => {})
         return () => subscription.unsubscribe()
@@ -229,7 +229,7 @@ export default function ClientPortalPage() {
                 } : null)
                 setSigning(false)
                 // Devis accepté : on invite immédiatement au paiement (le paiement
-                // justifie l'émission de la facture) — ouverture directe du choix
+                // justifie l'émission de la facture) : ouverture directe du choix
                 // de moyen de paiement.
                 setTimeout(() => processPayment(), 400)
             } else {
@@ -365,8 +365,7 @@ export default function ClientPortalPage() {
     const finalizePayment = async (method: string, txId: string) => {
         // Confirmation CÔTÉ SERVEUR : vérification de la transaction chez le
         // provider + garde atomique + reçu client + alerte équipe.
-        // (L'ancien update Supabase côté client échouait — colonne inexistante —
-        //  et n'était de toute façon ni vérifié ni notifié.)
+        // (L'ancien update Supabase côté client échouait : colonne inexistante-//  et n'était de toute façon ni vérifié ni notifié.)
         try {
             const res = await fetch('/api/documents/confirm-payment', {
                 method: 'POST',
@@ -1057,7 +1056,7 @@ export default function ClientPortalPage() {
                                     <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">Total TTC</span>
                                     <div className="text-right space-y-1">
                                         {/* Montant officiel du document : TOUJOURS dans la devise
-                                            d'émission — la conversion n'est qu'indicative dessous */}
+                                            d'émission : la conversion n'est qu'indicative dessous */}
                                         <div className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">
                                             {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total) : doc.total).toLocaleString('fr-FR')} {doc.currency || 'XOF'}
                                         </div>

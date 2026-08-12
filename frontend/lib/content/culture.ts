@@ -3,7 +3,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 export const DEFAULT_CULTURE: ServiceLandingContent = {
     hero_badge: "Tourisme & immersion culturelle",
     hero_title: "Le Bénin authentique, vécu de l'intérieur",
-    hero_subtitle: "Loin des circuits standardisés, une immersion sincère dans les traditions, les savoirs et les rencontres qui font l'identité profonde du Bénin. Ici, la culture se vit — elle ne se contemple pas de loin.",
+    hero_subtitle: "Loin des circuits standardisés, une immersion sincère dans les traditions, les savoirs et les rencontres qui font l'identité profonde du Bénin. Ici, la culture se vit : elle ne se contemple pas de loin.",
     hero_chips: ["Guide historien expert", "Séjours sur mesure", "Rencontres authentiques", "Ganvié · Ouidah · Abomey"],
     hero_image: "/assets/icones/icone_Guide_culturel.png",
     cta1_label: "Préparer mon séjour",
@@ -20,7 +20,7 @@ export const DEFAULT_CULTURE: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "Le Bénin est l'un des berceaux les plus vivants de la culture africaine. Nous vous proposons une immersion sincère dans les traditions, les savoirs et les rencontres qui font l'identité profonde de ce pays — accompagnés d'un guide historien passionné, dans le respect des lieux et des personnes.",
+    intro_text: "Le Bénin est l'un des berceaux les plus vivants de la culture africaine. Nous vous proposons une immersion sincère dans les traditions, les savoirs et les rencontres qui font l'identité profonde de ce pays : accompagnés d'un guide historien passionné, dans le respect des lieux et des personnes.",
     etapes_title: "Comment ça se passe",
     etapes: [
         { num: "01", title: "Définition du programme", desc: "Nous construisons votre parcours selon vos envies, vos racines et le temps dont vous disposez." },
@@ -48,14 +48,14 @@ export const DEFAULT_CULTURE: ServiceLandingContent = {
     features_title: "Nos expériences",
     features_intro: "Une sélection d'expériences pour vivre le Bénin en profondeur.",
     features: [
-        "Consultation du Fa — oracle traditionnel yoruba-fon",
+        "Consultation du Fa : oracle traditionnel yoruba-fon",
         "Cérémonie du Nom et validation à l'état civil",
         "Soins par les plantes et approche de la médecine ancestrale",
         "Audience privée avec dignitaires et rois traditionnels",
         "Initiation et sensibilisation à la culture vodoun",
         "Programmes de visite : Ganvié, Ouidah, Abomey, Porto-Novo",
         "Guide historien expert et passionné par l'histoire du Bénin",
-        "Ateliers culinaires — recettes et saveurs béninoises",
+        "Ateliers culinaires : recettes et saveurs béninoises",
         "Découverte de l'artisanat local et des savoir-faire traditionnels",
     ],
     features_note: "* Programmes modulables et personnalisables. Un premier échange permet de définir votre séjour idéal.",

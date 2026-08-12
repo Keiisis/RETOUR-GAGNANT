@@ -49,7 +49,7 @@ export default function LogementTremplin() {
                         <TransitionLink href="/services/logement/programme#eligibilite" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> Vérifier mon éligibilité</TransitionLink>
                     </div>
                   </div>
-                  {/* Élément 3D — tour transportée d'une page à l'autre (View Transitions) + scroll (GSAP) */}
+                  {/* Élément 3D : tour transportée d'une page à l'autre (View Transitions) + scroll (GSAP) */}
                   <BuildingModel3D className="mt-4 h-[340px] w-full lg:mt-0 lg:h-[460px]" />
                 </div>
             </section>

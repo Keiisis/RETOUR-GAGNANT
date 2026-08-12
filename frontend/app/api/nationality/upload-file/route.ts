@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { guardPublic, UPLOAD_LIMIT, flowKey } from '@/lib/api-guard'
 
 // ══════════════════════════════════════════════════════════════
-//  UPLOAD CÔTÉ SERVEUR — PIÈCES JOINTES NATIONALITÉ
+//  UPLOAD CÔTÉ SERVEUR : PIÈCES JOINTES NATIONALITÉ
 //  Le fichier transite par NOTRE API puis est déposé avec la clé
 //  SERVICE ROLE (bypass RLS). Contrairement à l'upload signé, il ne
 //  dépend PAS du transfert direct navigateur → Storage (bloqué chez

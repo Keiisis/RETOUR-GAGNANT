@@ -10,7 +10,7 @@ const supabase = createClient(
 )
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
-// GET /api/admin/documents — liste des dossiers MyAfroOrigins en attente de revue.
+// GET /api/admin/documents : liste des dossiers MyAfroOrigins en attente de revue.
 export async function GET(request: NextRequest) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ applications: data || [] })
 }
 
-// POST /api/admin/documents — actions :
+// POST /api/admin/documents : actions :
 //   { action: 'invite', email, name }     → email d'invitation au client (lien 50 €)
 //   { action: 'link', paid: boolean, invoice_id?: string }                    → génère juste le lien (copier/coller)
 //   { action: 'approve', id }             → bascule le dossier vers la file Nationalité
@@ -95,14 +95,14 @@ export async function POST(request: NextRequest) {
                 </p>
                 <div style="text-align:center;margin:32px 0;">
                     <a href="${link}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:15px 42px;border-radius:10px;font-weight:700;font-size:15px;">Reprendre mon dossier</a>
-                    <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">Lien personnel et confidentiel — à n'utiliser que par vos soins.</p>
+                    <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">Lien personnel et confidentiel : à n'utiliser que par vos soins.</p>
                 </div>
                 <p>Nos équipes restent à votre entière disposition. C'est une démarche importante, et nous sommes honorés de la mener à vos côtés.</p>
                 <p style="margin-top:26px;">Avec tout notre dévouement,<br><strong>L'équipe Retour Gagnant Bénin</strong></p>
             </div>
             <div style="padding:18px 40px;background:#0d1117;text-align:center;">
                 <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.6;">
-                    &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — Tous droits réservés<br>
+                    &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : Tous droits réservés<br>
                     <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
                 </p>
             </div>
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
             </div>
             <div style="padding:18px 40px;background:#0d1117;text-align:center;">
                 <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.6;">
-                    &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — Tous droits réservés<br>
+                    &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : Tous droits réservés<br>
                     <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
                 </p>
             </div>

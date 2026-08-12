@@ -70,7 +70,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
         setProposal(result.proposal)
         setItems((result.items || []).map((it: Record<string, unknown>) => ({
             ...it,
-            // Galerie stockée dans metadata.images (jsonb) — remontée en champ éditable
+            // Galerie stockée dans metadata.images (jsonb) : remontée en champ éditable
             images: ((it.metadata as Record<string, unknown> | null)?.images as SlideImage[]) || [],
         })) as unknown as ProposalItem[])
         setCurrency(result.proposal.currency || 'XOF')
@@ -208,7 +208,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                     <div>
                         <h1 className="text-xl lg:text-2xl font-black text-white">Éditeur de Proposition</h1>
                         <p className="text-slate-400 text-sm">
-                            Client : <span className="text-[#FCD116] font-semibold">{proposal.client_name}</span> — {proposal.destination}
+                            Client : <span className="text-[#FCD116] font-semibold">{proposal.client_name}</span> : {proposal.destination}
                         </p>
                     </div>
                 </div>
@@ -292,7 +292,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                 </div>
             </div>
 
-            {/* Slides Editor — Reorderable */}
+            {/* Slides Editor : Reorderable */}
             <Reorder.Group axis="y" values={items} onReorder={setItems} className="space-y-4">
                 {items.map((item, index) => {
                     const typeOpt = TYPE_OPTIONS.find(t => t.value === item.type)
@@ -305,7 +305,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                                 animate={{ opacity: 1, y: 0 }}
                                 className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition-all"
                             >
-                                {/* Slide Header — always visible */}
+                                {/* Slide Header : always visible */}
                                 <div
                                     className="p-4 flex items-center gap-3 cursor-pointer select-none"
                                     onClick={() => setExpandedSlide(isExpanded ? null : item.id)}
@@ -338,7 +338,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                                     </button>
                                 </div>
 
-                                {/* Slide Body — expandable */}
+                                {/* Slide Body : expandable */}
                                 {isExpanded && (
                                     <motion.div
                                         initial={{ height: 0, opacity: 0 }}
@@ -382,7 +382,7 @@ export default function AdminPresentationEditor({ params }: { params: Promise<{ 
                                                 </div>
                                             </div>
 
-                                            {/* Right column — Image + Price */}
+                                            {/* Right column : Image + Price */}
                                             <div className="col-span-12 md:col-span-5 space-y-4">
                                                 {/* Image upload zone */}
                                                 <div>

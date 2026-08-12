@@ -41,7 +41,7 @@ async function generateAutoReply(clientName: string, subject: string, message: s
 }
 
 // Le handler est enveloppé par withWafGuard (analyse de body automatique :
-// prototype pollution / RCE / SSRF / DoS) — voir export en bas de fichier.
+// prototype pollution / RCE / SSRF / DoS) : voir export en bas de fichier.
 async function handleContact(req: NextRequest) {
     try {
         // ═══ RATE LIMITING ════════════════════════════════════════════
@@ -107,7 +107,7 @@ async function handleContact(req: NextRequest) {
                 // Send auto-reply to client
                 await sendEmail({
                     to: email,
-                    subject: `Retour Gagnant — Nous avons reçu votre message`,
+                    subject: `Retour Gagnant : Nous avons reçu votre message`,
                     html: await (await getEmailTemplates('fr')).autoReply(clientName, aiReply),
                     context: 'auto_reply',
                     relatedId: msgId,
@@ -118,7 +118,7 @@ async function handleContact(req: NextRequest) {
                 if (config.adminEmail) {
                     await sendEmail({
                         to: config.adminEmail,
- subject: `Nouveau Contact — ${clientName} (${sujet || 'Contact'})`,
+ subject: `Nouveau Contact : ${clientName} (${sujet || 'Contact'})`,
                         html: await (await getEmailTemplates('fr')).newLeadNotification(clientName, email, 0, sujet || 'Contact', 'Formulaire de Contact'),
                         context: 'admin_notification',
                         relatedId: msgId,
@@ -131,7 +131,7 @@ async function handleContact(req: NextRequest) {
             // Notification WhatsApp automatique (no-op si non configuré)
             try {
                 await sendWhatsAppNotification(
-                    ` Nouveau message de contact — Retour Gagnant\n` +
+                    ` Nouveau message de contact : Retour Gagnant\n` +
                     `De : ${clientName}\n` +
                     `Email : ${email}\n` +
                     `Sujet : ${sujet || 'Contact'}\n` +

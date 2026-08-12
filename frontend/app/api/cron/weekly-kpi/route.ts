@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Rapport KPI Hebdomadaire (chaque samedi à 10h, heure Bénin)
+//  CRON : Rapport KPI Hebdomadaire (chaque samedi à 10h, heure Bénin)
 // Destinataires : contact@retourgagnantbenin.bj + pdg.retourgagnantbenin@gmail.com
 // Contenu : visiteurs de la semaine (volume + évolution vs semaine
 // précédente), localisations, pages consultées, appareils et sources,
@@ -77,7 +77,7 @@ async function buildReport() {
     const prevStart = new Date(now.getTime() - 14 * 864e5)
     const iso = (d: Date) => d.toISOString()
 
-    // 1. Visiteurs (sessions) — semaine courante + précédente
+    // 1. Visiteurs (sessions) : semaine courante + précédente
     const { data: sessions } = await supabase
         .from('visitor_sessions')
         .select('session_id, country, city, page, device_type, referrer, utm_source, created_at')
@@ -143,7 +143,7 @@ async function buildReport() {
     // Services demandés (motifs RDV + commandes)
     const servicesAsked = topN([
         ...(rdvs || []).map(r => r.motif),
-        ...(paidOrders || []).map(o => o.product_title?.split(' — ')[0] || ''),
+        ...(paidOrders || []).map(o => o.product_title?.split(' : ')[0] || ''),
         ...(natApps || []).map(() => 'Reconnaissance de Nationalité'),
     ], 8)
 
@@ -184,7 +184,7 @@ async function buildReport() {
             <td>
               <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:3px;color:#FCD116;text-transform:uppercase;">Retour Gagnant Bénin</p>
               <p style="margin:6px 0 0;font-size:24px;font-weight:900;color:#ffffff;">Rapport hebdomadaire</p>
-              <p style="margin:5px 0 0;font-size:13px;color:rgba(255,255,255,0.85);">Semaine du ${esc(frDay(weekStart))} au ${esc(frDay(now))} — l'évolution de votre site en un coup d'œil.</p>
+              <p style="margin:5px 0 0;font-size:13px;color:rgba(255,255,255,0.85);">Semaine du ${esc(frDay(weekStart))} au ${esc(frDay(now))} : l'évolution de votre site en un coup d'œil.</p>
             </td>
             <td style="width:64px;text-align:right;vertical-align:top;">
               <img src="${SITE}/logo.jpg" alt="RGB" width="56" height="56" style="border-radius:12px;border:2px solid rgba(255,255,255,0.35);" />
@@ -216,7 +216,7 @@ async function buildReport() {
         </td></tr>
 
         <!-- PAGES -->
-        ${sectionTitle('Pages les plus consultées', 'Là où vos visiteurs passent leur temps — utile pour savoir quels services attirent le plus.')}
+        ${sectionTitle('Pages les plus consultées', 'Là où vos visiteurs passent leur temps : utile pour savoir quels services attirent le plus.')}
         <tr><td style="padding:8px 32px 0;">
           <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
             ${pages.map(p => bar(p.key === '/' ? 'Accueil' : p.key, p.count, pages[0]?.count || 1, '#C9A84C')).join('') || '<tr><td style="font-size:12px;color:#8B94A6;padding:6px 0;">Aucune donnée cette semaine.</td></tr>'}
@@ -256,7 +256,7 @@ async function buildReport() {
         </td></tr>
 
         <!-- MESSAGES -->
-        ${sectionTitle('Ce que vos clients ont dit', `${nf((weekMessages || []).length)} message(s) reçu(s) cette semaine — extraits des plus récents.`)}
+        ${sectionTitle('Ce que vos clients ont dit', `${nf((weekMessages || []).length)} message(s) reçu(s) cette semaine : extraits des plus récents.`)}
         <tr><td style="padding:4px 32px 0;">
           <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
             ${messagesRows || '<tr><td style="font-size:12px;color:#8B94A6;padding:6px 0;">Aucun message reçu cette semaine.</td></tr>'}
@@ -273,13 +273,13 @@ async function buildReport() {
         <tr><td style="background:#0d1117;padding:18px 32px;text-align:center;">
           <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.7;">
             Rapport généré automatiquement chaque samedi à 10 h (heure Bénin) à partir des données réelles du site.<br>
-            &copy; ${now.getFullYear()} Retour Gagnant Bénin — <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
+            &copy; ${now.getFullYear()} Retour Gagnant Bénin : <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
           </p>
         </td></tr>
       </table>
     </div>`
 
- const subject = `Rapport hebdomadaire — ${nf(sess.length)} visites, ${nf((rdvs || []).length)} RDV, ${revenueTxt} encaissés`
+ const subject = `Rapport hebdomadaire : ${nf(sess.length)} visites, ${nf((rdvs || []).length)} RDV, ${revenueTxt} encaissés`
     return { html, subject, stats: { sessions: sess.length, rdv: (rdvs || []).length, messages: (weekMessages || []).length, paymentsCount } }
 }
 

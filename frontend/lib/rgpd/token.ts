@@ -1,9 +1,9 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Jeton de vérification de propriété d'email (stateless, HMAC)
+// RGPD : Jeton de vérification de propriété d'email (stateless, HMAC)
 //
 // Le self-service public n'affiche/n'efface JAMAIS de données sur simple
 // saisie d'un email (sinon n'importe qui pourrait lire/effacer les données
-// d'autrui — Art. 12.6 RGPD impose de vérifier l'identité du demandeur).
+// d'autrui : Art. 12.6 RGPD impose de vérifier l'identité du demandeur).
 //
 // On émet un jeton signé envoyé PAR EMAIL : seul le propriétaire de la boîte
 // peut le récupérer. Aucune table requise (signature HMAC + expiration).

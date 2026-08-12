@@ -1,6 +1,6 @@
 /**
- * SVG Plexiglas HORAIRES Generator — v3
- * 80cm x 120cm (800mm x 1200mm) — Forme arche
+ * SVG Plexiglas HORAIRES Generator : v3
+ * 80cm x 120cm (800mm x 1200mm) : Forme arche
  * Plaque Horaires & Jours d'ouverture
  * 3 entités : R.G.B / O.H.T / A.C.S.T
  * Bordure découpe : Bleu marine (pas doré)
@@ -63,7 +63,7 @@ function buildSVG(): string {
     const cx = PW / 2
 
     /* ══════════════════════════════════════════════════════════
-       LAYOUT — calculé du bas vers le haut pour que la dernière
+       LAYOUT : calculé du bas vers le haut pour que la dernière
        ligne (adresse) soit juste au-dessus du filet intérieur
        Filet intérieur bas = PH - INNER_M = 1184
        → adresseY = 1168 (16px au-dessus du trait)

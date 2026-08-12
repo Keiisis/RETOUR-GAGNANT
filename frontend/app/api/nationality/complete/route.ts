@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
         // Reprise « documents seuls » (merge=true) : le client ne re-dépose QUE
         // les pièces manquantes. On FUSIONNE avec les pièces déjà reçues au lieu
-        // d'écraser — sinon une reprise partielle effacerait les docs valides.
+        // d'écraser : sinon une reprise partielle effacerait les docs valides.
         // Clé d'une ligne succès = préfixe avant le 1er « : » (les échecs et
         // lignes sans clé ne sont pas conservés).
         if (body.merge === true) {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
             nom: `${body.prenom || ''} ${body.nom || ''}`.trim() || app.application_ref,
             email: app.email,
             telephone: body.telephone || null,
-            sujet: `Dossier nationalité #${app.application_ref} — pièces complétées`,
+            sujet: `Dossier nationalité #${app.application_ref} : pièces complétées`,
             message: `Le client a complété son dossier de nationalité (référence ${app.application_ref}).\n\n${docs.length} pièce(s) justificative(s) transmise(s) via le lien de complément.`,
             type: 'nationality',
             lu: false,

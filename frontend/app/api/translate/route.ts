@@ -126,7 +126,7 @@ ${JSON.stringify(textsToTranslate)}`
                     const recordsToInsert: { source_text: string; source_hash: string; lang: string; translated_text: string; context: string }[] = []
 
                     // Helper: check if a translation looks like PURE English (for Creole validation)
-                    // Be conservative — only reject if clearly English, not just containing borrowed words
+                    // Be conservative : only reject if clearly English, not just containing borrowed words
                     const looksEnglish = (text: string): boolean => {
                         if (lang !== 'cr' && lang !== 'ht') return false
                         if (text.length < 10) return false // Too short to judge
@@ -140,7 +140,7 @@ ${JSON.stringify(textsToTranslate)}`
                     }
 
                     if (Array.isArray(parsed)) {
-                        // FALLBACK: Groq returned an array — map by index
+                        // FALLBACK: Groq returned an array : map by index
                         console.log('[translate] Groq returned array format, mapping by index')
                         for (let i = 0; i < missingTexts.length && i < parsed.length; i++) {
                             const translated = parsed[i]
@@ -161,7 +161,7 @@ ${JSON.stringify(textsToTranslate)}`
                             }
                         }
                     } else if (typeof parsed === 'object' && parsed !== null) {
-                        // EXPECTED: Groq returned an object — map by key
+                        // EXPECTED: Groq returned an object : map by key
                         console.log('[translate] Groq returned object format, mapping by key')
                         for (let i = 0; i < missingTexts.length; i++) {
                             const original = missingTexts[i].text
@@ -197,7 +197,7 @@ ${JSON.stringify(textsToTranslate)}`
                 }
             }
             } catch (groqErr: unknown) {
-                // Rate limit or network error — return whatever we have from cache
+                // Rate limit or network error : return whatever we have from cache
                 console.warn(`[translate] Groq API unavailable: ${groqErr instanceof Error ? groqErr.message : 'unknown error'}. Returning ${Object.keys(translations).length} cached translations.`)
             }
         }

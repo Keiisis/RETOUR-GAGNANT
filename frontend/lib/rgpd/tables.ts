@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Cartographie des tables contenant des données personnelles
+// RGPD : Cartographie des tables contenant des données personnelles
 // Source de vérité UNIQUE, partagée par :
 //   • /api/admin/rgpd            (export + effacement admin)
 //   • /api/rgpd/{request,data,delete}  (self-service public vérifié)
@@ -25,7 +25,7 @@ export interface RgpdTable {
     label: string
 }
 
-export const ANON = '[supprimé — RGPD]'
+export const ANON = '[supprimé : RGPD]'
 
 export const RGPD_TABLES: RgpdTable[] = [
     // ── Données effaçables (pas d'obligation légale de conservation) ──

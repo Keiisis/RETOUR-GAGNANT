@@ -121,7 +121,7 @@ RÈGLES ABSOLUES :
         const logoUrl = `${data.baseUrl}/logo.jpg`
         const agencyEmail = settings.contact_email || settings.smtp_from_email || 'contact@retourgagnantbenin.bj'
         const agencyPhone = settings.contact_phone || ''
-        const agencyAddress = settings.contact_address || 'Haie-Vive Cocotiers, Carré n°1158, Cotonou — République du Bénin'
+        const agencyAddress = settings.contact_address || 'Haie-Vive Cocotiers, Carré n°1158, Cotonou : République du Bénin'
         const trackingUrl = `${data.baseUrl}/suivi-dossier`
 
         // Email HTML professionnel avec infos agence complètes
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
         // nationalité (150 000 FCFA) sans avoir vraiment payé.
         // Si payment_method = 'kkiapay' et payment_ref renseigné, on vérifie.
         // Fiche « filet webhook » à compléter (créée par /api/webhooks/kkiapay
-        // AVANT que le formulaire n'aboutisse — marquée last_step_completed = 0).
+        // AVANT que le formulaire n'aboutisse : marquée last_step_completed = 0).
         let stubToComplete: { id: string; application_ref: string } | null = null
 
         if (body.payment_method === 'kkiapay' && body.payment_ref) {
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest) {
             payment_ref: paymentRef,
             payment_method: paymentMethod,
             last_step_completed: body.last_step_completed ?? 6,
-            admin_notes: isMyafro ? `[MYAFROORIGINS] Dossier bloqué sur MyAfroOrigins — reçu via le lien de complément (tarif 50 €).${isPrepaid ? ` Associé au paiement manuel de la facture ${invoiceRef || ''}.` : ''} À vérifier puis approuver vers la file Nationalité.` : null,
+            admin_notes: isMyafro ? `[MYAFROORIGINS] Dossier bloqué sur MyAfroOrigins : reçu via le lien de complément (tarif 50 €).${isPrepaid ? ` Associé au paiement manuel de la facture ${invoiceRef || ''}.` : ''} À vérifier puis approuver vers la file Nationalité.` : null,
             // New fields
             situation_matrimoniale: body.situation_matrimoniale || null,
             nombre_enfants: body.nombre_enfants ?? 0,
@@ -388,7 +388,7 @@ export async function POST(request: NextRequest) {
                 .update(updateData)
                 .eq('id', stubToComplete.id)
             // Filet : si la colonne myafro_date n'existe pas encore (migration
-            // non appliquée), on réessaie sans elle — la soumission ne doit
+            // non appliquée), on réessaie sans elle : la soumission ne doit
             // JAMAIS échouer pour un champ optionnel.
             if (updError && updError.message?.includes('myafro_date')) {
                 const { myafro_date: _md, ...withoutMyafro } = updateData as Record<string, unknown>
@@ -513,8 +513,8 @@ export async function POST(request: NextRequest) {
                dépôt de dossier. Le client payait, puis ne voyait rien.
 
                Même mécanisme que les rendez-vous : on résout l'utilisateur à
-               partir de son adresse — le dépôt peut venir du site sans session
-               mobile — puis on écrit la notification.
+               partir de son adresse : le dépôt peut venir du site sans session
+               mobile : puis on écrit la notification.
 
                Volontairement non bloquant : un dossier payé et enregistré ne
                doit jamais échouer parce qu'une notification n'est pas passée. */

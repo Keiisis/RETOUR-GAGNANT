@@ -531,7 +531,7 @@ export const FinancialAnalytics = () => {
                         textTransform: 'uppercase',
                         letterSpacing: '1px',
                     }}>
-                         Alertes — Factures en retard
+                         Alertes : Factures en retard
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

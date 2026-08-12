@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
             .eq('user_id', user.id)
     }
 
-    // Cookie de session 2FA (8h) — lu par le middleware pour /client
+    // Cookie de session 2FA (8h) : lu par le middleware pour /client
     const res = NextResponse.json({ success: true })
     res.cookies.set('client_totp_verified', 'true', {
         httpOnly: false,

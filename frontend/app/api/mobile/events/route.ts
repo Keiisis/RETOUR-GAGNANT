@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     if (trop) return trop
 
     // L'inscrit est celui qui présente le jeton, pas celui qu'annonce le
-    // corps de la requête : sinon on inscrit — et on facture — au nom d'un
+    // corps de la requête : sinon on inscrit : et on facture : au nom d'un
     // autre client. Repli sur body.client_id pour les anciennes versions.
     const sessionClientId = await getMobileUserId(req)
 

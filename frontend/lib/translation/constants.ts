@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// Translation Engine — Constants & Language Config
+// Translation Engine : Constants & Language Config
 // ═══════════════════════════════════════════════════════
 
 export type LangCode = 'fr' | 'en' | 'es' | 'pt' | 'cr' | 'ht'

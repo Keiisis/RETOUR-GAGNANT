@@ -26,9 +26,9 @@ const DEFAULTS = {
         image_caption_sub: 'Là où tout a commencé',
         block1_heading: "Une rencontre, une vision, une loi historique.",
         block1_text: "Tout commence par une détermination inébranlable. Mme NATHALIE RIFFERT GERMANY, femme engagée et passionnée, a porté en elle le rêve d'un retour au pays après 400 ans d'absence. Ce rêve est devenu réalité grâce à une rencontre décisive.",
-        block2_quote: "Le 13 décembre 2023, en Martinique — un dialogue historique s'est noué entre trois acteurs majeurs : Mr GEORGES GERMANY, Mme NATHALIE RIFFERT GERMANY et le Chef de l'État béninois, S.E.M. PATRICE TALON.",
+        block2_quote: "Le 13 décembre 2023, en Martinique : un dialogue historique s'est noué entre trois acteurs majeurs : Mr GEORGES GERMANY, Mme NATHALIE RIFFERT GERMANY et le Chef de l'État béninois, S.E.M. PATRICE TALON.",
         block3_text1: "C'est lors de cet échange que l'idée de rendre à tous les afro-descendants leur identité originelle a pris corps. À la demande de Nathalie, cette vision s'est élargie à l'ensemble des Caraïbes.",
-        block3_text2: "Aujourd'hui, le Président Patrice Talon entre dans l'histoire de l'humanité en ouvrant les bras à des milliers de frères et sœurs. Une nouvelle page s'écrit — avec lui, avec nous, et avec vous.",
+        block3_text2: "Aujourd'hui, le Président Patrice Talon entre dans l'histoire de l'humanité en ouvrant les bras à des milliers de frères et sœurs. Une nouvelle page s'écrit : avec lui, avec nous, et avec vous.",
     },
     fondatrice: {
         photo: '/images/histoire/nathalie-new.jpg',
@@ -50,8 +50,8 @@ const DEFAULTS = {
         heading: "L'Énigme du Symbole",
         logo_image: '/images/logo-transparent.png',
         symbols: [
-            { title: 'La Porte Sculptée', text: "L'accès sécurisé et facilité au Bénin d'aujourd'hui. Elle symbolise l'Accueil, la Protection et l'Authenticité — des lignes rappelant l'artisanat local, signe de respect pour nos traditions séculaires." },
-            { title: "L'Arbre de Vie", text: "La transformation de «l'Arbre de l'Oubli» en un Arbre de Vie. Il incarne la Solidité, la Prospérité et la Renaissance — la reconnexion spirituelle et physique avec la terre nourricière." },
+            { title: 'La Porte Sculptée', text: "L'accès sécurisé et facilité au Bénin d'aujourd'hui. Elle symbolise l'Accueil, la Protection et l'Authenticité : des lignes rappelant l'artisanat local, signe de respect pour nos traditions séculaires." },
+            { title: "L'Arbre de Vie", text: "La transformation de «l'Arbre de l'Oubli» en un Arbre de Vie. Il incarne la Solidité, la Prospérité et la Renaissance : la reconnexion spirituelle et physique avec la terre nourricière." },
             { title: 'Notre Signature', text: "L'harmonie de ces symboles forme une image puissante : celle de la maison retrouvée. Choisir Retour GAGNANT, c'est choisir la stabilité, la réussite et la fierté de bâtir le Bénin moderne." },
         ] as Symbol[],
     },
@@ -62,7 +62,7 @@ const DEFAULTS = {
         main_title: "Ce document, c'est bien plus que du papier.",
         main_text1: "Il porte en lui des années de démarches, de doutes, de nuits blanches et de conversations qui n'en finissaient pas. Il porte surtout la preuve que quand on croit profondément en quelque chose, les murs finissent par céder.",
         main_text2: "Chaque tampon, chaque signature raconte une porte qui s'est ouverte. Chaque page est le témoignage silencieux d'un combat mené avec patience, avec cœur, sans jamais baisser les bras.",
-        main_text3: "Voir ce rêve inscrit dans le marbre officiel, c'est la plus belle des récompenses. Pas pour nous — pour toutes les familles qui, demain, pourront dire : je suis rentré chez moi.",
+        main_text3: "Voir ce rêve inscrit dans le marbre officiel, c'est la plus belle des récompenses. Pas pour nous : pour toutes les familles qui, demain, pourront dire : je suis rentré chez moi.",
         engagement_image: '/images/histoire/integre-causes.jpeg',
         carousel: [
             '/images/histoire/attestation-debut.jpeg',
@@ -179,8 +179,8 @@ function HeroForm({ data, onChange }: { data: typeof DEFAULTS.hero; onChange: (d
     const set = (k: keyof typeof DEFAULTS.hero) => (v: string) => onChange({ ...data, [k]: v })
     return (
         <div className="space-y-5">
-            <Field label="Titre — Ligne 1"><TextInput value={data.title_line1} onChange={set('title_line1')} /></Field>
-            <Field label="Titre — Ligne 2 (vert)"><TextInput value={data.title_line2} onChange={set('title_line2')} /></Field>
+            <Field label="Titre : Ligne 1"><TextInput value={data.title_line1} onChange={set('title_line1')} /></Field>
+            <Field label="Titre : Ligne 2 (vert)"><TextInput value={data.title_line2} onChange={set('title_line2')} /></Field>
             <Field label="Sous-titre"><TextArea value={data.subtitle} onChange={set('subtitle')} rows={3} /></Field>
             <ImageField label="Image de fond (Hero)" value={data.image} onChange={set('image')} />
         </div>
@@ -197,16 +197,16 @@ function RencontreForm({ data, onChange }: { data: typeof DEFAULTS.rencontre; on
                 <Field label="Sous-légende"><TextInput value={data.image_caption_sub} onChange={set('image_caption_sub')} /></Field>
             </div>
             <div className="border-t border-white/5 pt-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 1 — Carte principale</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 1 : Carte principale</p>
                 <Field label="Titre"><TextInput value={data.block1_heading} onChange={set('block1_heading')} /></Field>
                 <div className="mt-3"><Field label="Texte"><TextArea value={data.block1_text} onChange={set('block1_text')} rows={4} /></Field></div>
             </div>
             <div className="border-t border-white/5 pt-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 2 — Citation en italique</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 2 : Citation en italique</p>
                 <Field label="Citation"><TextArea value={data.block2_quote} onChange={set('block2_quote')} rows={3} /></Field>
             </div>
             <div className="border-t border-white/5 pt-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 3 — Conclusion</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Bloc 3 : Conclusion</p>
                 <Field label="Paragraphe 1"><TextArea value={data.block3_text1} onChange={set('block3_text1')} rows={3} /></Field>
                 <div className="mt-3"><Field label="Paragraphe 2"><TextArea value={data.block3_text2} onChange={set('block3_text2')} rows={3} /></Field></div>
             </div>
@@ -361,8 +361,8 @@ function CTAForm({ data, onChange }: { data: typeof DEFAULTS.cta; onChange: (d: 
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Titre — Ligne 1"><TextInput value={data.heading_line1} onChange={set('heading_line1')} /></Field>
-                <Field label="Titre — Ligne 2 (vert)"><TextInput value={data.heading_line2} onChange={set('heading_line2')} /></Field>
+                <Field label="Titre : Ligne 1"><TextInput value={data.heading_line1} onChange={set('heading_line1')} /></Field>
+                <Field label="Titre : Ligne 2 (vert)"><TextInput value={data.heading_line2} onChange={set('heading_line2')} /></Field>
             </div>
             <Field label="Sous-titre"><TextArea value={data.subtitle} onChange={set('subtitle')} rows={3} /></Field>
             <div className="border-t border-white/5 pt-4">
@@ -433,13 +433,13 @@ export default function AdminNotreHistoirePage() {
         setSaved(false)
         try {
             const sectionLabels: Record<TabKey, string> = {
-                hero: 'Héros — Notre Histoire',
-                rencontre: 'La Rencontre — Notre Histoire',
-                fondatrice: 'Fondatrice — Notre Histoire',
-                architectes: 'Architectes — Notre Histoire',
-                logo: 'Le Logo — Notre Histoire',
-                confiance: 'Confiance — Notre Histoire',
-                cta: 'CTA Final — Notre Histoire',
+                hero: 'Héros : Notre Histoire',
+                rencontre: 'La Rencontre : Notre Histoire',
+                fondatrice: 'Fondatrice : Notre Histoire',
+                architectes: 'Architectes : Notre Histoire',
+                logo: 'Le Logo : Notre Histoire',
+                confiance: 'Confiance : Notre Histoire',
+                cta: 'CTA Final : Notre Histoire',
             }
             const sortOrders: Record<TabKey, number> = {
                 hero: 1, rencontre: 2, fondatrice: 3, architectes: 4, logo: 5, confiance: 6, cta: 7
@@ -478,8 +478,8 @@ export default function AdminNotreHistoirePage() {
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FCD116]/10 via-[#0f141e] to-[#008751]/10 border border-white/10 p-6">
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-xl font-bold text-white mb-1">Éditeur — Notre Histoire</h1>
-                        <p className="text-gray-400 text-sm">7 sections éditables — modifications en temps réel sur le site</p>
+                        <h1 className="text-xl font-bold text-white mb-1">Éditeur : Notre Histoire</h1>
+                        <p className="text-gray-400 text-sm">7 sections éditables : modifications en temps réel sur le site</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link

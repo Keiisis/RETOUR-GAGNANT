@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    // LOT 3 — Verrou période clôturée
+    // LOT 3 : Verrou période clôturée
     const datePaiement = date_paiement || new Date().toISOString().split('T')[0]
     if (await isPeriodLocked(supabase, datePaiement)) {
         return NextResponse.json(
-            { error: 'Période clôturée — paiement refusé. Rouvrez la clôture pour modifier.' },
+            { error: 'Période clôturée : paiement refusé. Rouvrez la clôture pour modifier.' },
             { status: 423 }
         )
     }
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceKey)
     const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
-        return NextResponse.json({ error: 'Période clôturée — modification refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : modification refusée.' }, { status: 423 })
     }
 
     const patch: Record<string, unknown> = {}
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceKey)
     const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
-        return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : suppression refusée.' }, { status: 423 })
     }
 
     const { error } = await supabase.from('paiements_manuels').delete().eq('id', id)

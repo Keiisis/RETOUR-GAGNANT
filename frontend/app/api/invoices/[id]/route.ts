@@ -31,7 +31,7 @@ OBJECTIFS PSYCHOLOGIQUES :
 1. Ancrer la décision d'achat comme un choix intelligent et stratégique (biais de cohérence)
 2. Créer un sentiment d'appartenance à une communauté de personnes qui réussissent (appartenance sociale)
 3. Ouvrir la porte à une prochaine interaction sans quémander ni promettre ce qui n'est pas garanti
-4. Laisser une empreinte émotionnelle positive et durable — le client doit se souvenir de ce message
+4. Laisser une empreinte émotionnelle positive et durable : le client doit se souvenir de ce message
 
 RÈGLES ABSOLUES :
 - Mentionner naturellement le numéro de facture et la date dans la première phrase
@@ -81,7 +81,7 @@ export async function GET(
     }
 
     // ── Signature client (si elle existe et auto_sign != 'never') ──
-    // Injectée dans la zone "Bon pour accord — Client" de la facture.
+    // Injectée dans la zone "Bon pour accord : Client" de la facture.
     let clientSignatureDataUrl: string | null = null
     if (order.client_id) {
       const { data: sigRow } = await supabase
@@ -107,7 +107,7 @@ export async function GET(
 
     const tpl = templateRes.data?.content || {}
     const erpHeader: string = tpl.header || 'RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj'
-    const erpFooter: string = tpl.footer || 'RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes.'
+    const erpFooter: string = tpl.footer || 'RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes.'
     const presidentTitle: string = tpl.signature_title || 'LA DIRECTION GÉNÉRALE'
     const presidentName: string = tpl.signature_name || 'Nathalie RIFFERT GERMANY'
 
@@ -180,9 +180,9 @@ export async function GET(
     const grandTotal = order.amount
 
     const paymentMethodLabel: Record<string, string> = {
-      kkiapay: 'Mobile Money — Kkiapay',
-      fedapay: 'Mobile Money — FedaPay',
-      stripe: 'Carte bancaire — Stripe',
+      kkiapay: 'Mobile Money : Kkiapay',
+      fedapay: 'Mobile Money : FedaPay',
+      stripe: 'Carte bancaire : Stripe',
       paypal: 'PayPal Business',
       zeyow: 'Zeyow',
     }
@@ -201,7 +201,7 @@ export async function GET(
       generateGroqMessage(order.customer_name || 'Client', order.product_title || 'notre service', invoiceRef, date),
     ])
 
-    // Lignes produits — HTML
+    // Lignes produits : HTML
     const productRowsHtml = cartItems.map((item: CartItem, idx: number) => {
       const price = resolveItemPrice(item)
       const qty = item.quantity || 1
@@ -232,7 +232,7 @@ export async function GET(
     const groqSection = groqMessage ? `
       <div style="margin:20px 0;padding:16px 20px;background:linear-gradient(135deg,#f0fdf6,#f8fff4);border-left:4px solid #008751;border-radius:0 10px 10px 0;">
         <p style="margin:0;font-size:13px;color:#2d5a3d;line-height:1.75;font-style:italic;">&ldquo;${escapeHtml(groqMessage)}&rdquo;</p>
-        <p style="margin:8px 0 0;font-size:10px;color:#008751;font-weight:800;text-transform:uppercase;letter-spacing:1px;">— L'équipe ${escapeHtml(companyName)}</p>
+        <p style="margin:8px 0 0;font-size:10px;color:#008751;font-weight:800;text-transform:uppercase;letter-spacing:1px;">-L'équipe ${escapeHtml(companyName)}</p>
       </div>` : ''
 
     // Watermark SVG inline
@@ -254,7 +254,7 @@ export async function GET(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Facture ${invoiceRef} — ${escapeHtml(companyName)}</title>
+  <title>Facture ${invoiceRef} : ${escapeHtml(companyName)}</title>
   <link rel="icon" type="image/png" href="${baseUrl}/icon.png">
   <link rel="shortcut icon" href="${baseUrl}/icon.png">
   <style>
@@ -448,7 +448,7 @@ export async function GET(
             ${shippingFee > 0 ? `
             <tr style="background:#fafbfc">
               <td colspan="4" style="padding:9px 12px;font-size:11px;color:#667;border-bottom:1px solid #e2e8f0;">
-                Frais de livraison — ${escapeHtml(order.shipping_country || order.shipping_zone || '')}
+                Frais de livraison : ${escapeHtml(order.shipping_country || order.shipping_zone || '')}
               </td>
               <td style="padding:9px 12px;font-size:12px;font-weight:700;color:#1a2035;text-align:right;border-bottom:1px solid #e2e8f0;white-space:nowrap;">
                 + ${fmtPrice(shippingFee)}
@@ -503,7 +503,7 @@ export async function GET(
       <!-- ZONE SIGNATURE (style ERP) -->
       <div class="sig-zone">
         <div class="sig-box-left">
-          <div class="sig-title">Bon pour accord — Client</div>
+          <div class="sig-title">Bon pour accord : Client</div>
           ${clientSignatureDataUrl
             ? `<img src="${clientSignatureDataUrl}" alt="Signature client" class="sig-client-img" />
                <div class="sig-date" style="text-align:center">${escapeHtml(order.customer_name || '')}</div>
@@ -544,7 +544,7 @@ export async function GET(
     <!-- FOOTER DARK (style ERP) -->
     <div class="dark-footer">
       ${footerLines.map((l: string) => `<p>${escapeHtml(l)}</p>`).join('')}
-      <div class="doc-ref">Document N° ${invoiceRef} — Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
+      <div class="doc-ref">Document N° ${invoiceRef} : Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
     </div>
 
   </div>

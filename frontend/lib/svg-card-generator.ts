@@ -1,5 +1,5 @@
 /**
- * SVG Card Generator — Vrai SVG vectoriel natif
+ * SVG Card Generator : Vrai SVG vectoriel natif
  * 
  * ✅ Dimensions exactes: 85mm × 55mm (standard carte de visite)
  * ✅ Unités en mm → import parfait dans Illustrator
@@ -150,12 +150,12 @@ function buildVersoSVG(data: CardData, qrBase64: string): string {
         cy += 4.25
     }
 
-    // Footer en bas — 3 lignes, tailles directes en mm
+    // Footer en bas : 3 lignes, tailles directes en mm
     const fLine1 = CARD_H - 12.5  // email
     const fLine2 = fLine1 + 3.8   // website
     const fLine3 = fLine2 + 3.8   // adresse
     const fIconSz = 3             // icônes footer
-    const fFontSz = '2.3'         // ~6.5pt — gros et lisible
+    const fFontSz = '2.3'         // ~6.5pt : gros et lisible
 
     // QR Code
     const qrImgSize = 14       // 14mm
@@ -196,7 +196,7 @@ function buildVersoSVG(data: CardData, qrBase64: string): string {
     </g>
     <g id="verso-adresse">
       ${icon(ICON_PIN, lx, fLine3 - 1.8, fIconSz)}
-      <text x="${(lx + 4).toFixed(2)}" y="${fLine3.toFixed(2)}" font-family="${FONT_M}" font-size="${fFontSz}" font-weight="900" fill="${DARK}">Haie-Vive Cocotiers, Carré N°1158, Cotonou — BÉNIN</text>
+      <text x="${(lx + 4).toFixed(2)}" y="${fLine3.toFixed(2)}" font-family="${FONT_M}" font-size="${fFontSz}" font-weight="900" fill="${DARK}">Haie-Vive Cocotiers, Carré N°1158, Cotonou : BÉNIN</text>
     </g>
     <g id="verso-qr-code">
       <rect x="${qrBoxX.toFixed(2)}" y="${qrBoxY.toFixed(2)}" width="${qrBoxW}" height="${qrBoxW}" rx="0.75" fill="#FFFFFF" stroke="${GOLD}" stroke-width="0.25"/>
@@ -251,7 +251,7 @@ function generateRectoSVG(logoBase64: string, fullName: string): string {
 
     return `${svgHeader(pageW, pageH)}
 
-  <!-- ═══ RECTO — ${CARD_W}mm × ${CARD_H}mm ═══ -->
+  <!-- ═══ RECTO : ${CARD_W}mm × ${CARD_H}mm ═══ -->
   <g id="page-recto">
     <text x="${(pageW / 2).toFixed(2)}" y="${(pad + 3.5).toFixed(2)}" text-anchor="middle" font-family="${FONT_M}" font-size="1.75" font-weight="900" fill="${DARK}" letter-spacing="0.35">RECTO</text>
     ${cropMarks(cardX, cardY, CARD_W, CARD_H)}
@@ -261,7 +261,7 @@ ${buildRectoSVG(logoBase64)}
   </g>
 
   <g id="footer-info">
-    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">RECTO — ${CARD_W}mm × ${CARD_H}mm — ${escXml(fullName)} — SVG vectoriel</text>
+    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">RECTO : ${CARD_W}mm × ${CARD_H}mm : ${escXml(fullName)} : SVG vectoriel</text>
   </g>
 </svg>`
 }
@@ -270,14 +270,14 @@ ${buildRectoSVG(logoBase64)}
 function generateVersoSVG(data: CardData, qrBase64: string, fullName: string): string {
     const pad = 8
     const labelH = 5
-    const pageW = CARD_W + pad * 2   // 101mm — identique au recto
-    const pageH = CARD_H + pad * 2 + labelH  // 76mm — identique au recto
+    const pageW = CARD_W + pad * 2   // 101mm : identique au recto
+    const pageH = CARD_H + pad * 2 + labelH  // 76mm : identique au recto
     const cardX = pad
     const cardY = pad + labelH
 
     return `${svgHeader(pageW, pageH)}
 
-  <!-- ═══ VERSO — ${CARD_W}mm × ${CARD_H}mm ═══ -->
+  <!-- ═══ VERSO : ${CARD_W}mm × ${CARD_H}mm ═══ -->
   <g id="page-verso">
     <text x="${(pageW / 2).toFixed(2)}" y="${(pad + 3.5).toFixed(2)}" text-anchor="middle" font-family="${FONT_M}" font-size="1.75" font-weight="900" fill="${DARK}" letter-spacing="0.35">VERSO</text>
     ${cropMarks(cardX, cardY, CARD_W, CARD_H)}
@@ -287,7 +287,7 @@ ${buildVersoSVG(data, qrBase64)}
   </g>
 
   <g id="footer-info">
-    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">VERSO — ${CARD_W}mm × ${CARD_H}mm — ${escXml(fullName)} — SVG vectoriel</text>
+    <text x="${(pageW / 2).toFixed(2)}" y="${(pageH - 1.5).toFixed(2)}" text-anchor="middle" font-family="'Inter', sans-serif" font-size="1" fill="#999" letter-spacing="0.04">VERSO : ${CARD_W}mm × ${CARD_H}mm : ${escXml(fullName)} : SVG vectoriel</text>
   </g>
 </svg>`
 }
@@ -325,7 +325,7 @@ function downloadFile(content: string, filename: string): void {
     URL.revokeObjectURL(url)
 }
 
-/* ═══ Fonction de téléchargement — 2 fichiers séparés ═══ */
+/* ═══ Fonction de téléchargement : 2 fichiers séparés ═══ */
 export async function downloadSVGCard(data: CardData, filenamePrefix: string): Promise<void> {
     const { logo, qr } = await loadImages()
     const fullName = `${data.prenom} ${data.nom}`

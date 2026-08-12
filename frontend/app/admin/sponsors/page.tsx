@@ -224,7 +224,7 @@ export default function AdminSponsorsPage() {
                         Sponsors & Partenaires
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Section &quot;Ils nous font confiance&quot; — page d&apos;accueil
+                        Section &quot;Ils nous font confiance&quot; : page d&apos;accueil
                     </p>
                 </div>
                 {!showAddForm && !editingId && (
@@ -329,7 +329,7 @@ export default function AdminSponsorsPage() {
                                                 {s.website_url.replace(/^https?:\/\//, '')}
                                             </a>
                                         ) : (
-                                            <span className="text-[11px] text-gray-600">—</span>
+                                            <span className="text-[11px] text-gray-600">-</span>
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-center">

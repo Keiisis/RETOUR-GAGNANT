@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useTranslation, T } from "@/lib/translation";
 
 /**
- * Qui sommes-nous — éditorial image + prose, un seul message. Palette claire.
+ * Qui sommes-nous : éditorial image + prose, un seul message. Palette claire.
  * Contenu (titre/texte/vidéo) éditable via `settings`. Sans blobs, sans titre
  * en dégradé, sans pastilles décoratives (anti-slop).
  */

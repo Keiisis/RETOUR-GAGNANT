@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         // Requête transport : plus générique pour matcher les agences locales
         const transportQuery = `taxi moto transport agence voyage location voiture ${destination} Bénin`
 
-        // Scraping en parallèle — 6 requêtes (activités doublées pour plus de résultats)
+        // Scraping en parallèle : 6 requêtes (activités doublées pour plus de résultats)
         const [hotels, restaurants, act1, act2, transport, images] = await Promise.all([
             callSerperWithRetry(serperApiKeys, `hôtel hébergement auberge ${destination} Bénin`, 'maps'),
             callSerperWithRetry(serperApiKeys, `restaurant maquis brasserie gastronomie ${destination} Bénin`, 'maps'),

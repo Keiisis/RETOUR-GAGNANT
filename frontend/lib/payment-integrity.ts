@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  INTÉGRITÉ DES PAIEMENTS — idempotence réelle & rejeu
+//  INTÉGRITÉ DES PAIEMENTS : idempotence réelle & rejeu
 //  • insertOnce  : l'unicité est garantie par la BASE (index unique sur
 //    source_ref), plus par une comparaison de chaînes sujette aux
 //    courses entre deux webhooks simultanés.
@@ -84,7 +84,7 @@ export async function logWebhookFailure(
             console.error('[webhook-failure] journalisation impossible:', error.message)
         }
         if (error?.code === UNDEFINED_TABLE) {
-            console.error('[webhook-failure] table absente (migration 20260723_integrite_paiements.sql) —', p.provider, p.reference, p.error)
+            console.error('[webhook-failure] table absente (migration 20260723_integrite_paiements.sql)-', p.provider, p.reference, p.error)
         }
     } catch (e) {
         console.error('[webhook-failure]', e instanceof Error ? e.message : e)

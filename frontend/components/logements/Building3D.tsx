@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useReducedMotion } from 'framer-motion'
 
 /**
- * Élément décoratif 3D — tour de logements isométrique en CSS 3D (aucun WebGL,
+ * Élément décoratif 3D : tour de logements isométrique en CSS 3D (aucun WebGL,
  * donc léger et mobile-first). Pivote ET descend au scroll via GSAP ScrollTrigger
  * (scrub), flotte doucement en boucle. Chargement de GSAP en import dynamique +
  * `gsap.context` pour un montage/démontage propre (SSR-safe, pas de fuite).

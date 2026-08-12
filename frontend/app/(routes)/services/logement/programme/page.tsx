@@ -123,7 +123,7 @@ export default function ProgrammeLogementsPage() {
                             <TransitionLink href="/services/logement" className="hover:text-[#008751]">Logement</TransitionLink><ChevronRight size={13} />
                             <span className="text-slate-600 font-medium">Programme national</span>
                         </nav>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Building2 size={13} /> En partenariat — Programme national</div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Building2 size={13} /> En partenariat : Programme national</div>
                         <h1 className="font-display text-4xl md:text-[3.7rem] font-bold leading-[1.03] tracking-[-0.02em] max-w-3xl">
                             <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent">Devenez propriétaire</span> au Bénin.
                         </h1>
@@ -159,7 +159,7 @@ export default function ProgrammeLogementsPage() {
                                 { Ic: Building, to: 20000, suffix: '', label: 'logements économiques & sociaux' },
                                 { Ic: MapPinned, to: 14, suffix: '', label: 'villes couvertes au Bénin' },
                                 { Ic: CalendarClock, to: 25, suffix: ' ans', label: 'durée max en location-accession' },
-                                { Ic: Wallet, to: 22.88, dec: 2, suffix: ' M', label: 'FCFA — dès la villa sociale' },
+                                { Ic: Wallet, to: 22.88, dec: 2, suffix: ' M', label: 'FCFA : dès la villa sociale' },
                             ].map((k, i) => (
                                 <div key={i} className="flex flex-col">
                                     <k.Ic size={20} className="text-[#FCD116] mb-2" />
@@ -247,7 +247,7 @@ export default function ProgrammeLogementsPage() {
                 <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
                     <div className="text-center max-w-2xl mx-auto mb-10">
                         <h2 className="font-display text-3xl md:text-4xl font-bold">Le logement est ouvert à tous. <span className="text-[#008751]">L'acceptation, non.</span></h2>
-                        <p className="mt-3 text-slate-600">Un dossier incomplet ou mal monté est recalé — et la place part à un autre. C'est précisément là que nous intervenons.</p>
+                        <p className="mt-3 text-slate-600">Un dossier incomplet ou mal monté est recalé : et la place part à un autre. C'est précisément là que nous intervenons.</p>
                     </div>
                     <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
                         <div className="rounded-3xl border border-slate-200 bg-slate-50/60 p-6">
@@ -261,7 +261,7 @@ export default function ProgrammeLogementsPage() {
                         <div className="rounded-3xl border-2 border-[#008751]/25 bg-[#E6F3ED]/40 p-6 shadow-[0_18px_50px_-28px_rgba(0,135,81,0.5)]">
                             <p className="text-[11px] font-black uppercase tracking-wider text-[#008751] mb-4">Avec Retour Gagnant</p>
                             <ul className="space-y-3">
-                                {['Dossier vérifié et fiabilisé, pièce par pièce', 'Tout géré localement — zéro déplacement pour la diaspora', 'Éligibilité confirmée avant de déposer', 'Transmission de votre demande pour une acceptation rapide'].map((t, i) => (
+                                {['Dossier vérifié et fiabilisé, pièce par pièce', 'Tout géré localement : zéro déplacement pour la diaspora', 'Éligibilité confirmée avant de déposer', 'Transmission de votre demande pour une acceptation rapide'].map((t, i) => (
                                     <li key={i} className="flex gap-2.5 text-sm text-slate-700 font-medium"><span className="w-5 h-5 rounded-full bg-[#008751] text-white flex items-center justify-center shrink-0"><Check size={12} /></span> {t}</li>
                                 ))}
                             </ul>
@@ -331,7 +331,7 @@ export default function ProgrammeLogementsPage() {
                                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.3)]">
                                     <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><FileCheck2 size={18} className="text-[#008751]" /> Pièces du dossier</h3>
                                     <ul className="space-y-2.5">{PIECES.map((p, i) => <li key={i} className="flex gap-2.5 text-sm text-slate-600"><span className="w-5 h-5 rounded-md bg-[#E6F3ED] text-[#008751] flex items-center justify-center text-[10px] font-black shrink-0">{i + 1}</span> {p}</li>)}</ul>
-                                    <p className="text-[11px] text-slate-400 mt-3">Liste indicative — la liste officielle définitive accompagne la fiche de réservation.</p>
+                                    <p className="text-[11px] text-slate-400 mt-3">Liste indicative : la liste officielle définitive accompagne la fiche de réservation.</p>
                                 </div>
                                 <EligibiliteCheck onLead={() => setLeadFor('general')} />
                             </div>
@@ -361,7 +361,7 @@ export default function ProgrammeLogementsPage() {
                         <div id="model-cta-slot" aria-hidden="true" className="hidden xl:block absolute right-8 top-1/2 h-[420px] w-[380px] -translate-y-1/2 pointer-events-none" />
                         <div className="relative max-w-2xl">
                             <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier recalé, c'est une place perdue.</h2>
-                            <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande — pour qu'elle passe du premier coup.</p>
+                            <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande : pour qu'elle passe du premier coup.</p>
                             <div className="mt-7">
                                 <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors text-lg"><Send size={18} /> Composer mon dossier</button>
                                 <p className="mt-3 text-white/70 text-sm">Sans engagement · réponse sous 48 h · nous transmettons pour vous.</p>
@@ -370,7 +370,7 @@ export default function ProgrammeLogementsPage() {
                     </div>
                 </section>
 
-                {/* Barre CTA sticky (mobile) — toujours visible, conversion */}
+                {/* Barre CTA sticky (mobile) : toujours visible, conversion */}
                 <div className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 flex items-center gap-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                     <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-black text-slate-900 leading-tight truncate">Prêt à devenir propriétaire ?</p>

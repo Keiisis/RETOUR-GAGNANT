@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { guardPublic, UPLOAD_LIMIT, flowKey } from '@/lib/api-guard'
 
 // ══════════════════════════════════════════════════════════════
-//  URLS D'UPLOAD SIGNÉES — PIÈCES JOINTES NATIONALITÉ
+//  URLS D'UPLOAD SIGNÉES : PIÈCES JOINTES NATIONALITÉ
 //  L'upload se faisait navigateur → Storage avec la clé ANON, donc
 //  soumis aux policies RLS du bucket `nationality_documents`. Quand ces
 //  policies refusent l'INSERT anon (ou après un changement de config),

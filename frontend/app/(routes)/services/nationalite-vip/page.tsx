@@ -208,7 +208,7 @@ export default function NationaliteVipPage() {
                 </section>
             )}
 
-            {/* ═══ DÉMARRER — 2 CTA (+ calculateur gated) ═══ */}
+            {/* ═══ DÉMARRER : 2 CTA (+ calculateur gated) ═══ */}
             <section id="demarrer" className="max-w-6xl mx-auto px-5 md:px-8 pb-4">
                 {c.pricing_show_calculator && globalCalcEnabled && (
                     <div className="mb-8 max-w-xl">

@@ -19,7 +19,7 @@ export async function fetchGemma(payload: NvidiaPayload): Promise<Response> {
     const apiKey = process.env.NVIDIA_API_KEY
     if (!apiKey) throw new Error('NVIDIA_API_KEY manquante')
 
-    // enable_thinking=false par défaut — thinking mode multiplie le temps par 5-10x → 504
+    // enable_thinking=false par défaut : thinking mode multiplie le temps par 5-10x → 504
     const { enable_thinking = false, stream = true, ...rest } = payload
 
     return fetch(NVIDIA_API_URL, {

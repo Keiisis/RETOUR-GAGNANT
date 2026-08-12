@@ -52,7 +52,7 @@ export default function AgentMessagesPage() {
 
         if (error) {
             console.error('[agent/messages] fetchMessages error:', error)
-            setFetchError(`${error.code || 'ERR'} — ${error.message}${error.hint ? ` (${error.hint})` : ''}`)
+            setFetchError(`${error.code || 'ERR'} : ${error.message}${error.hint ? ` (${error.hint})` : ''}`)
         } else {
             console.info('[agent/messages] fetchMessages OK, count =', data?.length, data)
             setFetchError(null)
@@ -285,7 +285,7 @@ export default function AgentMessagesPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         to: selected.email,
-                        subject: `Retour Gagnant — Réponse à : ${selected.sujet}`,
+                        subject: `Retour Gagnant : Réponse à : ${selected.sujet}`,
                         message: content,
                         clientName: `${selected.nom} ${selected.prenom}`.trim() || 'Client',
                         context: 'agent_reply',
@@ -389,7 +389,7 @@ export default function AgentMessagesPage() {
                                                 <span className={`text-sm ${!m.lu ? 'text-white font-bold' : 'text-gray-400 font-semibold'}`}>{m.nom} {m.prenom}</span>
                                             </div>
                                             <span className={`text-[10px] ${!m.lu ? 'text-blue-400 font-bold' : 'text-gray-600'} flex-shrink-0`}>
-                                                {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                                {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                             </span>
                                         </div>
                                         <p className={`text-xs pl-8 ${!m.lu ? 'text-gray-300 font-medium' : 'text-gray-500'} truncate`}>{m.sujet}</p>
@@ -432,7 +432,7 @@ export default function AgentMessagesPage() {
                             <div className="flex-1 p-6 overflow-y-auto space-y-6">
                                 <div className="flex justify-center">
                                     <span className="text-[10px] uppercase font-bold text-gray-600 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                                        {selected.created_at && !isNaN(new Date(selected.created_at).getTime()) ? `${new Date(selected.created_at).toLocaleDateString('fr-FR')} à ${new Date(selected.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '—'}
+                                        {selected.created_at && !isNaN(new Date(selected.created_at).getTime()) ? `${new Date(selected.created_at).toLocaleDateString('fr-FR')} à ${new Date(selected.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '-'}
                                     </span>
                                 </div>
 

@@ -20,7 +20,7 @@ const EDITABLE = [
     'status', 'agent_notes', 'admin_notes', 'amount', 'currency', 'payment_status',
 ]
 
-// PATCH /api/admin/nationalite/[id] — édition d'une demande (whitelist stricte).
+// PATCH /api/admin/nationalite/[id] : édition d'une demande (whitelist stricte).
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ success: true, application: data })
 }
 
-// DELETE /api/admin/nationalite/[id] — suppression d'une demande + de ses
+// DELETE /api/admin/nationalite/[id] : suppression d'une demande + de ses
 // fichiers dans le bucket nationality_documents.
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'admin')

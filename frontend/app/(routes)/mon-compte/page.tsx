@@ -38,7 +38,7 @@ export default function MonComptePage() {
         setError('')
 
         try {
-            // Fetch client data directly by email (no auth needed — read access)
+            // Fetch client data directly by email (no auth needed : read access)
             const [dossierRes, oracleRes, docRes, contractRes, orderRes] = await Promise.all([
                 supabase.from('dossier_tracking').select('*').eq('client_email', email).order('created_at', { ascending: false }),
                 supabase.from('eligibility_results').select('*').eq('client_email', email).order('created_at', { ascending: false }),

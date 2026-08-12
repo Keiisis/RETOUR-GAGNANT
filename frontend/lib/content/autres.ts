@@ -3,7 +3,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 export const DEFAULT_AUTRES: ServiceLandingContent = {
     hero_badge: "Services du quotidien",
     hero_title: "Transport, santé, scolarité : le quotidien facilité au Bénin",
-    hero_subtitle: "Des solutions complémentaires pour faciliter chaque aspect de votre installation — de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
+    hero_subtitle: "Des solutions complémentaires pour faciliter chaque aspect de votre installation : de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
     hero_chips: ["Transport & aéroport", "Santé & cliniques", "Scolarité", "Démarches administratives"],
     hero_image: "/assets/icones/Autres Services.png",
     cta1_label: "Nous contacter",
@@ -20,7 +20,7 @@ export const DEFAULT_AUTRES: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "Au-delà des grandes démarches, l'installation au Bénin se joue aussi dans le quotidien. Nous vous proposons des solutions complémentaires pour faciliter chaque aspect de votre vie sur place — sereinement, dès l'arrivée.",
+    intro_text: "Au-delà des grandes démarches, l'installation au Bénin se joue aussi dans le quotidien. Nous vous proposons des solutions complémentaires pour faciliter chaque aspect de votre vie sur place : sereinement, dès l'arrivée.",
     etapes_title: "Comment ça marche",
     etapes: [
         { num: "01", title: "Votre besoin", desc: "Vous nous indiquez ce dont vous avez besoin (transport, santé, école, démarche)." },

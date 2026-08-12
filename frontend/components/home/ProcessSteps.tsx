@@ -36,7 +36,7 @@ function StepNode({ step, i, count, progress, reduce }: { step: Step; i: number;
     const badge = useTransform(progress, [s + 0.05, s + 0.2], [0, 1]);
     const ring = useTransform(progress, [s, s + 0.08, s + 0.28], [0, 0.6, 0]);
 
-    // Parallaxe à la souris (desktop) — lissée par ressort.
+    // Parallaxe à la souris (desktop) : lissée par ressort.
     const mx = useMotionValue(0);
     const my = useMotionValue(0);
     const rotY = useSpring(mx, { stiffness: 150, damping: 14, mass: 0.3 });

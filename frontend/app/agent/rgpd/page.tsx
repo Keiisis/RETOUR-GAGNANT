@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { ShieldCheck, FileText, FileArrowDown as FileDown, CircleNotch as Loader2, Warning as AlertTriangle, Scroll as ScrollText, CheckCircle as CheckCircle2, Clock, Scales as Scale, Trash as Trash2, Info } from '@phosphor-icons/react';
 
 const DOCS = [
-    { id: 'registre', title: 'Registre des traitements', desc: 'Article 30 — fiches, sous-traitants, durées (interne)', icon: ScrollText },
-    { id: 'procedure', title: 'Procédure de violation 72h', desc: 'Articles 33/34 — notification, confinement (interne)', icon: AlertTriangle },
+    { id: 'registre', title: 'Registre des traitements', desc: 'Article 30 : fiches, sous-traitants, durées (interne)', icon: ScrollText },
+    { id: 'procedure', title: 'Procédure de violation 72h', desc: 'Articles 33/34 : notification, confinement (interne)', icon: AlertTriangle },
     { id: 'politique', title: 'Politique de confidentialité', desc: 'Version publique', icon: FileText },
 ]
 

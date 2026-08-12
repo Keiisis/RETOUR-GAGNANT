@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
             for (const childGedcomId of fam.children) {
                 const childDbId = result.gedcom_to_db[childGedcomId]
                 if (!childDbId) {
-                    result.warnings.push(`Enfant ${childGedcomId} introuvable après import — relation famille ${fam.id} ignorée`)
+                    result.warnings.push(`Enfant ${childGedcomId} introuvable après import : relation famille ${fam.id} ignorée`)
                     continue
                 }
                 const updates: Record<string, string | null> = {}

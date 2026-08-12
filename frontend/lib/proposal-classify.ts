@@ -24,12 +24,12 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin
 const CUR_SYM: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
 const fmtMoney = (n: number, c: string) => `${Math.round(n).toLocaleString('fr-FR')} ${CUR_SYM[c] || c}`
 
-/** Reçu de paiement léger (encaissement direct sans facture — catégorie « paiements »). */
+/** Reçu de paiement léger (encaissement direct sans facture : catégorie « paiements »). */
 async function sendSimplePaymentReceipt(email: string, name: string, libelle: string, montant: number, currency: string): Promise<void> {
     const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     await sendEmail({
         to: email,
-        subject: `Reçu de paiement — ${libelle} — ${fmtMoney(montant, currency)}`,
+        subject: `Reçu de paiement : ${libelle} : ${fmtMoney(montant, currency)}`,
         html: `
         <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">
           <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
@@ -47,7 +47,7 @@ async function sendSimplePaymentReceipt(email: string, name: string, libelle: st
             <p style="color:#6b7280;font-size:13px">Pour toute question, contactez-nous au +229 01 60 32 21 21.</p>
           </div>
           <div style="padding:14px 32px;background:#0d1117;text-align:center">
-            <p style="margin:0;color:#6b7280;font-size:11px">Ce reçu vaut preuve de paiement — &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — <a href="${SITE}" style="color:#008751;text-decoration:none">${SITE.replace('https://', '')}</a></p>
+            <p style="margin:0;color:#6b7280;font-size:11px">Ce reçu vaut preuve de paiement : &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : <a href="${SITE}" style="color:#008751;text-decoration:none">${SITE.replace('https://', '')}</a></p>
           </div>
         </div>`,
         context: 'proposal_payment_receipt',
@@ -90,7 +90,7 @@ export async function classifyProposalPayment(
                     montant,
                     date_paiement: new Date().toISOString().slice(0, 10),
                     reference: 'Lien de paiement',
-                    notes: `[EXTERNE] ${proposal.destination || 'Paiement'} — ${proposal.client_name || ''} [PROP:${shortId}]`,
+                    notes: `[EXTERNE] ${proposal.destination || 'Paiement'} : ${proposal.client_name || ''} [PROP:${shortId}]`,
                 }, `proposal:${shortId}`, { column: 'notes', pattern: `%[PROP:${shortId}]%` })
                 if (ins.status !== 'created') { if (order?.id) await supabase.from('orders').delete().eq('id', order.id); return }
                 // Reçu de paiement au client (encaissement sans facture)
@@ -130,7 +130,7 @@ export async function classifyProposalPayment(
 
             const invoiceItems = facturables
                 .map((it: { title?: string; location?: string; selling_price?: number; original_price?: number }) => ({
-                    description: `${it.title || 'Prestation'}${it.location ? ` — ${it.location}` : ''}`,
+                    description: `${it.title || 'Prestation'}${it.location ? ` : ${it.location}` : ''}`,
                     quantity: 1,
                     unit_price: it.selling_price || 0,   // HT (prix saisi)
                     unit_cost: it.original_price || 0,
@@ -176,14 +176,14 @@ export async function classifyProposalPayment(
                 total: totalTTC,
                 status: 'paye',
                 paid_at: new Date().toISOString(),
-                notes: `Facture auto-générée — Lien de paiement / Proposition\nProposal: ${shortId.toUpperCase()}\nClient: ${proposal.client_name || 'N/A'}`,
+                notes: `Facture auto-générée : Lien de paiement / Proposition\nProposal: ${shortId.toUpperCase()}\nClient: ${proposal.client_name || 'N/A'}`,
                 conditions: 'Document généré automatiquement après paiement.',
                 validite: 'Acquittée',
             }, `proposal:${shortId}`, { column: 'notes', pattern: `%Proposal: ${shortId}%` })
             if (createdFacture.status === 'error') console.error('[classifyProposalPayment]', createdFacture.message)
 
             // ── EMAIL : reçu RGB officiel + PDF de la facture au client, alerte
-            //    équipe. Envoyé UNE seule fois (dans le bloc de création) — évite
+            //    équipe. Envoyé UNE seule fois (dans le bloc de création) : évite
             //    que le client ne reçoive que le reçu Kkiapay sans facture RGB.
             if (createdFacture.status === 'created' && createdFacture.id && proposal.client_email) {
                 try {

@@ -16,7 +16,7 @@ export interface CardData {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PALETTE — Fond blanc, accents dorés, texte sombre
+   PALETTE : Fond blanc, accents dorés, texte sombre
 ══════════════════════════════════════════════════════════════ */
 
 const GOLD   = '#C9A84C'
@@ -26,13 +26,13 @@ const TEXT   = '#1B1B1B'
 const TEXT_L = '#6B6B6B'
 
 /* ══════════════════════════════════════════════════════════════
-   FONT STACK — Montserrat + Inter, sans-serif géométrique
+   FONT STACK : Montserrat + Inter, sans-serif géométrique
 ══════════════════════════════════════════════════════════════ */
 
 const FONT = "var(--font-montserrat), 'Inter', 'Helvetica Neue', sans-serif"
 
 /* ══════════════════════════════════════════════════════════════
-   ICÔNES SVG minimalistes — trait fin
+   ICÔNES SVG minimalistes : trait fin
 ══════════════════════════════════════════════════════════════ */
 
 const IcoPhone = ({ sz, col }: { sz: number; col: string }) => (
@@ -61,7 +61,7 @@ const IcoPin = ({ sz, col }: { sz: number; col: string }) => (
 )
 
 /* ══════════════════════════════════════════════════════════════
-   QR CODE — canvas data URL pour html-to-image
+   QR CODE : canvas data URL pour html-to-image
 ══════════════════════════════════════════════════════════════ */
 
 function QRCodeDisplay({ size }: { size: number }) {
@@ -92,7 +92,7 @@ function QRCodeDisplay({ size }: { size: number }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   RECTO — Minimaliste
+   RECTO : Minimaliste
    Respiration + Hiérarchie typographique uniquement
    Zéro ornement. Logo + Nom + Tagline. C'est tout.
 ══════════════════════════════════════════════════════════════ */
@@ -124,7 +124,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                     background: GOLD,
                 }} />
 
-                {/* ── Contenu centré — tout ULTRA VISIBLE ── */}
+                {/* ── Contenu centré : tout ULTRA VISIBLE ── */}
                 <div style={{
                     position: 'absolute',
                     top: 4 * s,
@@ -135,7 +135,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                     padding: `${10 * s}px ${30 * s}px`,
                 }}>
 
-                    {/* LOGO — MAXIMUM */}
+                    {/* LOGO : MAXIMUM */}
                     <img
                         src="/images/logo-transparent.png"
                         alt="Retour Gagnant Bénin"
@@ -147,7 +147,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                         }}
                     />
 
-                    {/* NOM — RETOUR GAGNANT BÉNIN sur une seule ligne */}
+                    {/* NOM : RETOUR GAGNANT BÉNIN sur une seule ligne */}
                     <div style={{
                         color: DARK,
                         fontSize: 27 * s,
@@ -162,7 +162,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                         Retour Gagnant Bénin
                     </div>
 
-                    {/* Tagline — dorée, ULTRA VISIBLE, gras */}
+                    {/* Tagline : dorée, ULTRA VISIBLE, gras */}
                     <div style={{
                         color: GOLD_D,
                         fontSize: 21 * s,
@@ -182,7 +182,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
 CardRecto.displayName = 'CardRecto'
 
 /* ══════════════════════════════════════════════════════════════
-   VERSO — Design Minimaliste Premium
+   VERSO : Design Minimaliste Premium
    100% respiration + hiérarchie typo
    Zéro ornement décoratif
    Montserrat/Inter, gras, espaces blancs généreux
@@ -218,7 +218,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                 }} />
 
                 {/* ══════════════════════════════════════════
-                    CONTENU — Gauche: identité / Droite: QR
+                    CONTENU : Gauche: identité / Droite: QR
                 ══════════════════════════════════════════ */}
                 <div style={{
                     position: 'absolute',
@@ -226,7 +226,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                     left: 0, right: 0,
                     display: 'flex',
                 }}>
-                    {/* ═══ GAUCHE — 72% de la largeur ═══ */}
+                    {/* ═══ GAUCHE : 72% de la largeur ═══ */}
                     <div style={{
                         flex: 1,
                         padding: `${36 * s}px ${0}px ${30 * s}px ${42 * s}px`,
@@ -234,7 +234,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                         flexDirection: 'column',
                     }}>
 
-                        {/* PRÉNOM — Ultra visible */}
+                        {/* PRÉNOM : Ultra visible */}
                         <div style={{
                             color: TEXT_L,
                             fontSize: 22 * s,
@@ -247,7 +247,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                             {data.prenom}
                         </div>
 
-                        {/* NOM — Ultra visible, Très gros */}
+                        {/* NOM : Ultra visible, Très gros */}
                         <div style={{
                             color: GOLD_D,
                             fontSize: 36 * s,
@@ -259,7 +259,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                             {data.nom}
                         </div>
 
-                        {/* Ligne dorée fine — seul élément graphique */}
+                        {/* Ligne dorée fine : seul élément graphique */}
                         <div style={{
                             width: 50 * s,
                             height: 3 * s,
@@ -269,7 +269,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                             borderRadius: 2,
                         }} />
 
-                        {/* POSTE — TRÈS GRAS, MAJEUR */}
+                        {/* POSTE : TRÈS GRAS, MAJEUR */}
                         <div style={{
                             color: DARK,
                             fontSize: 15 * s,
@@ -281,7 +281,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                             {data.position || 'CONSULTANT(E)'}
                         </div>
 
-                        {/* ── CONTACTS — GÉANTS ── */}
+                        {/* ── CONTACTS : GÉANTS ── */}
                         <div style={{
                             display: 'flex', flexDirection: 'column',
                             gap: 14 * s,
@@ -318,7 +318,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                         {/* Espace flexible → pousse le footer en bas */}
                         <div style={{ flex: 1, minHeight: 12 * s }} />
 
-                        {/* ── FOOTER — ULTRA GROS, lisible même pour malvoyants ── */}
+                        {/* ── FOOTER : ULTRA GROS, lisible même pour malvoyants ── */}
                         <div style={{
                             display: 'flex', flexDirection: 'column',
                             gap: 12 * s,
@@ -331,7 +331,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                                     fontWeight: 900,
                                     letterSpacing: '0.01em',
                                 }}>
-                                    contact@retourgagnantbenin.bj — www.retourgagnantbenin.bj
+                                    contact@retourgagnantbenin.bj : www.retourgagnantbenin.bj
                                 </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 * s }}>
@@ -341,13 +341,13 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                                     fontSize: 17 * s,
                                     fontWeight: 900,
                                 }}>
-                                    Haie-Vive Cocotiers, Carré N°1158, Cotonou — BÉNIN
+                                    Haie-Vive Cocotiers, Carré N°1158, Cotonou : BÉNIN
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* ═══ DROITE — QR Code, centré verticalement ═══ */}
+                    {/* ═══ DROITE : QR Code, centré verticalement ═══ */}
                     <div style={{
                         width: 180 * s,
                         display: 'flex',
@@ -356,7 +356,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
                         justifyContent: 'center',
                         paddingRight: 20 * s,
                     }}>
-                        {/* QR Code — carré simple, propre */}
+                        {/* QR Code : carré simple, propre */}
                         <div style={{
                             background: '#ffffff',
                             padding: `${8 * s}px`,

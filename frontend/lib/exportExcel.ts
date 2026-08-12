@@ -122,7 +122,7 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
   }
   worksheet.headerFooter = {
     oddHeader: `&L&9&"Arial,Bold"&K${COLOR_NAVY.slice(2)}Retour Gagnant Bénin&R&9&KFF4B5563${cfg.sheetName || ''}`,
-    oddFooter: '&L&8&I&KFF888888CONFIDENTIEL — Retour Gagnant Bénin&C&8&KFF4B5563Généré le &D à &T&R&8&KFF4B5563Page &P / &N',
+    oddFooter: '&L&8&I&KFF888888CONFIDENTIEL : Retour Gagnant Bénin&C&8&KFF4B5563Généré le &D à &T&R&8&KFF4B5563Page &P / &N',
   }
 
   if (legalHeader) {
@@ -169,7 +169,7 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
     currentRow += 2
   }
 
-  // Largeurs de colonnes (sans forcer les headers — on les écrit nous-mêmes)
+  // Largeurs de colonnes (sans forcer les headers : on les écrit nous-mêmes)
   columns.forEach((col, i) => {
     worksheet.getColumn(i + 1).width = col.width || 20
   })
@@ -369,7 +369,7 @@ async function addCoverSheet(wb: ExcelJS.Workbook, opts: { title: string; subtit
   addTricoloreBand(ws, r, 'J')
   r++
 
-  // Logo RGB (lazy import — évite de bundler 1.4MB dans les routes qui n'exportent pas)
+  // Logo RGB (lazy import : évite de bundler 1.4MB dans les routes qui n'exportent pas)
   try {
     const { LOGO_BASE64 } = await import('@/lib/logoBase64')
     const imgId = wb.addImage({ base64: LOGO_BASE64, extension: 'png' })
@@ -384,7 +384,7 @@ async function addCoverSheet(wb: ExcelJS.Workbook, opts: { title: string; subtit
     for (let k = 0; k < 6; k++) ws.getRow(r + k).height = 30
     r += 6
   } catch {
-    // logo indisponible — on continue sans bloquer l'export
+    // logo indisponible : on continue sans bloquer l'export
   }
 
   r++
@@ -488,7 +488,7 @@ function addDashboardSheet(wb: ExcelJS.Workbook, dash: NonNullable<MultiSheetOpt
     pageSetup: { orientation: 'landscape', fitToPage: true, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }, paperSize: 9 },
   })
   ws.headerFooter = {
-    oddFooter: '&L&8&I&KFF888888CONFIDENTIEL — Retour Gagnant Bénin&C&8&KFF4B5563Dashboard synthétique&R&8&KFF4B5563Page &P / &N',
+    oddFooter: '&L&8&I&KFF888888CONFIDENTIEL : Retour Gagnant Bénin&C&8&KFF4B5563Dashboard synthétique&R&8&KFF4B5563Page &P / &N',
   }
   const cols = 10
   for (let i = 1; i <= cols; i++) ws.getColumn(i).width = 14
@@ -579,7 +579,7 @@ function addDashboardSheet(wb: ExcelJS.Workbook, dash: NonNullable<MultiSheetOpt
 
 export async function exportToExcelMultiSheet({ filename, sheets, coverTitle, coverSubtitle, coverPeriod, dashboard }: MultiSheetOptions) {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Retour Gagnant Bénin — Comptabilité'
+  workbook.creator = 'Retour Gagnant Bénin : Comptabilité'
   workbook.lastModifiedBy = 'Retour Gagnant Bénin'
   workbook.created = new Date()
   workbook.company = 'Retour Gagnant Bénin'

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔌  @waf-adapters/supabase-ownership — Resolver Supabase
+// 🔌  @waf-adapters/supabase-ownership : Resolver Supabase
 // ══════════════════════════════════════════════════════════════
 //
 // COUCHE JETABLE/REMPLAÇABLE. C'est le SEUL fichier de la pile
@@ -12,7 +12,7 @@
 // Principe : on déclare une CARTE `resourceType → {table, idColumn,
 // ownerColumn}`. Le resolver fait un SELECT ciblé et renvoie l'owner.
 // On interroge les VRAIES tables (pas une copie parallèle "shadow"
-// qui dériverait) — c'est la critique #5b de l'audit corrigée.
+// qui dériverait) : c'est la critique #5b de l'audit corrigée.
 // ══════════════════════════════════════════════════════════════
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -41,7 +41,7 @@ export type ResourceMap = Record<string, ResourceMapEntry>
 /**
  * Carte par défaut pour Retour Gagnant. À ADAPTER par projet.
  * (Quand on extrait le WAF, cette carte est remplacée par celle
- *  du projet hôte — WordPress, autre SaaS, etc.)
+ *  du projet hôte : WordPress, autre SaaS, etc.)
  */
 export const RGB_RESOURCE_MAP: ResourceMap = {
     invoice:        { table: 'invoices',           ownerColumn: 'client_id' },
@@ -67,7 +67,7 @@ export const RGB_RESOURCE_MAP: ResourceMap = {
 /**
  * Crée un resolver Supabase à partir d'une carte de ressources.
  * Le client Supabase doit être en SERVICE ROLE (bypass RLS) car on
- * vérifie nous-mêmes l'autorisation — c'est le but du WAF.
+ * vérifie nous-mêmes l'autorisation : c'est le but du WAF.
  */
 export function createSupabaseOwnershipResolver(
     supabase: SupabaseClient,

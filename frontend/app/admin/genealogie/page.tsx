@@ -516,7 +516,7 @@ export default function AdminGenealogyPage() {
                 <div>
                   <span className="text-[9px] text-gray-500 uppercase tracking-widest font-black">Prénom & Nom</span>
                   <p className="text-sm font-bold text-white mt-0.5">
-                    {selectedTree.client_first_name || '—'} {selectedTree.client_last_name || '—'}
+                    {selectedTree.client_first_name || '-'} {selectedTree.client_last_name || '-'}
                   </p>
                 </div>
                 <div>
@@ -586,7 +586,7 @@ export default function AdminGenealogyPage() {
                       FICHE ACTIVE
                     </p>
                     <h3 className="text-base font-black text-white font-heading mt-1">
-                      {selectedPerson.first_name || '—'} {selectedPerson.last_name || '—'}
+                      {selectedPerson.first_name || '-'} {selectedPerson.last_name || '-'}
                     </h3>
                   </div>
                   

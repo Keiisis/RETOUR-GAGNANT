@@ -457,8 +457,8 @@ export default function AgentClientsPage() {
                     </div>
                     <h1 className="text-2xl font-black text-white">Clients</h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        {clients.length} client(s) — <span className="text-emerald-400 font-bold">{activeMembersCount} actifs</span>
-                        {totalRevenue > 0 && <> — <span className="text-amber-400 font-bold">{totalRevenue.toLocaleString('fr-FR')} XOF encaissés</span></>}
+                        {clients.length} client(s) : <span className="text-emerald-400 font-bold">{activeMembersCount} actifs</span>
+                        {totalRevenue > 0 && <> : <span className="text-amber-400 font-bold">{totalRevenue.toLocaleString('fr-FR')} XOF encaissés</span></>}
                     </p>
                 </div>
                 <div className="flex items-center gap-1 p-1 bg-white/5 border border-white/10 rounded-xl">
@@ -695,7 +695,7 @@ export default function AgentClientsPage() {
                                         <div className="flex items-center gap-2 text-sm text-gray-300"><Mail size={14} className="text-emerald-400" /> {selectedClient.email}</div>
                                         {selectedClient.telephone && <div className="flex items-center gap-2 text-sm text-gray-300"><Phone size={14} className="text-emerald-400" /> {selectedClient.telephone}</div>}
                                         <div className="flex items-center gap-2 text-sm text-gray-300"><FileText size={14} className="text-emerald-400" /> {selectedClient.service}</div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-300"><Calendar size={14} className="text-emerald-400" /> {selectedClient.created_at && !isNaN(new Date(selectedClient.created_at).getTime()) ? new Date(selectedClient.created_at).toLocaleDateString('fr-FR') : '—'}</div>
+                                        <div className="flex items-center gap-2 text-sm text-gray-300"><Calendar size={14} className="text-emerald-400" /> {selectedClient.created_at && !isNaN(new Date(selectedClient.created_at).getTime()) ? new Date(selectedClient.created_at).toLocaleDateString('fr-FR') : '-'}</div>
                                     </div>
 
                                     {selectedClient.notes && (
@@ -773,7 +773,7 @@ export default function AgentClientsPage() {
                                                     <div className="space-y-1.5 max-h-24 overflow-y-auto">
                                                         {detailData.appointments.map(a => (
                                                             <div key={a.id} className="flex items-center justify-between text-xs">
-                                                                <span className="text-gray-300">{a.date && !isNaN(new Date(a.date).getTime()) ? new Date(a.date).toLocaleDateString('fr-FR') : '—'} · {a.type}</span>
+                                                                <span className="text-gray-300">{a.date && !isNaN(new Date(a.date).getTime()) ? new Date(a.date).toLocaleDateString('fr-FR') : '-'} · {a.type}</span>
                                                                 <span className="text-[9px] font-bold text-gray-500">{a.status}</span>
                                                             </div>
                                                         ))}

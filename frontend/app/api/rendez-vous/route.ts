@@ -37,7 +37,7 @@ const SERVICE_KNOWLEDGE: { match: string[]; brief: string }[] = [
     },
     {
         match: ['investissement', 'investir', 'rendement', 'affaires'],
-        brief: "Investissement : opportunités locales, accompagnement et sécurisation. Utile : secteur visé, horizon, montant envisagé. Aucune promesse de rendement — analyse au cas par cas.",
+        brief: "Investissement : opportunités locales, accompagnement et sécurisation. Utile : secteur visé, horizon, montant envisagé. Aucune promesse de rendement : analyse au cas par cas.",
     },
     {
         match: ['nationalité', 'nationalite', 'vip', 'citoyenneté', 'citoyennete'],
@@ -70,14 +70,14 @@ async function generateAutoReply(clientName: string, service: string, message: s
                     role: 'system',
                     content: `Tu es le conseiller virtuel de Retour Gagnant Bénin (accompagnement de la diaspora béninoise et afro-descendante). Un visiteur vient de demander un rendez-vous. Tu rédiges LE message de réponse personnalisé qui lui sera envoyé immédiatement par email, AVANT qu'un conseiller humain ne le rappelle.
 
-OBJECTIF : le rassurer, montrer qu'on a VRAIMENT lu et compris sa demande, et le fidéliser en lui apportant déjà une vraie valeur — de façon autonome, sans qu'un agent intervienne.
+OBJECTIF : le rassurer, montrer qu'on a VRAIMENT lu et compris sa demande, et le fidéliser en lui apportant déjà une vraie valeur : de façon autonome, sans qu'un agent intervienne.
 
 RAISONNE d'abord sur sa situation précise (son service + son message), puis réponds.
 
 RÈGLES :
 - Réponds DIRECTEMENT et CONCRÈTEMENT à ce qu'il écrit. S'il pose une question, donne un premier éclairage utile.
 - Appuie-toi sur les informations métier fournies ci-dessous pour donner des conseils pertinents (ex. pièces à préparer, prochaines étapes).
-- Chaleureux, professionnel, humain. Tutoiement non — vouvoie poliment.
+- Chaleureux, professionnel, humain. Tutoiement non : vouvoie poliment.
 - 5 à 8 phrases, structurées et fluides. PAS de markdown, pas de listes à puces, pas de titres.
 - Ne donne JAMAIS de prix chiffré ni de date/heure ferme (le conseiller les confirmera).
 - Ne promets aucun résultat garanti (nationalité, rendement, délai administratif).
@@ -91,7 +91,7 @@ ${knowledge}`,
                     role: 'user',
                     content: `Client : "${clientName || 'Visiteur'}"
 Service demandé : "${service || 'Non précisé'}"
-Message du client : ${hasMessage ? `"${message.trim()}"` : "(aucun message écrit — adapte une réponse d'accueil pertinente pour ce service)"}`,
+Message du client : ${hasMessage ? `"${message.trim()}"` : "(aucun message écrit : adapte une réponse d'accueil pertinente pour ce service)"}`,
                 },
             ],
             temperature: 0.6,
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
             nom: clientName,
             email,
             telephone: telephone || null,
-            sujet: `Nouvelle demande de RDV — ${service || 'Consultation'}`,
+            sujet: `Nouvelle demande de RDV : ${service || 'Consultation'}`,
             message: `${clientName} a demandé un rendez-vous.\n\nService : ${service || 'Consultation'}\n${date ? `Date souhaitée : ${date} ${timeSlot || ''}\n` : ''}Canal : ${contactMethod || 'téléphone'}\nTéléphone : ${telephone || 'non communiqué'}\n${message?.trim() ? `\nMessage :\n${message.trim()}` : ''}\n\n→ À traiter dans l'onglet Rendez-vous (Agenda) du panel Agent.`,
             type: 'rdv',
             lu: false,
@@ -202,21 +202,21 @@ export async function POST(req: NextRequest) {
                 const aiReply = await generateAutoReply(clientName, service || 'Consultation', message || '');
                 const templates = await getEmailTemplates('fr');
 
-                // Email de confirmation au visiteur (sans CTA "réserver un rdv" — illogique)
+                // Email de confirmation au visiteur (sans CTA "réserver un rdv" : illogique)
                 await sendEmail({
                     to: email,
- subject: `Retour Gagnant — Votre demande de rendez-vous est enregistrée`,
+ subject: `Retour Gagnant : Votre demande de rendez-vous est enregistrée`,
                     html: await templates.rdvConfirmation(clientName, service || 'Consultation', date, timeSlot, contactMethod, aiReply, message || ''),
                     context: 'rdv_confirmation',
                     relatedId: rdvId,
                 });
 
-                // Notification équipe — 5 destinataires fixes + admin configuré
+                // Notification équipe : 5 destinataires fixes + admin configuré
                 // (l'agent ET l'admin doivent recevoir chaque demande de RDV)
                 const staffTo = await getStaffToLine();
                 await sendEmail({
                     to: staffTo,
- subject: `Nouveau RDV — ${clientName} (${service || 'Consultation'})`,
+ subject: `Nouveau RDV : ${clientName} (${service || 'Consultation'})`,
                     html: await templates.rdvAdminNotification(clientName, email, service || 'Consultation', date, timeSlot, contactMethod, telephone || '', message || '', aiReply),
                     context: 'admin_notification',
                     relatedId: rdvId,
@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
             // Notification WhatsApp automatique (no-op si non configuré)
             try {
                 await sendWhatsAppNotification(
-                    ` Nouveau RDV — Retour Gagnant\n` +
+                    ` Nouveau RDV : Retour Gagnant\n` +
                     `Client : ${clientName}\n` +
                     `Service : ${service || 'Consultation'}\n` +
                     `Tél : ${telephone || 'non communiqué'}\n` +

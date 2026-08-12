@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// ⏳ WAF TARPIT — Ralentissement progressif des attaquants
+// ⏳ WAF TARPIT : Ralentissement progressif des attaquants
 // Les IPs suspectes reçoivent des réponses avec un délai
 // artificiel proportionnel à leur niveau de menace
 // ══════════════════════════════════════════════════════════════
@@ -32,7 +32,7 @@ const DEFAULT_TIERS: TarpitTier[] = [
 // Max absolu pour fonctions serverless (Vercel = 10-30s timeout)
 const MAX_TARPIT_MS = 8000
 
-// Plafond de tarpits SIMULTANÉS par instance — anti auto-DoS.
+// Plafond de tarpits SIMULTANÉS par instance : anti auto-DoS.
 // Un await sleep occupe la fonction serverless (concurrence + facturation).
 // Sous flood, sans plafond, on saturerait notre propre concurrence.
 const MAX_CONCURRENT_TARPITS = 50

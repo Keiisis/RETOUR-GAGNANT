@@ -296,7 +296,7 @@ export default function TraductionsAdminPage() {
         else setBatchGlobal(true)
 
         try {
-            // Step 1 — quick scan to show how many texts will be processed
+            // Step 1 : quick scan to show how many texts will be processed
             setBatchStep('scanning')
             const scanRes = await fetch('/api/translate/batch', {
                 method: 'POST',
@@ -308,7 +308,7 @@ export default function TraductionsAdminPage() {
                 setScanCount(scanData.totalTexts ?? null)
             }
 
-            // Step 2 — actual translation
+            // Step 2 : actual translation
             setBatchStep('translating')
             const body = lang ? { lang } : {}
             const res = await fetch('/api/translate/batch', {
@@ -355,7 +355,7 @@ export default function TraductionsAdminPage() {
                         Moteur de Traduction IA
                     </h1>
                     <p className="text-[var(--panel-text-heading)]/50 mt-1 text-sm">
-                        Gérez le cache DB des traductions — <span className="text-[var(--panel-text-heading)]/80 font-semibold">{totalCount.toLocaleString('fr-FR')}</span> traductions stockées
+                        Gérez le cache DB des traductions : <span className="text-[var(--panel-text-heading)]/80 font-semibold">{totalCount.toLocaleString('fr-FR')}</span> traductions stockées
                     </p>
                 </div>
 
@@ -676,7 +676,7 @@ export default function TraductionsAdminPage() {
                     <li>Tout texte affiché en français est haché (djb2) et utilisé comme clé de cache dans Supabase.</li>
                     <li>Au premier affichage par un visiteur étranger, Groq Llama 3.3-70B traduit le texte en moins d&apos;une seconde.</li>
                     <li>La traduction est <strong className="text-[var(--panel-text-heading)]">sauvegardée définitivement</strong> dans la table <code className="text-[#FCD116] bg-[var(--panel-surface-alt)] px-1 rounded">translations</code>.</li>
-                    <li>Les visiteurs suivants reçoivent la traduction depuis le cache — <strong className="text-[var(--panel-text-heading)]">0 latence</strong>.</li>
+                    <li>Les visiteurs suivants reçoivent la traduction depuis le cache : <strong className="text-[var(--panel-text-heading)]">0 latence</strong>.</li>
                     <li>Les traductions <strong className="text-[var(--panel-text-heading)]">manuelles</strong> (modifiées ici) ont priorité sur les traductions IA.</li>
                     <li>Le bouton <em>Forcer la traduction globale</em> pré-traduit tous les textes non encore traduits en une passe.</li>
                 </ol>

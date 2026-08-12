@@ -194,7 +194,7 @@ export default function AdminEmailTemplatesPage() {
                         TEMPLATES <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#06b6d4]"><T>EMAIL</T></span>
                     </h1>
                     <p className="text-sm text-gray-500">
-                        {templates.length} template(s) — personnalisables avec variables dynamiques
+                        {templates.length} template(s) : personnalisables avec variables dynamiques
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export default function AdminEmailTemplatesPage() {
                                         type="text"
                                         value={createForm.subject}
                                         onChange={e => setCreateForm(p => ({ ...p, subject: e.target.value }))}
-                                        placeholder={t("Retour Gagnant — {{titre}}")}
+                                        placeholder={t("Retour Gagnant : {{titre}}")}
                                         title={t("Objet de l'email")}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-[#3b82f6]/40 transition-colors"
                                     />
@@ -428,7 +428,7 @@ export default function AdminEmailTemplatesPage() {
                                                     <iframe
                                                         srcDoc={fillPreview(template.html_body)}
                                                         className="w-full min-h-[400px] max-h-[600px] border-0"
-                                                        title={`Preview — ${template.name}`}
+                                                        title={`Preview : ${template.name}`}
                                                         sandbox="allow-same-origin"
                                                     />
                                                 </div>

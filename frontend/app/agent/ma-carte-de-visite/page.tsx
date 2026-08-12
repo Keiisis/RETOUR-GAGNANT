@@ -155,7 +155,7 @@ export default function MaCarteDeVisite() {
                 pdf.text(label, x + cardW / 2, y - cropOff - cropLen - 2, { align: 'center' })
                 pdf.setFontSize(5.5)
                 pdf.setTextColor(130, 130, 130)
-                pdf.text(`${cardW} × ${cardH} mm — Imprimer à TAILLE RÉELLE (100%)`, x + cardW / 2, y + cardH + cropOff + cropLen + 4, { align: 'center' })
+                pdf.text(`${cardW} × ${cardH} mm : Imprimer à TAILLE RÉELLE (100%)`, x + cardW / 2, y + cardH + cropOff + cropLen + 4, { align: 'center' })
             }
 
             pdf.addImage(rectoUrl, 'PNG', x, y, cardW, cardH)
@@ -212,7 +212,7 @@ export default function MaCarteDeVisite() {
                 <p className="text-gray-400 text-sm">{card.position}</p>
             </motion.div>
 
-            {/* ═══ TABS — RGB / Ouidah Heritage Tour ═══ */}
+            {/* ═══ TABS : RGB / Ouidah Heritage Tour ═══ */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -313,14 +313,14 @@ export default function MaCarteDeVisite() {
             >
                 <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                     <Download size={15} style={{ color: currentTab.accent }} />
-                    Télécharger — {currentTab.label}
+                    Télécharger : {currentTab.label}
                 </h2>
 
                 {/* ── Formats Vectoriels (Recommandés) ── */}
                 <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ background: currentTab.accent }} />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: currentTab.accent }}>Vectoriel — Recommandé pour impression</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: currentTab.accent }}>Vectoriel : Recommandé pour impression</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button type="button" onClick={handleDownloadSvg} disabled={downloading !== null}
@@ -350,18 +350,18 @@ export default function MaCarteDeVisite() {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Raster — Usage écran / web</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em]">Raster : Usage écran / web</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button type="button" onClick={() => downloadPNG('recto')} disabled={downloading !== null}
                             className="flex items-center justify-center gap-2 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-300 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-medium">
                             {downloading === 'recto-png' ? <Loader2 size={15} className="animate-spin" /> : <FileImage size={15} />}
-                            Recto — PNG
+                            Recto : PNG
                         </button>
                         <button type="button" onClick={() => downloadPNG('verso')} disabled={downloading !== null}
                             className="flex items-center justify-center gap-2 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-gray-300 hover:text-white hover:border-white/20 transition-all disabled:opacity-40 font-medium">
                             {downloading === 'verso-png' ? <Loader2 size={15} className="animate-spin" /> : <FileImage size={15} />}
-                            Verso — PNG
+                            Verso : PNG
                         </button>
                     </div>
                 </div>
@@ -372,7 +372,7 @@ export default function MaCarteDeVisite() {
                 </div>
             </motion.div>
 
-            {/* Full-size refs for download — off-screen */}
+            {/* Full-size refs for download : off-screen */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} aria-hidden>
                 <RGBRecto ref={rgbRectoRef} data={card} scale={1} />
                 <RGBVerso ref={rgbVersoRef} data={card} scale={1} />

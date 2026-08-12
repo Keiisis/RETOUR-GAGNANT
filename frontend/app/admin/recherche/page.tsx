@@ -1,10 +1,10 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — RECHERCHE GLOBALE
+//  ADMIN : RECHERCHE GLOBALE
 //
 //  Un client par nom, e-mail, téléphone, numéro de dossier ou de
-//  facture — retrouvé d'un seul champ, à travers dossiers, factures,
+//  facture : retrouvé d'un seul champ, à travers dossiers, factures,
 //  messages et fiches clients. Résultats groupés, chacun cliquable vers
 //  sa section. Requête déclenchée à la frappe (débounce 350 ms).
 // ══════════════════════════════════════════════════════════════

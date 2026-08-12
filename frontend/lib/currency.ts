@@ -2,9 +2,9 @@ import { supabase } from '@/lib/supabase'
 import type { LangCode } from '@/lib/translation/constants'
 
 // ═══════════════════════════════════════════════════════════
-// SYSTÈME DE DEVISES ERP (DB-BACKED) — XOF (FCFA), EUR (€), USD ($)
+// SYSTÈME DE DEVISES ERP (DB-BACKED) : XOF (FCFA), EUR (€), USD ($)
 // Conversion automatique synchronisée avec l'ERP
-// Devise affichée = f(langue active) — mapping ci-dessous
+// Devise affichée = f(langue active) : mapping ci-dessous
 // ═══════════════════════════════════════════════════════════
 
 export type CurrencyCode = 'XOF' | 'EUR' | 'USD' | 'GBP' | 'HTG'
@@ -59,7 +59,7 @@ const BASE_RATES_TO_XOF: Record<CurrencyCode, number> = {
     EUR: 655.957,
     USD: 600.00, // Sera remplacé par la DB
     GBP: 760.00, // Sera remplacé par la DB
-    HTG: 4.2591, // 80 000 XOF ≈ HTG 18 783 (vérifié Mai 2026 — sera remplacé par la DB)
+    HTG: 4.2591, // 80 000 XOF ≈ HTG 18 783 (vérifié Mai 2026 : sera remplacé par la DB)
 }
 
 const cachedRates: Record<CurrencyCode, number> = { ...BASE_RATES_TO_XOF }
@@ -209,7 +209,7 @@ export function convertFromBaseSync(amountBase: number, targetCurrency: Currency
 }
 
 // ═══════════════════════════════════════════════════════════
-// CONVERSION AVEC MARGE — pour les paiements multi-devises
+// CONVERSION AVEC MARGE : pour les paiements multi-devises
 // Marge 3% pour couvrir les frais de conversion et de traitement
 // ═══════════════════════════════════════════════════════════
 

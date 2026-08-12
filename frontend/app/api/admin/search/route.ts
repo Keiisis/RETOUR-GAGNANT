@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  RECHERCHE GLOBALE — Admin
+//  RECHERCHE GLOBALE : Admin
 //
 //  Trouver un client d'un seul champ, au lieu d'ouvrir dossiers, puis
 //  factures, puis messages tour à tour. On interroge les quatre surfaces
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     ])
 
     const nom = (p: string | null, n: string | null, e: string | null) =>
-        `${p || ''} ${n || ''}`.trim() || e || '—'
+        `${p || ''} ${n || ''}`.trim() || e || '-'
 
     const resultat: ResultatRecherche = {
         dossiers: (dossRes.data || []).map(d => ({

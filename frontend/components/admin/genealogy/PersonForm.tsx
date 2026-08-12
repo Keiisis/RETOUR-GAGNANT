@@ -545,7 +545,7 @@ export default function PersonForm({
               else if (!cMotherId) { cMotherId = partnerPerson.id; }
             }
             return { fatherId: cFatherId, motherId: cMotherId };
-          /* Collatéraux: fratrie des GP et GG — preserve parent links */
+          /* Collatéraux: fratrie des GP et GG : preserve parent links */
           case 'sibling_of_paternal_grandfather':
           case 'sibling_of_paternal_grandmother':
           case 'sibling_of_maternal_grandfather':
@@ -686,7 +686,7 @@ export default function PersonForm({
 
   return (
     <div className="relative group">
-      {/* Aura lumineuse derrière la carte — visible seulement en thème sombre,
+      {/* Aura lumineuse derrière la carte : visible seulement en thème sombre,
           sinon elle délave la carte blanche (effet « flou » en mode clair) */}
       {isDark && (
         <div
@@ -706,7 +706,7 @@ export default function PersonForm({
           opacity: 1,
         }}
       >
-        {/* Halo de couleur en haut — UNIQUEMENT en thème sombre. En clair,
+        {/* Halo de couleur en haut : UNIQUEMENT en thème sombre. En clair,
             même à faible opacité il crée un voile délavé sur la carte blanche. */}
         {isDark && (
           <div
@@ -714,7 +714,7 @@ export default function PersonForm({
             style={{ background: accent, opacity: 0.35 }}
           />
         )}
-        {/* Texture grain subtile — sombre uniquement (invisible/salissant en clair) */}
+        {/* Texture grain subtile : sombre uniquement (invisible/salissant en clair) */}
         {isDark && (
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.025] mix-blend-overlay"

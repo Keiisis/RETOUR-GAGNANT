@@ -34,9 +34,9 @@ const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d = new Date(dateStr)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 const PAGE_SIZE = 20

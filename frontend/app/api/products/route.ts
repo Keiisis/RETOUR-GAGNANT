@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/products
  * Retourne tous les produits actifs depuis la table `products` (gérée par admin/boutique).
- * La table `inventory_items` est réservée à l'ERP (devis/factures) — elle n'alimente
+ * La table `inventory_items` est réservée à l'ERP (devis/factures) : elle n'alimente
  * plus la boutique publique afin d'éviter toute désynchronisation.
  */
 export async function GET() {

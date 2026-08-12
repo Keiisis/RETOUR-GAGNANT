@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  CLIENT — CENTRE DE TÉLÉCHARGEMENT
+//  CLIENT : CENTRE DE TÉLÉCHARGEMENT
 //
 //  Un seul endroit pour récupérer TOUS ses documents, jusqu'ici
 //  éparpillés (factures documents_financiers vs commandes boutique) et,

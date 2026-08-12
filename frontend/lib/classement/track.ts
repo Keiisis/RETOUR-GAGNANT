@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// Classement Client — enregistrement automatique d'un client.
+// Classement Client : enregistrement automatique d'un client.
 // Appelé en fire-and-forget depuis les flux (RDV, lead nationalité, contact).
 // Idempotent par email : ne réécrase jamais la catégorie/les notes/le statut
 // d'un client déjà suivi ; complète seulement les champs manquants.

@@ -44,7 +44,7 @@ function daysBetween(a: Date, b: Date): number {
 // pour chaque document expiré ou bientôt expiré (< WARN_DAYS_BEFORE jours).
 // Idempotent : ne crée pas de doublon si une notif identique existe < 24h.
 //
-// Body optionnel : { tree_id?: string } — limite le scan à un seul arbre
+// Body optionnel : { tree_id?: string } : limite le scan à un seul arbre
 //
 // Sécurité : protégé par CRON_SECRET (env) en mode Vercel cron.
 // En mode dev/admin, on accepte aussi la session staff.
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
             const title = isExpired
                 ? `Document expiré : ${e.title || e.doc_type}`
                 : `Document bientôt expiré (${e.days_until_expiry}j)`
-            const personPart = e.person_name ? ` — ${e.person_name}` : ''
+            const personPart = e.person_name ? ` : ${e.person_name}` : ''
             const bodyMsg = `${e.title || e.doc_type}${personPart}. Date d'émission : ${e.issued_date}, expire le ${e.expires_on}.`
 
             // Déduplication 24h sur (user_id, title)

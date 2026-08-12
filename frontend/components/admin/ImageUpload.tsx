@@ -153,7 +153,7 @@ export function ImageUpload({
                             </div>
                             <p className="text-sm font-bold text-white mb-1"><T>Glissez une image ici</T></p>
                             <p className="text-[10px] text-gray-500 uppercase tracking-widest"><T>ou cliquez pour parcourir</T></p>
-                            <p className="text-[9px] text-gray-600 mt-2"><T>JPG, PNG, WebP — Max 5 Mo</T></p>
+                            <p className="text-[9px] text-gray-600 mt-2"><T>JPG, PNG, WebP : Max 5 Mo</T></p>
                         </>
                     )}
                 </div>

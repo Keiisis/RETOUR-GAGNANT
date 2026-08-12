@@ -82,7 +82,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         // Éléments facturables (la TVA 18 % s'ajoute au HT)
         const billable = allItems.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
         const items: InvoicePdfItem[] = billable.map(i => ({
-            description: `${i.title}${p.destination ? ` — ${p.destination}` : ''}`,
+            description: `${i.title}${p.destination ? ` : ${p.destination}` : ''}`,
             quantity: 1,
             unit_price: round(Number(i.selling_price) || 0),
             tva: 18,
@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const total_tva = round(sous_total * 0.18)
         const total = round(sous_total + total_tva)
 
-        // Document officiel — même générateur que le dashboard Agent/Admin.
+        // Document officiel : même générateur que le dashboard Agent/Admin.
         const base64 = generateInvoicePdf({
             invoiceRef: generateRef(p.client_name, p.created_at),
             date: dateFr(p.created_at),

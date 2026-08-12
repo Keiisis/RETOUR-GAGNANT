@@ -144,8 +144,8 @@ function getSubject(emailNum: number, name: string): string {
     const prenom = (name || '').split(' ')[0] || 'vous'
     switch (emailNum) {
         case 1: return ` ${prenom}, votre panier vous attend sur Retour Gagnant Bénin`
-        case 2: return ` ${prenom}, vos articles sont encore disponibles — mais pour combien de temps ?`
-        case 3: return ` Dernière chance, ${prenom} — votre panier expire bientôt`
+        case 2: return ` ${prenom}, vos articles sont encore disponibles : mais pour combien de temps ?`
+        case 3: return ` Dernière chance, ${prenom} : votre panier expire bientôt`
         default: return `Votre panier Retour Gagnant Bénin`
     }
 }
@@ -203,10 +203,10 @@ function buildRecoveryEmail(order: {
         },
         2: {
             headline: ` Vos articles sont encore disponibles, ${prenom} !`,
-            body: `Votre panier est toujours enregistré chez nous. Mais les stocks de certains articles sont limités — nous ne pouvons pas garantir leur disponibilité indéfiniment.`,
+            body: `Votre panier est toujours enregistré chez nous. Mais les stocks de certains articles sont limités : nous ne pouvons pas garantir leur disponibilité indéfiniment.`,
             cta: 'Sécuriser ma commande maintenant',
             urgency: `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin:20px 0;">
-                <p style="color:#c2410c;font-weight:bold;margin:0;font-size:13px;"> Stock limité — commandez avant qu'il ne soit trop tard !</p>
+                <p style="color:#c2410c;font-weight:bold;margin:0;font-size:13px;"> Stock limité : commandez avant qu'il ne soit trop tard !</p>
             </div>`,
         },
         3: {
@@ -277,7 +277,7 @@ function buildRecoveryEmail(order: {
     <tr>
         <td style="background:#f1f5f9;padding:20px 40px;text-align:center;">
             <p style="color:#94a3b8;font-size:11px;margin:0;line-height:1.6;">
-                © ${new Date().getFullYear()} Retour Gagnant Bénin — Votre partenaire pour un retour réussi au Bénin<br>
+                © ${new Date().getFullYear()} Retour Gagnant Bénin : Votre partenaire pour un retour réussi au Bénin<br>
                 <span style="font-size:10px;">Vous recevez cet email car vous avez initié un achat sur notre plateforme. Référence commande : ${order.id.slice(0, 8).toUpperCase()}</span>
             </p>
         </td>

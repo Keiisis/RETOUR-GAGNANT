@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 📎  KeysO-WAF · core/upload-scanner — Analyse de fichiers uploadés
+// 📎  KeysO-WAF · core/upload-scanner : Analyse de fichiers uploadés
 // ══════════════════════════════════════════════════════════════
 //
 // Détecte les uploads malveillants AVANT stockage :
@@ -10,7 +10,7 @@
 //   - Polyglotes (PHP/JS planqué dans un fichier image)
 //   - PHP/scripts serveur dans des fichiers "inoffensifs"
 //
-// PORTABLE — zéro dépendance. Travaille sur { filename, mime, bytes|text }.
+// PORTABLE : zéro dépendance. Travaille sur { filename, mime, bytes|text }.
 // ══════════════════════════════════════════════════════════════
 
 export type UploadThreat =
@@ -32,7 +32,7 @@ export interface UploadScanVerdict {
 
 export interface UploadInput {
     filename: string
-    /** MIME déclaré par le client (non fiable — on le confronte). */
+    /** MIME déclaré par le client (non fiable : on le confronte). */
     mime?: string
     /** Premiers octets du fichier (pour les magic bytes). */
     bytes?: Uint8Array

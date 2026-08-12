@@ -355,7 +355,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
 
                                 {/* Notes */}
                                 <div>
-                                    <label className={`block text-xs font-semibold mb-1.5 ${p.sub}`}>Notes — où en est-on ? problèmes ? possibilités ?</label>
+                                    <label className={`block text-xs font-semibold mb-1.5 ${p.sub}`}>Notes : où en est-on ? problèmes ? possibilités ?</label>
                                     <textarea value={draftNotes} onChange={e => setDraftNotes(e.target.value)} rows={4}
                                         placeholder="Ex. Dossier passeport en attente de l'extrait de naissance. Client relancé le 12. Possibilité d'accélérer via le partenaire X…"
                                         className={`w-full p-3 rounded-xl border outline-none focus:border-emerald-500 resize-y text-sm ${p.input}`} />

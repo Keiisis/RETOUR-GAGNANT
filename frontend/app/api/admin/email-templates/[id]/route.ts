@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// PATCH /api/admin/email-templates/[id] — modifier un template
+// PATCH /api/admin/email-templates/[id] : modifier un template
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -47,7 +47,7 @@ export async function PATCH(
     }
 }
 
-// DELETE /api/admin/email-templates/[id] — supprimer un template
+// DELETE /api/admin/email-templates/[id] : supprimer un template
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

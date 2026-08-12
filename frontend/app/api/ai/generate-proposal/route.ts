@@ -133,7 +133,7 @@ Format :
         // ── CONVERSION DEVISE À LA SOURCE ─────────────────────────────
         // Les prix générés par l'IA (comme ceux de Google Maps) sont TOUJOURS
         // en FCFA (XOF). Si l'agent a choisi une autre devise (EUR, USD, GBP),
-        // on convertit chaque prix vers cette devise AVANT stockage — sinon un
+        // on convertit chaque prix vers cette devise AVANT stockage : sinon un
         // hôtel à 150 000 FCFA se retrouvait étiqueté « 150 000 € » (absurde).
         // Le montant stocké est ainsi correctement libellé dans proposal.currency.
         const target = (currency || 'XOF').toUpperCase()
@@ -159,7 +159,7 @@ Format :
             status: 'draft',
             total_amount: items.reduce((acc: number, item: ProposalItem) => acc + (item.original_price || 0), 0)
         }
-        // currency est optionnel selon la version du schéma DB — on l'insère de façon conditionnelle
+        // currency est optionnel selon la version du schéma DB : on l'insère de façon conditionnelle
         // Exécuter d'abord sans currency, si ça plante par son absence c'est qu'elle n'existe pas encore
         let proposal: Record<string, unknown> | null = null
         let proposalError: { message: string; code?: string } | null = null

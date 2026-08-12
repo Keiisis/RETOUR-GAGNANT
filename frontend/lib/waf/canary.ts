@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🐦 lib/waf/canary.ts — Canary Tokens & Honey-Records
+// 🐦 lib/waf/canary.ts : Canary Tokens & Honey-Records
 // ══════════════════════════════════════════════════════════════
 //
 // Système de tokens traçables injectés dans les payloads de déception.

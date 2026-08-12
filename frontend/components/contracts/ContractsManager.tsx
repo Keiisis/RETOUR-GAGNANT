@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  CONTRATS — gestionnaire partagé Admin / Agent
+//  CONTRATS : gestionnaire partagé Admin / Agent
 //  Aperçu A4, envoi avec détection de compte, édition (série et
 //  données d'émission IMMUABLES), suppression, téléchargement,
 //  marquage signé/non-signé manuel, journal de traçabilité.
@@ -82,7 +82,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user?.email) setActor(`${role === 'admin' ? 'Admin' : 'Agent'} — ${session.user.email}`)
+            if (session?.user?.email) setActor(`${role === 'admin' ? 'Admin' : 'Agent'} : ${session.user.email}`)
         })
     }, [role])
 
@@ -109,7 +109,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
             })
             const data = await res.json()
             if (data.success) {
-                toast(isNew ? t('Contrat créé') + ` — ${data.contract?.serial || ''}` : t('Contrat mis à jour'))
+                toast(isNew ? t('Contrat créé') + ` : ${data.contract?.serial || ''}` : t('Contrat mis à jour'))
                 setEditing(null)
                 fetchContracts()
             } else toast(data.error || t('Enregistrement impossible'), 'error')
@@ -129,8 +129,8 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
             const data = await res.json()
             if (data.success) {
                 toast(data.hasAccount
-                    ? t('Envoyé — compte client détecté : parcours Espace Client')
-                    : t('Envoyé — aucun compte : lien de signature sécurisé transmis'))
+                    ? t('Envoyé : compte client détecté : parcours Espace Client')
+                    : t('Envoyé : aucun compte : lien de signature sécurisé transmis'))
                 fetchContracts()
             } else toast(data.error || t('Envoi impossible'), 'error')
         } catch { toast(t('Envoi impossible'), 'error') }
@@ -173,9 +173,9 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
     }
 
     const copySignLink = (c: Contract) => {
-        if (!c.sign_token) { toast(t('Token indisponible — appliquez la migration SQL'), 'error'); return }
+        if (!c.sign_token) { toast(t('Token indisponible : appliquez la migration SQL'), 'error'); return }
         navigator.clipboard.writeText(`${window.location.origin}/contrat/${c.sign_token}`)
-        toast(t('Lien de signature copié — envoyez-le par le canal de votre choix'))
+        toast(t('Lien de signature copié : envoyez-le par le canal de votre choix'))
     }
 
     const statusConfig: Record<string, { label: string; bg: string; fg: string; icon: LucideIcon }> = {
@@ -219,7 +219,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                             <div className="text-xs leading-relaxed" style={labelStyle}>
                                 <T>Données d&apos;émission immuables :</T>{' '}
                                 <span className="font-mono font-bold" style={{ color: '#C9A84C' }}>{existing.serial}</span>
-                                {' — '}<T>émis le</T> {new Date(existing.created_at).toLocaleDateString('fr-FR')} <T>par</T> {existing.agent_name}.{' '}
+                                {' : '}<T>émis le</T> {new Date(existing.created_at).toLocaleDateString('fr-FR')} <T>par</T> {existing.agent_name}.{' '}
                                 <T>Ces informations ne peuvent jamais être modifiées (traçabilité).</T>
                             </div>
                         </div>
@@ -247,7 +247,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                         <div>
                             <label className="text-xs font-bold mb-1 block" style={labelStyle}><T>Titre du contrat *</T></label>
                             <input type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-                                placeholder={t("Contrat d'accompagnement — Nationalité")}
+                                placeholder={t("Contrat d'accompagnement : Nationalité")}
                                 className="w-full border rounded-xl py-3 px-4 text-sm focus:outline-none" style={inputStyle} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,7 +269,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                         <div>
                             <label className="text-xs font-bold mb-1 block" style={labelStyle}><T>Contenu du contrat * (articles, engagements, modalités)</T></label>
                             <textarea rows={14} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}
-                                placeholder={t('Article 1 — Objet\nLe Prestataire s\'engage à…\n\nArticle 2 — Modalités…')}
+                                placeholder={t('Article 1 : Objet\nLe Prestataire s\'engage à…\n\nArticle 2 : Modalités…')}
                                 className="w-full border rounded-xl py-3 px-4 text-sm focus:outline-none resize-none font-mono" style={inputStyle} />
                             <p className="text-[11px] mt-1.5" style={labelStyle}><T>L&apos;en-tête légal (RCCM, IFU, parties), les clauses réglementaires et les blocs de signature sont ajoutés automatiquement au document final.</T></p>
                         </div>
@@ -332,7 +332,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2.5 flex-wrap">
                                                 <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md"
-                                                    style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#059669' }}>{c.serial || '—'}</span>
+                                                    style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#059669' }}>{c.serial || '-'}</span>
                                                 <p className="text-sm font-bold truncate" style={{ color: 'var(--panel-text-heading, #fff)' }}>{c.title}</p>
                                             </div>
                                             <div className="flex items-center gap-3 mt-1.5 text-[11px] flex-wrap" style={labelStyle}>
@@ -345,7 +345,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                                                 <p className="text-[11px] mt-1.5 flex items-center gap-1.5 font-semibold" style={{ color: '#059669' }}>
                                                     <ShieldCheck size={12} />
                                                     {c.signature_method === 'manuel' ? <T>Signé manuellement</T> : <T>Signé en ligne</T>}
-                                                    {' — '}{c.signed_name || c.client_nom}{c.signed_at ? ` — ${new Date(c.signed_at).toLocaleString('fr-FR')}` : ''}
+                                                    {' : '}{c.signed_name || c.client_nom}{c.signed_at ? ` : ${new Date(c.signed_at).toLocaleString('fr-FR')}` : ''}
                                                 </p>
                                             )}
                                         </div>
@@ -417,7 +417,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                                                             <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#10B981' }} />
                                                             <div className="text-[11px] leading-relaxed" style={labelStyle}>
                                                                 <span className="font-bold" style={{ color: 'var(--panel-text, #E5E7EB)' }}>{ACTION_LABELS[entry.action] || entry.action}</span>
-                                                                {' — '}{new Date(entry.at).toLocaleString('fr-FR')}{' — '}{entry.actor}
+                                                                {' : '}{new Date(entry.at).toLocaleString('fr-FR')}{' : '}{entry.actor}
                                                                 {entry.details && <span className="block opacity-80">{entry.details}</span>}
                                                             </div>
                                                         </div>
@@ -449,7 +449,7 @@ export default function ContractsManager({ role }: { role: 'admin' | 'agent' }) 
                             <AlertTriangle className="text-red-500 mb-3" size={26} />
                             <h3 className="text-base font-black mb-2" style={{ color: 'var(--panel-text-heading, #fff)' }}><T>Supprimer ce contrat ?</T></h3>
                             <p className="text-xs leading-relaxed mb-1" style={labelStyle}>
-                                <span className="font-mono font-bold">{deleteTarget.serial}</span> — {deleteTarget.title}
+                                <span className="font-mono font-bold">{deleteTarget.serial}</span> : {deleteTarget.title}
                             </p>
                             <p className="text-xs leading-relaxed mb-5" style={labelStyle}>
                                 <T>Cette action est définitive : le document et tout son journal de traçabilité seront effacés.</T>

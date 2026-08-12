@@ -8,7 +8,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST /api/documents/sign — signature du devis par le client.
+// POST /api/documents/sign : signature du devis par le client.
 // RÈGLE MÉTIER : la signature acte l'ACCORD du client (statut 'accepte') mais
 // NE crée PAS de facture. Une facture n'est émise QUE lorsque le paiement est
 // encaissé (le paiement justifie l'émission de la facture). La conversion

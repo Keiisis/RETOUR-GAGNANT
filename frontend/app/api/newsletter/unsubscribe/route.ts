@@ -9,7 +9,7 @@ function page(title: string, message: string, ok: boolean): Response {
     const color = ok ? '#008751' : '#E8112D'
     const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} — Retour Gagnant Bénin</title></head>
+<title>${title} : Retour Gagnant Bénin</title></head>
 <body style="margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#f8faf9;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
   <div style="max-width:480px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.08)">
     <div style="display:flex;height:6px"><div style="flex:1;background:#008751"></div><div style="flex:1;background:#FCD116"></div><div style="flex:1;background:#E8112D"></div></div>

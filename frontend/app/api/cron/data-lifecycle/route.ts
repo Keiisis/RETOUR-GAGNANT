@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Cycle de vie des données sensibles
+//  CRON : Cycle de vie des données sensibles
 // Déclenché chaque nuit à 02h00 UTC
 // 1. Suppression automatique des fichiers sensibles traités
 // 2. Nettoyage des logs WAF anciens (> 90 jours)
@@ -144,7 +144,7 @@ async function runLifecycle() {
     <body style="background:#0f172a;font-family:Arial,sans-serif;margin:0;padding:20px">
         <div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden">
             <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);padding:20px 24px">
-                <h1 style="color:#0f172a;margin:0;font-size:18px"> Rapport Quotidien — Sécurité & Données</h1>
+                <h1 style="color:#0f172a;margin:0;font-size:18px"> Rapport Quotidien : Sécurité & Données</h1>
                 <p style="color:#0f172a;margin:4px 0 0;font-size:13px;opacity:0.8">Retour Gagnant Bénin · ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
             <div style="padding:24px">

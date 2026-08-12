@@ -106,7 +106,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
             const label = body.event_label || STATUS_DEFAULT_LABEL[body.shipping_status] || 'Mise à jour de statut'
             let description = body.event_description || ''
             if (!description && body.shipping_status === 'shipped' && order.tracking_code) {
-                description = `Colis expédié — code de suivi : ${order.tracking_code}${order.tracking_carrier ? ` (${order.tracking_carrier})` : ''}`
+                description = `Colis expédié : code de suivi : ${order.tracking_code}${order.tracking_carrier ? ` (${order.tracking_carrier})` : ''}`
             }
 
             await supabase.from('order_tracking_events').insert({

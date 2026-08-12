@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
 import { getMobileUserId } from '@/lib/mobile-auth'
 
-// Service role — bypasse RLS pour créer/lire les dossiers depuis l'app mobile
+// Service role : bypasse RLS pour créer/lire les dossiers depuis l'app mobile
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -12,7 +12,7 @@ const supabase = createClient(
 // ─── GET : tous les dossiers d'un client avec leurs documents ────────────────
 export async function GET(req: NextRequest) {
     try {
-        // Identité dérivée du jeton (anti-IDOR) — on ignore tout client_id fourni
+        // Identité dérivée du jeton (anti-IDOR) : on ignore tout client_id fourni
         const clientId = await getMobileUserId(req)
         if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         // ── WAF #2 : analyse structurelle du body (proto pollution / RCE / SSRF / DoS) ──
         const { body: scanned, rejection } = await scanRequestBody(req)
         if (rejection) return rejection
-        // Identité dérivée du jeton (anti-IDOR) — on ignore tout client_id du corps
+        // Identité dérivée du jeton (anti-IDOR) : on ignore tout client_id du corps
         const client_id = await getMobileUserId(req)
         if (!client_id) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 

@@ -170,7 +170,7 @@ export default function InventoryPage() {
                         <Box className="text-emerald-400" /> Gestion des Stocks & Catalogue
                     </h1>
                     <p className="text-[var(--panel-text-muted)] text-sm mt-1">
-                        Catalogue unifié — Boutique + ERP (Devis/Factures). Les articles boutique apparaissent automatiquement ici.
+                        Catalogue unifié : Boutique + ERP (Devis/Factures). Les articles boutique apparaissent automatiquement ici.
                     </p>
                 </div>
                 <button type="button" className="bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2">
@@ -306,7 +306,7 @@ export default function InventoryPage() {
                                                             </span>
                                                         )}
                                                         <span className="text-[10px] text-[var(--panel-text-muted)] font-mono">
-                                                            {item.sku || (item.source === 'boutique' ? item.category || '—' : 'Sans SKU')}
+                                                            {item.sku || (item.source === 'boutique' ? item.category || '-' : 'Sans SKU')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -323,7 +323,7 @@ export default function InventoryPage() {
                                             </span>
                                         </td>
 
-                                        {/* Stock — éditable pour les produits boutique */}
+                                        {/* Stock : éditable pour les produits boutique */}
                                         <td className="p-4">
                                             {item.track_inventory ? (
                                                 editingId === item.id && item.source === 'boutique' ? (

@@ -156,8 +156,8 @@ export default function AdminNewsletterPage() {
                                         <td className="px-4 py-2.5 text-[#1a2332] font-semibold truncate max-w-[260px]">{c.subject}</td>
                                         <td className="px-3 py-2.5 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusBadge(c.status)}`}>{c.status}</span></td>
                                         <td className="px-3 py-2.5 text-right font-mono text-emerald-700">{c.sent_count}/{c.recipient_count}</td>
-                                        <td className="px-3 py-2.5 text-right font-mono text-red-500">{c.failed_count || '—'}</td>
-                                        <td className="px-3 py-2.5 text-gray-500">{c.sent_by_nom || '—'}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-red-500">{c.failed_count || '-'}</td>
+                                        <td className="px-3 py-2.5 text-gray-500">{c.sent_by_nom || '-'}</td>
                                         <td className="px-4 py-2.5 text-right text-gray-400">{fmtDate(c.created_at)}</td>
                                     </tr>
                                 ))}
@@ -173,7 +173,7 @@ export default function AdminNewsletterPage() {
                     <div className="flex items-center gap-2">
                         <Users size={16} className="text-emerald-700" />
                         <h2 className="text-sm font-black text-[#1a2332]">Abonnés</h2>
-                        <span className="text-[11px] text-gray-400 font-medium">{subscribers.length} inscrit(s) — {activeSubscribers} actif(s)</span>
+                        <span className="text-[11px] text-gray-400 font-medium">{subscribers.length} inscrit(s) : {activeSubscribers} actif(s)</span>
                     </div>
                 </div>
                 {loading ? (

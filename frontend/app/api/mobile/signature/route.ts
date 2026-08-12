@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 
 /* ════════════════════════════════════════════════════════════════════════════
-   Mobile signature endpoint — l'identité vient du JETON (Bearer), jamais d'un
+   Mobile signature endpoint : l'identité vient du JETON (Bearer), jamais d'un
    client_id fourni en query/body (anti-IDOR).
    ════════════════════════════════════════════════════════════════════════════ */
 
@@ -14,7 +14,7 @@ const supabase = createClient(
 
 const VALID_AUTO_SIGN = ['ask', 'auto', 'never']
 
-// GET — signature du client authentifié
+// GET : signature du client authentifié
 export async function GET(req: NextRequest) {
     try {
         const clientId = await getMobileUserId(req)
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// PATCH { client_id, auto_sign } — updates only the preference
+// PATCH { client_id, auto_sign } : updates only the preference
 export async function PATCH(req: NextRequest) {
     try {
         const client_id = await getMobileUserId(req)
@@ -107,7 +107,7 @@ export async function PATCH(req: NextRequest) {
     }
 }
 
-// DELETE — supprime la signature du client authentifié
+// DELETE : supprime la signature du client authentifié
 export async function DELETE(req: NextRequest) {
     try {
         const clientId = await getMobileUserId(req)

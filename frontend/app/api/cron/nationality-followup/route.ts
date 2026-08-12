@@ -66,7 +66,7 @@ function wrapHtml(smtp: Record<string, string>, ref: string, body: string) {
         </div>
         <div style="padding:32px 40px;color:#1a1a1a;font-size:14px;line-height:1.85;">${body}</div>
         <div style="padding:14px 40px;background:#0d1117;text-align:center;">
-            <p style="margin:0;color:#6b7280;font-size:11px;">&copy; ${new Date().getFullYear()} ${siteName} — <a href="${SITE_URL}" style="color:#008751;text-decoration:none;">${SITE_URL.replace('https://','')}</a></p>
+            <p style="margin:0;color:#6b7280;font-size:11px;">&copy; ${new Date().getFullYear()} ${siteName} : <a href="${SITE_URL}" style="color:#008751;text-decoration:none;">${SITE_URL.replace('https://','')}</a></p>
         </div>
     </div>`
 }
@@ -82,10 +82,10 @@ async function generateReminderBody(
     needsRechercheAncestrale: boolean
 ): Promise<string> {
     const toneDesc = tone === 'gentle'
-        ? 'bienveillant et encourageant — c\'est un premier rappel amical'
+        ? 'bienveillant et encourageant : c\'est un premier rappel amical'
         : tone === 'firm'
-            ? 'ferme mais respectueux — le dossier risque d\'être suspendu si rien n\'est transmis'
-            : 'urgent et solennel — c\'est la dernière chance avant suspension du dossier'
+            ? 'ferme mais respectueux : le dossier risque d\'être suspendu si rien n\'est transmis'
+            : 'urgent et solennel : c\'est la dernière chance avant suspension du dossier'
 
     if (groq) {
         try {
@@ -97,7 +97,7 @@ async function generateReminderBody(
                     },
                     {
                         role: 'user',
-                        content: `Demandeur : ${prenom} ${nom} — Référence : ${ref} — Deadline : ${deadline}. Pièces encore manquantes : ${missingDocs.map(d => d.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont toujours manquants — mentionne brièvement notre service Recherche Ancestrale (250 €).' : ''} Rédige le corps de l'email de rappel.`
+                        content: `Demandeur : ${prenom} ${nom} : Référence : ${ref} : Deadline : ${deadline}. Pièces encore manquantes : ${missingDocs.map(d => d.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont toujours manquants : mentionne brièvement notre service Recherche Ancestrale (250 €).' : ''} Rédige le corps de l'email de rappel.`
                     }
                 ],
                 model: 'mixtral-8x7b-32768',
@@ -112,7 +112,7 @@ async function generateReminderBody(
         ? `<p>Nous espérons que vous allez bien. Nous vous contactons car votre dossier de nationalité béninoise sous la référence <strong>${ref}</strong> nécessite encore quelques documents.</p>`
         : tone === 'firm'
             ? `<p>Nous vous rappelons que votre dossier sous la référence <strong>${ref}</strong> est en attente de pièces justificatives importantes. Sans réception de ces documents avant le <strong>${deadline}</strong>, votre dossier sera suspendu.</p>`
-            : `<p><strong>RAPPEL FINAL</strong> — Votre dossier de nationalité béninoise (<strong>${ref}</strong>) est en attente depuis plusieurs semaines. Passé la date du <strong>${deadline}</strong>, votre dossier sera suspendu sans possibilité de traitement immédiat.</p>`
+            : `<p><strong>RAPPEL FINAL</strong> : Votre dossier de nationalité béninoise (<strong>${ref}</strong>) est en attente depuis plusieurs semaines. Passé la date du <strong>${deadline}</strong>, votre dossier sera suspendu sans possibilité de traitement immédiat.</p>`
 
     return `${toneIntro}
         <p>Documents encore attendus :</p>
@@ -189,9 +189,9 @@ export async function POST(request: NextRequest) {
                 const html = wrapHtml(smtp, app.application_ref, fullBody)
 
                 const subjectByTone = {
-                    gentle: `Rappel — Documents manquants pour votre dossier ${app.application_ref}`,
-                    firm: `URGENT — Complétez votre dossier avant le ${deadlineStr}`,
-                    final: `DERNIER RAPPEL — Dossier ${app.application_ref} en danger de suspension`,
+                    gentle: `Rappel : Documents manquants pour votre dossier ${app.application_ref}`,
+                    firm: `URGENT : Complétez votre dossier avant le ${deadlineStr}`,
+                    final: `DERNIER RAPPEL : Dossier ${app.application_ref} en danger de suspension`,
                 }
 
                 const sent = await sendMail(smtp, app.email, subjectByTone[threshold.tone as Tone], html)
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
                         const adminEmail = smtp.contact_email || smtp.smtp_from_email
                         if (adminEmail) {
                             await sendMail(smtp, adminEmail,
-                                `[ADMIN] Dossier ${app.application_ref} — Deadline atteinte`,
+                                `[ADMIN] Dossier ${app.application_ref} : Deadline atteinte`,
                                 wrapHtml(smtp, app.application_ref, `
                                     <p>Le dossier de <strong>${app.prenom} ${app.nom}</strong> (${app.email}) a atteint sa deadline de 7 semaines.</p>
                                     <p>Documents toujours manquants : ${missingDocs.map(d => d.label).join(', ')}</p>

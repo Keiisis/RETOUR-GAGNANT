@@ -76,7 +76,7 @@ export default function AdminFaqPage() {
                 <div className="mb-6">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]"><T>Nationalité</T></span>
                     <h1 className="text-2xl font-black text-white flex items-center gap-2"><HelpCircle size={22} className="text-emerald-400" /> <T>Gestion FAQ</T></h1>
-                    <p className="text-xs text-gray-500 mt-1">{faqs.length} questions — Ajoutez, modifiez, réordonnez ou supprimez</p>
+                    <p className="text-xs text-gray-500 mt-1">{faqs.length} questions : Ajoutez, modifiez, réordonnez ou supprimez</p>
                 </div>
 
                 <div className="space-y-2">

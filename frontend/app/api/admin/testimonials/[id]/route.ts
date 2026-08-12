@@ -10,7 +10,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// PATCH /api/admin/testimonials/[id] — modifier ou changer le statut
+// PATCH /api/admin/testimonials/[id] : modifier ou changer le statut
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -81,7 +81,7 @@ export async function PATCH(
 }
 
 
-// DELETE /api/admin/testimonials/[id] — supprimer un témoignage
+// DELETE /api/admin/testimonials/[id] : supprimer un témoignage
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

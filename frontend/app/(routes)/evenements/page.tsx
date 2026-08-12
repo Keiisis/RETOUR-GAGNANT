@@ -37,7 +37,7 @@ const CATEGORIES = [
     { value: 'cultural', label: 'Culturel' },
 ]
 
-// Palette STRICTEMENT charte Bénin (vert / or / rouge + neutre) — aucune
+// Palette STRICTEMENT charte Bénin (vert / or / rouge + neutre) : aucune
 // couleur hors-charte (plus de bleu/violet/rose).
 const CAT_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
     conference: { bg: 'bg-[#E6F3ED]', text: 'text-[#00643C]', dot: '#008751' },
@@ -129,7 +129,7 @@ export default function EvenementsPage() {
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                         className="text-gray-500 text-lg max-w-xl mx-auto leading-relaxed mb-10"
                     >
-                        <T>Organisation Galas, conférences, salons — Rencontres B2B et Opportunités d&apos;affaire.</T>
+                        <T>Organisation Galas, conférences, salons : Rencontres B2B et Opportunités d&apos;affaire.</T>
                     </motion.p>
 
                     <motion.div

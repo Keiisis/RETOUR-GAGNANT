@@ -39,7 +39,7 @@ type ReminderLevel = typeof REMINDER_THRESHOLDS[number]['level']
 export async function POST(request: Request) {
     try {
         // ═══ AUTHENTICATION ════════════════════════════════════════════
-        // Protéger cet endpoint — uniquement accessible via Vercel Cron
+        // Protéger cet endpoint : uniquement accessible via Vercel Cron
         // ou avec le secret correct dans le header.
         const refus = requireCron(request)
         if (refus) return refus
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
             // Solde restant dû (les paiements sont stockés en XOF)
             const totalXOF = await toXOFStrict(Number(invoice.total) || 0, invoice.currency)
             if (totalXOF === null) {
-                console.warn(`[CRON/Reminders] taux ${invoice.currency} indisponible — ${invoice.numero} ignorée`)
+                console.warn(`[CRON/Reminders] taux ${invoice.currency} indisponible : ${invoice.numero} ignorée`)
                 continue
             }
             const soldeXOF = totalXOF - (encaisse[invoice.id] || 0)
@@ -167,9 +167,9 @@ export async function POST(request: Request) {
 
                 // Sujet adapté au niveau
                 const subjectMap: Record<ReminderLevel, string> = {
-                    reminder_1: ` Rappel — Facture ${invoice.numero} en attente`,
-                    reminder_2: `⏳ 2ème Rappel — Facture ${invoice.numero} impayée`,
-                    reminder_3: ` Dernier Rappel — Facture ${invoice.numero} — Action requise`,
+                    reminder_1: ` Rappel : Facture ${invoice.numero} en attente`,
+                    reminder_2: `⏳ 2ème Rappel : Facture ${invoice.numero} impayée`,
+                    reminder_3: ` Dernier Rappel : Facture ${invoice.numero} : Action requise`,
                 }
 
                 // Envoyer au client
@@ -193,12 +193,12 @@ export async function POST(request: Request) {
                         const levelLabel = targetLevel === 'reminder_1' ? '1er' : (targetLevel === 'reminder_2' ? '2ème' : 'DERNIER')
                         await sendEmail({
                             to: config.adminEmail,
- subject: `${levelLabel} rappel envoyé — ${invoice.numero} (${invoice.client_nom})`,
+ subject: `${levelLabel} rappel envoyé : ${invoice.numero} (${invoice.client_nom})`,
                             html: await (await getEmailTemplates('fr')).newLeadNotification(
                                 invoice.client_nom,
                                 invoice.client_email,
                                 Math.min(100, Math.round(daysOverdue * 3.3)),
-                                `Facture ${invoice.numero} — ${montantFormatted} ${currency}`,
+                                `Facture ${invoice.numero} : ${montantFormatted} ${currency}`,
                                 `Rappel automatique (${levelLabel})`,
                             ),
                             context: 'admin_notification',
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
         const sent = results.filter(r => r.success).length
         const failed = results.filter(r => !r.success).length
 
-        console.log(`[CRON/Reminders] Terminé — ${sent} rappels envoyés, ${failed} échecs, ${unpaidInvoices.length} factures analysées`)
+        console.log(`[CRON/Reminders] Terminé : ${sent} rappels envoyés, ${failed} échecs, ${unpaidInvoices.length} factures analysées`)
 
         return NextResponse.json({
             success: true,
@@ -255,7 +255,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * GET — Permet à Vercel Cron de vérifier que l'endpoint est live.
+ * GET : Permet à Vercel Cron de vérifier que l'endpoint est live.
  * Utile aussi pour le monitoring.
  */
 export async function GET(request: Request) {

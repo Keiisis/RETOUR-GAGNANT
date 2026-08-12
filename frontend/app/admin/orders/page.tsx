@@ -53,7 +53,7 @@ export default function AdminOrdersPage() {
         pagination: { pageSize: 100 },
         sorters: [{ field: 'created_at', order: 'desc' }],
     })
-    useUpdate() // Refine context — required by parent layout
+    useUpdate() // Refine context : required by parent layout
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
 
@@ -123,9 +123,9 @@ export default function AdminOrdersPage() {
 
     const formatPrice = (price: number) => new Intl.NumberFormat('fr-FR').format(price || 0)
     const formatDate = (date: string) => {
-        if (!date) return '—'
+        if (!date) return '-'
         const d = new Date(date)
-        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', {
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',

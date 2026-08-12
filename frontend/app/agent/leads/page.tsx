@@ -31,7 +31,7 @@ export default function AgentLeadsPage() {
         fetchLeads()
     }, [fetchLeads])
 
-    // Subscription temps réel — nouveaux leads + mises à jour
+    // Subscription temps réel : nouveaux leads + mises à jour
     useEffect(() => {
         const channel = supabase.channel('leads_realtime')
             .on(
@@ -282,7 +282,7 @@ export default function AgentLeadsPage() {
                                             </span>
 
                                             <span className="text-[10px] text-gray-600">
-                                                {lead.created_at && !isNaN(new Date(lead.created_at).getTime()) ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '—'}
+                                                {lead.created_at && !isNaN(new Date(lead.created_at).getTime()) ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '-'}
                                             </span>
 
                                             {/* Bouton Oracle answers */}
@@ -313,7 +313,7 @@ export default function AgentLeadsPage() {
                                                 {lead.is_contacted ? ' Contacté' : 'À contacter'}
                                             </button>
 
-                                            {/* Email Button — ouvre le drawer */}
+                                            {/* Email Button : ouvre le drawer */}
                                             <button
                                                 type="button"
                                                 onClick={() => setSelectedLead(lead)}
@@ -339,7 +339,7 @@ export default function AgentLeadsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Panel Oracle Answers — expandable */}
+                                    {/* Panel Oracle Answers : expandable */}
                                     <AnimatePresence>
                                         {expandedId === lead.id && (
                                             <motion.div
@@ -366,7 +366,7 @@ export default function AgentLeadsPage() {
                 </div>
             </div>
 
-            {/* Drawer de composition email — monté en dehors du scroll container */}
+            {/* Drawer de composition email : monté en dehors du scroll container */}
             <LeadReplyDrawer
                 lead={selectedLead}
                 onClose={() => setSelectedLead(null)}

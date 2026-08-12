@@ -117,8 +117,8 @@ export default function ServiceLandingEditor({ page, defaults, title, backHref =
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <Link href={backHref} className="text-xs text-gray-500 hover:text-white flex items-center gap-1.5 mb-2 transition-colors"><ArrowLeft size={12} /> Retour</Link>
-                        <h1 className="text-2xl font-black text-white flex items-center gap-3"><Layout size={22} className="text-emerald-400" /> Contenu — {title}</h1>
-                        <p className="text-xs text-gray-500 mt-1">Toutes les sections de <span className="font-mono text-gray-400">{frontendPath}</span> — 100% éditable.</p>
+                        <h1 className="text-2xl font-black text-white flex items-center gap-3"><Layout size={22} className="text-emerald-400" /> Contenu : {title}</h1>
+                        <p className="text-xs text-gray-500 mt-1">Toutes les sections de <span className="font-mono text-gray-400">{frontendPath}</span> : 100% éditable.</p>
                     </div>
                     <SaveBtn />
                 </div>
@@ -134,15 +134,15 @@ export default function ServiceLandingEditor({ page, defaults, title, backHref =
                     <div><label className={LC}>Puces de confiance</label><StrList items={c.hero_chips} onChange={v => up('hero_chips', v)} /></div>
                     <div><label className={LC}>Image (chemin, ex : /assets/icones/…png)</label><input value={c.hero_image} onChange={e => up('hero_image', e.target.value)} className={IC} /></div>
                     <div className="grid md:grid-cols-2 gap-3">
-                        <div><label className={LC}>Bouton 1 — texte</label><input value={c.cta1_label} onChange={e => up('cta1_label', e.target.value)} className={IC} /></div>
-                        <div><label className={LC}>Bouton 1 — lien</label><input value={c.cta1_href} onChange={e => up('cta1_href', e.target.value)} className={IC} /></div>
-                        <div><label className={LC}>Bouton 2 — texte</label><input value={c.cta2_label} onChange={e => up('cta2_label', e.target.value)} className={IC} /></div>
-                        <div><label className={LC}>Bouton 2 — lien</label><input value={c.cta2_href} onChange={e => up('cta2_href', e.target.value)} className={IC} /></div>
+                        <div><label className={LC}>Bouton 1 : texte</label><input value={c.cta1_label} onChange={e => up('cta1_label', e.target.value)} className={IC} /></div>
+                        <div><label className={LC}>Bouton 1 : lien</label><input value={c.cta1_href} onChange={e => up('cta1_href', e.target.value)} className={IC} /></div>
+                        <div><label className={LC}>Bouton 2 : texte</label><input value={c.cta2_label} onChange={e => up('cta2_label', e.target.value)} className={IC} /></div>
+                        <div><label className={LC}>Bouton 2 : lien</label><input value={c.cta2_href} onChange={e => up('cta2_href', e.target.value)} className={IC} /></div>
                     </div>
                 </Section>
 
                 {/* PILIERS */}
-                <Section icon={<ShieldCheck size={18} />} color="#10b981" title="Piliers (bande verte)" sub="4 blocs — icônes fixes">
+                <Section icon={<ShieldCheck size={18} />} color="#10b981" title="Piliers (bande verte)" sub="4 blocs : icônes fixes">
                     <ObjList items={c.piliers} onChange={v => up('piliers', v)} blank={{ title: '', desc: '' }} fields={[{ key: 'title', ph: 'Titre' }, { key: 'desc', ph: 'Description' }]} />
                 </Section>
 
@@ -158,7 +158,7 @@ export default function ServiceLandingEditor({ page, defaults, title, backHref =
                 </Section>
 
                 {/* CONTRASTE */}
-                <Section icon={<ListChecks size={18} />} color="#E8112D" title="Comparatif — En solo vs Avec RGB" sub="Aversion à la perte">
+                <Section icon={<ListChecks size={18} />} color="#E8112D" title="Comparatif : En solo vs Avec RGB" sub="Aversion à la perte">
                     <div className="grid md:grid-cols-2 gap-3">
                         <div><label className={LC}>Titre</label><input value={c.contrast_title} onChange={e => up('contrast_title', e.target.value)} className={IC} /></div>
                         <div><label className={LC}>Titre (partie verte)</label><input value={c.contrast_accent} onChange={e => up('contrast_accent', e.target.value)} className={IC} /></div>
@@ -178,7 +178,7 @@ export default function ServiceLandingEditor({ page, defaults, title, backHref =
                 </Section>
 
                 {/* RÉASSURANCE */}
-                <Section icon={<ShieldCheck size={18} />} color="#10b981" title="Réassurance" sub="3 blocs — icônes fixes">
+                <Section icon={<ShieldCheck size={18} />} color="#10b981" title="Réassurance" sub="3 blocs : icônes fixes">
                     <ObjList items={c.reassurance} onChange={v => up('reassurance', v)} blank={{ title: '', desc: '' }} fields={[{ key: 'title', ph: 'Titre' }, { key: 'desc', ph: 'Description' }]} />
                 </Section>
 

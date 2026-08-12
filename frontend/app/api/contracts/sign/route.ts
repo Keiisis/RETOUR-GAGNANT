@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CONTRAT — Signature électronique
+//  CONTRAT : Signature électronique
 //  Deux parcours :
 //   - token (lien sécurisé, client sans compte) : GET consultation + POST signature
 //   - contractId + clientEmail (Espace Client, rétro-compatible)
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
         const log: AuditEntry[] = Array.isArray(contract.audit_log) ? contract.audit_log as AuditEntry[] : []
         log.push(auditEntry('signature_en_ligne', name,
-            `Signé en ligne (${token ? 'lien sécurisé' : 'Espace Client'}) — IP ${ip} — empreinte ${signatureHash.slice(0, 16)}…`))
+            `Signé en ligne (${token ? 'lien sécurisé' : 'Espace Client'}) : IP ${ip} : empreinte ${signatureHash.slice(0, 16)}…`))
 
         // Garde atomique : ne signe que si pas déjà signé (double-clic, doublon)
         const { data: updated, error } = await supabase
@@ -108,13 +108,13 @@ export async function POST(req: NextRequest) {
             const staffTo = [...new Set([COMPANY.email, ...(config.adminEmail ? [config.adminEmail] : [])])].join(', ')
             await sendEmail({
                 to: staffTo,
-                subject: `Contrat signé — ${contract.serial || ''} ${contract.title}`,
+                subject: `Contrat signé : ${contract.serial || ''} ${contract.title}`,
                 html: `<div style="font-family:Arial;max-width:560px;margin:0 auto;border:1px solid #eef2f1;border-radius:12px;padding:24px">
                     <p style="margin:0 0 8px;color:#047857;font-weight:800;font-size:14px">Signature électronique confirmée</p>
                     <p style="margin:0;color:#1B2A4A;font-size:13px;line-height:1.8">
-                    Contrat <strong style="font-family:monospace">${contract.serial || id}</strong> — ${String(contract.title)}<br/>
+                    Contrat <strong style="font-family:monospace">${contract.serial || id}</strong> : ${String(contract.title)}<br/>
                     Signataire : <strong>${name}</strong> (${String(contract.client_email)})<br/>
-                    Le ${new Date(now).toLocaleString('fr-FR')} — IP ${ip}<br/>
+                    Le ${new Date(now).toLocaleString('fr-FR')} : IP ${ip}<br/>
                     Empreinte : <span style="font-family:monospace;font-size:11px">${signatureHash.slice(0, 32)}…</span></p>
                 </div>`,
                 context: 'contract_signed',

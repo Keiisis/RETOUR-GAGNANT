@@ -50,7 +50,7 @@ export default function CreateUserPage() {
             setSuccess(true)
             setTimeout(() => router.push('/admin/users'), 2500)
         } catch {
-            setError('Erreur réseau — veuillez réessayer')
+            setError('Erreur réseau : veuillez réessayer')
         } finally {
             setIsLoading(false)
         }

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  PUBLIC — Prêtres Fa : annuaire visible + dépôt d'avis
+//  PUBLIC : Prêtres Fa : annuaire visible + dépôt d'avis
 //  Ne renvoie QUE les prêtres actifs et les avis publiés.
 //  Les coordonnées internes (téléphone / email) ne sortent jamais.
 // ══════════════════════════════════════════════════════════════
@@ -46,7 +46,7 @@ export async function GET() {
     return NextResponse.json({ priests })
 }
 
-// POST — dépôt d'un avis par un visiteur (NON publié : modération admin)
+// POST : dépôt d'un avis par un visiteur (NON publié : modération admin)
 export async function POST(request: NextRequest) {
     const ip = getClientIp(request)
     const rl = rateLimit(`fa-review:${ip}`, CHECKOUT_LIMIT)

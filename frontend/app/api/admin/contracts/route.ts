@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN/AGENT — Contrats : liste + création
+//  ADMIN/AGENT : Contrats : liste + création
 //  Le numéro de série et le token de signature sont générés ici,
 //  côté serveur, et ne peuvent plus jamais être modifiés ensuite.
 // ══════════════════════════════════════════════════════════════

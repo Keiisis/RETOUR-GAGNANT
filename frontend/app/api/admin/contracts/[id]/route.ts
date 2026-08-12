@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN/AGENT — Contrat : édition (whitelist) + suppression
+//  ADMIN/AGENT : Contrat : édition (whitelist) + suppression
 //  IMMUABLES : serial, created_at, agent_name, sign_token
 //  (whitelist ici + trigger SQL en base = double verrou)
 //  Chaque modification est consignée dans audit_log.
@@ -55,7 +55,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             update.signed_ip = null
             update.signature_method = null
             update.signature_hash = ''
-            log.push(auditEntry('marquage_non_signe', actor, 'Signature retirée — repassé au statut « envoyé »'))
+            log.push(auditEntry('marquage_non_signe', actor, 'Signature retirée : repassé au statut « envoyé »'))
         } else {
             // ── Édition classique : uniquement les champs autorisés ──
             const changed: string[] = []

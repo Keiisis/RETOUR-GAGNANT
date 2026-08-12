@@ -204,7 +204,7 @@ export default function AgentDocumentsPage() {
                                             <span>{catConfig.label}</span>
                                             {doc.client_name && <span>• {doc.client_name}</span>}
                                             <span>• {formatSize(doc.file_size)}</span>
-                                            <span>• {doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}</span>
+                                            <span>• {doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</span>
                                         </div>
                                         {doc.notes && <p className="text-[10px] text-gray-600 mt-0.5 line-clamp-1">{doc.notes}</p>}
                                     </div>

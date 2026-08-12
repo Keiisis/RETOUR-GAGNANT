@@ -176,7 +176,7 @@ export default function AdminSettingsPage() {
                         PARAMÈTRES <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#008751]"><T>SYSTÈME</T></span>
                     </h1>
                     <p className="text-sm text-gray-500">
-                        {settings.length} paramètre(s) configuré(s) — modifiables en temps réel
+                        {settings.length} paramètre(s) configuré(s) : modifiables en temps réel
                     </p>
                 </div>
                 <button
@@ -193,7 +193,7 @@ export default function AdminSettingsPage() {
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
             )}
 
-            {/* General Settings — inline editing */}
+            {/* General Settings : inline editing */}
             <div className="bg-[#0a0f18] border border-white/5 rounded-2xl overflow-hidden">
                 <div className="flex items-center gap-4 p-6 border-b border-white/5 bg-white/[0.02]">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#FCD116' + '20', border: '1px solid #FCD116' + '40' }}>
@@ -276,7 +276,7 @@ export default function AdminSettingsPage() {
                                                     {meta?.type === 'color' ? (
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-5 h-5 rounded-md border border-white/20 flex-shrink-0" style={{ backgroundColor: setting.value || '#FCD116' }} />
-                                                            <span className="text-sm font-mono text-white/80">{setting.value || '—'}</span>
+                                                            <span className="text-sm font-mono text-white/80">{setting.value || '-'}</span>
                                                         </div>
                                                     ) : (
                                                         <span className="text-sm text-white/80 truncate max-w-xs">
@@ -332,7 +332,7 @@ export default function AdminSettingsPage() {
                                         {catSettings.slice(0, 4).map(s => (
                                             <div key={s.key} className="flex justify-between items-center text-xs">
                                                 <span className="text-gray-500">{KEY_META[s.key]?.label || s.key}</span>
-                                                <span className="text-white/60 font-mono truncate max-w-[140px]">{s.value || '—'}</span>
+                                                <span className="text-white/60 font-mono truncate max-w-[140px]">{s.value || '-'}</span>
                                             </div>
                                         ))}
                                         {catSettings.length > 4 && (
@@ -363,14 +363,14 @@ export default function AdminSettingsPage() {
                             icon: CreditCard,
                             color: '#FCD116',
                             title: 'Passerelles de Paiement',
-                            desc: 'Kkiapay, FedaPay, Zeyow, Stripe, PayPal — sandbox/production.',
+                            desc: 'Kkiapay, FedaPay, Zeyow, Stripe, PayPal : sandbox/production.',
                         },
                         {
                             href: '/admin/settings/mecef',
                             icon: ShieldCheck,
                             color: '#008751',
                             title: 'Normalisation e-MCF (DGI)',
-                            desc: 'Jeton API, sandbox/production, opérateur — factures normalisées automatiquement.',
+                            desc: 'Jeton API, sandbox/production, opérateur : factures normalisées automatiquement.',
                         },
                         {
                             href: '/admin/settings/frontend',

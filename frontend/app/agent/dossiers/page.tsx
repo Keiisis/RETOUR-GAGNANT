@@ -536,7 +536,7 @@ export default function AgentDossiersPage() {
                                                                     {/* Prise en charge : à moi (plein) ou libre (contour). */}
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); toggleMine(d) }}
-                                                                        title={d.agent_assigne === currentUserId ? 'Vous êtes responsable — cliquez pour lâcher' : d.agent_assigne ? 'Assigné à un autre agent — cliquez pour reprendre' : 'Prendre en charge'}
+                                                                        title={d.agent_assigne === currentUserId ? 'Vous êtes responsable : cliquez pour lâcher' : d.agent_assigne ? 'Assigné à un autre agent : cliquez pour reprendre' : 'Prendre en charge'}
                                                                         className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border transition-colors ${d.agent_assigne === currentUserId
                                                                             ? 'bg-emerald-500 text-white border-emerald-500'
                                                                             : d.agent_assigne
@@ -571,7 +571,7 @@ export default function AgentDossiersPage() {
                                                                     <Calendar size={10} />
                                                                     {d.created_at && !isNaN(new Date(d.created_at).getTime())
                                                                         ? new Date(d.created_at).toLocaleDateString('fr-FR')
-                                                                        : '—'}
+                                                                        : '-'}
                                                                 </div>
                                                                 <span className="text-[10px] font-mono text-emerald-500/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
                                                                     {d.progression || 0}%
@@ -677,7 +677,7 @@ export default function AgentDossiersPage() {
                                     <span>
                                         {selectedDossier.created_at && !isNaN(new Date(selectedDossier.created_at).getTime())
                                             ? new Date(selectedDossier.created_at).toLocaleDateString('fr-FR')
-                                            : '—'}
+                                            : '-'}
                                     </span>
                                 </div>
                             </div>
@@ -831,7 +831,7 @@ export default function AgentDossiersPage() {
                                                         <p className="text-[9px] text-gray-600 mt-1">
                                                             {m.created_at && !isNaN(new Date(m.created_at).getTime())
                                                                 ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-                                                                : '—'}
+                                                                : '-'}
                                                         </p>
                                                     </div>
                                                     {m.role === 'agent' && (
@@ -872,7 +872,7 @@ export default function AgentDossiersPage() {
                                     </>
                                 ) : (
                                     <div className="p-4 space-y-2">
-                                        <p className="text-xs text-gray-500">Pas de fil de messagerie — envoyez un email :</p>
+                                        <p className="text-xs text-gray-500">Pas de fil de messagerie : envoyez un email :</p>
                                         <div className="flex gap-2">
                                             <textarea
                                                 value={chatInput}

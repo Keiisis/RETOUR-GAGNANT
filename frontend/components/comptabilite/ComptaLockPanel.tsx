@@ -152,7 +152,7 @@ export default function ComptaLockPanel({
                             <Unlock className="w-6 h-6 text-[#E8112D]" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8112D]">Période rouverte — verrou levé</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8112D]">Période rouverte : verrou levé</p>
                             <p className="text-white font-black mt-0.5">{periodLabel}</p>
                             <p className="text-[10px] text-gray-500 mt-0.5">
                                 Rouverte{cloture.reopened_at ? ` le ${new Date(cloture.reopened_at).toLocaleString('fr-FR')}` : ''}

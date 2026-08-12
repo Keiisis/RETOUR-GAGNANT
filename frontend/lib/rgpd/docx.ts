@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Génération DOCX (Word) avec l'en-tête institutionnel RGB.
+// RGPD : Génération DOCX (Word) avec l'en-tête institutionnel RGB.
 // Permet de compléter facilement les champs [entre crochets].
 // ══════════════════════════════════════════════════════════════
 
@@ -26,7 +26,7 @@ function cell(text: string, opts: { header?: boolean } = {}): TableCell {
         margins: { top: 60, bottom: 60, left: 90, right: 90 },
         children: [new Paragraph({
             children: [new TextRun({
-                text: text || '—',
+                text: text || '-',
                 bold: opts.header,
                 color: opts.header ? 'FFFFFF' : NAVY,
                 size: 17,
@@ -109,7 +109,7 @@ export async function generateRgpdDocx(doc: RgpdDoc): Promise<Buffer> {
     if (doc.confidential) {
         body.push(new Paragraph({
             spacing: { after: 200 },
-            children: [new TextRun({ text: 'CONFIDENTIEL — Usage interne', bold: true, color: 'E8112D', size: 18 })],
+            children: [new TextRun({ text: 'CONFIDENTIEL : Usage interne', bold: true, color: 'E8112D', size: 18 })],
         }))
     }
 

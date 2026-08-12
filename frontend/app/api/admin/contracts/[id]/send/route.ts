@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN/AGENT — Envoi du contrat au client
+//  ADMIN/AGENT : Envoi du contrat au client
 //  DÉTECTION DE COMPTE : le système scanne l'email fourni.
 //   - Compte existant  → email « Espace Client » (+ lien direct en secours)
 //   - Aucun compte     → email avec lien de signature en ligne sécurisé
@@ -39,12 +39,12 @@ function emailShell(inner: string): string {
           <td><img src="${SITE_URL}/logo.jpg" alt="Retour Gagnant" style="width:46px;height:46px;border-radius:10px;object-fit:cover"/></td>
           <td style="padding-left:12px">
             <p style="margin:0;color:#1B2A4A;font-size:15px;font-weight:800">${esc(COMPANY.name)}</p>
-            <p style="margin:1px 0 0;color:#8B94A6;font-size:11px">Accompagnement de la diaspora — Cotonou, Bénin</p>
+            <p style="margin:1px 0 0;color:#8B94A6;font-size:11px">Accompagnement de la diaspora : Cotonou, Bénin</p>
           </td>
         </tr></table>
         ${inner}
         <p style="margin:22px 0 0;color:#5B6474;font-size:12px;line-height:1.7">Une question ? Écrivez-nous à <a href="mailto:${COMPANY.email}" style="color:#008751;font-weight:700;text-decoration:none">${COMPANY.email}</a> ou par WhatsApp au ${esc(COMPANY.phone)}.</p>
-        <p style="margin:16px 0 0;color:#9aa5b1;font-size:10.5px;text-align:center;border-top:1px solid #eef1f0;padding-top:14px">${esc(COMPANY.name)} — RCCM ${esc(COMPANY.rccm)} — IFU ${esc(COMPANY.ifu)}<br/>${esc(COMPANY.address)}</p>
+        <p style="margin:16px 0 0;color:#9aa5b1;font-size:10.5px;text-align:center;border-top:1px solid #eef1f0;padding-top:14px">${esc(COMPANY.name)} : RCCM ${esc(COMPANY.rccm)} : IFU ${esc(COMPANY.ifu)}<br/>${esc(COMPANY.address)}</p>
       </div>
     </div>`
 }
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const { data: contract, error } = await supabase.from('contracts').select('*').eq('id', id).single()
         if (error || !contract) return NextResponse.json({ error: 'Contrat introuvable' }, { status: 404 })
         if (contract.status === 'signe') {
-            return NextResponse.json({ error: 'Ce contrat est déjà signé — renvoi impossible.' }, { status: 400 })
+            return NextResponse.json({ error: 'Ce contrat est déjà signé : renvoi impossible.' }, { status: 400 })
         }
 
         // Filet : token manquant (contrat créé avant la v2 et migration non backfillée)
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         const result = await sendEmail({
             to: contract.client_email,
-            subject: `${COMPANY.name} — Contrat à signer : ${contract.title} (${contract.serial})`,
+            subject: `${COMPANY.name} : Contrat à signer : ${contract.title} (${contract.serial})`,
             html: hasAccount ? buildAccountEmail(c, signUrl) : buildNoAccountEmail(c, signUrl),
             context: 'contract_notification',
             relatedId: contract.id,
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         log.push(auditEntry(
             resend ? 'renvoi' : 'envoi',
             actor,
-            `Email ${resend ? 'renvoyé' : 'envoyé'} à ${contract.client_email} — compte plateforme : ${hasAccount ? 'détecté (parcours Espace Client)' : 'aucun (parcours lien sécurisé + PDF)'}`
+            `Email ${resend ? 'renvoyé' : 'envoyé'} à ${contract.client_email} : compte plateforme : ${hasAccount ? 'détecté (parcours Espace Client)' : 'aucun (parcours lien sécurisé + PDF)'}`
         ))
         await supabase.from('contracts').update({ status: 'envoye', audit_log: log }).eq('id', id)
 

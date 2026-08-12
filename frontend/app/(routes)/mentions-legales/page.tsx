@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Mentions Légales | Retour Gagnant Bénin',
-    description: 'Mentions légales du site Retour Gagnant Bénin — informations sur l\'éditeur, l\'hébergeur et les conditions d\'utilisation.',
+    description: 'Mentions légales du site Retour Gagnant Bénin : informations sur l\'éditeur, l\'hébergeur et les conditions d\'utilisation.',
 }
 
 export default function MentionsLegalesPage() {

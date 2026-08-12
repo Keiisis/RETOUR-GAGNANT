@@ -127,7 +127,7 @@ export default function Admin2FASettingsPage() {
                 )}
                 <span className="font-medium">
                     {status === 'loading' ? 'Vérification...' :
-                     status === 'enabled' ? '2FA activée — votre compte est protégé' :
+                     status === 'enabled' ? '2FA activée : votre compte est protégé' :
                      '2FA désactivée'}
                 </span>
             </div>
@@ -161,7 +161,7 @@ export default function Admin2FASettingsPage() {
             {/* État: configuration en cours */}
             {status === 'setup' && (
                 <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 space-y-5">
-                    <h2 className="text-white font-semibold">Étape 1 — Scannez ce QR code</h2>
+                    <h2 className="text-white font-semibold">Étape 1 : Scannez ce QR code</h2>
                     {qrCode && (
                         <div className="flex justify-center">
                             <div className="bg-white p-3 rounded-xl">
@@ -184,7 +184,7 @@ export default function Admin2FASettingsPage() {
                     </div>
 
                     <div className="border-t border-gray-700 pt-4">
-                        <h2 className="text-white font-semibold mb-3">Étape 2 — Confirmez avec un code</h2>
+                        <h2 className="text-white font-semibold mb-3">Étape 2 : Confirmez avec un code</h2>
                         <input
                             type="text"
                             inputMode="numeric"

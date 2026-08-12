@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  PUBLIC — Auto-écoles partenaires (Permis de Conduire Béninois)
+//  PUBLIC : Auto-écoles partenaires (Permis de Conduire Béninois)
 //  Ne renvoie QUE les écoles actives, avec leur prix et leur durée.
 //  Les coordonnées internes (téléphone / email) ne sortent jamais.
 // ══════════════════════════════════════════════════════════════

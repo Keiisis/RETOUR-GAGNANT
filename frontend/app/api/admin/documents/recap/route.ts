@@ -1,10 +1,10 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN/DOCUMENTS — Récap génératif de l'Assistant Virtuel
+//  ADMIN/DOCUMENTS : Récap génératif de l'Assistant Virtuel
 //  Analyse RÉELLE des dossiers MyAfroOrigins (ancienneté déclarée,
 //  paiement 50 €, recherche ancestrale 250 €, documents) puis
 //  synthèse opérationnelle par Groq (LLaMA 3.3 70B) pour la
 //  direction : priorités, relances à faire, risques.
-//  Fallback règles si l'IA est indisponible — jamais d'échec.
+//  Fallback règles si l'IA est indisponible : jamais d'échec.
 // ══════════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         })
 
         const fallback = facts
-            .map(f => `• ${f.client} (${f.dossier}) — urgence ${f.urgence}, dossier MyAfroOrigins depuis ${f.anciennete_myafroorigins}, 50 € ${f.frais_reprise_50e}, recherche ancestrale : ${f.recherche_ancestrale_250e}.`)
+            .map(f => `• ${f.client} (${f.dossier}) : urgence ${f.urgence}, dossier MyAfroOrigins depuis ${f.anciennete_myafroorigins}, 50 € ${f.frais_reprise_50e}, recherche ancestrale : ${f.recherche_ancestrale_250e}.`)
             .join('\n')
 
         if (GROQ_KEYS.length === 0) {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
                         role: 'system',
                         content: `Tu es l'assistant de direction de Retour Gagnant Bénin. On te donne l'état FACTUEL des dossiers clients bloqués sur MyAfroOrigins repris par l'agence (frais de reprise 50 €, puis recherche ancestrale 250 €). Rédige un récapitulatif opérationnel ULTRA PRÉCIS en français pour la présidente, pour piloter les relances :
 1) Une phrase de vue d'ensemble chiffrée.
-2) « À FAIRE EN PRIORITÉ » : les actions concrètes classées par urgence (qui relancer, pour quoi — 50 € impayés, recherche ancestrale 250 € à proposer ou relancer, documents à valider), en citant nom + référence.
+2) « À FAIRE EN PRIORITÉ » : les actions concrètes classées par urgence (qui relancer, pour quoi : 50 € impayés, recherche ancestrale 250 € à proposer ou relancer, documents à valider), en citant nom + référence.
 3) « À SURVEILLER » : le reste, en une ligne chacun.
 Règles : uniquement les faits fournis, aucun chiffre inventé, pas de blabla, puces commençant par « - », pas de markdown gras, maximum 18 lignes.`,
                     },

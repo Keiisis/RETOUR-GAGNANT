@@ -182,7 +182,7 @@ export default function SuggestionsPanel({ treeId, isDark = false, onSelectPerso
                                 <div className="text-center py-12">
                                     <Info size={28} color={subText} className="mx-auto mb-3" />
                                     <p className="text-[12px]" style={{ color: subText }}>
-                                        {totalCount === 0 ? 'Arbre complet — rien à suggérer.' : 'Aucune suggestion dans ce filtre.'}
+                                        {totalCount === 0 ? 'Arbre complet : rien à suggérer.' : 'Aucune suggestion dans ce filtre.'}
                                     </p>
                                 </div>
                             ) : (

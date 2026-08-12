@@ -188,14 +188,14 @@ function getAdvice(status: number | null, msg: string, elapsed: number, timeout:
         tips.push('Rate limit Apify → attendre quelques minutes avant de réessayer')
     }
     if (elapsed >= timeout - 10) {
-        tips.push(`Timeout après ${elapsed}s — Facebook anti-bot détecté ou trop de posts demandés`)
+        tips.push(`Timeout après ${elapsed}s : Facebook anti-bot détecté ou trop de posts demandés`)
         tips.push('Essayer avec maxPosts: 3 ou utiliser PhantomBuster pour Facebook')
     }
     if (msg.includes('timeout')) {
         tips.push('Augmenter le timeout ou réduire maxPosts pour accélérer le scraping Facebook')
     }
     if (tips.length === 0) {
-        tips.push('Erreur inattendue — voir le champ "error" pour plus de détails')
+        tips.push('Erreur inattendue : voir le champ "error" pour plus de détails')
         tips.push('Tester avec platform=instagram ou tiktok pour vérifier que les clés fonctionnent')
     }
     return tips

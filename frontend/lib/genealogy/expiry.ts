@@ -2,7 +2,7 @@ import type { DocType } from './types'
 
 /**
  * ═══════════════════════════════════════════════════════════════
- * SOURCE UNIQUE DE VÉRITÉ — Expiration des documents généalogiques
+ * SOURCE UNIQUE DE VÉRITÉ : Expiration des documents généalogiques
  * ═══════════════════════════════════════════════════════════════
  * Avant : 3 systèmes divergeaient (engine = 92j pour tout ; cron =
  * vocabulaire `acte_naissance`/`casier_judiciaire` qui ne matchait

@@ -8,7 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // DELETE /api/admin/2fa/disable
-// Body: { code: "123456" } — nécessite un code valide pour désactiver
+// Body: { code: "123456" } : nécessite un code valide pour désactiver
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

@@ -2,7 +2,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 
 export const DEFAULT_FA: ServiceLandingContent = {
     hero_badge: "Consultation Fa & Racines",
-    hero_title: "Rencontrez un Bokonon — la sagesse du Fa, dans un cadre organisé",
+    hero_title: "Rencontrez un Bokonon : la sagesse du Fa, dans un cadre organisé",
     hero_subtitle: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un prêtre du Fa reconnu, en présentiel au Bénin ou en visioconférence.",
     hero_chips: ["Bokonon reconnu", "Présentiel ou visio", "Cadre contractuel clair", "Organisation de bout en bout"],
     hero_image: "/assets/icones/icone_Consultation_Fa_Racines.png",
@@ -49,11 +49,11 @@ export const DEFAULT_FA: ServiceLandingContent = {
     features_intro: "Un accompagnement complet, en présentiel comme à distance.",
     features: [
         "Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté",
-        "Présentiel — accueil à l'arrivée et accompagnement sur place",
-        "Présentiel — prise de rendez-vous avec le prêtre Fa et coordination complète",
-        "Présentiel — réservation d'hôtel et change de monnaie sur place",
-        "Visio — organisation de la séance à distance et liaison avec le Bokonon",
-        "Visio — assistance et veille technique pendant toute la consultation",
+        "Présentiel : accueil à l'arrivée et accompagnement sur place",
+        "Présentiel : prise de rendez-vous avec le prêtre Fa et coordination complète",
+        "Présentiel : réservation d'hôtel et change de monnaie sur place",
+        "Visio : organisation de la séance à distance et liaison avec le Bokonon",
+        "Visio : assistance et veille technique pendant toute la consultation",
         "Cadre contractuel clair : un accord de mise en relation est signé avant le début de la procédure",
     ],
     features_note: "",
@@ -71,6 +71,6 @@ export const DEFAULT_FA: ServiceLandingContent = {
     ],
 
     final_title: "La sagesse du Fa, dans les meilleures conditions.",
-    final_text: "Réservez votre consultation — nous organisons tout, en présentiel comme à distance.",
+    final_text: "Réservez votre consultation : nous organisons tout, en présentiel comme à distance.",
     final_note: "Cadre contractuel clair · présentiel ou visio.",
 }

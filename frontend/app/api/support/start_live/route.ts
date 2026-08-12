@@ -27,7 +27,7 @@ export async function POST(request: Request) {
                 nom: nom.trim(),
                 prenom: '',
                 email: (email || 'anonyme@livechat.com').toLowerCase().trim(),
- sujet: `Live Chat — ${nom.trim()}`,
+ sujet: `Live Chat : ${nom.trim()}`,
                 message: question.trim(),
                 type: 'support',
                 lu: false,
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
             });
 
         if (chatError) {
-            // Table chat_messages manquante — retourner quand même le sessionId
+            // Table chat_messages manquante : retourner quand même le sessionId
             // Le message sera stocké dans `messages.message` comme fallback
             console.error('[start_live] chat_messages error (table missing?):', chatError.message);
         }

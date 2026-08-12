@@ -10,7 +10,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-// GET /api/testimonials — fetch all approved testimonials for public display
+// GET /api/testimonials : fetch all approved testimonials for public display
 export async function GET() {
     try {
         const supabase = getSupabase();
@@ -55,7 +55,7 @@ export async function GET() {
     }
 }
 
-// POST /api/testimonials — public submission from frontend
+// POST /api/testimonials : public submission from frontend
 export async function POST(request: NextRequest) {
     const trop = guardPublic(request, 'testimonials', PUBLIC_FORM_LIMIT)
     if (trop) return trop

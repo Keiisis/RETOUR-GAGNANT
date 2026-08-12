@@ -40,7 +40,7 @@ async function callGroq(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// PASS 1 — Analyse structurelle & quantitative
+// PASS 1 : Analyse structurelle & quantitative
 // ═══════════════════════════════════════════════════════════════════
 const PASS1_SYSTEM = `Tu es un analyste quantitatif expert en marketing digital, copywriting viral et community management africain.
 Tu reçois des publications de réseaux sociaux. Ton rôle : extraire des METRIQUES PRECISES, des PATTERNS STRUCTURELS et des SCORES CHIFFRES.
@@ -95,7 +95,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure :
 }`
 
 // ═══════════════════════════════════════════════════════════════════
-// PASS 2 — Analyse stratégique & créative
+// PASS 2 : Analyse stratégique & créative
 // ═══════════════════════════════════════════════════════════════════
 const PASS2_SYSTEM = `Tu es un stratège marketing digital expert en psychologie d'audience, positionnement concurrentiel et copywriting viral pour l'Afrique de l'Ouest.
 
@@ -151,7 +151,7 @@ Retourne UNIQUEMENT un JSON valide :
 }`
 
 // ═══════════════════════════════════════════════════════════════════
-// Sanitization — robustesse contre les sorties Groq imprévisibles
+// Sanitization : robustesse contre les sorties Groq imprévisibles
 // ═══════════════════════════════════════════════════════════════════
 function clamp(v: unknown, min: number, max: number): number {
     const n = Number(v)
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
         const ctx = `${platform ? `Plateforme: ${platform}` : ''}${profile_url ? ` | Profil: ${profile_url}` : ''}`
 
         // ── PASS 1 : Structurel & Quantitatif ───────────────────
-        console.log(`[analyze-style] Pass 1 — structurel...`)
+        console.log(`[analyze-style] Pass 1 : structurel...`)
         const raw1 = await callGroq(
             PASS1_SYSTEM,
             `${ctx ? `${ctx}\n\n` : ''}Analyse ces publications :\n\n---\n${trimmedSamples}\n---\n\nRetourne l'analyse structurelle JSON.`,
@@ -323,13 +323,13 @@ export async function POST(request: NextRequest) {
         let parsed1: Record<string, unknown>
         try { parsed1 = JSON.parse(raw1) } catch {
             console.warn('[analyze-style] Pass 1 JSON parse failed:', raw1?.slice(0, 200))
-            return NextResponse.json({ error: 'Analyse échouée — réessayez' }, { status: 500 })
+            return NextResponse.json({ error: 'Analyse échouée : réessayez' }, { status: 500 })
         }
 
         const pass1 = sanitizePass1(parsed1)
 
         // ── PASS 2 : Stratégique & Créatif ──────────────────────
-        console.log(`[analyze-style] Pass 2 — stratégique...`)
+        console.log(`[analyze-style] Pass 2 : stratégique...`)
         let pass2
         try {
             const raw2 = await callGroq(
@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
             call_to_action_style: pass1.content_blueprint.cta_formulas.join(' / '),
         }
 
-        console.log(`[analyze-style]  Deep Style DNA — score global: ${scores.overall}/100`)
+        console.log(`[analyze-style]  Deep Style DNA : score global: ${scores.overall}/100`)
         return NextResponse.json({ success: true, analysis, platform, profile_url })
     } catch (err) {
         console.error('[analyze-style] Error:', err)

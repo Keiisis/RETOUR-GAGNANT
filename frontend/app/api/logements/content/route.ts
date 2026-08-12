@@ -9,13 +9,13 @@ const supabase = createClient(
 
 const EMPTY = { stats: [], temoignages: [], faq: [], rarete_active: false, rarete_texte: '' }
 
-// GET — contenu marketing (public).
+// GET : contenu marketing (public).
 export async function GET() {
     const { data } = await supabase.from('logement_content').select('*').eq('id', 'main').maybeSingle()
     return NextResponse.json({ content: data || EMPTY })
 }
 
-// PATCH — mise à jour (admin). { stats?, temoignages?, faq?, rarete_active?, rarete_texte? }
+// PATCH : mise à jour (admin). { stats?, temoignages?, faq?, rarete_active?, rarete_texte? }
 export async function PATCH(request: NextRequest) {
     const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!

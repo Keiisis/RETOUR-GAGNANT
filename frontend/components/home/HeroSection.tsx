@@ -7,7 +7,7 @@ import { useTranslation, T } from "@/lib/translation";
 import { supabase } from "@/lib/supabase";
 
 /**
- * Hero — vidéo plein écran (direction d'origine conservée). Seule la
+ * Hero : vidéo plein écran (direction d'origine conservée). Seule la
  * typographie évolue : titre en Fraunces, corps en Geist. Titre/sous-titre/
  * vidéo restent éditables via `settings` (Supabase).
  */

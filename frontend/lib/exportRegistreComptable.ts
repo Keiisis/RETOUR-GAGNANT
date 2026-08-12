@@ -1,12 +1,12 @@
 /**
- * Export Registre Comptable Mensuel Agent — Format identique à Gestion_Factures_RGB_2026.xlsx
+ * Export Registre Comptable Mensuel Agent : Format identique à Gestion_Factures_RGB_2026.xlsx
  *
  * Structure par feuille mensuelle :
  *   - En-tête RGB + IFU/RCCM
  *   - Paramètre TVA configurable
- *   - SECTION 1 — RECETTES (fond vert) avec sous-total + ventilation catégorie
- *   - SECTION 2 — DÉPENSES (fond rouge) avec sous-total + ventilation catégorie
- *   - SECTION 3 — BILAN FINANCIER avec TVA nette, résultat, marge
+ *   - SECTION 1 : RECETTES (fond vert) avec sous-total + ventilation catégorie
+ *   - SECTION 2 : DÉPENSES (fond rouge) avec sous-total + ventilation catégorie
+ *   - SECTION 3 : BILAN FINANCIER avec TVA nette, résultat, marge
  *   - Rappels légaux
  */
 import * as ExcelJS from 'exceljs'
@@ -164,7 +164,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
 
     // ── ROW 1 : Titre ────────────────────────────────────────
     mergeAndStyle(ws, r, 1, COLS,
-        `RETOUR GAGNANT BENIN  —  REGISTRE COMPTABLE MENSUEL  —  ${moisLabel.toUpperCase()}`,
+        `RETOUR GAGNANT BENIN : REGISTRE COMPTABLE MENSUEL : ${moisLabel.toUpperCase()}`,
         C.navy, { bold: true, color: { argb: C.gold }, size: 12 })
     setRowHeight(ws, r, 30)
     r++
@@ -203,18 +203,18 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     ws.getCell(r, 5).alignment = { vertical: 'middle', horizontal: 'center' }
     ws.getCell(r, 5).border = thinBorder
     ws.mergeCells(r, 6, r, COLS)
-    ws.getCell(r, 6).value = 'Modifier si exoneration TVA (mettre 0) — ce parametre affecte tous les calculs automatiques du mois'
+    ws.getCell(r, 6).value = 'Modifier si exoneration TVA (mettre 0) : ce parametre affecte tous les calculs automatiques du mois'
     ws.getCell(r, 6).fill = fill(C.lightGray)
     ws.getCell(r, 6).font = font({ italic: true, color: { argb: C.gray }, size: 8 })
     r++
     r++ // blank
 
     // ═══════════════════════════════════════════════════════════
-    // SECTION 1 — RECETTES
+    // SECTION 1 : RECETTES
     // ═══════════════════════════════════════════════════════════
     const SEC1_HEADER = r
     mergeAndStyle(ws, r, 1, COLS,
-        'SECTION 1  —  RECETTES  (ENTREES DE TRESORERIE)',
+        'SECTION 1 : RECETTES  (ENTREES DE TRESORERIE)',
         C.green, { bold: true, color: { argb: C.white }, size: 11 })
     setRowHeight(ws, r, 26)
     r++
@@ -279,7 +279,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
             row.getCell(10).value = rec.statut || ''
             row.getCell(10).fill = fill(C.lightGold)
         } else {
-            // Empty row — formulas still present
+            // Empty row : formulas still present
             for (let c = 2; c <= 6; c++) {
                 row.getCell(c).fill = fill(C.lightGold)
                 row.getCell(c).border = thinBorder
@@ -406,10 +406,10 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     r += 2 // blanks
 
     // ═══════════════════════════════════════════════════════════
-    // SECTION 2 — DÉPENSES
+    // SECTION 2 : DÉPENSES
     // ═══════════════════════════════════════════════════════════
     mergeAndStyle(ws, r, 1, COLS,
-        'SECTION 2  —  DEPENSES  (SORTIES DE TRESORERIE)',
+        'SECTION 2 : DEPENSES  (SORTIES DE TRESORERIE)',
         C.red, { bold: true, color: { argb: C.white }, size: 11 })
     setRowHeight(ws, r, 26)
     r++
@@ -578,10 +578,10 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     r += 2 // blanks
 
     // ═══════════════════════════════════════════════════════════
-    // SECTION 3 — BILAN FINANCIER DU MOIS
+    // SECTION 3 : BILAN FINANCIER DU MOIS
     // ═══════════════════════════════════════════════════════════
     mergeAndStyle(ws, r, 1, COLS,
-        'SECTION 3  —  BILAN FINANCIER DU MOIS',
+        'SECTION 3 : BILAN FINANCIER DU MOIS',
         C.navy, { bold: true, color: { argb: C.gold }, size: 11 })
     setRowHeight(ws, r, 26)
     r++
@@ -625,7 +625,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     // Verdict automatique
     r++
     ws.mergeCells(r, 1, r, COLS)
-    ws.getCell(r, 1).value = { formula: `IF(G${recTotalRow}-G${depTotalRow}>0,"EXCEDENT  —  Finances saines, resultat positif sur le mois","DEFICIT  —  Attention, les depenses depassent les recettes ce mois-ci")` }
+    ws.getCell(r, 1).value = { formula: `IF(G${recTotalRow}-G${depTotalRow}>0,"EXCEDENT : Finances saines, resultat positif sur le mois","DEFICIT : Attention, les depenses depassent les recettes ce mois-ci")` }
     ws.getCell(r, 1).font = font({ bold: true, size: 10, color: { argb: C.navy } })
     ws.getCell(r, 1).fill = fill(C.lightGold)
     ws.getCell(r, 1).alignment = { horizontal: 'center', vertical: 'middle' }
@@ -641,11 +641,11 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     r++
 
     const rappels = [
-        `TVA Benin 18% — Declaration mensuelle avant le 10 du mois suivant (DGI)`,
+        `TVA Benin 18% : Declaration mensuelle avant le 10 du mois suivant (DGI)`,
         `Numerotation sequentielle sans rupture ni doublon (Code General des Impots Art. 256)`,
         `Mentions obligatoires : IFU emetteur, IFU client (si assujetti), date, description, montant HT, TVA, TTC`,
         `Conservation des originaux : 10 ans minimum (Art. 36 Livre de Procedures Fiscales)`,
-        `Facture obligatoire des 10 000 FCFA (Art. 256 CGI) — En dessous, ticket de caisse possible`,
+        `Facture obligatoire des 10 000 FCFA (Art. 256 CGI) : En dessous, ticket de caisse possible`,
     ]
     rappels.forEach(txt => {
         ws.mergeCells(r, 1, r, COLS)
@@ -658,7 +658,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
 
     // Print setup
     ws.pageSetup.printTitlesRow = `1:${SEC1_HEADER}`
-    ws.headerFooter.oddHeader = `&C&B&10&K0D2B4E${COMPANY.name} — Registre ${moisLabel}`
+    ws.headerFooter.oddHeader = `&C&B&10&K0D2B4E${COMPANY.name} : Registre ${moisLabel}`
     ws.headerFooter.oddFooter = `&L&8&KBBBBBBCONFIDENTIEL&C&8Genere le ${new Date().toLocaleDateString('fr-FR')}&R&8Page &P / &N`
 
     return { recTotalRow, depTotalRow }

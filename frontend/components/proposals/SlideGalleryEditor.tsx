@@ -47,7 +47,7 @@ export default function SlideGalleryEditor({
         <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-950/50 p-3 space-y-2">
             <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Galerie du slide <span className="text-slate-600 normal-case font-medium tracking-normal">({images.length} image{images.length > 1 ? 's' : ''} — chacune avec sa légende)</span>
+                    Galerie du slide <span className="text-slate-600 normal-case font-medium tracking-normal">({images.length} image{images.length > 1 ? 's' : ''} : chacune avec sa légende)</span>
                 </p>
             </div>
 

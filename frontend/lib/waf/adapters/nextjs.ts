@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔌  @waf-adapters/nextjs — Helpers Next.js (App Router)
+// 🔌  @waf-adapters/nextjs : Helpers Next.js (App Router)
 // ══════════════════════════════════════════════════════════════
 //
 // COUCHE JETABLE. Relie le core portable (body-scanner, ownership)
@@ -27,11 +27,11 @@ function wafReject(message: string, status: number): NextResponse {
 }
 
 // ══════════════════════════════════════════════════════════════
-// #2 — Analyse de body (prototype pollution / RCE / SSRF / DoS)
+// #2 : Analyse de body (prototype pollution / RCE / SSRF / DoS)
 // ══════════════════════════════════════════════════════════════
 
 export interface ScanRequestBodyResult {
-    /** Body parsé — à RÉUTILISER dans la route (le stream est consommé). */
+    /** Body parsé : à RÉUTILISER dans la route (le stream est consommé). */
     body: unknown
     verdict: BodyScanVerdict
     /** Réponse à retourner immédiatement si la requête est dangereuse, sinon null. */
@@ -48,7 +48,7 @@ export interface ScanRequestBodyOptions {
 
 /**
  * Lit le corps JSON d'une requête Next.js, le scanne, et renvoie :
- *   - `body`      : le payload parsé (à réutiliser — NE PAS refaire req.json())
+ *   - `body`      : le payload parsé (à réutiliser : NE PAS refaire req.json())
  *   - `verdict`   : résultat de l'analyse structurelle
  *   - `rejection` : NextResponse 400 prête si dangereux, sinon null
  *
@@ -86,7 +86,7 @@ export async function scanRequestBody(
 }
 
 // ══════════════════════════════════════════════════════════════
-// #1 — Autorisation au niveau objet (anti-IDOR/BOLA)
+// #1 : Autorisation au niveau objet (anti-IDOR/BOLA)
 // ══════════════════════════════════════════════════════════════
 
 export interface AssertOwnershipParams {
@@ -100,7 +100,7 @@ export interface AssertOwnershipParams {
     /**
      * Mode de réponse en cas d'accès refusé :
      *   - 'block'   (défaut) : 403 JSON
-     *   - 'deceive' : 404 (ressource "inexistante") — ne révèle pas qu'elle existe
+     *   - 'deceive' : 404 (ressource "inexistante") : ne révèle pas qu'elle existe
      */
     rejectMode?: 'block' | 'deceive'
 }

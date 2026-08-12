@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import { useTheme } from '@/lib/theme/ThemeContext';
 
 /* ══════════════════════════════════════════════════════════════════
-   PLAN DE COMPOSITION DE FAMILLE PROFESSIONNEL — LAYOUT HIÉRARCHIQUE (6 GÉNÉRATIONS)
+   PLAN DE COMPOSITION DE FAMILLE PROFESSIONNEL : LAYOUT HIÉRARCHIQUE (6 GÉNÉRATIONS)
    
    Architecture de rendu :
    - Chaque génération est une ligne horizontale
@@ -254,7 +254,7 @@ export default function FamilyTree({
 
 
   /* ═══════════════════════════════════════════════════════════════
-     LAYOUT ENGINE — Positionnement hiérarchique (6 Générations)
+     LAYOUT ENGINE : Positionnement hiérarchique (6 Générations)
      
      Génération 0 (haut)  : Trisaïeuls (Parents des arrière-grands-parents)
      Génération 1         : Arrière-grands-parents

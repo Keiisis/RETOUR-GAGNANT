@@ -7,7 +7,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-// GET — liste des sponsors (publique: is_active=true, admin: tous)
+// GET : liste des sponsors (publique: is_active=true, admin: tous)
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST — créer un sponsor (admin)
+// POST : créer un sponsor (admin)
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

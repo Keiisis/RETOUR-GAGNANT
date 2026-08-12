@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Rafraîchissement des taux de change réels
+//  CRON : Rafraîchissement des taux de change réels
 // ──────────────────────────────────────────────────────────────
 // S'exécute chaque nuit via Vercel Cron (voir vercel.json).
 //
@@ -7,7 +7,7 @@
 // Met à jour la table `currencies.exchange_rate_to_base` (= XOF par 1 unité
 // de la devise) pour toutes les devises présentes, SAUF :
 //   • XOF (devise de base, toujours 1)
-//   • EUR (parité FIXE 655,957 — jamais dépendante d'une API)
+//   • EUR (parité FIXE 655,957 : jamais dépendante d'une API)
 //
 // Robustesse : si l'API échoue ou renvoie une valeur aberrante, on NE touche
 // PAS la ligne (on conserve la dernière valeur connue/manuelle). Pas de

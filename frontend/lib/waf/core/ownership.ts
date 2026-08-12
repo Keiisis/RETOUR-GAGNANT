@@ -1,8 +1,8 @@
 // ══════════════════════════════════════════════════════════════
-// 🔐  @waf-core/ownership — Autorisation au niveau objet (anti-IDOR/BOLA)
+// 🔐  @waf-core/ownership : Autorisation au niveau objet (anti-IDOR/BOLA)
 // ══════════════════════════════════════════════════════════════
 //
-// PORTABLE — Zéro dépendance datastore. Le cœur ne sait PAS comment
+// PORTABLE : Zéro dépendance datastore. Le cœur ne sait PAS comment
 // on stocke les ressources : il reçoit un "resolver" injecté qui
 // répond à une seule question : « qui possède cette ressource ? ».
 //
@@ -81,7 +81,7 @@ export interface VerifyOwnershipOptions {
 
 /**
  * Vérifie qu'un utilisateur a le droit de toucher une ressource précise.
- * Pur : aucune I/O directe — toute I/O passe par le resolver injecté.
+ * Pur : aucune I/O directe : toute I/O passe par le resolver injecté.
  * Ne lève jamais : en cas d'erreur resolver, retourne un refus explicite.
  */
 export async function verifyOwnership(
@@ -115,7 +115,7 @@ export async function verifyOwnership(
         // fail-closed sur erreur resolver : on refuse plutôt que de fuir
         return {
             allowed: false, decision: 'not_found_denied', actualOwnerId: null,
-            detail: `Erreur resolver ownership (${e instanceof Error ? e.message : 'inconnue'}) — accès refusé par sécurité`,
+            detail: `Erreur resolver ownership (${e instanceof Error ? e.message : 'inconnue'}) : accès refusé par sécurité`,
         }
     }
 
@@ -124,12 +124,12 @@ export async function verifyOwnership(
         if (missingPolicy === 'allow') {
             return {
                 allowed: true, decision: 'not_found_allowed', actualOwnerId: null,
-                detail: `Ressource ${query.resourceType}#${query.resourceId} introuvable — policy 'allow'`,
+                detail: `Ressource ${query.resourceType}#${query.resourceId} introuvable : policy 'allow'`,
             }
         }
         return {
             allowed: false, decision: 'not_found_denied', actualOwnerId: null,
-            detail: `Ressource ${query.resourceType}#${query.resourceId} introuvable — policy 'deny'`,
+            detail: `Ressource ${query.resourceType}#${query.resourceId} introuvable : policy 'deny'`,
         }
     }
 
@@ -141,7 +141,7 @@ export async function verifyOwnership(
         }
     }
 
-    // 5. IDOR/BOLA — l'utilisateur demande la ressource d'autrui
+    // 5. IDOR/BOLA : l'utilisateur demande la ressource d'autrui
     return {
         allowed: false, decision: 'foreign', actualOwnerId: resolution.ownerId,
         detail: `IDOR/BOLA : user ${query.userId} demande ${query.resourceType}#${query.resourceId} appartenant à ${resolution.ownerId}`,

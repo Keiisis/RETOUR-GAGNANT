@@ -112,7 +112,7 @@ export default function ChatAssistant() {
     const sendVoiceMessage = useCallback(async (transcript: string, duration: number) => {
         if (!transcript.trim()) return;
 
-        const voiceContent = ` [Message vocal — ${duration}s] : ${transcript.trim()}`;
+        const voiceContent = ` [Message vocal : ${duration}s] : ${transcript.trim()}`;
 
         setInput("");
         setMessages((prev) => [...prev, { role: "user", content: voiceContent }]);
@@ -483,7 +483,7 @@ export default function ChatAssistant() {
                                                 ))}
                                             </div>
                                             <span className="text-[11px] font-bold text-[#E8112D] uppercase tracking-widest">
-                                                {recordingDuration}s — <T>En écoute...</T>
+                                                {recordingDuration}s : <T>En écoute...</T>
                                             </span>
                                         </div>
                                     )}

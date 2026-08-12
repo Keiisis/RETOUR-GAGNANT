@@ -42,7 +42,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 
-        // Vérifier que la commande est bien une commande FedaPay (non falsifiable — défini côté serveur)
+        // Vérifier que la commande est bien une commande FedaPay (non falsifiable : défini côté serveur)
         // Empêche d'utiliser cet endpoint pour manipuler des commandes d'autres gateways
         if (order.payment_method !== 'fedapay') {
             console.warn(`[FedaPay Webhook] Tentative sur commande ${orderId} (méthode: ${order.payment_method})`)
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
                     return NextResponse.json({ ok: false, message: 'Vérification FedaPay échouée' })
                 }
 
-                // Vérification du montant — FedaPay retourne le montant en XOF directement (zero-decimal)
+                // Vérification du montant : FedaPay retourne le montant en XOF directement (zero-decimal)
                 const txAmount = txObject?.amount
                 if (txAmount !== undefined && txAmount !== null) {
                     // XOF est zero-decimal : 10 000 XOF = 10 000 (pas de centimes)
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
                 }
             } else {
                 // Pas de clé secrète → impossible de vérifier → refus par sécurité
-                console.error('[FedaPay Webhook] Clé secrète manquante — vérification impossible')
+                console.error('[FedaPay Webhook] Clé secrète manquante : vérification impossible')
                 return NextResponse.json({ error: 'Configuration FedaPay manquante' }, { status: 503 })
             }
 
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
                 .maybeSingle()
 
             if (existingTx) {
-                console.error(`[FedaPay Webhook] Transaction ${transactionId} déjà utilisée — commande ${existingTx.id}`)
+                console.error(`[FedaPay Webhook] Transaction ${transactionId} déjà utilisée : commande ${existingTx.id}`)
                 // Garde atomique : ne pas écraser une commande déjà complétée (race condition)
                 await supabase
                     .from('orders')
@@ -185,7 +185,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ ok: true, message: 'Remboursement enregistré' })
         }
 
-        // declined / canceled — garde atomique : ne pas écraser une commande déjà complétée
+        // declined / canceled : garde atomique : ne pas écraser une commande déjà complétée
         await supabase
             .from('orders')
             .update({ payment_status: 'failed', transaction_id: transactionId })

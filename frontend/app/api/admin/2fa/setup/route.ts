@@ -11,7 +11,7 @@ const APP_NAME    = 'Retour Gagnant Admin'
 
 // POST /api/admin/2fa/setup
 // Génère un secret TOTP + QR code pour l'admin connecté
-// Ne l'active PAS encore — nécessite une vérification via /verify
+// Ne l'active PAS encore : nécessite une vérification via /verify
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

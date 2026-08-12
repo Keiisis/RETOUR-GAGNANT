@@ -58,7 +58,7 @@ select
     'Selon l''auto-école choisie',
     '#008751',
     'shield',
-    '/assets/icones/Permis de Conduire Service.png',
+    '/assets/icones/permis-conduire.png',
     true,
     45
 where not exists (select 1 from public.services where slug = 'permis-conduire');

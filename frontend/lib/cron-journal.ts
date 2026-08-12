@@ -3,7 +3,7 @@
 //
 //  Problème résolu : « est-ce que tous les crons fonctionnent ? » n'avait
 //  aucune réponse consultable. Un cron muet, un cron qui plante et un cron
-//  qui n'est même pas déclaré se ressemblent tous — il fallait ouvrir les
+//  qui n'est même pas déclaré se ressemblent tous : il fallait ouvrir les
 //  journaux Vercel pour trancher, quand on y pense.
 //
 //  Chaque exécution laisse désormais une ligne : quand, combien de temps,

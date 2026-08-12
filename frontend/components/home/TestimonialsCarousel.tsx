@@ -140,7 +140,7 @@ function SubmissionForm() {
                     const { data: { publicUrl } } = supabase.storage.from('testimonials').getPublicUrl(fileName);
                     photoUrl = publicUrl;
                 }
-                // Photo upload failure is non-blocking — testimonial still submits
+                // Photo upload failure is non-blocking : testimonial still submits
             }
 
             const res = await fetch('/api/testimonials', {

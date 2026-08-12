@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  SIGNATURE EN LIGNE — page publique accessible via lien sécurisé
+//  SIGNATURE EN LIGNE : page publique accessible via lien sécurisé
 //  Aucun compte requis. Le document A4 exact est affiché (iframe
 //  du template officiel), le client signe en saisissant son nom
 //  complet + consentement → statut « signé » automatique.
@@ -120,7 +120,7 @@ export default function ContractSignPage({ params }: { params: Promise<{ token: 
                             {justSigned ? <T>Merci ! Votre contrat est signé.</T> : <T>Ce contrat a déjà été signé.</T>}
                         </p>
                         <p className="text-sm text-emerald-700/80 mt-1">
-                            {contract.signed_name} — {contract.signed_at ? new Date(contract.signed_at).toLocaleString('fr-FR') : ''}
+                            {contract.signed_name} : {contract.signed_at ? new Date(contract.signed_at).toLocaleString('fr-FR') : ''}
                         </p>
                         <p className="text-xs text-gray-500 mt-3"><T>Un exemplaire signé est disponible en téléchargement ci-dessous. Notre équipe vous recontacte très vite.</T></p>
                     </motion.div>
@@ -180,7 +180,7 @@ export default function ContractSignPage({ params }: { params: Promise<{ token: 
 
                 <p className="text-center text-[11px] text-gray-400 mt-8 leading-relaxed">
                     <T>Signature horodatée et scellée par empreinte cryptographique SHA-256.</T><br />
-                    RETOUR GAGNANT BÉNIN — RCCM RB/COT/26 B 42001 — IFU 3202644573981
+                    RETOUR GAGNANT BÉNIN : RCCM RB/COT/26 B 42001 : IFU 3202644573981
                 </p>
             </div>
         </div>

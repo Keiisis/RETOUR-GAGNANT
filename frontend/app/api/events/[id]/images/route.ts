@@ -10,7 +10,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseKey)
 }
 
-// POST /api/events/[id]/images — add image to gallery
+// POST /api/events/[id]/images : add image to gallery
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(req, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 }
 
-// DELETE /api/events/[id]/images?image_id=xxx — remove image
+// DELETE /api/events/[id]/images?image_id=xxx : remove image
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(req, 'admin')
     if (!auth.authenticated) return auth.error!

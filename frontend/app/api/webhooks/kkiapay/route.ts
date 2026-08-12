@@ -10,10 +10,10 @@ import { confirmDocumentPayment } from '@/lib/document-payment'
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ══════════════════════════════════════════════════════════════
-   FILET DE SÉCURITÉ NATIONALITÉ — paiement confirmé côté serveur.
+   FILET DE SÉCURITÉ NATIONALITÉ : paiement confirmé côté serveur.
    Le widget du formulaire passe `data: {"context":"nationality","email":…}`.
    Si le navigateur du client meurt après le paiement (fiche jamais créée par
-   le formulaire — incident 2026-06), ce webhook :
+   le formulaire : incident 2026-06), ce webhook :
      1. vérifie la transaction auprès de Kkiapay (anti-fraude),
      2. crée une fiche minimale (identité récupérée depuis le lead
         `eligibility_results` capturé AVANT paiement) marquée
@@ -63,7 +63,7 @@ async function handleNationalityPayment(
 ): Promise<NextResponse> {
     // Statuts non finaux / échecs : rien à faire (aucune fiche à marquer)
     if (status !== 'SUCCESS' && status !== 'TRANSACTION_APPROVED') {
-        return NextResponse.json({ ok: true, message: 'Statut non finalisé — ignoré' })
+        return NextResponse.json({ ok: true, message: 'Statut non finalisé : ignoré' })
     }
 
     // Idempotence : fiche déjà présente (créée par le formulaire ou une
@@ -81,7 +81,7 @@ async function handleNationalityPayment(
     const verify = await verifyKkiapayTx(transactionId)
     if (!verify.ok) {
         console.warn(`[Kkiapay Webhook][nationality] transaction non confirmée: ${verify.status}`)
-        return NextResponse.json({ ok: true, message: 'Transaction non confirmée — ignorée' })
+        return NextResponse.json({ ok: true, message: 'Transaction non confirmée : ignorée' })
     }
 
     const email = String(widgetData.email || '').toLowerCase().trim()
@@ -90,12 +90,12 @@ async function handleNationalityPayment(
         await supabase.from('messages').insert([{
             nom: 'Webhook Kkiapay',
             email: 'contact@retourgagnantbenin.bj',
-            sujet: `Paiement nationalité NON IDENTIFIABLE — TX ${transactionId}`,
+            sujet: `Paiement nationalité NON IDENTIFIABLE : TX ${transactionId}`,
             message: `Un paiement nationalité a été confirmé par Kkiapay (transaction ${transactionId}, ${verify.amount ?? '?'} XOF) mais le webhook ne contient pas l'email du client. Retrouvez la transaction dans le tableau de bord Kkiapay et créez la fiche manuellement.`,
             type: 'nationality',
             lu: false,
         }])
-        return NextResponse.json({ ok: true, message: 'Paiement sans identité — équipe alertée' })
+        return NextResponse.json({ ok: true, message: 'Paiement sans identité : équipe alertée' })
     }
 
     // Identité depuis le lead capturé avant paiement (pré-inscription du formulaire)
@@ -123,8 +123,8 @@ async function handleNationalityPayment(
     if (c?.currency) currency = String(c.currency)
 
     const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
-    const note = `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement — le client n'a pas (encore) finalisé le formulaire. ` +
-        `Transaction ${transactionId} — encaissé ${verify.amount ?? '?'} XOF. ` +
+    const note = `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement : le client n'a pas (encore) finalisé le formulaire. ` +
+        `Transaction ${transactionId} : encaissé ${verify.amount ?? '?'} XOF. ` +
         `DOCUMENTS : si le formulaire n'aboutit pas, un lien de complément sera envoyé automatiquement au client (ou utilisez « Relancer (documents) »).`
 
     const { error: insErr } = await supabase.from('nationality_applications').insert([{
@@ -176,7 +176,7 @@ async function handleNationalityPayment(
     await supabase.from('messages').insert([{
         nom: `${prenom} ${nom}`.trim() || email,
         email, telephone,
-        sujet: `Demande de nationalité #${ref} (paiement confirmé — webhook)`,
+        sujet: `Demande de nationalité #${ref} (paiement confirmé : webhook)`,
         message: `Paiement nationalité confirmé côté serveur.\n\nClient: ${prenom} ${nom}\nEmail: ${email}\nRéférence: ${ref}\nMontant: ${amount} ${currency} (encaissé ${verify.amount ?? '?'} XOF)\nTransaction: ${transactionId}\n\n${note}`,
         type: 'nationality',
         lu: false,
@@ -246,7 +246,7 @@ export async function POST(request: Request) {
             && (status === 'SUCCESS' || status === 'TRANSACTION_APPROVED')) {
             const verify = await verifyKkiapayTx(String(transactionId))
             if (!verify.ok) {
-                return NextResponse.json({ ok: true, message: 'Transaction non confirmée — ignorée' })
+                return NextResponse.json({ ok: true, message: 'Transaction non confirmée : ignorée' })
             }
             try {
                 await fetch(`${SITE}/api/nationality/recherche-ancestrale`, {
@@ -283,7 +283,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 
-        // Vérifier que la commande est bien une commande Kkiapay (non falsifiable — défini côté serveur)
+        // Vérifier que la commande est bien une commande Kkiapay (non falsifiable : défini côté serveur)
         // Empêche d'utiliser cet endpoint pour manipuler des commandes d'autres gateways
         if (order.payment_method !== 'kkiapay') {
             console.warn(`[Kkiapay Webhook] Tentative sur commande ${orderId} (méthode: ${order.payment_method})`)
@@ -313,7 +313,7 @@ export async function POST(request: Request) {
                 ? 'https://api-sandbox.kkiapay.me'
                 : 'https://api.kkiapay.me'
 
-            // Server-side verification — le SDK officiel envoie les 3 headers
+            // Server-side verification : le SDK officiel envoie les 3 headers
             const verifyRes = await fetch(`${kkiapayBase}/api/v1/transactions/status`, {
                 method: 'POST',
                 headers: {
@@ -339,7 +339,7 @@ export async function POST(request: Request) {
                     .maybeSingle()
 
                 if (existingTx) {
-                    console.error(`[Kkiapay Webhook] Transaction ${transactionId} déjà utilisée — commande ${existingTx.id}`)
+                    console.error(`[Kkiapay Webhook] Transaction ${transactionId} déjà utilisée : commande ${existingTx.id}`)
                     return NextResponse.json({ error: 'Transaction déjà utilisée pour une autre commande' }, { status: 400 })
                 }
 
@@ -384,7 +384,7 @@ export async function POST(request: Request) {
             }
         }
 
-        // Payment failed — garde atomique : ne pas écraser une commande déjà complétée
+        // Payment failed : garde atomique : ne pas écraser une commande déjà complétée
         await supabase
             .from('orders')
             .update({ payment_status: 'failed', transaction_id: transactionId })

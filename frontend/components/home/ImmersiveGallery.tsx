@@ -65,7 +65,7 @@ export default function ImmersiveGallery() {
             });
     }, []);
 
-    // Hero slideshow timer — changes main image every 4 seconds
+    // Hero slideshow timer : changes main image every 4 seconds
     useEffect(() => {
         if (isPaused || images.length === 0) return;
         intervalRef.current = setInterval(() => {

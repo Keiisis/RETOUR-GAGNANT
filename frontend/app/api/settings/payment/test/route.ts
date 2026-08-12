@@ -57,7 +57,7 @@ export async function POST(request: Request) {
                         return NextResponse.json({ success: false, error: `Kkiapay: clés invalides ou non autorisées (${response.status})` })
                     }
                     if (response.status === 404) {
-                        return NextResponse.json({ success: false, error: `Kkiapay: endpoint introuvable — vérifiez le mode Sandbox/Production` })
+                        return NextResponse.json({ success: false, error: `Kkiapay: endpoint introuvable : vérifiez le mode Sandbox/Production` })
                     }
                     // Status 400 ou 500 avec un body = le serveur a reçu et traité la requête.
                     // Si les clés étaient invalides, on recevrait 401/403. Un 400 signifie que
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
                         : 'https://api.fedapay.com'
                     const env = isSandbox ? 'Sandbox' : 'Production'
 
-                    // GET /v1/customers — endpoint stable pour valider l'auth
+                    // GET /v1/customers : endpoint stable pour valider l'auth
                     // (GET /v1/transactions déprécié → 400 ; POST /v1/transactions/search → 404 en sandbox)
                     const response = await axios.get(`${apiUrl}/v1/customers?per_page=1`, {
                         headers: {
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
                     }
                     if (response.status === 403) {
                         // 403 = clé authentifiée mais permissions restreintes (compte neuf, plan limité)
-                        return NextResponse.json({ success: true, message: `FedaPay ${env}: clé valide (accès restreint — compte vérifié)` })
+                        return NextResponse.json({ success: true, message: `FedaPay ${env}: clé valide (accès restreint : compte vérifié)` })
                     }
                     if (response.status === 401) {
                         return NextResponse.json({ success: false, error: 'Clé secrète FedaPay invalide (401 Unauthorized)' })
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
                     const detail = body?.message || body?.error || (typeof body === 'string' ? body.slice(0, 150) : '')
                     return NextResponse.json({
                         success: false,
-                        error: `FedaPay: statut HTTP ${response.status}${detail ? ` — ${detail}` : ''} (vérifiez mode Sandbox/Production)`,
+                        error: `FedaPay: statut HTTP ${response.status}${detail ? ` : ${detail}` : ''} (vérifiez mode Sandbox/Production)`,
                     })
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Erreur réseau'
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
                     return NextResponse.json({ success: false, error: 'URL de redirection Zeyow manquante' })
                 }
 
-                // Zeyow est basé sur la redirection (pas de clé API) — on valide l'URL
+                // Zeyow est basé sur la redirection (pas de clé API) : on valide l'URL
                 let parsed: URL
                 try {
                     parsed = new URL(redirectUrl)
@@ -154,8 +154,8 @@ export async function POST(request: Request) {
                     }
                     return NextResponse.json({ success: false, error: `Zeyow: serveur en erreur (${response.status})` })
                 } catch {
-                    // HEAD peut être bloqué (CORS, firewall) — l'URL est syntaxiquement valide
-                    return NextResponse.json({ success: true, message: 'Zeyow URL valide (format correct — serveur non testé)' })
+                    // HEAD peut être bloqué (CORS, firewall) : l'URL est syntaxiquement valide
+                    return NextResponse.json({ success: true, message: 'Zeyow URL valide (format correct : serveur non testé)' })
                 }
             }
 
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
                     return NextResponse.json({ success: false, error: 'Clé secrète et clé publique Stripe requises' })
                 }
                 if (!secretKey.startsWith('sk_') || !publicKey.startsWith('pk_')) {
-                    return NextResponse.json({ success: false, error: 'Format invalide — sk_ pour la clé secrète, pk_ pour la clé publique' })
+                    return NextResponse.json({ success: false, error: 'Format invalide : sk_ pour la clé secrète, pk_ pour la clé publique' })
                 }
 
                 // Vérifier la cohérence entre la clé et le mode configuré
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
                     const currency = balance.available[0]?.currency?.toUpperCase() || '?'
                     return NextResponse.json({
                         success: true,
-                        message: `Stripe ${env} connectée — Devise principale: ${currency}`,
+                        message: `Stripe ${env} connectée : Devise principale: ${currency}`,
                     })
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Erreur'
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
                         return NextResponse.json({ success: false, error: 'PayPal: Client ID ou Client Secret invalide (401)' })
                     }
                     if (res.status === 400) {
-                        return NextResponse.json({ success: false, error: 'PayPal: requête invalide (400) — vérifiez les credentials' })
+                        return NextResponse.json({ success: false, error: 'PayPal: requête invalide (400) : vérifiez les credentials' })
                     }
                     return NextResponse.json({ success: false, error: `PayPal: réponse inattendue (status ${res.status})` })
                 } catch (err: unknown) {

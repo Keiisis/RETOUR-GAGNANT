@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf'
 import { LOGO_BASE64 } from './logoBase64'
 
 /* ══════════════════════════════════════════════════════════════════
-   FICHE D'ANALYSE DE DOSSIER — nationalité béninoise
+   FICHE D'ANALYSE DE DOSSIER : nationalité béninoise
 
    Document officiel envoyé au client pour lui indiquer les pièces à
    régulariser. Mise en page pro : bandeau vert profond (charte), liseré
@@ -77,7 +77,7 @@ function badgeColor(statut: string): [number, number, number] {
 // hors cp1252 que les polices de base jsPDF ne savent pas rendre.
 const safe = (t: string): string =>
     (t || '')
-        .replace(/[—–]/g, '-')
+        .replace(/[-–]/g, '-')
         .replace(/['']/g, "'")
         .replace(/[""]/g, '"')
         .replace(/…/g, '...')
@@ -177,7 +177,7 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
         y += h + 7
     }
 
-    // ── SECTION 1 — DIAGNOSTIC ──────────────────────────────────────
+    // ── SECTION 1 : DIAGNOSTIC ──────────────────────────────────────
     const heading = (num: string, title: string) => {
         y = ensure(14, y)
         pdf.setFillColor(...CO.green); pdf.rect(ML, y - 3.5, 1.8, 6, 'F')
@@ -198,7 +198,7 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
         y += h + 8
     }
 
-    // ── SECTION 2 — TABLEAU DES PIÈCES ──────────────────────────────
+    // ── SECTION 2 : TABLEAU DES PIÈCES ──────────────────────────────
     heading('2', data.piecesTitle || 'DETAIL DES PIECES A REGULARISER')
     const useFiliation = data.piecesColMode === 'filiation'
     const cols = useFiliation
@@ -244,7 +244,7 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
     pdf.setDrawColor(...CO.green); pdf.setLineWidth(0.6); pdf.line(ML, y, ML + CW, y)
     y += 9
 
-    // ── SECTION 3 — PROCHAINES ÉTAPES ───────────────────────────────
+    // ── SECTION 3 : PROCHAINES ÉTAPES ───────────────────────────────
     if (data.nextStepsBoxes?.length || data.nextStepsIntro) {
         heading('3', data.nextStepsTitle || 'PROCHAINES ETAPES')
         if (data.nextStepsIntro) {

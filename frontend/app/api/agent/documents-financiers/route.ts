@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  DEVIS / FACTURES / AVOIRS — mutation serveur (service key)
+//  DEVIS / FACTURES / AVOIRS : mutation serveur (service key)
 //  Les UPDATE/DELETE directs depuis le navigateur sont bloqués par
 //  RLS (0 ligne modifiée, sans erreur → faux succès puis retour à
 //  l'état d'origine au rafraîchissement). On passe donc par cette

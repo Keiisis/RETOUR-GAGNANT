@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — SUPERVISION DES RENDEZ-VOUS
+//  ADMIN : SUPERVISION DES RENDEZ-VOUS
 //
 //  L'admin n'avait AUCUNE vue des rendez-vous : seul l'agent les
 //  voyait dans son agenda. Un client (ou un visiteur) prenait RDV et la
@@ -174,7 +174,7 @@ export default function AdminRendezVousPage() {
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
                                 </div>
 
-                                {/* Actions — masquées si déjà annulé/terminé */}
+                                {/* Actions : masquées si déjà annulé/terminé */}
                                 {rdv.statut !== 'annule' && rdv.statut !== 'termine' && (
                                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
                                         {rdv.statut !== 'confirme' && (

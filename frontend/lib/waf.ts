@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🛡️ lib/waf.ts — WAF Ultime · Défense Active · Cyber-Déception
+// 🛡️ lib/waf.ts : WAF Ultime · Défense Active · Cyber-Déception
 // ══════════════════════════════════════════════════════════════
 
 export type { ThreatType, WafVerdict, RuleMatch, CustomRule } from './waf/engine'
@@ -32,7 +32,7 @@ export type { CanaryCheckResult, CanaryToken, CanaryTokenType } from './waf/cana
 export { identifierRobot, robotRevendique, ipDansCidr, recupererPlagesOfficielles, SOURCES_PLAGES } from './waf/crawlers'
 export type { VerdictRobot } from './waf/crawlers'
 
-// ── CORE PORTABLE (extractible — zéro dépendance framework) ──
+// ── CORE PORTABLE (extractible : zéro dépendance framework) ──
 // Ces modules forment le cœur du WAF-SDK vendable. Ils ne dépendent
 // NI de Next.js NI de Supabase. Voir lib/waf/core/README.md.
 export {
@@ -195,15 +195,15 @@ export function invalidateIpCache(ip: string): void {
 }
 
 // ══════════════════════════════════════════════════════════════
-// EXTRACTION IP — Anti-spoofing XFF
+// EXTRACTION IP : Anti-spoofing XFF
 // ══════════════════════════════════════════════════════════════
 const VALID_IP_RE = /^(?:(?:25[0-5]|2[0-4]\d|\d{1,3})\.){3}(?:25[0-5]|2[0-4]\d|\d{1,3})$|^[0-9a-f:]+$/i
 
 // ── Anti-spoofing IP ──────────────────────────────────────────
 // Un attaquant peut envoyer de FAUX en-têtes (x-forwarded-for, x-real-ip…)
 // pour usurper une IP (évasion de ban) ou empoisonner l'IP d'un tiers.
-// Mitigation : l'opérateur épingle le header AUTORITAIRE — celui que la
-// plateforme/CDN contrôle et que le client ne peut pas falsifier — via
+// Mitigation : l'opérateur épingle le header AUTORITAIRE : celui que la
+// plateforme/CDN contrôle et que le client ne peut pas falsifier : via
 // la variable d'env WAF_TRUE_IP_HEADER (ex: 'x-vercel-forwarded-for' sur
 // Vercel, 'cf-connecting-ip' derrière Cloudflare). Si défini, on ne fait
 // confiance QU'À ce header. Sinon, ordre de repli prudent.
@@ -234,7 +234,7 @@ export function extractIp(headers: Headers): string {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 🧠 MÉMOIRE IP — Profil comportemental par IP
+// 🧠 MÉMOIRE IP : Profil comportemental par IP
 // Trust score : 0-100 (50=neutre, 0=danger, 100=fiable)
 // Persiste dans waf_ip_memory via RPC atomique Supabase
 // ══════════════════════════════════════════════════════════════
@@ -395,7 +395,7 @@ export function updateIpMemory(opts: {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 🌐 BAN DE SOUS-RÉSEAU (/24) — Contre-attaque coordonnée
+// 🌐 BAN DE SOUS-RÉSEAU (/24) : Contre-attaque coordonnée
 // Si 3+ IPs du même /24 attaquent → bannir tout le sous-réseau
 // ══════════════════════════════════════════════════════════════
 const subnetAttackers = new Map<string, Set<string>>()
@@ -430,7 +430,7 @@ export function trackSubnetAttack(
         // Alerte critique
         createAlert({
             level: 'critical',
-            message: `Attaque coordonnée détectée depuis le sous-réseau ${subnet}.0/24 — ${attackers.size} IPs distinctes`,
+            message: `Attaque coordonnée détectée depuis le sous-réseau ${subnet}.0/24 : ${attackers.size} IPs distinctes`,
             context: { subnet, ips: [...attackers], count: attackers.size },
             supabaseUrl, serviceKey,
         })
@@ -499,7 +499,7 @@ export function trackCampaign(
 
         createAlert({
             level: 'critical',
-            message: `Campagne d'attaque détectée — même payload depuis ${ips.size} IPs distinctes`,
+            message: `Campagne d'attaque détectée : même payload depuis ${ips.size} IPs distinctes`,
             context: { payload_hash: payloadHash, source_ips: [...ips] },
             supabaseUrl, serviceKey,
         })
@@ -523,7 +523,7 @@ export function trackCampaign(
 }
 
 // ══════════════════════════════════════════════════════════════
-// 🤖 APPRENTISSAGE AUTOMATIQUE — Règles auto-générées
+// 🤖 APPRENTISSAGE AUTOMATIQUE : Règles auto-générées
 // Quand un pattern frappe N fois → règle candidate
 // ══════════════════════════════════════════════════════════════
 const learnedPatternHits  = new Map<string, { count: number; ips: Set<string>; category: string }>()
@@ -581,7 +581,7 @@ export function learnAttackPattern(opts: {
 
             createAlert({
                 level: 'info',
-                message: `Règle auto-apprise activée : "${pattern.slice(0, 60)}" — ${existing.count} hits depuis ${existing.ips.size} IPs`,
+                message: `Règle auto-apprise activée : "${pattern.slice(0, 60)}" : ${existing.count} hits depuis ${existing.ips.size} IPs`,
                 context: { pattern, category, hit_count: existing.count },
                 supabaseUrl, serviceKey,
             })
@@ -648,7 +648,7 @@ export function logWafEvent(opts: {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ⚡ ESCALADE AUTOMATIQUE — Violations progressives
+// ⚡ ESCALADE AUTOMATIQUE : Violations progressives
 //
 // Niveau 0 → N-1 : log seulement
 // Niveau N (5)   : ban IP immédiat + alerte warning
@@ -717,7 +717,7 @@ export function trackViolation(
 }
 
 // ══════════════════════════════════════════════════════════════
-// 🍯 HONEYPOT — Leurre pour attracteur d'attaquants
+// 🍯 HONEYPOT : Leurre pour attracteur d'attaquants
 // Chemins qui semblent "juteux" pour les hackers mais ne sont
 // que des pièges → ban immédiat si accédés
 // ══════════════════════════════════════════════════════════════
@@ -750,7 +750,7 @@ export function triggerHoneypot(
 
     createAlert({
         level: 'critical',
- message: `HONEYPOT : IP ${ip} a tenté d'accéder à ${path} — bannissement immédiat`,
+ message: `HONEYPOT : IP ${ip} a tenté d'accéder à ${path} : bannissement immédiat`,
         context: { ip, path },
         supabaseUrl, serviceKey,
     })

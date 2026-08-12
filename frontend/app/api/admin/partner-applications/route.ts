@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET /api/admin/partner-applications — liste toutes les candidatures
+// GET /api/admin/partner-applications : liste toutes les candidatures
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/admin/partner-applications — soumettre une candidature (public)
+// POST /api/admin/partner-applications : soumettre une candidature (public)
 export async function POST(request: NextRequest) {
     try {
         const supabase = getSupabase()

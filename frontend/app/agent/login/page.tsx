@@ -71,7 +71,7 @@ export default function AgentLoginPage() {
             }
 
             // Force la session à être lue et les cookies à être écrits
-            // AVANT de naviguer — c'est la clé pour éviter la boucle middleware
+            // AVANT de naviguer : c'est la clé pour éviter la boucle middleware
             await supabase.auth.getSession()
 
             // Success animation

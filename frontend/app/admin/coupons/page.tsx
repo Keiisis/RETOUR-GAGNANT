@@ -55,9 +55,9 @@ export default function CouponsPage() {
     }, [loadCoupons])
 
     const formatDateSafe = (val: string | null) => {
-        if (!mounted || !val) return '—'
+        if (!mounted || !val) return '-'
         const d = new Date(val)
-        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
     }
 
     const generateCode = () => {

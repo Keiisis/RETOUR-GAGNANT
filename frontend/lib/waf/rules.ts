@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 📋 WAF RULES — Jeu de règles complet inspiré OWASP CRS 4.x
+// 📋 WAF RULES : Jeu de règles complet inspiré OWASP CRS 4.x
 // 500+ patterns organisés par catégorie, avec scoring de sévérité
 // IDs alignés sur la numérotation ModSecurity OWASP CRS
 //
@@ -62,7 +62,7 @@ const QUERY_BODY: RuleTarget[] = ['query', 'body']
 const UA_ONLY: RuleTarget[] = ['userAgent']
 
 // ══════════════════════════════════════════════════════════════
-// 942xxx — SQL INJECTION
+// 942xxx : SQL INJECTION
 // Ciblage STRICT : jamais urlPath → évite faux positifs /create /update
 // ══════════════════════════════════════════════════════════════
 const SQL_RULES: WafRule[] = [
@@ -201,7 +201,7 @@ const SQL_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 941xxx — XSS (Cross-Site Scripting)
+// 941xxx : XSS (Cross-Site Scripting)
 // ══════════════════════════════════════════════════════════════
 const XSS_RULES: WafRule[] = [
     {
@@ -315,7 +315,7 @@ const XSS_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 930xxx — LOCAL FILE INCLUSION (LFI)
+// 930xxx : LOCAL FILE INCLUSION (LFI)
 // ══════════════════════════════════════════════════════════════
 const LFI_RULES: WafRule[] = [
     {
@@ -351,7 +351,7 @@ const LFI_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 931xxx — REMOTE FILE INCLUSION (RFI)
+// 931xxx : REMOTE FILE INCLUSION (RFI)
 // ══════════════════════════════════════════════════════════════
 const RFI_RULES: WafRule[] = [
     {
@@ -375,7 +375,7 @@ const RFI_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 932xxx — RCE / OS COMMAND INJECTION
+// 932xxx : RCE / OS COMMAND INJECTION
 // ══════════════════════════════════════════════════════════════
 const RCE_RULES: WafRule[] = [
     {
@@ -429,7 +429,7 @@ const RCE_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 933xxx — PHP INJECTION
+// 933xxx : PHP INJECTION
 // ══════════════════════════════════════════════════════════════
 const PHP_RULES: WafRule[] = [
     {
@@ -459,7 +459,7 @@ const PHP_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 934xxx — NODE.JS / SERVER-SIDE INJECTION
+// 934xxx : NODE.JS / SERVER-SIDE INJECTION
 // ══════════════════════════════════════════════════════════════
 const NODEJS_RULES: WafRule[] = [
     {
@@ -489,7 +489,7 @@ const NODEJS_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 932xxx — COMMAND INJECTION (OS)
+// 932xxx : COMMAND INJECTION (OS)
 // ══════════════════════════════════════════════════════════════
 const CMD_RULES: WafRule[] = [
     {
@@ -507,7 +507,7 @@ const CMD_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 913xxx — SCANNER DETECTION
+// 913xxx : SCANNER DETECTION
 // ══════════════════════════════════════════════════════════════
 const SCANNER_RULES: WafRule[] = [
     {
@@ -549,7 +549,7 @@ const SCANNER_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 920xxx — PROTOCOL VIOLATIONS
+// 920xxx : PROTOCOL VIOLATIONS
 // ══════════════════════════════════════════════════════════════
 const PROTOCOL_RULES: WafRule[] = [
     {
@@ -579,7 +579,7 @@ const PROTOCOL_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 951xxx — DATA LEAKAGE PREVENTION
+// 951xxx : DATA LEAKAGE PREVENTION
 // ══════════════════════════════════════════════════════════════
 const DATA_LEAKAGE_RULES: WafRule[] = [
     {
@@ -597,7 +597,7 @@ const DATA_LEAKAGE_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 921xxx — HTTP REQUEST SMUGGLING
+// 921xxx : HTTP REQUEST SMUGGLING
 // ══════════════════════════════════════════════════════════════
 const SMUGGLING_RULES: WafRule[] = [
     {
@@ -615,7 +615,7 @@ const SMUGGLING_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// SSRF — Server Side Request Forgery
+// SSRF : Server Side Request Forgery
 // ══════════════════════════════════════════════════════════════
 const SSRF_RULES: WafRule[] = [
     {
@@ -645,7 +645,7 @@ const SSRF_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// XXE — XML External Entity Injection
+// XXE : XML External Entity Injection
 // ══════════════════════════════════════════════════════════════
 const XXE_RULES: WafRule[] = [
     {
@@ -675,7 +675,7 @@ const SESSION_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 950xxx — HONEYPOT (fichiers/endpoints piégés)
+// 950xxx : HONEYPOT (fichiers/endpoints piégés)
 // Détecte les attaquants cherchant des fichiers sensibles connus
 // ══════════════════════════════════════════════════════════════
 const HONEYPOT_RULES: WafRule[] = [
@@ -718,7 +718,7 @@ const HONEYPOT_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// 960xxx — ENUMERATION (dénombrement de ressources)
+// 960xxx : ENUMERATION (dénombrement de ressources)
 // ══════════════════════════════════════════════════════════════
 const ENUMERATION_RULES: WafRule[] = [
     {
@@ -742,7 +742,7 @@ const ENUMERATION_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// ANTI-BYPASS — Règles résistantes aux techniques d'évasion avancées
+// ANTI-BYPASS : Règles résistantes aux techniques d'évasion avancées
 // ══════════════════════════════════════════════════════════════
 const ANTI_BYPASS_RULES: WafRule[] = [
     // ── XSS bypass : <svg/onload= (slash au lieu d'espace) ───────
@@ -854,7 +854,7 @@ const ANTI_BYPASS_RULES: WafRule[] = [
 ]
 
 // ══════════════════════════════════════════════════════════════
-// EXPORT — toutes les règles consolidées
+// EXPORT : toutes les règles consolidées
 // ══════════════════════════════════════════════════════════════
 export const ALL_RULES: WafRule[] = [
     ...SQL_RULES,
@@ -895,8 +895,8 @@ export const SEVERITY_SCORES: Record<Severity, number> = {
 
 // Seuils de blocage par niveau de paranoia
 export const BLOCK_THRESHOLDS: Record<number, number> = {
-    1: 5,   // Paranoia 1 (défaut) — block si score >= 5 (1 règle critique)
-    2: 4,   // Paranoia 2 — block si score >= 4
-    3: 3,   // Paranoia 3 — block si score >= 3
-    4: 1,   // Paranoia 4 (strict) — block dès le moindre match
+    1: 5,   // Paranoia 1 (défaut) : block si score >= 5 (1 règle critique)
+    2: 4,   // Paranoia 2 : block si score >= 4
+    3: 3,   // Paranoia 3 : block si score >= 3
+    4: 1,   // Paranoia 4 (strict) : block dès le moindre match
 }

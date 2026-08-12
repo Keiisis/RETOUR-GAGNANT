@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// Politique de mot de passe fort — source unique (serveur).
+// Politique de mot de passe fort : source unique (serveur).
 // Utilisée par TOUS les formulaires de création de compte :
 //   • /api/client/register
 //   • /api/admin/users/create

@@ -411,15 +411,15 @@ export default function AIConfigPage() {
                             <div className="space-y-3 text-xs text-gray-500">
                                 <div className="flex gap-2 items-start">
                                     <span className="w-2 h-2 rounded-full bg-[#008751] mt-1.5 shrink-0" />
-                                    <span><strong className="text-white"><T>Frontend</T></strong> <T>— Ton chaleureux, pas d&apos;infos confidentielles</T></span>
+                                    <span><strong className="text-white"><T>Frontend</T></strong> <T>-Ton chaleureux, pas d&apos;infos confidentielles</T></span>
                                 </div>
                                 <div className="flex gap-2 items-start">
                                     <span className="w-2 h-2 rounded-full bg-[#3b82f6] mt-1.5 shrink-0" />
-                                    <span><strong className="text-white"><T>Agent</T></strong> <T>— Opérationnel, accès données, professionnel</T></span>
+                                    <span><strong className="text-white"><T>Agent</T></strong> <T>-Opérationnel, accès données, professionnel</T></span>
                                 </div>
                                 <div className="flex gap-2 items-start">
                                     <span className="w-2 h-2 rounded-full bg-[#FCD116] mt-1.5 shrink-0" />
-                                    <span><strong className="text-white"><T>Admin</T></strong> <T>— Accès complet, analytique, exhaustif</T></span>
+                                    <span><strong className="text-white"><T>Admin</T></strong> <T>-Accès complet, analytique, exhaustif</T></span>
                                 </div>
                             </div>
                         </Card>

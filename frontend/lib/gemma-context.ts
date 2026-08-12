@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Cache 5 min — évite de refaire les requêtes à chaque message
+// Cache 5 min : évite de refaire les requêtes à chaque message
 let _cache: { data: string; ts: number } | null = null
 const CACHE_TTL = 5 * 60 * 1000
 
@@ -100,10 +100,10 @@ export async function buildRgbContext(): Promise<string> {
 
     const fd = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 
-    // Contexte compact — même info, beaucoup moins de tokens
+    // Contexte compact : même info, beaucoup moins de tokens
     const lines = [
-        `[RGB — ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}]`,
-        `Site: ${settMap.site_name || 'Retour Gagnant Bénin'} | Email: ${settMap.contact_email || '—'} | Tél: ${settMap.contact_phone || '—'}`,
+        `[RGB : ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}]`,
+        `Site: ${settMap.site_name || 'Retour Gagnant Bénin'} | Email: ${settMap.contact_email || '-'} | Tél: ${settMap.contact_phone || '-'}`,
         '',
         `FINANCES: Revenu total=${xof(revenueTotal)} | Ce mois=${xof(revenueMonth)} | Aujourd'hui=${xof(revenueToday)}`,
         `COMMANDES: ${allPaidOrders.length} payées | ${pendingOrders.length} en attente`,
@@ -122,7 +122,7 @@ export async function buildRgbContext(): Promise<string> {
     if (unreadMsgs.length > 0) {
         lines.push(`MESSAGES NON LUS:`)
         unreadMsgs.forEach(m => {
-            lines.push(`  ${fd(m.created_at)} | ${m.name || '?'} — ${m.sujet || '—'}`)
+            lines.push(`  ${fd(m.created_at)} | ${m.name || '?'} : ${m.sujet || '-'}`)
             if (m.content) lines.push(`    > ${m.content.slice(0, 100)}`)
         })
         lines.push('')

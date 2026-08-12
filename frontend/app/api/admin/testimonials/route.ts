@@ -10,7 +10,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET /api/admin/testimonials — liste tous les témoignages
+// GET /api/admin/testimonials : liste tous les témoignages
 export async function GET(request: NextRequest) {
     try {
         const auth = await verifyApiAuth(request, 'admin')
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/admin/testimonials — créer un témoignage (depuis admin)
+// POST /api/admin/testimonials : créer un témoignage (depuis admin)
 export async function POST(request: NextRequest) {
     try {
         const auth = await verifyApiAuth(request, 'admin')

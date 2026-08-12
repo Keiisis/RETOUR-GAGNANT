@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 // ═══════════════════════════════════════════════════════
-// GET /api/analytics/live — Données live + stats 24h enrichies
+// GET /api/analytics/live : Données live + stats 24h enrichies
 // ═══════════════════════════════════════════════════════
 export async function GET() {
     try {

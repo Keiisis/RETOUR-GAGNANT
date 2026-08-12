@@ -54,9 +54,9 @@ const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined, options?: Intl.DateTimeFormatOptions) => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d = new Date(dateStr)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', options)
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', options)
 }
 
 
@@ -269,7 +269,7 @@ export default function ClientDocumentDetailPage() {
                     setClientSignature(json.signature || null)
                 }
             } catch {
-                // signature unavailable — not critical
+                // signature unavailable : not critical
             } finally {
                 setSigLoaded(true)
             }
@@ -281,7 +281,7 @@ export default function ClientDocumentDetailPage() {
         if (!sigLoaded) return
 
         if (!clientSignature) {
-            // No signature registered — offer to create or proceed without
+            // No signature registered : offer to create or proceed without
             setModal('no-sig')
             return
         }

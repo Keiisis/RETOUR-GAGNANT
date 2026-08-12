@@ -3,7 +3,7 @@ import { getServiceClient, requireReadTree } from '@/lib/genealogy/api-auth'
 
 // GET /api/genealogie/suggestions?tree_id=X
 //
-// Renvoie les "trous" de l'arbre — informations manquantes pour solidifier
+// Renvoie les "trous" de l'arbre : informations manquantes pour solidifier
 // le dossier RGB. S'appuie sur la fonction SQL fn_genealogy_suggestions().
 //
 // Réponse :

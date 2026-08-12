@@ -11,11 +11,12 @@ const supabase = createClient(
 )
 
 // ══════════════════════════════════════════════════════════════
-// POST /api/services/permis-checkout — Permis de Conduire Béninois.
-// Le client CHOISIT une auto-école ; le PRIX est fixé CÔTÉ SERVEUR depuis
-// cette école (jamais celui du client), converti en XOF (taux BCEAO). La
-// commande entre ensuite dans le pipeline standard : widget Kkiapay/FedaPay
-// avec { order_id } → /api/checkout/verify → webhook (filet) → facture + reçu.
+// POST /api/services/permis-checkout : Permis de Conduire Béninois.
+// Le PRIX dépend de la CATÉGORIE de permis choisie ; il est fixé CÔTÉ SERVEUR
+// depuis la table permis_types (jamais fourni par le client), converti en XOF
+// (taux BCEAO). L'auto-école est un choix facultatif (où suivre la formation).
+// La commande entre dans le pipeline standard : widget Kkiapay/FedaPay avec
+// { order_id } → /api/checkout/verify → webhook (filet) → facture + reçu.
 // ══════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
@@ -28,36 +29,35 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const body = (scanned ?? {}) as any
 
-        const schoolId = String(body.school_id || '').trim()
+        const typeId = String(body.permis_type_id || '').trim()
+        const schoolId = String(body.school_id || '').trim() || null
         const customerName = String(body.customer_name || '').trim()
         const customerEmail = String(body.customer_email || '').trim().toLowerCase()
         const customerPhone = String(body.customer_phone || '').trim()
 
-        if (!schoolId) return NextResponse.json({ error: 'Veuillez choisir une auto-école.' }, { status: 400 })
+        if (!typeId) return NextResponse.json({ error: 'Veuillez choisir une catégorie de permis.' }, { status: 400 })
         if (!customerName || !customerPhone) return NextResponse.json({ error: 'Nom et téléphone requis.' }, { status: 400 })
         if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
             return NextResponse.json({ error: 'Email invalide.' }, { status: 400 })
         }
 
-        // Auto-école choisie — validée en base : active uniquement. Le PRIX vient
-        // d'ici, jamais du client (source unique, jamais de montant falsifiable).
-        const { data: school } = await supabase
-            .from('driving_schools')
-            .select('id, nom, ville, price_eur, duration')
-            .eq('id', schoolId).eq('is_active', true).maybeSingle()
-        if (!school) {
-            return NextResponse.json({ error: 'Auto-école indisponible. Actualisez la page.' }, { status: 400 })
+        // Catégorie choisie, validée en base : active uniquement. Le PRIX vient
+        // d'ici (source unique, jamais falsifiable côté client).
+        const { data: type } = await supabase
+            .from('permis_types')
+            .select('id, category, label, price_eur, duration')
+            .eq('id', typeId).eq('is_active', true).maybeSingle()
+        if (!type) {
+            return NextResponse.json({ error: 'Catégorie indisponible. Actualisez la page.' }, { status: 400 })
         }
 
-        const amountEUR = Number(school.price_eur)
+        const amountEUR = Number(type.price_eur)
         if (!isFinite(amountEUR) || amountEUR <= 0) {
             return NextResponse.json(
-                { error: 'Tarif non configuré pour cette auto-école. Contactez-nous — nous régularisons immédiatement.' },
+                { error: 'Tarif non configuré pour cette catégorie. Contactez-nous, nous régularisons immédiatement.' },
                 { status: 503 },
             )
         }
-        // Conversion par l'autorité unique serveur (taux réels). Si le taux manque,
-        // on refuse plutôt que de facturer faux.
         const amountXOF = await toXOFStrict(amountEUR, 'EUR')
         if (amountXOF === null || amountXOF <= 0) {
             return NextResponse.json(
@@ -66,8 +66,21 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const schoolLabel = `${school.nom}${school.ville ? ` — ${school.ville}` : ''}`
-        const title = `Permis de Conduire Béninois — ${schoolLabel} (${amountEUR} €)`
+        // Auto-école choisie (facultatif) : validée si fournie.
+        let schoolName: string | null = null
+        let schoolRef: string | null = null
+        if (schoolId) {
+            const { data: school } = await supabase
+                .from('driving_schools').select('id, nom, ville')
+                .eq('id', schoolId).eq('is_active', true).maybeSingle()
+            if (school) {
+                schoolRef = school.id
+                schoolName = `${school.nom}${school.ville ? ` (${school.ville})` : ''}`
+            }
+        }
+
+        const title = `Permis de Conduire Béninois : ${type.label} (${amountEUR} €)`
+            + (schoolName ? ` / ${schoolName}` : '')
 
         const { data: order, error } = await supabase
             .from('orders')
@@ -88,10 +101,12 @@ export async function POST(request: NextRequest) {
                     price: amountXOF,
                     service: 'permis-conduire',
                     price_eur: amountEUR,
-                    school_id: school.id,
-                    school_name: school.nom,
-                    school_ville: school.ville || null,
-                    duration: school.duration || null,
+                    permis_type_id: type.id,
+                    permis_category: type.category,
+                    permis_label: type.label,
+                    duration: type.duration || null,
+                    school_id: schoolRef,
+                    school_name: schoolName,
                 }],
             })
             .select('id')

@@ -138,7 +138,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
             // Browser desktop notification
             if ('Notification' in window && Notification.permission === 'granted') {
-                const notif = new Notification(' Nouveau message — Retour Gagnant', {
+                const notif = new Notification(' Nouveau message : Retour Gagnant', {
                     body: `Vous avez ${unreadMessages} message(s) en attente.`,
                     icon: '/logo.jpg',
                     tag: 'rg-new-message',
@@ -163,7 +163,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         if (isLoginPage) return
 
         const checkAuth = async () => {
-            // Utilise getSession() — lit les cookies locaux, rapide et fiable
+            // Utilise getSession() : lit les cookies locaux, rapide et fiable
             const { data: { session } } = await supabase.auth.getSession()
 
             if (!session || !session.user) {
@@ -241,7 +241,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 body: JSON.stringify({ userId: agentId }),
             }).then(r => r.ok).catch(() => false)
 
-            // 2) Fallback : client browser (si API indispo — dev local sans serveur)
+            // 2) Fallback : client browser (si API indispo : dev local sans serveur)
             if (!apiOk) {
                 const { error } = await supabase
                     .from('user_profiles')
@@ -387,7 +387,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Mes Dossiers'), icon: FileText, href: '/agent/dossiers' },
                 { title: t('Leads Oracle'), icon: Compass, href: '/agent/leads' },
                 { title: t('Demandes Nat.'), icon: Globe, href: '/agent/nationalite' },
-                // Onglet Logement — réservé à l'agent nommément autorisé
+                // Onglet Logement : réservé à l'agent nommément autorisé
                 ...(isLogementAgent(agent?.id) ? [{ title: t('Logement'), icon: Building2, href: '/agent/logements' }] : []),
             ],
         },

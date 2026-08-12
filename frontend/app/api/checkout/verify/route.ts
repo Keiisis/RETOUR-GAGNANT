@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
         const body = await request.json()
         const { order_id, transaction_id } = body
-        // NOTE: `payment_method` du client est IGNORÉ — on utilise toujours celui en DB
+        // NOTE: `payment_method` du client est IGNORÉ : on utilise toujours celui en DB
 
         if (!order_id || !transaction_id) {
             return NextResponse.json(
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, message: 'Already verified' })
         }
 
-        // La méthode de paiement vient UNIQUEMENT de la DB — jamais du client
+        // La méthode de paiement vient UNIQUEMENT de la DB : jamais du client
         const method = existingOrder.payment_method
 
         // ═══ MONTANT ATTENDU EN XOF ═══════════════════════════════════
@@ -85,9 +85,9 @@ export async function POST(request: Request) {
         const orderCurrency = (existingOrder.currency || 'XOF').toUpperCase()
         const expectedXOF = await toXOFStrict(Number(existingOrder.amount) || 0, orderCurrency)
         if (expectedXOF === null) {
-            console.error(`[Verify] Taux ${orderCurrency} indisponible — vérification du montant impossible`)
+            console.error(`[Verify] Taux ${orderCurrency} indisponible : vérification du montant impossible`)
             return NextResponse.json(
-                { success: false, error: `Taux de change ${orderCurrency} indisponible — vérification impossible. Contactez le support.` },
+                { success: false, error: `Taux de change ${orderCurrency} indisponible : vérification impossible. Contactez le support.` },
                 { status: 503 },
             )
         }
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
                     ? 'https://sandbox-api.fedapay.com'
                     : 'https://api.fedapay.com'
 
-                // Toujours passer par l'API FedaPay — ne JAMAIS utiliser le transaction_id
+                // Toujours passer par l'API FedaPay : ne JAMAIS utiliser le transaction_id
                 // stocké en DB comme raccourci d'acceptation.
                 // RAISON : le webhook stocke transaction_id même pour les paiements ÉCHOUÉS
                 // (payment_status = 'failed'). Si on accepte le raccourci, un attaquant qui
@@ -234,12 +234,12 @@ export async function POST(request: Request) {
                             const verifiedStatus =
                                 txObject?.status
                                 || verifyData?.status
-                            console.log('FedaPay API verify — statut:', verifiedStatus, '| id:', transaction_id)
+                            console.log('FedaPay API verify : statut:', verifiedStatus, '| id:', transaction_id)
                             if (verifiedStatus === 'approved' || verifiedStatus === 'transferred') {
                                 // ─── Vérification du montant FedaPay ─────────────────────────
                                 // FedaPay stocke les montants en XOF directement (pas de centimes).
-                                // Le franc CFA (XOF) n'a pas de sous-unité — 10 000 XOF = 10 000.
-                                // CRITIQUE : ne jamais sauter cette vérification — un attaquant
+                                // Le franc CFA (XOF) n'a pas de sous-unité : 10 000 XOF = 10 000.
+                                // CRITIQUE : ne jamais sauter cette vérification : un attaquant
                                 // pourrait payer 100 XOF et valider une commande à 50 000 XOF.
                                 const txAmount = txObject?.amount
                                 if (txAmount !== undefined && txAmount !== null) {
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
                             const errBody = await verifyRes.text()
                             console.warn(`FedaPay API ${verifyRes.status}: ${errBody.slice(0, 100)}`)
                             return NextResponse.json(
-                                { success: false, error: 'FedaPay: impossible de vérifier — réessayez ou contactez le support' },
+                                { success: false, error: 'FedaPay: impossible de vérifier : réessayez ou contactez le support' },
                                 { status: 400 }
                             )
                         }
@@ -279,7 +279,7 @@ export async function POST(request: Request) {
                     }
                 } else {
                     // Fail-closed : sans clé secrète, impossible de vérifier auprès de FedaPay
-                    console.error('[Verify/FedaPay] Clé secrète manquante — vérification impossible')
+                    console.error('[Verify/FedaPay] Clé secrète manquante : vérification impossible')
                     return NextResponse.json(
                         { success: false, error: 'Configuration FedaPay incomplète (clé secrète manquante dans les settings admin)' },
                         { status: 503 }
@@ -331,7 +331,7 @@ export async function POST(request: Request) {
                 }
 
                 // Vérifier que ce PaymentIntent appartient bien à cette commande.
-                // metadata.order_id est OBLIGATOIRE — toujours défini par checkout/stripe/route.ts.
+                // metadata.order_id est OBLIGATOIRE : toujours défini par checkout/stripe/route.ts.
                 // Un PaymentIntent sans metadata.order_id = créé hors de notre système → rejet.
                 if (!pi.metadata?.order_id || pi.metadata.order_id !== order_id) {
                     console.error('[Verify/Stripe] order_id metadata manquant ou incorrect:', {
@@ -395,7 +395,7 @@ export async function POST(request: Request) {
                             }
 
                             // Vérifier via custom_id que la capture appartient bien à cette commande.
-                            // custom_id est OBLIGATOIRE — toujours défini par paypal/create/route.ts.
+                            // custom_id est OBLIGATOIRE : toujours défini par paypal/create/route.ts.
                             // Un custom_id absent ou non concordant = capture externe → rejet immédiat.
                             const captureCustomId =
                                 captureData.custom_id ||
@@ -411,7 +411,7 @@ export async function POST(request: Request) {
                                 )
                             }
 
-                            // Vérification du montant PayPal (XOF uniquement — pas de conversion temps réel)
+                            // Vérification du montant PayPal (XOF uniquement : pas de conversion temps réel)
                             const capturedCurrency = (captureData.amount?.currency_code || '').toUpperCase()
                             const capturedAmountValue = parseFloat(captureData.amount?.value || '0')
                             if (capturedCurrency === 'XOF' && capturedAmountValue < minXOF) {
@@ -459,7 +459,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // ─── Mise à jour atomique — uniquement si encore pending ────────────
+        // ─── Mise à jour atomique : uniquement si encore pending ────────────
         // La clause .eq('payment_status', 'pending') garantit qu'une commande
         // déjà complétée ou échouée ne peut pas être modifiée.
         const { error: updateError, data: updatedRows } = await supabase
@@ -492,7 +492,7 @@ export async function POST(request: Request) {
         // Le trigger SQL crée déjà la ligne `invoices` quand payment_status passe
         // à 'completed'. On déclenche l'envoi sans bloquer la réponse.
         // EXCEPTION : une commande « proposition / lien de paiement » reçoit son
-        // reçu RGB officiel (+ PDF) via classifyProposalPayment — on n'envoie
+        // reçu RGB officiel (+ PDF) via classifyProposalPayment : on n'envoie
         // donc PAS ici l'email facture boutique (doublon / mauvais libellé).
         if (existingOrder.customer_email && existingOrder.shipping_zone !== 'proposal') {
             const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
@@ -566,7 +566,7 @@ export async function POST(request: Request) {
                 .maybeSingle()
 
             if (existingInvoice) {
-                console.log(`[ERP] Facture déjà existante pour commande ${orderRef} — skip`)
+                console.log(`[ERP] Facture déjà existante pour commande ${orderRef} : skip`)
             } else {
                 // Récupérer les détails complets de la commande pour la facture
                 const { data: fullOrder } = await supabase
@@ -577,7 +577,7 @@ export async function POST(request: Request) {
 
                 // Commande issue d'une proposition / lien de paiement : classification
                 // UNIQUE et idempotente (facture / boutique / paiement selon la catégorie)
-                // — surtout PAS de facture « Boutique en ligne » ici (source de doublons).
+                // : surtout PAS de facture « Boutique en ligne » ici (source de doublons).
                 if (fullOrder && fullOrder.shipping_zone === 'proposal') {
                     await classifyProposalPayment(supabase, String(fullOrder.shipping_address || ''), fullOrder)
                 } else if (fullOrder) {
@@ -668,7 +668,7 @@ export async function POST(request: Request) {
                         remise: 0,
                         total: fullOrder.amount,
                         status: 'paye',
-                        notes: `Facture auto-générée — ${sourceLabel}\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transaction_id}`,
+                        notes: `Facture auto-générée : ${sourceLabel}\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transaction_id}`,
                         conditions: 'Document généré automatiquement après paiement vérifié.',
                         validite: 'Acquittée',
                     })

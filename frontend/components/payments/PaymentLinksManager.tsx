@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  GÉNÉRER LIEN DE PAIEMENT — partagé Admin / Agent
+//  GÉNÉRER LIEN DE PAIEMENT : partagé Admin / Agent
 //  Crée des liens de paiement réels (5 providers) reliés à la
 //  facturation et à la comptabilité : à chaque paiement, une
 //  facture ERP est générée automatiquement + email client.
@@ -64,7 +64,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user?.email) setActor(`${role === 'admin' ? 'Admin' : 'Agent'} — ${session.user.email}`)
+            if (session?.user?.email) setActor(`${role === 'admin' ? 'Admin' : 'Agent'} : ${session.user.email}`)
         })
     }, [role])
 
@@ -106,7 +106,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
 
     const copyLink = (l: PaymentLink) => {
         navigator.clipboard.writeText(l.url)
-        toast(t('Lien copié — partagez-le par le canal de votre choix'))
+        toast(t('Lien copié : partagez-le par le canal de votre choix'))
     }
 
     const fmtA = (n: number, c: string | null) =>
@@ -149,7 +149,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                                     <div className="relative">
                                         <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" style={labelStyle} />
                                         <input type="text" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })}
-                                            placeholder={t('Frais de dossier — Accompagnement passeport')}
+                                            placeholder={t('Frais de dossier : Accompagnement passeport')}
                                             className="w-full border rounded-xl py-3 pl-9 pr-4 text-sm focus:outline-none" style={inputStyle} />
                                     </div>
                                 </div>
@@ -248,10 +248,10 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                                         {l.paid && (() => {
                                             const cat = (String(l.notes || '').match(/\[CAT:(\w+)\]/)?.[1]) || 'factures'
                                             const msg = cat === 'paiements'
-                                                ? 'Payé — encaissement enregistré en comptabilité, reçu envoyé au client'
+                                                ? 'Payé : encaissement enregistré en comptabilité, reçu envoyé au client'
                                                 : cat === 'boutique'
-                                                    ? 'Payé — commande enregistrée en comptabilité'
-                                                    : 'Payé — facture RGB générée, envoyée au client et comptabilisée'
+                                                    ? 'Payé : commande enregistrée en comptabilité'
+                                                    : 'Payé : facture RGB générée, envoyée au client et comptabilisée'
                                             return (
                                                 <p className="text-[11px] mt-1.5 flex items-center gap-1.5 font-semibold" style={{ color: '#059669' }}>
                                                     <ShieldCheck size={12} /> <T>{msg}</T>
@@ -304,7 +304,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                             <AlertTriangle className="text-red-500 mb-3" size={26} />
                             <h3 className="text-base font-black mb-2" style={{ color: 'var(--panel-text-heading, #fff)' }}><T>Supprimer ce lien ?</T></h3>
                             <p className="text-xs leading-relaxed mb-5" style={labelStyle}>
-                                {deleteTarget.destination} — {fmtA(deleteTarget.total_amount, deleteTarget.currency)}.{' '}
+                                {deleteTarget.destination} : {fmtA(deleteTarget.total_amount, deleteTarget.currency)}.{' '}
                                 <T>Le lien ne fonctionnera plus. Les liens déjà payés ne peuvent jamais être supprimés (traçabilité comptable).</T>
                             </p>
                             <div className="flex gap-3">

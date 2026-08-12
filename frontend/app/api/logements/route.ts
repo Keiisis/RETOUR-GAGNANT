@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export const revalidate = 60
 
-// GET /api/logements?programme=…&ville=… — catalogue public (actifs uniquement).
+// GET /api/logements?programme=…&ville=… : catalogue public (actifs uniquement).
 export async function GET(request: NextRequest) {
     const programme = request.nextUrl.searchParams.get('programme')
     const ville = request.nextUrl.searchParams.get('ville')

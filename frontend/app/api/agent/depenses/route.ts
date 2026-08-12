@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  AGENT / ADMIN — Édition & suppression des dépenses
+//  AGENT / ADMIN : Édition & suppression des dépenses
 //  Route sous /api/agent/* : le middleware l'autorise aux agents ET
 //  aux admins (verifyApiAuth('agent') accepte les deux rôles). Permet
 //  de corriger un montant, une catégorie, un libellé, ou surtout la
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest) {
 
     // Verrou de clôture : sur l'ancienne date ET (si changée) la nouvelle
     if (await isPeriodLocked(supabase, existing.date_depense)) {
-        return NextResponse.json({ error: 'Période clôturée — modification refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : modification refusée.' }, { status: 423 })
     }
 
     const patch: Record<string, unknown> = {}
@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
         const iso = toDepenseIso(body.date_depense)
         if (!iso) return NextResponse.json({ error: 'Date invalide' }, { status: 400 })
         if (await isPeriodLocked(supabase, iso)) {
-            return NextResponse.json({ error: 'Nouvelle période clôturée — modification refusée.' }, { status: 423 })
+            return NextResponse.json({ error: 'Nouvelle période clôturée : modification refusée.' }, { status: 423 })
         }
         patch.date_depense = iso
     }
@@ -112,7 +112,7 @@ export async function DELETE(request: NextRequest) {
     const { data: existing } = await supabase
         .from('depenses').select('date_depense').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_depense)) {
-        return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : suppression refusée.' }, { status: 423 })
     }
 
     // Copie complete AVANT suppression (seule trace restante)

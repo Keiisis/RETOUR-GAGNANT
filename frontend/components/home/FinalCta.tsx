@@ -7,7 +7,7 @@ import { CalendarBlank, ArrowRight, EnvelopeSimple, CheckCircle, CircleNotch } f
 import { T } from "@/lib/translation";
 
 /**
- * Section finale — fusion RDV (intention primaire, même libellé que le hero) +
+ * Section finale : fusion RDV (intention primaire, même libellé que le hero) +
  * inscription newsletter (intention distincte). Bloc vert (accent autorisé une
  * fois sur la page). Palette claire autour, jamais de fond noir.
  */

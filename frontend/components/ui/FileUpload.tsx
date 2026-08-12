@@ -155,7 +155,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
                                 <p className="text-[9px] mt-0.5 leading-tight">
                                     Cliquez ou glissez-déposez
                                     <br />
-                                    JPG, PNG, WebP — max 5MB
+                                    JPG, PNG, WebP : max 5MB
                                 </p>
                             )}
                         </div>

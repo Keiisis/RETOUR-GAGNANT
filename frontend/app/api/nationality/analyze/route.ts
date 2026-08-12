@@ -76,7 +76,7 @@ function wrapHtml(smtp: Record<string, string>, ref: string, body: string, baseU
             </p>
         </div>
         <div style="padding:14px 40px;background:#0d1117;text-align:center;">
-            <p style="margin:0;color:#6b7280;font-size:11px;">&copy; ${new Date().getFullYear()} ${siteName} — <a href="${baseUrl}" style="color:#008751;text-decoration:none;">${baseUrl.replace('https://','')}</a></p>
+            <p style="margin:0;color:#6b7280;font-size:11px;">&copy; ${new Date().getFullYear()} ${siteName} : <a href="${baseUrl}" style="color:#008751;text-decoration:none;">${baseUrl.replace('https://','')}</a></p>
         </div>
     </div>`
 }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
             if (/^[a-z0-9_]+$/i.test(k)) presentKeys.add(k)
         }
         // Filet : si la base n'a encore rien (race), on retombe sur les clés
-        // client — mais uniquement en dernier recours.
+        // client : mais uniquement en dernier recours.
         if (presentKeys.size === 0 && Array.isArray(uploaded_keys)) {
             for (const k of uploaded_keys) if (typeof k === 'string') presentKeys.add(k)
         }
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
                 <p style="margin:0 0 12px;font-size:13px;color:#78350f;line-height:1.7;">
                     Retrouver les actes de naissance ou de décès de vos arrière-grands-parents peut s'avérer complexe, surtout pour des ascendants issus de la traite transatlantique. Notre équipe dispose des outils et partenariats pour effectuer cette recherche à votre place.
                 </p>
-                <p style="margin:0 0 12px;font-size:13px;color:#78350f;"><strong>Investissement : 250 €</strong> — recherche complète dans les archives, bases de données & associations spécialisées.</p>
+                <p style="margin:0 0 12px;font-size:13px;color:#78350f;"><strong>Investissement : 250 €</strong> : recherche complète dans les archives, bases de données & associations spécialisées.</p>
                 <a href="${baseUrl}/nationalite/complement-ancestral?ref=${ref}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:13px;">
                     Déléguer ma Recherche Ancestrale →
                 </a>
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
                         },
                         {
                             role: 'user',
-                            content: `Demandeur : ${prenom} ${nom} — Référence : ${ref} — Deadline : ${deadlineStr}. Pièces manquantes : ${missingSlots.map(s => s.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont manquants. Mentionne brièvement notre service Recherche Ancestrale.' : ''} Rédige le corps de l'email.`
+                            content: `Demandeur : ${prenom} ${nom} : Référence : ${ref} : Deadline : ${deadlineStr}. Pièces manquantes : ${missingSlots.map(s => s.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont manquants. Mentionne brièvement notre service Recherche Ancestrale.' : ''} Rédige le corps de l'email.`
                         }
                     ],
                     model: 'mixtral-8x7b-32768',
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
         `
 
         const html = wrapHtml(smtp, ref, emailBody, baseUrl)
-        await sendMail(smtp, email, `Documents manquants — Dossier N° ${ref} (délai : ${deadlineStr})`, html)
+        await sendMail(smtp, email, `Documents manquants : Dossier N° ${ref} (délai : ${deadlineStr})`, html)
 
         return NextResponse.json({
             success: true,

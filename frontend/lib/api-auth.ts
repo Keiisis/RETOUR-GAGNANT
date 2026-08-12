@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 // ═══════════════════════════════════════════════════════
-// 🛡️ Server-Side API Auth — Vérifie l'authentification
+// 🛡️ Server-Side API Auth : Vérifie l'authentification
 // et le rôle de l'utilisateur pour les routes API
 // ═══════════════════════════════════════════════════════
 

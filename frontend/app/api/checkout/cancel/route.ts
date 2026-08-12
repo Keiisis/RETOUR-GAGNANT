@@ -41,7 +41,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Commande déjà payée, annulation impossible' }, { status: 409 })
         }
 
-        // Déjà annulée ou abandonnée — idempotent
+        // Déjà annulée ou abandonnée : idempotent
         if (order.payment_status === 'cancelled' || order.payment_status === 'abandoned') {
             return NextResponse.json({ success: true })
         }

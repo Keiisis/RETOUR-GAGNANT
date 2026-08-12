@@ -1,10 +1,10 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — DISPONIBILITÉS & CRÉNEAUX
+//  ADMIN : DISPONIBILITÉS & CRÉNEAUX
 //  Horaires récurrents (par jour de semaine) + fermetures ou
 //  ouvertures exceptionnelles. Les créneaux proposés aux clients
-//  en découlent automatiquement — rien n'est figé en base.
+//  en découlent automatiquement : rien n'est figé en base.
 // ══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
@@ -245,7 +245,7 @@ export default function DisponibilitesPage() {
                         {/* ── Aperçu 7 jours ── */}
                         <section className="border rounded-2xl p-5" style={card}>
                             <h2 className="text-sm font-black mb-1" style={{ color: 'var(--panel-text-heading, #fff)' }}>
-                                Aperçu — ce que voit le client
+                                Aperçu : ce que voit le client
                             </h2>
                             <p className="text-[11px] mb-4" style={lblStyle}>7 prochains jours, créneaux réellement réservables.</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

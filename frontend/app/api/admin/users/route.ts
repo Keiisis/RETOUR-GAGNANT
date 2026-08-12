@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             const profile = profileMap.get(u.id)
             if (profile && VALID_ROLES.includes(profile.role)) return true
 
-            // Inclure si user_metadata.role valide (agents créés avant user_profiles — ex: Nadjath)
+            // Inclure si user_metadata.role valide (agents créés avant user_profiles : ex: Nadjath)
             const metaRole = u.user_metadata?.role
             if (metaRole && VALID_ROLES.includes(metaRole)) return true
 

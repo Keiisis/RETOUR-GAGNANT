@@ -68,7 +68,7 @@ export default function NationalitePage() {
 
     return (
         <div className="min-h-screen bg-[#fdfbf7]">
-            {/* ═══ HERO — clair, éditorial, chaud (aucun fond noir) ═══ */}
+            {/* ═══ HERO : clair, éditorial, chaud (aucun fond noir) ═══ */}
             <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden">
                 {/* Photo patrimoine + voile IVOIRE (pas de noir) : image en haut, fond crème */}
                 <div className="absolute inset-0 bg-cover bg-[center_top_15%]" style={{ backgroundImage: `url('${content.form_bg_image || '/images/bg-nationalite-afro.jpg'}')` }} />

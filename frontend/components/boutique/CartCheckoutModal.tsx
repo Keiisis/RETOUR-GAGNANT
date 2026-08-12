@@ -99,11 +99,11 @@ const ZONE_FEES: Record<string, number> = {
 }
 
 const ZONE_LABELS: Record<string, string> = {
-    benin: '🇧🇯 Bénin — Livraison gratuite',
-    'afrique-ouest': " Afrique de l'Ouest — +5 000 FCFA",
-    europe: '🇪🇺 Europe — +15 000 FCFA',
-    international: ' International — +25 000 FCFA',
-    digital: ' Service digital — Gratuit',
+    benin: '🇧🇯 Bénin : Livraison gratuite',
+    'afrique-ouest': " Afrique de l'Ouest : +5 000 FCFA",
+    europe: '🇪🇺 Europe : +15 000 FCFA',
+    international: ' International : +25 000 FCFA',
+    digital: ' Service digital : Gratuit',
 }
 
 const ALL_COUNTRIES = [
@@ -179,7 +179,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const paypalRenderedRef = useRef(false)
     const paypalOrderIdRef = useRef<string | null>(null)
 
-    const currency = 'XOF' // Devise DB — toujours XOF pour les gateways africaines
+    const currency = 'XOF' // Devise DB : toujours XOF pour les gateways africaines
 
     // Devise sélectionnée par le client (dérivée de la langue active)
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
@@ -195,7 +195,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
 
     // TVA EN SUS : les prix produits sont HORS TAXE. La TVA 18 % s'ajoute sur
     // les marchandises (après remise) ; la livraison reste hors TVA. Le client
-    // paie donc TTC marchandises + livraison — identique au calcul serveur.
+    // paie donc TTC marchandises + livraison : identique au calcul serveur.
     const htMarchandises = Math.max(0, totalAmount - (appliedCoupon?.discount_amount || 0))
     const { tva: tvaMarchandises, ttc: ttcMarchandises } = fromHt(htMarchandises, 'XOF')
     const finalTotal = ttcMarchandises + shippingFee
@@ -273,7 +273,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 stripeInstanceRef.current = StripeJs(publicKey)
             }
 
-            // CardElement (API classique) — pas d'appearance ni de clientSecret sur elements()
+            // CardElement (API classique) : pas d'appearance ni de clientSecret sur elements()
             const elements = stripeInstanceRef.current.elements()
             const card = elements.create('card', {
                 style: {
@@ -305,7 +305,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         if (getStripe()) {
             setTimeout(mountCard, 100)
         } else {
-            // Stripe.js chargé via afterInteractive — attente polling jusqu'à 8s
+            // Stripe.js chargé via afterInteractive : attente polling jusqu'à 8s
             let elapsed = 0
             interval = setInterval(() => {
                 elapsed += 300
@@ -720,7 +720,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 onComplete: async (resp: Record<string, unknown>) => {
                     const tx = resp.transaction as Record<string, unknown> | undefined
                     if (resp.reason === 'APPROVED' || (tx && (tx.status === 'approved' || tx.status === 'transferred'))) {
-                        // L'ID serveur est fiable — plus besoin d'extraire du callback
+                        // L'ID serveur est fiable : plus besoin d'extraire du callback
                         await verifyPayment(oid, String(fedapayTxId))
                     } else {
                         cancelOrder(oid); setErrorMessage('Paiement non approuvé.'); setStep('error')
@@ -940,7 +940,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         </button>
                     </div>
 
-                    {/* Résumé panier — masqué sur l'écran de succès (panier déjà vidé) */}
+                    {/* Résumé panier : masqué sur l'écran de succès (panier déjà vidé) */}
                     {step !== 'success' && <div className="px-6 py-4 bg-white/[0.02] border-b border-white/5">
                         <div className="space-y-2 max-h-32 overflow-y-auto">
                             {items.map(item => (
@@ -1023,7 +1023,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div>
                                     <label htmlFor="cart-email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">
-                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>— pour recevoir votre facture</T></span>
+                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
                                         <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
@@ -1031,7 +1031,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     </div>
                                 </div>
 
-                                {/* Livraison — pays + adresse */}
+                                {/* Livraison : pays + adresse */}
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block flex items-center gap-1">
                                         <MapPin size={12} /> Pays de livraison *
@@ -1173,7 +1173,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                         <Lock size={14} className="text-[#635BFF]" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-white"><T>Paiement par carte — Stripe</T></p>
+                                        <p className="text-sm font-bold text-white"><T>Paiement par carte : Stripe</T></p>
                                         <p className="text-[10px] text-gray-500"><T>Sécurisé par Stripe · TLS 256-bit</T></p>
                                     </div>
                                 </div>

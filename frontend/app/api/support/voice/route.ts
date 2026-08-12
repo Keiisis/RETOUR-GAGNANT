@@ -34,7 +34,7 @@ export async function POST(request: Request) {
             nom: nom || 'Client Vocal',
             prenom: prenom || '',
             email: email || 'vocal@assistant.ia',
- sujet: `Message Vocal (${duration || 0}s) — ${source === 'support_form'? 'Formulaire Support': 'Chat IA'}`,
+ sujet: `Message Vocal (${duration || 0}s) : ${source === 'support_form'? 'Formulaire Support': 'Chat IA'}`,
             message: transcript,
             type: 'support',
             lu: false,

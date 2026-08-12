@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 //  NORMALISATION AUTOMATIQUE e-MCF / MECeF (DGI Bénin)
 //  Appelle l'API DGI pour normaliser une facture et enregistre les champs
-//  fiscaux (NIM, code, compteurs, QR, date) sur le document — plus de saisie
+//  fiscaux (NIM, code, compteurs, QR, date) sur le document : plus de saisie
 //  manuelle. En cas d'échec, renvoie le message exact de la DGI.
 // ══════════════════════════════════════════════════════════════
 

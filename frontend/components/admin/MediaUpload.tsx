@@ -267,7 +267,7 @@ export function MediaUpload({
                             <p className="text-[10px] text-gray-500 uppercase tracking-widest"><T>ou cliquez pour parcourir</T></p>
                             <p className="text-[9px] text-gray-600 mt-2">
                                 {accept === 'video' ? 'MP4, WebM, MOV' : accept === 'image' ? 'JPG, PNG, WebP, GIF' : 'Images & Vidéos'}
-                                {' '}— Max {maxSizeMB} Mo
+                                {' '}-Max {maxSizeMB} Mo
                             </p>
                         </>
                     )}

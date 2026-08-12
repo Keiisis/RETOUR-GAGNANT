@@ -3,7 +3,7 @@ import { getServiceClient, getTreeIdForPerson, requireWriteTree } from '@/lib/ge
 
 // POST /api/genealogie/persons/[id]/anonymize
 //
-// RGPD article 17 — Droit à l'oubli. Anonymise une personne vivante :
+// RGPD article 17 : Droit à l'oubli. Anonymise une personne vivante :
 //   - first_name, last_name → '████'
 //   - birth_place, death_place → null
 //   - birth_date conservé en année uniquement (YYYY-01-01)
@@ -47,7 +47,7 @@ export async function POST(
 
         if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
 
-        // Supprimer aussi les documents et faits explicites — ils contiennent
+        // Supprimer aussi les documents et faits explicites : ils contiennent
         // potentiellement des PII identifiants
         await supabase.from('person_facts').delete().eq('person_id', id)
         await supabase.from('document_persons').delete().eq('person_id', id)

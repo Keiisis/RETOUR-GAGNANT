@@ -104,11 +104,11 @@ export default function NationaliteFormPage() {
     const [paymentProcessing, setPaymentProcessing] = useState(false)
     const [paymentError, setPaymentError] = useState('')
     // Garde : les listeners Kkiapay ne doivent être enregistrés qu'UNE fois
-    // (sinon empilement de callbacks à chaque clic — piège connu du SDK k.js)
+    // (sinon empilement de callbacks à chaque clic : piège connu du SDK k.js)
     const kkiapayBound = useRef(false)
     // Garde : la soumission auto post-paiement ne doit se déclencher qu'UNE fois.
     // (Incident nationalité : des clients ont payé mais la fiche n'était créée
-    //  qu'au clic manuel « Confirmer » — perdue si l'étape n'était pas franchie.)
+    //  qu'au clic manuel « Confirmer » : perdue si l'étape n'était pas franchie.)
     const autoSubmitRef = useRef(false)
     // Mode « reprise » : le client complète un dossier DÉJÀ PAYÉ via un lien signé
     // (relance depuis le panel). Aucun paiement redemandé, on met à jour la fiche.
@@ -140,7 +140,7 @@ export default function NationaliteFormPage() {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [docWarnings, setDocWarnings] = useState<string[]>([])
 
-    // ── DEMANDE DE NATIONALITÉ — pièces obligatoires à communiquer (valables
+    // ── DEMANDE DE NATIONALITÉ : pièces obligatoires à communiquer (valables
     //    < 3 mois). Liste officielle, STRICTEMENT distincte de la liste de la
     //    RECHERCHE ancestrale (voir page /nationalite/complement-ancestral).
     //    Chargées depuis l'admin (page_sections) sinon valeurs par défaut.
@@ -154,12 +154,12 @@ export default function NationaliteFormPage() {
         { key: 'naissance_pere',     label: "Extrait de naissance du père",                                            multi: false, required: true },
         { key: 'naissance_mere',     label: "Extrait de naissance de la mère",                                         multi: false, required: true },
         { key: 'livret_parents',     label: "Copie du livret de famille de vos parents",                               multi: false, required: true },
-        { key: 'agp_paternel',       label: "Extrait de naissance — arrière-grand-père (côté paternel)",               multi: false, required: false, ancestral: true },
-        { key: 'agm_paternelle',     label: "Extrait de naissance — arrière-grand-mère (côté paternel)",               multi: false, required: false, ancestral: true },
-        { key: 'agp_maternel',       label: "Extrait de naissance — arrière-grand-père (côté maternel)",               multi: false, required: false, ancestral: true },
-        { key: 'agm_maternelle',     label: "Extrait de naissance — arrière-grand-mère (côté maternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agp_paternel',       label: "Extrait de naissance : arrière-grand-père (côté paternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agm_paternelle',     label: "Extrait de naissance : arrière-grand-mère (côté paternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agp_maternel',       label: "Extrait de naissance : arrière-grand-père (côté maternel)",               multi: false, required: false, ancestral: true },
+        { key: 'agm_maternelle',     label: "Extrait de naissance : arrière-grand-mère (côté maternel)",               multi: false, required: false, ancestral: true },
         { key: 'livret_mineur',      label: "Copie de votre livret de famille (si enfant mineur)",                     multi: false, required: false, conditional: 'has_children' },
-        { key: 'actes_ascendants',   label: "Autres actes des grands-parents et arrière-grands-parents",              multi: true,  required: false, hint: "Acte de mariage, notarial, militaire ou de décès — tout document disponible" },
+        { key: 'actes_ascendants',   label: "Autres actes des grands-parents et arrière-grands-parents",              multi: true,  required: false, hint: "Acte de mariage, notarial, militaire ou de décès : tout document disponible" },
         { key: 'photo',              label: "Photo d'identité récente (moins de 6 mois)",                              multi: false, required: false },
     ]
     const [docSlots, setDocSlots] = useState<DocSlot[]>(DEFAULT_DOC_SLOTS)
@@ -208,8 +208,7 @@ export default function NationaliteFormPage() {
                         pays_residence: parsed.pays_residence || p.pays_residence,
                     }))
                     // On NE saute PAS l'étape : le client voit ses informations
-                    // pré-remplies (modifiables) et confirme avant de continuer —
-                    // évite de rester bloqué sur d'anciennes données (ex. un test).
+                    // pré-remplies (modifiables) et confirme avant de continuer-// évite de rester bloqué sur d'anciennes données (ex. un test).
                 }
             }
         } catch { /* ignore */ }
@@ -222,7 +221,7 @@ export default function NationaliteFormPage() {
             .then(({ data }) => {
                 if (data?.content) {
                     const c = data.content as Record<string, unknown>
-                    // En mode MyAfroOrigins, le tarif (50 €) est imposé — ne pas l'écraser.
+                    // En mode MyAfroOrigins, le tarif (50 €) est imposé : ne pas l'écraser.
                     const isMyafroUrl = new URLSearchParams(window.location.search).has('myafro')
                     if (c.amount && !isMyafroUrl) setFormAmount(Number(c.amount))
                     if (c.currency && !isMyafroUrl) setFormCurrency(c.currency as CurrencyCode)
@@ -407,7 +406,7 @@ export default function NationaliteFormPage() {
             window.FedaPay.init('#fedapay-nat-btn', {
                 public_key: paymentSettings.fedapay_public_key,
                 environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-                transaction: { amount: amountXOF, description: `Reconnaissance Nationalité — ${form.prenom} ${form.nom}` },
+                transaction: { amount: amountXOF, description: `Reconnaissance Nationalité : ${form.prenom} ${form.nom}` },
                 customer: { email: form.email || undefined, phone_number: { number: form.telephone } },
                 onComplete: (resp: Record<string, unknown>) => {
                     const tx = resp.transaction as Record<string, unknown> | undefined
@@ -532,7 +531,7 @@ export default function NationaliteFormPage() {
         }
 
         // Dépôt de CHAQUE pièce, en 3 voies de fiabilité décroissante :
-        //  1) SERVEUR (service role) pour les fichiers ≤ 4,4 Mo — le fichier passe
+        //  1) SERVEUR (service role) pour les fichiers ≤ 4,4 Mo : le fichier passe
         //     par notre API qui atteint toujours Storage (ne dépend pas du
         //     transfert direct navigateur → Storage, bloqué chez certains clients).
         //  2) URL SIGNÉE directe (gros fichiers, ou si le serveur refuse).
@@ -562,7 +561,7 @@ export default function NationaliteFormPage() {
             const sig = signed[i]
             let uploaded = false
 
-            // 1) Voie serveur (fichiers pas trop lourds) — la plus fiable.
+            // 1) Voie serveur (fichiers pas trop lourds) : la plus fiable.
             if (doc.file.size <= SERVER_MAX) {
                 const path = await uploadViaServer(doc)
                 if (path) { finalUploadedUrls.push(`${doc.key}:${doc.label}: ${path}`); uploaded = true }
@@ -592,7 +591,7 @@ export default function NationaliteFormPage() {
 
             if (!uploaded) {
                 const reason = (lastUploadError || 'inconnu').slice(0, 120)
-                finalUploadedUrls.push(`${t(doc.label)}: ${doc.name} (upload échoué — ${reason})`)
+                finalUploadedUrls.push(`${t(doc.label)}: ${doc.name} (upload échoué : ${reason})`)
                 uploadFailCount++
             }
             setUploadProgress(10 + Math.floor((i + 1) / allDocs.length * 50))
@@ -693,7 +692,7 @@ export default function NationaliteFormPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [paymentDone])
 
-    // ═══ CONFIRMATION — « Bienvenue chez vous » ═══
+    // ═══ CONFIRMATION : « Bienvenue chez vous » ═══
     // Moment émotionnel (retour vers la terre des ancêtres) traité avec sobriété :
     // un sceau officiel tricolore + la référence présentée comme un numéro de
     // document. Pas de particules ni de rotation infinie (anti-slop), contraste
@@ -731,7 +730,7 @@ export default function NationaliteFormPage() {
                     <T>Votre demande de reconnaissance de nationalité est bien arrivée. Notre équipe juridique la prend en charge et vous tiendra informé(e) à chaque étape.</T>
                 </p>
 
-                {/* Référence — présentée comme un numéro officiel */}
+                {/* Référence : présentée comme un numéro officiel */}
                 <div className="mt-8 inline-flex items-stretch rounded-2xl border border-[#e7e1d8] bg-white overflow-hidden shadow-[0_2px_20px_rgba(28,25,23,0.05)]">
                     <div className="w-1.5 bg-gradient-to-b from-[#008751] via-[#FCD116] to-[#E8112D]" aria-hidden />
                     <div className="px-6 py-4 text-left">
@@ -847,7 +846,7 @@ export default function NationaliteFormPage() {
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5 flex items-start gap-2">
                     <Shield size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                        <T>Vos informations sont protégées. Vous recevrez un email pour créer votre espace personnel — cela n'interrompt pas votre démarche en cours.</T>
+                        <T>Vos informations sont protégées. Vous recevrez un email pour créer votre espace personnel : cela n'interrompt pas votre démarche en cours.</T>
                     </p>
                 </div>
 
@@ -909,8 +908,8 @@ export default function NationaliteFormPage() {
                             <h1 className="text-2xl md:text-3xl font-black text-gray-900 drop-shadow-sm">
                                 {form.prenom ? `${t('Bonjour')} ${form.prenom},` : <T>Bonjour,</T>}
                             </h1>
-                            <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Déposez vos pièces justificatives pour finaliser votre dossier</T>{appRef ? ` — ${appRef}` : ''}.</p>
-                            <p className="text-xs text-emerald-700 mt-1 font-bold"><T>Vos frais sont déjà réglés — aucun paiement ne vous sera redemandé.</T></p>
+                            <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Déposez vos pièces justificatives pour finaliser votre dossier</T>{appRef ? ` : ${appRef}` : ''}.</p>
+                            <p className="text-xs text-emerald-700 mt-1 font-bold"><T>Vos frais sont déjà réglés : aucun paiement ne vous sera redemandé.</T></p>
                         </>
                     ) : (
                         <>
@@ -920,7 +919,7 @@ export default function NationaliteFormPage() {
                     )}
                 </div>
 
-                {/* Progress — masqué en reprise « documents seuls » */}
+                {/* Progress : masqué en reprise « documents seuls » */}
                 {!docsOnly && <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
                     {STEPS.map((s, i) => (
                         <div key={s.num} className="flex items-center">
@@ -1025,7 +1024,7 @@ export default function NationaliteFormPage() {
                                     <label className="cursor-pointer block bg-gray-50 border border-dashed border-emerald-500/30 rounded-xl p-5 text-center hover:border-emerald-500/60 transition-all">
                                         <FileText size={24} className="mx-auto text-emerald-600/50 mb-2" />
                                         <p className="text-xs font-bold text-emerald-600"><T>Cliquer ou glisser-déposer</T></p>
-                                        <p className="text-[10px] text-gray-400 mt-1"><T>PNG, JPG, PDF — Max 50 Mo</T></p>
+                                        <p className="text-[10px] text-gray-400 mt-1"><T>PNG, JPG, PDF : Max 50 Mo</T></p>
                                         {rawDocs.find(d => d.key === 'identite_scan') && <p className="text-[10px] text-emerald-600 mt-2 font-bold"><T>Fichier sélectionné :</T> {rawDocs.find(d => d.key === 'identite_scan')?.name}</p>}
                                         <input title={t("Scan du document d'identité")} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => { const f = e.target.files; if (f && f[0]) { setRawDocs(p => [...p.filter(d => d.key !== 'identite_scan'), { key: 'identite_scan', label: "Document d'identité (scan)", name: f[0].name, file: f[0] }]) } }} />
                                     </label>
@@ -1118,7 +1117,7 @@ export default function NationaliteFormPage() {
                                             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                                                 <p className="text-xs font-bold text-amber-800 mb-1">Documents ancestraux manquants</p>
                                                 <p className="text-[11px] text-amber-900 leading-relaxed">
-                                                    Vous n'avez pas fourni certains actes d'état civil de vos ascendants. Vous pouvez soumettre votre dossier et les compléter dans un délai de 7 semaines — ou laisser notre service <strong>Recherche Ancestrale</strong> les retrouver pour vous (250 €).
+                                                    Vous n'avez pas fourni certains actes d'état civil de vos ascendants. Vous pouvez soumettre votre dossier et les compléter dans un délai de 7 semaines : ou laisser notre service <strong>Recherche Ancestrale</strong> les retrouver pour vous (250 €).
                                                 </p>
                                             </div>
                                         )}
@@ -1131,11 +1130,11 @@ export default function NationaliteFormPage() {
 
                                         {/* Slots facultatifs */}
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Documents complémentaires <span className="text-gray-400 font-normal normal-case tracking-normal">(facultatifs — peuvent être transmis dans les 7 semaines suivant la soumission)</span></p>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Documents complémentaires <span className="text-gray-400 font-normal normal-case tracking-normal">(facultatifs : peuvent être transmis dans les 7 semaines suivant la soumission)</span></p>
                                             {facultatifs.map(renderSlot)}
                                         </div>
 
-                                        {/* Documents libres nommés — mode MyAfroOrigins */}
+                                        {/* Documents libres nommés : mode MyAfroOrigins */}
                                         {myafroMode && (
                                             <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 p-4">
                                                 <div>
@@ -1196,7 +1195,7 @@ export default function NationaliteFormPage() {
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-xs text-slate-800 font-bold truncate">{t(d.label)}</p>
-                                                                <p className="text-[10px] text-gray-500 truncate">{d.name} — {(d.file.size / 1024).toFixed(0)} Ko</p>
+                                                                <p className="text-[10px] text-gray-500 truncate">{d.name} : {(d.file.size / 1024).toFixed(0)} Ko</p>
                                                             </div>
                                                             <button type="button" title={t("Supprimer")} onClick={() => setRawDocs(p => p.filter((_, idx) => idx !== i))} className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-50/10 rounded-lg transition-all"><X size={14} /></button>
                                                         </div>
@@ -1266,7 +1265,7 @@ export default function NationaliteFormPage() {
                                 <p className="text-xs text-gray-500"><T>Vérifiez attentivement vos informations avant de procéder au paiement.</T></p>
                                 {[
                                     { title: t('Identité'), items: [[t('Nom complet'), `${form.prenom} ${form.nom}`], [t('Genre'), form.genre], [t('Né(e) le'), form.date_naissance], [t('Nationalité'), form.nationalite], [t('Résidence'), `${form.adresse_residence ? form.adresse_residence + ', ' : ''}${form.pays_residence}`], [t('Email'), form.email], [t('Téléphone'), form.telephone], [t('Profession'), form.profession]] },
-                                    { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} — ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} — ${form.ancestor2_lien_parente}`]] : []), ...(myafroMode ? [[t('Date MyAfroOrigins'), form.myafro_date]] : [])] },
+                                    { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} : ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} : ${form.ancestor2_lien_parente}`]] : []), ...(myafroMode ? [[t('Date MyAfroOrigins'), form.myafro_date]] : [])] },
                                     { title: t("Document d'identité"), items: [[t('Type'), form.type_document_identite], [t('Numéro'), form.numero_document], [t('Pays délivrance'), form.pays_delivrance], [t('Expiration'), form.date_expiration_document]] },
                                     { title: t('Parents'), items: [[t('Père'), `${form.pere_prenom} ${form.pere_nom}`], [t('Mère'), `${form.mere_prenom} ${form.mere_nom}`]] },
                                 ].map((sec, si) => (

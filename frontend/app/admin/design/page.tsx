@@ -79,7 +79,7 @@ async function downloadPDF(
         toPng(versoRef.current, captureOpts),
     ])
 
-    // ═══ PDF — 2 pages A4 Portrait, carte 85×55mm centrée ═══
+    // ═══ PDF : 2 pages A4 Portrait, carte 85×55mm centrée ═══
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
     const cardW = 85, cardH = 55
@@ -109,14 +109,14 @@ async function downloadPDF(
         pdf.text(label, x + cardW / 2, y - cropOff - cropLen - 2, { align: 'center' })
         pdf.setFontSize(5.5)
         pdf.setTextColor(130, 130, 130)
-        pdf.text(`${cardW} × ${cardH} mm — Imprimer à TAILLE RÉELLE (100%)`, x + cardW / 2, y + cardH + cropOff + cropLen + 4, { align: 'center' })
+        pdf.text(`${cardW} × ${cardH} mm : Imprimer à TAILLE RÉELLE (100%)`, x + cardW / 2, y + cardH + cropOff + cropLen + 4, { align: 'center' })
     }
 
-    // Page 1 — RECTO
+    // Page 1 : RECTO
     pdf.addImage(rectoUrl, 'PNG', x, y, cardW, cardH)
     drawCropMarks('RECTO')
 
-    // Page 2 — VERSO (position strictement identique)
+    // Page 2 : VERSO (position strictement identique)
     pdf.addPage('a4', 'portrait')
     pdf.addImage(versoUrl, 'PNG', x, y, cardW, cardH)
     drawCropMarks('VERSO')
@@ -223,7 +223,7 @@ export default function AdminDesignPage() {
                     .filter((u: { role?: string }) => u.role && validRoles.includes(u.role))
                     .map((u: { id: string; full_name?: string; role: string }) => ({
                         id: u.id,
-                        full_name: u.full_name || '—',
+                        full_name: u.full_name || '-',
                         role: u.role,
                     }))
                 setAgents(agentList)
@@ -425,7 +425,7 @@ export default function AdminDesignPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm">Cartes de Visite</p>
-                        <p className="text-gray-500 text-xs">Format 85×55mm — Recto / Verso</p>
+                        <p className="text-gray-500 text-xs">Format 85×55mm : Recto / Verso</p>
                     </div>
                     <div className="w-2 h-2 rounded-full bg-[#C9A84C]" />
                 </div>
@@ -447,7 +447,7 @@ export default function AdminDesignPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Roll-Ups</p>
-                        <p className="text-gray-600 text-xs">85×200cm — Haute Définition</p>
+                        <p className="text-gray-600 text-xs">85×200cm : Haute Définition</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C9A84C] transition-colors" />
                 </Link>
@@ -458,7 +458,7 @@ export default function AdminDesignPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Plexiglas SVG</p>
-                        <p className="text-gray-600 text-xs">80×120cm — Forme arche</p>
+                        <p className="text-gray-600 text-xs">80×120cm : Forme arche</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
                 </Link>
@@ -469,7 +469,7 @@ export default function AdminDesignPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Plexiglas Horaires</p>
-                        <p className="text-gray-600 text-xs">80×120cm — R.G.B / O.H.T / A.C.S.T</p>
+                        <p className="text-gray-600 text-xs">80×120cm : R.G.B / O.H.T / A.C.S.T</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C88B2A] transition-colors" />
                 </Link>
@@ -485,7 +485,7 @@ export default function AdminDesignPage() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-white">Cartes de Visite</h1>
-                            <p className="text-gray-400 text-sm">Génération automatique — format 85×55mm, recto/verso</p>
+                            <p className="text-gray-400 text-sm">Génération automatique : format 85×55mm, recto/verso</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ export default function AdminDesignPage() {
                 </div>
             </div>
 
-            {/* ── Bannière SQL — visible uniquement si table manquante ── */}
+            {/* ── Bannière SQL : visible uniquement si table manquante ── */}
             {tableReady === false && (
                 <motion.div
                     initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -600,7 +600,7 @@ CREATE POLICY "Admins full access" ON public.business_cards
 
                         {agents.length === 0 && !loadingCards && (
                             <div className="text-xs text-gray-500 bg-white/[0.02] border border-white/[0.05] rounded-lg px-3 py-2.5 mb-3">
-                                Aucun agent disponible — vérifiez que des utilisateurs avec le rôle <code className="bg-white/5 px-1 rounded text-gray-400">agent</code> existent dans la base.
+                                Aucun agent disponible : vérifiez que des utilisateurs avec le rôle <code className="bg-white/5 px-1 rounded text-gray-400">agent</code> existent dans la base.
                             </div>
                         )}
 
@@ -626,7 +626,7 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                     onClick={() => setSelectedAgent(a.id)}
                                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedAgent === a.id ? 'bg-[#008751]/15 border border-[#008751]/30 text-[#008751]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}`}
                                 >
-                                    {a.full_name || '—'} <span className="opacity-50 text-xs">— {a.role}</span>
+                                    {a.full_name || '-'} <span className="opacity-50 text-xs">-{a.role}</span>
                                 </button>
                             ))}
                             {loadingCards && (
@@ -763,11 +763,11 @@ CREATE POLICY "Admins full access" ON public.business_cards
                         </div>
 
                         <p className="text-center text-gray-600 text-xs mt-2">
-                            Format réel : 85 × 55 mm — export 300+ DPI
+                            Format réel : 85 × 55 mm : export 300+ DPI
                         </p>
                     </div>
 
-                    {/* Refs pour export — off-screen pour permettre le chargement des images */}
+                    {/* Refs pour export : off-screen pour permettre le chargement des images */}
                     <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }} aria-hidden>
                         <RGBRecto ref={rgbRectoRef} data={form} scale={1} />
                         <RGBVerso ref={rgbVersoRef} data={form} scale={1} />
@@ -834,7 +834,7 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                             <p className="text-gray-600 text-xs mt-0.5">Non attribuée</p>
                                         )}
                                         <p className="text-gray-600 text-xs mt-0.5">
-                                            {!card.created_at || isNaN(new Date(card.created_at).getTime()) ? '—' : new Date(card.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            {!card.created_at || isNaN(new Date(card.created_at).getTime()) ? '-' : new Date(card.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                                         </p>
                                     </div>
 

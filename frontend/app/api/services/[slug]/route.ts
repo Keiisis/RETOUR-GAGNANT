@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Route publique — retourne un service par slug avec toutes ses données
+// Route publique : retourne un service par slug avec toutes ses données
 // Utilise la service role key pour contourner RLS Supabase
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''

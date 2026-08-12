@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  LIENS DE PAIEMENT — Admin / Agent
+//  LIENS DE PAIEMENT : Admin / Agent
 //  Un lien de paiement réutilise la chaîne de paiement PROUVÉE des
 //  propositions (/p/[secret]/paiement) : 5 providers, montant validé
 //  serveur, webhook, facture ERP auto (documents_financiers → compta),
@@ -33,7 +33,7 @@ function buildLinkEmail(clientName: string, label: string, amount: number, curre
           <td><img src="${SITE_URL}/logo.jpg" alt="Retour Gagnant" style="width:46px;height:46px;border-radius:10px;object-fit:cover"/></td>
           <td style="padding-left:12px">
             <p style="margin:0;color:#1B2A4A;font-size:15px;font-weight:800">${esc(COMPANY.name)}</p>
-            <p style="margin:1px 0 0;color:#8B94A6;font-size:11px">Accompagnement de la diaspora — Cotonou, Bénin</p>
+            <p style="margin:1px 0 0;color:#8B94A6;font-size:11px">Accompagnement de la diaspora : Cotonou, Bénin</p>
           </td>
         </tr></table>
         <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:19px;font-weight:800">Votre lien de paiement sécurisé</h1>
@@ -46,8 +46,8 @@ function buildLinkEmail(clientName: string, label: string, amount: number, curre
           <a href="${url}" style="display:inline-block;background:#10B981;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:800;font-size:14px">Payer maintenant en toute sécurité</a>
         </div>
         <p style="margin:0;color:#8B94A6;font-size:11.5px;text-align:center;line-height:1.7">Une facture officielle vous sera automatiquement envoyée après le paiement.</p>
-        <p style="margin:18px 0 0;color:#5B6474;font-size:12px;line-height:1.7">Une question ? <a href="mailto:${COMPANY.email}" style="color:#008751;font-weight:700;text-decoration:none">${COMPANY.email}</a> — WhatsApp : +229 01 94 35 50 50 / +229 01 60 32 21 21</p>
-        <p style="margin:16px 0 0;color:#9aa5b1;font-size:10.5px;text-align:center;border-top:1px solid #eef1f0;padding-top:14px">${esc(COMPANY.name)} — RCCM ${esc(COMPANY.rccm)} — IFU ${esc(COMPANY.ifu)}</p>
+        <p style="margin:18px 0 0;color:#5B6474;font-size:12px;line-height:1.7">Une question ? <a href="mailto:${COMPANY.email}" style="color:#008751;font-weight:700;text-decoration:none">${COMPANY.email}</a> : WhatsApp : +229 01 94 35 50 50 / +229 01 60 32 21 21</p>
+        <p style="margin:16px 0 0;color:#9aa5b1;font-size:10.5px;text-align:center;border-top:1px solid #eef1f0;padding-top:14px">${esc(COMPANY.name)} : RCCM ${esc(COMPANY.rccm)} : IFU ${esc(COMPANY.ifu)}</p>
       </div>
     </div>`
 }
@@ -112,8 +112,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { label, amount, currency, client_name, client_email, client_phone, send_email, actor, category } = body
         // Marqueur de créateur pris SUR LA SESSION, jamais dans le corps de la
-        // requête : sinon un agent pourrait s'attribuer le lien d'un autre —
-        // ou s'en cacher — en forgeant `by_user_id`.
+        // requête : sinon un agent pourrait s'attribuer le lien d'un autre-// ou s'en cacher : en forgeant `by_user_id`.
         const byMarker = garde.userId ? ` [BY:${String(garde.userId).slice(0, 40)}]` : ''
         // Catégorie comptable de destination choisie à la création
         const cat = ['factures', 'boutique', 'paiements'].includes(category) ? category : 'factures'
@@ -151,7 +150,7 @@ export async function POST(request: NextRequest) {
             destination: String(label).trim(),
             status: 'ready',
             total_amount: xofAmount, // TOUJOURS en XOF
-            notes: `LIEN-PAIEMENT [CAT:${cat}]${byMarker} — créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` — montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
+            notes: `LIEN-PAIEMENT [CAT:${cat}]${byMarker} : créé par ${String(actor || 'Admin').slice(0, 80)} le ${new Date().toLocaleString('fr-FR')}${cur !== 'XOF' ? ` : montant saisi : ${amt.toLocaleString('fr-FR')} ${cur} (converti en ${xofAmount.toLocaleString('fr-FR')} FCFA)` : ''}`,
         }
 
         // currency TOUJOURS 'XOF' (cohérence page + Kkiapay + facture) ;
@@ -176,7 +175,7 @@ export async function POST(request: NextRequest) {
         if (send_email && base.client_email) {
             const result = await sendEmail({
                 to: base.client_email,
-                subject: `${COMPANY.name} — Lien de paiement sécurisé : ${base.destination}`,
+                subject: `${COMPANY.name} : Lien de paiement sécurisé : ${base.destination}`,
                 html: buildLinkEmail(base.client_name, base.destination, xofAmount, 'XOF', url),
                 context: 'payment_link',
                 relatedId: proposal.id,
@@ -210,12 +209,12 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Ce lien ne vous appartient pas.' }, { status: 403 })
         }
         if (link.status === 'paid') {
-            return NextResponse.json({ error: 'Ce lien a été payé — suppression interdite (traçabilité comptable).' }, { status: 400 })
+            return NextResponse.json({ error: 'Ce lien a été payé : suppression interdite (traçabilité comptable).' }, { status: 400 })
         }
         // Nettoyage : supprimer les commandes NON PAYÉES issues de ce lien
         // (sinon un ordre « en attente » orphelin reste visible en comptabilité
         //  Boutique après suppression du lien). Les commandes payées sont
-        //  conservées (traçabilité) — mais un lien payé n'est pas supprimable.
+        //  conservées (traçabilité) : mais un lien payé n'est pas supprimable.
         await supabase.from('orders').delete().eq('shipping_address', id).eq('shipping_zone', 'proposal').neq('payment_status', 'completed')
         await supabase.from('ai_proposal_items').delete().eq('proposal_id', id)
         const { error } = await supabase.from('ai_client_proposals').delete().eq('id', id)

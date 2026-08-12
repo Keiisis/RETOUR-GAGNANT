@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🎫  KeysO-WAF · core/csrf — Protection CSRF (double-submit + origin)
+// 🎫  KeysO-WAF · core/csrf : Protection CSRF (double-submit + origin)
 // ══════════════════════════════════════════════════════════════
 //
 // Deux couches complémentaires, sans état serveur :
@@ -7,7 +7,7 @@
 //   2. Double-submit cookie : un token signé est posé en cookie ET doit
 //      être renvoyé dans un header/champ ; les deux doivent correspondre.
 //
-// PORTABLE — zéro dépendance (utilise Web Crypto si dispo, sinon fallback).
+// PORTABLE : zéro dépendance (utilise Web Crypto si dispo, sinon fallback).
 // ══════════════════════════════════════════════════════════════
 
 export interface CsrfOriginResult {

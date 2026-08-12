@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY manquant — impossible de bypasser RLS')
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY manquant : impossible de bypasser RLS')
 }
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/community-manager/library — Sauvegarder un contenu
+// POST /api/community-manager/library : Sauvegarder un contenu
 export async function POST(request: NextRequest) {
     const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PATCH /api/community-manager/library — Toggle favori
+// PATCH /api/community-manager/library : Toggle favori
 export async function PATCH(request: NextRequest) {
     const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!

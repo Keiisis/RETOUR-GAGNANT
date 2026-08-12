@@ -85,7 +85,7 @@ function addRot(bone: THREE.Object3D | undefined, rx: number, ry = 0, rz = 0) {
 }
 
 /**
- * Le Roi Béhanzin — au centre, majestueux ; clip « Casual_Walk » en boucle.
+ * Le Roi Béhanzin : au centre, majestueux ; clip « Casual_Walk » en boucle.
  *
  * Les bras du clip sont raides. On ajoute un MOUVEMENT SECONDAIRE PROCÉDURAL,
  * additif et appliqué APRÈS la mise à jour du mixer (d'où un mixer dédié, pour

@@ -21,14 +21,14 @@ interface PageContent {
 const DEFAULT_CONTENT: PageContent = {
     hero_title: "Recherche Ancestrale",
     hero_subtitle: "Retrouvez la trace de ceux que l'histoire a effacés. Reconstruire sa lignée, c'est se réapproprier ce qui nous a été pris.",
-    description: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été délibérément effacée par la traite transatlantique. Retrouver l'ancêtre réduit en esclavage, c'est un acte de mémoire, de dignité et d'identité. Nous mobilisons des bases de données spécialisées, des archives officielles et des associations expertes pour reconstituer votre lignée jusqu'aux racines béninoises ou africaines — avec méthode, rigueur et profond respect pour l'histoire de votre famille.",
+    description: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été délibérément effacée par la traite transatlantique. Retrouver l'ancêtre réduit en esclavage, c'est un acte de mémoire, de dignité et d'identité. Nous mobilisons des bases de données spécialisées, des archives officielles et des associations expertes pour reconstituer votre lignée jusqu'aux racines béninoises ou africaines : avec méthode, rigueur et profond respect pour l'histoire de votre famille.",
     documents: [
         "Extrait de naissance de vos deux parents (père et mère)",
         "Extrait de naissance ou de décès de vos grands-parents (côté paternel et côté maternel)",
         "Tout autre document disponible : acte de mariage, acte notarié, acte militaire ou certificat de décès de vos grands-parents et arrière-grands-parents",
     ],
-    documents_note: "L'ensemble des pièces sont à transmettre par voie électronique — une démarche simple et sécurisée pour débuter votre recherche.",
-    pricing_label: "Recherche complète — archives, bases de données & associations spécialisées",
+    documents_note: "L'ensemble des pièces sont à transmettre par voie électronique : une démarche simple et sécurisée pour débuter votre recherche.",
+    pricing_label: "Recherche complète : archives, bases de données & associations spécialisées",
     pricing_amount: "250 €",
     cta_title: "Prêt à entreprendre cette démarche ?",
     cta_description: "Chaque histoire mérite d'être retrouvée. Prenez rendez-vous avec nos experts pour débuter votre recherche ancestrale et renouer avec vos origines africaines.",

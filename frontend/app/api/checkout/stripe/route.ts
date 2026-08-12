@@ -6,7 +6,7 @@ import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// XOF et autres devises sans centimes — Stripe n'applique pas *100
+// XOF et autres devises sans centimes : Stripe n'applique pas *100
 const ZERO_DECIMAL = new Set([
     'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
     'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Commande introuvable' }, { status: 404 })
         }
 
-        // Vérifier que la commande est bien associée à Stripe (défini côté serveur — non falsifiable)
+        // Vérifier que la commande est bien associée à Stripe (défini côté serveur : non falsifiable)
         if (order.payment_method !== 'stripe') {
             console.warn(`[Stripe Intent] Tentative sur commande ${order_id} (méthode: ${order.payment_method})`)
             return NextResponse.json({ error: 'Commande non associée à Stripe' }, { status: 400 })
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         }
 
         const stripe = new Stripe(secretKey)
-        // Si une devise d'affichage valide est transmise, l'utiliser — sinon fallback XOF
+        // Si une devise d'affichage valide est transmise, l'utiliser : sinon fallback XOF
         const currency = (effectiveCurrency || order.currency || 'XOF').toUpperCase()
         const rawAmount = effectiveAmount ?? order.amount
 
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
             currency: currency.toLowerCase(),
             metadata: { order_id },
             receipt_email: order.customer_email || undefined,
-            description: `Retour Gagnant Bénin — Commande ${order_id.slice(0, 8).toUpperCase()}`,
+            description: `Retour Gagnant Bénin : Commande ${order_id.slice(0, 8).toUpperCase()}`,
         })
 
         // Stocker l'ID du PaymentIntent pour la vérification ultérieure

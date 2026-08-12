@@ -141,14 +141,13 @@ export default function AdminNationalitePage() {
      * 1. `URL.revokeObjectURL` était appelé JUSTE APRÈS `a.click()`. Le clic
      *    ne fait que déclencher le téléchargement, il ne l'attend pas : on
      *    invalidait donc l'URL avant que le navigateur ait fini de lire le
-     *    blob. Sur un ZIP contenant les pièces d'identité — plusieurs Mo —
-     *    le téléchargement était annulé. On libère maintenant après un
+     *    blob. Sur un ZIP contenant les pièces d'identité : plusieurs Mo-*    le téléchargement était annulé. On libère maintenant après un
      *    délai, une fois la lecture engagée.
      *
      * 2. L'ancre n'était jamais insérée dans le document. Firefox ignore le
      *    clic programmatique sur un élément détaché.
      *
-     * 3. `if (res.ok)` sans `else` : toute erreur — 401, 403, 500 — était
+     * 3. `if (res.ok)` sans `else` : toute erreur : 401, 403, 500 : était
      *    avalée en silence. L'utilisateur ne pouvait pas distinguer un
      *    échec d'un bouton mort.
      */
@@ -166,7 +165,7 @@ export default function AdminNationalitePage() {
                 let detail = `HTTP ${res.status}`
                 try {
                     const j = await res.json()
-                    if (j?.error) detail = j.detail ? `${j.error} — ${j.detail}` : j.error
+                    if (j?.error) detail = j.detail ? `${j.error} : ${j.detail}` : j.error
                 } catch { /* réponse non JSON : le code HTTP suffit */ }
                 alert(`Téléchargement impossible : ${detail}`)
                 return
@@ -279,7 +278,7 @@ export default function AdminNationalitePage() {
         } finally { setAddingDocs(false) }
     }
 
-    // ── Lien de dépôt client (nommage libre) — dossiers payés uniquement ──
+    // ── Lien de dépôt client (nommage libre) : dossiers payés uniquement ──
     const [depotCopiedId, setDepotCopiedId] = useState<string | null>(null)
     const copyDepotLink = async (id: string) => {
         try {
@@ -312,7 +311,7 @@ export default function AdminNationalitePage() {
             const { error } = await supabase.from('nationality_applications')
                 .update({ recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise })
                 .eq('id', a.id)
-            if (error) { alert('Champs indisponibles — exécutez les migrations 20260804_recherche_ancestrale_payee.sql et 20260804b_recherche_ancestrale_montant.sql'); return }
+            if (error) { alert('Champs indisponibles : exécutez les migrations 20260804_recherche_ancestrale_payee.sql et 20260804b_recherche_ancestrale_montant.sql'); return }
             setApps(prev => prev.map(x => x.id === a.id ? { ...x, recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise } : x))
         } finally { setAncestralBusy(null) }
     }
@@ -332,7 +331,7 @@ export default function AdminNationalitePage() {
     const [fichePdf, setFichePdf] = useState<string | null>(null)
     const [ficheEmail, setFicheEmail] = useState<{ subject: string; body: string }>({ subject: '', body: '' })
     const [ficheBusy, setFicheBusy] = useState(false)
-    // Le PDF (base64) est exposé à l'iframe via un blob same-origin — la CSP
+    // Le PDF (base64) est exposé à l'iframe via un blob same-origin : la CSP
     // interdit les data: en frame-src, mais autorise blob:.
     const [fichePdfUrl, setFichePdfUrl] = useState<string | null>(null)
     useEffect(() => {
@@ -379,8 +378,8 @@ export default function AdminNationalitePage() {
         nextStepsTitle: 'MODALITÉS DE RÉGULARISATION',
         nextStepsIntro: "Pour permettre le traitement et la validation finale de votre dossier, deux options s'offrent à vous :",
         nextStepsBoxes: [
-            { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' },
-            { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' },
+            { title: 'Option 1 : Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' },
+            { title: 'Option 2 : Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' },
         ],
         finalNote: "Merci de bien vouloir informer l'équipe RGB de l'option retenue (fourniture directe des pièces ou souscription au service de recherche généalogique à 250 €) afin de poursuivre l'instruction de votre dossier.",
     }) : d)
@@ -561,7 +560,7 @@ export default function AdminNationalitePage() {
                                             <div className="flex items-center gap-4 mt-1 text-[10px] text-gray-500 flex-wrap">
                                                 <span className="flex items-center gap-1"><Mail size={10} /> {a.email}</span>
                                                 <span className="flex items-center gap-1"><MapPin size={10} /> {a.pays_residence}</span>
-                                                <span>{!a.created_at || isNaN(new Date(a.created_at).getTime()) ? '—' : new Date(a.created_at).toLocaleDateString('fr-FR')}</span>
+                                                <span>{!a.created_at || isNaN(new Date(a.created_at).getTime()) ? '-' : new Date(a.created_at).toLocaleDateString('fr-FR')}</span>
                                             </div>
                                         </div>
                                         {isOpen ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
@@ -591,7 +590,7 @@ export default function AdminNationalitePage() {
                                         <div>
                                             <h4 className="text-[9px] font-black text-purple-400 uppercase tracking-[0.2em] mb-2"><T>Parents</T></h4>
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                                                {[['Père — Nom', a.pere_nom], ['Père — Prénom', a.pere_prenom], ['Père — Naissance', a.pere_date_naissance], ['Mère — Nom', a.mere_nom], ['Mère — Prénom', a.mere_prenom], ['Mère — Naissance', a.mere_date_naissance]].map(([k, v], j) => v && (
+                                                {[['Père : Nom', a.pere_nom], ['Père : Prénom', a.pere_prenom], ['Père : Naissance', a.pere_date_naissance], ['Mère : Nom', a.mere_nom], ['Mère : Prénom', a.mere_prenom], ['Mère : Naissance', a.mere_date_naissance]].map(([k, v], j) => v && (
                                                     <div key={j}><span className="text-gray-600 block text-[10px]">{k}</span><span className="text-white font-bold">{v}</span></div>
                                                 ))}
                                             </div>
@@ -600,14 +599,14 @@ export default function AdminNationalitePage() {
                                         <div>
                                             <h4 className="text-[9px] font-black text-amber-400 uppercase tracking-[0.2em] mb-2"><T>Ancêtres</T></h4>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                                {[['Ancêtre 1 — Nom', a.ancestor1_nom], ['Ancêtre 1 — Prénom', a.ancestor1_prenom], ['Ancêtre 1 — Lien', a.ancestor1_lien_parente], ['Ancêtre 1 — Nationalité', a.ancestor1_nationalite], ['Ancêtre 1 — Pays résidence', a.ancestor1_pays_residence], ['Ancêtre 1 — Vivant', a.ancestor1_vivant === true ? 'Oui' : a.ancestor1_vivant === false ? 'Non' : null], ['Ancêtre 2 — Nom', a.ancestor2_nom], ['Ancêtre 2 — Prénom', a.ancestor2_prenom], ['Ancêtre 2 — Lien', a.ancestor2_lien_parente], ['Ancêtre 2 — Nationalité', a.ancestor2_nationalite]].map(([k, v], j) => v && (
+                                                {[['Ancêtre 1 : Nom', a.ancestor1_nom], ['Ancêtre 1 : Prénom', a.ancestor1_prenom], ['Ancêtre 1 : Lien', a.ancestor1_lien_parente], ['Ancêtre 1 : Nationalité', a.ancestor1_nationalite], ['Ancêtre 1 : Pays résidence', a.ancestor1_pays_residence], ['Ancêtre 1 : Vivant', a.ancestor1_vivant === true ? 'Oui' : a.ancestor1_vivant === false ? 'Non' : null], ['Ancêtre 2 : Nom', a.ancestor2_nom], ['Ancêtre 2 : Prénom', a.ancestor2_prenom], ['Ancêtre 2 : Lien', a.ancestor2_lien_parente], ['Ancêtre 2 : Nationalité', a.ancestor2_nationalite]].map(([k, v], j) => v && (
                                                     <div key={j}><span className="text-gray-600 block text-[10px]">{k}</span><span className="text-white font-bold">{v}</span></div>
                                                 ))}
                                             </div>
                                         </div>
                                         {/* Afro-descendance */}
                                         {a.afro_descendant_description && <div><span className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] block mb-1"><T>Description afro-descendance</T></span><p className="text-xs text-gray-400 bg-white/[0.02] rounded-lg p-3">{a.afro_descendant_description}</p></div>}
-                                        {/* Paiement — scindé : nationalité / recherche ancestrale + total */}
+                                        {/* Paiement : scindé : nationalité / recherche ancestrale + total */}
                                         <div>
                                             <h4 className="text-[9px] font-black text-[#FCD116] uppercase tracking-[0.2em] mb-2"><T>Paiement</T></h4>
                                             {(() => {
@@ -631,7 +630,7 @@ export default function AdminNationalitePage() {
                                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
                                                                 </div>
                                                                 <p className="text-lg font-black text-white">{natAmt} {natCur}</p>
-                                                                <p className="text-[10px] text-gray-500">{[a.payment_method, a.payment_ref].filter(Boolean).join(' · ') || '—'}</p>
+                                                                <p className="text-[10px] text-gray-500">{[a.payment_method, a.payment_ref].filter(Boolean).join(' · ') || '-'}</p>
                                                             </div>
                                                             {/* Recherche ancestrale */}
                                                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
@@ -639,7 +638,7 @@ export default function AdminNationalitePage() {
                                                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><T>Recherche ancestrale</T></span>
                                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${ancPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>{ancPaid ? 'PAYÉE' : 'NON PAYÉE'}</span>
                                                                 </div>
-                                                                <p className={`text-lg font-black ${ancPaid ? 'text-white' : 'text-gray-600'}`}>{ancPaid ? `${ancAmt} ${ancCur}` : '—'}</p>
+                                                                <p className={`text-lg font-black ${ancPaid ? 'text-white' : 'text-gray-600'}`}>{ancPaid ? `${ancAmt} ${ancCur}` : '-'}</p>
                                                                 <p className="text-[10px] text-gray-500"><T>Forfait recherche généalogique</T></p>
                                                             </div>
                                                         </div>
@@ -665,7 +664,7 @@ export default function AdminNationalitePage() {
                                         )}
                                         {/* Notes agent */}
                                         <div><span className="text-[10px] text-gray-600 block mb-1"><T>Notes agent</T></span><textarea defaultValue={a.agent_notes || ''} onBlur={e => updateNotes(a.id, e.target.value)} className="w-full bg-white/[0.03] border border-white/5 rounded-lg p-3 text-xs text-white focus:outline-none resize-none" rows={2} placeholder={t("Notes...")} /></div>
-                                        {/* Actions — boutons PLEINS, fort contraste (lisibles en clair ET sombre) */}
+                                        {/* Actions : boutons PLEINS, fort contraste (lisibles en clair ET sombre) */}
                                         <div className="flex gap-2 flex-wrap">
                                             {a.documents_uploaded && (a.documents_uploaded as string[]).length > 0 && (
                                                 <button onClick={() => openPreview(a)} className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Eye size={13} /> <T>Prévisualiser</T></button>
@@ -706,7 +705,7 @@ export default function AdminNationalitePage() {
                                             >
                                                 {copiedId === a.id ? <><Check size={13} /> <T>Lien copié</T></> : <><Copy size={13} /> <T>Copier le lien</T></>}
                                             </button>
-                                            {/* Dépôt client à nommage libre — RÉSERVÉ aux dossiers payés */}
+                                            {/* Dépôt client à nommage libre : RÉSERVÉ aux dossiers payés */}
                                             {isPaidStatus(a.payment_status) && (
                                                 <button
                                                     onClick={() => copyDepotLink(a.id)}
@@ -749,7 +748,7 @@ export default function AdminNationalitePage() {
                     <div className="w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                             <div>
-                                <h3 className="text-lg font-black text-white">Pièces jointes — {previewApp.prenom} {previewApp.nom}</h3>
+                                <h3 className="text-lg font-black text-white">Pièces jointes : {previewApp.prenom} {previewApp.nom}</h3>
                                 <p className="text-[11px] text-gray-500">{previewApp.application_ref}</p>
                             </div>
                             <button onClick={() => setPreviewApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
@@ -788,7 +787,7 @@ export default function AdminNationalitePage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" onClick={() => setEditApp(null)}>
                     <div className="w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col bg-[#0d1424] border border-white/10 rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-                            <h3 className="text-lg font-black text-white flex items-center gap-2"><Pencil size={16} className="text-violet-400" /> Éditer la demande — {editApp.application_ref}</h3>
+                            <h3 className="text-lg font-black text-white flex items-center gap-2"><Pencil size={16} className="text-violet-400" /> Éditer la demande : {editApp.application_ref}</h3>
                             <button onClick={() => setEditApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -823,7 +822,7 @@ export default function AdminNationalitePage() {
                                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Description afro-descendance</label>
                                 <textarea rows={3} value={String(editForm.afro_descendant_description ?? '')} onChange={e => setEditForm(f => ({ ...f, afro_descendant_description: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500/50 resize-none" />
                             </div>
-                            {/* Gestionnaire de fichiers — voir / supprimer / ajouter (couleurs slate immunisées) */}
+                            {/* Gestionnaire de fichiers : voir / supprimer / ajouter (couleurs slate immunisées) */}
                             <div className="sm:col-span-2">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documents du client ({editDocs.length})</label>
                                 <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3 space-y-2">
@@ -869,7 +868,7 @@ export default function AdminNationalitePage() {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                             <div>
                                 <h3 className="text-lg font-black text-white flex items-center gap-2"><FilePlus size={18} className="text-[#008751]" /> Ajouter des documents</h3>
-                                <p className="text-[11px] text-gray-500">{addDocsApp.prenom} {addDocsApp.nom} — {addDocsApp.application_ref}</p>
+                                <p className="text-[11px] text-gray-500">{addDocsApp.prenom} {addDocsApp.nom} : {addDocsApp.application_ref}</p>
                             </div>
                             <button onClick={() => !addingDocs && setAddDocsApp(null)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-400"><X size={18} /></button>
                         </div>
@@ -960,7 +959,7 @@ export default function AdminNationalitePage() {
                                     <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Objet</label>
                                         <input value={ficheData.objet} onChange={e => setF({ objet: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" /></div>
                                     <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Encadré exigence de format <span className="text-slate-400 normal-case font-medium">(vide = masqué)</span></label>
-                                        <textarea rows={2} value={ficheData.formatWarning || ''} onChange={e => setF({ formatWarning: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" placeholder="Ex : Tout document en mode photo n'est pas utilisable — format PDF obligatoire." /></div>
+                                        <textarea rows={2} value={ficheData.formatWarning || ''} onChange={e => setF({ formatWarning: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" placeholder="Ex : Tout document en mode photo n'est pas utilisable : format PDF obligatoire." /></div>
                                     <div><label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Diagnostic général</label>
                                         <textarea rows={3} value={ficheData.diagnostic} onChange={e => setF({ diagnostic: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none" /></div>
                                     <div>
@@ -1027,7 +1026,7 @@ export default function AdminNationalitePage() {
                                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">E-mail au client {ficheApp.email ? <span className="text-slate-400 normal-case font-medium">→ {ficheApp.email}</span> : <span className="text-[#E8112D] normal-case font-semibold">(aucun e-mail !)</span>}</p>
                                         <input value={ficheEmail.subject} onChange={e => setFicheEmail(v => ({ ...v, subject: e.target.value }))} placeholder="Objet de l'e-mail" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15" />
                                         <textarea rows={15} value={ficheEmail.body} onChange={e => setFicheEmail(v => ({ ...v, body: e.target.value }))} placeholder="Message (rédigé par l'IA, modifiable)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15 resize-none leading-relaxed" />
-                                        <p className="inline-flex items-center gap-1.5 text-[12px] text-slate-500"><Wand2 size={13} className="text-indigo-500" /> Message rédigé par l&apos;assistant IA — ajustable avant l&apos;envoi.</p>
+                                        <p className="inline-flex items-center gap-1.5 text-[12px] text-slate-500"><Wand2 size={13} className="text-indigo-500" /> Message rédigé par l&apos;assistant IA : ajustable avant l&apos;envoi.</p>
                                     </div>
                                 </div>
                                 <div className="px-7 py-4 border-t border-slate-100 flex justify-between gap-3">

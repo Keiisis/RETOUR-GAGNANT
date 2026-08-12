@@ -30,7 +30,7 @@ export function signResumeToken(applicationId: string, ttlDays = 30): string {
   * Jeton « myafroorigins » : autorise le tarif RÉDUIT (50 €) sur le formulaire
  * de nationalité pour les clients dont le dossier est bloqué sur la plateforme
  * MyAfroOrigins. Le jeton (généré côté admin) est la preuve d'autorisation du
- * tarif réduit — sans lui, le formulaire applique le tarif plein.
+ * tarif réduit : sans lui, le formulaire applique le tarif plein.
  */
 export function signMyafroToken(ttlDays = 60, paid = false, invoiceId?: string): string {
     const payload = { 

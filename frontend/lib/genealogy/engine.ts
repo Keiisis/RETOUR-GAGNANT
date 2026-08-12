@@ -97,7 +97,7 @@ export function buildDossierReport(
   });
 
   items.filter(i => i.missingPerson).forEach(i => {
- alerts.push({ level: 'error', message: `${ROLE_LABELS[i.targetRole] ?? i.label} absent de l'arbre — ajoutez-le pour avancer.`, relatedRole: i.targetRole });
+ alerts.push({ level: 'error', message: `${ROLE_LABELS[i.targetRole] ?? i.label} absent de l'arbre : ajoutez-le pour avancer.`, relatedRole: i.targetRole });
   });
 
   items.filter(i => i.required && !i.fulfilled && !i.missingPerson && !i.expired).forEach(i => {
@@ -152,7 +152,7 @@ export function detectInconsistencies(persons: Person[]): Alert[] {
     if (ageAtBirth < 12) {
  alerts.push({ level: 'warning', message: `${rel === 'père'? 'Le père': 'La mère'} de ${name} aurait moins de 12 ans à sa naissance (écart improbable).`});
     } else if (ageAtBirth > 70) {
-      alerts.push({ level: 'info', message: `ℹ️ ${rel === 'père' ? 'Le père' : 'La mère'} de ${name} aurait plus de 70 ans à sa naissance — à vérifier.` });
+      alerts.push({ level: 'info', message: `ℹ️ ${rel === 'père' ? 'Le père' : 'La mère'} de ${name} aurait plus de 70 ans à sa naissance : à vérifier.` });
     }
     // 3. Conception après le décès du parent (tolérance 9 mois pour le père)
     if (parent.death_date) {

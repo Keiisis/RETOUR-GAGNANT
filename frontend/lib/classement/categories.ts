@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// Classement Client — catégories de service, jalons de relance, statuts.
+// Classement Client : catégories de service, jalons de relance, statuts.
 // Source unique partagée par l'API, le cron de relances et l'UI.
 // ══════════════════════════════════════════════════════════════
 
@@ -94,7 +94,7 @@ export function getStatus(value: string): StatusInfo {
 /**
  * Éligibilité aux relances automatiques (décision 2026-07-02) :
  * on ne relance QUE les clients qui ont payé (statut « Payé », valeur DB
- * `converti` — posée automatiquement par markClientConverted au paiement).
+ * `converti` : posée automatiquement par markClientConverted au paiement).
  * Règle unique partagée par le cron, le badge de nav et le board UI.
  */
 export function isRelanceEligible(status: string): boolean {

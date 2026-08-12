@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 const EXCLUDED = ['/admin', '/agent', '/dashboard']
 
 /**
- * Curseur animé « Bio Guéra » — un cavalier au galop (silhouette SVG stylisée,
+ * Curseur animé « Bio Guéra » : un cavalier au galop (silhouette SVG stylisée,
  * charte Bénin) qui suit la souris. Au clic, le cavalier lance sa lance vers le
  * point cliqué (le bouton) où un assaillant est touché puis tombe.
  *
@@ -128,7 +128,7 @@ export default function BioGueraCursor() {
     return (
         <div ref={layerRef} className="bg-cursor-layer" aria-hidden="true">
             <div ref={riderRef} className="bg-rider">
-                {/* Cavalier au galop — silhouette stylisée, accents tricolores */}
+                {/* Cavalier au galop : silhouette stylisée, accents tricolores */}
                 <svg width="68" height="60" viewBox="0 0 68 60" fill="none">
                     {/* poussière */}
                     <ellipse cx="16" cy="52" rx="14" ry="3" fill="#0b2a1c" opacity="0.18" />
@@ -152,7 +152,7 @@ export default function BioGueraCursor() {
                     <path d="M34 20 Q36 30 40 31 L34 31 Q30 26 31 20 Z" fill="#0b2a1c" />
                     {/* cape tricolore */}
                     <path d="M31 21 Q24 24 26 32 L31 28 Z" fill="#008751" />
-                    {/* bras + lance levée — groupe animé (pivot à l'épaule) */}
+                    {/* bras + lance levée : groupe animé (pivot à l'épaule) */}
                     <g className="bg-arm">
                         <line x1="37" y1="21" x2="52" y2="10" stroke="#0b2a1c" strokeWidth="2.6" strokeLinecap="round" />
                         <line x1="46" y1="16" x2="64" y2="8" stroke="#b9922f" strokeWidth="2.2" strokeLinecap="round" />

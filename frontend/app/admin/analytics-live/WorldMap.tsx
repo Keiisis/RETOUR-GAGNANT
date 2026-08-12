@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, memo } from 'react'
 import { motion } from 'framer-motion'
-// CSS Leaflet embarqué depuis node_modules — indispensable au positionnement
+// CSS Leaflet embarqué depuis node_modules : indispensable au positionnement
 // des tuiles. La version CDN (unpkg) échouait par moments → tuiles noires
 // empilées n'importe comment. Ici c'est bundlé : plus aucune dépendance réseau.
 import 'leaflet/dist/leaflet.css'
@@ -230,7 +230,7 @@ const WorldMap = memo(function WorldMap({ sessions, countryPoints = [] }: {
                                 title: s.city ? `${s.city}, ${s.country}` : (s.country || 'Localisation inconnue'),
                                 lines: [
                                     'En ligne maintenant',
-                                    `${s.browser || 'Navigateur inconnu'} — ${s.device_type || 'desktop'}`,
+                                    `${s.browser || 'Navigateur inconnu'} : ${s.device_type || 'desktop'}`,
                                     `Page : ${formatPage(s.page)}`,
                                 ]
                             })

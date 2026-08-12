@@ -1,7 +1,7 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════
-// Translation Engine — React Context Provider
+// Translation Engine : React Context Provider
 // Manages active language, loads translations from cache,
 // provides t() function for all components.
 // ═══════════════════════════════════════════════════════
@@ -116,7 +116,7 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
             try {
                 const supabase = createClient(supabaseUrl, supabaseKey)
 
-                // Paginated load — Supabase returns max 1000 rows per query by default.
+                // Paginated load : Supabase returns max 1000 rows per query by default.
                 // A site with thousands of translations must page through all of them.
                 const PAGE_SIZE = 1000
                 const allRows: { source_hash: string; translated_text: string }[] = []

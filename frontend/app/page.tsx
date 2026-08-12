@@ -13,7 +13,7 @@ import PartnersSection from "@/components/home/PartnersSection";
 import FinalCta from "@/components/home/FinalCta";
 import { T } from "@/lib/translation";
 
-// Grain papier léger (texture anti-flat) — fixe, non interactif.
+// Grain papier léger (texture anti-flat) : fixe, non interactif.
 const GRAIN =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
@@ -22,10 +22,10 @@ export default function Home() {
     <div className="relative bg-[#FBFAF7]">
       <SmoothScroll />
 
-      {/* Hero — asymétrique éditorial */}
+      {/* Hero : asymétrique éditorial */}
       <HeroSection />
 
-      {/* Services — bento asymétrique */}
+      {/* Services : bento asymétrique */}
       <section className="bg-[#FBFAF7] py-20 md:py-28">
         <div className="mx-auto max-w-[1400px] px-5 md:px-8">
           <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -46,28 +46,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Qui sommes-nous — éditorial image + prose */}
+      {/* Qui sommes-nous : éditorial image + prose */}
       <AboutUsSection />
 
-      {/* Notre démarche — timeline verticale */}
+      {/* Notre démarche : timeline verticale */}
       <ProcessSteps />
 
-      {/* L'Héritage — ouverture cinématique : Le Roi Béhanzin marche (3D) */}
+      {/* L'Héritage : ouverture cinématique : Le Roi Béhanzin marche (3D) */}
       <BehanzinHeritage />
 
-      {/* Patrimoine — galerie défilante */}
+      {/* Patrimoine : galerie défilante */}
       <HeritageCarousel />
 
-      {/* Immersion visuelle — bloc noir cinématique (galerie photos) */}
+      {/* Immersion visuelle : bloc noir cinématique (galerie photos) */}
       <ImmersiveGallery />
 
-      {/* Témoignages — défilement de citations */}
+      {/* Témoignages : défilement de citations */}
       <TestimonialsCarousel />
 
-      {/* Partenaires — logo wall */}
+      {/* Partenaires : logo wall */}
       <PartnersSection />
 
-      {/* CTA final — RDV + newsletter */}
+      {/* CTA final : RDV + newsletter */}
       <FinalCta />
 
       {/* Grain papier */}

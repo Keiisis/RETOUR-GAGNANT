@@ -193,7 +193,7 @@ export default function AgentPresentationsPage() {
                             <span className="text-[#008751] font-bold">RETOUR</span>{' '}
                             <span className="text-[#FCD116] font-bold">GAGNANT</span>{' '}
                             <span className="text-[#E8112D] font-bold">BÉNIN</span>
-                            {' '}— Propositions IA de conciergerie premium
+                            {' '}-Propositions IA de conciergerie premium
                         </p>
                     </div>
                 </div>
@@ -238,7 +238,7 @@ export default function AgentPresentationsPage() {
                                 <div className="space-y-1.5 text-xs text-slate-400 mb-5">
                                     <div className="flex justify-between">
                                         <span>Créé le</span>
-                                        <span className="text-slate-300">{prop.created_at && !isNaN(new Date(prop.created_at).getTime()) ? new Date(prop.created_at).toLocaleDateString('fr-FR') : '—'}</span>
+                                        <span className="text-slate-300">{prop.created_at && !isNaN(new Date(prop.created_at).getTime()) ? new Date(prop.created_at).toLocaleDateString('fr-FR') : '-'}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Montant</span>
@@ -464,7 +464,7 @@ export default function AgentPresentationsPage() {
                                                         <div className="flex-1 min-w-0">
                                                             {/* text-slate-100 : immunisé contre l'override globals.css qui
                                                                 assombrit .text-white en thème clair (invisible sur carte sélectionnée). */}
-                                                            <p className="text-slate-100 font-bold text-sm truncate">{item.title || item.address || '—'}</p>
+                                                            <p className="text-slate-100 font-bold text-sm truncate">{item.title || item.address || '-'}</p>
                                                             {item.address && <p className="text-slate-400 text-xs truncate flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{item.address}</p>}
                                                             {item.rating > 0 && (
                                                                 <p className="text-[#FCD116] text-xs font-bold mt-1 flex items-center gap-1">

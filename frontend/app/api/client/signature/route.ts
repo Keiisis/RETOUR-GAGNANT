@@ -26,7 +26,7 @@ async function getClientId(request: NextRequest): Promise<string | null> {
     }
 }
 
-// GET /api/client/signature — récupérer la signature du client connecté
+// GET /api/client/signature : récupérer la signature du client connecté
 export async function GET(request: NextRequest) {
     try {
         const clientId = await getClientId(request)
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/client/signature — sauvegarder ou mettre à jour la signature
+// POST /api/client/signature : sauvegarder ou mettre à jour la signature
 export async function POST(request: NextRequest) {
     try {
         const clientId = await getClientId(request)
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PATCH /api/client/signature — mettre à jour seulement les préférences (auto_sign)
+// PATCH /api/client/signature : mettre à jour seulement les préférences (auto_sign)
 export async function PATCH(request: NextRequest) {
     try {
         const clientId = await getClientId(request)
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
     }
 }
 
-// DELETE /api/client/signature — supprimer la signature
+// DELETE /api/client/signature : supprimer la signature
 export async function DELETE(request: NextRequest) {
     try {
         const clientId = await getClientId(request)

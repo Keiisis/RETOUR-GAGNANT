@@ -1,7 +1,7 @@
 'use client'
 
 /* ══════════════════════════════════════════════════════════════
-   STANDARD TÉLÉPHONIQUE — côté agent
+   STANDARD TÉLÉPHONIQUE : côté agent
 
    Monté une seule fois dans le layout agent : l'appel sonne quelle que
    soit la page ouverte. Écoute la table `calls` en temps réel, affiche
@@ -156,7 +156,7 @@ export function AgentCallCenter() {
                    et on entend le client, mais lui ne nous entend plus. Sans
                    ce signal, l'agent parlait dans le vide. */
                 onMicroPerdu: () => setErreur(
-                    "Micro perdu — le client ne vous entend plus. Vérifiez votre casque, puis rappelez.",
+                    "Micro perdu : le client ne vous entend plus. Vérifiez votre casque, puis rappelez.",
                 ),
             })
             engine.current = moteur

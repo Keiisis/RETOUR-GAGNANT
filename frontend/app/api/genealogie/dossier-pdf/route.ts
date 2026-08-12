@@ -56,10 +56,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
     historical_identity: 'Pièce historique',
     other: 'Autre document',
 }
-const docTypeLabel = (t?: string | null) => (t ? DOC_TYPE_LABELS[t] || t : '—')
-const roleLabel = (r?: string | null) => (r ? ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r : '—')
+const docTypeLabel = (t?: string | null) => (t ? DOC_TYPE_LABELS[t] || t : '-')
+const roleLabel = (r?: string | null) => (r ? ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r : '-')
 const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+    d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
 
 interface DossierChecklistItem {
     label: string
@@ -90,7 +90,7 @@ const CHECKLIST_ANCETRE: DossierChecklistItem[] = [
     { label: 'Lettre du demandeur expliquant la démarche', required: true },
 ]
 
-// Charge le logo (HTTP — fiable en serverless Vercel) → data URL base64
+// Charge le logo (HTTP : fiable en serverless Vercel) → data URL base64
 async function loadLogoDataUrl(): Promise<string | null> {
     try {
         const res = await fetch(`${SITE_URL}/logo.jpg`)
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
         const margin = 18
 
         const now = new Date()
-        const clientName = `${tree.client_first_name || ''} ${tree.client_last_name || ''}`.trim() || tree.name || '—'
+        const clientName = `${tree.client_first_name || ''} ${tree.client_last_name || ''}`.trim() || tree.name || '-'
         const docRef = `RGB-PCF-${treeId.slice(0, 8).toUpperCase()}`
 
         // ── Bande tricolore (vert | jaune | rouge), pleine largeur ──
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
         doc.setFontSize(8)
         doc.setTextColor(COL_MUTED)
         doc.text(
-            'Document strictement confidentiel — établi à la demande du client et réservé à son usage personnel.',
+            'Document strictement confidentiel : établi à la demande du client et réservé à son usage personnel.',
             pageW / 2, cardY + cardH + 12, { align: 'center', maxWidth: cardW }
         )
 
@@ -305,11 +305,11 @@ export async function POST(request: NextRequest) {
                 head: [['Nom complet', 'Sexe', 'Naissance', 'Lieu', 'Lien de parenté', 'Décès']],
                 body: (persons || []).map(p => [
                     `${p.first_name || ''} ${p.last_name || ''}`.trim() + (p.is_self ? ' ' : ''),
-                    p.gender === 'male' ? 'H' : p.gender === 'female' ? 'F' : '—',
+                    p.gender === 'male' ? 'H' : p.gender === 'female' ? 'F' : '-',
                     fmtDate(p.birth_date),
-                    p.birth_place || '—',
+                    p.birth_place || '-',
                     roleLabel(p.relation_role),
-                    p.death_date ? `† ${fmtDate(p.death_date)}` : '—',
+                    p.death_date ? `† ${fmtDate(p.death_date)}` : '-',
                 ]),
                 headStyles: { fillColor: COL_EMERALD_DARK, textColor: '#FFFFFF', fontStyle: 'bold', fontSize: 9 },
                 styles: { fontSize: 8.5, cellPadding: 2.6, textColor: COL_NAVY, lineColor: COL_LINE, lineWidth: 0.1 },
@@ -331,9 +331,9 @@ export async function POST(request: NextRequest) {
                 head: [['Type de pièce', 'Intitulé', 'Émise le', 'Concerne']],
                 body: (docs || []).map(d => [
                     docTypeLabel(d.doc_type),
-                    d.title || '—',
+                    d.title || '-',
                     fmtDate(d.issued_date),
-                    d.person_id ? personNames[d.person_id] || '—' : '—',
+                    d.person_id ? personNames[d.person_id] || '-' : '-',
                 ]),
                 headStyles: { fillColor: COL_EMERALD_DARK, textColor: '#FFFFFF', fontStyle: 'bold', fontSize: 9 },
                 styles: { fontSize: 8.5, cellPadding: 2.6, textColor: COL_NAVY, lineColor: COL_LINE, lineWidth: 0.1 },
@@ -348,7 +348,7 @@ export async function POST(request: NextRequest) {
             sectionHeader(
                 'Pièces à Fournir',
                 dossier
-                    ? `${title} — Statut : ${dossier.status} · Avancement ${Math.round(dossier.progress)}%`
+                    ? `${title} : Statut : ${dossier.status} · Avancement ${Math.round(dossier.progress)}%`
                     : title,
             )
             autoTable(doc, {

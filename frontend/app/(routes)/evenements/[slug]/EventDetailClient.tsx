@@ -25,9 +25,9 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { week
 const formatTime = (d: string) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
 const PAYMENT_METHODS = [
-    { id: 'kkiapay', label: 'Kkiapay', sub: 'Mobile Money — Bénin', color: '#008751' },
+    { id: 'kkiapay', label: 'Kkiapay', sub: 'Mobile Money : Bénin', color: '#008751' },
     { id: 'fedapay', label: 'FedaPay', sub: 'Afrique de l\'Ouest', color: '#0ea5e9' },
-    { id: 'stripe', label: 'Carte Bancaire', sub: 'Stripe — International', color: '#6366f1' },
+    { id: 'stripe', label: 'Carte Bancaire', sub: 'Stripe : International', color: '#6366f1' },
     { id: 'paypal', label: 'PayPal', sub: 'International', color: '#0070ba' },
 ]
 
@@ -83,10 +83,10 @@ export default function EventDetailPage() {
             if (data.success) {
                 setSuccess(true)
             } else {
-                setError(data.error || 'Paiement reçu — confirmation en cours. Votre ticket arrivera par email.')
+                setError(data.error || 'Paiement reçu : confirmation en cours. Votre ticket arrivera par email.')
             }
         } catch {
-            setError('Paiement reçu — confirmation en cours. Votre ticket arrivera par email.')
+            setError('Paiement reçu : confirmation en cours. Votre ticket arrivera par email.')
         }
         setPayProcessing(false)
     }, [])
@@ -107,7 +107,7 @@ export default function EventDetailPage() {
                 FP.init({
                     public_key: paymentSettings.fedapay_public_key,
                     environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-                    transaction: { amount: Math.round(price), description: `Ticket — ${event?.title || 'Événement'}`, currency: { iso: 'XOF' } },
+                    transaction: { amount: Math.round(price), description: `Ticket : ${event?.title || 'Événement'}`, currency: { iso: 'XOF' } },
                     customer: { email: form.email || undefined, lastname: form.full_name || 'Client' },
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onComplete: (resp: any) => {
@@ -119,7 +119,7 @@ export default function EventDetailPage() {
                 }).open()
                 return
             }
-            // Kkiapay (défaut) — config minimale, listeners enregistrés UNE fois
+            // Kkiapay (défaut) : config minimale, listeners enregistrés UNE fois
             await ensureKkiapaySDK()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const w = window as any
@@ -286,7 +286,7 @@ export default function EventDetailPage() {
 
                 <div className="grid lg:grid-cols-5 gap-8 items-start">
 
-                    {/* ── GAUCHE — Description ── */}
+                    {/* ── GAUCHE : Description ── */}
                     <div className="lg:col-span-3 space-y-6">
 
                         {/* Header event */}
@@ -320,7 +320,7 @@ export default function EventDetailPage() {
                                         <div className="text-xs font-bold text-[#1a2332]">{formatDate(event.start_date)}</div>
                                         <div className="text-[10px] text-gray-400">
                                             {formatTime(event.start_date)}
-                                            {event.end_date && ` — ${formatTime(event.end_date)}`}
+                                            {event.end_date && ` : ${formatTime(event.end_date)}`}
                                         </div>
                                     </div>
                                 </div>
@@ -388,7 +388,7 @@ export default function EventDetailPage() {
                         )}
                     </div>
 
-                    {/* ── DROITE — Sticky CTA ── */}
+                    {/* ── DROITE : Sticky CTA ── */}
                     <div className="lg:col-span-2">
                         <div className="sticky top-24 space-y-4">
                             <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden"
@@ -449,7 +449,7 @@ export default function EventDetailPage() {
                                                 boxShadow: '0 8px 32px rgba(0,135,81,0.35)',
                                             }}>
                                             <Ticket size={16} />
-                                            {event.price_standard === 0 ? t('Participer gratuitement') : `${t('Participer')} — ${showPrice(event.price_standard)}`}
+                                            {event.price_standard === 0 ? t('Participer gratuitement') : `${t('Participer')} : ${showPrice(event.price_standard)}`}
                                         </button>
 
                                         {event.price_vip > 0 && (
@@ -460,7 +460,7 @@ export default function EventDetailPage() {
                                                     boxShadow: '0 8px 32px rgba(252,209,22,0.4)',
                                                 }}>
                                                 <Crown size={16} />
-                                                {t('Réserver VIP')} — {showPrice(event.price_vip)}
+                                                {t('Réserver VIP')} : {showPrice(event.price_vip)}
                                             </button>
                                         )}
                                     </div>
@@ -477,7 +477,7 @@ export default function EventDetailPage() {
                                         {event.max_capacity > 0 && (
                                             <div className="flex items-center gap-2 text-[11px] text-gray-400">
                                                 <Users size={12} className="text-[#008751]" />
-                                                {t('Places limitées')} — {event.max_capacity} {t('au total')}
+                                                {t('Places limitées')} : {event.max_capacity} {t('au total')}
                                             </div>
                                         )}
                                     </div>
@@ -617,7 +617,7 @@ export default function EventDetailPage() {
                                             ))}
                                         </div>
 
-                                        {/* Étape 1 — Informations */}
+                                        {/* Étape 1 : Informations */}
                                         {formStep === 0 && (
                                             <div className="space-y-4">
                                                 {[
@@ -643,7 +643,7 @@ export default function EventDetailPage() {
                                             </div>
                                         )}
 
-                                        {/* Étape 2 — Paiement */}
+                                        {/* Étape 2 : Paiement */}
                                         {formStep === 1 && !isFree && (
                                             <div className="space-y-4">
                                                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
@@ -690,7 +690,7 @@ export default function EventDetailPage() {
                                             </div>
                                         )}
 
-                                        {/* Étape 3 — Encaissement (widget provider) */}
+                                        {/* Étape 3 : Encaissement (widget provider) */}
                                         {formStep === 2 && (
                                             <div className="flex flex-col items-center py-6 space-y-3">
                                                 {payProcessing ? (

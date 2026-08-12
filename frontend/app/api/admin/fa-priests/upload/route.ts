@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Upload d'images des Prêtres Fa (portrait & galerie)
+//  ADMIN : Upload d'images des Prêtres Fa (portrait & galerie)
 //  Fichier envoyé depuis l'appareil → Supabase Storage (bucket public
 //  « fa-priests ») → URL publique renvoyée et stockée en base.
 //  Le bucket est créé automatiquement au premier envoi.
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, urls, errors })
 }
 
-// DELETE ?url=… — retire une image du stockage
+// DELETE ?url=… : retire une image du stockage
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

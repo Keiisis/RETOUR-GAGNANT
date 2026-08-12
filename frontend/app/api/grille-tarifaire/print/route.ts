@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
                 <!-- PIED DE PAGE -->
                 <div class="footer">
                     <p class="footer-info">RETOUR GAGNANT BENIN - RCCM: RB/COT/26 B 42001 - IFU: 3202644573981 - Haie-Vive Cocotiers, Cotonou - contact@retourgagnantbenin.bj</p>
-                    <p class="footer-ref">Document N° ${gridRef} — Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
+                    <p class="footer-ref">Document N° ${gridRef} : Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
                 </div>
             </div>
             `
@@ -303,7 +303,7 @@ export async function GET(request: NextRequest) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Grilles Tarifaires — Retour Gagnant Bénin</title>
+  <title>Grilles Tarifaires : Retour Gagnant Bénin</title>
   <style>
     /* ===== RESET ===== */
     *{margin:0;padding:0;box-sizing:border-box}
@@ -469,7 +469,7 @@ export async function GET(request: NextRequest) {
       break-inside:avoid;
     }
 
-    /* Cadre vert — dimensions facture */
+    /* Cadre vert : dimensions facture */
     .sig-box{
       border:1px solid #008751;
       border-radius:8px;
@@ -494,7 +494,7 @@ export async function GET(request: NextRequest) {
     .sig-date{font-size:9px;color:#888;margin-top:4px}
     .sig-valid{font-size:7.5px;font-weight:800;text-transform:uppercase;color:#008751;letter-spacing:0.5px;margin-top:4px}
 
-    /* Cachet 200px — mix-blend-mode:multiply rend le blanc invisible, comme un vrai tampon */
+    /* Cachet 200px : mix-blend-mode:multiply rend le blanc invisible, comme un vrai tampon */
     .cachet{
       position:absolute;
       right:5px;

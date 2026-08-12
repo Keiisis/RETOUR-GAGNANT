@@ -1,7 +1,7 @@
 'use client'
 
 /* ══════════════════════════════════════════════════════════════
-   APPELER UN CONSEILLER — côté client (web)
+   APPELER UN CONSEILLER : côté client (web)
 
    Crée une ligne dans `calls` puis ouvre le micro. Tous les agents
    connectés voient l'appel sonner dans leur panel ; le premier qui

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Relances Classement Client
+//  CRON : Relances Classement Client
 // Chaque jour : pour chaque client, si un jalon (15/20/30/45/60/75/90 j)
 // est atteint et pas encore notifié, envoie un email de rappel (à l'équipe)
 // avec l'état du dossier (statut + notes/problèmes) ET des suggestions
@@ -52,7 +52,7 @@ async function aiSuggestions(c: ClientRow, days: number, milestone: number): Pro
                 },
                 {
                     role: 'user',
-                    content: `Service : ${cat}\nStatut actuel : ${statut}\nJours depuis le 1er contact : ${days} (jalon de relance : ${milestone}j)\nNotes / problèmes rencontrés : ${c.notes?.trim() || '(aucune note renseignée)'}\nNom client : ${c.full_name || '—'}`,
+                    content: `Service : ${cat}\nStatut actuel : ${statut}\nJours depuis le 1er contact : ${days} (jalon de relance : ${milestone}j)\nNotes / problèmes rencontrés : ${c.notes?.trim() || '(aucune note renseignée)'}\nNom client : ${c.full_name || '-'}`,
                 },
             ],
             temperature: 0.5,
@@ -77,8 +77,8 @@ function buildEmail(c: ClientRow, days: number, milestone: number, suggestions: 
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #eef2f1;border-radius:14px;overflow:hidden">
       <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
       <div style="padding:26px 28px">
-        <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin — Suivi Client</p>
-        <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Relance à ${milestone} jours — ${c.full_name || c.email}</h1>
+        <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin : Suivi Client</p>
+        <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Relance à ${milestone} jours : ${c.full_name || c.email}</h1>
         <p style="margin:0 0 18px;color:#8B94A6;font-size:13px">Il est temps de faire le point sur ce dossier.</p>
 
         <table style="width:100%;border-collapse:collapse;background:#F8FAF9;border-radius:10px;overflow:hidden;margin:0 0 18px">
@@ -100,7 +100,7 @@ function buildEmail(c: ClientRow, days: number, milestone: number, suggestions: 
         </div>
 
         <a href="${SITE_URL}/agent/classement-client" style="display:inline-block;background:#10B981;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:800;font-size:13px">Ouvrir le Classement Client</a>
-        <p style="margin:18px 0 0;color:#9aa5b1;font-size:11px;text-align:center">Rappel automatique — Retour Gagnant Bénin</p>
+        <p style="margin:18px 0 0;color:#9aa5b1;font-size:11px;text-align:center">Rappel automatique : Retour Gagnant Bénin</p>
       </div>
     </div>`
 }
@@ -132,7 +132,7 @@ async function run() {
         try {
             await sendEmail({
                 to: toLine,
-                subject: `Relance ${milestone}j — ${c.full_name || c.email} (${getCategory(c.service_category).label})`,
+                subject: `Relance ${milestone}j : ${c.full_name || c.email} (${getCategory(c.service_category).label})`,
                 html: buildEmail(c, days, milestone, suggestions),
                 context: 'client_relance',
                 relatedId: c.id,

@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { ChartBar as BarChart3, TrendUp as TrendingUp, Users, ChatText as MessageSquare, Globe as Globe2, Calendar, ArrowUpRight, ArrowDownRight, FileText, Sparkle as Sparkles, Envelope as Mail, Target } from '@phosphor-icons/react';
 
 const formatDate = (val: string | null | undefined) => {
-    if (!val) return '—'
+    if (!val) return '-'
     const d = new Date(val)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 interface Lead {

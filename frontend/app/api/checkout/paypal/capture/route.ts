@@ -5,7 +5,7 @@ import { toXOFStrict, fromXOFStrict } from '@/lib/server-rates'
 
 // Les taux viennent de la table `currencies` via lib/server-rates.
 // L'ancienne table locale (USD à 600 au lieu de 574,71) faisait rejeter
-// des paiements légitimes — et acceptait des montants faux dans l'autre
+// des paiements légitimes : et acceptait des montants faux dans l'autre
 // sens dès que le taux réel s'en écartait.
 
 async function getPayPalAccessToken(
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // Idempotence — vérifier si déjà traité
+        // Idempotence : vérifier si déjà traité
         const { data: existingOrder, error: fetchErr } = await supabase
             .from('orders')
             // `currency` est indispensable : sans elle, un montant en EUR
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // Vérifier que la commande est bien associée à PayPal (défini côté serveur — non falsifiable)
+        // Vérifier que la commande est bien associée à PayPal (défini côté serveur : non falsifiable)
         if (existingOrder.payment_method !== 'paypal') {
             console.warn(`[PayPal Capture] Tentative sur commande ${order_id} (méthode: ${existingOrder.payment_method})`)
             return NextResponse.json(
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
 
         if (expectedPaypalAmount === null || expectedPaypalAmount <= 0) {
             return NextResponse.json(
-                { success: false, error: `Taux de change ${capturedCurrency} indisponible — capture non validée.` },
+                { success: false, error: `Taux de change ${capturedCurrency} indisponible : capture non validée.` },
                 { status: 503 }
             )
         }
@@ -175,12 +175,12 @@ export async function POST(request: Request) {
                 diff: Math.abs(capturedAmount - expectedPaypalAmount),
             })
             return NextResponse.json(
-                { success: false, error: 'Montant capturé incorrect — paiement rejeté' },
+                { success: false, error: 'Montant capturé incorrect : paiement rejeté' },
                 { status: 400 }
             )
         }
 
-        // Mettre à jour la commande en "completed" — garde atomique anti-race condition
+        // Mettre à jour la commande en "completed" : garde atomique anti-race condition
         await supabase
             .from('orders')
             .update({

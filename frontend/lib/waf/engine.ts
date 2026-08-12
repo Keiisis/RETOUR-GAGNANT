@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// ⚙️ WAF ENGINE — Moteur d'analyse principal
+// ⚙️ WAF ENGINE : Moteur d'analyse principal
 // Système de scoring d'anomalies (inspiré OWASP CRS ModSecurity)
 // Analyse multi-cibles, règles custom DB, géo-blocage, body inspection
 // ══════════════════════════════════════════════════════════════

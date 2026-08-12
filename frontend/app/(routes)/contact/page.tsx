@@ -41,7 +41,7 @@ export default function ContactPage() {
 
     return (
         <div className="min-h-screen bg-white text-slate-900">
-            {/* Hero — clair, charte Bénin, Playfair */}
+            {/* Hero : clair, charte Bénin, Playfair */}
             <section className="relative overflow-hidden">
                 <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
                 <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 text-center">
@@ -54,7 +54,7 @@ export default function ContactPage() {
                         <h1 className="font-display text-4xl md:text-[3.4rem] font-bold leading-[1.05] tracking-[-0.02em]">
                             <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent"><T>Contactez-nous</T></span>
                         </h1>
-                        <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Une question ? Un projet ? Notre équipe est à votre écoute — réponse sous 24 h.</T></p>
+                        <p className="mt-4 text-[17px] text-slate-600 max-w-xl mx-auto"><T>Une question ? Un projet ? Notre équipe est à votre écoute : réponse sous 24 h.</T></p>
                         <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
                             <span className="inline-flex items-center gap-1.5"><Clock size={15} className="text-[#008751]" /> <T>Réponse sous 24 h</T></span>
                             <span className="inline-flex items-center gap-1.5"><Phone size={15} className="text-[#008751]" /> <T>WhatsApp disponible</T></span>

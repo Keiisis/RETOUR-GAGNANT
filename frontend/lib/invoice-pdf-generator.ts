@@ -27,7 +27,7 @@ export interface InvoicePdfData {
     conditions?: string
     validite?: string
     isManual?: boolean
-    /** 'facture' (défaut) ou 'devis' — change le titre, le badge et le texte légal. */
+    /** 'facture' (défaut) ou 'devis' : change le titre, le badge et le texte légal. */
     docType?: 'devis' | 'facture'
 }
 
@@ -157,7 +157,7 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     pdf.text(`${isDevis ? 'Réf.' : 'N°'} : ${data.invoiceRef}`, PW - MR, y + 11, { align: 'right' })
     pdf.text(`Date : ${data.date}`, PW - MR, y + 15, { align: 'right' })
 
-    // Status Badge — devis : "DEVIS" (vert) ; facture : ACQUITTÉE / EN ATTENTE
+    // Status Badge : devis : "DEVIS" (vert) ; facture : ACQUITTÉE / EN ATTENTE
     const statusText = isDevis ? (data.validite ? `VALABLE ${data.validite}` : 'DEVIS') : (data.isPaid ? 'ACQUITTEE' : 'EN ATTENTE')
     const statusW = isDevis ? 34 : 28
     const statusH = 6
@@ -354,7 +354,7 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
         pdf.setFont('helvetica', 'bold')
         pdf.setFontSize(7)
         pdf.setTextColor(0, 100, 60)
-        pdf.text('BON POUR ACCORD — CLIENT', ML + 4, y + 4.5)
+        pdf.text('BON POUR ACCORD : CLIENT', ML + 4, y + 4.5)
         pdf.setDrawColor(200, 230, 215)
         pdf.line(ML + 4, y + 6, ML + sigW - 4, y + 6)
         pdf.setFont('helvetica', 'italic')
@@ -424,9 +424,9 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(7.5)
     pdf.setTextColor(120, 150, 180)
-    pdf.text('RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981', PW / 2, footerY + 6, { align: 'center' })
+    pdf.text('RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981', PW / 2, footerY + 6, { align: 'center' })
     pdf.text('Siège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj', PW / 2, footerY + 11, { align: 'center' })
-    pdf.text('TVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes.', PW / 2, footerY + 16, { align: 'center' })
+    pdf.text('TVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes.', PW / 2, footerY + 16, { align: 'center' })
 
     const pdfData = pdf.output('arraybuffer')
     return Buffer.from(pdfData).toString('base64')

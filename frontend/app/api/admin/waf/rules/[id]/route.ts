@@ -5,7 +5,7 @@ import { verifyApiAuth } from '@/lib/api-auth'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// PATCH /api/admin/waf/rules/[id] — Modifier une règle
+// PATCH /api/admin/waf/rules/[id] : Modifier une règle
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ rule: data })
 }
 
-// DELETE /api/admin/waf/rules/[id] — Supprimer une règle
+// DELETE /api/admin/waf/rules/[id] : Supprimer une règle
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

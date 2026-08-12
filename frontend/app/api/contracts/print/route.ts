@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CONTRAT — Document A4 imprimable (aperçu + téléchargement PDF)
+//  CONTRAT : Document A4 imprimable (aperçu + téléchargement PDF)
 //  ?id=…     → accès staff (admin/agent)
 //  ?token=…  → accès public via le lien sécurisé du client
 // ══════════════════════════════════════════════════════════════

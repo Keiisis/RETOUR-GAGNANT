@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET /api/admin/services — liste tous les services
+// GET /api/admin/services : liste tous les services
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/admin/services — créer un service
+// POST /api/admin/services : créer un service
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

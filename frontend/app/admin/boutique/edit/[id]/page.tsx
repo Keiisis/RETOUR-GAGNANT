@@ -186,7 +186,7 @@ export default function EditProductPage() {
                                 <Plus size={16} /> Ajouter une image
                             </Button>
                             <p className="text-[10px] text-gray-600">
-                                Glissez une image ou collez une URL directe. Formats : JPG, PNG, WebP — max 5 Mo.
+                                Glissez une image ou collez une URL directe. Formats : JPG, PNG, WebP : max 5 Mo.
                             </p>
                         </CardContent>
                     </Card>

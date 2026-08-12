@@ -5,7 +5,7 @@ import { verifyApiAuth } from '@/lib/api-auth'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// GET /api/admin/waf/rules — Liste toutes les règles custom
+// GET /api/admin/waf/rules : Liste toutes les règles custom
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ rules: data || [] })
 }
 
-// POST /api/admin/waf/rules — Créer une règle custom
+// POST /api/admin/waf/rules : Créer une règle custom
 // Body: { name, pattern, category, description, severity, targets, enabled }
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')

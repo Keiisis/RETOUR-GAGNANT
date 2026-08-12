@@ -29,7 +29,7 @@ type NormalizedPost = {
     stars?: number   // Google Maps (0-5)
 }
 
-// ── Actors Apify — IDs vérifiés sur console.apify.com ────
+// ── Actors Apify : IDs vérifiés sur console.apify.com ────
 const APIFY_ACTORS: Record<string, {
     actor: string
     buildInput: (url: string, username: string) => Record<string, unknown>
@@ -223,7 +223,7 @@ function normalizeGoogleMapsPlace(i: Record<string, unknown>, fallbackUrl: strin
     const url = strSafe(i.url || i.placeUrl || i.website) || fallbackUrl
     const name = strSafe(i.title || i.name)
     const address = strSafe(i.address || i.vicinity)
-    const text = name ? `${name}${address ? ` — ${address}` : ''}` : strSafe(i.description)
+    const text = name ? `${name}${address ? ` : ${address}` : ''}` : strSafe(i.description)
     if (!text) return null
     const stars = num(i.rating || i.totalScore || 0)
     return {
@@ -357,7 +357,7 @@ async function callApifyWithRotation(
 
             if (status === 401 || status === 403) continue
             if (status === 429) { await new Promise(r => setTimeout(r, 2000)); continue }
-            if (status === 400) throw new Error(`Apify: paramètres invalides — ${msg}`)
+            if (status === 400) throw new Error(`Apify: paramètres invalides : ${msg}`)
             continue // timeout, 5xx, réseau → clé suivante
         }
     }
@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
                 } else {
                     posts = result.posts
                     method = 'apify'
-                    console.log(`[scrape]  Apify clé #${apifyKeyUsed} — ${posts.length} posts`)
+                    console.log(`[scrape]  Apify clé #${apifyKeyUsed} : ${posts.length} posts`)
                 }
             } catch (err) {
                 apifyError = err instanceof Error ? err.message : String(err)
@@ -476,7 +476,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET /api/community-manager/scrape — Status
+// GET /api/community-manager/scrape : Status
 export async function GET() {
     return NextResponse.json({
         supported_platforms: VALID_PLATFORMS,

@@ -145,7 +145,7 @@ function getRealIP(req: NextRequest): string {
 }
 
 // ═══════════════════════════════════════════════════════
-// POST /api/analytics/track — Enregistrer une visite
+// POST /api/analytics/track : Enregistrer une visite
 // ═══════════════════════════════════════════════════════
 export async function POST(req: NextRequest) {
     const trop = guardPublic(req, 'analytics/track', TELEMETRY_LIMIT)

@@ -30,7 +30,7 @@ declare global {
         FedaPay: {
             init: (selector: string, config: Record<string, unknown>) => void
         }
-        // Stripe est déclaré dans CartCheckoutModal — pas redéclaré ici
+        // Stripe est déclaré dans CartCheckoutModal : pas redéclaré ici
         paypal: {
             Buttons: (config: {
                 createOrder: () => Promise<string>
@@ -78,7 +78,7 @@ interface PaymentModalProps {
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal'
 type Step = 'info' | 'payment' | 'stripe-form' | 'paypal-form' | 'processing' | 'success' | 'error'
 
-// ─── Livraison — pays du monde + zones ─────────────────────────────────────────
+// ─── Livraison : pays du monde + zones ─────────────────────────────────────────
 const COUNTRY_TO_ZONE: Record<string, string> = {
     'Bénin': 'benin',
     // CEDEAO / Afrique de l'Ouest
@@ -111,10 +111,10 @@ const ZONE_FEES: Record<string, number> = {
 }
 
 const ZONE_LABELS: Record<string, string> = {
-    'benin': 'Bénin — Livraison gratuite',
-    'afrique-ouest': 'Afrique de l\'Ouest — 5 000 FCFA',
-    'europe': 'Europe — 15 000 FCFA',
-    'international': 'International — 25 000 FCFA',
+    'benin': 'Bénin : Livraison gratuite',
+    'afrique-ouest': 'Afrique de l\'Ouest : 5 000 FCFA',
+    'europe': 'Europe : 15 000 FCFA',
+    'international': 'International : 25 000 FCFA',
     'digital': 'Service digital (aucune livraison)',
 }
 
@@ -245,7 +245,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
-    // ─── Stripe Elements — monter/démonter selon le step ──────────────────────
+    // ─── Stripe Elements : monter/démonter selon le step ──────────────────────
     useEffect(() => {
         if (step !== 'stripe-form') {
             if (cardElementRef.current && cardMountedRef.current) {
@@ -260,11 +260,11 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         const publicKey = settings.stripe_public_key
         if (!publicKey) return
 
-        // Cast — Stripe est déclaré dans la Window par CartCheckoutModal
+        // Cast : Stripe est déclaré dans la Window par CartCheckoutModal
         type StripeLoader = (key: string) => StripeInstance
         const getStripe = () => (window as unknown as { Stripe?: StripeLoader }).Stripe
 
-        // Polling : Stripe.js se charge en afterInteractive — attendre jusqu'à 8s
+        // Polling : Stripe.js se charge en afterInteractive : attendre jusqu'à 8s
         const mountCard = () => {
             const StripeJs = getStripe()
             if (!StripeJs) return
@@ -274,7 +274,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 stripeInstanceRef.current = StripeJs(publicKey)
             }
 
-            // CardElement (API classique) — pas d'appearance ni de clientSecret sur elements()
+            // CardElement (API classique) : pas d'appearance ni de clientSecret sur elements()
             const elements = stripeInstanceRef.current.elements()
             const card = elements.create('card', {
                 style: {
@@ -302,7 +302,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         if (getStripe()) {
             setTimeout(mountCard, 100)
         } else {
-            // Stripe.js pas encore chargé — polling toutes les 300ms jusqu'à 8s
+            // Stripe.js pas encore chargé : polling toutes les 300ms jusqu'à 8s
             let elapsed = 0
             const interval = setInterval(() => {
                 elapsed += 300
@@ -317,7 +317,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         }
     }, [step, settings.stripe_public_key])
 
-    // ─── PayPal Buttons — initialiser quand step === 'paypal-form' ────────────
+    // ─── PayPal Buttons : initialiser quand step === 'paypal-form' ────────────
     useEffect(() => {
         if (step !== 'paypal-form') {
             paypalRenderedRef.current = false
@@ -727,7 +727,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 onComplete: async (resp: Record<string, unknown>) => {
                     const transaction = resp.transaction as Record<string, unknown> | undefined
                     if (resp.reason === 'APPROVED' || (transaction && (transaction.status === 'approved' || transaction.status === 'transferred'))) {
-                        // L'ID serveur est fiable — plus besoin d'extraire du callback
+                        // L'ID serveur est fiable : plus besoin d'extraire du callback
                         await verifyPayment(oid, String(fedapayTxId))
                     } else {
                         cancelOrder(oid)
@@ -1009,7 +1009,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">
-                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>— pour recevoir votre facture</T></span>
+                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
                                         <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
@@ -1141,7 +1141,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                         <Lock size={14} className="text-[#635BFF]" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-white"><T>Paiement par carte — Stripe</T></p>
+                                        <p className="text-sm font-bold text-white"><T>Paiement par carte : Stripe</T></p>
                                         <p className="text-[10px] text-gray-500"><T>Sécurisé par Stripe · TLS 256-bit</T></p>
                                     </div>
                                 </div>

@@ -125,7 +125,7 @@ export default function RollUpPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-gray-300 font-bold text-sm group-hover:text-white transition-colors">Cartes de Visite</p>
-                        <p className="text-gray-600 text-xs">Format 85×55mm — Recto / Verso</p>
+                        <p className="text-gray-600 text-xs">Format 85×55mm : Recto / Verso</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-600 group-hover:text-[#C9A84C] transition-colors" />
                 </Link>
@@ -146,7 +146,7 @@ export default function RollUpPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm">Roll-Ups</p>
-                        <p className="text-gray-500 text-xs">85×200cm — Haute Définition</p>
+                        <p className="text-gray-500 text-xs">85×200cm : Haute Définition</p>
                     </div>
                     <div className="w-2 h-2 rounded-full bg-[#C9A84C]" />
                 </div>

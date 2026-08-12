@@ -288,7 +288,7 @@ export default function AdminBoutiquePage() {
                                                         if (e.key === 'Escape') setStockDraft(prev => { const c = { ...prev }; delete c[item.id]; return c })
                                                     }}
                                                     onClick={e => e.currentTarget.select()}
-                                                    title="Cliquer pour modifier — Entrée pour valider"
+                                                    title="Cliquer pour modifier : Entrée pour valider"
                                                     className={cn(
                                                         'w-10 bg-white/5 border border-white/10 rounded-md text-sm font-black text-center py-0.5 focus:outline-none focus:border-[#FCD116] focus:bg-[#FCD116]/5 transition-all',
                                                         (item.stock || 0) > 10 ? 'text-[#008751]' : (item.stock || 0) > 0 ? 'text-[#FCD116]' : 'text-[#E8112D]'

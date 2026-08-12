@@ -109,7 +109,7 @@ export default function CreateDocumentPage() {
         }
 
         // Snapshot the current exchange rate for immutability
-        // Taux lu à l'instant de l'enregistrement (après refresh DB) — snapshot
+        // Taux lu à l'instant de l'enregistrement (après refresh DB) : snapshot
         // immuable pour ce document (EUR = parité fixe 655,957 ; USD = taux DB réel)
         await refreshRates().catch(() => {})
         const currentRate = getCurrentRates()[currency] || 1
@@ -181,9 +181,9 @@ export default function CreateDocumentPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Devise du client</label>
                         <select title="Devise du client" value={currency} onChange={e => setCurrency(e.target.value as 'XOF' | 'EUR' | 'USD')} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:border-emerald-500/50 appearance-none font-mono">
-                            <option value="XOF">XOF — Francs CFA (Afrique de l'Ouest)</option>
-                            <option value="EUR">EUR — Euro (€)</option>
-                            <option value="USD">USD — Dollar Am&eacute;ricain ($)</option>
+                            <option value="XOF">XOF : Francs CFA (Afrique de l'Ouest)</option>
+                            <option value="EUR">EUR : Euro (€)</option>
+                            <option value="USD">USD : Dollar Am&eacute;ricain ($)</option>
                         </select>
                     </div>
                 </div>

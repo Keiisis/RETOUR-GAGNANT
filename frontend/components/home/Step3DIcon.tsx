@@ -79,16 +79,16 @@ export default function Step3DIcon({ kind }: { kind: StepKind }) {
                 .s3d-face, .s3d-back { grid-area: 1 / 1; display: grid; place-items: center; }
                 .s3d-back { filter: brightness(0.55) blur(0.4px); transform: translateZ(-7px); }
 
-                /* Contact — la bulle pivote doucement + flotte */
+                /* Contact : la bulle pivote doucement + flotte */
                 .s3d--contact .s3d-scene { animation: s3d-swingY 3.4s ease-in-out infinite, s3d-float 3.4s ease-in-out infinite; }
-                /* Plan — épingle qui bascule, anneau d'itinéraire qui tourne */
+                /* Plan : épingle qui bascule, anneau d'itinéraire qui tourne */
                 .s3d--plan .s3d-scene { animation: s3d-swingY 4s ease-in-out infinite, s3d-float 3s ease-in-out infinite; }
                 .s3d-ring { position: absolute; width: 54px; height: 54px; border: 2px dashed ${GOLD}; border-radius: 50%; opacity: 0.65; animation: s3d-spin 7s linear infinite; }
-                /* Build — engrenages qui tournent en sens inverse */
+                /* Build : engrenages qui tournent en sens inverse */
                 .s3d--build .s3d-scene { transform: rotateX(12deg); }
                 .s3d--build .s3d-g1 { animation: s3d-g1 5s linear infinite; }
                 .s3d--build .s3d-g2 { animation: s3d-g2 3.6s linear infinite; }
-                /* Install — clé qui pivote et flotte */
+                /* Install : clé qui pivote et flotte */
                 .s3d--install .s3d-scene { animation: s3d-turnY 6s ease-in-out infinite, s3d-float 3.2s ease-in-out infinite; }
 
                 @keyframes s3d-swingY { 0%,100% { transform: rotateY(-24deg); } 50% { transform: rotateY(24deg); } }

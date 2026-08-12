@@ -207,7 +207,7 @@ export default function CalendarBooking() {
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                             <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                                 <Clock size={14} className="text-emerald-400" />
-                                {selectedDate ? `Créneaux — ${selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Sélectionnez une date'}
+                                {selectedDate ? `Créneaux : ${selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Sélectionnez une date'}
                             </h3>
                             {selectedDate ? (
                                 <div className="space-y-2">
@@ -245,7 +245,7 @@ export default function CalendarBooking() {
                     <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 max-w-lg mx-auto">
                         <h2 className="text-lg font-bold text-white mb-1"><T>Vos coordonnées</T></h2>
                         <p className="text-xs text-gray-500 mb-6">
-                            {selectedService} — {selectedDate?.toLocaleDateString('fr-FR')} — {selectedTime}
+                            {selectedService} : {selectedDate?.toLocaleDateString('fr-FR')} : {selectedTime}
                         </p>
 
                         <div className="space-y-4">

@@ -2,7 +2,7 @@
 
 // ══════════════════════════════════════════════════════════════
 //  ANNUAIRE PUBLIC DES PRÊTRES FA (Bokonon)
-//  Alimenté par /api/fa-priests — aucun contenu codé en dur.
+//  Alimenté par /api/fa-priests : aucun contenu codé en dur.
 //  Affiche uniquement les prêtres actifs et les avis publiés.
 //  Les visiteurs peuvent déposer un avis (modéré avant publication).
 // ══════════════════════════════════════════════════════════════
@@ -134,7 +134,7 @@ export default function FaPriestsDirectory() {
                                 <div className="flex items-center gap-2 mt-2">
                                     <Stars value={p.rating_avg} size={13} />
                                     <span className="text-[12px] font-bold text-[#1a2332]">
-                                        {p.rating_avg > 0 ? p.rating_avg.toFixed(1) : '—'}
+                                        {p.rating_avg > 0 ? p.rating_avg.toFixed(1) : '-'}
                                     </span>
                                     <span className="text-[11px] text-gray-400">({p.rating_count})</span>
                                 </div>
@@ -198,7 +198,7 @@ export default function FaPriestsDirectory() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5">
                                             <Stars value={open.rating_avg} size={14} />
-                                            <span className="text-[13px] font-bold text-[#1a2332]">{open.rating_avg > 0 ? open.rating_avg.toFixed(1) : '—'}</span>
+                                            <span className="text-[13px] font-bold text-[#1a2332]">{open.rating_avg > 0 ? open.rating_avg.toFixed(1) : '-'}</span>
                                             <span className="text-[11px] text-gray-400">({open.rating_count} <T>avis</T>)</span>
                                         </div>
                                     </div>

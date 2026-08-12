@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET /api/admin/leads — liste tous les leads Oracle
+// GET /api/admin/leads : liste tous les leads Oracle
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

@@ -49,7 +49,7 @@ export const authProvider: AuthProvider = {
         };
     },
     check: async () => {
-        // Use getUser() instead of getSession() — it validates the token
+        // Use getUser() instead of getSession() : it validates the token
         // server-side and works even if cookies were recently refreshed.
         // getSession() only reads local cookies which can fail on Vercel
         // if old httpOnly cookies are stuck in the browser.
@@ -61,7 +61,7 @@ export const authProvider: AuthProvider = {
                 };
             }
         } catch {
-            // Network error — treat as not authenticated
+            // Network error : treat as not authenticated
         }
 
         return {

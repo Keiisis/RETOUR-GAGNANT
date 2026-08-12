@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         void supabase.from('messages').insert([{
             nom: clientName,
             email: clientEmail,
-            sujet: `Nouvelle demande de RDV (espace client) — ${service || 'Consultation'}`,
+            sujet: `Nouvelle demande de RDV (espace client) : ${service || 'Consultation'}`,
             message: `${clientName} a demandé un rendez-vous depuis son espace client.\n\nService : ${service || 'Consultation'}\n${date ? `Date souhaitée : ${date} ${heure || ''}\n` : ''}Canal : ${type || 'téléphone'}\n\n→ À traiter dans l'onglet Rendez-vous (Agenda) du panel Agent.`,
             type: 'rdv',
             lu: false,
@@ -60,16 +60,16 @@ export async function POST(req: NextRequest) {
             if (msgErr) console.log('[RDV confirm-client] notification in-app échouée (non bloquant):', msgErr.message);
         });
 
-        // Fire-and-forget — ne bloque pas la réponse HTTP
+        // Fire-and-forget : ne bloque pas la réponse HTTP
         (async () => {
             try {
                 const aiReply = await generateAutoReply(clientName, service || 'Consultation');
                 const templates = await getEmailTemplates('fr');
 
-                // Email de confirmation au client (sans CTA "réserver" — déjà fait)
+                // Email de confirmation au client (sans CTA "réserver" : déjà fait)
                 await sendEmail({
                     to: clientEmail,
- subject: `Retour Gagnant — Votre rendez-vous est enregistré`,
+ subject: `Retour Gagnant : Votre rendez-vous est enregistré`,
                     html: await templates.rdvConfirmation(
                         clientName,
                         service || 'Consultation',
@@ -82,11 +82,11 @@ export async function POST(req: NextRequest) {
                     relatedId: rdvId || undefined,
                 });
 
-                // Notification équipe — 5 destinataires fixes + admin configuré
+                // Notification équipe : 5 destinataires fixes + admin configuré
                 const staffTo = await getStaffToLine();
                 await sendEmail({
                     to: staffTo,
- subject: `Nouveau RDV (espace client) — ${clientName} (${service || 'Consultation'})`,
+ subject: `Nouveau RDV (espace client) : ${clientName} (${service || 'Consultation'})`,
                     html: await templates.rdvAdminNotification(
                         clientName,
                         clientEmail,

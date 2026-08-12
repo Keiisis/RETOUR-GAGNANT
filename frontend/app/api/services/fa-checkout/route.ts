@@ -12,7 +12,7 @@ const supabase = createClient(
 )
 
 // ══════════════════════════════════════════════════════════════
-// POST /api/services/fa-checkout — Consultation Fa & Racines.
+// POST /api/services/fa-checkout : Consultation Fa & Racines.
 // Crée la commande CÔTÉ SERVEUR avec le PRIX FIXÉ ICI (jamais celui du
 // client), lu depuis les tarifs admin du service, converti en XOF (taux BCEAO).
 // La commande entre ensuite dans le pipeline standard : widget Kkiapay/
@@ -33,7 +33,7 @@ function parseEur(s: string): number | null {
 
 /**
  * Tarifs pilotés EXCLUSIVEMENT depuis l'admin (services.pricing_options du
- * service « consultation-fa-racines ») — MÊME source que la page et le
+ * service « consultation-fa-racines ») : MÊME source que la page et le
  * calculateur. AUCUN prix codé en dur : si le tarif n'est pas configuré,
  * la commande est refusée (jamais de montant de repli obsolète facturé).
  * Le prix reste fixé CÔTÉ SERVEUR : le client ne l'envoie jamais.
@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Vous devez accepter la clause de mise en relation pour poursuivre.' }, { status: 400 })
         }
 
-        // Prix fixé serveur (source admin uniquement) — jamais fourni par le client
+        // Prix fixé serveur (source admin uniquement) : jamais fourni par le client
         const amountEUR = await getPriceEUR(mode)
         if (!amountEUR) {
             return NextResponse.json(
-                { error: 'Tarif non configuré pour cette formule. Contactez-nous — nous régularisons immédiatement.' },
+                { error: 'Tarif non configuré pour cette formule. Contactez-nous : nous régularisons immédiatement.' },
                 { status: 503 },
             )
         }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Prêtre choisi (facultatif) — validé en base : actif uniquement.
+        // Prêtre choisi (facultatif) : validé en base : actif uniquement.
         let priestLabel = ''
         let priestRef: string | null = null
         if (priestId) {
@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
         }
 
         const modeLabel = mode === 'presentiel' ? 'Présentiel' : 'Visio'
-        const title = `Consultation Fa & Racines — ${modeLabel} (${amountEUR} €)`
-            + (priestLabel ? ` — ${priestLabel}` : '')
+        const title = `Consultation Fa & Racines : ${modeLabel} (${amountEUR} €)`
+            + (priestLabel ? ` : ${priestLabel}` : '')
 
         const { data: order, error } = await supabase
             .from('orders')

@@ -7,7 +7,7 @@ const serviceSupabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// GET — récupérer le profil du client connecté
+// GET : récupérer le profil du client connecté
 export async function GET(req: NextRequest) {
     try {
         const supabase = createServerClient(
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// PATCH — mettre à jour le profil
+// PATCH : mettre à jour le profil
 export async function PATCH(req: NextRequest) {
     try {
         const supabase = createServerClient(

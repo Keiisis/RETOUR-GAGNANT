@@ -1,11 +1,11 @@
 // ══════════════════════════════════════════════════════════════
-//  TVA — source unique
+//  TVA : source unique
 //
 //  Règle métier (confirmée) : le prix SAISI est le prix normal, HORS
 //  TAXE. La TVA s'AJOUTE dessus. Un service à 100 est facturé 118 au
 //  client (100 HT + 18 % = 118 TTC).
 //
-//  Le taux (18 %) est le taux légal DGI du Bénin — une constante légale,
+//  Le taux (18 %) est le taux légal DGI du Bénin : une constante légale,
 //  pas un prix. Centralisé ici : un seul endroit à changer si la loi
 //  évolue, et une seule formule pour le paiement, le devis, la facture
 //  et la comptabilité (jamais de calcul divergent).

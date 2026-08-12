@@ -29,7 +29,7 @@ export default function LiveSupportChat({ email, clientName }: LiveSupportChatPr
     const [isSubmitting, setIsSubmitting] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-    // Contient la fonction de nettoyage du polling (visibleInterval) — le poll
+    // Contient la fonction de nettoyage du polling (visibleInterval) : le poll
     // se met en pause quand l'onglet est en arrière-plan.
     const pollingRef = useRef<(() => void) | null>(null);
     const lastCountRef = useRef(0);

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  TAUX DE CHANGE — lecture publique, écriture réservée à l'admin
+//  TAUX DE CHANGE : lecture publique, écriture réservée à l'admin
 //
 //  La table `currencies` est la source unique dont dépendent les devis,
 //  les factures, l'export comptable et surtout la conversion envoyée aux
@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 import { logAudit } from '@/lib/audit-compta'
 
-// Client avec service role key — bypasse RLS pour les opérations admin
+// Client avec service role key : bypasse RLS pour les opérations admin
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -26,7 +26,7 @@ const supabaseAdmin = createClient(
  */
 const ECART_MAX = 0.25 // ±25 %
 
-// GET /api/settings/currency — Lire tous les taux depuis la DB
+// GET /api/settings/currency : Lire tous les taux depuis la DB
 // Public : le front a besoin des taux pour afficher les prix.
 export async function GET() {
     try {
@@ -47,7 +47,7 @@ export async function GET() {
     }
 }
 
-// PUT /api/settings/currency — Mettre à jour les taux
+// PUT /api/settings/currency : Mettre à jour les taux
 // ADMIN UNIQUEMENT : modifier un taux modifie tous les encaissements.
 export async function PUT(request: NextRequest) {
     const garde = await requireStaff(request, 'admin')

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 🛡️ Security Utilities — Fonctions de sécurité partagées
+// 🛡️ Security Utilities : Fonctions de sécurité partagées
 // ═══════════════════════════════════════════════════════
 
 /**

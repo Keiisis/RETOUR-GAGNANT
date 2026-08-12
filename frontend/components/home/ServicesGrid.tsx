@@ -15,7 +15,7 @@ interface ServiceItem {
     imageUrl: string
 }
 
-// Images (icônes dorées) par slug — repli si la DB n'a pas d'image.
+// Images (icônes dorées) par slug : repli si la DB n'a pas d'image.
 const IMG_BY_SLUG: Record<string, string> = {
     passeport: '/assets/icones/icone_Passeport_Documents.png',
     logement: '/assets/icones/icone_Acheter_ou_louer.png',
@@ -27,7 +27,7 @@ const IMG_BY_SLUG: Record<string, string> = {
     'recherche-ancestrale': '/assets/icones/Recherche Ancestrale.png',
     'consultation-fa-racines': '/assets/icones/icone_Consultation_Fa_Racines.png',
     'langues-racines': '/assets/icones/icone_Langues_Racines.png',
-    'permis-conduire': '/assets/icones/Permis de Conduire Service.png',
+    'permis-conduire': '/assets/icones/permis-conduire.png',
     autres: '/assets/icones/Autres Services.png',
 }
 
@@ -151,17 +151,17 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
                             )}
                         </div>
 
-                        {/* Titre — Fraunces */}
+                        {/* Titre : Fraunces */}
                         <h3 className="font-fraunces text-[1.35rem] font-semibold leading-snug tracking-[-0.01em] text-[#111a15] transition-colors duration-300 group-hover:text-[#008751]">
                             {t(service.title)}
                         </h3>
 
-                        {/* Description — Geist */}
+                        {/* Description : Geist */}
                         <p className="mt-2.5 font-geist text-[15px] leading-relaxed text-[#5c665f] line-clamp-3">
                             {t(service.description)}
                         </p>
 
-                        {/* CTA — lien souligné animé (anti-slop, pas de gros bouton) */}
+                        {/* CTA : lien souligné animé (anti-slop, pas de gros bouton) */}
                         <span className="mt-6 inline-flex items-center gap-1.5 font-geist text-[14px] font-semibold text-[#008751]">
                             <span className="bg-gradient-to-r from-[#008751] to-[#008751] bg-[length:0%_2px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-500 group-hover:bg-[length:100%_2px]">
                                 <T>En savoir plus</T>

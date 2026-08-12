@@ -98,7 +98,7 @@ export default function FamilyMap({ persons }: FamilyMapProps) {
             lng: geo.lng,
             person: entry.person,
             type: entry.type,
-            label: `${name}\n${entry.type === 'birth' ? ' Naissance' : ' Décès'} — ${entry.place}`,
+            label: `${name}\n${entry.type === 'birth' ? ' Naissance' : ' Décès'} : ${entry.place}`,
           });
         }
       }
@@ -139,7 +139,7 @@ export default function FamilyMap({ persons }: FamilyMapProps) {
         attributionControl: true,
       });
 
-      // Tile layer — dark/light
+      // Tile layer : dark/light
       const tileUrl = isDark
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';

@@ -177,7 +177,7 @@ export default function AgentAgendaPage() {
     const today = new Date()
     const isToday = (day: number) => today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear()
 
-    // RDVs : en_attente en premier, puis par date décroissante — tous affichés
+    // RDVs : en_attente en premier, puis par date décroissante : tous affichés
     const statutOrder: Record<string, number> = { en_attente: 0, confirme: 1, termine: 2, annule: 3 }
     const sortedRDVs = [...rdvList].sort((a, b) => {
         const sA = statutOrder[a.statut] ?? 4
@@ -267,7 +267,7 @@ export default function AgentAgendaPage() {
                     </div>
                 </div>
 
-                {/* Sidebar — Day detail or upcoming */}
+                {/* Sidebar : Day detail or upcoming */}
                 <div className="space-y-4">
                     <AnimatePresence mode="wait">
                         {selectedDay && selectedDayItems ? (
@@ -277,7 +277,7 @@ export default function AgentAgendaPage() {
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
                                             <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                                                {mounted && selectedDayItems?.dateStr && !isNaN(new Date(selectedDayItems.dateStr + 'T12:00:00').getTime()) ? new Date(selectedDayItems.dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
+                                                {mounted && selectedDayItems?.dateStr && !isNaN(new Date(selectedDayItems.dateStr + 'T12:00:00').getTime()) ? new Date(selectedDayItems.dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '-'}
                                             </p>
                                             <p className="text-xs text-gray-500 mt-0.5">
                                                 {selectedDayItems.events.length + selectedDayItems.rdvs.length} élément(s)
@@ -315,7 +315,7 @@ export default function AgentAgendaPage() {
                                                                 <Icon size={13} className="mt-0.5 flex-shrink-0" />
                                                                 <div>
                                                                     <p className="text-xs font-bold pr-4">{event.title}</p>
-                                                                    <p className="text-[10px] opacity-70">{event.time}{event.location && ` — ${event.location}`}</p>
+                                                                    <p className="text-[10px] opacity-70">{event.time}{event.location && ` : ${event.location}`}</p>
                                                                     {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
                                                                 </div>
                                                             </div>
@@ -328,7 +328,7 @@ export default function AgentAgendaPage() {
                                                             <p className="text-xs font-bold text-white">{getClientName(rdv)}</p>
                                                             <ExternalLink size={10} className="text-gray-500" />
                                                         </div>
-                                                        <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-1">{rdv.heure} — {rdv.motif}</p>
+                                                        <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-1">{rdv.heure} : {rdv.motif}</p>
                                                     </div>
                                                 ))}
                                             </>
@@ -386,7 +386,7 @@ export default function AgentAgendaPage() {
                                                         <Icon size={14} className="mt-0.5 flex-shrink-0" />
                                                         <div>
                                                             <p className="text-xs font-bold">{event.title}</p>
-                                                            <p className="text-[10px] opacity-70 mt-0.5">{event.date && !isNaN(new Date(event.date).getTime()) ? new Date(event.date).toLocaleDateString('fr-FR') : '—'} à {event.time}</p>
+                                                            <p className="text-[10px] opacity-70 mt-0.5">{event.date && !isNaN(new Date(event.date).getTime()) ? new Date(event.date).toLocaleDateString('fr-FR') : '-'} à {event.time}</p>
                                                             {event.client && <p className="text-[10px] opacity-60">{event.client}</p>}
                                                         </div>
                                                     </div>
@@ -447,7 +447,7 @@ export default function AgentAgendaPage() {
                                     <p className="text-sm text-gray-300">{selectedRDV.motif}</p>
                                 </div>
 
-                                {/* Notes — hide internal __VISITOR__ prefix, show only the message part */}
+                                {/* Notes : hide internal __VISITOR__ prefix, show only the message part */}
                                 {selectedRDV.notes && (() => {
                                     const displayNotes = selectedRDV.notes.replace(/^__VISITOR__:[^\n]*\n?---\n?/m, '').replace(/^__VISITOR__:[^\n]*/m, '').replace(/^Message:\s*/m, '').trim()
                                     return displayNotes ? (
@@ -458,7 +458,7 @@ export default function AgentAgendaPage() {
                                     ) : null
                                 })()}
 
-                                 <p className="text-[10px] text-gray-500">Reçu le {selectedRDV.created_at && !isNaN(new Date(selectedRDV.created_at).getTime()) ? new Date(selectedRDV.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</p>
+                                 <p className="text-[10px] text-gray-500">Reçu le {selectedRDV.created_at && !isNaN(new Date(selectedRDV.created_at).getTime()) ? new Date(selectedRDV.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</p>
 
                                 {/* Actions statut */}
                                 {selectedRDV.statut === 'en_attente' && (
@@ -471,7 +471,7 @@ export default function AgentAgendaPage() {
                                     <button type="button" onClick={() => updateRdvStatus(selectedRDV.id, 'termine')} className="w-full py-2 rounded-xl bg-gray-500/10 text-gray-400 border border-gray-500/20 text-xs font-bold hover:bg-gray-500/20 transition-all">Marquer comme terminé</button>
                                 )}
 
-                                {/* Contacter — inline email reply ou WhatsApp */}
+                                {/* Contacter : inline email reply ou WhatsApp */}
                                 <div className="border-t border-white/5 pt-4 space-y-3">
                                     {!replyMode ? (
                                         <div className="flex gap-2">

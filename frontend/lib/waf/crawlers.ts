@@ -3,7 +3,7 @@
 //
 //  Problème résolu : `detectHeadlessBrowser` classe le vrai Googlebot
 //  comme navigateur sans interface. Son User-Agent contient « Chrome »,
-//  et il n'envoie ni `accept-language` ni `sec-ch-ua` — soit deux ou
+//  et il n'envoie ni `accept-language` ni `sec-ch-ua` : soit deux ou
 //  trois indicateurs, au-dessus du seuil. Chaque passage dégradait donc
 //  la confiance de l'IP jusqu'au blocage : le site finit par disparaître
 //  de l'index sans qu'aucune alerte ne le dise.
@@ -14,7 +14,7 @@
 //  waf-maintenance et stockées dans `waf_config`.
 //
 //  Conséquence voulue : un vrai robot est exempté, un imposteur qui
-//  usurpe son User-Agent reste traité comme suspect — et l'usurpation
+//  usurpe son User-Agent reste traité comme suspect : et l'usurpation
 //  devient elle-même un signal.
 // ══════════════════════════════════════════════════════════════
 
@@ -30,7 +30,7 @@ export const SOURCES_PLAGES: Record<string, string> = {
  *
  * Volontairement court : chaque entrée doit avoir une liste de plages
  * publiée en face. Un robot sans plages vérifiables n'a rien à faire
- * ici — on ne peut pas distinguer le vrai du faux.
+ * ici : on ne peut pas distinguer le vrai du faux.
  */
 const MOTIFS: Array<{ nom: string; motif: RegExp }> = [
     { nom: 'googlebot', motif: /googlebot|google-inspectiontool|storebot-google/i },
@@ -99,7 +99,7 @@ function ipv6EnGroupes(ip: string): number[] | null {
 
 /**
  * L'adresse `ip` appartient-elle au préfixe CIDR donné ?
- * Renvoie false — jamais une exception — sur une entrée malformée :
+ * Renvoie false : jamais une exception : sur une entrée malformée :
  * une plage illisible ne doit pas exempter, ni faire tomber le WAF.
  */
 export function ipDansCidr(ip: string, cidr: string): boolean {
@@ -201,7 +201,7 @@ interface PrefixePublie {
  *
  * Appelée par le cron waf-maintenance, pas par le middleware : une
  * requête utilisateur ne doit jamais attendre trois appels réseau.
- * Une source injoignable est ignorée — on conserve les autres plutôt
+ * Une source injoignable est ignorée : on conserve les autres plutôt
  * que d'échouer en bloc.
  */
 export async function recupererPlagesOfficielles(): Promise<{

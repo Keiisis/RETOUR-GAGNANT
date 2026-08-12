@@ -75,7 +75,7 @@ export async function GET() {
         report.online_last_5min = ` EXCEPTION: ${e}`
     }
 
-    // 4. Test d'un UPDATE simulé (sans userId réel — just schema check)
+    // 4. Test d'un UPDATE simulé (sans userId réel : just schema check)
     try {
         const { error: schemaErr } = await supabase
             .from('user_profiles')
@@ -84,7 +84,7 @@ export async function GET() {
 
         report.update_schema_check = schemaErr
             ? ` ERREUR SCHEMA: ${schemaErr.message}`
-            : ' schéma OK (0 lignes affectées — normal, ID fictif)'
+            : ' schéma OK (0 lignes affectées : normal, ID fictif)'
     } catch (e) {
         report.update_schema_check = ` EXCEPTION: ${e}`
     }

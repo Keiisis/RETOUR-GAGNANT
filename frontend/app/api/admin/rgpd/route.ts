@@ -8,7 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // ══════════════════════════════════════════════════════════════
-// RGPD (admin) — Droit d'accès (GET) & droit à l'effacement (POST).
+// RGPD (admin) : Droit d'accès (GET) & droit à l'effacement (POST).
 // Outil interne réservé à l'administration pour honorer une demande,
 // identifié par email. Moteur partagé : lib/rgpd/erase.ts.
 // ══════════════════════════════════════════════════════════════

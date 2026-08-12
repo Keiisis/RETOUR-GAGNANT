@@ -25,7 +25,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
     const { t } = useTranslation();
     const clientName = lead ? `${lead.client_prenom} ${lead.client_nom}`.trim() : ''
     const defaultSubject = lead
-        ? `Retour Gagnant — Votre projet : ${lead.recommended_service}`
+        ? `Retour Gagnant : Votre projet : ${lead.recommended_service}`
         : ''
     const defaultBody = lead
         ? `Bonjour ${lead.client_prenom},\n\nNous avons bien analysé votre profil soumis sur l'Oracle de Retour Gagnant Bénin (score d'éligibilité : ${lead.eligibility_score}%).\n\nVotre projet autour du service « ${lead.recommended_service} » retient toute notre attention et nous souhaitons vous accompagner personnellement dans cette démarche.\n\nPouvez-vous nous indiquer vos disponibilités pour un échange téléphonique ou en visioconférence ? Notre équipe d'experts se fera un plaisir de vous présenter les prochaines étapes.\n\nCordialement,\nL'équipe Retour Gagnant Bénin`
@@ -164,7 +164,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
                         className="fixed right-0 top-0 h-full z-50 w-full max-w-2xl flex flex-col bg-[#050a12] border-l border-white/10 shadow-2xl shadow-black/50"
                     >
                         {/* ════════════════════════════════════ */}
-                        {/* HEADER — Identité du lead           */}
+                        {/* HEADER : Identité du lead           */}
                         {/* ════════════════════════════════════ */}
                         <div className="relative shrink-0 px-4 pt-5 pb-4 sm:px-8 sm:pt-8 sm:pb-6 border-b border-white/[0.06] bg-[#070d16]">
                             {/* Accent gradient top */}
@@ -219,7 +219,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
                         </div>
 
                         {/* ════════════════════════════════════ */}
-                        {/* BODY — Formulaire                   */}
+                        {/* BODY : Formulaire                   */}
                         {/* ════════════════════════════════════ */}
                         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6 space-y-5">
 
@@ -286,7 +286,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
                                                 className="flex items-center gap-3 p-3 rounded-xl bg-[#FCD116]/8 border border-[#FCD116]/20"
                                             >
                                                 <Sparkles size={14} className="text-[#FCD116] shrink-0" />
-                                                <p className="text-xs text-[#FCD116]/80 font-medium"><T>Message amélioré par l&apos;IA — Relisez avant d&apos;envoyer.</T></p>
+                                                <p className="text-xs text-[#FCD116]/80 font-medium"><T>Message amélioré par l&apos;IA : Relisez avant d&apos;envoyer.</T></p>
                                                 <button
                                                     type="button"
                                                     onClick={() => { setBody(defaultBody); setAiImproved(false) }}
@@ -372,7 +372,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
                         </div>
 
                         {/* ════════════════════════════════════ */}
-                        {/* FOOTER — Actions                    */}
+                        {/* FOOTER : Actions                    */}
                         {/* ════════════════════════════════════ */}
                         {status !== 'success' && (
                             <div className="shrink-0 px-4 py-4 sm:px-8 sm:py-5 border-t border-white/[0.06] bg-[#070d16]">

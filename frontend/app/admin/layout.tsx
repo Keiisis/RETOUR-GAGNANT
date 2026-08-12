@@ -134,6 +134,7 @@ function AdminLayoutContent({
         { title: 'Frontend', icon: Palette, href: '/admin/frontend' },
         { title: 'Grille Tarifaire', icon: Layers, href: '/admin/grille-tarifaire' },
         { title: 'Prêtres Fa', icon: Sparkles, href: '/admin/pretres-fa' },
+        { title: 'Catégories permis', icon: Car, href: '/admin/permis-types' },
         { title: 'Auto-écoles', icon: Car, href: '/admin/auto-ecoles' },
         { title: 'Rendez-vous', icon: Calendar, href: '/admin/rendez-vous', badge: rdvEnAttente },
         { title: 'Disponibilités', icon: Calendar, href: '/admin/disponibilites' },
@@ -165,7 +166,7 @@ function AdminLayoutContent({
         { title: 'Devises (ERP)', icon: Coins, href: '/admin/settings/currency' },
         { title: 'Réglages ERP', icon: ShieldCheck, href: '/admin/settings/erp' },
         { title: 'Sécurité WAF', icon: ShieldAlert, href: '/admin/securite' },
-        { title: '2FA — Auth Admin', icon: KeyRound, href: '/admin/settings/2fa' },
+        { title: '2FA : Auth Admin', icon: KeyRound, href: '/admin/settings/2fa' },
         { title: 'Centre RGPD', icon: ShieldCheck, href: '/admin/rgpd' },
     ]
 
@@ -343,7 +344,7 @@ function AdminLayoutContent({
 
                 {/* ═══════════ MAIN CONTENT ═══════════ */}
                 <main className="flex-1 flex flex-col overflow-hidden relative">
-                    {/* Background Pattern — halos décoratifs (quasi invisibles en
+                    {/* Background Pattern : halos décoratifs (quasi invisibles en
                         mode clair via .admin-bg-glow pour éviter toute sensation de voile) */}
                     <div className="admin-bg-glow absolute inset-0 z-0 pointer-events-none overflow-hidden">
                         <div className="absolute top-[20%] left-[30%] w-[800px] h-[800px] bg-[#008751]/5 rounded-full blur-[150px]" />
@@ -413,7 +414,7 @@ function AdminLayoutContent({
                     <div className="flex-1 overflow-y-auto relative z-10 scrollbar-premium">
                         <div className="p-4 lg:p-6 xl:p-8 max-w-[1600px] mx-auto pb-20">
                             {/* Transition de page : léger glissement SANS fondu
-                                d'opacité — le fondu restait parfois bloqué à mi-
+                                d'opacité : le fondu restait parfois bloqué à mi-
                                 course et donnait un voile « flou » sur tout le panel. */}
                             <motion.div
                                 key={pathname}

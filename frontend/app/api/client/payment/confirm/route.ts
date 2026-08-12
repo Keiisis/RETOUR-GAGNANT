@@ -9,7 +9,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 // ══════════════════════════════════════════════════════════════
-// POST /api/client/payment/confirm — confirme le paiement d'une FACTURE
+// POST /api/client/payment/confirm : confirme le paiement d'une FACTURE
 //
 // SÉCURITÉ (corrige un bypass de paiement) :
 //   1. Identité dérivée de la SESSION (cookies), jamais du corps.
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
         }
 
-        // 1. Identité vérifiée (session) — jamais le corps
+        // 1. Identité vérifiée (session) : jamais le corps
         const sessionUser = await getSessionUser(req)
         if (!sessionUser) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 

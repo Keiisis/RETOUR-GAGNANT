@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Avis sur les Prêtres Fa : lecture + modération
+//  ADMIN : Avis sur les Prêtres Fa : lecture + modération
 //  Un avis déposé publiquement arrive NON publié : il n'apparaît sur
 //  le site qu'après validation ici.
 // ══════════════════════════════════════════════════════════════
@@ -15,7 +15,7 @@ const db = () => createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-// GET ?priest_id=… — avis d'un prêtre (ou tous si non précisé)
+// GET ?priest_id=… : avis d'un prêtre (ou tous si non précisé)
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ reviews: data || [] })
 }
 
-// POST — avis ajouté par l'équipe (publié d'office)
+// POST : avis ajouté par l'équipe (publié d'office)
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
 }
 
-// PATCH — publier / dépublier
+// PATCH : publier / dépublier
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true })
 }
 
-// DELETE — suppression d'un avis
+// DELETE : suppression d'un avis
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

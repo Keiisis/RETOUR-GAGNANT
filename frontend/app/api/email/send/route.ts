@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
         const result = await sendEmail({
             to,
-            subject: subject || `Retour Gagnant — Réponse à votre demande`,
+            subject: subject || `Retour Gagnant : Réponse à votre demande`,
             html,
             context: context || 'agent_reply',
             relatedId: relatedId || '',

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             .eq('slug', slug)
             .maybeSingle()
         if (data) {
-            const title = `${data.title} | Événements — Retour Gagnant`
+            const title = `${data.title} | Événements : Retour Gagnant`
             const desc = ((data.short_description || data.description || '') as string).replace(/\s+/g, ' ').trim().slice(0, 160)
                 || 'Événement de la diaspora béninoise organisé par Retour Gagnant.'
             return pageMeta(title, desc, `/evenements/${slug}`, (data.cover_image_url as string) || undefined)

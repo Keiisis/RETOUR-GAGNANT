@@ -30,17 +30,17 @@ const GENERAL_DEFAULTS: Array<{ key: string; value: string; label: string; type:
     { key: 'serper_api_key_1', value: '', label: 'Clé Serper.dev 1', type: 'text', category: 'radar' },
     { key: 'serper_api_key_2', value: '', label: 'Clé Serper.dev 2', type: 'text', category: 'radar' },
     { key: 'serper_api_key_3', value: '', label: 'Clé Serper.dev 3', type: 'text', category: 'radar' },
-    // ── e-MCF / MECeF (DGI Bénin) — normalisation automatique des factures ──
+    // ── e-MCF / MECeF (DGI Bénin) : normalisation automatique des factures ──
     { key: 'mecef_enabled', value: 'false', label: 'Activer la normalisation e-MCF (DGI)', type: 'boolean', category: 'mecef' },
     { key: 'mecef_sandbox', value: 'true', label: 'Mode test (sandbox DGI)', type: 'boolean', category: 'mecef' },
     { key: 'mecef_token', value: '', label: 'Jeton API e-MCF', type: 'password', category: 'mecef' },
     { key: 'mecef_operator_id', value: 'CAISSE', label: 'Identifiant opérateur/caisse', type: 'text', category: 'mecef' },
     { key: 'mecef_operator_name', value: 'RETOUR GAGNANT', label: 'Nom opérateur', type: 'text', category: 'mecef' },
     { key: 'mecef_aib', value: '', label: 'AIB (vide, A=1%, B=5%)', type: 'text', category: 'mecef' },
-    { key: 'mecef_price_ttc', value: 'true', label: 'Prix envoyés TTC (défaut) — décocher si HT', type: 'boolean', category: 'mecef' }
+    { key: 'mecef_price_ttc', value: 'true', label: 'Prix envoyés TTC (défaut) : décocher si HT', type: 'boolean', category: 'mecef' }
 ]
 
-// GET /api/admin/settings — retourne tous les paramètres groupés par catégorie
+// GET /api/admin/settings : retourne tous les paramètres groupés par catégorie
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// PATCH /api/admin/settings — mise à jour d'un paramètre par clé
+// PATCH /api/admin/settings : mise à jour d'un paramètre par clé
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!

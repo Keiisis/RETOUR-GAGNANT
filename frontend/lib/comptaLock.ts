@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-// Helper LOT 3 — vérifie si la période comptable d'une date est clôturée.
+// Helper LOT 3 : vérifie si la période comptable d'une date est clôturée.
 // Retourne true si la date tombe dans un mois YYYY-MM présent dans clotures_mensuelles.
 // Utilisé par les routes API qui mutent documents_financiers / paiements_manuels / depenses
 // pour refuser les modifications sur un mois déjà archivé.

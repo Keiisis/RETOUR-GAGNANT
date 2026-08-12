@@ -46,7 +46,7 @@ export async function restoreStockForOrder(
             const qty = Number(l.quantity) || 1
             if (!targetId || qty <= 0) continue
 
-            // 1. Produits « legacy » — silencieux si la RPC n'existe pas
+            // 1. Produits « legacy » : silencieux si la RPC n'existe pas
             try {
                 await supabase.rpc('increment_stock', { p_id: targetId, qty })
             } catch { /* produit hors legacy */ }
@@ -70,7 +70,7 @@ export async function restoreStockForOrder(
                     quantity_change: qty,
                     stock_after: nouveau,
                     reference_id: orderId,
-                    notes: `Retour en stock — ${raison} (Réf. ${orderId.slice(0, 8).toUpperCase()})`,
+                    notes: `Retour en stock : ${raison} (Réf. ${orderId.slice(0, 8).toUpperCase()})`,
                 })
                 restored += qty
             }

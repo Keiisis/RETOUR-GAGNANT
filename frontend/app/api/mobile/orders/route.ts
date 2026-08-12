@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
         const tracking = searchParams.get('tracking')
         const orderId = searchParams.get('order_id')
         // Suivi par code = public (le code fait office de secret). Tout le reste
-        // exige l'identité dérivée du JETON (anti-IDOR) — on ignore tout client_id fourni.
+        // exige l'identité dérivée du JETON (anti-IDOR) : on ignore tout client_id fourni.
         const clientId = tracking ? null : await getMobileUserId(req)
         if (!tracking && !clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
         const body = (await req.json()) as OrderBody
 
         // Si un jeton est fourni, l'identité prime sur tout client_id du corps
-        // (anti-usurpation). Sinon commande invitée (client_id null) — le paiement
+        // (anti-usurpation). Sinon commande invitée (client_id null) : le paiement
         // reste vérifié serveur plus bas.
         const authUid = await getMobileUserId(req)
 
@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
         const okHt = Math.abs(amount - serverTotalHt) <= 1
         const okTtc = Math.abs(amount - serverTotalTtc) <= 1
         if (!okHt && !okTtc) {
-            return NextResponse.json({ error: 'Montant incohérent — actualisez votre panier' }, { status: 400 })
+            return NextResponse.json({ error: 'Montant incohérent : actualisez votre panier' }, { status: 400 })
         }
         // On enregistre le montant RÉELLEMENT payé (celui validé côté client).
         const chargedAmount = okTtc ? serverTotalTtc : serverTotalHt

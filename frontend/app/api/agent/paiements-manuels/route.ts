@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  AGENT — Édition / suppression de ses paiements (manuels & externes)
+//  AGENT : Édition / suppression de ses paiements (manuels & externes)
 //  Route sous /api/agent/* : le middleware l'autorise aux agents (les
 //  routes /api/admin/* leur sont interdites). Permet à l'agent de
 //  corriger lui-même les DOUBLONS qui faussent la comptabilité.
@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest) {
     if (own) return NextResponse.json({ error: own }, { status: 403 })
     const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
-        return NextResponse.json({ error: 'Période clôturée — modification refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : modification refusée.' }, { status: 423 })
     }
 
     const patch: Record<string, unknown> = {}
@@ -84,7 +84,7 @@ export async function DELETE(request: NextRequest) {
     if (own) return NextResponse.json({ error: own }, { status: 403 })
     const { data: existing } = await supabase.from('paiements_manuels').select('date_paiement').eq('id', id).single()
     if (existing && await isPeriodLocked(supabase, existing.date_paiement)) {
-        return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : suppression refusée.' }, { status: 423 })
     }
 
     // Copie complete AVANT suppression (seule trace restante)

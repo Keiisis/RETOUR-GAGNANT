@@ -1,6 +1,6 @@
 /**
- * SVG Plexiglas Mockup Generator — v3
- * 80cm x 120cm (800mm x 1200mm) — Forme arche
+ * SVG Plexiglas Mockup Generator : v3
+ * 80cm x 120cm (800mm x 1200mm) : Forme arche
  * Compatible Illustrator / Navigateur / Decoupe CNC
  * Pas d'emoji ni de caracteres unicode exotiques (compatibilite XML)
  */

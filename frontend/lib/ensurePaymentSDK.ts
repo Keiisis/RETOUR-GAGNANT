@@ -12,7 +12,7 @@ function loadScript(src: string, timeout = 15000): Promise<void> {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`)
         if (existing) {
-            // Le tag existe — on résout immédiatement, waitForGlobal prendra le relai
+            // Le tag existe : on résout immédiatement, waitForGlobal prendra le relai
             resolve()
             return
         }
@@ -67,7 +67,7 @@ const KKIAPAY_HOST = 'cdn.kkiapay.me'
 export async function ensureKkiapaySDK(): Promise<void> {
     if (typeof win().openKkiapayWidget === 'function') return
 
-    // 1ère tentative — le script est peut-être déjà en train de charger
+    // 1ère tentative : le script est peut-être déjà en train de charger
     //   (ajouté par boutique/layout.tsx strategy="afterInteractive")
     const existing = document.querySelector(`script[src*="${KKIAPAY_HOST}"]`)
     if (existing) {
@@ -80,7 +80,7 @@ export async function ensureKkiapaySDK(): Promise<void> {
         }
     }
 
-    // 2ème tentative — charger une copie fraîche
+    // 2ème tentative : charger une copie fraîche
     await loadScript(KKIAPAY_URL, 15000)
     await waitForGlobal('openKkiapayWidget', 12000)
 }

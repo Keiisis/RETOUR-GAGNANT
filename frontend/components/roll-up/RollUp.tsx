@@ -5,7 +5,7 @@ import QRCode from 'react-qr-code'
 import { BookOpen, House as Home, Briefcase, Bank as Landmark, Hammer, TrendUp as TrendingUp, Users, SealCheck as BadgeCheck, GridFour as LayoutGrid } from '@phosphor-icons/react';
 
 /* ══════════════════════════════════════════════════════════════
-   PALETTE — Bleu cobalt eclatant + Or vibrant + drapeau Benin
+   PALETTE : Bleu cobalt eclatant + Or vibrant + drapeau Benin
 ══════════════════════════════════════════════════════════════ */
 
 const BLUE_DEEP  = '#052257'
@@ -36,7 +36,7 @@ export interface RollUpData {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   QR CODE — utilise l'image custom /images/qr-code.png (avec logo
+   QR CODE : utilise l'image custom /images/qr-code.png (avec logo
    arbre au centre). Fallback sur QRCode genere si indispo.
 ══════════════════════════════════════════════════════════════ */
 
@@ -116,7 +116,7 @@ function MiniLogoRGB({ s }: { s: number }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ICONE SERVICE — circle gradient or, icone bleu profond
+   ICONE SERVICE : circle gradient or, icone bleu profond
 ══════════════════════════════════════════════════════════════ */
 
 function ServiceRow({
@@ -158,7 +158,7 @@ function ServiceRow({
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ROLL-UP — 85x200 cm (850 x 2000 px base DOM)
+   ROLL-UP : 85x200 cm (850 x 2000 px base DOM)
 ══════════════════════════════════════════════════════════════ */
 
 export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: number }>(
@@ -181,7 +181,7 @@ export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: num
                 }}
             >
                 {/* ═══════════════════════════════════════════
-                    DECORS — halos lateraux verts + halo or
+                    DECORS : halos lateraux verts + halo or
                 ═══════════════════════════════════════════ */}
 
                 {/* Halo vert gauche */}
@@ -248,7 +248,7 @@ export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: num
                 </div>
 
                 {/* ═══════════════════════════════════════════
-                    CONTENU — layout flex vertical
+                    CONTENU : layout flex vertical
                 ═══════════════════════════════════════════ */}
 
                 <div style={{
@@ -260,7 +260,7 @@ export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: num
                     flexDirection: 'column',
                     alignItems: 'center',
                 }}>
-                    {/* ═══ HEADER — Logo libre + titre ═══ */}
+                    {/* ═══ HEADER : Logo libre + titre ═══ */}
                     <div style={{
                         marginTop: 90 * s,
                         display: 'flex',
@@ -442,7 +442,7 @@ export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: num
                             ))}
                         </div>
 
-                        {/* 9e service — "Autres Services" pleine largeur centre */}
+                        {/* 9e service : "Autres Services" pleine largeur centre */}
                         <div style={{
                             width: '100%',
                             display: 'flex',
@@ -456,7 +456,7 @@ export const RollUp = forwardRef<HTMLDivElement, { data: RollUpData, scale?: num
                     {/* Espace flexible */}
                     <div style={{ flex: 1, minHeight: 20 * s }} />
 
-                    {/* ═══ FOOTER — QR + contacts + slogan ═══ */}
+                    {/* ═══ FOOTER : QR + contacts + slogan ═══ */}
                     <div style={{
                         width: '100%',
                         display: 'flex',

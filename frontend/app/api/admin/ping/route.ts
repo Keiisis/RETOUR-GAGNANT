@@ -22,7 +22,7 @@ import { extractIp, logWafEvent } from '@/lib/waf'
 // déjà au montage, donc aucun code client à ajouter et aucune requête
 // supplémentaire dans le navigateur.
 //
-// ⚠️ L'adresse n'est JAMAIS lue dans le corps de la requête — un appelant
+// ⚠️ L'adresse n'est JAMAIS lue dans le corps de la requête : un appelant
 // pourrait y écrire ce qu'il veut. Elle est extraite des en-têtes de proxy
 // de confiance par `extractIp`, la même fonction que le WAF utilise pour
 // décider de bloquer.
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
                 ip, method: 'POST', path: '/api/admin/ping',
                 userAgent: req.headers.get('user-agent') || '',
                 threatType: 'trusted_ip_renewed',
-                detail: `Liste blanche dynamique : ${role} — ${actives} adresse(s) active(s), valide 7 jours`,
+                detail: `Liste blanche dynamique : ${role} : ${actives} adresse(s) active(s), valide 7 jours`,
                 action: 'allow',
                 supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
                 serviceKey,

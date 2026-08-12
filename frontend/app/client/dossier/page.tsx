@@ -77,9 +77,9 @@ const fmtSize = (bytes: number) => {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 const fmtDate = (d: string) => {
-    if (!d) return '—'
+    if (!d) return '-'
     const dateObj = new Date(d)
-    return isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('fr-FR')
+    return isNaN(dateObj.getTime()) ? '-' : dateObj.toLocaleDateString('fr-FR')
 }
 const fmtN = (n: number) => Math.round(n).toLocaleString('fr-FR')
 

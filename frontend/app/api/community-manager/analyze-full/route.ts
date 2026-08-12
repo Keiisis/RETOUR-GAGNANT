@@ -38,7 +38,7 @@ const APIFY_ACTORS: Record<string, {
     timeout: number
 }> = {
     facebook: {
-        // https://console.apify.com/actors/KoJrdxJCTtpon81KY — tableau plat de posts
+        // https://console.apify.com/actors/KoJrdxJCTtpon81KY : tableau plat de posts
         actor: 'KoJrdxJCTtpon81KY',
         buildInput: (url) => ({
             startUrls: [{ url: url.replace(/\/$/, '') }],
@@ -49,7 +49,7 @@ const APIFY_ACTORS: Record<string, {
         timeout: 180,
     },
     instagram: {
-        // https://console.apify.com/actors/shu8hvrXbJbY3Eb9W — {url, caption, likesCount, timestamp, shortCode}
+        // https://console.apify.com/actors/shu8hvrXbJbY3Eb9W : {url, caption, likesCount, timestamp, shortCode}
         actor: 'shu8hvrXbJbY3Eb9W',
         buildInput: (url) => ({
             directUrls: [url.replace(/\/$/, '')],
@@ -59,7 +59,7 @@ const APIFY_ACTORS: Record<string, {
         timeout: 120,
     },
     tiktok: {
-        // https://console.apify.com/actors/GdWCkxBtKWOsKjdch — {text, diggCount/heartCount, commentCount, shareCount, createTimeISO, webVideoUrl}
+        // https://console.apify.com/actors/GdWCkxBtKWOsKjdch : {text, diggCount/heartCount, commentCount, shareCount, createTimeISO, webVideoUrl}
         actor: 'GdWCkxBtKWOsKjdch',
         buildInput: (_url, username) => ({
             profiles: [username],
@@ -71,7 +71,7 @@ const APIFY_ACTORS: Record<string, {
         timeout: 180,
     },
     twitter: {
-        // https://console.apify.com/actors/61RPP7dywgiy0JPD0 — {text, likes, retweets, replies, views, url, timestamp}
+        // https://console.apify.com/actors/61RPP7dywgiy0JPD0 : {text, likes, retweets, replies, views, url, timestamp}
         actor: '61RPP7dywgiy0JPD0',
         buildInput: (_url, username) => ({
             handles: [username.replace(/^@/, '')],
@@ -81,7 +81,7 @@ const APIFY_ACTORS: Record<string, {
         timeout: 120,
     },
     google_maps: {
-        // https://console.apify.com/actors/nwua9Gu5YrADL7ZDj — {title, address, rating, reviews:[{text, stars}]}
+        // https://console.apify.com/actors/nwua9Gu5YrADL7ZDj : {title, address, rating, reviews:[{text, stars}]}
         actor: 'nwua9Gu5YrADL7ZDj',
         buildInput: (url, username) => {
             const isGmapsUrl = url.includes('google.com/maps') || url.includes('maps.google')
@@ -167,7 +167,7 @@ function normGooglePlace(i: Record<string, unknown>, fb: string): RawPost | null
     const url = strSafe(i.url || i.placeUrl || i.website) || fb
     const name = strSafe(i.title || i.name)
     const address = strSafe(i.address || i.vicinity)
-    const text = name ? `${name}${address ? ` — ${address}` : ''}` : strSafe(i.description)
+    const text = name ? `${name}${address ? ` : ${address}` : ''}` : strSafe(i.description)
     if (!text) return null
     const stars = num(i.rating || i.totalScore || 0)
     return { text: stars ? `${text} (⭐ ${stars}/5)` : text, likes: stars * 20, stars, comments: num(i.reviewCount || i.reviewsCount || 0), shares: 0, date: strSafe(i.updatedAt || ''), url }
@@ -254,7 +254,7 @@ async function scrapePosts(profileUrl: string, platform: string): Promise<{ post
                 apifyKeyIndex = (keyIdx + 1) % APIFY_KEYS.length
                 const items: unknown[] = Array.isArray(res.data) ? res.data : []
                 const posts = normalizeItems(items, profileUrl, platform)
-                console.log(`[analyze-full] Apify  clé ${keyIdx + 1} — ${posts.length} posts`)
+                console.log(`[analyze-full] Apify  clé ${keyIdx + 1} : ${posts.length} posts`)
 
                 if (posts.length === 0) {
                     // Apify OK mais 0 résultats (profil privé / personnel / vide) → Serper
@@ -280,7 +280,7 @@ async function scrapePosts(profileUrl: string, platform: string): Promise<{ post
 }
 
 // ══════════════════════════════════════════════════════════
-// Deep Style DNA v2 — Moteur multi-pass
+// Deep Style DNA v2 : Moteur multi-pass
 // ══════════════════════════════════════════════════════════
 
 async function callGroq(
@@ -495,7 +495,7 @@ async function analyzeStyleDeep(posts: RawPost[], platform: string, profileUrl: 
     const ctx = `Plateforme: ${platform} | Profil: ${profileUrl}`
 
     // Pass 1 : Structurel
-    console.log(`[analyze-full] Deep Style DNA — Pass 1...`)
+    console.log(`[analyze-full] Deep Style DNA : Pass 1...`)
     let pass1
     try {
         const raw1 = await callGroq(PASS1_SYSTEM, `${ctx}\n\nAnalyse ces ${textPosts.length} publications :\n---\n${samples}\n---`, { temperature: 0.2, max_tokens: 3000 })
@@ -506,7 +506,7 @@ async function analyzeStyleDeep(posts: RawPost[], platform: string, profileUrl: 
     }
 
     // Pass 2 : Stratégique
-    console.log(`[analyze-full] Deep Style DNA — Pass 2...`)
+    console.log(`[analyze-full] Deep Style DNA : Pass 2...`)
     let pass2
     try {
         const raw2 = await callGroq(PASS2_SYSTEM, `${ctx}\n\n## Analyse structurelle (Pass 1) :\n\`\`\`json\n${JSON.stringify(pass1, null, 2)}\n\`\`\`\n\n## Publications originales :\n---\n${samples.slice(0, 6000)}\n---`, { temperature: 0.5, max_tokens: 3000 })
@@ -551,7 +551,7 @@ Forces: ${(competitive.strengths || []).join(', ')}
 Faiblesses: ${(competitive.weaknesses || []).join(', ')}
 Opportunités: ${(competitive.opportunities || []).join(', ')}
 ---
-*${meta.posts_analyzed} posts analysés — ${meta.generated_at}*`
+*${meta.posts_analyzed} posts analysés : ${meta.generated_at}*`
     }
 
     const vf = (dna.voice_fingerprint || {}) as Record<string, unknown>
@@ -564,7 +564,7 @@ Opportunités: ${(competitive.opportunities || []).join(', ')}
     const dominantEmotions = Array.isArray(em.dominant_emotions) ? em.dominant_emotions : []
     const rewrites = Array.isArray(ci.example_rewrites) ? ci.example_rewrites : []
 
-    return `# System Prompt — Imite le style de @${meta.username} (${meta.platform})
+    return `# System Prompt : Imite le style de @${meta.username} (${meta.platform})
 
 ${ci.system_prompt || `Tu es un expert en community management. Tu imites le style de @${meta.username} sur ${meta.platform}.`}
 
@@ -589,7 +589,7 @@ ${ensureArray(ci.dont_list).map(d => ` ${d}`).join('\n') || '(aucune)'}
 ${cb.structure_template || '?'}
 - Longueur idéale: ${cb.ideal_length_words || '?'} mots
 - Hashtags: ${cb.hashtag_count || '?'} (placement: ${cb.hashtag_placement || '?'})
-- Emojis: ${cb.emoji_density || '?'}${ensureArray(cb.emoji_favorites).length > 0 ? ` — favoris: ${ensureArray(cb.emoji_favorites).join(' ')}` : ''}
+- Emojis: ${cb.emoji_density || '?'}${ensureArray(cb.emoji_favorites).length > 0 ? ` : favoris: ${ensureArray(cb.emoji_favorites).join(' ')}` : ''}
 - Visuel: ${cb.visual_pairing || '?'}
 
 ## FORMULES CTA A REUTILISER
@@ -623,7 +623,7 @@ ${rewrites.map((r: Record<string, unknown>, i: number) => `### Exemple ${i + 1}\
 - Autorité: ${sc.authority || '?'} | Viralité: ${sc.viral_potential || '?'} | Communauté: ${sc.community_building || '?'}
 
 ---
-*Dossier @${meta.username} — ${meta.posts_analyzed} posts analysés — ${meta.generated_at} — Community Manager Pro v3*`
+*Dossier @${meta.username} : ${meta.posts_analyzed} posts analysés : ${meta.generated_at} : Community Manager Pro v3*`
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -650,7 +650,7 @@ export async function POST(request: NextRequest) {
         const profileUsername = username || profile_url.replace(/\/$/, '').split('/').filter(Boolean).pop() || ''
 
         // ── 1. Scraping ───────────────────────────────────
-        console.log(`[analyze-full] Début pipeline — ${platform} : ${profile_url}`)
+        console.log(`[analyze-full] Début pipeline : ${platform} : ${profile_url}`)
         const { posts: rawPosts, method: scrapeMethod } = await scrapePosts(profile_url, platform)
         console.log(`[analyze-full] ${rawPosts.length} posts scrappés via ${scrapeMethod}`)
 
@@ -683,7 +683,7 @@ export async function POST(request: NextRequest) {
             meta: {
                 version: '3.0',
                 generated_at: new Date().toISOString(),
-                tool: 'Retour Gagnant — Community Manager Pro v3',
+                tool: 'Retour Gagnant : Community Manager Pro v3',
                 posts_analyzed: rawPosts.length,
                 scrape_method: scrapeMethod,
                 platform,
@@ -779,7 +779,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log(`[analyze-full]  Dossier construit — engagement: ${engagementLevel} | style analysé: ${deepResult !== null}`)
+        console.log(`[analyze-full]  Dossier construit : engagement: ${engagementLevel} | style analysé: ${deepResult !== null}`)
         return NextResponse.json({ success: true, dossier })
     } catch (err) {
         console.error('[analyze-full] Error:', err)

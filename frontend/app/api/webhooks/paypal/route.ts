@@ -47,13 +47,13 @@ export async function POST(request: Request) {
         const sandbox = sm.paypal_sandbox === 'true'
         const webhookId = sm.paypal_webhook_id
 
-        // Vérification de signature PayPal — OBLIGATOIRE (fail-closed)
+        // Vérification de signature PayPal : OBLIGATOIRE (fail-closed)
         // Si les credentials sont incomplets → rejet immédiat.
         // Ne jamais traiter un webhook sans vérification cryptographique.
         if (!clientId || !clientSecret || !webhookId) {
-            console.error('[PayPal Webhook] Credentials incomplets (paypal_client_id/secret/webhook_id) — rejeté')
+            console.error('[PayPal Webhook] Credentials incomplets (paypal_client_id/secret/webhook_id) : rejeté')
             return NextResponse.json(
-                { error: 'Webhook PayPal non configuré — ajoutez paypal_webhook_id dans les settings admin' },
+                { error: 'Webhook PayPal non configuré : ajoutez paypal_webhook_id dans les settings admin' },
                 { status: 403 }
             )
         }
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         } catch (e) {
             // Fail-closed : toute erreur de vérification de signature = rejet
             // Ne JAMAIS traiter un webhook dont la signature ne peut pas être vérifiée
-            console.error('[PayPal Webhook] Erreur de vérification de signature — rejeté:', e)
+            console.error('[PayPal Webhook] Erreur de vérification de signature : rejeté:', e)
             return NextResponse.json(
                 { error: 'Vérification de signature échouée' },
                 { status: 400 }

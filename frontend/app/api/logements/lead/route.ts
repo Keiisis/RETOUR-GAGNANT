@@ -13,7 +13,7 @@ const SIMAU_EMAIL = process.env.SIMAU_LEAD_EMAIL || 'info@simaubenin.com'
 
 const esc = (s: unknown) => String(s ?? '').replace(/[<>]/g, '')
 
-// POST /api/logements/lead — capture d'un lead + transmission à SIMAU + notif admin.
+// POST /api/logements/lead : capture d'un lead + transmission à SIMAU + notif admin.
 export async function POST(request: NextRequest) {
     const trop = guardPublic(request, 'logement-lead', EMAIL_LIMIT)
     if (trop) return trop
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
             const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#3C3C3C;">
                 <div style="height:6px;background:linear-gradient(90deg,#008751 46%,#FCD116 46% 73%,#E8112D 73%);border-radius:6px;"></div>
                 <h2 style="color:#008751;">Nouveau prospect logement (Programme national)</h2>
-                <p>Transmis par Retour Gagnant Bénin — accompagnement à la composition du dossier.</p>
+                <p>Transmis par Retour Gagnant Bénin : accompagnement à la composition du dossier.</p>
                 <table style="width:100%;border-collapse:collapse;font-size:14px;">
                 ${rows.map(([k, v]) => `<tr><td style="padding:6px 0;color:#8A8A8A;width:170px;">${esc(k)}</td><td style="padding:6px 0;font-weight:bold;">${esc(v)}</td></tr>`).join('')}
                 </table>
             </div>`
             const to = [SIMAU_EMAIL, s.contact_email || s.smtp_from_email || s.smtp_user].filter(Boolean).join(', ')
-            await transporter.sendMail({ from, to, subject: `Nouveau prospect logement — ${lead.prenom || ''} ${lead.nom}`.trim(), html })
+            await transporter.sendMail({ from, to, subject: `Nouveau prospect logement : ${lead.prenom || ''} ${lead.nom}`.trim(), html })
             transmis = true
             await supabase.from('logement_leads').update({ transmis_simau: true, statut: 'transmis' }).eq('id', saved.id)
         }

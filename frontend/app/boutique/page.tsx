@@ -104,7 +104,7 @@ function SkeletonCard({ index }: { index: number }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// PAGE BOUTIQUE — Ultra Immersive
+// PAGE BOUTIQUE : Ultra Immersive
 // ═════════════════════════════════════════════════════════════════════
 
 export default function BoutiquePage() {
@@ -212,7 +212,7 @@ export default function BoutiquePage() {
 
             {/* ══════ PARALLAX BACKGROUND LAYERS ══════ */}
 
-            {/* Layer 1 — Deep gradient orbs */}
+            {/* Layer 1 : Deep gradient orbs */}
             <motion.div style={{ y: bgY1 }} className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                 <motion.div
                     animate={{ rotate: 360, scale: [1, 1.15, 1] }}
@@ -231,7 +231,7 @@ export default function BoutiquePage() {
                 />
             </motion.div>
 
-            {/* Layer 2 — Decorative lines (desktop only) */}
+            {/* Layer 2 : Decorative lines (desktop only) */}
             {!isMobile && (
                 <motion.div style={{ y: bgY2 }} className="fixed inset-0 pointer-events-none z-[1]">
                     <div className="absolute top-[15%] left-[8%] w-px h-48 bg-gradient-to-b from-transparent via-[#008751]/[0.08] to-transparent" />
@@ -241,12 +241,12 @@ export default function BoutiquePage() {
                 </motion.div>
             )}
 
-            {/* Layer 3 — Floating particles */}
+            {/* Layer 3 : Floating particles */}
             <div className="fixed inset-0 pointer-events-none z-[2]">
                 <FloatingParticles count={isMobile ? 3 : 6} />
             </div>
 
-            {/* ══════ HERO SECTION — Split Text Reveal ══════ */}
+            {/* ══════ HERO SECTION : Split Text Reveal ══════ */}
             <motion.section
                 style={{ y: yHero, opacity: opacityHero }}
                 className="relative pt-40 pb-20 md:pt-48 md:pb-32 px-6 z-10 w-full flex flex-col items-center justify-center min-h-[50vh]"
@@ -285,7 +285,7 @@ export default function BoutiquePage() {
                                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                                 transition={{ delay: 1.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
                             >
-                                {t("L'héritage, l'art, le savoir-faire, l'élégance — Bénin est un tableau unique réuni dans une collection soigneusement sélectionnée. Laissez-vous inspirer.")}
+                                {t("L'héritage, l'art, le savoir-faire, l'élégance : Bénin est un tableau unique réuni dans une collection soigneusement sélectionnée. Laissez-vous inspirer.")}
                             </motion.p>
                         </>
                     )}

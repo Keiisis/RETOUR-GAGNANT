@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         }
 
         const actionLink = linkData.properties.action_link
-        // Code à 8 chiffres saisi dans l'app (vérifié via verifyOtp — l'écran
+        // Code à 8 chiffres saisi dans l'app (vérifié via verifyOtp : l'écran
         // mobile essaie le type 'magiclink' en plus de 'signup').
         const emailOtp = linkData.properties.email_otp || ''
         const existingPrenom = (existingUser.user_metadata?.prenom as string) || (existingUser.user_metadata?.nom as string) || ''
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         for (const s of settingsData ?? []) settings[s.key] = s.value
 
         if (!settings.smtp_host) {
-            throw new Error('Configuration SMTP manquante — vérifiez l\'admin')
+            throw new Error('Configuration SMTP manquante : vérifiez l\'admin')
         }
 
         const transporter = nodemailer.createTransport({
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
         await transporter.sendMail({
             from: fromString,
             to: normalizedEmail,
-            subject: `Votre code de confirmation : ${emailOtp} — Retour Gagnant Bénin`,
+            subject: `Votre code de confirmation : ${emailOtp} : Retour Gagnant Bénin`,
             html: htmlContent
         })
 

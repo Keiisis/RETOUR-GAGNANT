@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET /api/admin/services/[id] — récupérer un service
+// GET /api/admin/services/[id] : récupérer un service
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 }
 
-// PATCH /api/admin/services/[id] — modifier un service
+// PATCH /api/admin/services/[id] : modifier un service
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 }
 
-// DELETE /api/admin/services/[id] — supprimer un service
+// DELETE /api/admin/services/[id] : supprimer un service
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

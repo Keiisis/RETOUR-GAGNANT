@@ -382,7 +382,7 @@ export default function DevenirPartenairePage() {
                         <T>Rejoignez notre réseau d&apos;élite et touchez la diaspora béninoise du monde entier. Ensemble, construisons des ponts entre l&apos;Afrique et la diaspora.</T>
                     </p>
 
-                    {/* Benefits — real 3D icons */}
+                    {/* Benefits : real 3D icons */}
                     <div className="flex flex-wrap justify-center gap-3 pt-2">
                         {[
                             { icon: Network, label: 'Visibilité diaspora', from: '#2563eb', to: '#4f46e5' },
@@ -486,7 +486,7 @@ export default function DevenirPartenairePage() {
 
                             <div className="px-8 py-7 space-y-6">
 
-                                {/* ════ STEP 1 — STRUCTURE ════ */}
+                                {/* ════ STEP 1 : STRUCTURE ════ */}
                                 {step === 0 && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -498,7 +498,7 @@ export default function DevenirPartenairePage() {
                                             </Field>
                                         </div>
 
-                                        {/* Category grid — 3D icon cards */}
+                                        {/* Category grid : 3D icon cards */}
                                         <Field label={t("Secteur d'activité")} required hint={t("Sélectionnez la catégorie qui correspond le mieux à votre activité")}>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
                                                 {CATEGORIES.map(cat => {
@@ -562,7 +562,7 @@ export default function DevenirPartenairePage() {
                                     </div>
                                 )}
 
-                                {/* ════ STEP 2 — ACTIVITÉ ════ */}
+                                {/* ════ STEP 2 : ACTIVITÉ ════ */}
                                 {step === 1 && (
                                     <div className="space-y-6">
                                         <Field label={t("Décrivez votre activité principale")} required hint={t("Soyez précis : produits, services, zone géographique couverte")}>
@@ -584,7 +584,7 @@ export default function DevenirPartenairePage() {
                                             </div>
                                         </Field>
 
-                                        {/* Partnership types — 3D icon cards */}
+                                        {/* Partnership types : 3D icon cards */}
                                         <Field label={t("Types de partenariat souhaités")} required hint={t("Sélectionnez un ou plusieurs types de collaboration")}>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-1">
                                                 {PARTNERSHIP_TYPES.map(pt => {
@@ -624,7 +624,7 @@ export default function DevenirPartenairePage() {
                                     </div>
                                 )}
 
-                                {/* ════ STEP 3 — COORDONNÉES ════ */}
+                                {/* ════ STEP 3 : COORDONNÉES ════ */}
                                 {step === 2 && (
                                     <div className="space-y-5">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -673,7 +673,7 @@ export default function DevenirPartenairePage() {
                                     </div>
                                 )}
 
-                                {/* ════ STEP 4 — CANDIDATURE ════ */}
+                                {/* ════ STEP 4 : CANDIDATURE ════ */}
                                 {step === 3 && (
                                     <div className="space-y-6">
                                         <Field label={t("Pourquoi souhaitez-vous rejoindre notre réseau ?")} required hint={t("Exprimez votre motivation, vos valeurs communes avec Retour Gagnant Bénin")}>
@@ -692,7 +692,7 @@ export default function DevenirPartenairePage() {
                                                     <FileUpload
                                                         type="logo" label={t("Logo")}
                                                         value={form.logo_url} onChange={v => set('logo_url', v)}
-                                                        hint={t("PNG, JPG — max 5MB")} className="w-[120px] flex-shrink-0"
+                                                        hint={t("PNG, JPG : max 5MB")} className="w-[120px] flex-shrink-0"
                                                     />
                                                     <div className="flex-1 pt-8 text-[12px] text-gray-500 leading-relaxed">
                                                         <T>Votre logo apparaîtra sur votre profil visible par toute la diaspora. Format carré recommandé (500×500px minimum).</T>
@@ -701,7 +701,7 @@ export default function DevenirPartenairePage() {
                                                 <FileUpload
                                                     type="cover" label={t("Photo de couverture")}
                                                     value={form.cover_image_url} onChange={v => set('cover_image_url', v)}
-                                                    hint={t("Image panoramique de votre établissement, produits ou services — 1200×400px recommandé")}
+                                                    hint={t("Image panoramique de votre établissement, produits ou services : 1200×400px recommandé")}
                                                 />
                                             </div>
                                         </div>

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CONTRATS — logique partagée (serveur)
+//  CONTRATS : logique partagée (serveur)
 //  Numéro de série immuable, journal d'audit, template A4 légal
 // ══════════════════════════════════════════════════════════════
 
@@ -71,17 +71,17 @@ export function fmtAmount(amount: number, currency: string): string {
 }
 
 export function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export function fmtDateTime(d: string | null | undefined): string {
-    if (!d) return '—'
+    if (!d) return '-'
     return new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 // ══════════════════════════════════════════════════════════════
-//  TEMPLATE A4 — document contractuel professionnel
+//  TEMPLATE A4 : document contractuel professionnel
 //  Utilisé pour : aperçu admin/agent, PDF téléchargeable,
 //  page publique de signature (mode embed)
 // ══════════════════════════════════════════════════════════════
@@ -98,7 +98,7 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
         ? `<p style="margin:0 0 2px;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:19px;color:#1B2A4A">${esc(c.signed_name || c.client_nom)}</p>
            <p style="margin:0 0 2px;color:#047857;font-size:10.5px;font-weight:700">Signé électroniquement le ${fmtDateTime(c.signed_at)}</p>
            ${c.signature_method === 'manuel'
-            ? '<p style="margin:0;color:#8B94A6;font-size:9.5px">Signature recueillie manuellement — enregistrée par l\'agence</p>'
+            ? '<p style="margin:0;color:#8B94A6;font-size:9.5px">Signature recueillie manuellement : enregistrée par l\'agence</p>'
             : `<p style="margin:0;color:#8B94A6;font-size:9.5px;font-family:monospace">Empreinte SHA-256 : ${esc((c.signature_hash || '').slice(0, 32))}…</p>`}`
         : `<div style="height:58px;border-bottom:1px dotted #B9C2CF"></div>
            <p style="margin:6px 0 0;color:#8B94A6;font-size:10px">Signature précédée de la mention « Lu et approuvé »</p>`
@@ -119,7 +119,7 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
           </td>
           <td style="vertical-align:top;text-align:right;white-space:nowrap">
             <p style="margin:0;font-size:9px;color:#8B94A6;text-transform:uppercase;letter-spacing:.2em;font-weight:800">Contrat</p>
-            <p style="margin:3px 0 0;font-size:13px;font-weight:800;color:#047857;font-family:monospace">${esc(c.serial || '—')}</p>
+            <p style="margin:3px 0 0;font-size:13px;font-weight:800;color:#047857;font-family:monospace">${esc(c.serial || '-')}</p>
             <p style="margin:5px 0 0;font-size:9.5px;color:#5B6474">Émis le ${fmtDate(c.created_at)}</p>
             ${c.expires_at ? `<p style="margin:1px 0 0;font-size:9.5px;color:#5B6474">Valable jusqu'au ${fmtDate(c.expires_at)}</p>` : ''}
           </td>
@@ -160,8 +160,8 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
           <p style="margin:0 0 6px;font-size:11px;font-weight:800;color:#1B2A4A;text-transform:uppercase;letter-spacing:.08em">Dispositions générales</p>
           <p style="margin:0 0 5px;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Validité.</strong> La présente offre contractuelle est valable jusqu'au ${fmtDate(c.expires_at)}. Passé ce délai et à défaut de signature, elle devient caduque.</p>
           <p style="margin:0 0 5px;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Signature électronique.</strong> Conformément aux dispositions du Code du numérique de la République du Bénin (loi n° 2017-20), les parties reconnaissent à la signature électronique apposée sur le présent contrat la même valeur probante qu'une signature manuscrite. Chaque signature en ligne est horodatée et scellée par une empreinte cryptographique SHA-256 conservée par le Prestataire.</p>
-          <p style="margin:0 0 5px;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Droit applicable — litiges.</strong> Le présent contrat est régi par le droit béninois. À défaut de règlement amiable, tout litige relatif à sa validité, son interprétation ou son exécution relèvera de la compétence des juridictions de Cotonou (République du Bénin).</p>
-          <p style="margin:0;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Intégralité.</strong> Le présent document, identifié par le numéro ${esc(c.serial || '—')}, exprime l'intégralité de l'accord des parties sur son objet et prévaut sur tout échange antérieur.</p>
+          <p style="margin:0 0 5px;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Droit applicable : litiges.</strong> Le présent contrat est régi par le droit béninois. À défaut de règlement amiable, tout litige relatif à sa validité, son interprétation ou son exécution relèvera de la compétence des juridictions de Cotonou (République du Bénin).</p>
+          <p style="margin:0;font-size:10.5px;color:#5B6474;line-height:1.7;text-align:justify"><strong>Intégralité.</strong> Le présent document, identifié par le numéro ${esc(c.serial || '-')}, exprime l'intégralité de l'accord des parties sur son objet et prévaut sur tout échange antérieur.</p>
         </div>
 
         <!-- Signatures -->
@@ -180,8 +180,8 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
         <!-- Pied -->
         <div style="border-top:1px solid #EEF1F0;padding-top:10px;margin-top:8px">
           <p style="margin:0;font-size:8.5px;color:#9AA5B1;text-align:center;line-height:1.6">
-            ${esc(COMPANY.name)} — RCCM ${esc(COMPANY.rccm)} — IFU ${esc(COMPANY.ifu)} — ${esc(COMPANY.address)}<br/>
-            Document n° ${esc(c.serial || '—')} émis le ${fmtDateTime(c.created_at)}${signed ? ` — signé le ${fmtDateTime(c.signed_at)}` : ''} — retourgagnantbenin.bj
+            ${esc(COMPANY.name)} : RCCM ${esc(COMPANY.rccm)} : IFU ${esc(COMPANY.ifu)} : ${esc(COMPANY.address)}<br/>
+            Document n° ${esc(c.serial || '-')} émis le ${fmtDateTime(c.created_at)}${signed ? ` : signé le ${fmtDateTime(c.signed_at)}` : ''} : retourgagnantbenin.bj
           </p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
     return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${esc(c.serial || 'Contrat')} — ${esc(c.title)}</title>
+<title>${esc(c.serial || 'Contrat')} : ${esc(c.title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
   *{box-sizing:border-box} body{margin:0;background:#EDF1EF;padding:28px 12px}

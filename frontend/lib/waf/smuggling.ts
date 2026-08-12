@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔀 lib/waf/smuggling.ts — HTTP Request Smuggling Detection
+// 🔀 lib/waf/smuggling.ts : HTTP Request Smuggling Detection
 // ══════════════════════════════════════════════════════════════
 //
 // Détecte les attaques de type HTTP Request Smuggling (CL/TE) :
@@ -128,7 +128,7 @@ export function scanForSmuggling(headers: Headers): SmugglingResult {
             }
         }
 
-        // CL énorme (> 10MB pour une requête de page) — potentiel smuggling
+        // CL énorme (> 10MB pour une requête de page) : potentiel smuggling
         const clNum = parseInt(clValue, 10)
         if (clNum > 10_000_000) {
             return {

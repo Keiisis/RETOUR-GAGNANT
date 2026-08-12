@@ -12,13 +12,13 @@ const COMPANY = {
     phone2:  '+229 01 94 35 50 50',
     email:   'contact@retourgagnantbenin.bj',
     website: 'www.retourgagnantbenin.bj',
-    address: 'Haie-Vive Cocotiers, Carré n°1158, Cotonou — République du Bénin',
+    address: 'Haie-Vive Cocotiers, Carré n°1158, Cotonou : République du Bénin',
     ifu:     '3202644573981',
     rccm:    'RB/COT/26 B 42001',
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   PPTX — MÊME DIRECTION ARTISTIQUE QUE L'ÉCRAN D'ACCUEIL MOBILE.
+   PPTX : MÊME DIRECTION ARTISTIQUE QUE L'ÉCRAN D'ACCUEIL MOBILE.
 
    « LE BLANC EST LA FORCE » : fonds blancs francs, encre anthracite
    (#3C3C3C, jamais de noir pur), accents du drapeau béninois, fin liseré
@@ -164,10 +164,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const pptx = new pptxgen()
         pptx.author  = COMPANY.name
         pptx.company = COMPANY.name
-        pptx.title   = `Voyage ${p.destination} — ${p.client_name}`
+        pptx.title   = `Voyage ${p.destination} : ${p.client_name}`
         pptx.layout  = 'LAYOUT_WIDE'
 
-        // Fin liseré tricolore — la signature de la maison.
+        // Fin liseré tricolore : la signature de la maison.
         const addFlagRule = (slide: pptxgen.Slide, y: number, h = 0.1) => {
             slide.addShape('rect', { x: 0,        y, w: W * 0.34, h, fill: { color: C.green },  line: { width: 0 } })
             slide.addShape('rect', { x: W * 0.34, y, w: W * 0.33, h, fill: { color: C.yellow }, line: { width: 0 } })
@@ -236,7 +236,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         }
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDE HERO — couverture blanche éditoriale (texte à gauche, photo à droite)
+        // SLIDE HERO : couverture blanche éditoriale (texte à gauche, photo à droite)
         // ═══════════════════════════════════════════════════════════
         {
             const slide = pptx.addSlide()
@@ -286,7 +286,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                 })
             }
 
-            // Total — pilule vert doux, montant vert
+            // Total : pilule vert doux, montant vert
             slide.addShape('roundRect', {
                 x: Lx, y: 5.75, w: 4.4, h: 0.62, rectRadius: 0.09,
                 fill: { color: C.greenSoft }, line: { color: C.green, width: 1 },
@@ -303,7 +303,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         }
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDES CONTENU — blanc, texte à gauche, images (mosaïque) à droite
+        // SLIDES CONTENU : blanc, texte à gauche, images (mosaïque) à droite
         // ═══════════════════════════════════════════════════════════
         contentItems.forEach((item, idx) => {
             const slide = pptx.addSlide()
@@ -348,7 +348,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                     valign: 'top', lineSpacingMultiple: 1.2,
                 })
             }
-            // Points forts — pastilles vert doux
+            // Points forts : pastilles vert doux
             const hlY = (item.description ? descY + 1.25 : descY) + 0.05
             const highlights = (item.highlights || []).slice(0, 6)
             highlights.forEach((h, i) => {
@@ -366,7 +366,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                 })
             })
 
-            // Prix — pilule JAUNE (fond premium), texte encre
+            // Prix : pilule JAUNE (fond premium), texte encre
             if (item.selling_price > 0) {
                 slide.addShape('roundRect', {
                     x: Lx, y: 6.35, w: 3.3, h: 0.55, rectRadius: 0.08,
@@ -385,7 +385,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         })
 
         // ═══════════════════════════════════════════════════════════
-        // SLIDE PRICING — récapitulatif blanc
+        // SLIDE PRICING : récapitulatif blanc
         // ═══════════════════════════════════════════════════════════
         {
             const slide = pptx.addSlide()
@@ -430,7 +430,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             })
             rY += 0.66
 
-            // Bloc contact — vert doux
+            // Bloc contact : vert doux
             const cY = Math.min(rY + 0.45, H - 1.55)
             slide.addShape('roundRect', { x: tX, y: cY, w: tW, h: 1.05, rectRadius: 0.08, fill: { color: C.greenSoft }, line: { width: 0 } })
             slide.addText('Pour finaliser votre réservation, contactez votre conseiller :', {

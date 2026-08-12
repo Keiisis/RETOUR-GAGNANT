@@ -26,9 +26,9 @@ const D = {
         image_caption_sub: 'Là où tout a commencé',
         block1_heading: "Une rencontre, une vision, une loi historique.",
         block1_text: "Tout commence par une détermination inébranlable. Mme NATHALIE RIFFERT GERMANY, femme engagée et passionnée, a porté en elle le rêve d'un retour au pays après 400 ans d'absence. Ce rêve est devenu réalité grâce à une rencontre décisive.",
-        block2_quote: "Le 13 décembre 2023, en Martinique — un dialogue historique s'est noué entre trois acteurs majeurs : Mr GEORGES GERMANY, Mme NATHALIE RIFFERT GERMANY et le Chef de l'État béninois, S.E.M. PATRICE TALON.",
+        block2_quote: "Le 13 décembre 2023, en Martinique : un dialogue historique s'est noué entre trois acteurs majeurs : Mr GEORGES GERMANY, Mme NATHALIE RIFFERT GERMANY et le Chef de l'État béninois, S.E.M. PATRICE TALON.",
         block3_text1: "C'est lors de cet échange que l'idée de rendre à tous les afro-descendants leur identité originelle a pris corps. À la demande de Nathalie, cette vision s'est élargie à l'ensemble des Caraïbes.",
-        block3_text2: "Aujourd'hui, le Président Patrice Talon entre dans l'histoire de l'humanité en ouvrant les bras à des milliers de frères et sœurs. Une nouvelle page s'écrit — avec lui, avec nous, et avec vous.",
+        block3_text2: "Aujourd'hui, le Président Patrice Talon entre dans l'histoire de l'humanité en ouvrant les bras à des milliers de frères et sœurs. Une nouvelle page s'écrit : avec lui, avec nous, et avec vous.",
     },
     fondatrice: {
         photo: '/images/histoire/nathalie-new.jpg',
@@ -50,8 +50,8 @@ const D = {
         heading: "L'Énigme du Symbole",
         logo_image: '/images/logo-transparent.png',
         symbols: [
-            { title: 'La Porte Sculptée', text: "L'accès sécurisé et facilité au Bénin d'aujourd'hui. Elle symbolise l'Accueil, la Protection et l'Authenticité — des lignes rappelant l'artisanat local, signe de respect pour nos traditions séculaires." },
-            { title: "L'Arbre de Vie", text: "La transformation de «l'Arbre de l'Oubli» en un Arbre de Vie. Il incarne la Solidité, la Prospérité et la Renaissance — la reconnexion spirituelle et physique avec la terre nourricière." },
+            { title: 'La Porte Sculptée', text: "L'accès sécurisé et facilité au Bénin d'aujourd'hui. Elle symbolise l'Accueil, la Protection et l'Authenticité : des lignes rappelant l'artisanat local, signe de respect pour nos traditions séculaires." },
+            { title: "L'Arbre de Vie", text: "La transformation de «l'Arbre de l'Oubli» en un Arbre de Vie. Il incarne la Solidité, la Prospérité et la Renaissance : la reconnexion spirituelle et physique avec la terre nourricière." },
             { title: 'Notre Signature', text: "L'harmonie de ces symboles forme une image puissante : celle de la maison retrouvée. Choisir Retour GAGNANT, c'est choisir la stabilité, la réussite et la fierté de bâtir le Bénin moderne." },
         ],
     },
@@ -62,7 +62,7 @@ const D = {
         main_title: "Ce document, c'est bien plus que du papier.",
         main_text1: "Il porte en lui des années de démarches, de doutes, de nuits blanches et de conversations qui n'en finissaient pas. Il porte surtout la preuve que quand on croit profondément en quelque chose, les murs finissent par céder.",
         main_text2: "Chaque tampon, chaque signature raconte une porte qui s'est ouverte. Chaque page est le témoignage silencieux d'un combat mené avec patience, avec cœur, sans jamais baisser les bras.",
-        main_text3: "Voir ce rêve inscrit dans le marbre officiel, c'est la plus belle des récompenses. Pas pour nous — pour toutes les familles qui, demain, pourront dire : je suis rentré chez moi.",
+        main_text3: "Voir ce rêve inscrit dans le marbre officiel, c'est la plus belle des récompenses. Pas pour nous : pour toutes les familles qui, demain, pourront dire : je suis rentré chez moi.",
         engagement_image: '/images/histoire/integre-causes.jpeg',
         carousel: [
             '/images/histoire/attestation-debut.jpeg',
@@ -87,7 +87,7 @@ const D = {
 type SectionData = typeof D
 
 /* ═══════════════════════════════════════════════════════════════
-   COMPOSANT — LIGNE DE VIE DORÉE
+   COMPOSANT : LIGNE DE VIE DORÉE
    ═══════════════════════════════════════════════════════════════ */
 
 function GoldenDivider() {
@@ -107,7 +107,7 @@ function GoldenDivider() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   COMPOSANT — TYPEWRITER EFFECT
+   COMPOSANT : TYPEWRITER EFFECT
    ═══════════════════════════════════════════════════════════════ */
 
 function TypewriterText({ text, className, delay = 0 }: { text: string, className?: string, delay?: number }) {
@@ -147,7 +147,7 @@ function TypewriterText({ text, className, delay = 0 }: { text: string, classNam
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   COMPOSANT — TILT 3D CARD (pour attestations)
+   COMPOSANT : TILT 3D CARD (pour attestations)
    ═══════════════════════════════════════════════════════════════ */
 
 function TiltCard({ src, children }: { src: string, children?: React.ReactNode }) {
@@ -184,7 +184,7 @@ function TiltCard({ src, children }: { src: string, children?: React.ReactNode }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 1 — HERO
+   SECTION 1 : HERO
    ═══════════════════════════════════════════════════════════════ */
 
 function HeroSection({ data }: { data: SectionData['hero'] }) {
@@ -269,7 +269,7 @@ function HeroSection({ data }: { data: SectionData['hero'] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 2 — LA RENCONTRE
+   SECTION 2 : LA RENCONTRE
    ═══════════════════════════════════════════════════════════════ */
 
 function ChapitreRencontre({ data }: { data: SectionData['rencontre'] }) {
@@ -332,7 +332,7 @@ function ChapitreRencontre({ data }: { data: SectionData['rencontre'] }) {
                             <p className="text-lg text-gray-600 leading-relaxed">{t(data.block1_text)}</p>
                         </motion.div>
 
-                        {/* Bloc 2 — citation */}
+                        {/* Bloc 2 : citation */}
                         <motion.div
                             initial={{ opacity: 0, y: 50 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -362,7 +362,7 @@ function ChapitreRencontre({ data }: { data: SectionData['rencontre'] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 3 — MOT DE LA FONDATRICE
+   SECTION 3 : MOT DE LA FONDATRICE
    ═══════════════════════════════════════════════════════════════ */
 
 function ChapitreFondatrice({ data }: { data: SectionData['fondatrice'] }) {
@@ -420,7 +420,7 @@ function ChapitreFondatrice({ data }: { data: SectionData['fondatrice'] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 4 — LES ARCHITECTES
+   SECTION 4 : LES ARCHITECTES
    ═══════════════════════════════════════════════════════════════ */
 
 function ChapitreArchitectes({ data }: { data: SectionData['architectes'] }) {
@@ -476,7 +476,7 @@ function ChapitreArchitectes({ data }: { data: SectionData['architectes'] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 5 — LE LOGO
+   SECTION 5 : LE LOGO
    ═══════════════════════════════════════════════════════════════ */
 
 function ChapitreLogo({ data }: { data: SectionData['logo'] }) {
@@ -535,7 +535,7 @@ function ChapitreLogo({ data }: { data: SectionData['logo'] }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SECTION 6 — CONFIANCE
+   SECTION 6 : CONFIANCE
    ═══════════════════════════════════════════════════════════════ */
 
 function ChapitreConfiance({ data }: { data: SectionData['confiance'] }) {

@@ -157,7 +157,7 @@ export default function AgentComptabilitePage() {
     const [newExpense, setNewExpense] = useState({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
     const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
     const [savingExpense, setSavingExpense] = useState(false)
-    // Salaires du personnel (espace salaire — impact comptable via depenses/categorie 'salaires')
+    // Salaires du personnel (espace salaire : impact comptable via depenses/categorie 'salaires')
     const [showSalaireModal, setShowSalaireModal] = useState(false)
     const [newSalaire, setNewSalaire] = useState({ nom: '', prenom: '', poste: '', montant: '', mois: currentMonthKey() })
     const [savingSalaire, setSavingSalaire] = useState(false)
@@ -197,7 +197,7 @@ export default function AgentComptabilitePage() {
             .eq('agent_id', user.id)
             .order('date_depense', { ascending: false })
 
-        // Fetch Settings — commission_rate dans la table settings
+        // Fetch Settings : commission_rate dans la table settings
         const { data: settings } = await supabase
             .from('settings')
             .select('key,value')
@@ -490,7 +490,7 @@ export default function AgentComptabilitePage() {
         const { nom, prenom, poste, montant, mois } = newSalaire
         const { error } = await supabase.from('depenses').insert({
             agent_id: user.id,
-            titre: `Salaire ${mois} — ${nom.trim().toUpperCase()} ${prenom.trim()} — ${poste.trim()}`,
+            titre: `Salaire ${mois} : ${nom.trim().toUpperCase()} ${prenom.trim()} : ${poste.trim()}`,
             categorie: 'salaires',
             montant: Number(montant),
             date_depense: new Date(`${mois}-28T12:00:00Z`).toISOString(),
@@ -547,7 +547,7 @@ export default function AgentComptabilitePage() {
         if (isExterne && !externePayment.libelle.trim()) { setSavingPayment(false); return }
 
         const composedNotes = isExterne
-            ? `[EXTERNE] ${externePayment.libelle}${externePayment.client ? ' — ' + externePayment.client : ''}${newPayment.notes ? ' | ' + newPayment.notes : ''}`
+            ? `[EXTERNE] ${externePayment.libelle}${externePayment.client ? ' : ' + externePayment.client : ''}${newPayment.notes ? ' | ' + newPayment.notes : ''}`
             : (newPayment.notes || null)
 
         const { error } = await supabase.from('paiements_manuels').insert({
@@ -611,7 +611,7 @@ export default function AgentComptabilitePage() {
                 // Paiement externe (sans facture liée)
                 recettes.push({
                     date: new Date(p.date_paiement),
-                    numero: isExterne ? 'EXT' : '—',
+                    numero: isExterne ? 'EXT' : '-',
                     client: isExterne ? libelleExterne : 'Paiement externe',
                     categorie: 'Autre recette',
                     refDossier: p.reference || '',
@@ -790,7 +790,7 @@ export default function AgentComptabilitePage() {
                     <button
                         onClick={() => setShowSalaireModal(true)}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-400 hover:bg-sky-500/30 transition-all font-bold"
-                        title="Enregistrer un salaire du personnel — impact comptable automatique sur les dépenses"
+                        title="Enregistrer un salaire du personnel : impact comptable automatique sur les dépenses"
                     >
                         <Users size={18} />
                         <span className="text-xs">Salaire</span>
@@ -955,7 +955,7 @@ export default function AgentComptabilitePage() {
                                                     <div>
                                                         <p className="text-sm font-bold text-white">{tx.numero}</p>
                                                         <p className="text-[9px] text-gray-500">
-                                                            {tx.created_at && !isNaN(new Date(tx.created_at).getTime()) ? new Date(tx.created_at).toLocaleDateString('fr-FR') : '—'}
+                                                            {tx.created_at && !isNaN(new Date(tx.created_at).getTime()) ? new Date(tx.created_at).toLocaleDateString('fr-FR') : '-'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -963,14 +963,14 @@ export default function AgentComptabilitePage() {
                                             <td className="py-4 px-6 text-sm text-gray-300">{tx.client_nom} {tx.client_prenom}</td>
                                             <td className="py-4 px-6 text-right font-mono text-sm font-bold text-white">{formatCurrency(tx.total)}</td>
                                             <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400">
-                                                {montantPaye > 0 ? formatCurrency(montantPaye) : <span className="text-gray-600">—</span>}
+                                                {montantPaye > 0 ? formatCurrency(montantPaye) : <span className="text-gray-600">-</span>}
                                             </td>
                                             <td className="py-4 px-6 text-right font-mono text-sm">
                                                 {tx.type === 'facture' ? (
                                                     <span className={solde > 0 ? 'text-amber-400 font-bold' : 'text-gray-600'}>
                                                         {solde > 0 ? formatCurrency(solde) : ' Soldé'}
                                                     </span>
-                                                ) : <span className="text-gray-600">—</span>}
+                                                ) : <span className="text-gray-600">-</span>}
                                             </td>
                                             <td className="py-4 px-6 text-center">
                                                 <div className="flex items-center justify-center gap-1">
@@ -1099,7 +1099,7 @@ export default function AgentComptabilitePage() {
                                                     ) : (
                                                         <div>
                                                             <p className="font-bold text-amber-400">Paiement Externe</p>
-                                                            <p className="text-xs text-gray-400">{cleanNotes || '—'}</p>
+                                                            <p className="text-xs text-gray-400">{cleanNotes || '-'}</p>
                                                         </div>
                                                     )}
                                                 </td>
@@ -1111,7 +1111,7 @@ export default function AgentComptabilitePage() {
                                                 </td>
                                                 <td className="py-4 px-6 font-mono text-xs text-gray-400">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <span className="truncate">{p.reference || '—'}</span>
+                                                        <span className="truncate">{p.reference || '-'}</span>
                                                         <div className="flex items-center gap-1 shrink-0">
                                                             <button type="button" title="Modifier le montant" onClick={() => editPaiementMontant(p.id, p.montant)}
                                                                 className="p-1.5 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><Pencil size={13} /></button>
@@ -1186,7 +1186,7 @@ export default function AgentComptabilitePage() {
                 </div>
             </div>
 
-            {/* ALARM BANNER — Factures non soldées */}
+            {/* ALARM BANNER : Factures non soldées */}
             {(() => {
                 const nonSoldees = allDocs.filter(d => d.type === 'facture' && (paiements[d.id] || 0) < d.total && d.status !== 'annule')
                 const totalRestant = nonSoldees.reduce((a, d) => a + Math.max(0, d.total - (paiements[d.id] || 0)), 0)
@@ -1246,7 +1246,7 @@ export default function AgentComptabilitePage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date <span className="normal-case font-medium text-gray-600">(Optionnel — date du jour si vide)</span></label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date <span className="normal-case font-medium text-gray-600">(Optionnel : date du jour si vide)</span></label>
                                         <input type="date" value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} title="Date de la dépense (optionnel)" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm" />
                                     </div>
                                     <div>
@@ -1263,7 +1263,7 @@ export default function AgentComptabilitePage() {
                 )}
             </AnimatePresence>
 
-            {/* SALAIRE MODAL — espace salaires du personnel */}
+            {/* SALAIRE MODAL : espace salaires du personnel */}
             <AnimatePresence>
                 {showSalaireModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1278,7 +1278,7 @@ export default function AgentComptabilitePage() {
                                 </h3>
                                 <button type="button" onClick={() => setShowSalaireModal(false)} title="Fermer" className="p-2 rounded-full hover:bg-white/5 text-gray-500"><X size={18} /></button>
                             </div>
-                            <p className="text-[11px] text-gray-500 mb-5">Suivi du volet salarial — l&apos;impact comptable est calculé automatiquement dans les dépenses (catégorie « Salaires du personnel »), les exports et le FEC.</p>
+                            <p className="text-[11px] text-gray-500 mb-5">Suivi du volet salarial : l&apos;impact comptable est calculé automatiquement dans les dépenses (catégorie « Salaires du personnel »), les exports et le FEC.</p>
                             <form onSubmit={handleAddSalaire} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -1327,7 +1327,7 @@ export default function AgentComptabilitePage() {
                             <div className="p-6 border-b border-white/5 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-black text-white">Enregistrer un Paiement</h3>
-                                    <p className="text-xs text-gray-500 mt-0.5">{selectedDoc ? `${selectedDoc.numero} — ${selectedDoc.client_nom} ${selectedDoc.client_prenom}` : paymentMode === 'externe' ? 'Paiement externe (facture hors site)' : 'Choisir une facture à encaisser'}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{selectedDoc ? `${selectedDoc.numero} : ${selectedDoc.client_nom} ${selectedDoc.client_prenom}` : paymentMode === 'externe' ? 'Paiement externe (facture hors site)' : 'Choisir une facture à encaisser'}</p>
                                 </div>
                                 <button title="Fermer" onClick={() => setShowPaymentModal(false)} className="text-gray-500 hover:text-white"><X size={20} /></button>
                             </div>
@@ -1372,11 +1372,11 @@ export default function AgentComptabilitePage() {
                                                 }}
                                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm"
                                             >
-                                                <option value="" disabled>— Sélectionnez une facture —</option>
+                                                <option value="" disabled>-Sélectionnez une facture-</option>
                                                 {selectableDocs.length === 0 && <option value="" disabled>Aucune facture disponible</option>}
                                                 {selectableDocs.map(d => (
                                                     <option key={d.id} value={d.id} className="bg-[#0c1420]">
-                                                        {d.numero} — {d.client_nom} {d.client_prenom} — {formatCurrency(Math.max(0, d.total - (paiements[d.id] || 0)))} restant
+                                                        {d.numero} : {d.client_nom} {d.client_prenom} : {formatCurrency(Math.max(0, d.total - (paiements[d.id] || 0)))} restant
                                                     </option>
                                                 ))}
                                             </select>

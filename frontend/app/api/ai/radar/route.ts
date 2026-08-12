@@ -66,7 +66,7 @@ async function callSerperWithRetry(keys: string[], query: string): Promise<unkno
 }
 
 // ═══════════════════════════════════════════════════════
-// GET — Historique des recherches + Leads existants
+// GET : Historique des recherches + Leads existants
 // ═══════════════════════════════════════════════════════
 export async function GET(req: Request) {
     const garde = await requireStaff(req, 'agent')
@@ -198,7 +198,7 @@ export async function GET(req: Request) {
 }
 
 // ═══════════════════════════════════════════════════════
-// POST — Lancer un scan (avec cache, dedup, retry, score IA)
+// POST : Lancer un scan (avec cache, dedup, retry, score IA)
 // ═══════════════════════════════════════════════════════
 export async function POST(req: Request) {
     const garde = await requireStaff(req, 'agent')
@@ -397,7 +397,7 @@ Format de Sortie JSON strict :
 }
 
 // ═══════════════════════════════════════════════════════
-// PATCH — Modifier un lead (favori, notes, statut, assignation)
+// PATCH : Modifier un lead (favori, notes, statut, assignation)
 // ═══════════════════════════════════════════════════════
 export async function PATCH(req: Request) {
     const garde = await requireStaff(req, 'agent')

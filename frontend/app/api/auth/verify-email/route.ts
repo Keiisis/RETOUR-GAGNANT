@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/client/login?error=lien-invalide`)
     }
 
-    // Préparer la réponse de redirection en avance — les cookies de session seront
+    // Préparer la réponse de redirection en avance : les cookies de session seront
     // attachés dessus par le callback setAll du SSR client.
     const redirectSuccess = `${origin}/client/auth-confirm`
     const redirectError = `${origin}/client/login?error=confirmation-echouee`

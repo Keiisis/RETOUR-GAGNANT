@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { confirmDocumentPayment } from '@/lib/document-payment'
 
-// POST /api/documents/confirm-payment — confirmation serveur du paiement d'un
+// POST /api/documents/confirm-payment : confirmation serveur du paiement d'un
 // devis/facture depuis le portail public /portail/[id].
 // L'autorisation EST la vérification : la transaction doit être SUCCESS chez le
 // provider ET couvrir le montant du document. Idempotent (garde atomique).

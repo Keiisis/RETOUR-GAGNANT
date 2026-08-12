@@ -247,7 +247,7 @@ export default function ClientPayerPage() {
         if (!settings?.fedapay_public_key || !doc) return
         const FP = win().FedaPay
         if (!FP) return
-        // FedaPay et KKiapay traitent uniquement en XOF — le sélecteur de devise est informatif
+        // FedaPay et KKiapay traitent uniquement en XOF : le sélecteur de devise est informatif
         FP.init({
             public_key: settings.fedapay_public_key,
             transaction: {

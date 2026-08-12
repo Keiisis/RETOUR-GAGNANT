@@ -11,7 +11,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantb
  * Cron Vercel : déclenche le scan des documents généalogiques bientôt expirés
  * et crée les notifications associées dans la table `notifications`.
  *
- * Wrapper léger vers POST /api/genealogie/check-expired — évite la duplication
+ * Wrapper léger vers POST /api/genealogie/check-expired : évite la duplication
  * de logique. Le secret CRON est transmis pour autoriser la route cible.
  *
  * Vercel cron envoie GET ; on accepte aussi POST pour test manuel.
@@ -23,7 +23,7 @@ async function runCheckExpired() {
     // check-expired. Cette requête ressort de la fonction Vercel et rentre par
     // le bord : elle traverse donc le WAF, qui la bloquait (403 « Requête
     // bloquée par le pare-feu applicatif »). Le cron répondait 403 sans que
-    // personne ne le voie — aucune notification d'expiration n'est partie.
+    // personne ne le voie : aucune notification d'expiration n'est partie.
     //
     // Importer le handler supprime le réseau, le WAF et la latence d'un
     // aller-retour. Le secret reste transmis : la route cible sert aussi aux

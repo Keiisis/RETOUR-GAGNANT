@@ -82,9 +82,9 @@ export default function AdminBlogPage() {
     }, [])
 
     const formatDateSafe = (val: string) => {
-        if (!mounted || !val) return '—'
+        if (!mounted || !val) return '-'
         const d = new Date(val)
-        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
     }
 
     const generateSlug = (title: string) => {

@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- * Rate Limiter — Sliding Window In-Memory
+ * Rate Limiter : Sliding Window In-Memory
  * ═══════════════════════════════════════════════════════════════════
  *
  * Algorithme : Sliding Window Counter (plus précis que Fixed Window).
@@ -18,7 +18,7 @@
  * Portée :
  *   Ce module est en mémoire (Map JavaScript). Sur Vercel serverless,
  *   chaque instance Node.js "chaude" (warm) partage ce Map entre requêtes.
- *   Une instance froide repart de zéro — c'est le seul angle mort.
+ *   Une instance froide repart de zéro : c'est le seul angle mort.
  *
  *   Pour une protection distribuée inter-instances (multi-région), utiliser
  *   Upstash Redis avec @upstash/ratelimit. Cette implémentation couvre les
@@ -40,7 +40,7 @@ interface Entry {
     blockedUntil?: number
     /** Compteur de violations pour l'escalade progressive */
     violations: number
-    /** Dernière activité (ms) — utilisé pour l'éviction LRU */
+    /** Dernière activité (ms) : utilisé pour l'éviction LRU */
     lastSeen: number
 }
 
@@ -111,7 +111,7 @@ function pruneStore(now: number): void {
 /**
  * Vérifie si une requête est autorisée selon les règles de rate limiting.
  *
- * @param key        Clé unique — recommandé : `"endpoint:ip"` (ex: `"checkout:1.2.3.4"`)
+ * @param key        Clé unique : recommandé : `"endpoint:ip"` (ex: `"checkout:1.2.3.4"`)
  * @param config     Configuration des limites pour cet endpoint
  * @returns          Résultat avec `allowed`, `remaining`, `retryAfter`
  */
@@ -189,9 +189,9 @@ export function rateLimit(key: string, config: RateLimitConfig): RateLimitResult
  * Extrait l'adresse IP réelle du client depuis les headers HTTP.
  *
  * Priorité :
- *  1. `x-real-ip`       — défini par Vercel avec l'IP réelle du client
- *  2. `x-forwarded-for` — premier IP de la chaîne (client original)
- *  3. `'unknown'`        — fallback (rate limiting toujours actif via cette clé)
+ *  1. `x-real-ip` : défini par Vercel avec l'IP réelle du client
+ *  2. `x-forwarded-for` : premier IP de la chaîne (client original)
+ *  3. `'unknown'` : fallback (rate limiting toujours actif via cette clé)
  *
  * NOTE : sur Vercel, `x-real-ip` est injecté par l'infrastructure et non
  * spoofable par le client. `x-forwarded-for` peut l'être si le serveur

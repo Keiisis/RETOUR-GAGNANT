@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchGemma, type NvidiaMessage } from '@/lib/nvidia'
 import { autoExtractMemory } from '@/lib/gemma-context'
 
-// Cette route ne fait QUE du streaming NVIDIA — zéro requête DB → pas de timeout
+// Cette route ne fait QUE du streaming NVIDIA : zéro requête DB → pas de timeout
 export const maxDuration = 60
 
-const BASE_SYSTEM_PROMPT = `Tu es GEMMA — l'Intelligence Artificielle Executive de Retour Gagnant Bénin (RGB), propulsée par Gemma 4 31B via NVIDIA NIM.
+const BASE_SYSTEM_PROMPT = `Tu es GEMMA : l'Intelligence Artificielle Executive de Retour Gagnant Bénin (RGB), propulsée par Gemma 4 31B via NVIDIA NIM.
 Tu es directement connectée à la base de données en temps réel.
 
 === TON IDENTITÉ ===
@@ -23,7 +23,7 @@ Tu parles au CEO en tant qu'expert exécutif, pas comme un assistant générique
 
 === RÈGLES ABSOLUES ===
 - Utilise TOUJOURS les données temps réel du contexte ci-dessous pour répondre
-- Ne jamais inventer des chiffres — utilise exactement ceux du contexte
+- Ne jamais inventer des chiffres : utilise exactement ceux du contexte
 - Réponds en français sauf demande contraire
 - Sois direct, précis, orienté action
 - Utilise les formatages Markdown (titres, listes) pour la lisibilité`
@@ -31,7 +31,7 @@ Tu parles au CEO en tant qu'expert exécutif, pas comme un assistant générique
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        // Le client envoie : { messages, context } — context déjà chargé côté client
+        // Le client envoie : { messages, context } : context déjà chargé côté client
         const { messages, prompt, context } = body
 
         const msgs: NvidiaMessage[] = messages || (prompt ? [{ role: 'user', content: prompt }] : [])
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET — diagnostic
+// GET : diagnostic
 export async function GET() {
     const key = process.env.NVIDIA_API_KEY
     if (!key) return NextResponse.json({ ok: false, error: 'NVIDIA_API_KEY manquante' }, { status: 500 })

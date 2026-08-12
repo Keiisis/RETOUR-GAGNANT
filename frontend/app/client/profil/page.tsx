@@ -153,9 +153,9 @@ export default function ClientProfilPage() {
                     </p>
                     <p className="text-[10px] text-gray-700 mt-0.5">
                         Membre depuis {(() => {
-                            if (!profile?.created_at) return '—';
+                            if (!profile?.created_at) return '-';
                             const d = new Date(profile.created_at);
-                            return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                            return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
                         })()}
                     </p>
                 </div>

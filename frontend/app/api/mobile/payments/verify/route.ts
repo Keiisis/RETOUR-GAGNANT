@@ -52,8 +52,7 @@ async function verifyKkiapayTransaction(
 //   Body échec  :  { client_id, local_tx_id, status: 'failed' }
 //
 // La row paiements doit déjà exister (créée en pending par PaymentsScreen avant
-// l'ouverture du widget Kkiapay). Cette route confirme — ou marque comme échouée —
-// le paiement après le retour du widget natif.
+// l'ouverture du widget Kkiapay). Cette route confirme : ou marque comme échouée-// le paiement après le retour du widget natif.
 export async function POST(req: NextRequest) {
     const trop = guardPublic(req, 'mobile/payments/verify', PAYMENT_ROUTE_LIMIT)
     if (trop) return trop
@@ -122,14 +121,14 @@ export async function POST(req: NextRequest) {
 
         // Sécurité : le montant encaissé doit couvrir le montant dû.
         // Kkiapay n'encaisse QU'EN XOF : si le paiement est libellé dans une
-        // autre devise, on le convertit avant de comparer — sinon 50 € étaient
+        // autre devise, on le convertit avant de comparer : sinon 50 € étaient
         // comparés à 32 798 XOF et tout paiement était accepté ou rejeté au
         // hasard selon la devise.
         if (verify.amount !== undefined) {
             const attenduXOF = await toXOFStrict(payment.amount, payment.currency)
             if (attenduXOF === null) {
                 return NextResponse.json(
-                    { error: `Taux de change ${payment.currency} indisponible — confirmation refusée.` },
+                    { error: `Taux de change ${payment.currency} indisponible : confirmation refusée.` },
                     { status: 503 }
                 )
             }

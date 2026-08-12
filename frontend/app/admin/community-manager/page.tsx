@@ -169,15 +169,15 @@ interface GeneratedVariant {
 
 // ── Helpers ───────────────────────────────────────────────
 const formatDateSafe = (val: any, mounted: boolean = true) => {
-    if (!mounted || !val) return '—'
+    if (!mounted || !val) return '-'
     const d = new Date(val)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 const formatDateTimeSafe = (val: any, mounted: boolean = true) => {
-    if (!mounted || !val) return '—'
+    if (!mounted || !val) return '-'
     const d = new Date(val)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleString('fr-FR')
 }
 
 const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string; placeholder?: string }> = {
@@ -284,7 +284,7 @@ export default function CommunityManagerPage() {
 }
 
 // ═════════════════════════════════════════════════════════
-// TAB 1 — VEILLE CONCURRENTIELLE
+// TAB 1 : VEILLE CONCURRENTIELLE
 // ═════════════════════════════════════════════════════════
 function VeilleTab({
     onDossierReady,
@@ -669,7 +669,7 @@ function VeilleTab({
                             ].map(m => (
                                 <div key={m.label} className="bg-white/[0.03] rounded-lg p-3">
                                     <p className="text-gray-600 text-[10px] font-bold mb-1">{m.label}</p>
-                                    <p className="text-gray-300 text-xs">{m.value || '—'}</p>
+                                    <p className="text-gray-300 text-xs">{m.value || '-'}</p>
                                 </div>
                             ))}
                         </div>
@@ -703,7 +703,7 @@ function VeilleTab({
                         </div>
                     )}
 
-                    {/* Deep Style DNA (v3) — Radar + Scores */}
+                    {/* Deep Style DNA (v3) : Radar + Scores */}
                     {activeDossier.style_dna?.scores && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-4">
@@ -739,7 +739,7 @@ function VeilleTab({
                                             <p className="text-white font-bold text-xs flex-1">&ldquo;{h.hook}&rdquo;</p>
                                             <span className={`text-[10px] font-black flex-shrink-0 ${h.power_score >= 80 ? 'text-emerald-400' : h.power_score >= 60 ? 'text-yellow-400' : 'text-gray-400'}`}>{h.power_score}</span>
                                         </div>
-                                        <p className="text-gray-500 text-[10px] mt-1">{h.technique} — {h.why_it_works}</p>
+                                        <p className="text-gray-500 text-[10px] mt-1">{h.technique} : {h.why_it_works}</p>
                                     </div>
                                 ))}
                             </div>
@@ -799,10 +799,10 @@ function VeilleTab({
                         </div>
                     </div>
 
-                    {/* Claude Instructions (v3) — Before/After */}
+                    {/* Claude Instructions (v3) : Before/After */}
                     {activeDossier.style_dna?.claude_instructions && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                            <p className="text-purple-400 text-xs font-bold mb-4 flex items-center gap-2"><Brain size={12} /> Instructions Claude.ai — DO / DON&apos;T</p>
+                            <p className="text-purple-400 text-xs font-bold mb-4 flex items-center gap-2"><Brain size={12} /> Instructions Claude.ai : DO / DON&apos;T</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                 <div className="bg-emerald-500/5 rounded-xl p-3">
                                     <p className="text-emerald-400 text-[10px] font-bold mb-2">DO</p>
@@ -863,7 +863,7 @@ function VeilleTab({
 }
 
 // ═════════════════════════════════════════════════════════
-// TAB 2 — ANALYSE DE STYLE
+// TAB 2 : ANALYSE DE STYLE
 // ═════════════════════════════════════════════════════════
 function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, id: string) => void; copiedId: string | null }) {
     const [samples, setSamples] = useState('')
@@ -945,7 +945,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                         placeholder="Collez ici plusieurs publications du profil que vous souhaitez analyser...&#10;&#10;Exemple :&#10;---&#10;Publication 1&#10;---&#10;Publication 2&#10;---"
                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500/50 placeholder:text-gray-600 resize-none"
                     />
-                    <p className="text-gray-600 text-xs mt-1">{samples.length} caractères — {samples.length < 50 ? `encore ${50 - samples.length} min` : ' prêt à analyser'}</p>
+                    <p className="text-gray-600 text-xs mt-1">{samples.length} caractères : {samples.length < 50 ? `encore ${50 - samples.length} min` : ' prêt à analyser'}</p>
                 </div>
                 {error && (
                     <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center gap-2">
@@ -1030,7 +1030,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                     {/* Hooks Masterclass */}
                     {analysis.hooks_masterclass && analysis.hooks_masterclass.length > 0 && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                            <p className="text-yellow-400 text-xs font-bold mb-4 flex items-center gap-2"> Hooks Masterclass — Accroches décortiquées</p>
+                            <p className="text-yellow-400 text-xs font-bold mb-4 flex items-center gap-2"> Hooks Masterclass : Accroches décortiquées</p>
                             <div className="space-y-3">
                                 {analysis.hooks_masterclass.map((h, i) => (
                                     <div key={i} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
@@ -1158,7 +1158,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                         </div>
                     )}
 
-                    {/* Claude Instructions — Before/After */}
+                    {/* Claude Instructions : Before/After */}
                     {analysis.claude_instructions && (
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-4">
@@ -1172,11 +1172,11 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                 <div className="bg-emerald-500/5 rounded-xl p-3">
-                                    <p className="text-emerald-400 text-[10px] font-bold mb-2">DO — A faire</p>
+                                    <p className="text-emerald-400 text-[10px] font-bold mb-2">DO : A faire</p>
                                     <ul className="space-y-1">{analysis.claude_instructions.do_list.map((s, i) => <li key={i} className="text-gray-300 text-xs flex items-start gap-1.5"><Check size={10} className="text-emerald-400 flex-shrink-0 mt-0.5" />{s}</li>)}</ul>
                                 </div>
                                 <div className="bg-red-500/5 rounded-xl p-3">
-                                    <p className="text-red-400 text-[10px] font-bold mb-2">DON&apos;T — A éviter</p>
+                                    <p className="text-red-400 text-[10px] font-bold mb-2">DON&apos;T : A éviter</p>
                                     <ul className="space-y-1">{analysis.claude_instructions.dont_list.map((s, i) => <li key={i} className="text-gray-300 text-xs flex items-start gap-1.5"><AlertTriangle size={10} className="text-red-400 flex-shrink-0 mt-0.5" />{s}</li>)}</ul>
                                 </div>
                             </div>
@@ -1234,7 +1234,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
 }
 
 // ═════════════════════════════════════════════════════════
-// TAB 5 — CALENDRIER ÉDITORIAL IA
+// TAB 5 : CALENDRIER ÉDITORIAL IA
 // ═════════════════════════════════════════════════════════
 const CONTENT_TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
     post: { icon: '', color: 'text-gray-300' },
@@ -1317,7 +1317,7 @@ function CalendarTab({
 
     const exportText = () => {
         const text = calendar.map(d =>
-            `=== Jour ${d.day} — ${d.date} (${d.weekday}) ===\n ${d.topic}\n Format: ${d.content_type} |  ${d.posting_time}\n Accroche: ${d.hook}\n Brief: ${d.brief}\n Hashtags: ${d.hashtags.join(' ')}\n Visuel: ${d.visual_idea}\n`
+            `=== Jour ${d.day} : ${d.date} (${d.weekday}) ===\n ${d.topic}\n Format: ${d.content_type} |  ${d.posting_time}\n Accroche: ${d.hook}\n Brief: ${d.brief}\n Hashtags: ${d.hashtags.join(' ')}\n Visuel: ${d.visual_idea}\n`
         ).join('\n')
         copyToClipboard(text, 'calendar-text')
     }
@@ -1634,7 +1634,7 @@ function AnalysisCard({ title, items, color, icon }: { title: string; items: str
 }
 
 // ═════════════════════════════════════════════════════════
-// TAB 3 — PUBLICATIONS VIRALES
+// TAB 3 : PUBLICATIONS VIRALES
 // ═════════════════════════════════════════════════════════
 function ViralTab({
     copyToClipboard, copiedId, setActiveTab
@@ -1710,7 +1710,7 @@ function ViralTab({
                             onChange={e => setProfileUrl(e.target.value)}
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
                         >
-                            <option value="">— Aucun profil —</option>
+                            <option value="">-Aucun profil-</option>
                             {profiles.map(p => (
                                 <option key={p.id} value={p.profile_url}>@{p.username} ({p.platform})</option>
                             ))}
@@ -1802,7 +1802,7 @@ function ViralTab({
 }
 
 // ═════════════════════════════════════════════════════════
-// TAB 4 — GÉNÉRATION VIRALE
+// TAB 4 : GÉNÉRATION VIRALE
 // ═════════════════════════════════════════════════════════
 function GenerationTab({
     copyToClipboard, copiedId, activeDossier
@@ -1982,7 +1982,7 @@ function GenerationTab({
                         />
                     </div>
                     <div className="md:col-span-2">
-                        <label className="text-xs text-gray-500 font-bold mb-1.5 block">Inspiration de style (optionnel — ou depuis l&apos;onglet Analyse)</label>
+                        <label className="text-xs text-gray-500 font-bold mb-1.5 block">Inspiration de style (optionnel : ou depuis l&apos;onglet Analyse)</label>
                         <textarea
                             placeholder="ex: Ton autoritaire avec des chiffres concrets, emojis rares, CTA fort en fin de post..."
                             value={form.style_inspiration}
@@ -1996,7 +1996,7 @@ function GenerationTab({
                     <div className="md:col-span-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-2">
                             <label className="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
-                                <Brain size={12} /> Dossier Intelligence Concurrent (optionnel — surpuissant)
+                                <Brain size={12} /> Dossier Intelligence Concurrent (optionnel : surpuissant)
                             </label>
                             <div className="flex items-center gap-2">
                                 {activeDossier && (
@@ -2020,7 +2020,7 @@ function GenerationTab({
                             />
                         )}
                         {!useDossier && (
-                            <p className="text-gray-600 text-[10px]">Activez pour utiliser le dossier d'un concurrent comme contexte — l'IA créera du contenu qui surpasse ce concurrent.</p>
+                            <p className="text-gray-600 text-[10px]">Activez pour utiliser le dossier d'un concurrent comme contexte : l'IA créera du contenu qui surpasse ce concurrent.</p>
                         )}
                     </div>
                 </div>

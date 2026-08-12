@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  DOCUMENTS FINANCIERS — création / mise à jour / liste (agent)
+//  DOCUMENTS FINANCIERS : création / mise à jour / liste (agent)
 //
 //  Route en service-role : la RLS ne protège plus rien ici, le
 //  cloisonnement est donc explicite.
@@ -17,7 +17,7 @@ import { requireStaff } from '@/lib/api-guard'
 import { isPeriodLocked } from '@/lib/comptaLock'
 import { logAudit } from '@/lib/audit-compta'
 
-// Service role key — bypasse complètement RLS et l'accès à auth.users
+// Service role key : bypasse complètement RLS et l'accès à auth.users
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -28,7 +28,7 @@ const supabase = createClient(
  *
  * Volontairement restreint : `total`, `items`, `numero` et `agent_id` en
  * sont absents. Corriger un montant après émission se fait par un avoir
- * (/api/admin/avoirs), pas par une réécriture silencieuse — c'est ce que
+ * (/api/admin/avoirs), pas par une réécriture silencieuse : c'est ce que
  * l'administration fiscale attend, et c'est ce que le journal d'audit
  * peut prouver.
  */
@@ -124,7 +124,7 @@ export async function PATCH(req: NextRequest) {
         }
 
         if (await isPeriodLocked(supabase, avant.created_at)) {
-            return NextResponse.json({ error: 'Période clôturée — modification refusée.' }, { status: 423 })
+            return NextResponse.json({ error: 'Période clôturée : modification refusée.' }, { status: 423 })
         }
 
         // Liste blanche : tout champ hors périmètre est ignoré, et signalé

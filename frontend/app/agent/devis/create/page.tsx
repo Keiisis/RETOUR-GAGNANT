@@ -183,9 +183,9 @@ export default function AgentCreateDocumentPage() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Devise de l'Offre</label>
                         <select title="Devise" value={currency} onChange={e => setCurrency(e.target.value as any)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none focus:border-emerald-500/50 appearance-none font-mono">
-                            <option value="XOF">XOF — Francs CFA (Afrique de l'Ouest)</option>
-                            <option value="EUR">EUR — Euro (€)</option>
-                            <option value="USD">USD — Dollar Américain ($)</option>
+                            <option value="XOF">XOF : Francs CFA (Afrique de l'Ouest)</option>
+                            <option value="EUR">EUR : Euro (€)</option>
+                            <option value="USD">USD : Dollar Américain ($)</option>
                         </select>
                     </div>
                 </div>

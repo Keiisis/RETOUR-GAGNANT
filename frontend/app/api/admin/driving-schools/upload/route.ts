@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Upload d'images des auto-écoles (logo / photo)
+//  ADMIN : Upload d'images des auto-écoles (logo / photo)
 //  Fichier envoyé depuis l'appareil → Supabase Storage (bucket public
 //  « driving-schools ») → URL publique renvoyée et stockée en base.
 //  Le bucket est créé automatiquement au premier envoi.

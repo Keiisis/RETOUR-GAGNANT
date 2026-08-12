@@ -42,7 +42,7 @@ interface Proposal {
 }
 
 // ─── Constants ────────────────────────────────────────────────
-// Icônes premium (lucide) — plus aucun emoji dans les Smart Slides
+// Icônes premium (lucide) : plus aucun emoji dans les Smart Slides
 const TYPE_META: Record<string, { label: string; Icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>; accent: string; accentBg: string }> = {
     /* Charte stricte : accents du drapeau UNIQUEMENT, et lisibles sur fond
        clair (le jaune ne sert jamais de couleur de texte, seulement de fond).
@@ -287,7 +287,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     </div>
                 </div>
 
-                {/* Dots — mobile (centered) */}
+                {/* Dots : mobile (centered) */}
                 <div className="flex sm:hidden fixed top-3.5 inset-x-0 justify-center pointer-events-auto z-50">
                     <div className="flex items-center gap-1.5 bg-white/85 backdrop-blur-xl px-3 py-1.5 rounded-full border border-slate-200">
                         {items.map((_, i) => (
@@ -298,7 +298,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                     </div>
                 </div>
 
-                {/* Dots — desktop (right) */}
+                {/* Dots : desktop (right) */}
                 <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
                     {items.map((_, i) => (
                         <button key={i} title={`Slide ${i + 1}`} onClick={() => goToSlide(i)}
@@ -486,7 +486,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         </span>
                                     </motion.div>
 
-                                    {/* CTA — vert charte premium, voile brillant qui balaie,
+                                    {/* CTA : vert charte premium, voile brillant qui balaie,
                                         flèche en pastille qui glisse, halo vert. */}
                                     <motion.button
                                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
@@ -690,7 +690,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             </button>
                                         </div>
 
-                                        {/* Download buttons — PDF + PPTX */}
+                                        {/* Download buttons : PDF + PPTX */}
                                         <div className="grid grid-cols-2 gap-2 relative z-10 mb-3">
                                             <a
                                                 href={`/api/proposals/${proposal.id}/devis`}
@@ -713,7 +713,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         {/* Trust + validity */}
                                         <div className="flex flex-col items-center gap-1 relative z-10">
                                             <p className="text-slate-900/55 text-[9px] md:text-[10px] flex items-center gap-1.5">
-                                                <CheckCircle className="w-3 h-3 text-emerald-700" /> Paiement 100% sécurisé — Retour Gagnant Bénin
+                                                <CheckCircle className="w-3 h-3 text-emerald-700" /> Paiement 100% sécurisé : Retour Gagnant Bénin
                                             </p>
                                             <p className="text-[#008751]/35 text-[9px]">
                                                 {(() => {

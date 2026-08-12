@@ -126,7 +126,7 @@ export default function ServiceCreatePage() {
             setSuccess(true)
             setTimeout(() => router.push('/admin/services'), 2000)
         } catch {
-            setError('Erreur réseau — veuillez réessayer')
+            setError('Erreur réseau : veuillez réessayer')
         } finally {
             setSaving(false)
         }

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 
 /**
- * Smooth-scroll velours (Lenis) — monté uniquement sur l'accueil. Respecte
+ * Smooth-scroll velours (Lenis) : monté uniquement sur l'accueil. Respecte
  * prefers-reduced-motion (désactivé). Nettoyage complet au démontage (aucune
  * fuite, pas de conflit avec les panels internes).
  */

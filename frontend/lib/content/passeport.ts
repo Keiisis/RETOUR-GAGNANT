@@ -2,7 +2,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 
 export const DEFAULT_PASSEPORT: ServiceLandingContent = {
     hero_badge: "Passeport & documents officiels",
-    hero_title: "Passeport biométrique béninois — accompagnement complet",
+    hero_title: "Passeport biométrique béninois : accompagnement complet",
     hero_subtitle: "Documents officiels et accompagnement pour la diaspora béninoise. Constitution du dossier, coordination avec les autorités et suivi jusqu'à la remise de votre titre.",
     hero_chips: ["Dossier pris en charge", "Coordination officielle", "Suivi jusqu'à la remise", "Option express jour-J"],
     hero_image: "/assets/icones/icone_Passeport_Documents.png",
@@ -20,12 +20,12 @@ export const DEFAULT_PASSEPORT: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre — un accompagnement structuré, sans improvisation.",
-    etapes_title: "Pack VIP — en une journée",
+    intro_text: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre : un accompagnement structuré, sans improvisation.",
+    etapes_title: "Pack VIP : en une journée",
     etapes: [
         { num: "01", title: "Enrôlement État Civil", desc: "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois." },
         { num: "02", title: "Carte d'Identité Personnelle (CIP A)", desc: "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois." },
-        { num: "03", title: "Passeport Express Jour-J", desc: "Prise en charge prioritaire de votre demande de passeport biométrique — déposée et traitée le jour même." },
+        { num: "03", title: "Passeport Express Jour-J", desc: "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même." },
     ],
 
     contrast_title: "Une démarche officielle,",
@@ -52,7 +52,7 @@ export const DEFAULT_PASSEPORT: ServiceLandingContent = {
         "Acte de naissance certifié conforme délivré par la mairie béninoise",
         "Certificat de nationalité béninoise (Tribunal de Première Instance)",
         "Carte d'Identité Personnelle (CIP A) en cours de validité",
-        "Extrait de casier judiciaire béninois — Bulletin n°3 (moins de 3 mois)",
+        "Extrait de casier judiciaire béninois : Bulletin n°3 (moins de 3 mois)",
         "Justificatif de domicile de moins de 3 mois (quittance ou bail)",
         "4 photos d'identité biométriques (fond blanc, 3,5 × 4,5 cm, sans lunettes)",
         "Formulaire officiel de demande de passeport rempli et signé",
@@ -67,12 +67,12 @@ export const DEFAULT_PASSEPORT: ServiceLandingContent = {
 
     faq: [
         { q: "Puis-je faire ma demande depuis l'étranger ?", r: "Oui. Nous préparons et coordonnons votre dossier à distance et vous indiquons précisément les étapes qui nécessitent votre présence." },
-        { q: "En quoi consiste le Pack VIP express ?", r: "Une prise en charge intégrale et prioritaire — de l'état civil à la délivrance du passeport — organisée pour être traitée en une seule journée." },
+        { q: "En quoi consiste le Pack VIP express ?", r: "Une prise en charge intégrale et prioritaire : de l'état civil à la délivrance du passeport : organisée pour être traitée en une seule journée." },
         { q: "Que se passe-t-il s'il me manque une pièce ?", r: "Nous vous indiquons les documents alternatifs acceptés et vous aidons à les obtenir avant tout dépôt, pour éviter un refus." },
         { q: "Combien de temps prend l'obtention ?", r: "Cela dépend de la formule choisie et des autorités. Nous vous donnons une estimation réaliste dès l'analyse de votre dossier." },
     ],
 
-    final_title: "Un passeport, ça se prépare — pas ça s'improvise.",
+    final_title: "Un passeport, ça se prépare : pas ça s'improvise.",
     final_text: "Nous constituons un dossier conforme, coordonnons avec les autorités et vous suivons jusqu'à la remise de votre titre.",
     final_note: "Premier appel de 15 min gratuit · sans engagement.",
 }

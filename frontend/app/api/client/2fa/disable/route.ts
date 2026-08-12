@@ -7,7 +7,7 @@ import { getClientUser } from '@/lib/client-auth'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// POST /api/client/2fa/disable  { code } — désactive la 2FA (code requis)
+// POST /api/client/2fa/disable  { code } : désactive la 2FA (code requis)
 export async function POST(request: NextRequest) {
     const user = await getClientUser(request)
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })

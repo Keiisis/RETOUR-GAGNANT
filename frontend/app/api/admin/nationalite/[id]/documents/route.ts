@@ -48,7 +48,7 @@ function parseLine(line: string): { label: string; path: string } | null {
     return { label, path }
 }
 
-// GET — liste les pièces + RÉPARE les « .bin » (rename storage + DB) et renvoie
+// GET : liste les pièces + RÉPARE les « .bin » (rename storage + DB) et renvoie
 // des URLs signées. Utilisé par le gestionnaire de fichiers de l'édition.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ documents: docs })
 }
 
-// PATCH — remplace le FICHIER d'une pièce en conservant son libellé + sa
+// PATCH : remplace le FICHIER d'une pièce en conservant son libellé + sa
 // position ; { oldPath, newPath }. L'ancien fichier storage est supprimé.
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')
@@ -132,7 +132,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ success: true })
 }
 
-// DELETE ?path=… — retire une pièce (storage + ligne DB).
+// DELETE ?path=… : retire une pièce (storage + ligne DB).
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!

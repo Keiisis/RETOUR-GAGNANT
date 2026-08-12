@@ -140,7 +140,7 @@ export default function ServiceEditPage({ params }: { params: Promise<{ id: stri
             setSuccess(true)
             setTimeout(() => router.push('/admin/services'), 2000)
         } catch {
-            setError('Erreur réseau — veuillez réessayer')
+            setError('Erreur réseau : veuillez réessayer')
         } finally {
             setSaving(false)
         }

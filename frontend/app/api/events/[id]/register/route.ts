@@ -24,7 +24,7 @@ function signTicket(ticketCode: string, eventId: string, registrationId: string)
     return JSON.stringify({ ...payload, hash: hmac })
 }
 
-// POST /api/events/[id]/register — inscription publique
+// POST /api/events/[id]/register : inscription publique
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id: eventId } = await params
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         }
 
-        // 3. Calculate amount — TVA « en sus » : le prix du billet est HORS TAXE ;
+        // 3. Calculate amount : TVA « en sus » : le prix du billet est HORS TAXE ;
         // la TVA 18 % s'ajoute (le client paie le TTC), comme boutique/prestations.
         // Un billet gratuit (0) reste gratuit.
         const priceHt = ticket_type === 'vip'
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const { data: order, error: orderErr } = await supabase
             .from('orders')
             .insert({
-                product_title: `${event.title} — ${ticket_type === 'vip' ? 'VIP' : 'Standard'}`,
+                product_title: `${event.title} : ${ticket_type === 'vip' ? 'VIP' : 'Standard'}`,
                 quantity: 1,
                 amount,
                 currency: event.currency || 'XOF',
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 }
 
-// GET /api/events/[id]/register — list registrations (admin)
+// GET /api/events/[id]/register : list registrations (admin)
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id: eventId } = await params

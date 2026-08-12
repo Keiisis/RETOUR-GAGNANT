@@ -9,7 +9,7 @@ export type RelationRole =
   | 'paternal_ggf_2' | 'paternal_ggm_2'
   | 'maternal_ggf_1' | 'maternal_ggm_1'
   | 'maternal_ggf_2' | 'maternal_ggm_2'
-  /* Trisaïeuls — parents des arrière-grands-parents (Gen 0) */
+  /* Trisaïeuls : parents des arrière-grands-parents (Gen 0) */
   | 'trisaieul_paternal_ggf1_f' | 'trisaieul_paternal_ggf1_m'
   | 'trisaieul_paternal_ggm1_f' | 'trisaieul_paternal_ggm1_m'
   | 'trisaieul_paternal_ggf2_f' | 'trisaieul_paternal_ggf2_m'

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   APPEL VOCAL — moteur partagé (navigateur)
+   APPEL VOCAL : moteur partagé (navigateur)
 
    Utilisé par l'espace client et par le panel agent. La voix circule
    en pair-à-pair : elle ne passe ni par Supabase ni par nos serveurs.
@@ -15,7 +15,7 @@
 
    Robustesse réseau : la connexion directe couvre la majorité des
    appels. Quand les deux interlocuteurs sont derrière un réseau
-   opérateur qui masque leur adresse — fréquent sur mobile — un relais
+   opérateur qui masque leur adresse : fréquent sur mobile : un relais
    TURN prend le relais. Un relais public gratuit est fourni par
    défaut ; l'agence peut lui substituer le sien via `settings`
    (turn_url / turn_username / turn_credential). Le système ne dépend
@@ -79,11 +79,11 @@ export async function getIceServers(supabase: SupabaseClient): Promise<IceServer
  * Opus est négocié par défaut avec des réglages orientés qualité musicale :
  * trames longues, débit élevé, stéréo. En conversation, cela se paie en
  * latence sans rien apporter à l'intelligibilité. On demande donc :
- *   • usedtx        — on cesse d'émettre pendant les silences ;
- *   • useinbandfec  — correction d'erreur, précieuse sur réseau mobile ;
- *   • stereo=0      — la voix est monophonique ;
- *   • maxaveragebitrate — 24 kbit/s suffisent et allègent le réseau ;
- *   • ptime=20      — trames de 20 ms au lieu de 60, soit 40 ms gagnées.
+ *   • usedtx : on cesse d'émettre pendant les silences ;
+ *   • useinbandfec : correction d'erreur, précieuse sur réseau mobile ;
+ *   • stereo=0 : la voix est monophonique ;
+ *   • maxaveragebitrate : 24 kbit/s suffisent et allègent le réseau ;
+ *   • ptime=20 : trames de 20 ms au lieu de 60, soit 40 ms gagnées.
  */
 function reglerOpusPourLaVoix(sdp: string): string {
     if (!sdp) return sdp
@@ -127,7 +127,7 @@ export interface CallEngineOptions {
     /** L'autre partie a raccroché ou la connexion est morte. */
     onEnded?: (raison: string) => void
     /**
-     * Le micro a été perdu et n'a pas pu être repris — casque débranché,
+     * Le micro a été perdu et n'a pas pu être repris : casque débranché,
      * périphérique refusé. L'appel reste ouvert et la réception fonctionne,
      * mais l'interlocuteur n'entend plus rien : il faut le signaler, sinon
      * on parle dans le vide sans le savoir.
@@ -242,7 +242,7 @@ export class CallEngine {
         pc.onicecandidateerror = (event: Event) => {
             const e = event as RTCPeerConnectionIceErrorEvent
             console.warn(
-                `[appel:${this.opts.role}] serveur ICE en échec — ${e.url}`
+                `[appel:${this.opts.role}] serveur ICE en échec : ${e.url}`
                 + ` (code ${e.errorCode} : ${e.errorText})`,
             )
         }
@@ -274,7 +274,7 @@ export class CallEngine {
             }
         }
 
-        // Signalisation entrante — uniquement celle émise par l'autre partie.
+        // Signalisation entrante : uniquement celle émise par l'autre partie.
         this.channel = supabase
             .channel(`call-${callId}-${this.opts.role}`)
             .on(
@@ -391,8 +391,7 @@ export class CallEngine {
        se termine (`ended`), et l'interlocuteur n'entend PLUS RIEN.
 
        Le sens inverse, lui, continue de fonctionner : l'élément <audio>
-       suit la sortie par défaut du système. D'où le symptôme observé —
-       l'agent entend le client, le client n'entend plus l'agent.
+       suit la sortie par défaut du système. D'où le symptôme observé-l'agent entend le client, le client n'entend plus l'agent.
 
        On reprend donc le micro sur le nouveau périphérique et on échange
        le track dans l'émetteur. `replaceTrack` opère sans renégociation :

@@ -17,7 +17,7 @@ const DEFAULT_TEMPLATES = [
     {
         name: 'Confirmation de commande',
         slug: 'order_confirmation',
-        subject: 'Retour Gagnant — Confirmation de votre commande #{{ref}}',
+        subject: 'Retour Gagnant : Confirmation de votre commande #{{ref}}',
         html_body: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Confirmation Commande</title></head>
@@ -37,7 +37,7 @@ const DEFAULT_TEMPLATES = [
     <p style="color:#555;line-height:1.6">En cas de question, contactez-nous à <a href="mailto:contact@retourgagnantbenin.bj" style="color:#008751">contact@retourgagnantbenin.bj</a>.</p>
   </div>
   <div style="background:#f4f4f4;padding:20px;text-align:center">
-    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin — Haie Vive, Cotonou</p>
+    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin : Haie Vive, Cotonou</p>
   </div>
 </div>
 </body>
@@ -47,7 +47,7 @@ const DEFAULT_TEMPLATES = [
     {
         name: 'Réponse à un Lead Oracle',
         slug: 'agent_reply',
-        subject: 'Retour Gagnant — Suite à votre simulation',
+        subject: 'Retour Gagnant : Suite à votre simulation',
         html_body: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Réponse Lead</title></head>
@@ -66,7 +66,7 @@ const DEFAULT_TEMPLATES = [
     </div>
   </div>
   <div style="background:#f4f4f4;padding:20px;text-align:center">
-    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin — Haie Vive, Cotonou</p>
+    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin : Haie Vive, Cotonou</p>
   </div>
 </div>
 </body>
@@ -76,7 +76,7 @@ const DEFAULT_TEMPLATES = [
     {
         name: 'Notification de rendez-vous',
         slug: 'appointment_confirmation',
-        subject: 'Retour Gagnant — Confirmation de votre rendez-vous',
+        subject: 'Retour Gagnant : Confirmation de votre rendez-vous',
         html_body: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Rendez-vous confirmé</title></head>
@@ -97,7 +97,7 @@ const DEFAULT_TEMPLATES = [
     </div>
   </div>
   <div style="background:#f4f4f4;padding:20px;text-align:center">
-    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin — Haie Vive, Cotonou</p>
+    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin : Haie Vive, Cotonou</p>
   </div>
 </div>
 </body>
@@ -125,7 +125,7 @@ const DEFAULT_TEMPLATES = [
     </div>
   </div>
   <div style="background:#f4f4f4;padding:20px;text-align:center">
-    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin — Haie Vive, Cotonou</p>
+    <p style="margin:0;color:#888;font-size:12px">© Retour Gagnant Bénin : Haie Vive, Cotonou</p>
   </div>
 </div>
 </body>
@@ -134,7 +134,7 @@ const DEFAULT_TEMPLATES = [
     },
 ]
 
-// GET /api/admin/email-templates — liste tous les templates (avec seed si vide)
+// GET /api/admin/email-templates : liste tous les templates (avec seed si vide)
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/admin/email-templates — créer un nouveau template
+// POST /api/admin/email-templates : créer un nouveau template
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

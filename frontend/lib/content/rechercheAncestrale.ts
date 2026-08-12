@@ -54,7 +54,7 @@ export const DEFAULT_RECHERCHE_ANCESTRALE: ServiceLandingContent = {
         "Consultation d'archives officielles et bases de données diasporiques",
         "Partenariats avec associations spécialisées dans la généalogie afro-descendante",
     ],
-    features_note: "* L'ensemble des pièces sont à transmettre par voie électronique — une démarche simple et sécurisée pour débuter votre recherche.",
+    features_note: "* L'ensemble des pièces sont à transmettre par voie électronique : une démarche simple et sécurisée pour débuter votre recherche.",
 
     reassurance: [
         { title: "Sans engagement", desc: "Le premier échange est gratuit." },

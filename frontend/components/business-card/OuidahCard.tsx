@@ -7,7 +7,7 @@ import type { CardData } from './BusinessCard'
 export type { CardData }
 
 /* ══════════════════════════════════════════════════════════════
-   PALETTE — Extraite du blason Ouidah Heritage Tour
+   PALETTE : Extraite du blason Ouidah Heritage Tour
    • Bleu Marine profond  : couleur de l'océan dans le blason
    • Rouge Terre          : couleur du serpent Dan & symboles
    • Or Ambre             : couleur de la nef & tresse
@@ -25,14 +25,14 @@ const MUTED     = '#6B5E50'   // Taupe pour les secondaires
 const WHITE     = '#FFFFFF'
 
 /* ══════════════════════════════════════════════════════════════
-   TYPOGRAPHY — Montserrat Black pour un rendu ultra-lisible
+   TYPOGRAPHY : Montserrat Black pour un rendu ultra-lisible
 ══════════════════════════════════════════════════════════════ */
 
 const FONT = "var(--font-montserrat), 'Inter', 'Helvetica Neue', Arial, sans-serif"
 const SERIF = "var(--font-playfair), 'Cormorant Garamond', 'Didot', Georgia, serif"
 
 /* ══════════════════════════════════════════════════════════════
-   ICÔNES CONTACTS — filled, ultra-visible
+   ICÔNES CONTACTS : filled, ultra-visible
 ══════════════════════════════════════════════════════════════ */
 
 const IcoPhone = ({ sz, col }: { sz: number; col: string }) => (
@@ -61,7 +61,7 @@ const IcoPin = ({ sz, col }: { sz: number; col: string }) => (
 )
 
 /* ══════════════════════════════════════════════════════════════
-   QR CODE — Avec fallback image custom
+   QR CODE : Avec fallback image custom
 ══════════════════════════════════════════════════════════════ */
 
 function QRCodeDisplay({ size, dark, light }: { size: number; dark: string; light: string }) {
@@ -101,7 +101,7 @@ function QRCodeDisplay({ size, dark, light }: { size: number; dark: string; ligh
 }
 
 /* ══════════════════════════════════════════════════════════════
-   RECTO — Fond BLANC, Logo ÉNORME, Texte ULTRA-VISIBLE
+   RECTO : Fond BLANC, Logo ÉNORME, Texte ULTRA-VISIBLE
    Même dimensions et borderRadius que la carte RGB
 ══════════════════════════════════════════════════════════════ */
 
@@ -139,7 +139,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
           <div style={{ flex: 1, backgroundColor: NAVY }} />
         </div>
 
-        {/* ── Contenu centré — tout ULTRA VISIBLE ── */}
+        {/* ── Contenu centré : tout ULTRA VISIBLE ── */}
         <div style={{
           position: 'absolute',
           top: 5 * s,
@@ -150,7 +150,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
           padding: `${10 * s}px ${30 * s}px`,
         }}>
 
-          {/* LOGO — MAXIMUM */}
+          {/* LOGO : MAXIMUM */}
           <img
             src="/images/ouidah-logo.png"
             alt="Ouidah Heritage Tour"
@@ -162,7 +162,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
             }}
           />
 
-          {/* NOM — OUIDAH HERITAGE TOUR sur une seule ligne */}
+          {/* NOM : OUIDAH HERITAGE TOUR sur une seule ligne */}
           <div style={{
             color: NAVY_DEEP,
             fontSize: 24 * s,
@@ -177,7 +177,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
             Ouidah Heritage Tour
           </div>
 
-          {/* Tagline — terracotta, ULTRA VISIBLE, gras */}
+          {/* Tagline : terracotta, ULTRA VISIBLE, gras */}
           <div style={{
             color: TERRACOTTA,
             fontSize: 21 * s,
@@ -187,7 +187,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
             fontFamily: FONT,
             marginTop: 6 * s,
           }}>
-            Retour aux sources — Voyage dans la mémoire
+            Retour aux sources : Voyage dans la mémoire
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@ export const CardRecto = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
 CardRecto.displayName = 'CardRecto'
 
 /* ══════════════════════════════════════════════════════════════
-   VERSO — Fond BLANC, même style que le Recto
+   VERSO : Fond BLANC, même style que le Recto
    Même dimensions et borderRadius que la carte RGB
    Montserrat/Inter, gras, texte ultra-lisible
    QR Code et site web masqués pour le moment
@@ -238,7 +238,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
         </div>
 
         {/* ══════════════════════════════════════════
-            CONTENU — Pleine largeur (pas de QR)
+            CONTENU : Pleine largeur (pas de QR)
         ══════════════════════════════════════════ */}
         <div style={{
           position: 'absolute',
@@ -253,7 +253,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
             flexDirection: 'column',
           }}>
 
-            {/* PRÉNOM — Ultra visible */}
+            {/* PRÉNOM : Ultra visible */}
             <div style={{
               color: CHARCOAL,
               fontSize: 22 * s,
@@ -266,7 +266,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
               {data.prenom}
             </div>
 
-            {/* NOM — Ultra visible, Très gros */}
+            {/* NOM : Ultra visible, Très gros */}
             <div style={{
               color: NAVY,
               fontSize: 36 * s,
@@ -278,7 +278,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
               {data.nom}
             </div>
 
-            {/* Ligne ambrée fine — seul élément graphique */}
+            {/* Ligne ambrée fine : seul élément graphique */}
             <div style={{
               width: 50 * s,
               height: 3 * s,
@@ -288,7 +288,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
               borderRadius: 2,
             }} />
 
-            {/* POSTE — TRÈS GRAS, MAJEUR */}
+            {/* POSTE : TRÈS GRAS, MAJEUR */}
             <div style={{
               color: NAVY_DEEP,
               fontSize: 15 * s,
@@ -300,7 +300,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
               {data.position || 'GUIDE & EXPERT PATRIMOINE'}
             </div>
 
-            {/* ── CONTACTS — GÉANTS ── */}
+            {/* ── CONTACTS : GÉANTS ── */}
             <div style={{
               display: 'flex', flexDirection: 'column',
               gap: 14 * s,
@@ -337,7 +337,7 @@ export const CardVerso = forwardRef<HTMLDivElement, { data: CardData; scale?: nu
             {/* Espace flexible → pousse le footer en bas */}
             <div style={{ flex: 1, minHeight: 12 * s }} />
 
-            {/* ── FOOTER — Adresse ── */}
+            {/* ── FOOTER : Adresse ── */}
             <div style={{
               display: 'flex', flexDirection: 'column',
               gap: 10 * s,

@@ -137,7 +137,7 @@ export default function MecefSettingsPage() {
                 <>
                     <div className="bg-[#0a0f18] border border-white/5 rounded-2xl p-6">
                         <Toggle value={form.mecef_enabled} onChange={set('mecef_enabled')} label="Activer la normalisation e-MCF" hint="Affiche le bouton « Normaliser » sur les factures." />
-                        <Toggle value={form.mecef_sandbox} onChange={set('mecef_sandbox')} label="Mode test (sandbox DGI)" hint="developper.sygmef.impots.bj — sans effet fiscal. Décocher pour la production." />
+                        <Toggle value={form.mecef_sandbox} onChange={set('mecef_sandbox')} label="Mode test (sandbox DGI)" hint="developper.sygmef.impots.bj : sans effet fiscal. Décocher pour la production." />
                         <Toggle value={form.mecef_price_ttc} onChange={set('mecef_price_ttc')} label="Prix envoyés TTC" hint="Défaut recommandé. Décocher seulement si la DGI attend des prix HT." />
                     </div>
 

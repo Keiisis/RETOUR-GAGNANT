@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Horaires d'ouverture & fermetures exceptionnelles
+//  ADMIN : Horaires d'ouverture & fermetures exceptionnelles
 //  GET     → règles + exceptions
 //  POST    → { kind: 'rule' | 'exception', ... }
 //  PATCH   → mise à jour d'une règle

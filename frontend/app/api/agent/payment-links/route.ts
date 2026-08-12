@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  LIENS DE PAIEMENT — accès AGENT (et ADMIN)
+//  LIENS DE PAIEMENT : accès AGENT (et ADMIN)
 //
 //  Le middleware n'autorise /api/admin/* qu'aux rôles administrateurs :
 //  sans ce chemin parallèle, l'onglet « Liens de paiement » de l'espace

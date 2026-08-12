@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 
-// Webhook Zeyow — notification asynchrone de paiement (appel serveur-à-serveur uniquement)
+// Webhook Zeyow : notification asynchrone de paiement (appel serveur-à-serveur uniquement)
 export async function POST(request: Request) {
     try {
         // Vérification du secret partagé Zeyow (serveur → serveur uniquement)
@@ -24,15 +24,15 @@ export async function POST(request: Request) {
                 request.headers.get('authorization')?.replace('Bearer ', '')
 
             if (!receivedSecret || receivedSecret !== configuredSecret) {
-                console.warn('[Zeyow Webhook] Tentative non autorisée — secret invalide ou manquant')
+                console.warn('[Zeyow Webhook] Tentative non autorisée : secret invalide ou manquant')
                 return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
             }
         } else {
             // Aucun secret configuré : refuser les appels pour éviter les faux paiements
             // (configurer zeyow_webhook_secret dans les settings admin)
-            console.warn('[Zeyow Webhook] Rejeté : zeyow_webhook_secret non configuré — configurez-le dans les settings admin')
+            console.warn('[Zeyow Webhook] Rejeté : zeyow_webhook_secret non configuré : configurez-le dans les settings admin')
             return NextResponse.json(
-                { error: 'Webhook Zeyow non configuré — contactez l\'administrateur' },
+                { error: 'Webhook Zeyow non configuré : contactez l\'administrateur' },
                 { status: 403 }
             )
         }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
             amount,
         } = body
 
-        // Montant obligatoire — on refuse les webhooks sans montant (vecteur d'attaque)
+        // Montant obligatoire : on refuse les webhooks sans montant (vecteur d'attaque)
         if (amount === undefined || amount === null || amount === '') {
             console.warn('[Zeyow Webhook] Montant manquant dans le payload')
             return NextResponse.json({ error: 'Montant requis' }, { status: 400 })

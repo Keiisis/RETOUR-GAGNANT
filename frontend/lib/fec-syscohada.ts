@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// EXPORT FEC / SYSCOHADA — Fichier des Écritures Comptables
+// EXPORT FEC / SYSCOHADA : Fichier des Écritures Comptables
 // ═══════════════════════════════════════════════════════════════
 // Génère un FEC en PARTIE DOUBLE à partir des données « cash » du projet
 // (factures, paiements, dépenses), conforme au plan de comptes SYSCOHADA
@@ -216,9 +216,9 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
         const cli = clean(`${d.client_nom || ''} ${d.client_prenom || ''}`) || 'Client'
         const lib = `Avoir ${piece} - ${cli}`
         const devCols = cur !== 'XOF' ? { Montantdevise: amt(Number(d.total) || 0), Idevise: cur } : { Montantdevise: '', Idevise: '' }
-        // D 706 Ventes (HT) — annule le produit
+        // D 706 Ventes (HT) : annule le produit
         rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.ventes.num, CompteLib: ACC.ventes.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(tva > 0 ? ht : ttc), Credit: amt(0) })
-        // D 443 TVA facturée — annule la TVA collectée
+        // D 443 TVA facturée : annule la TVA collectée
         if (tva > 0) {
             rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.tvaFacturee.num, CompteLib: ACC.tvaFacturee.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(tva), Credit: amt(0) })
         }

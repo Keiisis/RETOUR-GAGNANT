@@ -59,7 +59,7 @@ function SponsorCard({ sponsor, index }: { sponsor: Sponsor; index: number }) {
                 )}
             </div>
 
-            {/* Séparateur accent — visible au survol */}
+            {/* Séparateur accent : visible au survol */}
             <div className="w-8 h-[2px] rounded-full bg-gradient-to-r from-[#008751] to-[#FCD116] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
             {/* Nom */}
@@ -183,10 +183,10 @@ export default function PartnersSection() {
                 <div className="pointer-events-none absolute right-0 top-0 h-full w-32 z-20"
                     style={{ background: 'linear-gradient(to left, #f0fdf8, transparent)' }} />
 
-                {/* Lane 1 — défile à gauche, 35s */}
+                {/* Lane 1 : défile à gauche, 35s */}
                 <MarqueeRow sponsors={row1} direction="left" className="mb-4" />
 
-                {/* Lane 2 — défile à droite, 45s (vitesse différente = effet parallaxe) */}
+                {/* Lane 2 : défile à droite, 45s (vitesse différente = effet parallaxe) */}
                 <MarqueeRow sponsors={row2} direction="right" />
             </div>
 

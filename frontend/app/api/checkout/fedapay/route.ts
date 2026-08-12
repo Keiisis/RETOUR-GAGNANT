@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
         // Construire le payload de la transaction
         // FedaPay API : structure PLATE (pas de wrapper "transaction")
-        // callback_url omis — vérification faite via DB (transaction_id stocké dans la commande)
+        // callback_url omis : vérification faite via DB (transaction_id stocké dans la commande)
         const payload: Record<string, unknown> = {
             amount: Math.round(Number(amount)),
             description: description || `Commande ${order_id}`,
@@ -99,12 +99,12 @@ export async function POST(request: Request) {
         const rawJson = JSON.stringify(data)
         console.log('FedaPay create response (HTTP', res.status, '):', rawJson.slice(0, 500))
 
-        // FedaPay retourne { "v1/transaction": {...} } — la clé contient un slash littéral
+        // FedaPay retourne { "v1/transaction": {...} } : la clé contient un slash littéral
         const transaction = data?.['v1/transaction'] || data?.v1?.transaction || data?.transaction || (data?.id ? data : null)
 
         if (!transaction?.id) {
             return NextResponse.json(
-                { error: `FedaPay: ID introuvable dans la réponse — ${rawJson.slice(0, 200)}` },
+                { error: `FedaPay: ID introuvable dans la réponse : ${rawJson.slice(0, 200)}` },
                 { status: 502 }
             )
         }
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         // Stocker l'ID de transaction FedaPay dans la commande pour vérification sécurisée
         // (l'API GET /v1/transactions/{id} retourne 404 dans certains comptes sandbox)
         if (!supabaseUrl || !supabaseServiceKey) {
-            console.error('SUPABASE_SERVICE_ROLE_KEY manquante — impossible de stocker transaction_id')
+            console.error('SUPABASE_SERVICE_ROLE_KEY manquante : impossible de stocker transaction_id')
             return NextResponse.json(
                 { error: 'Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY)' },
                 { status: 503 }

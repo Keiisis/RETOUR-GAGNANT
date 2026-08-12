@@ -38,14 +38,14 @@ function relanceHtml(prenom: string, nom: string, ref: string, link: string) {
             <p>Afin que notre service juridique puisse instruire votre dossier <strong>(référence ${ref})</strong> dans les meilleures conditions et sans délai, il nous reste à réunir vos pièces justificatives. Pour vous simplifier au maximum cette étape, nous avons préparé un <strong>espace personnel sécurisé</strong> qui reprend l'intégralité de vos informations : vous n'aurez qu'à y déposer vos documents.</p>
 
             <p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
-                <strong>Aucun paiement ne vous sera redemandé.</strong> Vos frais de traitement sont déjà réglés — cet espace sert uniquement à joindre vos pièces en toute sérénité.
+                <strong>Aucun paiement ne vous sera redemandé.</strong> Vos frais de traitement sont déjà réglés : cet espace sert uniquement à joindre vos pièces en toute sérénité.
             </p>
 
             <div style="text-align:center;margin:32px 0;">
                 <a href="${link}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:15px 42px;border-radius:10px;font-weight:700;font-size:15px;letter-spacing:0.3px;">
                     Déposer mes documents
                 </a>
-                <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">Lien personnel et confidentiel — à n'utiliser que par vos soins.</p>
+                <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">Lien personnel et confidentiel : à n'utiliser que par vos soins.</p>
             </div>
 
             <p>Nos équipes restent naturellement à votre entière disposition pour vous guider, à chaque instant, jusqu'à l'aboutissement de votre dossier. C'est une démarche profondément symbolique : celle du retour vers la terre de vos ancêtres, et nous sommes honorés de la mener à vos côtés.</p>
@@ -55,7 +55,7 @@ function relanceHtml(prenom: string, nom: string, ref: string, link: string) {
 
         <div style="padding:18px 40px;background:#0d1117;text-align:center;">
             <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.6;">
-                &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — Tous droits réservés<br>
+                &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : Tous droits réservés<br>
                 <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
             </p>
         </div>
@@ -75,7 +75,7 @@ export async function sendNationalityResumeEmail(
 
     const res = await sendEmail({
         to: app.email,
-        subject: `Finalisez votre dossier de nationalité — Réf. ${app.application_ref}`,
+        subject: `Finalisez votre dossier de nationalité : Réf. ${app.application_ref}`,
         html: relanceHtml(app.prenom || '', app.nom || '', app.application_ref, link),
         context: 'nationality_relance',
         relatedId: app.id,

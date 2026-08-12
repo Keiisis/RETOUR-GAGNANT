@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Génération PDF avec l'en-tête institutionnel Retour Gagnant Bénin
+// RGPD : Génération PDF avec l'en-tête institutionnel Retour Gagnant Bénin
 // (logo, bande tricolore béninoise, palette Nexus Emerald, pied de page).
 // ══════════════════════════════════════════════════════════════
 
@@ -63,7 +63,7 @@ export async function generateRgpdPdf(doc: RgpdDoc): Promise<ArrayBuffer> {
         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(MUTED)
         pdf.text(CONTACT_LINE, pageW / 2, pageH - 10, { align: 'center' })
         if (doc.confidential) {
-            pdf.setTextColor(FLAG_RED); pdf.text('CONFIDENTIEL — Usage interne', margin, pageH - 6)
+            pdf.setTextColor(FLAG_RED); pdf.text('CONFIDENTIEL : Usage interne', margin, pageH - 6)
         }
         pdf.setTextColor(MUTED); pdf.text(`Page ${pageNum}`, pageW - margin, pageH - 6, { align: 'right' })
     }

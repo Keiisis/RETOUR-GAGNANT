@@ -15,7 +15,7 @@ import { requireStaff } from '@/lib/api-guard';
    2) La réponse partait UNIQUEMENT par email : ni stockée, ni visible dans
       l'espace client, ni dans l'application mobile. Le client voyait son badge
       de statut changer, mais jamais le message de l'agent. On crée maintenant
-      une notification en base rattachée au client — les deux surfaces lisent
+      une notification en base rattachée au client : les deux surfaces lisent
       déjà la table `notifications`.
 
    L'email reste envoyé : il touche le client même hors application.

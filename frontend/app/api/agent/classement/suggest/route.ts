@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
                 },
                 {
                     role: 'user',
-                    content: `Service : ${getCategory(c.service_category).label}\nStatut : ${getStatus(c.status).label}\nJours depuis le 1er contact : ${days}\nNotes / problèmes : ${c.notes?.trim() || '(aucune note)'}\nClient : ${c.full_name || '—'}`,
+                    content: `Service : ${getCategory(c.service_category).label}\nStatut : ${getStatus(c.status).label}\nJours depuis le 1er contact : ${days}\nNotes / problèmes : ${c.notes?.trim() || '(aucune note)'}\nClient : ${c.full_name || '-'}`,
                 },
             ],
             temperature: 0.5,

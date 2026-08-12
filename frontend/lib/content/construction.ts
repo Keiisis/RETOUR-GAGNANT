@@ -2,7 +2,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 
 export const DEFAULT_CONSTRUCTION: ServiceLandingContent = {
     hero_badge: "Suivi de chantier & maîtrise d'ouvrage",
-    hero_title: "Construisez au Bénin, sans y être — sous l'œil d'un représentant de confiance",
+    hero_title: "Construisez au Bénin, sans y être : sous l'œil d'un représentant de confiance",
     hero_subtitle: "Devis approximatifs, délais non tenus, matériaux de qualité variable : les risques sont réels. Nous sommes votre représentant exigeant, présent à chaque étape du chantier.",
     hero_chips: ["Représentant sur place", "Rapports hebdo photos/vidéos", "Contrôle qualité", "Devis maîtrisés"],
     hero_image: "/assets/icones/icone_Construction.png",
@@ -20,7 +20,7 @@ export const DEFAULT_CONSTRUCTION: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "Construire au Bénin depuis l'étranger, c'est possible — à condition d'être bien entouré. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
+    intro_text: "Construire au Bénin depuis l'étranger, c'est possible : à condition d'être bien entouré. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
     etapes_title: "Notre mission",
     etapes: [
         { num: "01", title: "Cadrage & plans", desc: "Aide à l'achat du terrain, bureau d'architecte, conception et devis maîtrisés." },
@@ -49,10 +49,10 @@ export const DEFAULT_CONSTRUCTION: ServiceLandingContent = {
     features_intro: "Un accompagnement complet, du terrain à la remise des clés.",
     features: [
         "Aide à l'achat et à la location de terrain ou de bien immobilier",
-        "Bureau d'architecte — conception et plans techniques",
+        "Bureau d'architecte : conception et plans techniques",
         "Surveillance et contrôle de chantier (visites régulières, tous moyens)",
         "Vérification et validation des factures fournisseurs",
-        "Achats de matériaux — sélection et négociation",
+        "Achats de matériaux : sélection et négociation",
         "Rapports WhatsApp hebdomadaires (photos et vidéos)",
         "Mise en relation et coordination des intervenants du chantier",
         "Livraison et nettoyage du chantier clé en main",
@@ -69,10 +69,10 @@ export const DEFAULT_CONSTRUCTION: ServiceLandingContent = {
         { q: "À quelle fréquence suis-je informé de l'avancement ?", r: "Vous recevez des rapports hebdomadaires avec photos et vidéos, et vous pouvez nous joindre à tout moment." },
         { q: "Pouvez-vous gérer l'achat du terrain aussi ?", r: "Oui. Nous vous accompagnons de la recherche et la sécurisation du terrain jusqu'à la livraison de la construction." },
         { q: "Comment évitez-vous la surfacturation des matériaux ?", r: "Nous sélectionnons et négocions les matériaux, et validons chaque facture fournisseur avant paiement." },
-        { q: "Quelles formules proposez-vous ?", r: "Suivi mensuel, mission complète ou audit ponctuel — nous adaptons la formule à votre projet et votre budget." },
+        { q: "Quelles formules proposez-vous ?", r: "Suivi mensuel, mission complète ou audit ponctuel : nous adaptons la formule à votre projet et votre budget." },
     ],
 
     final_title: "Votre investissement mérite un suivi professionnel.",
-    final_text: "Nous contrôlons la qualité, maîtrisons le budget et vous rendons compte chaque semaine — jusqu'à la remise des clés.",
+    final_text: "Nous contrôlons la qualité, maîtrisons le budget et vous rendons compte chaque semaine : jusqu'à la remise des clés.",
     final_note: "Premier échange gratuit · rapports transparents · sans engagement.",
 }

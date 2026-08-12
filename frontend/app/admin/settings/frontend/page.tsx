@@ -341,7 +341,7 @@ export default function FrontendSettingsPage() {
                     </div>
                 </Card>
 
-                {/* Services — Toggle calculateur + JSON autres services */}
+                {/* Services : Toggle calculateur + JSON autres services */}
                 <Card className="bg-[#0a0f18] border-white/5 overflow-hidden rounded-[3rem] shadow-2xl relative lg:col-span-2">
                     <div className="p-10 space-y-8 relative z-10">
                         <div className="flex items-center gap-4 border-b border-white/5 pb-8 mb-8">
@@ -355,7 +355,7 @@ export default function FrontendSettingsPage() {
                         </div>
 
                         <div className="space-y-8">
-                            {/* Toggle GLOBAL — Calculateurs intelligents (tous les services) */}
+                            {/* Toggle GLOBAL : Calculateurs intelligents (tous les services) */}
                             <div className="flex items-center justify-between p-4 rounded-2xl bg-green-500/[0.04] border border-green-500/20">
                                 <div>
                                     <p className="text-sm font-bold text-white"><T>Calculateurs intelligents (tous les services)</T></p>
@@ -372,7 +372,7 @@ export default function FrontendSettingsPage() {
                                 </button>
                             </div>
 
-                            {/* Toggle PricingCalculator — spécifique Passeport / Nationalité VIP */}
+                            {/* Toggle PricingCalculator : spécifique Passeport / Nationalité VIP */}
                             <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5">
                                 <div>
                                     <p className="text-sm font-bold text-white"><T>Afficher le calculateur de prix</T></p>

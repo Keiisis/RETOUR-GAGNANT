@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Prêtres Fa (Bokonon) : CRUD complet
+//  ADMIN : Prêtres Fa (Bokonon) : CRUD complet
 //  Toutes les écritures passent ici (service role) : la table est en
 //  RLS lecture seule côté public. Aucune donnée codée en dur.
 // ══════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ function sanitize(body: Record<string, unknown>) {
     return out
 }
 
-// GET — liste complète (actifs + inactifs) avec notes agrégées
+// GET : liste complète (actifs + inactifs) avec notes agrégées
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ priests })
 }
 
-// POST — création
+// POST : création
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: data.id })
 }
 
-// PATCH — mise à jour
+// PATCH : mise à jour
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true })
 }
 
-// DELETE — suppression (les avis liés partent en cascade)
+// DELETE : suppression (les avis liés partent en cascade)
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

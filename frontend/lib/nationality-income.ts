@@ -2,7 +2,7 @@
 //  ENREGISTREMENT COMPTABLE D'UN PAIEMENT DE DOSSIER NATIONALITÉ
 //  Les paiements en ligne (Kkiapay) du formulaire nationalité étaient
 //  encaissés SANS trace dans facturation / comptabilité. Ce helper crée
-//  UNE facture (statut payé) par dossier — idempotent via la référence
+//  UNE facture (statut payé) par dossier : idempotent via la référence
 //  RG-NAT dans les notes. Le cas « facture manuelle sélectionnée » par
 //  l'admin possède déjà sa propre facture : on ne double PAS.
 // ══════════════════════════════════════════════════════════════
@@ -50,7 +50,7 @@ export async function recordNationalityIncome(
         const numero = await nextDocumentNumber(supabase, 'facture')
 
         // TVA EN SUS : p.amount est le tarif HORS TAXE (frais de dossier). La
-        // TVA 18 % s'ajoute — c'est ce que le client a payé (le widget charge
+        // TVA 18 % s'ajoute : c'est ce que le client a payé (le widget charge
         // HT × 1,18). fromHt garantit HT + TVA = TTC.
         const { ht, tva, ttc } = fromHt(p.amount, currency)
 
@@ -73,7 +73,7 @@ export async function recordNationalityIncome(
             total: ttc,
             status: 'paye',
             paid_at: new Date().toISOString(),
-            notes: `Facture auto-générée — Nationalité\nDossier: ${p.ref}\nMéthode: ${p.paymentMethod || 'en ligne'}${p.txId ? `\nTransaction: ${p.txId}` : ''}`,
+            notes: `Facture auto-générée : Nationalité\nDossier: ${p.ref}\nMéthode: ${p.paymentMethod || 'en ligne'}${p.txId ? `\nTransaction: ${p.txId}` : ''}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',
         }, `nationality:${p.ref}`, { column: 'notes', pattern: `%${p.ref}%` })
@@ -120,7 +120,7 @@ async function sendNationalityInvoiceEmail(f: {
                 total_tva: tva,
                 remise: 0,
                 total: ttc,
-                notes: `Dossier ${f.ref}\nPaiement ${f.paymentMethod}${f.txId ? ` — Transaction ${f.txId}` : ''}`,
+                notes: `Dossier ${f.ref}\nPaiement ${f.paymentMethod}${f.txId ? ` : Transaction ${f.txId}` : ''}`,
                 conditions: 'Paiement effectué en ligne.',
                 isManual: true,
             })
@@ -131,7 +131,7 @@ async function sendNationalityInvoiceEmail(f: {
         const montant = `${Math.round(ttc).toLocaleString('fr-FR')} ${f.currency === 'XOF' ? 'FCFA' : f.currency === 'EUR' ? '€' : f.currency === 'USD' ? '$' : f.currency}`
         await sendEmail({
             to: f.email,
-            subject: `Votre facture ${f.numero} — ${montant} — Dossier ${f.ref}`,
+            subject: `Votre facture ${f.numero} : ${montant} : Dossier ${f.ref}`,
             html: `
             <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;">
               <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
@@ -155,7 +155,7 @@ async function sendNationalityInvoiceEmail(f: {
                 <p style="margin-top:22px;">Avec toute notre considération,<br><strong>L'équipe Retour Gagnant Bénin</strong></p>
               </div>
               <div style="padding:16px 40px;background:#0d1117;text-align:center;">
-                <p style="margin:0;color:#6b7280;font-size:11px;">Cette facture vaut preuve de paiement. &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a></p>
+                <p style="margin:0;color:#6b7280;font-size:11px;">Cette facture vaut preuve de paiement. &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a></p>
               </div>
             </div>`,
             context: 'nationality_invoice',

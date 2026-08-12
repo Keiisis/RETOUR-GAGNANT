@@ -72,14 +72,14 @@ const frontendSections = [
     },
     {
         title: 'Notre Histoire',
-        description: 'Éditez tous les contenus, textes, photos et portraits de la page Notre Histoire — héros, chapitres, architectes, logo, confiance.',
+        description: 'Éditez tous les contenus, textes, photos et portraits de la page Notre Histoire : héros, chapitres, architectes, logo, confiance.',
         icon: BookOpen,
         href: '/admin/notre-histoire',
         color: '#FCD116',
         count: 'Histoire & Identité',
     },
     {
-        title: 'Design — Cartes de Visite',
+        title: 'Design : Cartes de Visite',
         description: 'Générez des cartes de visite professionnelles recto/verso pour vos agents. Téléchargement PNG ou PDF, attribution directe depuis l\'admin.',
         icon: CreditCard,
         href: '/admin/design',

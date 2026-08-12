@@ -44,7 +44,7 @@ export async function createTransporter() {
     const config = await getEmailConfig()
 
     if (!config.host || !config.user || !config.pass) {
-        console.log('[EMAIL] SMTP not configured yet — skipping email send.')
+        console.log('[EMAIL] SMTP not configured yet : skipping email send.')
         return null
     }
 
@@ -172,7 +172,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         viewDashboard: 'Voir dans le Dashboard',
         sentBy: 'Cet email vous a été envoyé par un conseiller de Retour Gagnant Bénin.',
         replyTo: 'Pour toute réponse, envoyez un email à',
-        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradition, Modernité, Excellence`,
+        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin : Tradition, Modernité, Excellence`,
         autoSent: 'Cet email a été envoyé automatiquement. Ne pas répondre directement.',
         newMessage: 'Un message de votre conseiller',
     },
@@ -191,7 +191,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         viewDashboard: 'View in Dashboard',
         sentBy: 'This email was sent by a consultant from Retour Gagnant Bénin.',
         replyTo: 'To reply, send an email to',
-        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradition, Modernity, Excellence`,
+        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin : Tradition, Modernity, Excellence`,
         autoSent: 'This email was sent automatically. Do not reply directly.',
         newMessage: 'A message from your advisor',
     },
@@ -210,7 +210,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         viewDashboard: 'Ver en el Dashboard',
         sentBy: 'Este email fue enviado por un consultor de Retour Gagnant Bénin.',
         replyTo: 'Para responder, envíe un email a',
-        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradición, Modernidad, Excelencia`,
+        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin : Tradición, Modernidad, Excelencia`,
         autoSent: 'Este email fue enviado automáticamente. No responda directamente.',
         newMessage: 'Un mensaje de su asesor',
     },
@@ -229,7 +229,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         viewDashboard: 'Ver no Dashboard',
         sentBy: 'Este email foi enviado por um consultor de Retour Gagnant Bénin.',
         replyTo: 'Para responder, envie um email para',
-        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — Tradição, Modernidade, Excelência`,
+        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin : Tradição, Modernidade, Excelência`,
         autoSent: 'Este email foi enviado automaticamente. Não responda diretamente.',
         newMessage: 'Uma mensagem do seu consultor',
     },
@@ -248,7 +248,7 @@ const EMAIL_I18N: Record<string, EmailTranslations> = {
         viewDashboard: 'عرض في لوحة التحكم',
         sentBy: 'تم إرسال هذا البريد من قبل مستشار في Retour Gagnant Bénin.',
         replyTo: 'للرد، أرسل بريدًا إلكترونيًا إلى',
-        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin — التقاليد، الحداثة، التميز`,
+        footer: `© ${new Date().getFullYear()} Retour Gagnant Bénin : التقاليد، الحداثة، التميز`,
         autoSent: 'تم إرسال هذا البريد تلقائيًا. لا ترد مباشرة.',
         newMessage: 'رسالة من مستشارك',
     },
@@ -270,7 +270,7 @@ function getI18n(lang: string): EmailTranslations {
 }
 
 // ═══════════════════════════════════════════════════════
-// 🎨 PREMIUM EMAIL WRAPPER — Ultra-shine, with logo, multilingual
+// 🎨 PREMIUM EMAIL WRAPPER : Ultra-shine, with logo, multilingual
 // Unified design for ALL emails across the entire site
 // Now dynamic: reads from document_templates (official_email)
 // ═══════════════════════════════════════════════════════
@@ -367,7 +367,7 @@ export const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?:
         <!-- ══════ FLAG STRIPE TOP ══════ -->
         <tr><td bgcolor="#008751" style="height:5px;background:linear-gradient(90deg,#008751 0%,#008751 33%,#FCD116 33%,#FCD116 66%,#E8112D 66%,#E8112D 100%);"></td></tr>
 
-        <!-- ══════ HEADER BLANC — Logo à gauche + Nom à droite ══════ -->
+        <!-- ══════ HEADER BLANC : Logo à gauche + Nom à droite ══════ -->
         <tr><td style="padding:44px 44px 36px;background:#FFFFFF;">
           <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
             <tr>
@@ -377,12 +377,12 @@ export const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?:
               </td>
               <!-- Nom à droite : RETOUR GAGNANT + BÉNIN en dessous -->
               <td style="vertical-align:middle;text-align:left;border-left:1px solid rgba(201,168,76,0.25);padding-left:26px;">
-                <!-- RETOUR GAGNANT — ligne 1 -->
+                <!-- RETOUR GAGNANT : ligne 1 -->
                 <h1 style="margin:0;font-size:30px;font-weight:900;letter-spacing:2px;line-height:1;font-family:'Playfair Display','Segoe UI',Georgia,serif;white-space:nowrap;">
                   <span style="color:#008751;text-shadow:0 2px 18px rgba(0,135,81,0.22);">RETOUR</span>
                   <span style="color:#E6B800;text-shadow:0 2px 18px rgba(252,209,22,0.32);margin-left:8px;">GAGNANT</span>
                 </h1>
-                <!-- BÉNIN — ligne 2 sous RETOUR -->
+                <!-- BÉNIN : ligne 2 sous RETOUR -->
                 <div style="margin-top:9px;">
                   <span style="display:inline-block;font-size:22px;font-weight:900;letter-spacing:12px;color:#E8112D;text-shadow:0 2px 16px rgba(232,17,45,0.28);font-family:'Playfair Display','Segoe UI',Georgia,serif;padding-left:12px;">BÉNIN</span>
                 </div>
@@ -452,7 +452,7 @@ export const EMAIL_WRAPPER = async (content: string, lang: string = 'fr', opts?:
 }
 
 // ═══════════════════════════════════════════════════════
-// 📧 EMAIL TEMPLATES — Multilingual, Premium, Intelligent
+// 📧 EMAIL TEMPLATES : Multilingual, Premium, Intelligent
 // ═══════════════════════════════════════════════════════
 import { getServerTranslation } from './server-translation'
 
@@ -477,7 +477,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         ${emailButton(`${SITE_URL}/rendez-vous`, t.bookBtn)}
     `, locale, { heroEmoji: '🤝', heroTitle: t.thankYou, preheader: t.received, accent: '#008751' }),
 
-        /** Confirmation de demande de RDV — sans CTA "réserver" (redondant et illogique) */
+        /** Confirmation de demande de RDV : sans CTA "réserver" (redondant et illogique) */
         rdvConfirmation: (clientName: string, service: string, date: string | null, timeSlot: string, contactMethod: string, aiMessage: string, clientMessage: string = '') => EMAIL_WRAPPER(`
         <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 22px;">
@@ -517,7 +517,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
                 Vous recevrez un email de confirmation avec tous les détails.
             </p>
         </div>
-    `, locale, { heroEmoji: '✅', heroTitle: 'Demande de rendez-vous reçue', preheader: 'Votre demande a bien été enregistrée — un agent vous confirme le créneau sous 24 h.', accent: '#008751' }),
+    `, locale, { heroEmoji: '✅', heroTitle: 'Demande de rendez-vous reçue', preheader: 'Votre demande a bien été enregistrée : un agent vous confirme le créneau sous 24 h.', accent: '#008751' }),
 
         /** Notification to agents/admin for new lead */
         newLeadNotification: (leadName: string, leadEmail: string, score: number, service: string, source: string) => EMAIL_WRAPPER(`
@@ -541,9 +541,9 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
             </tr>
         </table>
         ${emailButton(`${SITE_URL}/agent/leads`, t.viewDashboard, '#C9A84C')}
-    `, 'fr', { heroEmoji: '🔔', heroTitle: `${t.newLead} — ${score}%`, accent: score >= 70 ? '#008751' : '#C9A84C', preheader: `${leadName} · ${service} · score ${score}%` }),
+    `, 'fr', { heroEmoji: '🔔', heroTitle: `${t.newLead} : ${score}%`, accent: score >= 70 ? '#008751' : '#C9A84C', preheader: `${leadName} · ${service} · score ${score}%` }),
 
-        /** Notification admin — nouvelle demande de RDV (sans score Oracle) */
+        /** Notification admin : nouvelle demande de RDV (sans score Oracle) */
         rdvAdminNotification: (clientName: string, clientEmail: string, service: string, date: string | null, timeSlot: string, contactMethod: string, telephone: string = '', clientMessage: string = '', aiReply: string = '') => EMAIL_WRAPPER(`
         <table style="width:100%;border-collapse:collapse;margin:0 0 22px;">
             <tr>
@@ -586,7 +586,7 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         ${emailButton(`${SITE_URL}/agent/agenda`, "Voir dans l'Agenda", '#C9A84C')}
     `, 'fr', { heroEmoji: '📅', heroTitle: 'Nouvelle demande de RDV', accent: '#C9A84C', preheader: `${clientName} · ${service}${date ? ' · ' + date : ''}` }),
 
-        /** Agent reply email — sent from chat console */
+        /** Agent reply email : sent from chat console */
         agentReply: (clientName: string, agentMessage: string, language: string = 'fr') => EMAIL_WRAPPER(`
         <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">${getI18n(language).hello} <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <div style="color:#2D3A55;font-size:14.5px;line-height:1.9;margin:0 0 20px;white-space:pre-wrap;">${agentMessage}</div>
@@ -597,11 +597,11 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         </p>
     `, language, { heroEmoji: '💬', heroTitle: getI18n(language).newMessage, preheader: agentMessage.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 100), accent: '#008751' }),
 
-        /** Invitation à créer un compte — après capture d'un prospect nationalité */
+        /** Invitation à créer un compte : après capture d'un prospect nationalité */
         accountInvite: (clientName: string, registerUrl: string) => EMAIL_WRAPPER(`
         <p style="margin:0 0 18px;font-size:15px;color:#3E4A65;line-height:1.7;">Bonjour <strong style="color:#1B2A4A;">${clientName}</strong>,</p>
         <p style="color:#3E4A65;font-size:14.5px;line-height:1.8;margin:0 0 20px;">
-            Nous avons bien reçu votre intérêt pour la reconnaissance de la nationalité béninoise. Votre dossier est en cours de préparation — vous pouvez <strong style="color:#1B2A4A;">continuer votre démarche</strong> dès maintenant sur notre site.
+            Nous avons bien reçu votre intérêt pour la reconnaissance de la nationalité béninoise. Votre dossier est en cours de préparation : vous pouvez <strong style="color:#1B2A4A;">continuer votre démarche</strong> dès maintenant sur notre site.
         </p>
         <div style="background:#F4FAF6;border-left:3px solid #008751;padding:18px 22px;border-radius:0 12px 12px 0;margin:0 0 26px;">
             <p style="margin:0 0 8px;font-size:13.5px;color:#008751;font-weight:700;">Votre espace personnel vous attend</p>
@@ -611,12 +611,12 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
         </div>
         ${emailButton(registerUrl, 'Créer mon compte sécurisé')}
         <p style="color:#8B94A6;font-size:12.5px;line-height:1.7;margin:14px 0 0;text-align:center;">
-            Pas de pression — cette invitation ne bloque en rien votre démarche.<br/>
+            Pas de pression : cette invitation ne bloque en rien votre démarche.<br/>
             Vous pouvez créer votre compte avant, pendant, ou après la soumission de votre dossier.
         </p>
     `, 'fr', { heroEmoji: '🇧🇯', heroTitle: 'Bienvenue chez Retour Gagnant', preheader: 'Créez votre espace pour suivre votre dossier et échanger avec votre conseiller.', accent: '#008751' }),
 
-        /** Invoice payment reminder — tone escalates with delay */
+        /** Invoice payment reminder : tone escalates with delay */
         invoiceReminder: (
             clientName: string,
             invoiceNumero: string,
@@ -644,21 +644,21 @@ export const getEmailTemplates = async (locale: string = 'fr') => {
                 level = 'firm'
                 emoji = '⏳'
                 accentColor = '#d97706'
-                title = 'Rappel — Facture en attente de règlement'
+                title = 'Rappel : Facture en attente de règlement'
                 intro = `Nous nous permettons de revenir vers vous concernant la facture <strong>${invoiceNumero}</strong> d'un montant de <strong>${montant} ${currency}</strong>, émise il y a ${daysOverdue} jours et toujours en attente de règlement.`
                 closing = 'Nous vous serions reconnaissants de procéder au règlement dans les meilleurs délais, ou de nous contacter si un arrangement est nécessaire.'
             } else {
                 level = 'formal'
                 emoji = '🔴'
                 accentColor = '#dc2626'
-                title = 'Dernier rappel — Facture impayée'
+                title = 'Dernier rappel : Facture impayée'
                 intro = `Malgré nos précédents rappels, la facture <strong>${invoiceNumero}</strong> d'un montant de <strong>${montant} ${currency}</strong> reste impayée depuis ${daysOverdue} jours. Nous vous prions de bien vouloir procéder au règlement dans les plus brefs délais.`
                 closing = 'Sans règlement de votre part sous 7 jours, nous serons contraints d\'envisager des mesures complémentaires. Nous restons disponibles pour toute discussion amiable.'
             }
 
             const urgencyBadge = level === 'formal'
                 ? `<div style="background:#FEF2F2;border:1px solid rgba(220,38,38,0.25);border-radius:8px;padding:12px 16px;margin:0 0 22px;text-align:center;">
-                     <span style="color:#dc2626;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">⚠️ DERNIER RAPPEL — ACTION REQUISE</span>
+                     <span style="color:#dc2626;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">⚠️ DERNIER RAPPEL : ACTION REQUISE</span>
                    </div>`
                 : ''
 

@@ -54,8 +54,7 @@ export async function getProposalById(id: string) {
 
         if (iError) throw iError
 
-        // Galerie multi-images : stockée dans metadata.images (jsonb) —
-        // remontée en champ `images` pour le rendu et l'édition des slides.
+        // Galerie multi-images : stockée dans metadata.images (jsonb)-// remontée en champ `images` pour le rendu et l'édition des slides.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = (items || []).map((it: any) => ({
             ...it,
@@ -86,8 +85,7 @@ export async function getProposalBySecret(secret: string) {
 
         if (iError) throw iError
 
-        // Galerie multi-images : stockée dans metadata.images (jsonb) —
-        // remontée en champ `images` pour le rendu et l'édition des slides.
+        // Galerie multi-images : stockée dans metadata.images (jsonb)-// remontée en champ `images` pour le rendu et l'édition des slides.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = (items || []).map((it: any) => ({
             ...it,

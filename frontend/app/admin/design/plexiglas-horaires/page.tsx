@@ -194,15 +194,15 @@ export default function PlexiglasHorairesPage() {
                 <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4 flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-emerald-500" />
                     <div>
-                        <p className="text-white font-bold text-sm">Lundi — Vendredi</p>
-                        <p className="text-gray-400 text-xs">08h00 — 17h30</p>
+                        <p className="text-white font-bold text-sm">Lundi : Vendredi</p>
+                        <p className="text-gray-400 text-xs">08h00à 17h30</p>
                     </div>
                 </div>
                 <div className="rounded-xl bg-[#C9A84C]/5 border border-[#C9A84C]/20 p-4 flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-[#C9A84C]" />
                     <div>
                         <p className="text-white font-bold text-sm">Samedi</p>
-                        <p className="text-gray-400 text-xs">08h00 — 13h00 (sur RDV)</p>
+                        <p className="text-gray-400 text-xs">08h00à 13h00 (sur RDV)</p>
                     </div>
                 </div>
                 <div className="rounded-xl bg-red-500/5 border border-red-500/20 p-4 flex items-center gap-3">

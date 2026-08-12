@@ -18,7 +18,7 @@ interface Testimonial {
 
 /**
  * Preuve sociale RÉELLE uniquement : témoignages modérés depuis /api/testimonials
- * (mêmes données que l'admin). Ne rend RIEN s'il n'y en a aucun — aucune preuve
+ * (mêmes données que l'admin). Ne rend RIEN s'il n'y en a aucun : aucune preuve
  * fictive n'est jamais affichée. Optionnellement priorise un service donné.
  */
 export default function SocialProof({ service, title = "Ils nous ont fait confiance", max = 3 }: { service?: string; title?: string; max?: number }) {

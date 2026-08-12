@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
             const to = await getStaffToLine()
             await sendEmail({
                 to,
-                subject: `Nouvelle demande de service — ${service_title}`,
+                subject: `Nouvelle demande de service : ${service_title}`,
                 context: 'service_request',
                 relatedId: data.id,
                 html: `

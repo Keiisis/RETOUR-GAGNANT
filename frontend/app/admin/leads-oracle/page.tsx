@@ -33,9 +33,9 @@ const answerLabels: Record<string, { label: string; icon: typeof MapPin }> = {
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined, options?: Intl.DateTimeFormatOptions) => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d = new Date(dateStr)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', options)
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', options)
 }
 
 export default function AdminLeadsOraclePage() {
@@ -409,7 +409,7 @@ export default function AdminLeadsOraclePage() {
                                             </div>
                                         </div>
 
-                                        {/* Oracle answers — expandable */}
+                                        {/* Oracle answers : expandable */}
                                         <AnimatePresence>
                                             {expandedId === lead.id && (
                                                 <motion.div
@@ -423,7 +423,7 @@ export default function AdminLeadsOraclePage() {
                                                         <div className="flex items-center gap-2 mb-3">
                                                             <Sparkles size={12} className="text-amber-400" />
                                                             <p className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.2em]">
-                                                                Réponses Oracle — {lead.client_prenom} {lead.client_nom}
+                                                                Réponses Oracle : {lead.client_prenom} {lead.client_nom}
                                                             </p>
                                                         </div>
                                                         {renderOracleAnswers(lead)}
@@ -450,7 +450,7 @@ export default function AdminLeadsOraclePage() {
                 )}
             </div>
 
-            {/* Drawer de composition email — monté hors du scroll */}
+            {/* Drawer de composition email : monté hors du scroll */}
             <LeadReplyDrawer
                 lead={selectedLead}
                 onClose={() => setSelectedLead(null)}

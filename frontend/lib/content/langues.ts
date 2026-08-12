@@ -3,7 +3,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 export const DEFAULT_LANGUES: ServiceLandingContent = {
     hero_badge: "Langues & Racines",
     hero_title: "La langue de vos ancêtres est la première porte du retour",
-    hero_subtitle: "Le fon, le yoruba, le goun ou le mina portent la mémoire, l'humour et la vision du monde de vos ancêtres. Les apprendre, c'est renouer le fil que l'histoire a interrompu — en présentiel au Bénin ou en visioconférence.",
+    hero_subtitle: "Le fon, le yoruba, le goun ou le mina portent la mémoire, l'humour et la vision du monde de vos ancêtres. Les apprendre, c'est renouer le fil que l'histoire a interrompu : en présentiel au Bénin ou en visioconférence.",
     hero_chips: ["Locuteurs natifs", "Fon · Yoruba · Goun · Mina", "Présentiel ou visio", "Parcours personnalisé"],
     hero_image: "/assets/icones/icone_Langues_Racines.png",
     cta1_label: "Choisir mon format",
@@ -20,7 +20,7 @@ export const DEFAULT_LANGUES: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Nos parcours sont animés par des locuteurs natifs et pensés pour la diaspora — vocabulaire du quotidien, usages culturels, salutations et codes sociaux — en présentiel au Bénin ou en visioconférence où que vous soyez.",
+    intro_text: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Nos parcours sont animés par des locuteurs natifs et pensés pour la diaspora : vocabulaire du quotidien, usages culturels, salutations et codes sociaux : en présentiel au Bénin ou en visioconférence où que vous soyez.",
     etapes_title: "Comment ça se passe",
     etapes: [
         { num: "01", title: "Premier rendez-vous", desc: "Nous définissons ensemble votre langue, votre niveau et vos objectifs." },
@@ -49,7 +49,7 @@ export const DEFAULT_LANGUES: ServiceLandingContent = {
     features_intro: "Des parcours pensés pour la diaspora, à votre rythme.",
     features: [
         "Cours animés par des locuteurs natifs qualifiés",
-        "Fon, Yoruba, Goun, Mina — selon votre lignée et votre région d'origine",
+        "Fon, Yoruba, Goun, Mina : selon votre lignée et votre région d'origine",
         "Parcours débutant à avancé, adapté à votre rythme",
         "Immersion culturelle : proverbes, salutations, codes sociaux",
         "En présentiel au Bénin ou en visioconférence depuis l'étranger",

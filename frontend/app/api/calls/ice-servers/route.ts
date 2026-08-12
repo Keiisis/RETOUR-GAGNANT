@@ -7,13 +7,13 @@
 //
 //  Trois niveaux, du plus léger au plus robuste :
 //
-//   1. STUN public (Google) — gratuit, sans compte. Suffit dès qu'un
+//   1. STUN public (Google) : gratuit, sans compte. Suffit dès qu'un
 //      des deux interlocuteurs est joignable directement.
-//   2. TURN public (Open Relay Project de Metered) — gratuit, sans
+//   2. TURN public (Open Relay Project de Metered) : gratuit, sans
 //      compte. Relaie la voix quand les deux côtés sont derrière un
 //      réseau opérateur qui masque leur adresse. Service au mieux :
 //      aucun engagement de disponibilité.
-//   3. TURN propre à l'agence — si `turn_url` / `turn_username` /
+//   3. TURN propre à l'agence : si `turn_url` / `turn_username` /
 //      `turn_credential` sont renseignés dans `settings`, ils
 //      REMPLACENT le relais public.
 //
@@ -47,12 +47,12 @@ const STUN_PUBLIC: IceServer[] = [
 ]
 
 /**
- * Relais public gratuit — Open Relay Project (Metered).
+ * Relais public gratuit : Open Relay Project (Metered).
  * Les trois ports couvrent les réseaux les plus filtrés :
  *   80    : UDP, le plus rapide ;
  *   443   : UDP sur un port toujours ouvert ;
  *   443/tcp : dernier recours derrière un pare-feu d'entreprise.
- * Identifiants publics et documentés — ce ne sont pas des secrets.
+ * Identifiants publics et documentés : ce ne sont pas des secrets.
  */
 const TURN_PUBLIC: IceServer[] = [
     // Point d'entree historique.
@@ -67,7 +67,7 @@ const TURN_PUBLIC: IceServer[] = [
     },
     // Point d'entree actuel du meme projet. Les deux sont declares : si
     // l'un ne repond plus, l'autre reste disponible. Un serveur ICE muet
-    // ne bloque rien — le navigateur essaie tous les candidats en parallele.
+    // ne bloque rien : le navigateur essaie tous les candidats en parallele.
     {
         urls: [
             'turn:staticauth.openrelay.metered.ca:80',

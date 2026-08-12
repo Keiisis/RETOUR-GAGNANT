@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
                 { id: 6, label: 'Transmission au dossier nationalité', status: 'pending', date: null, note: '' },
             ],
             progression: Math.round((1 / 6) * 100),
-            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${payment_provider} — TX: ${payment_tx_id}`,
+            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${payment_provider} : TX: ${payment_tx_id}`,
         })
 
         // Alerte email équipe + statut « Payé » au Classement (fire-and-forget)
@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
         await supabase.from('messages').insert([{
             nom: `${app.prenom} ${app.nom}`,
             email: app.email,
-            sujet: `Recherche Ancestrale commandée — Dossier ${ref}`,
-            message: `${app.prenom} ${app.nom} a commandé le service Recherche Ancestrale.\n\nDossier nationalité : ${ref}\nRéférence recherche : ${searchRef}\nMontant payé : ${amount} EUR (${amount_xof} XOF)\nProvider : ${payment_provider} — TX: ${payment_tx_id}\n\nDocuments ancestraux à retrouver :\n${(app.missing_docs || []).filter((d: { ancestral: boolean; label: string }) => d.ancestral).map((d: { label: string }) => `• ${d.label}`).join('\n')}`,
+            sujet: `Recherche Ancestrale commandée : Dossier ${ref}`,
+            message: `${app.prenom} ${app.nom} a commandé le service Recherche Ancestrale.\n\nDossier nationalité : ${ref}\nRéférence recherche : ${searchRef}\nMontant payé : ${amount} EUR (${amount_xof} XOF)\nProvider : ${payment_provider} : TX: ${payment_tx_id}\n\nDocuments ancestraux à retrouver :\n${(app.missing_docs || []).filter((d: { ancestral: boolean; label: string }) => d.ancestral).map((d: { label: string }) => `• ${d.label}`).join('\n')}`,
             type: 'recherche-ancestrale',
             lu: false,
         }])
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
             await transporter.sendMail({
                 from: `"${smtp.smtp_from_name || siteName}" <${smtp.smtp_from_email || smtp.smtp_user}>`,
                 to: app.email,
-                subject: `Recherche Ancestrale confirmée — Référence ${searchRef}`,
+                subject: `Recherche Ancestrale confirmée : Référence ${searchRef}`,
                 html: `
                 <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:650px;margin:0 auto;background:#fff;border:1px solid #d4d4d4;">
                     <div style="background:linear-gradient(135deg,#006b40,#008751);padding:26px 40px;text-align:center;">
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
                     <div style="padding:32px 40px;color:#1a1a1a;font-size:14px;line-height:1.85;">
                         <p>Cher(e) ${app.prenom} ${app.nom},</p>
                         <p>Nous confirmons la bonne réception de votre paiement pour le service <strong>Recherche Ancestrale</strong>, rattaché à votre dossier de nationalité béninoise <strong>${ref}</strong>.</p>
-                        <p>Notre équipe va immédiatement mobiliser ses ressources — archives officielles, bases de données spécialisées et associations partenaires — pour retrouver les actes de vos ancêtres.</p>
+                        <p>Notre équipe va immédiatement mobiliser ses ressources : archives officielles, bases de données spécialisées et associations partenaires : pour retrouver les actes de vos ancêtres.</p>
                         <p>Vous recevrez les résultats de nos recherches dès qu'ils seront disponibles. Ces documents seront directement intégrés à votre dossier de nationalité.</p>
                         <div style="margin:20px 0;padding:14px 20px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb;">
                             <p style="margin:0;font-size:12px;color:#6b7280;">Référence dossier nationalité : <strong style="color:#1a1a1a;">${ref}</strong></p>

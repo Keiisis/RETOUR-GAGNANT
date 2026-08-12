@@ -73,7 +73,7 @@ export default function AgentNationalitePage() {
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
 
     // Envoie au client un lien sécurisé pour compléter/redéposer ses documents
-    // (dossier déjà payé — aucun paiement redemandé).
+    // (dossier déjà payé : aucun paiement redemandé).
     const sendRelance = async (id: string, mode: 'docs' | 'full' = 'docs') => {
         const stateKey = `${id}:${mode}`
         if (relanceState[stateKey] === 'sending') return
@@ -231,7 +231,7 @@ export default function AgentNationalitePage() {
                                         <p className="text-[10px] text-gray-500">
                                             {app.submitted_at && !isNaN(new Date(app.submitted_at).getTime())
                                                 ? new Date(app.submitted_at).toLocaleDateString('fr-FR')
-                                                : '—'}
+                                                : '-'}
                                         </p>
                                     </td>
                                     <td className="p-4">
@@ -313,7 +313,7 @@ export default function AgentNationalitePage() {
                                         <p className="text-xs text-gray-500">
                                             Soumis le {showDetail.submitted_at && !isNaN(new Date(showDetail.submitted_at).getTime())
                                                 ? new Date(showDetail.submitted_at).toLocaleString('fr-FR')
-                                                : '—'}
+                                                : '-'}
                                         </p>
                                     </div>
                                 </div>

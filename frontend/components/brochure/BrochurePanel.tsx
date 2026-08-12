@@ -39,13 +39,13 @@ const DEPLIANT_IMAGES = {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   CONTENU TEXTUEL — FRANÇAIS
+   CONTENU TEXTUEL : FRANÇAIS
 ══════════════════════════════════════════════════════════════ */
 
 const FR = {
-    s1_title: 'I — PRÉSENTATION GÉNÉRALE DE L\'AGENCE',
-    s1_body: 'L\'Agence Retour Gagnant Bénin est une institution privée de référence, dédiée à l\'accompagnement technique et opérationnel du retour des Afro-descendants vers le Bénin.\n\nPortée par une équipe aux compétences pluridisciplinaires — juridiques, administratives, économiques et interculturelles — l\'Agence maîtrise l\'ensemble des paramètres qui conditionnent la réussite d\'un retour : connaissance approfondie du cadre légal et foncier béninois, maîtrise des procédures administratives et consulaires, expertise en montage de projets d\'investissement, et capacité à mobiliser un réseau dense de partenaires institutionnels et privés rigoureusement sélectionnés.\n\nQu\'il s\'agisse d\'un retour définitif, d\'une installation partielle, d\'un investissement sectoriel, d\'un transfert de compétences ou d\'un partenariat économique, l\'Agence déploie une méthodologie d\'accompagnement structurée, adaptée et orientée vers des résultats concrets.\n\nAncrée dans la réalité historique et mémorielle du Bénin, pionnier de la réconciliation mémorielle, l\'Agence Retour Gagnant Bénin est l\'institution qui transforme une aspiration profonde en projet viable, un désir de réconciliation en réalité concrète, et un retour en une véritable expérience.',
-    s2_title: 'II — LES SERVICES DE RGB',
+    s1_title: 'I : PRÉSENTATION GÉNÉRALE DE L\'AGENCE',
+    s1_body: 'L\'Agence Retour Gagnant Bénin est une institution privée de référence, dédiée à l\'accompagnement technique et opérationnel du retour des Afro-descendants vers le Bénin.\n\nPortée par une équipe aux compétences pluridisciplinaires : juridiques, administratives, économiques et interculturelles : l\'Agence maîtrise l\'ensemble des paramètres qui conditionnent la réussite d\'un retour : connaissance approfondie du cadre légal et foncier béninois, maîtrise des procédures administratives et consulaires, expertise en montage de projets d\'investissement, et capacité à mobiliser un réseau dense de partenaires institutionnels et privés rigoureusement sélectionnés.\n\nQu\'il s\'agisse d\'un retour définitif, d\'une installation partielle, d\'un investissement sectoriel, d\'un transfert de compétences ou d\'un partenariat économique, l\'Agence déploie une méthodologie d\'accompagnement structurée, adaptée et orientée vers des résultats concrets.\n\nAncrée dans la réalité historique et mémorielle du Bénin, pionnier de la réconciliation mémorielle, l\'Agence Retour Gagnant Bénin est l\'institution qui transforme une aspiration profonde en projet viable, un désir de réconciliation en réalité concrète, et un retour en une véritable expérience.',
+    s2_title: 'II : LES SERVICES DE RGB',
     s2_items: [
         { title: '1. Accueil et orientation personnalisée', body: 'Chaque personne ou famille bénéficie d\'un interlocuteur dédié qui évalue sa situation, ses aspirations, ses ressources et son projet de retour.' },
         { title: '2. Accompagnement administratif', body: 'Obtention ou renouvellement de documents d\'identité, démarches consulaires, régularisation de la situation administrative au Bénin, obtention de la nationalité béninoise pour les Afro-descendants éligibles.' },
@@ -54,7 +54,7 @@ const FR = {
         { title: '5. Voyages de découverte et d\'immersion', body: 'Avant de décider, il faut voir. L\'Agence organise des voyages incluant visites de sites, rencontres avec des retournants, réunions avec des institutions et entrepreneurs locaux.' },
         { title: '6. Recherche généalogique', body: 'Le retour au Bénin pour les Afro-descendants dépasse un simple projet de vie : c\'est une véritable quête identitaire. RGB les accompagne dans la redécouverte de leurs origines (lignées, territoires, noms, groupes ethniques).' },
     ],
-    s3_title: 'III — NOS PARTENAIRES STRATÉGIQUES',
+    s3_title: 'III : NOS PARTENAIRES STRATÉGIQUES',
     s3_intro: 'Chaque partenaire est choisi sur la base de trois critères non négociables : expertise avérée, fiabilité démontrée et engagement réel en faveur de la réussite des Afro-descendants.',
     s3_items: [
         { label: 'Institutionnels', body: 'Ministères et agences publiques fournissant le cadre légal, administratif et réglementaire.' },
@@ -67,13 +67,13 @@ const FR = {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   CONTENU TEXTUEL — ENGLISH
+   CONTENU TEXTUEL : ENGLISH
 ══════════════════════════════════════════════════════════════ */
 
 const EN = {
-    s1_title: 'I — GENERAL PRESENTATION OF THE AGENCY',
-    s1_body: 'The Agence Retour Gagnant Bénin — RGB is a leading private institution dedicated to providing technical and operational support for the return of Afro-descendants to Benin.\n\nDriven by a multidisciplinary team with expertise in legal, administrative, economic, and intercultural fields, the Agency has full command of all the key factors that determine a successful return: in-depth knowledge of Benin\'s legal and land frameworks, mastery of administrative and consular procedures, strong expertise in investment project development, and the ability to mobilize a robust network of carefully selected institutional and private partners.\n\nWhether it involves a permanent return, partial relocation, sector-specific investment, skills transfer, or economic partnership, Return Winning Benin Agency implements a structured and tailored support methodology focused on delivering concrete results.\n\nRooted in the historical and memorial reality of Benin — a pioneer in memorial reconciliation — RGB is the institution that transforms a deep aspiration into a viable project, a desire for reconciliation into tangible reality, and a return into a truly meaningful experience.',
-    s2_title: 'II — RGB SERVICES',
+    s1_title: 'I : GENERAL PRESENTATION OF THE AGENCY',
+    s1_body: 'The Agence Retour Gagnant Bénin : RGB is a leading private institution dedicated to providing technical and operational support for the return of Afro-descendants to Benin.\n\nDriven by a multidisciplinary team with expertise in legal, administrative, economic, and intercultural fields, the Agency has full command of all the key factors that determine a successful return: in-depth knowledge of Benin\'s legal and land frameworks, mastery of administrative and consular procedures, strong expertise in investment project development, and the ability to mobilize a robust network of carefully selected institutional and private partners.\n\nWhether it involves a permanent return, partial relocation, sector-specific investment, skills transfer, or economic partnership, Return Winning Benin Agency implements a structured and tailored support methodology focused on delivering concrete results.\n\nRooted in the historical and memorial reality of Benin : a pioneer in memorial reconciliation : RGB is the institution that transforms a deep aspiration into a viable project, a desire for reconciliation into tangible reality, and a return into a truly meaningful experience.',
+    s2_title: 'II : RGB SERVICES',
     s2_items: [
         { title: '1. Personalized Reception & Orientation', body: 'Every individual or family is assigned a dedicated advisor who assesses their situation, aspirations, resources, and return project.' },
         { title: '2. Administrative Support', body: 'Obtaining or renewing identity documents, handling consular processes, regularizing administrative status in Benin, and acquiring Beninese nationality for eligible Afro-descendants.' },
@@ -82,7 +82,7 @@ const EN = {
         { title: '5. Discovery & Immersion Trips', body: 'Before making a decision, one must experience the environment. RGB organizes discovery trips including site visits, meetings with returnees, and exploration of residential areas.' },
         { title: '6. Genealogical Research', body: 'The return to Benin for Afro-descendants goes beyond a simple life project; it is a true quest for identity. RGB supports them in rediscovering their origins (lineages, territories, names, and ethnic groups).' },
     ],
-    s3_title: 'III — OUR STRATEGIC PARTNERS',
+    s3_title: 'III : OUR STRATEGIC PARTNERS',
     s3_intro: 'Each partner is chosen on the basis of three non-negotiable criteria: proven expertise, demonstrated reliability, and genuine commitment to the success of returning Afro-descendants.',
     s3_items: [
         { label: 'Institutional Partners', body: 'Ministries and public agencies providing the legal, administrative and policy framework for your return.' },
@@ -162,7 +162,7 @@ function QRDisplay({ size }: { size: number }) {
     return <QRCode value="https://www.retourgagnantbenin.bj" size={size} fgColor={DARK} bgColor="#ffffff" level="M" />
 }
 
-/** Image encadrée dorée pour les pages intérieures — affichage complet */
+/** Image encadrée dorée pour les pages intérieures : affichage complet */
 function DepliantImage({ src, s, w, h, radius = 6, caption, captionSub, position = 'center' }: { src: string; s: number; w: number; h: number; radius?: number; caption?: string; captionSub?: string; position?: string }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 * s, flexShrink: 0 }}>
@@ -192,7 +192,7 @@ function DepliantImage({ src, s, w, h, radius = 6, caption, captionSub, position
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PANEL 1 RECTO — COUVERTURE (COVER)
+   PANEL 1 RECTO : COUVERTURE (COVER)
    Logo agrandi, nom centré, mise en page impactante
 ══════════════════════════════════════════════════════════════ */
 
@@ -211,7 +211,7 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
 
                 <CornerBrackets s={s} arm={32} />
 
-                {/* ── LOGO + ORG — centré verticalement ── */}
+                {/* ── LOGO + ORG : centré verticalement ── */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 80 * s, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18 * s }}>
                     {/* Médaillon logo AGRANDI */}
                     <div style={{ width: 170 * s, height: 170 * s, borderRadius: 28 * s, border: `1.5px solid ${GOLD}40`, background: `rgba(201,168,76,0.04)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 60px rgba(201,168,76,0.08)` }}>
@@ -252,7 +252,7 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                     RGB
                 </div>
 
-                {/* Bande bas — AGRANDIE + CONTRASTE AMÉLIORÉ */}
+                {/* Bande bas : AGRANDIE + CONTRASTE AMÉLIORÉ */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 18 * s, paddingBottom: 24 * s, borderTop: `1.5px solid ${GOLD}40`, background: 'rgba(0,0,0,0.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 * s }}>
                     <div style={{ color: GOLD, fontSize: 12 * s, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT }}>
                         VOTRE RETOUR, NOTRE MISSION
@@ -261,7 +261,7 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                         www.retourgagnantbenin.bj
                     </div>
                     <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 9 * s, letterSpacing: '0.07em', fontFamily: FONT }}>
-                        Haie-Vive Cocotiers, Cotonou — BÉNIN
+                        Haie-Vive Cocotiers, Cotonou : BÉNIN
                     </div>
                 </div>
             </div>
@@ -271,7 +271,7 @@ export const Panel1Recto = forwardRef<HTMLDivElement, { scale?: number }>(
 Panel1Recto.displayName = 'Panel1Recto'
 
 /* ══════════════════════════════════════════════════════════════
-   HELPER — PANNEAU TEXTE (réutilisé FR + EN)
+   HELPER : PANNEAU TEXTE (réutilisé FR + EN)
    Avec 6 services, images du Bénin, header agrandi
 ══════════════════════════════════════════════════════════════ */
 
@@ -327,7 +327,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
     const colW = (W - colPad * 2 - colGap) / 2
     const headerH = 75 * s
     const footerH = 30 * s
-    const imgStripH = 115 * s   // Bande images — réduite pour laisser de la place au texte agrandi
+    const imgStripH = 115 * s   // Bande images : réduite pour laisser de la place au texte agrandi
     const imgGap = 10 * s
     const textTop = 4 * s + headerH + 10 * s
     const textBottom = footerH + imgStripH + 6 * s
@@ -341,7 +341,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
             {/* Bordure haut dorée */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4 * s, background: `linear-gradient(90deg, ${GOLD}, ${GOLD_L}, ${GOLD})` }} />
 
-            {/* Header — bande noire AGRANDIE */}
+            {/* Header : bande noire AGRANDIE */}
             <div style={{ position: 'absolute', top: 4 * s, left: 0, right: 0, height: headerH, background: TEXT_DARK, display: 'flex', alignItems: 'center', paddingLeft: colPad, paddingRight: colPad, gap: 12 * s }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/images/logo-transparent.png" alt="RGB" style={{ width: 42 * s, height: 42 * s, objectFit: 'contain', opacity: 0.95 }} />
@@ -414,7 +414,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                         </div>
                     </div>
 
-                    {/* Contacts épinglés en bas — TOUJOURS VISIBLES */}
+                    {/* Contacts épinglés en bas : TOUJOURS VISIBLES */}
                     <div style={{ flexShrink: 0, paddingTop: 5 * s, borderTop: `1.5px solid ${GOLD}50`, marginTop: 4 * s }}>
                         <div style={{ color: TEXT_DARK, fontSize: 8 * s, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 2 * s }}>Contact</div>
                         <div style={{ color: TEXT_DARK, fontSize: 7.5 * s, fontWeight: 700, lineHeight: 1.5, letterSpacing: '0.02em' }}>+229 01 60 32 21 21 · +229 01 94 35 50 50</div>
@@ -424,7 +424,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                 </div>
             </div>
 
-            {/* ══════ BANDE IMAGES PLEINE LARGEUR — Photos du Bénin ══════ */}
+            {/* ══════ BANDE IMAGES PLEINE LARGEUR : Photos du Bénin ══════ */}
             <div style={{
                 position: 'absolute',
                 bottom: footerH,
@@ -443,7 +443,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
                 <DepliantImage src={images.bottom} s={s} w={imgW / s} h={90} radius={6} caption={captions.bottom.main} captionSub={captions.bottom.sub} position={imgPositions?.bottom || 'center'} />
             </div>
 
-            {/* Footer — AGRANDI + plus lisible */}
+            {/* Footer : AGRANDI + plus lisible */}
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: footerH, background: TEXT_DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14 * s }}>
                 <div style={{ color: GOLD, fontSize: 7.5 * s, letterSpacing: '0.1em', fontWeight: 600 }}>contact@retourgagnantbenin.bj</div>
                 <div style={{ width: 1.2 * s, height: 12 * s, background: `${GOLD}50` }} />
@@ -456,7 +456,7 @@ function TextPanelInner({ s, content, lang, images, imgPositions }: { s: number;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PANEL 1 VERSO — FRANÇAIS
+   PANEL 1 VERSO : FRANÇAIS
    Images: Ganvié (haut) + Statue Amazone (bas)
 ══════════════════════════════════════════════════════════════ */
 
@@ -470,7 +470,7 @@ export const Panel1Verso = forwardRef<HTMLDivElement, { scale?: number }>(
 Panel1Verso.displayName = 'Panel1Verso'
 
 /* ══════════════════════════════════════════════════════════════
-   PANEL 2 VERSO — ENGLISH
+   PANEL 2 VERSO : ENGLISH
    Images: Éléphants Pendjari (haut) + Porte du Non-Retour (bas)
 ══════════════════════════════════════════════════════════════ */
 
@@ -484,7 +484,7 @@ export const Panel2Verso = forwardRef<HTMLDivElement, { scale?: number }>(
 Panel2Verso.displayName = 'Panel2Verso'
 
 /* ══════════════════════════════════════════════════════════════
-   PANEL 2 RECTO — 4e DE COUVERTURE (BACK)
+   PANEL 2 RECTO : 4e DE COUVERTURE (BACK)
    Logo agrandi, QR centré, "SCANNEZ MOI POUR NOUS DECOUVRIR"
 ══════════════════════════════════════════════════════════════ */
 
@@ -513,7 +513,7 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                     <HRule s={s} w={260 * s} opacity={0.4} />
                 </div>
 
-                {/* QR Code central — bien centré */}
+                {/* QR Code central : bien centré */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-42%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 * s }}>
                     <div style={{ padding: 14 * s, background: '#ffffff', borderRadius: 12 * s, boxShadow: `0 0 0 2px ${GOLD}40, 0 10px 50px rgba(0,0,0,0.5), 0 0 40px ${GOLD}12` }}>
                         <QRDisplay size={Math.round(165 * s)} />
@@ -523,12 +523,12 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                     </div>
                 </div>
 
-                {/* Coordonnées — AGRANDIES + plus lisibles */}
+                {/* Coordonnées : AGRANDIES + plus lisibles */}
                 <div style={{ position: 'absolute', bottom: 65 * s, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 * s }}>
                     <HRule s={s} w={320 * s} opacity={0.35} />
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 * s }}>
                         {[
-                            { icon: '', text: 'Haie-Vive Cocotiers, Carré N°1158, Cotonou — BÉNIN' },
+                            { icon: '', text: 'Haie-Vive Cocotiers, Carré N°1158, Cotonou : BÉNIN' },
                             { icon: '', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
                             { icon: '', text: 'contact@retourgagnantbenin.bj' },
                             { icon: '', text: 'www.retourgagnantbenin.bj' },
@@ -541,7 +541,7 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
                     </div>
                 </div>
 
-                {/* Slogan bas — AGRANDI */}
+                {/* Slogan bas : AGRANDI */}
                 <div style={{ position: 'absolute', bottom: 22 * s, left: 0, right: 0, textAlign: 'center', color: GOLD, fontSize: 11 * s, fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', fontFamily: "'Cinzel', " + FONT }}>
                     VOTRE RETOUR, NOTRE MISSION
                 </div>
@@ -552,7 +552,7 @@ export const Panel2Recto = forwardRef<HTMLDivElement, { scale?: number }>(
 Panel2Recto.displayName = 'Panel2Recto'
 
 /* ══════════════════════════════════════════════════════════════
-   A3 VERSO — FULL PAGE MONOLINGUAL (FR or EN)
+   A3 VERSO : FULL PAGE MONOLINGUAL (FR or EN)
    Two A4 halves side by side with fold line
 ══════════════════════════════════════════════════════════════ */
 
@@ -592,13 +592,13 @@ function A3Image({
 // Strings used inside A3VersoInner (kept here to keep JSX readable)
 const PASSPORT_FR = 'Passeport de la République du Bénin'
 const PASSPORT_EN = 'Republic of Benin Passport'
-const REGISTER_FR = "Acte d'ancestralité — Registre historique"
-const REGISTER_EN = 'Certificate of Ancestry — Historical Registry'
+const REGISTER_FR = "Acte d'ancestralité : Registre historique"
+const REGISTER_EN = 'Certificate of Ancestry : Historical Registry'
 const FOOTER_ITEMS = [
     { icon: '', text: '+229 01 60 32 21 21  ·  +229 01 94 35 50 50' },
     { icon: '', text: 'contact@retourgagnantbenin.bj' },
     { icon: '◆', text: 'www.retourgagnantbenin.bj' },
-    { icon: '●', text: 'Haie-Vive Cocotiers, Cotonou — BÉNIN' },
+    { icon: '●', text: 'Haie-Vive Cocotiers, Cotonou : BÉNIN' },
 ]
 
 function A3VersoInner({ s, content, lang }: { s: number; content: ContentData; lang: 'FR' | 'EN' }) {

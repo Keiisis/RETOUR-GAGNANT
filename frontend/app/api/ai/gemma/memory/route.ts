@@ -9,7 +9,7 @@ function sb() {
     )
 }
 
-// GET — lire toutes les mémoires
+// GET : lire toutes les mémoires
 export async function GET(req: NextRequest) {
     const garde = await requireStaff(req, 'agent')
     if (!garde.ok) return garde.response!
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ memory: data || [] })
 }
 
-// POST — ajouter une mémoire
+// POST : ajouter une mémoire
 export async function POST(req: NextRequest) {
     const garde = await requireStaff(req, 'agent')
     if (!garde.ok) return garde.response!
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ entry: data })
 }
 
-// DELETE — supprimer une mémoire
+// DELETE : supprimer une mémoire
 export async function DELETE(req: NextRequest) {
     const garde = await requireStaff(req, 'agent')
     if (!garde.ok) return garde.response!

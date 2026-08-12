@@ -39,7 +39,7 @@ const orderStatus = (s: string | null) => {
         pending: { label: 'En attente', color: '#F59E0B' },
         failed: { label: 'Échouée', color: '#EF4444' },
     }
-    return map[s || ''] || { label: s || '—', color: '#64748B' }
+    return map[s || ''] || { label: s || '-', color: '#64748B' }
 }
 const fmt = (a: number | null, c: string | null) => formatPrice(Number(a || 0), (c as CurrencyCode) || 'XOF')
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })

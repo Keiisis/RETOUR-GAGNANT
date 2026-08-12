@@ -7,7 +7,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
 
-// PUT — mettre à jour un sponsor
+// PUT : mettre à jour un sponsor
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -43,7 +43,7 @@ export async function PUT(
     }
 }
 
-// DELETE — supprimer un sponsor
+// DELETE : supprimer un sponsor
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

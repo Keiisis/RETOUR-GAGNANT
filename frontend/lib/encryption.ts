@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════════════════
-// 🔐 Chiffrement AES-256-GCM — Fichiers sensibles + secrets TOTP
-// Node.js crypto (serveur uniquement — ne pas importer côté client)
+// 🔐 Chiffrement AES-256-GCM : Fichiers sensibles + secrets TOTP
+// Node.js crypto (serveur uniquement : ne pas importer côté client)
 // ══════════════════════════════════════════════════════════════
 
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto'

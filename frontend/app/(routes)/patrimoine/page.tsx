@@ -5,7 +5,7 @@ import PatrimoineList from '@/components/PatrimoineList';
 export default function PatrimoinePage() {
     return (
         <div className="min-h-screen bg-white text-slate-900">
-            {/* Hero — clair, charte Bénin, Playfair */}
+            {/* Hero : clair, charte Bénin, Playfair */}
             <section className="relative overflow-hidden">
                 <div className="absolute -inset-x-8 -top-24 h-[130%] bg-[radial-gradient(55%_55%_at_12%_0%,rgba(0,135,81,0.16),transparent),radial-gradient(42%_45%_at_92%_2%,rgba(252,209,22,0.16),transparent),linear-gradient(180deg,#FBFDFC,#FFFFFF)]" />
                 <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-10 text-center">

@@ -31,7 +31,7 @@ function wrapEmail(subject: string, bodyHtml: string, unsubUrl: string): string 
 </body></html>`
 }
 
-// GET /api/admin/newsletter — stats + dernières campagnes
+// GET /api/admin/newsletter : stats + dernières campagnes
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     })
 }
 
-// POST /api/admin/newsletter — envoi d'une campagne à tous les abonnés actifs
+// POST /api/admin/newsletter : envoi d'une campagne à tous les abonnés actifs
 // Body : { subject: string, html: string }
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')

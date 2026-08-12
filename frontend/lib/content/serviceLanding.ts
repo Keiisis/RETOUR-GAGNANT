@@ -21,7 +21,7 @@ export interface ServiceLandingContent {
     cta1_href: string
     cta2_label: string
     cta2_href: string
-    // Piliers (bande verte) — 4 icônes fixes
+    // Piliers (bande verte) : 4 icônes fixes
     piliers: Pilier[]
     // Intro + étapes
     intro_eyebrow: string
@@ -41,7 +41,7 @@ export interface ServiceLandingContent {
     features_intro: string
     features: string[]
     features_note: string
-    // Réassurance — 3 icônes fixes
+    // Réassurance : 3 icônes fixes
     reassurance: Reassurance[]
     // FAQ
     faq: FaqQA[]

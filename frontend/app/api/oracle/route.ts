@@ -237,7 +237,7 @@ Example format: ["Insight 1.", "Insight 2.", "Insight 3."]`
                     const aiReply = `Félicitations pour avoir complété le test de l'Oracle. Votre profil indique un score d'éligibilité de ${finalScore}%. Nous sommes ravis de vous accompagner vers "${rec.service}".`;
                     await sendEmail({
                         to: email,
-                        subject: `Retour Gagnant — Les résultats de l'Oracle`,
+                        subject: `Retour Gagnant : Les résultats de l'Oracle`,
                         html: await (await getEmailTemplates('fr')).autoReply(clientName || 'Cher client', aiReply),
                         context: 'auto_reply',
                         relatedId: leadId,
@@ -248,7 +248,7 @@ Example format: ["Insight 1.", "Insight 2.", "Insight 3."]`
                 if (config.adminEmail) {
                     await sendEmail({
                         to: config.adminEmail,
- subject: `Nouveau Lead Oracle — ${clientName || email}`,
+ subject: `Nouveau Lead Oracle : ${clientName || email}`,
                         html: await (await getEmailTemplates('fr')).newLeadNotification(clientName || 'Inconnu', email || 'Inconnu', finalScore, rec.service, 'L\'Oracle'),
                         context: 'lead_notification',
                         relatedId: leadId,

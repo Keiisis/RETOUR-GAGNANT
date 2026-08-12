@@ -12,7 +12,7 @@ const supabase = createClient(
 
 // Les taux vivent dans la table `currencies` (lib/server-rates), jamais
 // dans le code : une table figée ici affichait 600 XOF pour 1 USD alors
-// que le taux réel enregistré était 574,71 — soit 4 % d'écart sur chaque
+// que le taux réel enregistré était 574,71 : soit 4 % d'écart sur chaque
 // facture réglée en dollars.
 
 async function getPayPalToken(clientId: string, secret: string, sandbox: boolean) {
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         const convertedAmount = await fromXOFStrict(doc.total, currency)
         if (convertedAmount === null || convertedAmount <= 0) {
             return NextResponse.json(
-                { error: `Taux de change ${currency} indisponible — paiement refusé.` },
+                { error: `Taux de change ${currency} indisponible : paiement refusé.` },
                 { status: 503 },
             )
         }
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
                     {
                         reference_id: doc_id,
                         custom_id: doc_id,
-                        description: `Facture ${doc.numero} — Retour Gagnant Bénin`,
+                        description: `Facture ${doc.numero} : Retour Gagnant Bénin`,
                         amount: { currency_code: currency, value: amountStr },
                     },
                 ],

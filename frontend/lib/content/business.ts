@@ -3,7 +3,7 @@ import type { ServiceLandingContent } from './serviceLanding'
 export const DEFAULT_BUSINESS: ServiceLandingContent = {
     hero_badge: "Création & implantation d'entreprise",
     hero_title: "Créez votre entreprise au Bénin, depuis la diaspora",
-    hero_subtitle: "De la création juridique de votre structure à l'ouverture de votre compte bancaire, en passant par les formalités fiscales — nous vous accompagnons à chaque étape.",
+    hero_subtitle: "De la création juridique de votre structure à l'ouverture de votre compte bancaire, en passant par les formalités fiscales : nous vous accompagnons à chaque étape.",
     hero_chips: ["Création clé en main", "RCCM & fiscalité", "Compte bancaire pro", "Réseau local"],
     hero_image: "/assets/icones/icone_Creation_d_Entreprise.png",
     cta1_label: "Prendre rendez-vous",
@@ -20,7 +20,7 @@ export const DEFAULT_BUSINESS: ServiceLandingContent = {
 
     intro_eyebrow: "Notre métier",
     intro_title: "Notre accompagnement",
-    intro_text: "Nous facilitons l'implantation économique des entrepreneurs de la diaspora au Bénin. De la création juridique de votre structure à l'ouverture de votre compte bancaire, en passant par les démarches fiscales, notre équipe vous accompagne à chaque étape — sur place, pour vous.",
+    intro_text: "Nous facilitons l'implantation économique des entrepreneurs de la diaspora au Bénin. De la création juridique de votre structure à l'ouverture de votre compte bancaire, en passant par les démarches fiscales, notre équipe vous accompagne à chaque étape : sur place, pour vous.",
     etapes_title: "Comment nous procédons",
     etapes: [
         { num: "01", title: "Structuration juridique", desc: "Choix de la forme (SARL, SA, SASU), statuts et immatriculation RCCM." },
@@ -52,7 +52,7 @@ export const DEFAULT_BUSINESS: ServiceLandingContent = {
         "Immatriculation RCCM et formalités fiscales",
         "Ouverture de compte bancaire professionnel",
         "Domiciliation commerciale à Cotonou",
-        "Cabinet de recrutement — sélection de talents locaux",
+        "Cabinet de recrutement : sélection de talents locaux",
         "Mise en relation avec les acteurs économiques locaux",
     ],
     features_note: "* Prestations modulables selon votre projet. Un premier échange permet de définir le périmètre exact.",

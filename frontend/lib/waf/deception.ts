@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════════
-// 🎭 WAF DECEPTION — Cyber-Déception & Gaslighting
+// 🎭 WAF DECEPTION : Cyber-Déception & Gaslighting
 // Retourne des faux payloads crédibles aux attaquants détectés
-// L'attaquant ne sait pas qu'il est piégé — il perd du temps
+// L'attaquant ne sait pas qu'il est piégé : il perd du temps
 // ══════════════════════════════════════════════════════════════
 
 import { NextResponse } from 'next/server'
@@ -141,7 +141,7 @@ Sorry, user www-data may not run sudo on web-prod-02.`,
         status_code: 200,
         content_type: 'text/html; charset=utf-8',
         response_body: `<!DOCTYPE html><html>
-<head><title>Log In — WordPress</title></head>
+<head><title>Log In : WordPress</title></head>
 <body style="background:#f1f1f1;font-family:sans-serif">
 <div style="width:320px;margin:8% auto;background:#fff;padding:26px;border:1px solid #c3c4c7;border-radius:4px">
 <h1 style="text-align:center">WordPress</h1>

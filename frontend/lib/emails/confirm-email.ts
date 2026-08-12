@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   E-mail de confirmation de compte — « code d'abord »
+   E-mail de confirmation de compte : « code d'abord »
 
    Le client reçoit un code à 8 chiffres qu'il saisit dans l'application
    mobile (ou sur le site). Le lien de confirmation reste proposé en secours
@@ -120,7 +120,7 @@ export function buildConfirmEmail(opts: ConfirmEmailOptions): string {
     </table>
 
     <p style="margin:20px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${INK_FAINT};">
-        Retour Gagnant Bénin — Cotonou, Bénin
+        Retour Gagnant Bénin : Cotonou, Bénin
     </p>
 </td></tr>
 </table>

@@ -84,9 +84,9 @@ export default function BlogPostClient({ slug }: { slug: string }) {
     }, [slug])
 
     const formatDate = (val: string) => {
-        if (!mounted || !val) return '—'
+        if (!mounted || !val) return '-'
         const d = new Date(val)
-        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     }
 
     // Markdown to HTML renderer

@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
 
     // Verrou de clôture : sur la facture d'origine ET sur la date du jour
     if (await isPeriodLocked(supabase, facture.created_at)) {
-        return NextResponse.json({ error: 'Période de la facture clôturée — avoir refusé.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période de la facture clôturée : avoir refusé.' }, { status: 423 })
     }
     if (await isPeriodLocked(supabase, new Date().toISOString())) {
-        return NextResponse.json({ error: 'Période courante clôturée — avoir refusé.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période courante clôturée : avoir refusé.' }, { status: 423 })
     }
 
     const totalFacture = Number(facture.total) || 0
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         currency: facture.currency || 'XOF',
         exchange_rate_applied: facture.exchange_rate_applied || 1,
         items: [{
-            description: `Avoir sur facture ${facture.numero} — ${motif}`,
+            description: `Avoir sur facture ${facture.numero} : ${motif}`,
             quantity: 1,
             unit_price: montant,
             tva: 0,
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         total: montant,
         status: 'valide',              // émis ; « payé » = remboursement effectué
         notes: `Avoir émis sur la facture ${facture.numero}.\nMotif : ${motif}`,
-        conditions: 'Note de crédit — déduite du chiffre d’affaires et de la TVA collectée.',
+        conditions: 'Note de crédit : déduite du chiffre d’affaires et de la TVA collectée.',
         validite: 'Sans objet',
     }).select('id, numero').single()
 
@@ -210,10 +210,10 @@ export async function DELETE(request: NextRequest) {
         .from('documents_financiers').select('id, type, status, created_at').eq('id', id).maybeSingle()
     if (!avoir || avoir.type !== 'avoir') return NextResponse.json({ error: 'Avoir introuvable.' }, { status: 404 })
     if (avoir.status === 'paye') {
-        return NextResponse.json({ error: 'Avoir déjà remboursé — suppression interdite (traçabilité comptable).' }, { status: 400 })
+        return NextResponse.json({ error: 'Avoir déjà remboursé : suppression interdite (traçabilité comptable).' }, { status: 400 })
     }
     if (await isPeriodLocked(supabase, avoir.created_at)) {
-        return NextResponse.json({ error: 'Période clôturée — suppression refusée.' }, { status: 423 })
+        return NextResponse.json({ error: 'Période clôturée : suppression refusée.' }, { status: 423 })
     }
 
     const { error } = await supabase.from('documents_financiers').delete().eq('id', id)

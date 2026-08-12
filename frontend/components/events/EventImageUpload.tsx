@@ -145,7 +145,7 @@ export default function EventImageUpload({
                                 <T>Glisser-déposer ou</T>{' '}
                                 <span className="text-[#008751] underline underline-offset-2"><T>parcourir</T></span>
                             </p>
-                            <p className="text-[10px] text-gray-600 mt-1"><T>JPG, PNG, WebP — max 8 MB</T></p>
+                            <p className="text-[10px] text-gray-600 mt-1"><T>JPG, PNG, WebP : max 8 MB</T></p>
                         </div>
                     </div>
                 )}

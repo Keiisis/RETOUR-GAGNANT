@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Moteur de collecte (droit d'accès) et d'effacement (droit à l'oubli)
+// RGPD : Moteur de collecte (droit d'accès) et d'effacement (droit à l'oubli)
 // Utilisé par l'admin ET par le self-service public.
 // Tolérant : table/colonne absente = ignorée silencieusement.
 // ══════════════════════════════════════════════════════════════

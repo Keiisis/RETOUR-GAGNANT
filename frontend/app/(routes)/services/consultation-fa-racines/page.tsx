@@ -10,8 +10,8 @@ import { mergeServiceLanding, type ServiceLandingContent } from '@/lib/content/s
 
 // Tarifs de repli (décision : 550 € présentiel / 780 € visio affichés directement).
 const FALLBACK_FA_OPTIONS = [
-    { label: 'Consultation en Présentiel — accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
-    { label: 'Consultation en Visio — assistance et veille à distance de bout en bout', price: '780 €' },
+    { label: 'Consultation en Présentiel : accueil, RDV avec le prêtre Fa, aide, hôtel, change', price: '550 €' },
+    { label: 'Consultation en Visio : assistance et veille à distance de bout en bout', price: '780 €' },
 ]
 
 export default function ConsultationFaPage() {

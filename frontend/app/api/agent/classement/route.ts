@@ -7,7 +7,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 // ══════════════════════════════════════════════════════════════
-// Classement Client — API (accessible agents ET admins)
+// Classement Client : API (accessible agents ET admins)
 //   GET   → liste complète + stats par catégorie
 //   PATCH → maj notes / statut / catégorie d'un client (+ last_review_at)
 //   POST  → { action:'backfill' } import des clients existants
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
             }
         } catch { /* table absente */ }
 
-        // 4) Suivi de dossiers — service_type bien catégorisable
+        // 4) Suivi de dossiers : service_type bien catégorisable
         try {
             const { data } = await supabase.from('dossier_tracking')
                 .select('client_nom, client_prenom, client_email, service_type, service, created_at')
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })
 }
 
-// DELETE /api/agent/classement — supprime un client du classement (id requis).
+// DELETE /api/agent/classement : supprime un client du classement (id requis).
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!

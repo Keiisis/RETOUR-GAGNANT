@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
             const link = `${SITE_URL}/mes-donnees?token=${encodeURIComponent(token)}`
             await sendEmail({
                 to: email,
-                subject: 'Accès à vos données personnelles — Retour Gagnant Bénin',
+                subject: 'Accès à vos données personnelles : Retour Gagnant Bénin',
                 context: 'rgpd_request',
                 html: rgpdEmailHtml(link),
             })

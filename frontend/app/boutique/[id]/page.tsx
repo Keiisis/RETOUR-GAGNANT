@@ -16,14 +16,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
             .eq('id', id)
             .maybeSingle()
         if (data) {
-            const title = `${data.title} | Boutique — Retour Gagnant`
+            const title = `${data.title} | Boutique : Retour Gagnant`
             const desc = ((data.description || '') as string).replace(/\s+/g, ' ').trim().slice(0, 160)
                 || 'Produits authentiques du Bénin sélectionnés par Retour Gagnant.'
             const img = Array.isArray(data.images) ? (data.images[0] as string) : undefined
             return pageMeta(title, desc, `/boutique/${id}`, img)
         }
     } catch { /* fallback */ }
-    return pageMeta('Produit | Boutique — Retour Gagnant', 'Produits authentiques du Bénin sélectionnés par Retour Gagnant.', `/boutique/${id}`)
+    return pageMeta('Produit | Boutique : Retour Gagnant', 'Produits authentiques du Bénin sélectionnés par Retour Gagnant.', `/boutique/${id}`)
 }
 
 export default function Page() {

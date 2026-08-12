@@ -7,7 +7,7 @@ import { Shield, CircleNotch as Loader2, Key as KeyRound } from '@phosphor-icons
 export default function Admin2FAPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    // Validation stricte du paramètre next — prévient l'open redirect post-2FA
+    // Validation stricte du paramètre next : prévient l'open redirect post-2FA
     const rawNext = searchParams.get('next') || ''
     const next = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(rawNext) ? rawNext : '/admin/dashboard'
 

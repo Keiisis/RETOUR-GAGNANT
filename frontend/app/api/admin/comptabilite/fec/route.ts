@@ -17,7 +17,7 @@ const isValidAnnee = (a: string) => /^\d{4}$/.test(a)
 
 // ══════════════════════════════════════════════════════════════
 // GET /api/admin/comptabilite/fec?periode=YYYY-MM  (ou ?annee=YYYY)
-// Export FEC / SYSCOHADA (écritures en partie double) — fichier .txt tabulé,
+// Export FEC / SYSCOHADA (écritures en partie double) : fichier .txt tabulé,
 // importable par un logiciel comptable / transmissible à l'expert-comptable.
 // ══════════════════════════════════════════════════════════════
 export async function GET(request: NextRequest) {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ── Format Excel professionnel (défaut) : feuilles LISIBLES (Factures,
-    //    Encaissements, Dépenses — une ligne par opération) + feuille partie
+    //    Encaissements, Dépenses : une ligne par opération) + feuille partie
     //    double (expert-comptable) + synthèse ──────────────────────────────────
     const xlsxBuffer = await buildFecWorkbook(rows, balance, label, {
         docs: docsRes.data || [],
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Classeur Excel FEC — présentation professionnelle :
+   Classeur Excel FEC : présentation professionnelle :
    feuille Synthèse (période, volumes, équilibre débit/crédit) +
    feuille Écritures (18 colonnes FEC stylées, filtres, totaux).
    ══════════════════════════════════════════════════════════════ */
@@ -170,7 +170,7 @@ async function buildFecWorkbook(
 
     syn.mergeCells('B3:C3')
     const sub = syn.getCell('B3')
-    sub.value = `Rapport comptable mensuel — Période : ${label}`
+    sub.value = `Rapport comptable mensuel : Période : ${label}`
     sub.font = { size: 11, bold: true, color: { argb: EMERALD_DARK } }
     sub.alignment = { horizontal: 'center' }
     syn.getRow(3).height = 22
@@ -272,9 +272,9 @@ async function buildFecWorkbook(
     /* ── Feuille 4 : Dépenses (sorties) ── */
     simpleSheet('Dépenses',
         [{ h: 'Date', w: 12 }, { h: 'Fournisseur / Libellé', w: 34 }, { h: 'Catégorie', w: 22 }, { h: 'Montant (FCFA)', w: 16, num: true }],
-        depenses.map(e => [fmtIsoDate(e.date_depense), e.titre || '—', expenseCategoryLabel(e.categorie || 'autre'), Number(e.montant) || 0]), 3)
+        depenses.map(e => [fmtIsoDate(e.date_depense), e.titre || '-', expenseCategoryLabel(e.categorie || 'autre'), Number(e.montant) || 0]), 3)
 
-    /* ── Feuille 5 : Écritures (partie double — expert-comptable) ── */
+    /* ── Feuille 5 : Écritures (partie double : expert-comptable) ── */
     const ws = wb.addWorksheet('Écritures (partie double)', { views: [{ state: 'frozen', ySplit: 1 }] })
     const COLS: Array<{ key: keyof FecRow; header: string; width: number }> = [
         { key: 'JournalCode', header: 'Journal', width: 9 },

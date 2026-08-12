@@ -23,14 +23,14 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
-// Serif éditorial premium — grands titres (pages vitrines : nationalité…).
+// Serif éditorial premium : grands titres (pages vitrines : nationalité…).
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-playfair",
 });
 
-// Refonte accueil (Phase 1) — titres cinétiques Fraunces (serif variable
+// Refonte accueil (Phase 1) : titres cinétiques Fraunces (serif variable
 // haute-contraste), corps Geist, chiffres Geist Mono.
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -51,7 +51,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Retour Gagnant Bénin — Accompagnement Premium pour la Diaspora",
+    default: "Retour Gagnant Bénin : Accompagnement Premium pour la Diaspora",
     template: "%s | Retour Gagnant Bénin",
   },
   description: "Votre partenaire de confiance pour un retour réussi au Bénin. Passeport, immobilier, création d'entreprise, investissement et accompagnement culturel pour la diaspora béninoise et afro-descendante.",
@@ -68,8 +68,8 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: "https://www.retourgagnantbenin.bj",
     siteName: "Retour Gagnant Bénin",
-    title: "Retour Gagnant Bénin — Accompagnement Premium pour la Diaspora",
-    description: "Passeport, immobilier, entreprise, investissement — tous les services pour réussir votre retour au Bénin.",
+    title: "Retour Gagnant Bénin : Accompagnement Premium pour la Diaspora",
+    description: "Passeport, immobilier, entreprise, investissement : tous les services pour réussir votre retour au Bénin.",
     images: [
       {
         url: "/images/hero-bg.jpg",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Retour Gagnant Bénin — Accompagnement Premium",
+    title: "Retour Gagnant Bénin : Accompagnement Premium",
     description: "Passeport, immobilier, entreprise, investissement pour la diaspora béninoise.",
     images: ["/images/hero-bg.jpg"],
   },

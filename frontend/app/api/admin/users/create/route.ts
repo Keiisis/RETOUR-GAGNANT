@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
         userId = existingUser.id
     } else {
-        // Créer le user via Admin API — email auto-confirmé, sans email de vérification
+        // Créer le user via Admin API : email auto-confirmé, sans email de vérification
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
             email: cleanEmail,
             password,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
         console.error('[Admin Create User] Profile error:', profileError.message)
-        // L'auth user est créé/mis à jour, le profil a échoué — on retourne succès quand même
+        // L'auth user est créé/mis à jour, le profil a échoué : on retourne succès quand même
     }
 
     return NextResponse.json({

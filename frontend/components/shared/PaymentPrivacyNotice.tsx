@@ -6,7 +6,7 @@ import { ShieldCheck } from '@phosphor-icons/react';
 // Notice RGPD pour les étapes de paiement.
 // Information (art. 13 RGPD), PAS une case à cocher : la base légale
 // du paiement est l'exécution du contrat / l'obligation légale (facturation),
-// qui ne requiert pas de consentement — mais exige la transparence.
+// qui ne requiert pas de consentement : mais exige la transparence.
 // ══════════════════════════════════════════════════════════════
 
 export default function PaymentPrivacyNotice({ className = '' }: { className?: string }) {

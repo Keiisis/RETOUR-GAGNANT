@@ -129,7 +129,7 @@ export default function ClientLoginPage() {
                     transition={{ delay: 0.16, duration: 0.5 }}
                     className="bg-white border border-[#E6DFD1] rounded-2xl p-7 shadow-[0_18px_50px_-24px_rgba(31,27,22,0.35)] relative overflow-hidden"
                 >
-                    {/* Filet tricolore latéral — la carte se lit comme un document officiel */}
+                    {/* Filet tricolore latéral : la carte se lit comme un document officiel */}
                     <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#008751] via-[#FCD116] to-[#E8112D]" />
                     <AnimatePresence>
                         {success && (

@@ -1,4 +1,4 @@
-// Test de connexion e-MCF (GET /info) — valide le jeton avant normalisation.
+// Test de connexion e-MCF (GET /info) : valide le jeton avant normalisation.
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'

@@ -9,7 +9,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const APP_NAME = 'Retour Gagnant Bénin'
 
-// POST /api/client/2fa/setup — génère un secret TOTP + QR (non activé)
+// POST /api/client/2fa/setup : génère un secret TOTP + QR (non activé)
 export async function POST(request: NextRequest) {
     const user = await getClientUser(request)
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })

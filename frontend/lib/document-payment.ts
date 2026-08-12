@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// Paiement des documents financiers (DEVIS / FACTURES) — confirmation
+// Paiement des documents financiers (DEVIS / FACTURES) : confirmation
 // côté serveur unique, partagée par :
 //   - POST /api/documents/confirm-payment  (portail public /portail/[id])
 //   - POST /api/client/payment/confirm     (panel client /client/payer/[id])
@@ -130,18 +130,18 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
         const recipients = [...new Set([...STAFF_RECIPIENTS, ...(config.adminEmail ? [config.adminEmail] : [])])]
         await sendEmail({
             to: recipients.join(', '),
-            subject: `Paiement reçu — ${typeLabel} ${numero} — ${clientName} (${doc.total} ${doc.currency})`,
+            subject: `Paiement reçu : ${typeLabel} ${numero} : ${clientName} (${doc.total} ${doc.currency})`,
             html: `
             <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #eef2f1;border-radius:14px;overflow:hidden">
               <div style="height:5px;background:linear-gradient(90deg,#008751 0 33%,#FCD116 33% 66%,#E8112D 66% 100%)"></div>
               <div style="padding:26px 28px">
-                <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin — Alerte Paiement</p>
-                <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Paiement reçu — ${typeLabel} ${esc(numero)}</h1>
+                <p style="margin:0 0 4px;color:#047857;font-size:13px;font-weight:800">Retour Gagnant Bénin : Alerte Paiement</p>
+                <h1 style="margin:0 0 6px;color:#1B2A4A;font-size:20px;font-weight:800">Paiement reçu : ${typeLabel} ${esc(numero)}</h1>
                 <p style="margin:0 0 18px;color:#8B94A6;font-size:13px">${esc(frDate())}</p>
                 <div style="background:#F4FAF6;border:1px solid rgba(0,135,81,0.2);border-radius:10px;padding:16px 18px;text-align:center;margin:0 0 18px">
                   <p style="margin:0;font-size:11px;font-weight:800;color:#047857;text-transform:uppercase;letter-spacing:.15em">Montant encaissé</p>
                   <p style="margin:6px 0 0;font-size:30px;font-weight:900;color:#008751">${esc(doc.total)} ${esc(doc.currency)}</p>
-                  <p style="margin:4px 0 0;font-size:12px;color:#8B94A6">via ${esc(provider)} — Réf. <span style="font-family:monospace">${esc(txId)}</span></p>
+                  <p style="margin:4px 0 0;font-size:12px;color:#8B94A6">via ${esc(provider)} : Réf. <span style="font-family:monospace">${esc(txId)}</span></p>
                 </div>
                 <table style="width:100%;border-collapse:collapse;background:#F8FAF9;border-radius:10px;overflow:hidden;margin:0 0 20px">
                   <tr><td style="padding:9px 14px;color:#8B94A6;font-size:12px;width:150px">Client</td><td style="padding:9px 14px;color:#1B2A4A;font-size:13px;font-weight:700">${esc(clientName)}</td></tr>
@@ -149,7 +149,7 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                   <tr><td style="padding:9px 14px;color:#8B94A6;font-size:12px">Document</td><td style="padding:9px 14px;color:#1B2A4A;font-size:13px;font-weight:700">${typeLabel} ${esc(numero)}</td></tr>
                 </table>
                 <a href="${SITE}/admin/facturation" style="display:inline-block;background:#10B981;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:800;font-size:13px">Ouvrir la facturation</a>
-                <p style="margin:18px 0 0;color:#9aa5b1;font-size:11px;text-align:center">Notification automatique — Retour Gagnant Bénin</p>
+                <p style="margin:18px 0 0;color:#9aa5b1;font-size:11px;text-align:center">Notification automatique : Retour Gagnant Bénin</p>
               </div>
             </div>`,
             context: 'doc_payment_alert',
@@ -204,7 +204,7 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
 
             await sendEmail({
                 to: doc.client_email,
-                subject: `Reçu de paiement — ${typeLabel} ${numero} — ${doc.total} ${doc.currency}`,
+                subject: `Reçu de paiement : ${typeLabel} ${numero} : ${doc.total} ${doc.currency}`,
                 html: `
                 <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
                     <div style="background:linear-gradient(135deg,#006b40,#008751);padding:28px 40px;text-align:center;">
@@ -232,7 +232,7 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                     <div style="padding:16px 40px;background:#0d1117;text-align:center;">
                         <p style="margin:0;color:#6b7280;font-size:11px;line-height:1.6;">
                             Ce reçu vaut preuve de paiement. Conservez-le précieusement.<br>
-                            &copy; ${new Date().getFullYear()} Retour Gagnant Bénin — <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
+                            &copy; ${new Date().getFullYear()} Retour Gagnant Bénin : <a href="${SITE}" style="color:#008751;text-decoration:none;">${SITE.replace('https://', '')}</a>
                         </p>
                     </div>
                 </div>`,
@@ -307,7 +307,7 @@ export async function confirmDocumentPayment(opts: {
         montant: paidXOF,
         date_paiement: new Date().toISOString().slice(0, 10),
         reference: transactionId,
-        notes: `Encaissement en ligne (${provider}) — TX ${transactionId}`,
+        notes: `Encaissement en ligne (${provider}) : TX ${transactionId}`,
     }, `payment:${provider}:${transactionId}`)
     if (encaissement.status === 'duplicate') {
         return { success: true, alreadyPaid: true }
@@ -323,7 +323,7 @@ export async function confirmDocumentPayment(opts: {
         void supabase.from('messages').insert([{
             nom: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || doc.client_email || 'Client',
             email: doc.client_email || 'contact@retourgagnantbenin.bj',
-            sujet: `Acompte reçu — ${doc.numero || doc.id.slice(0, 8)}`,
+            sujet: `Acompte reçu : ${doc.numero || doc.id.slice(0, 8)}`,
             message: `Acompte de ${paidXOF.toLocaleString('fr-FR')} XOF encaissé via ${provider} (TX ${transactionId}). Solde restant : ${soldeXOF.toLocaleString('fr-FR')} XOF.`,
             type: 'paiement',
             lu: false,
@@ -339,7 +339,7 @@ export async function confirmDocumentPayment(opts: {
     // qui ne comptabilise l'encaissé que sur les factures.
     const convertToInvoice = doc.type === 'devis'
     // Une facture porte TOUJOURS un numéro de la série FAC (jamais le n° DEV
-    // d'origine) — exigence de numérotation par série. Le devis d'origine
+    // d'origine) : exigence de numérotation par série. Le devis d'origine
     // est conservé en note pour la traçabilité.
     let invoiceNumero = doc.numero
     const updatePayload: Record<string, unknown> = {
@@ -369,7 +369,7 @@ export async function confirmDocumentPayment(opts: {
     void supabase.from('messages').insert([{
         nom: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || doc.client_email || 'Client',
         email: doc.client_email || 'contact@retourgagnantbenin.bj',
-        sujet: `Paiement reçu — ${typeLabel} ${doc.numero || doc.id.slice(0, 8)}`,
+        sujet: `Paiement reçu : ${typeLabel} ${doc.numero || doc.id.slice(0, 8)}`,
         message: `${typeLabel} ${doc.numero || doc.id} payé(e) : ${doc.total} ${doc.currency} via ${provider} (TX ${transactionId}).`,
         type: 'paiement',
         lu: false,

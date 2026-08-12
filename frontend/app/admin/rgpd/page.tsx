@@ -8,8 +8,8 @@ interface PreviewSection { table: string; label: string; kind: 'data' | 'documen
 interface Preview { email: string; found: boolean; totalRecords: number; documentCount: number; sections: PreviewSection[] }
 
 const DOCS = [
-    { id: 'registre', title: 'Registre des traitements', desc: 'Article 30 — fiches, sous-traitants, durées (interne)', icon: ScrollText },
-    { id: 'procedure', title: 'Procédure de violation 72h', desc: 'Articles 33/34 — notification, confinement (interne)', icon: AlertTriangle },
+    { id: 'registre', title: 'Registre des traitements', desc: 'Article 30 : fiches, sous-traitants, durées (interne)', icon: ScrollText },
+    { id: 'procedure', title: 'Procédure de violation 72h', desc: 'Articles 33/34 : notification, confinement (interne)', icon: AlertTriangle },
     { id: 'politique', title: 'Politique de confidentialité', desc: 'Version publique (sans détails techniques)', icon: FileText },
 ]
 

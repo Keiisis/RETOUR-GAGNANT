@@ -147,7 +147,7 @@ export default function AdminLogementsPage() {
                     <div className="w-11 h-11 rounded-2xl bg-[#E6F3ED] flex items-center justify-center text-[#008751]"><Home size={20} /></div>
                     <div>
                         <h1 className="text-2xl font-black text-slate-900">Catalogue Logements</h1>
-                        <p className="text-sm text-slate-500">Programme national · Résidences — 100 % éditable</p>
+                        <p className="text-sm text-slate-500">Programme national · Résidences : 100 % éditable</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export default function AdminLogementsPage() {
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{l.type}</span>
                                         {!l.is_active && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Masqué</span>}
                                     </div>
-                                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={12} /> {[l.ville, l.site].filter(Boolean).join(' · ') || '—'} · {l.surface_m2} m²</p>
+                                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={12} /> {[l.ville, l.site].filter(Boolean).join(' · ') || '-'} · {l.surface_m2} m²</p>
                                     <p className="text-xs text-[#008751] font-bold mt-0.5">{fmt(l.prix_comptant, l.devise)}{l.mensualite ? ` · ${fmt(l.mensualite, l.devise)}/mois` : ''}</p>
                                 </div>
                                 <button onClick={() => toggleActive(l)} disabled={busyId === l.id} title={l.is_active ? 'Masquer' : 'Afficher'} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100">{l.is_active ? <Eye size={16} /> : <EyeOff size={16} />}</button>
@@ -209,7 +209,7 @@ export default function AdminLogementsPage() {
                                 <Field label="Programme"><select value={editing.programme} onChange={e => set({ programme: e.target.value })} className={inp}>{PROGRAMMES.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}</select></Field>
                                 <Field label="Type"><select value={editing.type} onChange={e => set({ type: e.target.value })} className={inp}>{TYPES.map(t => <option key={t}>{t}</option>)}</select></Field>
                             </div>
-                            <Field label="Nom du logement"><input value={editing.nom} onChange={e => set({ nom: e.target.value })} className={inp} placeholder="Ex : Appartement B — Ouèdo" /></Field>
+                            <Field label="Nom du logement"><input value={editing.nom} onChange={e => set({ nom: e.target.value })} className={inp} placeholder="Ex : Appartement B : Ouèdo" /></Field>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Field label="Ville"><input value={editing.ville} onChange={e => set({ ville: e.target.value })} className={inp} placeholder="Ouèdo, Cotonou…" /></Field>
                                 <Field label="Site / quartier"><input value={editing.site} onChange={e => set({ site: e.target.value })} className={inp} /></Field>
@@ -290,7 +290,7 @@ export default function AdminLogementsPage() {
                             {/* Rareté */}
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-2"><input type="checkbox" checked={content.rarete_active} onChange={e => setC({ rarete_active: e.target.checked })} className="w-4 h-4 accent-[#008751]" /> Bandeau de rareté / urgence</label>
-                                <input value={content.rarete_texte} onChange={e => setC({ rarete_texte: e.target.value })} className={inp} placeholder="Ex : Commercialisation en cours — les meilleurs lots partent vite." />
+                                <input value={content.rarete_texte} onChange={e => setC({ rarete_texte: e.target.value })} className={inp} placeholder="Ex : Commercialisation en cours : les meilleurs lots partent vite." />
                             </div>
                             {/* Stats de preuve */}
                             <ListEditor<Stat>

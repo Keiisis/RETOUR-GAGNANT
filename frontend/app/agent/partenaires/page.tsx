@@ -353,19 +353,19 @@ export default function AgentPartenairesPage() {
                                                 label="Logo"
                                                 value={form.logo || ''}
                                                 onChange={v => setForm(p => ({ ...p, logo: v }))}
-                                                hint="PNG, JPG — max 5MB"
+                                                hint="PNG, JPG : max 5MB"
                                                 className="w-[100px] flex-shrink-0"
                                             />
                                         </div>
 
-                                        {/* Cover upload — full width */}
+                                        {/* Cover upload : full width */}
                                         <div className="md:col-span-2">
                                             <FileUpload
                                                 type="cover"
                                                 label="Photo de couverture"
                                                 value={form.cover_image || ''}
                                                 onChange={v => setForm(p => ({ ...p, cover_image: v }))}
-                                                hint="1200×400px recommandé — JPG, PNG, WebP"
+                                                hint="1200×400px recommandé : JPG, PNG, WebP"
                                             />
                                         </div>
 
@@ -583,7 +583,7 @@ export default function AgentPartenairesPage() {
                                             {/* Quick contact */}
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 {app.email && (
-                                                    <a href={`mailto:${app.email}?subject=Retour Gagnant — Suite à votre candidature partenaire`}
+                                                    <a href={`mailto:${app.email}?subject=Retour Gagnant : Suite à votre candidature partenaire`}
                                                         title={`Email : ${app.email}`}
                                                         onClick={() => app.status === 'pending' && updateAppStatus(app, 'contacted')}
                                                         className="flex items-center gap-1 text-[11px] font-bold bg-[#3b82f6]/15 text-[#3b82f6] hover:bg-[#3b82f6]/25 border border-[#3b82f6]/20 px-3 py-1.5 rounded-lg transition-all">

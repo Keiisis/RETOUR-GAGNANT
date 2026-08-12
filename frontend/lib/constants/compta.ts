@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// Comptabilité — constantes partagées (admin + agent + exports).
+// Comptabilité : constantes partagées (admin + agent + exports).
 // ══════════════════════════════════════════════════════════════
 
 /** Catégories officielles de dépenses (décision boss 2026-07-16). */

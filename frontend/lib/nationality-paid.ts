@@ -1,4 +1,4 @@
-// Statut de paiement « payé » d'un dossier de nationalité — tolère les
+// Statut de paiement « payé » d'un dossier de nationalité : tolère les
 // variantes (accents, libellés de webhooks). Source de vérité unique côté
 // serveur pour la règle « réservé aux dossiers payés ».
 export function isPaidNationality(status?: string | null): boolean {

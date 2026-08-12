@@ -11,7 +11,7 @@ import { T } from "@/lib/translation";
 const BehanzinWalk = dynamic(() => import("./BehanzinWalk"), { ssr: false });
 
 /**
- * L'Héritage — « Le Roi Béhanzin marche encore ».
+ * L'Héritage : « Le Roi Béhanzin marche encore ».
  * Parti pris ANTI-AI-SLOP : fond BLANC, traitement éditorial façon exposition
  * de musée (aucun dégradé/halo/glow). La mémorabilité vient de la typographie
  * (Fraunces géant en filigrane), d'une chronologie RÉELLE en cartel, et d'un
@@ -59,7 +59,7 @@ export default function BehanzinHeritage() {
 
     // ── Récit en « beats » cinématiques (fondu enchaîné) ──────────
     // Chaque beat apparaît, se tient, puis s'efface pendant que le suivant
-    // monte — un seul visible à la fois, comme un générique sur le roi qui
+    // monte : un seul visible à la fois, comme un générique sur le roi qui
     // marche. Permet un texte long et émouvant sans jamais surcharger l'écran
     // (essentiel sur mobile). Le bloc final (ligne de clôture + cartel + CTA)
     // reste, lui, affiché jusqu'au bout.
@@ -84,12 +84,12 @@ export default function BehanzinHeritage() {
 
     const st = (mv: unknown, fb = 1) => (reduce ? fb : (mv as never));
 
-    // Texte du récit — expressif, incarné, factuel (Abomey, emblème du requin,
+    // Texte du récit : expressif, incarné, factuel (Abomey, emblème du requin,
     // Amazones du Dahomey, exil Martinique puis Algérie, mort en 1906).
     const RECIT = [
-        "À Abomey, il y a plus d'un siècle, un roi refusa de courber l'échine. Sous son emblème — le requin qui trouble les eaux — Béhanzin défia l'empire le plus puissant de son temps.",
+        "À Abomey, il y a plus d'un siècle, un roi refusa de courber l'échine. Sous son emblème : le requin qui trouble les eaux : Béhanzin défia l'empire le plus puissant de son temps.",
         "À ses côtés, les Amazones du Dahomey combattirent jusqu'au dernier souffle. Pas pour un trône : pour une terre, une langue, une dignité que nul ne devait leur arracher.",
-        "On finit par l'emmener loin des siens. Déporté au-delà des mers — la Martinique, puis l'Algérie — il s'éteignit en exil, le regard tourné vers le Bénin. Son corps partit. Jamais son âme.",
+        "On finit par l'emmener loin des siens. Déporté au-delà des mers : la Martinique, puis l'Algérie : il s'éteignit en exil, le regard tourné vers le Bénin. Son corps partit. Jamais son âme.",
         "Comme lui, des millions d'enfants d'Afrique furent séparés de leur terre. Comme lui, ils n'ont jamais cessé de lui appartenir. Ce fil que l'exil n'a pas rompu, c'est le vôtre.",
         "Le jour où vous poserez le pied sur cette terre rouge, où l'on prononcera votre nom dans la langue de vos aïeux, vous le sentirez au fond de la poitrine : vous n'êtes pas un visiteur. Vous rentrez chez vous.",
     ];
@@ -97,7 +97,7 @@ export default function BehanzinHeritage() {
     return (
         <section ref={sectionRef} className="relative h-[400vh] bg-white">
             <div className="sticky top-0 h-screen overflow-hidden">
-                {/* Filigrane typographique — DAHOMEY, le royaume ancestral (bleed). */}
+                {/* Filigrane typographique : DAHOMEY, le royaume ancestral (bleed). */}
                 <motion.span
                     aria-hidden
                     style={{ x: st(wordX, 0) }}
@@ -106,9 +106,9 @@ export default function BehanzinHeritage() {
                     DAHOMEY
                 </motion.span>
 
-                {/* Roi 3D — zone dédiée : desktop à droite, mobile en bas. */}
+                {/* Roi 3D : zone dédiée : desktop à droite, mobile en bas. */}
                 <div className="absolute inset-x-0 bottom-0 h-[58%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[60%]">
-                    {/* Cercle « Porte du Retour » — tracé PLAT (aucune lueur). */}
+                    {/* Cercle « Porte du Retour » : tracé PLAT (aucune lueur). */}
                     <div
                         aria-hidden
                         className="absolute left-1/2 top-1/2 aspect-square h-[80%] max-h-[62vh] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#9A7B2E]/35 md:h-[86%]"
@@ -122,7 +122,7 @@ export default function BehanzinHeritage() {
                     </div>
                 </div>
 
-                {/* Colonne éditoriale — desktop à gauche, mobile en haut. */}
+                {/* Colonne éditoriale : desktop à gauche, mobile en haut. */}
                 <div className="absolute inset-x-0 top-0 px-6 pt-[calc(env(safe-area-inset-top)+5.5rem)] md:inset-y-0 md:right-auto md:left-0 md:flex md:w-[52%] md:items-center md:px-12 md:pt-0 lg:px-20">
                     <div className="max-w-xl">
                         <div className="mb-5 flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function BehanzinHeritage() {
                                     </p>
                                 ))}
                                 <p className="pt-2 font-fraunces text-xl italic leading-snug text-[#008751]">
-                                    <T>Béhanzin marche encore — dans chacun de ses enfants qui revient.</T>{" "}
+                                    <T>Béhanzin marche encore : dans chacun de ses enfants qui revient.</T>{" "}
                                     <span className="not-italic font-medium text-[#0d1a12]"><T>Et vous êtes des leurs.</T></span>
                                 </p>
                                 <ChronoCta />
@@ -169,7 +169,7 @@ export default function BehanzinHeritage() {
                                 {/* Clôture persistante : ligne finale + cartel + CTA */}
                                 <motion.div style={{ opacity: finalO, y: finalY }} className="absolute inset-x-0 top-0">
                                     <p className="font-fraunces text-2xl italic leading-snug text-[#008751] md:text-[1.9rem]">
-                                        <T>Béhanzin marche encore — dans chacun de ses enfants qui revient.</T>{" "}
+                                        <T>Béhanzin marche encore : dans chacun de ses enfants qui revient.</T>{" "}
                                         <span className="not-italic font-medium text-[#0d1a12]"><T>Et vous êtes des leurs.</T></span>
                                     </p>
                                     <ChronoCta />

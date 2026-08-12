@@ -8,7 +8,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 /**
  * Route de vérification du statut Zeyow après redirection navigateur.
  *
- * SÉCURITÉ — DESIGN INTENTIONNEL :
+ * SÉCURITÉ : DESIGN INTENTIONNEL :
  * Cet endpoint ne COMPLÈTE JAMAIS une commande lui-même.
  * Il se contente de lire le statut DB, défini uniquement par le webhook Zeyow
  * (app/api/webhooks/zeyow/route.ts), qui est le seul flux de confiance
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
             )
         }
 
-        // Vérifier que c'est bien une commande Zeyow (non falsifiable — défini côté serveur)
+        // Vérifier que c'est bien une commande Zeyow (non falsifiable : défini côté serveur)
         if (order.payment_method !== 'zeyow') {
             console.warn(`[Zeyow Confirm] Tentative sur commande ${order_id} (méthode: ${order.payment_method})`)
             return NextResponse.json(

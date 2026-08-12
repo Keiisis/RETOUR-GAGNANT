@@ -37,7 +37,7 @@ interface EmailAttachment {
 
 type Tab = 'compose' | 'sent' | 'templates'
 
-// Limite dure cote client — meme que l'API (20MB decodes)
+// Limite dure cote client : meme que l'API (20MB decodes)
 const MAX_ATTACHMENT_TOTAL_BYTES = 20 * 1024 * 1024
 
 function formatFileSize(bytes: number): string {
@@ -79,7 +79,7 @@ const EMAIL_TEMPLATES = [
     {
         id: 'suivi-dossier',
         name: 'Suivi de Dossier',
-        subject: 'Mise à jour de votre dossier — Retour Gagnant',
+        subject: 'Mise à jour de votre dossier : Retour Gagnant',
         color: '#1B2A4A',
         body: `<p>Bonjour <strong>[NOM DU CLIENT]</strong>,</p>
 <p>Nous souhaitons vous informer de l'avancement de votre dossier :</p>
@@ -93,7 +93,7 @@ const EMAIL_TEMPLATES = [
     {
         id: 'relance',
         name: 'Relance Paiement',
-        subject: 'Rappel — Facture en attente de règlement',
+        subject: 'Rappel : Facture en attente de règlement',
         color: '#C9A84C',
         body: `<p>Bonjour <strong>[NOM DU CLIENT]</strong>,</p>
 <p>Nous nous permettons de vous rappeler que la facture <strong>[N° FACTURE]</strong> d'un montant de <strong>[MONTANT] FCFA</strong> est en attente de règlement.</p>
@@ -109,7 +109,7 @@ const EMAIL_TEMPLATES = [
     {
         id: 'rdv',
         name: 'Confirmation RDV',
-        subject: 'Confirmation de votre rendez-vous — Retour Gagnant',
+        subject: 'Confirmation de votre rendez-vous : Retour Gagnant',
         color: '#008751',
         body: `<p>Bonjour <strong>[NOM DU CLIENT]</strong>,</p>
 <p>Votre rendez-vous a bien été confirmé :</p>
@@ -128,7 +128,7 @@ const EMAIL_TEMPLATES = [
     {
         id: 'remerciement',
         name: 'Remerciement',
-        subject: 'Merci pour votre confiance — Retour Gagnant',
+        subject: 'Merci pour votre confiance : Retour Gagnant',
         color: '#E8112D',
         body: `<p>Cher(e) <strong>[NOM DU CLIENT]</strong>,</p>
 <p>Nous tenions à vous remercier sincèrement pour la confiance que vous nous accordez.</p>
@@ -139,7 +139,7 @@ const EMAIL_TEMPLATES = [
 ]
 
 // ═══════════════════════════════════════════
-// Composant principal — Design clair institutionnel
+// Composant principal : Design clair institutionnel
 // ═══════════════════════════════════════════
 export default function AgentRedigerMailsPage() {
     const [tab, setTab] = useState<Tab>('compose')
@@ -447,7 +447,7 @@ export default function AgentRedigerMailsPage() {
     }
 
     return (
-        /* ══════════ CONTENEUR PRINCIPAL — fond clair ivoire ══════════ */
+        /* ══════════ CONTENEUR PRINCIPAL : fond clair ivoire ══════════ */
         <div className="min-h-screen -m-6 lg:-m-8" style={{ background: 'linear-gradient(180deg, #F7F4EE 0%, #FEFCF9 50%, #F5F0E8 100%)' }}>
             {/* ── Bandeau tricolore supérieur ── */}
             <div className="h-1 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
@@ -462,7 +462,7 @@ export default function AgentRedigerMailsPage() {
                         <div>
                             <h1 className="text-xl font-bold text-[#1B2A4A] tracking-tight">Messagerie Email</h1>
                             <p className="text-xs text-[#6B7280] mt-0.5">
-                                <span className="text-[#008751] font-semibold">Retour Gagnant Bénin</span> — Espace Agent
+                                <span className="text-[#008751] font-semibold">Retour Gagnant Bénin</span> : Espace Agent
                             </p>
                         </div>
                     </div>
@@ -818,16 +818,16 @@ export default function AgentRedigerMailsPage() {
                                 >
                                     <div className="px-6 py-3 bg-[#1B2A4A]/[0.03] border-b border-[#1B2A4A]/6 flex items-center gap-2">
                                         <Eye size={13} className="text-[#1B2A4A]" />
-                                        <span className="text-[10px] font-semibold text-[#1B2A4A] uppercase tracking-wider">Aperçu — Tel que reçu par le destinataire</span>
+                                        <span className="text-[10px] font-semibold text-[#1B2A4A] uppercase tracking-wider">Aperçu : Tel que reçu par le destinataire</span>
                                     </div>
                                     <div className="p-10 flex justify-center bg-white">
                                         <div className="w-full max-w-[620px] bg-white rounded-[20px] overflow-hidden border border-[#1B2A4A]/6" style={{ boxShadow: '0 20px 60px rgba(27,42,74,0.10), 0 4px 16px rgba(27,42,74,0.05)' }}>
                                             {/* Bande tricolore top */}
                                             <div className="h-[5px]" style={{ background: 'linear-gradient(90deg, #008751 0%, #008751 33%, #FCD116 33%, #FCD116 66%, #E8112D 66%, #E8112D 100%)' }} />
-                                            {/* Header blanc — Logo à gauche + RETOUR GAGNANT / BÉNIN à droite */}
+                                            {/* Header blanc : Logo à gauche + RETOUR GAGNANT / BÉNIN à droite */}
                                             <div className="bg-white" style={{ padding: '44px 44px 36px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
-                                                    {/* Colonne gauche — Logo libre, grand */}
+                                                    {/* Colonne gauche : Logo libre, grand */}
                                                     <div style={{ paddingRight: 26, display: 'flex', alignItems: 'center' }}>
                                                         <img
                                                             src="/assets/logo.png"
@@ -838,9 +838,9 @@ export default function AgentRedigerMailsPage() {
                                                         />
                                                     </div>
                                                     {/* Séparateur or vertical */}
-                                                    {/* Colonne droite — RETOUR GAGNANT + BÉNIN + tagline */}
+                                                    {/* Colonne droite : RETOUR GAGNANT + BÉNIN + tagline */}
                                                     <div style={{ borderLeft: '1px solid rgba(201,168,76,0.25)', paddingLeft: 26, textAlign: 'left' }}>
-                                                        {/* RETOUR GAGNANT — ligne 1 */}
+                                                        {/* RETOUR GAGNANT : ligne 1 */}
                                                         <h1
                                                             className="m-0"
                                                             style={{
@@ -853,7 +853,7 @@ export default function AgentRedigerMailsPage() {
                                                             <span style={{ color: '#008751', textShadow: '0 2px 18px rgba(0,135,81,0.22)' }}>RETOUR</span>
                                                             <span style={{ color: '#E6B800', textShadow: '0 2px 18px rgba(252,209,22,0.32)', marginLeft: 8 }}>GAGNANT</span>
                                                         </h1>
-                                                        {/* BÉNIN — ligne 2, aligné sous RETOUR */}
+                                                        {/* BÉNIN : ligne 2, aligné sous RETOUR */}
                                                         <div style={{ marginTop: 9 }}>
                                                             <span
                                                                 style={{
@@ -904,7 +904,7 @@ export default function AgentRedigerMailsPage() {
                                                     <div style={{ width: 28, height: 3, background: '#FCD116' }} />
                                                     <div style={{ width: 28, height: 3, background: '#E8112D', borderRadius: '0 2px 2px 0' }} />
                                                 </div>
-                                                <p className="text-[10.5px] text-[#6B7589] font-semibold tracking-wide">&copy; {new Date().getFullYear()} Retour Gagnant Bénin — Tradition, Modernité, Excellence</p>
+                                                <p className="text-[10.5px] text-[#6B7589] font-semibold tracking-wide">&copy; {new Date().getFullYear()} Retour Gagnant Bénin : Tradition, Modernité, Excellence</p>
                                             </div>
                                             {/* Bande basse */}
                                             <div className="h-[5px]" style={{ background: 'linear-gradient(90deg, #008751 0%, #008751 33%, #FCD116 33%, #FCD116 66%, #E8112D 66%, #E8112D 100%)' }} />
@@ -1028,7 +1028,7 @@ export default function AgentRedigerMailsPage() {
                                                         </span>
                                                         <span className="text-[10px] text-[#6B7280]/60 flex items-center gap-1">
                                                             <Clock size={10} />
-                                                            {email.created_at && !isNaN(new Date(email.created_at).getTime()) ? new Date(email.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                                            {email.created_at && !isNaN(new Date(email.created_at).getTime()) ? new Date(email.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}
                                                         </span>
                                                     </div>
                                                 </div>

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         supabase
             .from('depenses')
             // NB : PAS de colonne `notes` sur depenses (colonnes réelles :
-            // titre, categorie, montant, devise, date_depense, agent_id) — la
+            // titre, categorie, montant, devise, date_depense, agent_id) : la
             // demander faisait ECHOUER toute la requete → l'admin ne voyait
             // AUCUNE depense (dont celles des agents), faussant Dépenses Totales.
             .select('id,titre,categorie,montant,devise,date_depense,agent_id')

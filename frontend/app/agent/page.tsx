@@ -44,7 +44,7 @@ const staggerItem = {
     },
 }
 
-// fadeSlideUp removed — using staggerContainer/staggerItem instead
+// fadeSlideUp removed : using staggerContainer/staggerItem instead
 
 // ═══════════════════════════════════════════
 // Skeleton Loader
@@ -325,7 +325,7 @@ export default function AgentDashboard() {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric'
-                            }) : '—'}
+                            }) : '-'}
                         </p>
                     </div>
 
@@ -474,7 +474,7 @@ export default function AgentDashboard() {
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
                                         <span className="text-[9px] text-nexus-text-muted">
-                                            {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR') : '—'}
+                                            {m.created_at && !isNaN(new Date(m.created_at).getTime()) ? new Date(m.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR') : '-'}
                                         </span>
                                         {!(m.lu as boolean) && (
                                             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.5)]" />

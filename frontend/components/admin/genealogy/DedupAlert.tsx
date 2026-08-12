@@ -34,7 +34,7 @@ async function getAuthToken(): Promise<string | null> {
 }
 
 function fmt(p: PersonStub | null): string {
-    if (!p) return '—'
+    if (!p) return '-'
     const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Sans nom'
     const parts: string[] = []
     if (p.birth_date) parts.push(`né(e) ${p.birth_date}`)
@@ -74,7 +74,7 @@ export default function DedupAlert({ treeId, isDark = false, onMerged }: Props) 
     useEffect(() => { load() }, [load])
 
     const handleMerge = async (keepId: string, mergeId: string) => {
-        if (!confirm('Fusionner ces deux personnes ? Cette action est irréversible — toutes les relations, documents et faits seront déplacés vers la personne conservée, puis le doublon sera supprimé.')) return
+        if (!confirm('Fusionner ces deux personnes ? Cette action est irréversible : toutes les relations, documents et faits seront déplacés vers la personne conservée, puis le doublon sera supprimé.')) return
 
         setMerging(mergeId)
         setError(null)
@@ -106,7 +106,7 @@ export default function DedupAlert({ treeId, isDark = false, onMerged }: Props) 
     const subText = isDark ? '#94A3B8' : '#718096'
     const bgPanel = isDark ? 'rgba(7,11,19,0.98)' : 'rgba(255,255,255,0.98)'
 
-    // Bouton header — masqué si pas de doublons détectés (et déjà chargé)
+    // Bouton header : masqué si pas de doublons détectés (et déjà chargé)
     if (hasLoadedOnce && pairs.length === 0 && !open) {
         return null
     }

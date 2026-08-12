@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  TAUX DE CHANGE — LECTURE SERVEUR FIABLE
+//  TAUX DE CHANGE : LECTURE SERVEUR FIABLE
 //  Problème corrigé : lib/currency.ts garde les taux dans un cache
 //  de module avec une garde d'1 h. En serverless, chaque instance a
 //  SON cache → deux requêtes simultanées pouvaient convertir avec des
@@ -12,7 +12,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const TTL_MS = 30_000
 // Seul repli admis : la parité EUR/XOF est FIXE (BCEAO, inchangeable).
-// Aucune autre devise n'a de repli — mieux vaut refuser que facturer faux.
+// Aucune autre devise n'a de repli : mieux vaut refuser que facturer faux.
 const FIXED_EUR_XOF = 655.957
 
 let cache: { at: number; rates: Record<string, number> } | null = null
@@ -45,7 +45,7 @@ export async function getRatesXOF(): Promise<Record<string, number>> {
 
 /**
  * Convertit un montant vers le XOF.
- * Renvoie `null` si le taux de la devise est inconnu — l'appelant DOIT
+ * Renvoie `null` si le taux de la devise est inconnu : l'appelant DOIT
  * traiter ce cas plutôt que de facturer un montant approximatif.
  */
 export async function toXOFStrict(amount: number, currency?: string | null): Promise<number | null> {

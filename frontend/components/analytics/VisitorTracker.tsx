@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 
 // ══════════════════════════════════════════════════════════════
-// VisitorTracker — OPTIMISÉ QUOTA EDGE (incident Vercel 75% du quota) :
+// VisitorTracker : OPTIMISÉ QUOTA EDGE (incident Vercel 75% du quota) :
 //   AVANT : ping/page + heartbeat 30s REDÉMARRÉ à chaque navigation + unload
 //   APRÈS : ping/page + UN SEUL heartbeat global 120s pour toute la session,
 //           suspendu quand l'onglet est en arrière-plan (visibilitychange),
@@ -124,7 +124,7 @@ export function VisitorTracker() {
             ...clientSignals,
         })
 
-        // UN ping par page — pas de heartbeat par page
+        // UN ping par page : pas de heartbeat par page
         send(payloadRef.current())
 
         return () => {

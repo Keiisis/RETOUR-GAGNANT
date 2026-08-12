@@ -106,7 +106,7 @@ export default function ProductDetailPage() {
             <section className="container mx-auto px-6 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
 
-                    {/* LEFT — Images */}
+                    {/* LEFT : Images */}
                     <motion.div
                         initial={{ opacity: 0, x: -40 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -198,7 +198,7 @@ export default function ProductDetailPage() {
                         )}
                     </motion.div>
 
-                    {/* RIGHT — Info */}
+                    {/* RIGHT : Info */}
                     <motion.div
                         initial={{ opacity: 0, x: 40 }}
                         animate={{ opacity: 1, x: 0 }}

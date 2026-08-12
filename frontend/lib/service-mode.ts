@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   PARCOURS RÉEL D'UN SERVICE — source de vérité unique
+   PARCOURS RÉEL D'UN SERVICE : source de vérité unique
 
    Ce module ne DÉCIDE rien : il REPRODUIT ce que le site public fait déjà.
    Toute valeur ci-dessous a été relevée dans le code du web, qui reste la

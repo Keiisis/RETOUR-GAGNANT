@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseKey)
 }
 
-// POST /api/events/[id]/validate — validate a ticket (admin/agent only)
+// POST /api/events/[id]/validate : validate a ticket (admin/agent only)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyApiAuth(req, 'agent')
     if (!auth.authenticated) return auth.error!
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 if (hash !== expectedHash) {
                     return NextResponse.json({
                         valid: false,
-                        error: 'QR Code invalide — signature incorrecte',
+                        error: 'QR Code invalide : signature incorrecte',
                     }, { status: 403 })
                 }
             } catch {

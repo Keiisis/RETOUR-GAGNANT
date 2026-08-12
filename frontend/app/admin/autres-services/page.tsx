@@ -29,7 +29,7 @@ interface PageContent {
 
 const DEFAULT_CONTENT: PageContent = {
     hero_title: "Autres Services",
-    hero_subtitle: "Transport, santé, éducation, démarches administratives — Découvrez tous nos services complémentaires pour faciliter votre installation au Bénin.",
+    hero_subtitle: "Transport, santé, éducation, démarches administratives : Découvrez tous nos services complémentaires pour faciliter votre installation au Bénin.",
     services: [
         { icon: "Car", title: "Transport & Logistique", description: "Transfert aéroport, location de véhicule avec chauffeur, organisation de déplacements interurbains." },
         { icon: "HeartPulse", title: "Santé", description: "Mise en relation avec des cliniques et médecins partenaires, accompagnement pour les soins et hospitalisations." },
@@ -144,7 +144,7 @@ export default function AutresServicesAdminPage() {
                         </Link>
                         <h1 className="text-2xl font-black text-white flex items-center gap-3">
                             <FileText size={22} className="text-emerald-400" />
-                            Contenu — Autres Services
+                            Contenu : Autres Services
                         </h1>
                         <p className="text-xs text-gray-500 mt-1">
                             Tous les textes visibles sur la page <span className="font-mono text-gray-400">/services/autres</span>
@@ -228,7 +228,7 @@ export default function AutresServicesAdminPage() {
                                 >
                                     <span className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-[10px] font-black shrink-0">{i + 1}</span>
                                     <span className="text-[10px] font-mono bg-white/5 px-2 py-0.5 rounded text-gray-400 shrink-0">{svc.icon}</span>
-                                    <span className="text-sm font-bold text-white flex-1 truncate">{svc.title || '—'}</span>
+                                    <span className="text-sm font-bold text-white flex-1 truncate">{svc.title || '-'}</span>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={e => { e.stopPropagation(); removeService(i) }}
@@ -346,7 +346,7 @@ export default function AutresServicesAdminPage() {
                             <Layout size={18} className="text-blue-400" />
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-white">Bloc CTA — Besoin spécifique</h2>
+                            <h2 className="text-base font-black text-white">Bloc CTA : Besoin spécifique</h2>
                             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Section en bas de page</p>
                         </div>
                     </div>

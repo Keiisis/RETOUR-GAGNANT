@@ -6,13 +6,13 @@ import { requireStaff } from '@/lib/api-guard'
 // ═══════════════════════════════════════════════════════
 // Admin Translation Management API
 // Routes: GET (list+stats), PUT (update), DELETE (remove)
-// Requires SUPABASE_SERVICE_ROLE_KEY — admin use only.
+// Requires SUPABASE_SERVICE_ROLE_KEY : admin use only.
 // ═══════════════════════════════════════════════════════
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// ─── GET — Stats par langue + liste paginée ──────────
+// ─── GET : Stats par langue + liste paginée ──────────
 export async function GET(request: Request) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     }
 }
 
-// ─── PUT — Modifier une traduction ──────────────────
+// ─── PUT : Modifier une traduction ──────────────────
 export async function PUT(request: Request) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
@@ -121,7 +121,7 @@ export async function PUT(request: Request) {
     }
 }
 
-// ─── DELETE — Supprimer une traduction ──────────────
+// ─── DELETE : Supprimer une traduction ──────────────
 export async function DELETE(request: Request) {
     const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!

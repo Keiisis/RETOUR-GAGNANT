@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 // ══════════════════════════════════════════════════════════════
-//  FACTURE ERP AUTO — chemin webhook
+//  FACTURE ERP AUTO : chemin webhook
 //  Même logique que /api/checkout/verify (chemin navigateur) :
 //  après un paiement confirmé par WEBHOOK (client ayant fermé la
 //  page), on crée la facture documents_financiers → la compta ne
@@ -114,7 +114,7 @@ export async function createErpInvoiceForOrder(opts: {
             remise: 0,
             total: fullOrder.amount,
             status: 'paye',
-            notes: `Facture auto-générée — ${sourceLabel} (webhook)\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transactionId}`,
+            notes: `Facture auto-générée : ${sourceLabel} (webhook)\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transactionId}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',
         })
@@ -160,8 +160,8 @@ export async function createFaAppointment(
             heure,
             type: 'consultation-fa',
             motif: `Consultation Fa & Racines (${fa.mode === 'visio' ? 'Visio' : 'Présentiel'})`
-                + (priest ? ` — ${priest}` : ''),
-            notes: `${ref} — paiement confirmé. Client : ${order.customer_name || ''} ${order.customer_phone || ''}`.trim(),
+                + (priest ? ` : ${priest}` : ''),
+            notes: `${ref} : paiement confirmé. Client : ${order.customer_name || ''} ${order.customer_phone || ''}`.trim(),
             statut: 'confirme',
         })
     } catch (e) {

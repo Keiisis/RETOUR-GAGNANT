@@ -47,7 +47,7 @@ export default function AudioPlayer() {
                     fadeInVolume(audio, GENTLE_VOLUME);
                     setIsMuted(false);
                 }).catch(() => {
-                    // Browser blocked autoplay — wait for ANY user interaction to unlock audio context
+                    // Browser blocked autoplay : wait for ANY user interaction to unlock audio context
                     const unlockAudio = () => {
                         audio.play().then(() => {
                             fadeInVolume(audio, GENTLE_VOLUME);

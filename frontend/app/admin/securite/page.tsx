@@ -255,7 +255,7 @@ export default function SecuritePage() {
                         <Shield className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white">WAF — Pare-feu Applicatif</h1>
+                        <h1 className="text-2xl font-bold text-white">WAF : Pare-feu Applicatif</h1>
                         <p className="text-gray-400 text-sm">Moteur OWASP CRS · {summary?.totalLogs24h ?? 0} événements 24h · {summary?.totalBlocked ?? 0} IPs bloquées</p>
                     </div>
                 </div>
@@ -643,10 +643,10 @@ export default function SecuritePage() {
                                 ))}
                             </div>
                             <div className="mt-2 text-xs text-gray-500 space-y-0.5">
-                                <p><strong className="text-gray-400">Niveau 1</strong> — Règles essentielles (score ≥5 pour blocage)</p>
-                                <p><strong className="text-gray-400">Niveau 2</strong> — Règles renforcées (score ≥4)</p>
-                                <p><strong className="text-gray-400">Niveau 3</strong> — Règles strictes (score ≥3)</p>
-                                <p><strong className="text-gray-400">Niveau 4</strong> — Blocage dès le premier match</p>
+                                <p><strong className="text-gray-400">Niveau 1</strong> : Règles essentielles (score ≥5 pour blocage)</p>
+                                <p><strong className="text-gray-400">Niveau 2</strong> : Règles renforcées (score ≥4)</p>
+                                <p><strong className="text-gray-400">Niveau 3</strong> : Règles strictes (score ≥3)</p>
+                                <p><strong className="text-gray-400">Niveau 4</strong> : Blocage dès le premier match</p>
                             </div>
                         </div>
 

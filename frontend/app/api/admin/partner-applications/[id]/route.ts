@@ -12,7 +12,7 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// PATCH /api/admin/partner-applications/[id] — mettre à jour le statut, notes, is_read
+// PATCH /api/admin/partner-applications/[id] : mettre à jour le statut, notes, is_read
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -65,7 +65,7 @@ export async function PATCH(
     }
 }
 
-// DELETE /api/admin/partner-applications/[id] — supprimer une candidature
+// DELETE /api/admin/partner-applications/[id] : supprimer une candidature
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

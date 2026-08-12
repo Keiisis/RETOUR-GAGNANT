@@ -155,7 +155,7 @@ export default function EventRegistrationsPage() {
                                     <p className="text-sm font-bold">{scanResult.message}</p>
                                     {scanResult.data && (
                                         <p className="text-[10px] opacity-70 mt-1">
-                                            Ticket: {scanResult.data.ticket_code} — Validé à {new Date(scanResult.data.used_at).toLocaleTimeString()}
+                                            Ticket: {scanResult.data.ticket_code} : Validé à {new Date(scanResult.data.used_at).toLocaleTimeString()}
                                         </p>
                                     )}
                                 </div>
@@ -265,7 +265,7 @@ export default function EventRegistrationsPage() {
                                                     </button>
                                                 )
                                             ) : (
-                                                <span className="text-gray-600">—</span>
+                                                <span className="text-gray-600">-</span>
                                             )}
                                         </td>
                                     </tr>

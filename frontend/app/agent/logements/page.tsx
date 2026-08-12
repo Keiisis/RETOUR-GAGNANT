@@ -7,7 +7,7 @@ import { isLogementAgent } from '@/lib/logement-access'
 import LogementsManager from '@/app/admin/logements/page'
 
 /**
- * Gestion Logement dans l'espace AGENT — réservée à l'agent nommément autorisé
+ * Gestion Logement dans l'espace AGENT : réservée à l'agent nommément autorisé
  * (voir lib/logement-access). Réutilise exactement l'interface admin ; les API
  * (/api/admin/logements, /api/logements/content, /api/upload/logement) acceptent
  * cet agent en plus des admins. Tout autre agent est redirigé.

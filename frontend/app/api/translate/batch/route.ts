@@ -67,9 +67,9 @@ async function collectStaticStrings(): Promise<Set<string>> {
                     try {
                         const code = await readFile(join(dir, entry.name), 'utf-8')
 
-                        // <T>plain text</T> — ignore JSX expressions ({...}) and nested tags
+                        // <T>plain text</T> : ignore JSX expressions ({...}) and nested tags
                         const tagRe = /<T(?:\s[^>]*)?>([^<{][^<]*?)<\/T>/g
-                        // t('text') / t("text") — ignore template literals for safety
+                        // t('text') / t("text") : ignore template literals for safety
                         const fnRe = /\bt\s*\(\s*['"]([^'"\\]{2,})['"]/g
 
                         let m: RegExpExecArray | null
@@ -135,7 +135,7 @@ async function translateBatch(
         `1. Return ONLY a valid JSON array of strings in the EXACT same order.\n` +
         `2. No markdown formatting, explanations, or code blocks.\n` +
         `3. Preserve {variable} placeholders exactly as-is.\n` +
-        `4. Preserve HTML tags and their attributes exactly — never translate class names.\n` +
+        `4. Preserve HTML tags and their attributes exactly : never translate class names.\n` +
         `5. Natural, fluent, premium-quality translation suitable for a professional services website.\n` +
         `6. If a string is already in the target language or is a proper noun, keep it as-is.\n\n` +
         `French array:\n${JSON.stringify(batch)}`
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // 1a — Static UI strings from source files
+        // 1a : Static UI strings from source files
         let staticCount = 0
         try {
             const staticStrings = await collectStaticStrings()
@@ -206,7 +206,7 @@ export async function POST(req: Request) {
             console.warn('[Batch] Static scan skipped:', e)
         }
 
-        // 1b — Dynamic DB content (all content tables, graceful on missing tables)
+        // 1b : Dynamic DB content (all content tables, graceful on missing tables)
         const [
             services, products, testimonials, events, patrimoine,
             natContent, natFaq, natDocs,
@@ -241,7 +241,7 @@ export async function POST(req: Request) {
         sponsors.forEach(s => { addText(s.name); addText(s.description) })
         steps.forEach(s => { addText(s.title); addText(s.description) })
 
-        // 1c — All previously auto-translated source texts (catches dynamic strings not in above tables)
+        // 1c : All previously auto-translated source texts (catches dynamic strings not in above tables)
         const knownTrans = await paginatedSelect(supabase, 'translations', 'source_text').catch(() => [])
         knownTrans.forEach(r => addText(r.source_text))
 
@@ -298,7 +298,7 @@ export async function POST(req: Request) {
 
             // Translate in BATCH_SIZE chunks
             for (let i = 0; i < missingTexts.length; i += BATCH_SIZE) {
-                // Time budget guard — stop if too close to Vercel limit
+                // Time budget guard : stop if too close to Vercel limit
                 if (Date.now() - startTime > TIME_BUDGET_MS) {
                     console.warn(`[Batch] Time budget exceeded at lang=${lang}, batch ${i}/${missingTexts.length}`)
                     break

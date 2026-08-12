@@ -7,7 +7,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const TICKET_SECRET = process.env.TICKET_HMAC_SECRET || 'rgb-ticket-secret-2026'
 
-// Notification API — sends email notifications for order events using SMTP
+// Notification API : sends email notifications for order events using SMTP
 export async function POST(request: Request) {
   try {
     const { order_id, type } = await request.json()
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       message: type === 'payment_success'
         ? `${order.customer_name} a payé ${formatPrice(order.amount)} ${order.currency || 'XOF'} pour "${order.product_title}" (x${order.quantity || 1}). Tel: ${order.customer_phone}`
         : type === 'abandoned'
-        ? `${order.customer_name} a abandonné son panier (${order.product_title} — ${formatPrice(order.amount)} ${order.currency || 'XOF'}). Tel: ${order.customer_phone}${order.customer_email ? `, Email: ${order.customer_email}` : ''}. Relancez ce client !`
+        ? `${order.customer_name} a abandonné son panier (${order.product_title} : ${formatPrice(order.amount)} ${order.currency || 'XOF'}). Tel: ${order.customer_phone}${order.customer_email ? `, Email: ${order.customer_email}` : ''}. Relancez ce client !`
         : `La commande #${order_id.slice(0, 8)} a été mise à jour. Statut: ${order.payment_status}`,
       order_id,
       is_read: false,
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     /* ── Notification DANS l'application, pour le CLIENT ──
        La ligne ci-dessus n'a pas de `user_id` : c'est une notification de
        personnel, lue par le panel admin. L'écran Notifications du mobile,
-       lui, filtre sur `user_id` — le client ne voyait donc jamais la
+       lui, filtre sur `user_id` : le client ne voyait donc jamais la
        confirmation de son propre paiement, qu'il s'agisse d'un article de
        la boutique ou d'une consultation Fa.
 
@@ -227,7 +227,7 @@ export async function POST(request: Request) {
             from: fromString,
             to: order.customer_email,
             replyTo: settings.smtp_from_email,
- subject: `Facture & Confirmation de commande — ${siteName}`,
+ subject: `Facture & Confirmation de commande : ${siteName}`,
             html: generateCustomerEmailHTML(order, siteName, baseUrl, eventTicket, settings),
           })
           console.log('[Notification] Email client envoyé OK')
@@ -235,10 +235,10 @@ export async function POST(request: Request) {
           console.error('[Notification] ERREUR email client:', emailErr)
         }
       } else {
-        console.warn('[Notification] Pas d\'email client — customer_email:', order.customer_email, '| type:', type)
+        console.warn('[Notification] Pas d\'email client : customer_email:', order.customer_email, '| type:', type)
       }
     } else {
-      console.error("[Notification] SMTP NON CONFIGURÉ — smtp_host:", settings.smtp_host, "smtp_user:", settings.smtp_user, "smtp_pass:", settings.smtp_pass ? 'présent' : 'MANQUANT')
+      console.error("[Notification] SMTP NON CONFIGURÉ : smtp_host:", settings.smtp_host, "smtp_user:", settings.smtp_user, "smtp_pass:", settings.smtp_pass ? 'présent' : 'MANQUANT')
     }
 
     return NextResponse.json({ ok: true })
@@ -253,8 +253,8 @@ function generateOrderEmailHTML(order: Record<string, unknown>, siteName: string
   const logoUrl = `${baseUrl}/logo.jpg`
   const ref = `RG-${(order.id as string).slice(0, 8).toUpperCase()}`
   const payMethodLabel: Record<string, string> = {
-    kkiapay: 'Mobile Money — Kkiapay', fedapay: 'Mobile Money — FedaPay',
-    stripe: 'Carte bancaire — Stripe', paypal: 'PayPal Business', zeyow: 'Zeyow',
+    kkiapay: 'Mobile Money : Kkiapay', fedapay: 'Mobile Money : FedaPay',
+    stripe: 'Carte bancaire : Stripe', paypal: 'PayPal Business', zeyow: 'Zeyow',
   }
   const payLabel = payMethodLabel[order.payment_method as string] || String(order.payment_method || '').toUpperCase()
 
@@ -284,7 +284,7 @@ function generateOrderEmailHTML(order: Record<string, unknown>, siteName: string
       </div>
     </div>
     <div style="padding:16px 40px;background:#080d14;text-align:center;border-top:1px solid #1e2a3a;">
-      <p style="margin:0;color:#4b5563;font-size:11px;">${siteName} — Notification automatique · Ne pas répondre</p>
+      <p style="margin:0;color:#4b5563;font-size:11px;">${siteName} : Notification automatique · Ne pas répondre</p>
     </div>
   </div>`
 }
@@ -304,8 +304,8 @@ function generateCustomerEmailHTML(
   const siteEmail = settings.contact_email || 'contact@retourgagnantbenin.bj'
   const sitePhone = settings.contact_phone || '+229 01 60 32 21 21  ·  +229 01 94 35 50 50'
   const payMethodLabel: Record<string, string> = {
-    kkiapay: 'Mobile Money — Kkiapay', fedapay: 'Mobile Money — FedaPay',
-    stripe: 'Carte bancaire — Stripe', paypal: 'PayPal Business', zeyow: 'Zeyow',
+    kkiapay: 'Mobile Money : Kkiapay', fedapay: 'Mobile Money : FedaPay',
+    stripe: 'Carte bancaire : Stripe', paypal: 'PayPal Business', zeyow: 'Zeyow',
   }
   const payLabel = payMethodLabel[order.payment_method as string] || String(order.payment_method || '').toUpperCase()
 
@@ -437,7 +437,7 @@ function generateCustomerEmailHTML(
         ${sitePhone ? ` ou au ${sitePhone}` : ''}
       </p>
       <p style="margin:0;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1px;">
-        <strong>${siteName}</strong> · Haie-Vive Cocotiers, Carré n°1158, Cotonou — République du Bénin
+        <strong>${siteName}</strong> · Haie-Vive Cocotiers, Carré n°1158, Cotonou : République du Bénin
       </p>
     </div>
 

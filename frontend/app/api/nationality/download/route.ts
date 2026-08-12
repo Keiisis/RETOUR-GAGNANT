@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
         const summary = `
 ═══════════════════════════════════════════════════════════
 DOSSIER DE DEMANDE DE NATIONALITÉ BÉNINOISE
-Retour Gagnant Bénin — Reconnaissance Afro-Descendant
+Retour Gagnant Bénin : Reconnaissance Afro-Descendant
 ═══════════════════════════════════════════════════════════
 
 RÉFÉRENCE : ${app.application_ref}
@@ -157,8 +157,8 @@ Autorité : ${app.autorite_delivrance || 'N/A'}
 ───────────────────────────────────────────────────────────
 PARENTS
 ───────────────────────────────────────────────────────────
-Père : ${app.pere_prenom || ''} ${app.pere_nom || 'N/A'} — Né le ${app.pere_date_naissance || 'N/A'}
-Mère : ${app.mere_prenom || ''} ${app.mere_nom || 'N/A'} — Née le ${app.mere_date_naissance || 'N/A'}
+Père : ${app.pere_prenom || ''} ${app.pere_nom || 'N/A'} : Né le ${app.pere_date_naissance || 'N/A'}
+Mère : ${app.mere_prenom || ''} ${app.mere_nom || 'N/A'} : Née le ${app.mere_date_naissance || 'N/A'}
 
 ───────────────────────────────────────────────────────────
 SITUATION FAMILIALE

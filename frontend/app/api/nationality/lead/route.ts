@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
             leadId = inserted?.id || ''
         }
 
-        // Envois email en fire-and-forget — jamais bloquant pour l'utilisateur
+        // Envois email en fire-and-forget : jamais bloquant pour l'utilisateur
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
         const registerUrl = `${siteUrl}/client/register?email=${encodeURIComponent(cleanEmail)}&nom=${encodeURIComponent(nom)}&prenom=${encodeURIComponent(prenom)}&phone=${encodeURIComponent(telephone || '')}&pays=${encodeURIComponent(pays_residence || '')}&source=nationalite`
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                 const templates = await getEmailTemplates(lang || 'fr')
                 await sendEmail({
                     to: cleanEmail,
-                    subject: 'Retour Gagnant Bénin — Finalisez votre inscription',
+                    subject: 'Retour Gagnant Bénin : Finalisez votre inscription',
                     html: await templates.accountInvite(clientName, registerUrl),
                     context: 'account_invite',
                     relatedId: leadId,
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
                 if (config.adminEmail) {
                     await sendEmail({
                         to: config.adminEmail,
- subject: `Nouveau prospect nationalité — ${clientName}`,
+ subject: `Nouveau prospect nationalité : ${clientName}`,
                         html: await templates.newLeadNotification(
                             clientName,
                             cleanEmail,
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
             // Notification WhatsApp automatique (no-op si non configuré)
             try {
                 await sendWhatsAppNotification(
-                    `🇧🇯 Nouveau prospect nationalité — Retour Gagnant\n` +
+                    `🇧🇯 Nouveau prospect nationalité : Retour Gagnant\n` +
                     `Nom : ${clientName}\n` +
                     `Email : ${cleanEmail}\n` +
                     `Tél : ${telephone || 'non communiqué'}\n` +

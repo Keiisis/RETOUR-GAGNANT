@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — Auto-écoles partenaires (Permis de Conduire) : CRUD complet
+//  ADMIN : Auto-écoles partenaires (Permis de Conduire) : CRUD complet
 //  Toutes les écritures passent ici (service role) : la table est en RLS
 //  lecture seule côté public. Aucune donnée codée en dur. Prix + durée
 //  entièrement pilotés depuis ici.
@@ -44,7 +44,7 @@ function sanitize(body: Record<string, unknown>) {
     return out
 }
 
-// GET — liste complète (actives + inactives)
+// GET : liste complète (actives + inactives)
 export async function GET(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ schools: data || [] })
 }
 
-// POST — création
+// POST : création
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: data.id })
 }
 
-// PATCH — mise à jour
+// PATCH : mise à jour
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true })
 }
 
-// DELETE — suppression
+// DELETE : suppression
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!

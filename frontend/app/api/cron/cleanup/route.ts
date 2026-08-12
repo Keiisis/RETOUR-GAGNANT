@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON — Purge automatique des dossiers de nationalité (24h)
+//  CRON : Purge automatique des dossiers de nationalité (24h)
 // ──────────────────────────────────────────────────────────────
 // Ce endpoint s'exécute chaque nuit via Vercel Cron.
 //
@@ -105,7 +105,7 @@ async function runPurge() {
                                 }
                             }
                         } catch (dlErr) {
-                            // Fichier peut-être déjà supprimé — on continue
+                            // Fichier peut-être déjà supprimé : on continue
                             console.warn(`[PURGE] Fichier introuvable: ${doc.file_name}`)
                         }
                     }
@@ -121,7 +121,7 @@ async function runPurge() {
                     await transporter.sendMail({
                         from: `"${emailConfig.fromName}" <${emailConfig.fromEmail}>`,
                         to: emailConfig.adminEmail,
-                        subject: `[ARCHIVE] Dossier ${dossier.numero || dossier.id} — Purge automatique ${now.toLocaleDateString('fr-FR')}`,
+                        subject: `[ARCHIVE] Dossier ${dossier.numero || dossier.id} : Purge automatique ${now.toLocaleDateString('fr-FR')}`,
                         html: dossierHtml,
                         attachments: attachments.map(a => ({
                             filename: a.filename,
@@ -134,7 +134,7 @@ async function runPurge() {
                 } catch (mailErr) {
                     const msg = mailErr instanceof Error ? mailErr.message : 'Erreur email inconnue'
                     results.errors.push(`Email échoué pour dossier ${dossier.id}: ${msg}`)
-                    //  NE PAS supprimer si l'email a échoué — on réessaiera demain
+                    //  NE PAS supprimer si l'email a échoué : on réessaiera demain
                     continue
                 }
             }
@@ -205,7 +205,7 @@ async function runPurge() {
         await transporter.sendMail({
             from: `"${emailConfig.fromName}" <${emailConfig.fromEmail}>`,
             to: emailConfig.adminEmail,
-            subject: `[SÉCURITÉ] Purge 24h — ${results.dossiersDeleted} dossier(s) supprimé(s) · ${now.toLocaleDateString('fr-FR')}`,
+            subject: `[SÉCURITÉ] Purge 24h : ${results.dossiersDeleted} dossier(s) supprimé(s) · ${now.toLocaleDateString('fr-FR')}`,
             html: reportHtml,
         }).catch(() => { /* fail silently */ })
     }
@@ -229,7 +229,7 @@ function buildDossierArchiveEmail(
     <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:24px;text-align:center">
-            <h1 style="color:#f59e0b;margin:0;font-size:18px"> Archive de Dossier — Purge Automatique</h1>
+            <h1 style="color:#f59e0b;margin:0;font-size:18px"> Archive de Dossier : Purge Automatique</h1>
             <p style="color:#94a3b8;margin:6px 0 0;font-size:12px">${date.toLocaleString('fr-FR')} UTC</p>
         </div>
         <!-- Infos dossier -->
@@ -249,7 +249,7 @@ function buildDossierArchiveEmail(
                 </tr>
                 <tr>
                     <td style="padding:10px 0;color:#64748b;font-size:13px;border-bottom:1px solid #f1f5f9">Créé le</td>
-                    <td style="padding:10px 0;text-align:right;color:#1e293b;font-size:13px;border-bottom:1px solid #f1f5f9">${dossier.created_at ? new Date(dossier.created_at as string).toLocaleString('fr-FR') : '—'}</td>
+                    <td style="padding:10px 0;text-align:right;color:#1e293b;font-size:13px;border-bottom:1px solid #f1f5f9">${dossier.created_at ? new Date(dossier.created_at as string).toLocaleString('fr-FR') : '-'}</td>
                 </tr>
                 <tr>
                     <td style="padding:10px 0;color:#64748b;font-size:13px">Documents joints</td>
@@ -284,7 +284,7 @@ function buildPurgeReportEmail(
 <body style="margin:0;padding:20px;background:#0f172a;font-family:'Segoe UI',Arial,sans-serif">
     <div style="max-width:600px;margin:0 auto;background:#1e293b;border-radius:16px;overflow:hidden">
         <div style="background:linear-gradient(135deg,#dc2626,#f59e0b);padding:20px 24px">
-            <h1 style="color:#fff;margin:0;font-size:18px"> Rapport de Purge Automatique — 24h</h1>
+            <h1 style="color:#fff;margin:0;font-size:18px"> Rapport de Purge Automatique : 24h</h1>
             <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px">Retour Gagnant Bénin · ${date.toLocaleString('fr-FR')}</p>
         </div>
         <div style="padding:24px">
@@ -314,7 +314,7 @@ function buildPurgeReportEmail(
                 </ul>
             </div>` : `
             <div style="margin-top:16px;background:#052e16;border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;text-align:center">
-                <p style="margin:0;color:#6ee7b7;font-size:13px;font-weight:700"> Purge complète — Aucune erreur</p>
+                <p style="margin:0;color:#6ee7b7;font-size:13px;font-weight:700"> Purge complète : Aucune erreur</p>
             </div>`}
         </div>
     </div>

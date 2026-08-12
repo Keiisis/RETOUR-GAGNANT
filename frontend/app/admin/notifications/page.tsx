@@ -166,7 +166,7 @@ export default function AdminNotificationsPage() {
                         <div className="flex items-center gap-2 mt-1 p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
                             <AlertTriangle size={14} className="text-orange-400" />
                             <span className="text-xs text-orange-400 font-black uppercase tracking-wider">
-                                {abandonedCount} panier(s) abandonné(s) — relancez ces clients !
+                                {abandonedCount} panier(s) abandonné(s) : relancez ces clients !
                             </span>
                         </div>
                     )}

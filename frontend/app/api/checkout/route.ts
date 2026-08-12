@@ -164,8 +164,7 @@ export async function POST(request: Request) {
             }
 
             // ── SÉLECTION À LA CARTE : le client a choisi certaines prestations.
-            // Le total est TOUJOURS recalculé serveur depuis ai_proposal_items —
-            // le montant envoyé par le client ne sert qu'au contrôle de cohérence.
+            // Le total est TOUJOURS recalculé serveur depuis ai_proposal_items-// le montant envoyé par le client ne sert qu'au contrôle de cohérence.
             if (Array.isArray(selected_item_ids) && selected_item_ids.length > 0) {
                 if (selected_item_ids.length > 100 || selected_item_ids.some((x: unknown) => typeof x !== 'string')) {
                     return NextResponse.json({ error: 'Sélection invalide' }, { status: 400 })
@@ -181,7 +180,7 @@ export async function POST(request: Request) {
                 )
                 if (billable.length !== selected_item_ids.length) {
                     return NextResponse.json(
-                        { error: 'Sélection invalide — certaines prestations sont introuvables. Actualisez la page.' },
+                        { error: 'Sélection invalide : certaines prestations sont introuvables. Actualisez la page.' },
                         { status: 400 }
                     )
                 }
@@ -192,7 +191,7 @@ export async function POST(request: Request) {
                 const expectedTTC = ttcFromHt(expectedHT, proposal.currency)
                 if (expectedTTC <= 0 || Math.abs(parsedAmount - expectedTTC) > 1) {
                     console.error(
-                        `[Checkout/Proposal] Sélection — montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
+                        `[Checkout/Proposal] Sélection : montant invalide : reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
                     )
                     return NextResponse.json(
                         { error: 'Montant invalide pour cette sélection. Veuillez actualiser la page.' },
@@ -210,7 +209,7 @@ export async function POST(request: Request) {
                 const expectedTTC = ttcFromHt(Number(proposal.total_amount), proposal.currency)
                 if (Math.abs(parsedAmount - expectedTTC) > 1) {
                     console.error(
-                        `[Checkout/Proposal] Montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
+                        `[Checkout/Proposal] Montant invalide : reçu: ${parsedAmount}, attendu TTC: ${expectedTTC}`
                     )
                     return NextResponse.json(
                         { error: 'Montant invalide pour cette proposition. Veuillez actualiser la page.' },
@@ -238,7 +237,7 @@ export async function POST(request: Request) {
                 : (product_id ? [{ product_id, quantity: quantity || 1 }] : [])
 
             // Anti-épuisement de coupon : interdire l'usage d'un coupon sans produit.
-            // Sans produits, le montant n'est pas recalculé côté serveur — un attaquant
+            // Sans produits, le montant n'est pas recalculé côté serveur : un attaquant
             // pourrait créer des dizaines de commandes bidon pour épuiser les utilisations d'un coupon.
             if (coupon_id && itemsForPriceCheck.length === 0) {
                 return NextResponse.json(
@@ -304,7 +303,7 @@ export async function POST(request: Request) {
                 // Tolérance de 1 XOF pour les arrondis
                 if (Math.abs(parsedAmount - expectedTotal) > 1) {
                     console.error(
-                        `[Checkout] Montant invalide — reçu: ${parsedAmount}, attendu TTC: ${expectedTotal}` +
+                        `[Checkout] Montant invalide : reçu: ${parsedAmount}, attendu TTC: ${expectedTotal}` +
                         ` (HT marchandises: ${htGoods}, TVA incl., livraison: ${validatedShippingFee})`
                     )
                     return NextResponse.json(
@@ -354,7 +353,7 @@ export async function POST(request: Request) {
                 shipping_country: shipping_country || null,
                 // Pour une proposition/lien de paiement : on marque la commande
                 // (shipping_zone='proposal') et on garde le lien vers la proposition
-                // (shipping_address = son id) — product_id a une FK vers products,
+                // (shipping_address = son id) : product_id a une FK vers products,
                 // inutilisable ici. Permet la classification unique en aval.
                 shipping_address: isProposalPayment ? String(product_id || '') : (shipping_address || null),
                 shipping_zone: isProposalPayment ? 'proposal' : (shipping_zone || null),
@@ -379,7 +378,7 @@ export async function POST(request: Request) {
             const { error: incrErr } = await supabase.rpc('increment_coupon_use', { c_id: coupon_id })
 
             if (incrErr) {
-                // L'incrément a échoué (fonction SQL manquante ou erreur DB) — annuler la commande
+                // L'incrément a échoué (fonction SQL manquante ou erreur DB) : annuler la commande
                 console.error('[Checkout] increment_coupon_use failed:', incrErr.message)
                 await supabase.from('orders').delete().eq('id', data.id)
                 return NextResponse.json(

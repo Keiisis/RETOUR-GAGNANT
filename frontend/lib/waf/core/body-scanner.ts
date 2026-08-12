@@ -1,8 +1,8 @@
 // ══════════════════════════════════════════════════════════════
-// 🛡️  @waf-core/body-scanner — Analyseur structurel de payload
+// 🛡️  @waf-core/body-scanner : Analyseur structurel de payload
 // ══════════════════════════════════════════════════════════════
 //
-// PORTABLE — Zéro dépendance. Aucune référence à Next.js, Supabase,
+// PORTABLE : Zéro dépendance. Aucune référence à Next.js, Supabase,
 // React ou tout framework. Pure logique TypeScript.
 //
 // Objectif : analyser un corps de requête DÉJÀ PARSÉ (objet JS issu
@@ -97,7 +97,7 @@ const CLOUD_METADATA_HOSTS = new Set([
 
 /**
  * Teste si un hôte (IP ou nom) cible une ressource interne.
- * Détection IP CORRECTE (octets parsés) — pas de match substring naïf
+ * Détection IP CORRECTE (octets parsés) : pas de match substring naïf
  * qui bloquerait "version 10.2" ou "prix 127.0 €".
  */
 export function isInternalHost(host: string): boolean {
@@ -132,7 +132,7 @@ function scanString(value: string, path: string, opts: BodyScanOptions): BodySca
     if (value.length > opts.maxStringLength) {
         return {
             safe: false, threat: 'oversized_string', confidence: 70, path,
-            detail: `Chaîne de ${value.length} caractères (max ${opts.maxStringLength}) — possible DoS/ReDoS`,
+            detail: `Chaîne de ${value.length} caractères (max ${opts.maxStringLength}) : possible DoS/ReDoS`,
         }
     }
 
@@ -171,7 +171,7 @@ function scanString(value: string, path: string, opts: BodyScanOptions): BodySca
 
 /**
  * Analyse récursive d'un payload déjà parsé.
- * Renvoie un verdict { safe } — ne lève jamais d'exception.
+ * Renvoie un verdict { safe } : ne lève jamais d'exception.
  */
 export function scanBody(
     payload: unknown,
@@ -194,7 +194,7 @@ export function scanBody(
         if (depth > opts.maxDepth) {
             return {
                 safe: false, threat: 'recursive_depth', confidence: 80, path,
-                detail: `Profondeur d'imbrication > ${opts.maxDepth} — possible DoS JSON`,
+                detail: `Profondeur d'imbrication > ${opts.maxDepth} : possible DoS JSON`,
             }
         }
 
@@ -212,7 +212,7 @@ export function scanBody(
             if (node.length > opts.maxArrayLength) {
                 return {
                     safe: false, threat: 'array_explosion', confidence: 75, path,
-                    detail: `Tableau de ${node.length} éléments (max ${opts.maxArrayLength}) — possible DoS`,
+                    detail: `Tableau de ${node.length} éléments (max ${opts.maxArrayLength}) : possible DoS`,
                 }
             }
             for (let i = 0; i < node.length; i++) {
@@ -221,7 +221,7 @@ export function scanBody(
             continue
         }
 
-        // Objet — vérifier les clés (prototype pollution) puis descendre
+        // Objet : vérifier les clés (prototype pollution) puis descendre
         // On lit les clés brutes, y compris non-énumérables potentielles via getOwnPropertyNames
         const keys = Object.getOwnPropertyNames(node as Record<string, unknown>)
         for (const key of keys) {
@@ -229,7 +229,7 @@ export function scanBody(
             if (keyCount > opts.maxKeys) {
                 return {
                     safe: false, threat: 'key_explosion', confidence: 75, path,
-                    detail: `Plus de ${opts.maxKeys} clés au total — possible DoS structurel`,
+                    detail: `Plus de ${opts.maxKeys} clés au total : possible DoS structurel`,
                 }
             }
 

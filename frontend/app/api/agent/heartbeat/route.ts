@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
 
         if (count === 0) {
             // Ligne introuvable → tenter un UPSERT minimal pour créer la ligne si absente
-            console.warn('[Heartbeat] 0 lignes affectées pour userId:', userId, '— ligne absente?')
-            return NextResponse.json({ success: false, warning: 'Aucune ligne affectée — profil inexistant?', userId })
+            console.warn('[Heartbeat] 0 lignes affectées pour userId:', userId, '-ligne absente?')
+            return NextResponse.json({ success: false, warning: 'Aucune ligne affectée : profil inexistant?', userId })
         }
 
         return NextResponse.json({ success: true, updated: count, timestamp: now })

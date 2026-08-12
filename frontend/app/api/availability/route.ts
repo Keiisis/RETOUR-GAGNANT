@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  PUBLIC — Créneaux de rendez-vous disponibles
+//  PUBLIC : Créneaux de rendez-vous disponibles
 //  GET /api/availability?from=YYYY-MM-DD&days=14&service=nationalite
 //  Renvoie les créneaux LIBRES calculés (jamais stockés).
 // ══════════════════════════════════════════════════════════════

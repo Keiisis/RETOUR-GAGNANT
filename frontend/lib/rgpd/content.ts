@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// RGPD — Contenu structuré des documents officiels (source unique).
+// RGPD : Contenu structuré des documents officiels (source unique).
 // Rendu en PDF (lib/rgpd/pdf.ts) et DOCX (lib/rgpd/docx.ts) avec l'en-tête RGB.
 // ══════════════════════════════════════════════════════════════
 
@@ -22,18 +22,18 @@ export interface RgpdDoc {
 const REGISTRE: RgpdDoc = {
     id: 'registre',
     title: 'Registre des activités de traitement',
-    subtitle: 'Article 30 du Règlement (UE) 2016/679 (RGPD) — Document interne et confidentiel',
+    subtitle: 'Article 30 du Règlement (UE) 2016/679 (RGPD) : Document interne et confidentiel',
     confidential: true,
     blocks: [
         { type: 'note', text: 'Document INTERNE et CONFIDENTIEL. À tenir à jour à chaque nouveau traitement, daté, et tenu à disposition de l\'autorité de contrôle. Les champs entre crochets sont à compléter/valider par le responsable.' },
         { type: 'h2', text: '1. Responsable du traitement' },
         { type: 'table', head: ['Élément', 'Valeur'], rows: [
             ['Responsable du traitement', 'Retour Gagnant Bénin'],
-            ['Représentant légal', '[Nom + qualité — à compléter]'],
+            ['Représentant légal', '[Nom + qualité : à compléter]'],
             ['Adresse du siège', 'Haie-Vive Cocotiers, Carré n°1158, Cotonou, République du Bénin'],
             ['Identifiant (IFU / RCCM)', '[à compléter]'],
             ['Point de contact RGPD', 'contact@retourgagnantbenin.bj'],
-            ['Délégué à la protection des données', '[Désigné : oui/non — coordonnées si oui]'],
+            ['Délégué à la protection des données', '[Désigné : oui/non : coordonnées si oui]'],
             ['Date de dernière mise à jour', '[date]'],
         ] },
         { type: 'h2', text: '2. Sous-traitants (annexe confidentielle)' },
@@ -95,39 +95,39 @@ const REGISTRE: RgpdDoc = {
 const PROCEDURE: RgpdDoc = {
     id: 'procedure',
     title: 'Procédure de gestion des violations de données',
-    subtitle: 'Articles 33 et 34 du RGPD — Notification dans les 72 heures',
+    subtitle: 'Articles 33 et 34 du RGPD : Notification dans les 72 heures',
     confidential: true,
     blocks: [
         { type: 'p', text: 'Une « violation de données » désigne toute atteinte à la confidentialité (fuite, accès non autorisé), à l\'intégrité (altération) ou à la disponibilité (perte, destruction, rançongiciel) de données personnelles.' },
         { type: 'note', text: 'Règle d\'or : notifier l\'autorité de contrôle dans les 72 heures suivant la prise de connaissance, sauf si la violation est peu susceptible d\'engendrer un risque pour les personnes. Le délai court dès la prise de connaissance.' },
         { type: 'h2', text: 'Rôles' },
         { type: 'table', head: ['Rôle', 'Responsable', 'Mission'], rows: [
-            ['Référent incident', '[Nom — ex. CEO/DSI]', 'Pilote la réponse, décide de la notification'],
+            ['Référent incident', '[Nom : ex. CEO/DSI]', 'Pilote la réponse, décide de la notification'],
             ['Point de contact RGPD', 'contact@retourgagnantbenin.bj', 'Interface autorité & personnes concernées'],
             ['Support technique', '[Nom]', 'Confinement, investigation, correctifs'],
         ] },
-        { type: 'h2', text: 'Étape 1 — Détecter & qualifier (immédiat)' },
+        { type: 'h2', text: 'Étape 1 : Détecter & qualifier (immédiat)' },
         { type: 'list', items: [
             'Sources : journaux du WAF, alertes d\'intégrité, signalement client/prestataire, comportement anormal.',
             'Qualifier : quelles données, combien de personnes, type d\'atteinte, données sensibles concernées ?',
         ] },
-        { type: 'h2', text: 'Étape 2 — Confiner (dans l\'heure)' },
+        { type: 'h2', text: 'Étape 2 : Confiner (dans l\'heure)' },
         { type: 'list', items: [
             'Révoquer les accès/sessions compromis ; forcer la rotation des mots de passe et des clés.',
             'Bloquer les IP/origines en cause ; activer le mode d\'urgence si nécessaire.',
             'Isoler le composant touché sans détruire les preuves (conserver les journaux).',
         ] },
-        { type: 'h2', text: 'Étape 3 — Évaluer le risque' },
+        { type: 'h2', text: 'Étape 3 : Évaluer le risque' },
         { type: 'table', head: ['Risque pour les personnes', 'Notifier l\'autorité (72h)', 'Informer les personnes'], rows: [
             ['Aucun / négligeable', 'Non (mais consigner au registre)', 'Non'],
             ['Risque', 'Oui (≤ 72h)', 'Si risque élevé'],
             ['Risque élevé', 'Oui (≤ 72h)', 'Oui, sans délai'],
         ] },
-        { type: 'h2', text: 'Étape 4 — Notifier l\'autorité (≤ 72h)' },
-        { type: 'p', text: 'Autorité compétente : [à confirmer — ex. APDP Bénin ; CNIL si personnes concernées en France/UE]. Contenu : nature de la violation, catégories et nombre approximatif de personnes et d\'enregistrements, coordonnées du point de contact, conséquences probables, mesures prises. En cas d\'information incomplète, notifier de façon échelonnée.' },
-        { type: 'h2', text: 'Étape 5 — Informer les personnes (si risque élevé)' },
+        { type: 'h2', text: 'Étape 4 : Notifier l\'autorité (≤ 72h)' },
+        { type: 'p', text: 'Autorité compétente : [à confirmer : ex. APDP Bénin ; CNIL si personnes concernées en France/UE]. Contenu : nature de la violation, catégories et nombre approximatif de personnes et d\'enregistrements, coordonnées du point de contact, conséquences probables, mesures prises. En cas d\'information incomplète, notifier de façon échelonnée.' },
+        { type: 'h2', text: 'Étape 5 : Informer les personnes (si risque élevé)' },
         { type: 'p', text: 'Message clair et simple : ce qui s\'est passé, quelles données, conséquences possibles, mesures prises, recommandations (changer le mot de passe, vigilance phishing), point de contact.' },
-        { type: 'h2', text: 'Étape 6 — Documenter & corriger' },
+        { type: 'h2', text: 'Étape 6 : Documenter & corriger' },
         { type: 'list', items: [
             'Inscrire la violation au registre des violations (obligatoire, même sans notification).',
             'Corriger la cause racine ; mettre à jour les mesures de sécurité.',

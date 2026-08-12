@@ -5,7 +5,7 @@
 //  signées, une requête PAR pièce jointe, soumission…). Le débit de ces
 //  routes publiques est plafonné côté serveur. S'il était plafonné PAR IP,
 //  plusieurs clients derrière une même IP (mobile CGNAT, VPN, réseau
-//  d'entreprise) épuisaient le quota et se bloquaient mutuellement — pièces
+//  d'entreprise) épuisaient le quota et se bloquaient mutuellement : pièces
 //  perdues, soumission refusée.
 //
 //  On attache donc à chaque requête un identifiant STABLE par session de

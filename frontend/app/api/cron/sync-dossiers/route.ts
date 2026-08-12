@@ -12,7 +12,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
  * (dossier_tracking) avec le statut réel des commandes (orders).
  *
  * Logique de progression boutique :
- *   pending   →  20% étape 1 (commande reçue — en attente paiement)
+ *   pending   →  20% étape 1 (commande reçue : en attente paiement)
  *   completed →  40% étape 2 (paiement confirmé)
  *   shipped   →  60% étape 3 (commande expédiée)
  *   delivered →  80% étape 4 (livraison en cours)
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         // 2. Extraire les FRAGMENTS d'identifiant de commande
         //
         // `num_dossier` vaut « RG-CMD-6EF058C6 » : les 8 premiers caractères
-        // de l'UUID de la commande, en majuscules — PAS l'UUID entier.
+        // de l'UUID de la commande, en majuscules : PAS l'UUID entier.
         // L'ancien code les passait tels quels à `in('id', …)`, ce que
         // PostgreSQL rejette (« invalid input syntax for type uuid ») : la
         // requête échouait, la route renvoyait 500, et AUCUN dossier n'a

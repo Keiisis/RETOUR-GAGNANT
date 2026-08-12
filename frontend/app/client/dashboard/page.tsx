@@ -38,9 +38,9 @@ const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d = new Date(dateStr)
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR')
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR')
 }
 
 export default function ClientDashboardPage() {
@@ -210,12 +210,11 @@ export default function ClientDashboardPage() {
 
     // La couleur ENCODE un état, elle ne décore pas : une carte n'est colorée
     // que si elle attend une action du client. Sinon elle reste neutre. Avant,
-    // chaque carte avait un dégradé différent (emerald / or / teal / indigo) —
-    // quatre accents sans signification, d'où l'impression de désordre.
+    // chaque carte avait un dégradé différent (emerald / or / teal / indigo)-// quatre accents sans signification, d'où l'impression de désordre.
     const cards = [
         { title: 'Devis en attente', value: stats.devisEnAttente, icon: FileText, tone: 'action' as const, href: '/client/documents', desc: 'À signer' },
         { title: 'Factures à payer', value: stats.facturesToPay, icon: Receipt, tone: 'money' as const, href: '/client/documents', desc: 'En attente de paiement' },
-        { title: 'Dossier actif', value: stats.dossierActif ? 'Actif' : '—', icon: FolderOpen, tone: 'neutral' as const, href: '/client/dossier', desc: 'Suivi en cours' },
+        { title: 'Dossier actif', value: stats.dossierActif ? 'Actif' : '-', icon: FolderOpen, tone: 'neutral' as const, href: '/client/dossier', desc: 'Suivi en cours' },
         { title: 'Réponses reçues', value: stats.messagesNonLus, icon: MessageSquare, tone: 'action' as const, href: '/client/messages', desc: 'De votre agent' },
     ]
 

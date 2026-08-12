@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
 /* ══════════════════════════════════════════════════════════════
-   THEME CONTEXT — Toggle clair/sombre par panel
+   THEME CONTEXT : Toggle clair/sombre par panel
    Persistance localStorage par panel (chaque panel son reglage)
    Variables CSS appliquees sur un wrapper [data-theme][data-panel]
 ══════════════════════════════════════════════════════════════ */
@@ -43,7 +43,7 @@ export function ThemeProvider({
             const saved = localStorage.getItem(storageKey(panel))
             if (saved === 'light' || saved === 'dark') setThemeState(saved)
         } catch {
-            /* storage indispo (private mode) — on garde defaultTheme */
+            /* storage indispo (private mode) : on garde defaultTheme */
         }
         setMounted(true)
     }, [panel])
@@ -80,7 +80,7 @@ export function ThemeProvider({
 export function useTheme(): ThemeContextValue {
     const ctx = useContext(ThemeContext)
     if (!ctx) {
-        // Fallback safe si utilise hors d'un Provider — retourne defaults
+        // Fallback safe si utilise hors d'un Provider : retourne defaults
         return {
             theme: 'dark',
             panel: 'admin',

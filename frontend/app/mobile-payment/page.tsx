@@ -1,6 +1,6 @@
 "use client"
 
-// Force dynamic rendering — useSearchParams() requires it even with Suspense (Next.js 15)
+// Force dynamic rendering : useSearchParams() requires it even with Suspense (Next.js 15)
 export const dynamic = 'force-dynamic'
 
 import { Suspense, useEffect, useState } from 'react'
@@ -16,7 +16,7 @@ function MobilePaymentContent() {
     const isSandbox = process.env.NEXT_PUBLIC_KKIAPAY_SANDBOX === 'true'
     const publicKey = isSandbox ? process.env.NEXT_PUBLIC_KKIAPAY_SANDBOX_PUBLIC_KEY : process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY
 
-    // Dérive l'état initial directement — évite setState synchrone dans l'effet
+    // Dérive l'état initial directement : évite setState synchrone dans l'effet
     const isInvalid = !amount || !publicKey
     const [status, setStatus] = useState(
         isInvalid ? 'Paramètres de paiement invalides.' : 'Chargement du module de paiement...'

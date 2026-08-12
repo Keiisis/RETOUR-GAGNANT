@@ -188,7 +188,7 @@ export default function DedicatedTreePage() {
       const fileBase = clientName.replace(/\s+/g, '-').toLowerCase();
 
       // ═══════════════════════════════════════════════════
-      // IMAGE 1 — RECTO : L'arbre seul, grand et lisible
+      // IMAGE 1 : RECTO : L'arbre seul, grand et lisible
       // ═══════════════════════════════════════════════════
       const treeWrapper = document.createElement('div');
       treeWrapper.style.cssText = 'position:absolute;left:-9999px;top:0;background:#FFFFFF;padding:60px 60px 40px;display:inline-block;width:max-content;';
@@ -360,7 +360,7 @@ export default function DedicatedTreePage() {
 
       document.body.removeChild(treeWrapper);
 
-      // Download Image 1 — RECTO
+      // Download Image 1 : RECTO
       const link1 = document.createElement('a');
       link1.download = `arbre-${fileBase}-RECTO-${dateStr}.jpg`;
       link1.href = compressCanvasToBudget(treeCanvas, 800);
@@ -370,7 +370,7 @@ export default function DedicatedTreePage() {
       await new Promise(r => setTimeout(r, 500));
 
       // ═══════════════════════════════════════════════════
-      // IMAGE 2 — VERSO : Le rapport (pour le dos de l'impression)
+      // IMAGE 2 : VERSO : Le rapport (pour le dos de l'impression)
       // ═══════════════════════════════════════════════════
       const allDirectRoles: RelationRole[] = [
         'self', 'father', 'mother',
@@ -422,10 +422,10 @@ export default function DedicatedTreePage() {
         reportHtml += `
           <tr style="border-bottom:1px solid #E5E7EB;">
             <td style="padding:8px 12px;font-weight:600;color:#374151;">${roleName}</td>
-            <td style="padding:8px 12px;color:#1F2937;">${p.first_name || '—'}</td>
-            <td style="padding:8px 12px;color:#1F2937;">${p.last_name || '—'}</td>
-            <td style="padding:8px 12px;color:#1F2937;">${p.birth_date || '—'}</td>
-            <td style="padding:8px 12px;color:#1F2937;">${p.birth_place || '—'}</td>
+            <td style="padding:8px 12px;color:#1F2937;">${p.first_name || '-'}</td>
+            <td style="padding:8px 12px;color:#1F2937;">${p.last_name || '-'}</td>
+            <td style="padding:8px 12px;color:#1F2937;">${p.birth_date || '-'}</td>
+            <td style="padding:8px 12px;color:#1F2937;">${p.birth_place || '-'}</td>
           </tr>
         `;
       });
@@ -452,7 +452,7 @@ export default function DedicatedTreePage() {
           if (!p.first_name) missing.push('prénom');
           if (!p.last_name) missing.push('nom');
           if (!p.birth_date) missing.push('date de naissance');
-          reportHtml += `<li style="margin-bottom:4px;"><strong>${p.first_name || '?'} ${p.last_name || '?'}</strong> (${ROLE_LABELS[p.relation_role || ''] || 'Membre'}) — manque : ${missing.join(', ')}</li>`;
+          reportHtml += `<li style="margin-bottom:4px;"><strong>${p.first_name || '?'} ${p.last_name || '?'}</strong> (${ROLE_LABELS[p.relation_role || ''] || 'Membre'}) : manque : ${missing.join(', ')}</li>`;
         });
         reportHtml += `</ul></div>`;
       }
@@ -460,13 +460,13 @@ export default function DedicatedTreePage() {
       // All complete message
       if (missingRoles.length === 0 && incompletePersons.length === 0) {
         reportHtml += `<div style="padding:20px;background:#D1FAE5;border-radius:14px;border:1px solid #6EE7B7;">`;
-        reportHtml += `<p style="font-size:15px;font-weight:700;color:#065F46;margin:0;"> Arbre complet — Toutes les fiches sont renseignées</p>`;
+        reportHtml += `<p style="font-size:15px;font-weight:700;color:#065F46;margin:0;"> Arbre complet : Toutes les fiches sont renseignées</p>`;
         reportHtml += `</div>`;
       }
 
       reportHtml += `
         <div style="margin-top:40px;padding-top:20px;border-top:2px solid #E5E7EB;text-align:center;">
-          <p style="font-size:10px;color:#9CA3AF;margin:0;">RETOUR GAGNANT BÉNIN — Plan de composition de Famille • www.retourgagnantbenin.bj</p>
+          <p style="font-size:10px;color:#9CA3AF;margin:0;">RETOUR GAGNANT BÉNIN : Plan de composition de Famille • www.retourgagnantbenin.bj</p>
         </div>
       `;
 
@@ -487,7 +487,7 @@ export default function DedicatedTreePage() {
 
       document.body.removeChild(reportWrapper);
 
-      // Download Image 2 — VERSO
+      // Download Image 2 : VERSO
       const link2 = document.createElement('a');
       link2.download = `arbre-${fileBase}-VERSO-${dateStr}.jpg`;
       link2.href = compressCanvasToBudget(reportCanvas, 800);
@@ -744,7 +744,7 @@ export default function DedicatedTreePage() {
       page1.drawText(`Membres enregistrés : ${persons.length}`, { x: 60, y: 285, size: 12, font: helvetica });
 
       page1.drawLine({ start: { x: 40, y: 80 }, end: { x: 555, y: 80 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
-      page1.drawText('Retour Gagnant Bénin — www.retourgagnantbenin.bj', {
+      page1.drawText('Retour Gagnant Bénin : www.retourgagnantbenin.bj', {
         x: 40,
         y: 60,
         size: 8,
@@ -1099,7 +1099,7 @@ export default function DedicatedTreePage() {
       ctx.fillStyle = '#9CA3AF';
       ctx.font = '400 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('RETOUR GAGNANT BÉNIN — Plan de composition de Famille • www.retourgagnantbenin.bj', A4_W / 2, A4_H - 10);
+      ctx.fillText('RETOUR GAGNANT BÉNIN : Plan de composition de Famille • www.retourgagnantbenin.bj', A4_W / 2, A4_H - 10);
 
       // Download
       const link = document.createElement('a');
@@ -1288,7 +1288,7 @@ export default function DedicatedTreePage() {
             <AuditLogDrawer treeId={treeId} isDark={isDark} />
           )}
 
-          {/* Suggestions (#7) — sélectionne la personne ciblée à l'arrivée */}
+          {/* Suggestions (#7) : sélectionne la personne ciblée à l'arrivée */}
           {treeId && (
             <SuggestionsPanel
               treeId={treeId}
@@ -1300,7 +1300,7 @@ export default function DedicatedTreePage() {
             />
           )}
 
-          {/* Doublons potentiels (#6) — badge masqué si rien à signaler */}
+          {/* Doublons potentiels (#6) : badge masqué si rien à signaler */}
           {treeId && (
             <DedupAlert
               treeId={treeId}
@@ -1461,7 +1461,7 @@ export default function DedicatedTreePage() {
         </div>
       </header>
 
-      {/* 2. Main content area — conditionally rendered based on viewMode */}
+      {/* 2. Main content area : conditionally rendered based on viewMode */}
       {viewMode === 'tree' && (
         <div 
           ref={viewRef}
@@ -1908,10 +1908,10 @@ export default function DedicatedTreePage() {
         </div>
       )}
 
-      {/* 3. Drawer EDITER LE MEMBRE — style sidebar opaque pleine hauteur */}
+      {/* 3. Drawer EDITER LE MEMBRE : style sidebar opaque pleine hauteur */}
       {(selectedPerson || presetRole || addAction) && tree && (
         <>
-          {/* Backdrop 100% OPAQUE — masque totalement l'arrière-plan (l'arbre disparaît visuellement) */}
+          {/* Backdrop 100% OPAQUE : masque totalement l'arrière-plan (l'arbre disparaît visuellement) */}
           <div
             className="fixed inset-0"
             style={{
@@ -1923,7 +1923,7 @@ export default function DedicatedTreePage() {
             }}
             onClick={handleCancelEdit}
           />
-          {/* Drawer panel — opaque solide, comme la sidebar admin, bordure or épaisse */}
+          {/* Drawer panel : opaque solide, comme la sidebar admin, bordure or épaisse */}
           <div
             className="fixed right-0 top-0 bottom-0 w-[460px] max-w-[100vw] flex flex-col overflow-y-auto scrollbar-premium"
             style={{
@@ -1936,7 +1936,7 @@ export default function DedicatedTreePage() {
                 : '-30px 0 100px rgba(15,23,42,0.55), -12px 0 40px rgba(15,23,42,0.30)',
             }}
           >
-          {/* Ruban tricolore Bénin en tête — signature officielle */}
+          {/* Ruban tricolore Bénin en tête : signature officielle */}
           <div
             style={{
               height: 6,
@@ -1945,7 +1945,7 @@ export default function DedicatedTreePage() {
             }}
           />
 
-          {/* ═══════ HEADER MASSIF — fond émeraude, titre BLANC énorme ═══════ */}
+          {/* ═══════ HEADER MASSIF : fond émeraude, titre BLANC énorme ═══════ */}
           <div
             style={{
               background: 'linear-gradient(135deg, #047857 0%, #065F46 60%, #064E3B 100%)',
@@ -2044,7 +2044,7 @@ export default function DedicatedTreePage() {
             </div>
           </div>
 
-          {/* ═══════ BODY du drawer — fond très blanc, contraste fort ═══════ */}
+          {/* ═══════ BODY du drawer : fond très blanc, contraste fort ═══════ */}
           <div className="p-6 space-y-5" style={{ backgroundColor: isDark ? '#0B1220' : '#FFFFFF', opacity: 1, flex: 1 }}>
 
             {/* Document upload inside details */}

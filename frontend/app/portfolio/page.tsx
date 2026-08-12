@@ -138,7 +138,7 @@ export default function PortfolioImmersivePage() {
         const v = videoRef.current
         if (!v) return
 
-        const tryPlay = () => { v.play().catch(() => { /* silencieux — on retentera */ }) }
+        const tryPlay = () => { v.play().catch(() => { /* silencieux : on retentera */ }) }
 
         // Tentative immédiate (dès que <video> est dans le DOM)
         tryPlay()

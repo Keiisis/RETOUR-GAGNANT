@@ -227,7 +227,7 @@ function VerifiedView({ token }: { token: string }) {
                     <h2 className="text-lg font-bold text-[#1a2332]">Données détenues sur vous</h2>
                 </div>
                 <p className="text-gray-500 text-sm">
-                    {preview?.email} — {preview?.totalRecords} enregistrement(s)
+                    {preview?.email} : {preview?.totalRecords} enregistrement(s)
                     {preview && preview.documentCount > 0 && ` · ${preview.documentCount} document(s)`}
                 </p>
             </div>
@@ -245,7 +245,7 @@ function VerifiedView({ token }: { token: string }) {
                         {section.kind === 'document' ? (
                             <p className="text-sm text-gray-500 italic flex items-center gap-2">
                                 <FileLock2 className="w-4 h-4" />
-                                {section.count} document(s) enregistré(s). Pour votre sécurité, leur contenu n&apos;est pas affiché ici — il sera supprimé en même temps que vos données.
+                                {section.count} document(s) enregistré(s). Pour votre sécurité, leur contenu n&apos;est pas affiché ici : il sera supprimé en même temps que vos données.
                             </p>
                         ) : (
                             <div className="space-y-4">

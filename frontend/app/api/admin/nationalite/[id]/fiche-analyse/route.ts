@@ -74,7 +74,7 @@ function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
     const genealogieMode = !hasPhoto && missing.length > 0
 
     if (genealogieMode) {
-        // Fiche « dossier incomplet » — inventaire d'état civil + 2 options.
+        // Fiche « dossier incomplet » : inventaire d'état civil + 2 options.
         const GENEALOGY = [
             { document: "Extrait d'acte de naissance", filiation: 'Titulaire du dossier (Client)' },
             { document: "Extrait d'acte de naissance", filiation: "Père de l'intéressé" },
@@ -101,8 +101,8 @@ function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
             nextStepsBoxes: ancestralPaid
                 ? [{ title: 'Recherche généalogique en cours', body: "Votre forfait de recherche ayant été réglé, RGB réalise pour vous la recherche complète des extraits d'acte de naissance manquants. Vous pouvez également nous transmettre toute pièce déjà en votre possession pour accélérer l'instruction.", tone: 'blue' as const }]
                 : [
-                    { title: 'Option 1 — Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' as const },
-                    { title: 'Option 2 — Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' as const },
+                    { title: 'Option 1 : Transmission directe', body: "Vous rassemblez par vos propres moyens l'ensemble des extraits d'acte de naissance listés ci-dessus et nous les transmettez directement dans les meilleurs délais.", tone: 'blue' as const },
+                    { title: 'Option 2 : Accompagnement RGB', body: "Si vous rencontrez des difficultés à obtenir ces documents, RGB propose de réaliser la recherche généalogique complète pour vous. Forfait Recherche Généalogique : 250 €.", tone: 'yellow' as const },
                 ],
             finalNote: ancestralPaid
                 ? "Notre équipe reste à votre disposition et vous tiendra informé de l'avancement de la recherche généalogique afin de poursuivre l'instruction de votre dossier."
@@ -110,7 +110,7 @@ function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
         }
     }
 
-    // Fiche « conformité » — non-conformités de format / pièces manquantes + RDV.
+    // Fiche « conformité » : non-conformités de format / pièces manquantes + RDV.
     const diagParts: string[] = ['Après vérification des pièces transmises, votre dossier ne peut être validé en l\'état.']
     if (hasPhoto) diagParts.push('Certains documents ont été fournis au format photo, non exploitable par nos services : ils doivent être transmis en PDF officiel.')
     if (missing.length > 0) diagParts.push('Plusieurs pièces indispensables à la preuve d\'afro-descendance sont manquantes.')
@@ -142,8 +142,8 @@ async function writeEmail(app: AppRow, fiche: FicheAnalyseData): Promise<{ subje
     const nom = app.nom || fiche.clientName
     const issues = fiche.pieces.map(p => `- ${p.document} : ${p.statut}`).join('\n')
     const fallback = {
-        subject: `Votre dossier de nationalité — pièces à régulariser (${app.application_ref})`,
-        body: `Bonjour ${civ} ${nom},\n\nAprès l'analyse de votre dossier de demande de nationalité béninoise, quelques pièces doivent être régularisées pour poursuivre l'instruction. Vous trouverez le détail complet dans la fiche d'analyse jointe (PDF).\n\nPièces concernées :\n${issues}\n\nNotre équipe reste à votre entière disposition pour vous accompagner. N'hésitez pas à répondre à cet e-mail ou à demander un rendez-vous téléphonique.\n\nCordialement,\nPôle Instruction — Retour Gagnant Bénin`,
+        subject: `Votre dossier de nationalité : pièces à régulariser (${app.application_ref})`,
+        body: `Bonjour ${civ} ${nom},\n\nAprès l'analyse de votre dossier de demande de nationalité béninoise, quelques pièces doivent être régularisées pour poursuivre l'instruction. Vous trouverez le détail complet dans la fiche d'analyse jointe (PDF).\n\nPièces concernées :\n${issues}\n\nNotre équipe reste à votre entière disposition pour vous accompagner. N'hésitez pas à répondre à cet e-mail ou à demander un rendez-vous téléphonique.\n\nCordialement,\nPôle Instruction : Retour Gagnant Bénin`,
     }
     if (groqKeys.length === 0) return fallback
     try {
@@ -153,7 +153,7 @@ Rédige un e-mail EN FRANÇAIS, chaleureux, professionnel, clair et rassurant, a
 Pièces concernées :
 ${issues}
 
-Contraintes : ton bienveillant et pro, 120-160 mots, pas de jargon, invite à répondre ou à demander un rendez-vous téléphonique, signe "Pôle Instruction — Retour Gagnant Bénin". Réponds STRICTEMENT en JSON : {"subject": "...", "body": "..."} (body en texte simple avec sauts de ligne \\n).`
+Contraintes : ton bienveillant et pro, 120-160 mots, pas de jargon, invite à répondre ou à demander un rendez-vous téléphonique, signe "Pôle Instruction : Retour Gagnant Bénin". Réponds STRICTEMENT en JSON : {"subject": "...", "body": "..."} (body en texte simple avec sauts de ligne \\n).`
         const c = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
             model: 'llama-3.3-70b-versatile',

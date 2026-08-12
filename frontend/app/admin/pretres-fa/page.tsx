@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — PRÊTRES FA (Bokonon)
+//  ADMIN : PRÊTRES FA (Bokonon)
 //  Annuaire complet : identité, prestations, galerie, certifications,
 //  notation et modération des avis. Aucune donnée codée en dur :
 //  tout vient de la table fa_priests / fa_priest_reviews.
@@ -93,7 +93,7 @@ function RowEditor<T extends Record<string, string | undefined>>({
             </div>
             <div className="space-y-2">
                 {rows.length === 0 && (
-                    <p className="text-[11px] italic px-1" style={{ color: 'var(--panel-text-muted, #6B7280)' }}>Aucune entrée — cliquez sur « + {addLabel} ».</p>
+                    <p className="text-[11px] italic px-1" style={{ color: 'var(--panel-text-muted, #6B7280)' }}>Aucune entrée : cliquez sur « + {addLabel} ».</p>
                 )}
                 {rows.map((r, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
@@ -467,7 +467,7 @@ export default function PretresFaPage() {
                                         <div className="flex items-center gap-2 mt-2">
                                             <Stars value={p.rating_avg} />
                                             <span className="text-[11px] font-bold" style={{ color: 'var(--panel-text, #E5E7EB)' }}>
-                                                {p.rating_avg > 0 ? p.rating_avg.toFixed(1) : '—'}
+                                                {p.rating_avg > 0 ? p.rating_avg.toFixed(1) : '-'}
                                             </span>
                                             <span className="text-[10px]" style={lblStyle}>({p.rating_count} avis)</span>
                                             {p.reviews_pending > 0 && (
@@ -585,7 +585,7 @@ export default function PretresFaPage() {
                                             title="Photo principale (portrait)"
                                             icon={UserRound}
                                             multiple={false}
-                                            hint="JPG, PNG, WEBP ou AVIF — 8 Mo maximum"
+                                            hint="JPG, PNG, WEBP ou AVIF : 8 Mo maximum"
                                             values={editing.photo_url ? [editing.photo_url] : []}
                                             onChange={v => setEditing({ ...editing, photo_url: v[0] || '' })}
                                         />
@@ -627,7 +627,7 @@ export default function PretresFaPage() {
                                     title="Galerie d'images"
                                     icon={ImageIcon}
                                     multiple
-                                    hint="Plusieurs images à la fois — 8 Mo par fichier"
+                                    hint="Plusieurs images à la fois : 8 Mo par fichier"
                                     values={editing.gallery || []}
                                     onChange={v => setEditing({ ...editing, gallery: v })}
                                 />
@@ -647,7 +647,7 @@ export default function PretresFaPage() {
                                             onChange={e => setEditing({ ...editing, email: e.target.value })} />
                                     </div>
                                 </div>
-                                <p className="text-[10px] -mt-3" style={lblStyle}>Ces coordonnées restent internes — elles ne sont jamais exposées sur le site public.</p>
+                                <p className="text-[10px] -mt-3" style={lblStyle}>Ces coordonnées restent internes : elles ne sont jamais exposées sur le site public.</p>
 
                                 {/* Visibilité */}
                                 <div className="flex items-center justify-between rounded-2xl border p-4" style={card}>

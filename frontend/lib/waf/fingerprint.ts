@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 🔍 WAF FINGERPRINT — Empreinte navigateur côté serveur
+// 🔍 WAF FINGERPRINT : Empreinte navigateur côté serveur
 // Identifie les attaquants même après changement d'IP
 //
 // NOTE : Ce module tourne dans le Edge Runtime (middleware Next.js)

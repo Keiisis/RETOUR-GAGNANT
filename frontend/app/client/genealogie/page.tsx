@@ -278,7 +278,7 @@ export default function ClientGenealogyPage() {
         </div>
       </div>
 
-      {/* 2. Main content area — conditionally rendered based on viewMode */}
+      {/* 2. Main content area : conditionally rendered based on viewMode */}
       {viewMode === 'tree' && (
         <div 
           ref={viewRef}
@@ -608,7 +608,7 @@ export default function ClientGenealogyPage() {
       {/* Detail Drawer (Read-Only) */}
       {selectedPerson && (
         <>
-          {/* Backdrop overlay — FIXED position to cover entire viewport */}
+          {/* Backdrop overlay : FIXED position to cover entire viewport */}
           <div
             className="fixed inset-0 animate-in fade-in duration-200"
             style={{
@@ -619,7 +619,7 @@ export default function ClientGenealogyPage() {
             }}
             onClick={handleCancelDetail}
           />
-          {/* Drawer panel — FIXED position, always on top */}
+          {/* Drawer panel : FIXED position, always on top */}
           <div
             className="fixed right-0 bottom-0 w-[420px] flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300 scrollbar-premium"
             style={{
@@ -645,7 +645,7 @@ export default function ClientGenealogyPage() {
                   <h3 className="text-base font-black text-white"
                     style={{ color: isDark ? '#ffffff' : '#1e293b' }}
                   >
-                    {selectedPerson.first_name || '—'} {selectedPerson.last_name || '—'}
+                    {selectedPerson.first_name || '-'} {selectedPerson.last_name || '-'}
                   </h3>
                 </div>
                 <button
@@ -678,7 +678,7 @@ export default function ClientGenealogyPage() {
                   <p className="text-xs font-bold"
                     style={{ color: isDark ? '#ffffff' : '#1e293b' }}
                   >
-                    {selectedPerson.first_name || '—'} {selectedPerson.last_name || '—'}
+                    {selectedPerson.first_name || '-'} {selectedPerson.last_name || '-'}
                   </p>
                   <p className="text-[10px] text-gray-500 uppercase tracking-wider font-mono mt-0.5">
                     {ROLE_LABELS[selectedPerson.relation_role || ''] || 'Membre'}
@@ -697,16 +697,16 @@ export default function ClientGenealogyPage() {
                   <div>
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider block">Naissance</span>
                     <p className="font-bold mt-0.5" style={{ color: isDark ? '#ffffff' : '#1e293b' }}>
-                      {selectedPerson.birth_date || '—'}
+                      {selectedPerson.birth_date || '-'}
                     </p>
-                    <p className="text-gray-500 text-[10px] mt-0.5">{selectedPerson.birth_place || '—'}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5">{selectedPerson.birth_place || '-'}</p>
                   </div>
                   <div>
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider block">Décès</span>
                     <p className="font-bold mt-0.5" style={{ color: isDark ? '#ffffff' : '#1e293b' }}>
-                      {selectedPerson.death_date || '—'}
+                      {selectedPerson.death_date || '-'}
                     </p>
-                    <p className="text-gray-500 text-[10px] mt-0.5">{selectedPerson.death_place || '—'}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5">{selectedPerson.death_place || '-'}</p>
                   </div>
                 </div>
 

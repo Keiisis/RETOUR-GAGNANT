@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
 
-// Libellé de devise du DOCUMENT — ne JAMAIS forcer XOF sur un devis/facture EUR/USD
+// Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
 const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'XOF' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c === 'GBP' ? '£' : c
 // Total converti en XOF pour agréger des documents multi-devises (KPIs)
 const toXof = (amount: number, c?: string) => convertCurrency(amount, ((c || 'XOF').toUpperCase()) as CurrencyCode, 'XOF')
@@ -180,7 +180,7 @@ export default function AgentDevisPage() {
 
             const tpl = templateData?.content || {}
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN — RCCM : RB/COT/26 B 42001 — IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable — En cas de litige, seules les juridictions béninoises sont compétentes."
+            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes."
             const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
 
             const jsPDF = (await import('jspdf')).default
@@ -271,7 +271,7 @@ export default function AgentDevisPage() {
             pdf.setFontSize(8.5)
             pdf.setTextColor(80, 80, 80)
             pdf.text(`N° ${doc.numero}`, pw - mr, headerTop + 22, { align: 'right' })
-            pdf.text(`Date : ${doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}`, pw - mr, headerTop + 27, { align: 'right' })
+            pdf.text(`Date : ${doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}`, pw - mr, headerTop + 27, { align: 'right' })
             // Ne pas afficher Délai pour les factures (uniquement Validité pour les devis)
             if (doc.type === 'devis') {
                 pdf.text(`Validité : ${doc.validite}`, pw - mr, headerTop + 32, { align: 'right' })
@@ -431,7 +431,7 @@ export default function AgentDevisPage() {
             const sigW = (cw - 8) / 2
             const sigH = 38
 
-            // Client — facture : preuve de paiement (jamais de « bon pour accord »)
+            // Client : facture : preuve de paiement (jamais de « bon pour accord »)
             pdf.setDrawColor(0, 135, 81)
             pdf.roundedRect(ml, y, sigW, sigH, 2, 2, 'D')
             pdf.setFont('helvetica', 'bold')
@@ -459,7 +459,7 @@ export default function AgentDevisPage() {
                 }
             }
 
-            // PDG — réplique de la case DIRECTION GÉNÉRALE de la Grille Tarifaire
+            // PDG : réplique de la case DIRECTION GÉNÉRALE de la Grille Tarifaire
             const sig2X = ml + sigW + 8
             pdf.setDrawColor(20, 40, 80)
             pdf.roundedRect(sig2X, y, sigW, sigH, 2, 2, 'D')
@@ -470,7 +470,7 @@ export default function AgentDevisPage() {
             pdf.setFontSize(6.5)
             pdf.setTextColor(30, 40, 70)
             pdf.text('RETOUR GAGNANT BENIN', sig2X + 4, y + 11)
-            // Signature manuscrite (script) — times italique, encre bleue
+            // Signature manuscrite (script) : times italique, encre bleue
             pdf.setFont('times', 'italic')
             pdf.setFontSize(15)
             pdf.setTextColor(20, 40, 110)
@@ -481,7 +481,7 @@ export default function AgentDevisPage() {
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(5.8)
             pdf.setTextColor(90, 95, 130)
-            pdf.text('Signature et Cachet officiel — Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'), sig2X + 4, y + sigH - 3)
+            pdf.text('Signature et Cachet officiel : Fait a Cotonou, le ' + (doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'), sig2X + 4, y + sigH - 3)
 
             try {
                 const sSz = 40
@@ -524,8 +524,8 @@ export default function AgentDevisPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     to: doc.client_email,
-                    subject: `${typeLabel} N° ${doc.numero}${statusLabel} — Retour Gagnant Bénin`,
- message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n Détails :\n${doc.items?.map(i => `• ${i.description} — ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n Notes : ${doc.notes}`: ''}\n${doc.conditions ? `\n Conditions : ${doc.conditions}`: ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
+                    subject: `${typeLabel} N° ${doc.numero}${statusLabel} : Retour Gagnant Bénin`,
+ message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n Détails :\n${doc.items?.map(i => `• ${i.description} : ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n Notes : ${doc.notes}`: ''}\n${doc.conditions ? `\n Conditions : ${doc.conditions}`: ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
                     clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim(),
                     context: 'document_financier',
                     relatedId: doc.id,
@@ -569,12 +569,12 @@ export default function AgentDevisPage() {
     }
 
     const sendRelance = async (doc: DocumentFinancier) => {
-        if (!doc.client_email) { alert('Email client manquant — impossible de relancer.'); return }
+        if (!doc.client_email) { alert('Email client manquant : impossible de relancer.'); return }
         const info = computeOverdue(doc, paidByDoc[doc.id] || 0)
         if (!info.isUnpaid) return
         setSendingRelance(doc.id)
         try {
-            const subject = `Rappel — Facture ${doc.numero} en attente de règlement`
+            const subject = `Rappel : Facture ${doc.numero} en attente de règlement`
             const html = `
                 <p>Bonjour ${doc.client_nom || ''} ${doc.client_prenom || ''},</p>
                 <p>Nous nous permettons de revenir vers vous concernant la facture <strong>${doc.numero}</strong>${info.isOverdue ? ` échue depuis <strong>${info.daysLate} jour${info.daysLate > 1 ? 's' : ''}</strong>` : ''}.</p>
@@ -619,7 +619,7 @@ export default function AgentDevisPage() {
         return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
     }
 
-    // KPIs agrégés en XOF (conversion des documents EUR/USD) — sinon on
+    // KPIs agrégés en XOF (conversion des documents EUR/USD) : sinon on
     // additionnerait des devises différentes (337 EUR + 164 000 XOF = faux)
     const myCA = documents.filter(d => d.status === 'paye').reduce((s, d) => s + toXof(d.total, d.currency), 0)
     const activeDevis = documents.filter(d => d.type === 'devis' && d.status !== 'refuse').length
@@ -668,7 +668,7 @@ export default function AgentDevisPage() {
                             {overdueDocs.length} facture{overdueDocs.length > 1 ? 's' : ''} en retard de paiement
                         </p>
                         <p className="text-gray-400 text-xs mt-1">
-                            <span className="font-mono text-orange-300 font-bold">{overdueAmount.toLocaleString('fr-FR')} XOF</span> à récupérer — relancez vos clients depuis la liste ci-dessous.
+                            <span className="font-mono text-orange-300 font-bold">{overdueAmount.toLocaleString('fr-FR')} XOF</span> à récupérer : relancez vos clients depuis la liste ci-dessous.
                         </p>
                     </div>
                     <button
@@ -790,7 +790,7 @@ export default function AgentDevisPage() {
                                                         </span>
                                                     )}
                                                 </p>
-                                                <p className="text-gray-500 text-[10px]">{doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '—'}</p>
+                                                <p className="text-gray-500 text-[10px]">{doc.created_at && !isNaN(new Date(doc.created_at).getTime()) ? new Date(doc.created_at).toLocaleDateString('fr-FR') : '-'}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -814,7 +814,7 @@ export default function AgentDevisPage() {
                                                 </td>
                                                 <td className="py-3 px-5 text-right">
                                                     <p className={`font-mono text-sm font-bold ${fullyPaid ? 'text-emerald-500' : remaining > 0 ? 'text-amber-400' : 'text-gray-600'}`}>
-                                                        {fullyPaid ? '—' : `${remaining.toLocaleString('fr-FR')} ${curLabel(doc.currency)}`}
+                                                        {fullyPaid ? '-' : `${remaining.toLocaleString('fr-FR')} ${curLabel(doc.currency)}`}
                                                     </p>
                                                 </td>
                                             </>
@@ -849,7 +849,7 @@ export default function AgentDevisPage() {
                                                     onClick={() => sendRelance(doc)}
                                                     disabled={sendingRelance === doc.id || !doc.client_email}
                                                     className={`p-2 rounded-lg transition-all disabled:opacity-30 ${alarm.isOverdue ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'}`}
-                                                    title={alarm.isOverdue ? `Relancer — en retard de ${alarm.daysLate} jour(s)` : 'Envoyer une relance de paiement'}
+                                                    title={alarm.isOverdue ? `Relancer : en retard de ${alarm.daysLate} jour(s)` : 'Envoyer une relance de paiement'}
                                                 >
                                                     {sendingRelance === doc.id ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
                                                 </button>
@@ -858,7 +858,7 @@ export default function AgentDevisPage() {
                                                 <button
                                                     onClick={() => toggleFacturePaid(doc)}
                                                     className={`p-2 rounded-lg transition-all ${doc.status === 'paye' ? 'text-emerald-400 hover:text-amber-400 hover:bg-amber-500/10' : 'text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
-                                                    title={doc.status === 'paye' ? 'Payée — cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}
+                                                    title={doc.status === 'paye' ? 'Payée : cliquer pour marquer impayée' : 'Marquer cette facture comme payée'}
                                                 >
                                                     {doc.status === 'paye' ? <CheckCircle2 size={16} /> : <BadgeDollarSign size={16} />}
                                                 </button>

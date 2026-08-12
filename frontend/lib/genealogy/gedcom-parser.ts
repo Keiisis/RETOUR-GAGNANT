@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   GEDCOM Parser — minimaliste, GEDCOM 5.5 + 7.0
+   GEDCOM Parser : minimaliste, GEDCOM 5.5 + 7.0
    Lit le texte GEDCOM ligne par ligne et construit deux maps :
    - individuals : { @I1@ → IndividualRecord }
    - families    : { @F1@ → FamilyRecord }

@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-// Langues & Racines — choix Présentiel / Visio → prise de rendez-vous.
+// Langues & Racines : choix Présentiel / Visio → prise de rendez-vous.
 // Pas de prix affiché (sur devis) : chaque option mène au formulaire RDV
 // avec le service pré-sélectionné. La demande alimente automatiquement
 // l'Agenda agent (rdv_requests) + email équipe + notification in-app.

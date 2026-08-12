@@ -60,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             }))
         }
     } catch {
-        // Silently fail — static pages still generated
+        // Silently fail : static pages still generated
     }
 
     return [...staticPages, ...servicePages, ...blogPages]

@@ -372,7 +372,7 @@ export default function AdminUsersPage() {
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: !next } : u))
             toast('error', 'Erreur mise à jour statut')
         } else {
-            toast('info', `${user.full_name} — compte ${next ? 'activé' : 'désactivé'}`)
+            toast('info', `${user.full_name} : compte ${next ? 'activé' : 'désactivé'}`)
         }
     }
 

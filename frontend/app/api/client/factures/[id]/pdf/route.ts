@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  FACTURE CLIENT — PDF téléchargeable
+//  FACTURE CLIENT : PDF téléchargeable
 //
 //  Le générateur generateInvoicePdf existait mais n'était branché nulle
 //  part : le client ne pouvait PAS télécharger ses factures

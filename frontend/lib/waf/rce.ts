@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// 💀 lib/waf/rce.ts — Remote Code Execution Detection
+// 💀 lib/waf/rce.ts : Remote Code Execution Detection
 // ══════════════════════════════════════════════════════════════
 //
 // Détecte les tentatives d'exécution de code à distance via :

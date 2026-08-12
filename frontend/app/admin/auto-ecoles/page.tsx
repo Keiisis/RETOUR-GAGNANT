@@ -1,7 +1,7 @@
 'use client'
 
 // ══════════════════════════════════════════════════════════════
-//  ADMIN — AUTO-ÉCOLES PARTENAIRES (Permis de Conduire Béninois)
+//  ADMIN : AUTO-ÉCOLES PARTENAIRES (Permis de Conduire Béninois)
 //  Ajouter / éditer / supprimer les auto-écoles que les clients choisissent.
 //  Prix (EUR) + durée + prestations incluses 100 % pilotés ici. Aucune donnée
 //  codée en dur : tout vient de la table driving_schools.
@@ -129,7 +129,7 @@ export default function AutoEcolesAdmin() {
                     </div>
                     <div>
                         <h1 className="text-xl font-black" style={{ color: 'var(--panel-text, #1a2332)' }}>Auto-écoles partenaires</h1>
-                        <p className="text-xs" style={{ color: 'var(--panel-text-muted, #6B7280)' }}>Permis de Conduire Béninois — les clients choisissent parmi ces écoles.</p>
+                        <p className="text-xs" style={{ color: 'var(--panel-text-muted, #6B7280)' }}>Permis de Conduire Béninois : les clients choisissent parmi ces écoles.</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -783,7 +783,7 @@ export default function AiRadarView() {
                                         <UserPlus className="w-3 h-3" /> Attribution
                                     </p>
                                     <p className="text-xs text-gray-400 italic">
-                                        {selectedLead.assigned_agent_id ? `Assigné à l'agent ${selectedLead.assigned_agent_id}` : 'Non assigné — fonctionnalité CRM avancée'}
+                                        {selectedLead.assigned_agent_id ? `Assigné à l'agent ${selectedLead.assigned_agent_id}` : 'Non assigné : fonctionnalité CRM avancée'}
                                     </p>
                                 </div>
                             </div>

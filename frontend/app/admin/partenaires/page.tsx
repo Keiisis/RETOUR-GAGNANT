@@ -321,7 +321,7 @@ export default function AdminPartenaires() {
                                                     label="Logo"
                                                     value={form.logo || ''}
                                                     onChange={v => setForm(p => ({ ...p, logo: v }))}
-                                                    hint="PNG, JPG, WebP — max 5MB"
+                                                    hint="PNG, JPG, WebP : max 5MB"
                                                     className="w-[100px] flex-shrink-0"
                                                 />
                                             </div>
@@ -331,7 +331,7 @@ export default function AdminPartenaires() {
                                                     label="Photo de couverture"
                                                     value={form.cover_image || ''}
                                                     onChange={v => setForm(p => ({ ...p, cover_image: v }))}
-                                                    hint="1200×400px recommandé — JPG, PNG, WebP"
+                                                    hint="1200×400px recommandé : JPG, PNG, WebP"
                                                 />
                                             </div>
                                             <div className="md:col-span-2 space-y-1.5">
@@ -361,7 +361,7 @@ export default function AdminPartenaires() {
                                                 {(form.gallery || []).length === 0 && (
                                                     <div className="flex flex-col items-center justify-center py-6 rounded-xl border border-dashed border-white/10 text-gray-600 gap-2">
                                                         <GalleryHorizontal size={24} strokeWidth={1} />
-                                                        <p className="text-[11px]">Aucun article — cliquez sur &quot;Ajouter un article&quot;</p>
+                                                        <p className="text-[11px]">Aucun article : cliquez sur &quot;Ajouter un article&quot;</p>
                                                     </div>
                                                 )}
                                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -558,7 +558,7 @@ export default function AdminPartenaires() {
                                                         </span>
                                                     </div>
                                                     <p className="text-xs text-gray-500 mt-0.5">{app.contact_name} • {app.category} • {app.location}</p>
-                                                    <p className="text-[10px] text-gray-600">{!app.created_at || isNaN(new Date(app.created_at).getTime()) ? '—' : new Date(app.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                                    <p className="text-[10px] text-gray-600">{!app.created_at || isNaN(new Date(app.created_at).getTime()) ? '-' : new Date(app.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                                 </div>
                                                 {isExpanded ? <ChevronUp size={16} className="text-gray-500 flex-shrink-0" /> : <ChevronDown size={16} className="text-gray-500 flex-shrink-0" />}
                                             </button>
@@ -566,7 +566,7 @@ export default function AdminPartenaires() {
                                             {/* Quick actions */}
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 {app.email && (
-                                                    <a href={`mailto:${app.email}?subject=Retour Gagnant — Suite à votre candidature partenaire`}
+                                                    <a href={`mailto:${app.email}?subject=Retour Gagnant : Suite à votre candidature partenaire`}
                                                         onClick={() => app.status === 'pending' && updateAppStatus(app, 'contacted')}
                                                         className="flex items-center gap-1 text-xs font-bold bg-[#3b82f6]/15 text-[#3b82f6] hover:bg-[#3b82f6]/25 border border-[#3b82f6]/20 px-3 py-1.5 rounded-lg transition-all">
                                                         <Mail size={12} /> Email
