@@ -52,7 +52,7 @@ interface LangContextType {
 }
 
 // Replace `{key}` placeholders in a string with values from `vars`.
-// Translation cache stays template-based — interpolation happens after lookup.
+// Translation cache stays template-based : interpolation happens after lookup.
 const interpolate = (text: string, vars?: Vars): string => {
     if (!vars) return text
     return text.replace(/\{(\w+)\}/g, (match, key) =>
@@ -123,7 +123,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
 
         AsyncStorage.getItem(versionKey).then(storedVersion => {
             if (storedVersion !== String(CACHE_VERSION)) {
-                // Version mismatch — old/corrupted cache, purge it
+                // Version mismatch : old/corrupted cache, purge it
                 console.log(`[LangContext] Cache version mismatch for ${lang} (stored=${storedVersion}, current=${CACHE_VERSION}). Purging local cache.`)
                 AsyncStorage.removeItem(cacheKey).catch(() => {})
                 AsyncStorage.setItem(versionKey, String(CACHE_VERSION)).catch(() => {})
@@ -131,7 +131,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
                 return
             }
 
-            // Version matches — load from AsyncStorage
+            // Version matches : load from AsyncStorage
             return AsyncStorage.getItem(cacheKey).then(raw => {
                 if (raw) {
                     try {
@@ -176,7 +176,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         const texts = Array.from(pendingTexts.current)
         pendingTexts.current.clear()
 
-        // Filter already cached or permanently failed — using ref for latest cache
+        // Filter already cached or permanently failed : using ref for latest cache
         const currentCache = cacheRef.current
         const toTranslate = texts.filter(t =>
             !currentCache.has(t) && !failedForever.current.has(t)
@@ -281,7 +281,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
                 for (const t of uncached) pendingTexts.current.add(t)
                 setTimeout(flushBatch, 3000)
             } else {
-                // MAX RETRIES REACHED — mark texts as permanently failed
+                // MAX RETRIES REACHED : mark texts as permanently failed
                 // This STOPS the infinite loop: t() will not re-queue these texts
                 // until retryFailed() is called (e.g. when app returns from background)
                 console.log(`[LangContext] Giving up on ${uncached.length} texts after ${retryCount.current} retries (will retry on app foreground)`)
@@ -293,16 +293,16 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
             return
         }
 
-        // Success — reset retry counter
+        // Success : reset retry counter
         retryCount.current = 0
 
         // Check if more texts were queued while we were flushing
         if (pendingTexts.current.size > 0) {
             setTimeout(flushBatch, 200)
         }
-    }, []) // No dependencies — uses refs for latest state
+    }, []) // No dependencies : uses refs for latest state
 
-    // ── t() function — queues text for translation, with optional `{key}` interpolation ──
+    // ── t() function : queues text for translation, with optional `{key}` interpolation ──
     const t = useCallback((text: string, vars?: Vars): string => {
         if (!text) return text
         if (lang === DEFAULT_LANG) return interpolate(text, vars)
@@ -328,7 +328,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         return interpolate(text, vars) // Return original while translating
     }, [lang, cache, flushBatch])
 
-    // ── preloadTexts() — immediately queue critical texts for translation ──
+    // ── preloadTexts() : immediately queue critical texts for translation ──
     const preloadTexts = useCallback((texts: string[]) => {
         if (lang === DEFAULT_LANG) return
         const currentCache = cacheRef.current
@@ -347,7 +347,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         }
     }, [lang, flushBatch])
 
-    // ── retryFailed() — reset failedForever and re-queue those texts ──
+    // ── retryFailed() : reset failedForever and re-queue those texts ──
     // Called on app foreground (network may have recovered) or manually for debug.
     const retryFailed = useCallback(() => {
         if (langRef.current === DEFAULT_LANG) return
@@ -381,7 +381,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(id)
     }, [lang, retryFailed])
 
-    // ── clearCache(lang?) — wipe AsyncStorage cache for a language (or all) ──
+    // ── clearCache(lang?) : wipe AsyncStorage cache for a language (or all) ──
     const clearCache = useCallback(async (target?: LangCode) => {
         const targets = target ? [target] : SUPPORTED_LANGUAGES.map(l => l.code).filter(c => c !== 'fr')
         for (const code of targets) {

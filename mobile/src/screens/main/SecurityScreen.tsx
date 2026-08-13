@@ -26,14 +26,14 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Security'>
 const { width: SCREEN_W } = Dimensions.get('window')
 
 /* ──────────────────────────────────────────────
-   PALETTE — Corporate Premium 2026
+   PALETTE : Corporate Premium 2026
    ────────────────────────────────────────────── */
 // Palette de l'ecran : plus de copie locale. Toutes les couleurs
 // viennent du design system v2 (blanc + tricolore Benin).
 const C = screenColors
 
 /* ──────────────────────────────────────────────
-   ANIMATED SECTION — fade-in staggered
+   ANIMATED SECTION : fade-in staggered
    ────────────────────────────────────────────── */
 function AnimatedSection({ delay = 0, children, style }: any) {
     const v = useSharedValue(0)
@@ -48,7 +48,7 @@ function AnimatedSection({ delay = 0, children, style }: any) {
 }
 
 /* ──────────────────────────────────────────────
-   INTERACTIVE BUTTON — press scale
+   INTERACTIVE BUTTON : press scale
    ────────────────────────────────────────────── */
 function InteractiveButton({ onPress, disabled, style, children }: any) {
     const s = useSharedValue(1)
@@ -68,7 +68,7 @@ function InteractiveButton({ onPress, disabled, style, children }: any) {
 }
 
 /* ──────────────────────────────────────────────
-   HERO — bouclier animé doré
+   HERO : bouclier animé doré
    ────────────────────────────────────────────── */
 function SecurityHero({ score, t }: { score: number; t: (s: string) => string }) {
     const shine = useSharedValue(0)
@@ -145,7 +145,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
 }
 
 /* ──────────────────────────────────────────────
-   PASSWORD FIELD — premium
+   PASSWORD FIELD : premium
    ────────────────────────────────────────────── */
 function PasswordField({
     label, value, onChange, show, onToggle, placeholder, focused, setFocused, field,

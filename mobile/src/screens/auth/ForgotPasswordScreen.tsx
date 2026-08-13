@@ -24,7 +24,7 @@ import { useLang } from '../../contexts/LangContext'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   ForgotPasswordScreen — THEME "CORPORATE PREMIUM 2026"
+   ForgotPasswordScreen : THEME "CORPORATE PREMIUM 2026"
    Cohérent avec LoginScreen & RegisterScreen
 ═══════════════════════════════════════════════════════════ */
 
@@ -174,7 +174,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
                 {/* Footer signature */}
                 <View style={styles.footerContainer}>
-                    <Text style={styles.footer}>{t('Retour Gagnant Bénin')} — v1.0</Text>
+                    <Text style={styles.footer}>{t('Retour Gagnant Bénin')} : v1.0</Text>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

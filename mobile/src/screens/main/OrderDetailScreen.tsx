@@ -33,7 +33,7 @@ import { screenColors, typography, spacing, radius, shadows, fonts } from '../..
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ═══════════════════════════════════════════════════════════
-   OrderDetailScreen — THEME "CORPORATE PREMIUM 2026"
+   OrderDetailScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width } = Dimensions.get('window')

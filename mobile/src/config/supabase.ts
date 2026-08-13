@@ -36,7 +36,7 @@ const SecureStorageAdapter = {
             }
             await SecureStore.setItemAsync(key, value)
         } catch {
-            // Silently fail on storage errors — ne pas bloquer l'auth
+            // Silently fail on storage errors : ne pas bloquer l'auth
         }
     },
     removeItem: async (key: string): Promise<void> => {

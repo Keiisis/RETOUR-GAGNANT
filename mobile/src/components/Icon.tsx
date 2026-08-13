@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════
- *  Icon Bridge — Nexus Emerald Design System
+ *  Icon Bridge : Nexus Emerald Design System
  *  
  *  Wrapper qui permet d'utiliser les icônes Lucide (identiques au site web)
  *  tout en conservant le fallback Ionicons pour la transition progressive.

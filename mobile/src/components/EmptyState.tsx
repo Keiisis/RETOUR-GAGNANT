@@ -19,7 +19,7 @@ interface EmptyStateProps {
 }
 
 /**
- * EmptyState — fallback unifié pour les listes vides ou les zones sans data.
+ * EmptyState : fallback unifié pour les listes vides ou les zones sans data.
  * - icon : LucideIcon affiché dans un cercle dégradé doré
  * - cta optionnel : bouton primary émeraude
  * - variant 'soft' (défaut) : carte avec bordure ; 'plain' : juste le contenu

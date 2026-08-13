@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   RETOUR GAGNANT BÉNIN — Design System mobile v2
+   RETOUR GAGNANT BÉNIN : Design System mobile v2
 
    Direction validée le 2026-07-28. Les valeurs de la section « SOCLE »
    sont reprises TELLES QUELLES du design approuvé (projet Sleek
@@ -102,7 +102,7 @@ export const colors = {
     flagYellow: v2.yellow,
     flagRed: v2.red,
 
-    /* ═══ COMPATIBILITÉ — anciens noms, nouvelles valeurs ═══
+    /* ═══ COMPATIBILITÉ : anciens noms, nouvelles valeurs ═══
        Ces clés existaient dans le thème v1. Elles sont conservées pour que
        les écrans non migrés compilent, mais pointent sur la palette v2 :
        l'app bascule donc visuellement d'un bloc. À retirer quand tous les
@@ -209,7 +209,7 @@ export const shadows = {
     cardRaised: { shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 32, elevation: 5 },
     /** Barre flottante (tab bar, barre conseiller) */
     floating: { shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.30, shadowRadius: 40, elevation: 12 },
-    /** Bouton d'action principal — ombre verte */
+    /** Bouton d'action principal : ombre verte */
     action: { shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.40, shadowRadius: 20, elevation: 6 },
 
     /* ── Compatibilité v1 ── */
@@ -278,7 +278,7 @@ export const royal = {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PALETTE D'ÉCRAN — remplace les `const C = {…}` locaux
+   PALETTE D'ÉCRAN : remplace les `const C = {…}` locaux
 
    29 écrans sur 33 déclaraient leur propre palette, copiée-collée, avec un
    vert #008751 qui contredisait le thème, un or #C9A84C hors charte et un
@@ -291,7 +291,7 @@ export const royal = {
    réservé à la barre d'onglets flottante.
 ═══════════════════════════════════════════════════════════ */
 export const screenColors = {
-    /* Fonds — le blanc domine, plus de gris bleuté #F8F9FA */
+    /* Fonds : le blanc domine, plus de gris bleuté #F8F9FA */
     bg: v2.white,
     bgDeep: v2.neutral,
     surface: v2.white,

@@ -55,7 +55,7 @@ const BAR_HEIGHT = 56
 const TOP_PADDING = 8
 
 /* ═══════════════════════════════════════════════════════════════
-   TabButton — icône + label compact, jamais de débordement.
+   TabButton : icône + label compact, jamais de débordement.
    - Largeur contrainte par flex:1 (jamais de overflow horizontal)
    - Icône scale au focus, gold dot sous l'icône active
    - Haptics légers, ripple Android, hitSlop confortable
@@ -176,7 +176,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
     return (
         // Design v2 : pilule flottante posée sur le contenu, à la manière iOS.
-        // Le sombre est réservé à cette barre — les fonds d'écran restent blancs.
+        // Le sombre est réservé à cette barre : les fonds d'écran restent blancs.
         <View style={[styles.barOuter, { paddingBottom: bottomPadding }]} pointerEvents="box-none">
             <View style={styles.barInner}>
                 {state.routes.map((route, index) => {
@@ -246,7 +246,7 @@ export default function MainTabNavigator() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Styles — barre ancrée, hairline, zéro overflow horizontal
+   Styles : barre ancrée, hairline, zéro overflow horizontal
 ═══════════════════════════════════════════════════════════════ */
 
 const styles = StyleSheet.create({

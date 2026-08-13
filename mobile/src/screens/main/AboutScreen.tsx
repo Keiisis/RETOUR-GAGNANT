@@ -24,7 +24,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   AboutScreen — THEME "CORPORATE PREMIUM 2026"
+   AboutScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec RegisterScreen / ServicesScreen / SignatureScreen / BoutiqueScreen)
 ═══════════════════════════════════════════════════════════ */
 

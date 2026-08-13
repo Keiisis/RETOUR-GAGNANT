@@ -43,7 +43,7 @@ const STATUS_HINT: Record<string, string> = {
     annule: 'Ce dossier a été annulé. Contactez votre conseiller pour en savoir plus.',
 }
 
-/* Entrée échelonnée des sections — un seul effet, pas de boucle infinie. */
+/* Entrée échelonnée des sections : un seul effet, pas de boucle infinie. */
 const AnimatedSection = ({ delay = 0, children, style }: any) => {
     const o = useSharedValue(0); const y = useSharedValue(14)
     useEffect(() => {
@@ -168,7 +168,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                 sans position absolue) et applique elle-même la marge de la
                 barre système. Le contenu s'arrête donc déjà au-dessus d'elle.
                 Un `insets.bottom + 72` supplémentaire ajoutait de 96 à 120 px
-                de vide sous le dernier élément — le blanc visible en bas de
+                de vide sous le dernier élément : le blanc visible en bas de
                 l'accueil. Seule reste ici la respiration normale de fin de
                 page. Ne pas y réintroduire insets.bottom. */}
             <ScrollView
@@ -198,7 +198,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                         accessibilityRole="button"
                         accessibilityLabel={
                             unreadNotifs > 0
-                                ? `${t('Notifications')} — ${unreadNotifs} ${t('non lues')}`
+                                ? `${t('Notifications')} : ${unreadNotifs} ${t('non lues')}`
                                 : t('Notifications')
                         }
                         style={styles.bellBtn}

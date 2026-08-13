@@ -9,7 +9,7 @@ const TWOFA_UNTIL_KEY = '@rg_2fa_verified_until'
 const TWOFA_WINDOW_MS = 8 * 60 * 60 * 1000 // 8 h, comme le web
 
 /* ═══════════════════════════════════════════════════════════
-   Auth Context — Session management + Profile management
+   Auth Context : Session management + Profile management
 ═══════════════════════════════════════════════════════════ */
 
 export interface UserProfile {
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }))
             }
         } catch {
-            // Profil introuvable — pas bloquant
+            // Profil introuvable : pas bloquant
         }
     }
 

@@ -12,9 +12,9 @@ import { usePaymentSettings } from '../contexts/PaymentSettingsContext'
 import { colors, spacing, shadows, typography, radius } from '../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   KkiapayModal — Paiement natif via SDK Kkiapay React Native
+   KkiapayModal : Paiement natif via SDK Kkiapay React Native
    Fonctionne sur Android & iOS (necessite dev build, pas Expo Go)
-   Widget integre in-app — plus besoin d'ouvrir le navigateur.
+   Widget integre in-app : plus besoin d'ouvrir le navigateur.
    La cle publique et le mode sandbox/prod sont lus depuis la
    table Supabase `settings` (kkiapay_public_key / kkiapay_sandbox).
 ═══════════════════════════════════════════════════════════ */
@@ -31,7 +31,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     const [loading, setLoading] = useState(false)
     const { profile } = useAuth()
     const { t } = useLang()
-    // Settings preloaded at app start — no Supabase round-trip when modal opens
+    // Settings preloaded at app start : no Supabase round-trip when modal opens
     const { kkiapayPublicKey: kkiapayKey, kkiapaySandbox: sandbox } = usePaymentSettings()
     const { openKkiapayWidget, addSuccessListener, addFailedListener } = useKkiapay()
 
@@ -44,7 +44,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     useEffect(() => { onSuccessRef.current = onSuccess }, [onSuccess])
     useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
-    // ── Listeners Kkiapay (succès / échec) — enregistrement unique ──
+    // ── Listeners Kkiapay (succès / échec) : enregistrement unique ──
     useEffect(() => {
         addSuccessListener((data: any) => {
             const transactionId = data?.transactionId || data?.transaction_id || `KK-${Date.now()}`

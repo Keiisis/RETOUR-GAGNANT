@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   APPEL VOCAL — moteur mobile
+   APPEL VOCAL : moteur mobile
 
    Miroir de frontend/lib/webrtc-call.ts, adapté à React Native.
    La voix circule en pair-à-pair : Supabase ne transporte que la
@@ -34,8 +34,8 @@ let tenteDeCharger = false
    compile avant l'ajout du module, l'erreur remontait jusqu'a l'ecran et
    affichait un ecran rouge au lieu de basculer sur l'appel telephonique.
 
-   On interroge donc d'abord le registre des modules natifs — une simple
-   lecture de propriete, qui ne peut pas echouer — et on ne charge le
+   On interroge donc d'abord le registre des modules natifs : une simple
+   lecture de propriete, qui ne peut pas echouer : et on ne charge le
    module JS que s'il a de quoi fonctionner. */
 function loadWebRTC(): WebRTCModule | null {
     if (tenteDeCharger) return webrtc
@@ -59,7 +59,7 @@ export function isCallSupported(): boolean {
 /* ── Permission micro ──────────────────────────────────────────
    react-native-webrtc demande lui-même RECORD_AUDIO au moment du
    getUserMedia, mais son rejet est opaque : il ne distingue pas un refus
-   ponctuel — que l'on peut redemander — d'un refus définitif, où Android
+   ponctuel : que l'on peut redemander : d'un refus définitif, où Android
    n'affiche PLUS AUCUNE boîte de dialogue. Dans ce second cas, laisser
    l'utilisateur réessayer est une impasse : seul un passage par les
    réglages système débloque la situation.
@@ -197,7 +197,7 @@ async function getIceServers(supabase: SupabaseClient): Promise<IceServer[]> {
 }
 
 /**
- * Ajuste la description SDP pour la conversation — même réglage que le web.
+ * Ajuste la description SDP pour la conversation : même réglage que le web.
  *
  * Opus est négocié par défaut pour la qualité musicale : trames longues,
  * débit élevé, stéréo. En conversation cela se paie en latence sans rien
@@ -248,7 +248,7 @@ export class MobileCallEngine {
     /* Meme correctif que cote web : les signaux arrivent sans garantie
        d'ordre et leur traitement est asynchrone. Sans serialisation, un
        candidat ICE traite pendant setRemoteDescription levait une exception
-       et etait perdu — la connexion n'aboutissait jamais. */
+       et etait perdu : la connexion n'aboutissait jamais. */
     private queue: Promise<void> = Promise.resolve()
     private pendingIce: any[] = []
     private remoteReady = false
@@ -286,14 +286,14 @@ export class MobileCallEngine {
                 video: false,
             })
         } catch (e) {
-            throw new Error(`micro — ${cause(e)}`)
+            throw new Error(`micro : ${cause(e)}`)
         }
 
         let pc: any
         try {
             pc = new rtc.RTCPeerConnection({ iceServers: await getIceServers(supabase) })
         } catch (e) {
-            throw new Error(`connexion — ${cause(e)}`)
+            throw new Error(`connexion : ${cause(e)}`)
         }
         this.pc = pc
 

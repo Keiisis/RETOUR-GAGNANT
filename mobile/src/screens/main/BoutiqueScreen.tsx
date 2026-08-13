@@ -31,7 +31,7 @@ import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigat
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   BoutiqueScreen — THEME "CORPORATE PREMIUM 2026"
+   BoutiqueScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec RegisterScreen / ServicesScreen / SignatureScreen)
 ═══════════════════════════════════════════════════════════ */
 

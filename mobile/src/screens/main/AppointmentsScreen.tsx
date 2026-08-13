@@ -40,7 +40,7 @@ const RDV_STATUT_TO_APPT: Record<string, 'confirmed' | 'pending' | 'cancelled' |
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AppointmentsScreen — THEME "CORPORATE PREMIUM 2026"
+   AppointmentsScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec Register / Services / Signature / Boutique / About)
 ═══════════════════════════════════════════════════════════ */
 
@@ -223,7 +223,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
        l'ancien formulaire envoyait null, donc toute demande echouait avec
        « La demande n'a pas pu etre envoyee ». On lit desormais les
        disponibilites calculees par /api/availability, la meme source que le
-       site public — le client ne peut choisir qu'un creneau reellement libre. */
+       site public : le client ne peut choisir qu'un creneau reellement libre. */
     const [days, setDays] = useState<AvailabilityDay[]>([])
     const [slotsLoading, setSlotsLoading] = useState(false)
     const [formDate, setFormDate] = useState<string | null>(null)
@@ -372,7 +372,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
             if (error) throw error
 
-            // 2. Notification staff (email admin/agent) — même chemin que le panel web
+            // 2. Notification staff (email admin/agent) : même chemin que le panel web
             fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -439,7 +439,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
     }
 
     const formatDateShort = (iso: string | null) => {
-        if (!iso) return { day: '—', month: '' }
+        if (!iso) return { day: '-', month: '' }
         const d = new Date(iso)
         return {
             day: d.toLocaleDateString('fr-FR', { day: '2-digit' }),
@@ -699,7 +699,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                 })}
                             </View>
 
-                            {/* Créneau — jours réellement ouverts */}
+                            {/* Créneau : jours réellement ouverts */}
                             <View style={styles.labelRow}>
                                 <Text style={styles.modalLabel}>{t('Date souhaitée')}</Text>
                                 <Text style={styles.required}>{t('Requis')}</Text>

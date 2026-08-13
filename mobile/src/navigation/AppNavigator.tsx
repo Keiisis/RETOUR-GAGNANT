@@ -114,7 +114,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 const isIOS = Platform.OS === 'ios'
 
 /* ──────────────────────────────────────────────────────────────
-   PRESETS — 100 % natifs, calibrés sur iOS UIKit / SwiftUI.
+   PRESETS : 100 % natifs, calibrés sur iOS UIKit / SwiftUI.
    Aucune transition de type "web" : tout glisse, respire,
    et respecte le rythme tactile du système.
    ────────────────────────────────────────────────────────────── */
@@ -143,7 +143,7 @@ const modalIOS: NativeStackNavigationOptions = {
     statusBarAnimation: 'fade',
 }
 
-// Form sheet façon iOS 17 — la vue parent reste visible derrière,
+// Form sheet façon iOS 17 : la vue parent reste visible derrière,
 // coins arrondis, grabber, détents adaptatifs.
 const formSheetIOS: NativeStackNavigationOptions = {
     presentation: isIOS ? 'formSheet' : 'modal',
@@ -158,7 +158,7 @@ const formSheetIOS: NativeStackNavigationOptions = {
     contentStyle: { backgroundColor: '#FFFFFF' },
 }
 
-// Sheet à détents multiples (mi-hauteur puis plein écran) — type Apple Maps.
+// Sheet à détents multiples (mi-hauteur puis plein écran) : type Apple Maps.
 const detentSheetIOS: NativeStackNavigationOptions = {
     presentation: isIOS ? 'formSheet' : 'modal',
     animation: 'slide_from_bottom',
@@ -228,7 +228,7 @@ export default function AppNavigator() {
             navigationBarColor: '#FFFFFF',
             navigationBarHidden: false,
             // Évite que les écrans non visibles consomment du CPU
-            // (animations, vidéos, listes virtualisées) — gain de fluidité réel.
+            // (animations, vidéos, listes virtualisées) : gain de fluidité réel.
             freezeOnBlur: true,
         }),
         []
@@ -288,7 +288,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="TwoFactor" component={TwoFactorScreen} options={{ gestureEnabled: false, animation: 'fade' }} />
             ) : (
                 <>
-                    {/* Racine authentifiée — tabs */}
+                    {/* Racine authentifiée : tabs */}
                     <Stack.Screen
                         name="Main"
                         component={MainTabNavigator}

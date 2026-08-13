@@ -27,7 +27,7 @@ import { supabase } from '../../config/supabase'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   ServicesScreen — THEME "CORPORATE PREMIUM 2026"
+   ServicesScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec RegisterScreen.tsx)
 ═══════════════════════════════════════════════════════════ */
 
@@ -72,8 +72,8 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'document-text-outline',
         title: 'Passeport & Documents',
         subtitle: 'Documents officiels et accompagnement pour la diaspora béninoise',
-        desc: 'Obtention et renouvellement de passeport, acte de naissance, légalisation et apostille — accompagnement complet pour vos démarches officielles.',
-        fullDescription: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre — un accompagnement structuré, sans improvisation.",
+        desc: 'Obtention et renouvellement de passeport, acte de naissance, légalisation et apostille : accompagnement complet pour vos démarches officielles.',
+        fullDescription: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre : un accompagnement structuré, sans improvisation.",
         duration: '2 à 4 semaines',
         price: 'À partir de 50 000 FCFA',
         color: C.primary,
@@ -82,7 +82,7 @@ export const SERVICES_DATA: ServiceFull[] = [
             "Acte de naissance certifié conforme délivré par la mairie béninoise",
             "Certificat de nationalité béninoise (Tribunal de Première Instance)",
             "Carte d'Identité Personnelle (CIP A) en cours de validité",
-            "Extrait de casier judiciaire béninois — Bulletin n°3 (moins de 3 mois)",
+            "Extrait de casier judiciaire béninois : Bulletin n°3 (moins de 3 mois)",
             "Justificatif de domicile de moins de 3 mois (quittance ou bail)",
             "4 photos d'identité biométriques (fond blanc, 3,5 × 4,5 cm, sans lunettes)",
             "Formulaire officiel de demande de passeport rempli et signé",
@@ -92,14 +92,14 @@ export const SERVICES_DATA: ServiceFull[] = [
             "Acte de naissance certifié conforme délivré par la mairie béninoise",
             "Certificat de nationalité béninoise (Tribunal de Première Instance)",
             "Carte d'Identité Personnelle (CIP A) en cours de validité",
-            "Extrait de casier judiciaire béninois — Bulletin n°3 (moins de 3 mois)",
+            "Extrait de casier judiciaire béninois : Bulletin n°3 (moins de 3 mois)",
             "Justificatif de domicile de moins de 3 mois (quittance ou bail)",
             "4 photos d'identité biométriques (fond blanc, 3,5 × 4,5 cm, sans lunettes)",
             "Formulaire officiel de demande de passeport rempli et signé",
         ],
         pricing_options: [
-            { label: 'Pack Standard — Passeport ordinaire', price: '75 000 FCFA' },
-            { label: 'Pack VIP — Traitement express jour-J', price: '350 000 FCFA' },
+            { label: 'Pack Standard : Passeport ordinaire', price: '75 000 FCFA' },
+            { label: 'Pack VIP : Traitement express jour-J', price: '350 000 FCFA' },
             { label: 'Renouvellement accompagné', price: '50 000 FCFA' },
         ],
     },
@@ -109,7 +109,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         title: 'Acheter ou Louer',
         subtitle: 'Vérifiez, informez-vous et Sécurisez vos transactions foncières et immobilières',
         desc: 'Acquisition immobilière, location longue durée, sécurisation foncière et vérification juridique de vos biens au Bénin.',
-        fullDescription: "L'immobilier au Bénin offre de réelles opportunités — à condition de savoir naviguer dans un marché foncier qui requiert vigilance et expertise juridique. Nous vous accompagnons de la sélection du bien à la signature de l'acte notarié, en veillant à chaque étape à la solidité juridique de votre acquisition.",
+        fullDescription: "L'immobilier au Bénin offre de réelles opportunités : à condition de savoir naviguer dans un marché foncier qui requiert vigilance et expertise juridique. Nous vous accompagnons de la sélection du bien à la signature de l'acte notarié, en veillant à chaque étape à la solidité juridique de votre acquisition.",
         duration: '4 à 12 semaines',
         price: 'À partir de 25 000 FCFA',
         color: C.primary,
@@ -148,7 +148,7 @@ export const SERVICES_DATA: ServiceFull[] = [
             "Immatriculation RCCM et formalités fiscales",
             "Ouverture de compte bancaire professionnel",
             "Domiciliation commerciale à Cotonou",
-            "Cabinet de recrutement — sélection de talents locaux",
+            "Cabinet de recrutement : sélection de talents locaux",
             "Mise en relation avec les acteurs économiques locaux",
         ],
         documents: [
@@ -175,14 +175,14 @@ export const SERVICES_DATA: ServiceFull[] = [
         price: 'À partir de 80 000 FCFA/pers',
         color: C.error,
         features: [
-            'Consultation du Fa — oracle traditionnel yoruba-fon',
+            'Consultation du Fa : oracle traditionnel yoruba-fon',
             "Cérémonie du Nom et validation à l'état civil",
             'Soins par les plantes et approche de la médecine ancestrale',
             'Audience privée avec dignitaires et rois traditionnels',
             'Initiation et sensibilisation à la culture vodoun',
             'Programmes de visite : Ganvié, Ouidah, Abomey, Porto-Novo',
             "Guide historien expert et passionné par l'histoire du Bénin",
-            'Ateliers culinaires — recettes et saveurs béninoises',
+            'Ateliers culinaires : recettes et saveurs béninoises',
             "Découverte de l'artisanat local et des savoir-faire traditionnels",
         ],
         documents: [
@@ -202,16 +202,16 @@ export const SERVICES_DATA: ServiceFull[] = [
         title: 'Suivi de Chantier',
         subtitle: 'Bâtissez pour la postérité. Votre chantier, géré avec rigueur.',
         desc: "Maîtrise d'ouvrage déléguée, contrôle des travaux et coordination des entreprises locales pour votre construction.",
-        fullDescription: "Construire au Bénin depuis l'étranger, c'est possible — à condition d'être bien entouré. Entre les devis approximatifs, les délais non respectés et les matériaux de qualité variable, les risques sont réels. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
+        fullDescription: "Construire au Bénin depuis l'étranger, c'est possible : à condition d'être bien entouré. Entre les devis approximatifs, les délais non respectés et les matériaux de qualité variable, les risques sont réels. Nous agissons comme votre représentant sur place : présents à chaque étape, exigeants sur la qualité, transparents dans nos rapports. Votre investissement mérite un suivi professionnel.",
         duration: 'Selon durée des travaux',
         price: 'À partir de 50 000 FCFA',
         color: C.primary,
         features: [
             "Aide à l'achat et à la location de terrain ou de bien immobilier",
-            "Bureau d'architecte — conception et plans techniques",
+            "Bureau d'architecte : conception et plans techniques",
             'Surveillance et contrôle de chantier (visites régulières, tous moyens)',
             'Vérification et validation des factures fournisseurs',
-            'Achats de matériaux — sélection et négociation',
+            'Achats de matériaux : sélection et négociation',
             'Rapports WhatsApp hebdomadaires (photos et vidéos)',
             'Mise en relation et coordination des intervenants du chantier',
             'Livraison et nettoyage du chantier clé en main',
@@ -234,7 +234,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         title: 'Investissement',
         subtitle: "Opportunités d'affaires rentables. Faites fructifier votre héritage.",
         desc: "Identification d'opportunités d'affaires, partenariats locaux et accompagnement stratégique pour vos projets d'investissement au Bénin.",
-        fullDescription: "Le Bénin connaît une dynamique économique réelle, portée par des réformes structurelles et des investissements publics soutenus. Les opportunités existent — dans l'immobilier, l'agriculture, le commerce et les services — mais elles demandent une lecture fine du terrain. Nous vous aidons à identifier des projets sérieux, à évaluer les risques réels et à structurer vos investissements dans le respect du cadre juridique local.",
+        fullDescription: "Le Bénin connaît une dynamique économique réelle, portée par des réformes structurelles et des investissements publics soutenus. Les opportunités existent : dans l'immobilier, l'agriculture, le commerce et les services : mais elles demandent une lecture fine du terrain. Nous vous aidons à identifier des projets sérieux, à évaluer les risques réels et à structurer vos investissements dans le respect du cadre juridique local.",
         duration: 'Accompagnement continu',
         price: 'À partir de 50 000 FCFA',
         color: C.success,
@@ -242,7 +242,7 @@ export const SERVICES_DATA: ServiceFull[] = [
             'Vente exclusive de particuliers à particuliers (terrain, immeuble, maison)',
             'Projets agricoles rentables et autres secteurs porteurs',
             'Évaluation approfondie des risques financiers, juridiques et opérationnels',
-            "Veilles d'opportunités — marchés, appels d'offres, partenariats",
+            "Veilles d'opportunités : marchés, appels d'offres, partenariats",
             'Suivi et optimisation de vos investissements au Bénin',
             'Stratégies fiscales adaptées au contexte local',
         ],
@@ -264,7 +264,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'ribbon-outline',
         title: 'Nationalité VIP',
         subtitle: 'Obtenir la nationalité béninoise pour la diaspora afro-descendante',
-        desc: "Accompagnement personnalisé pour l'obtention de la nationalité béninoise — dossier complet, suivi administratif et prise en charge prioritaire.",
+        desc: "Accompagnement personnalisé pour l'obtention de la nationalité béninoise : dossier complet, suivi administratif et prise en charge prioritaire.",
         fullDescription: "Accompagnement personnalisé pour les membres de la diaspora souhaitant obtenir la nationalité béninoise. Suivi de dossier, coordination avec les autorités compétentes et prise en charge prioritaire.",
         duration: '3 à 6 mois',
         price: 'À partir de 150 000 FCFA',
@@ -286,7 +286,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         ],
         pricing_options: [
             { label: 'Accompagnement dossier standard', price: '150 000 FCFA' },
-            { label: 'Pack VIP — suivi prioritaire', price: '350 000 FCFA' },
+            { label: 'Pack VIP : suivi prioritaire', price: '350 000 FCFA' },
             { label: 'Consultation initiale', price: 'Gratuit' },
         ],
     },
@@ -295,7 +295,7 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'search-circle-outline',
         title: 'Recherche Ancestrale',
         subtitle: "Retrouvez la trace de ceux que l'histoire a effacés",
-        desc: 'Retrouvez la trace de vos ancêtres réduits en esclavage — archives, bases de données spécialisées et accompagnement généalogique pour reconstituer votre lignée africaine.',
+        desc: 'Retrouvez la trace de vos ancêtres réduits en esclavage : archives, bases de données spécialisées et accompagnement généalogique pour reconstituer votre lignée africaine.',
         fullDescription: "Pour des millions de descendants de la diaspora africaine, une partie de l'arbre généalogique a été effacée par la traite transatlantique. Nous mobilisons archives, bases de données spécialisées et associations expertes pour reconstituer votre lignée africaine.",
         duration: '4 à 10 semaines',
         price: '250 €',
@@ -315,7 +315,7 @@ export const SERVICES_DATA: ServiceFull[] = [
             'Résultats de test ADN si déjà effectué (optionnel)',
         ],
         pricing_options: [
-            { label: 'Recherche complète — archives, bases de données & associations', price: '250 €' },
+            { label: 'Recherche complète : archives, bases de données & associations', price: '250 €' },
         ],
     },
     {
@@ -323,17 +323,17 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'sparkles-outline',
         title: 'Consultation Fa & Racines',
         subtitle: 'Rencontrez un Bokonon, la sagesse du Fa dans un cadre organisé et respectueux',
-        desc: "Mise en relation avec un Bokonon (prêtre Fa) pour une consultation traditionnelle — en présentiel au Bénin ou à distance en visioconférence.",
+        desc: "Mise en relation avec un Bokonon (prêtre Fa) pour une consultation traditionnelle : en présentiel au Bénin ou à distance en visioconférence.",
         fullDescription: "Le Fa est l'un des plus anciens systèmes de sagesse d'Afrique de l'Ouest, inscrit au patrimoine culturel immatériel de l'humanité. Nous vous mettons en relation avec un Bokonon (prêtre du Fa) reconnu, pour une consultation traditionnelle menée dans les règles de l'art. Retour Gagnant Bénin intervient exclusivement comme intermédiaire de mise en relation : un accord est signé dès l'enclenchement de la procédure.",
         duration: 'Selon disponibilité du Bokonon',
         price: 'Présentiel 550 € · Visio 780 €',
         color: C.primary,
         features: [
             'Mise en relation avec un Bokonon (prêtre Fa) reconnu et expérimenté',
-            "Présentiel — accueil, prise de rendez-vous avec le prêtre Fa, aide sur place",
-            "Présentiel — réservation d'hôtel et change de monnaie sur place",
-            'Visio — organisation de la séance à distance et liaison avec le Bokonon',
-            'Visio — assistance et veille technique pendant toute la consultation',
+            "Présentiel : accueil, prise de rendez-vous avec le prêtre Fa, aide sur place",
+            "Présentiel : réservation d'hôtel et change de monnaie sur place",
+            'Visio : organisation de la séance à distance et liaison avec le Bokonon',
+            'Visio : assistance et veille technique pendant toute la consultation',
             'Accord de mise en relation signé avant le début de la procédure',
         ],
         documents: [
@@ -342,8 +342,8 @@ export const SERVICES_DATA: ServiceFull[] = [
             'Vos disponibilités pour la consultation',
         ],
         pricing_options: [
-            { label: 'Consultation en Présentiel — accueil, RDV, aide, hôtel, change', price: '550 €' },
-            { label: 'Consultation en Visio — assistance et veille à distance', price: '780 €' },
+            { label: 'Consultation en Présentiel : accueil, RDV, aide, hôtel, change', price: '550 €' },
+            { label: 'Consultation en Visio : assistance et veille à distance', price: '780 €' },
         ],
     },
     {
@@ -351,14 +351,14 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'language-outline',
         title: 'Langues & Racines',
         subtitle: 'La langue de vos ancêtres est la première porte du retour',
-        desc: 'Apprenez le fon, le yoruba, le goun ou le mina avec des locuteurs natifs — en présentiel au Bénin ou en visioconférence.',
+        desc: 'Apprenez le fon, le yoruba, le goun ou le mina avec des locuteurs natifs : en présentiel au Bénin ou en visioconférence.',
         fullDescription: "On ne revient jamais tout à fait chez soi tant qu'on n'en parle pas la langue. Le fon, le yoruba, le goun ou le mina portent la mémoire et la vision du monde de vos ancêtres : les apprendre, c'est renouer le fil que l'histoire a interrompu. Parcours animés par des locuteurs natifs, pensés pour la diaspora, en présentiel ou en visio.",
         duration: 'Parcours personnalisé',
-        price: 'Sur devis — premier rendez-vous gratuit',
+        price: 'Sur devis : premier rendez-vous gratuit',
         color: C.primary,
         features: [
             'Cours animés par des locuteurs natifs qualifiés',
-            "Fon, Yoruba, Goun, Mina — selon votre lignée et votre région d'origine",
+            "Fon, Yoruba, Goun, Mina : selon votre lignée et votre région d'origine",
             'Parcours débutant à avancé, adapté à votre rythme',
             'Immersion culturelle : proverbes, salutations, codes sociaux',
             'En présentiel au Bénin ou en visioconférence depuis l\'étranger',
@@ -374,12 +374,38 @@ export const SERVICES_DATA: ServiceFull[] = [
         ],
     },
     {
+        id: 'permis-conduire',
+        icon: 'car-outline',
+        title: 'Permis de Conduire Béninois',
+        subtitle: 'Conduisez au Bénin en toute légalité, un permis officiel sans tracas administratif',
+        desc: "Obtenez un permis de conduire béninois officiel. Vous choisissez la catégorie, nous coordonnons l'inscription, la formation en auto-école agréée et l'examen.",
+        fullDescription: "Vous êtes afro-descendant et vous vous installez ou séjournez au Bénin ? Obtenez un permis de conduire béninois officiel, en règle, et circulez l'esprit tranquille. Nous vous accompagnons du choix de la catégorie jusqu'à l'obtention, avec une auto-école partenaire agréée : inscription, cours de code, heures de conduite et présentation à l'examen.",
+        duration: 'Selon la catégorie',
+        price: 'Selon la catégorie de permis',
+        color: C.primary,
+        features: [
+            'Conseil sur la catégorie de permis adaptée à votre besoin',
+            'Mise en relation avec une auto-école partenaire agréée',
+            'Inscription et constitution complète du dossier',
+            'Cours de code et heures de conduite avec des moniteurs qualifiés',
+            "Présentation à l'examen officiel du permis béninois",
+            "Suivi administratif jusqu'à l'obtention du titre",
+        ],
+        documents: [
+            "Pièce d'identité valide (passeport ou CNI)",
+            'Justificatif de domicile au Bénin',
+            "Photos d'identité récentes",
+            "Certificat médical d'aptitude à la conduite",
+        ],
+        pricing_options: [],
+    },
+    {
         id: 'autres',
         icon: 'apps-outline',
         title: 'Autres Services',
         subtitle: 'Transport, santé, scolarité et démarches du quotidien',
-        desc: 'Transport, santé, scolarité et démarches administratives — des solutions complémentaires pour faciliter votre installation au Bénin.',
-        fullDescription: "Des solutions complémentaires pour faciliter chaque aspect de votre installation au Bénin — de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
+        desc: 'Transport, santé, scolarité et démarches administratives : des solutions complémentaires pour faciliter votre installation au Bénin.',
+        fullDescription: "Des solutions complémentaires pour faciliter chaque aspect de votre installation au Bénin : de l'aéroport à l'école de vos enfants, en passant par l'accès aux soins et les démarches administratives courantes.",
         duration: 'Selon la demande',
         price: 'Nous contacter',
         color: C.textSec,
@@ -472,7 +498,7 @@ function ServiceCard({ svc, index, onPress, t, pricingOn }: ServiceCardProps) {
                 onPressIn={() => { pressAnim.value = withSpring(1, { damping: 15, stiffness: 200 }) }}
                 onPressOut={() => { pressAnim.value = withSpring(0, { damping: 15, stiffness: 200 }) }}
                 accessibilityRole="button"
-                accessibilityLabel={`${t(svc.title)} — ${t(cta)}`}
+                accessibilityLabel={`${t(svc.title)} : ${t(cta)}`}
                 style={styles.card}
                 hitSlop={6}
             >
@@ -625,7 +651,7 @@ export default function ServicesScreen({ navigation }: any) {
         // Apparition élégante
         headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
 
-        // Mouvement lent et imperceptible — donne vie au fond
+        // Mouvement lent et imperceptible : donne vie au fond
     }, [])
 
     const styleHeader = useAnimatedStyle(() => ({
@@ -985,7 +1011,7 @@ const styles = StyleSheet.create({
 
     /* ── Service Card ── */
 
-    /* ── VIP Banner (Bleu massif, accent Or — comme bouton RegisterScreen) ── */
+    /* ── VIP Banner (Bleu massif, accent Or : comme bouton RegisterScreen) ── */
 
     /* ── Skeleton ── */
     skeletonCard: {

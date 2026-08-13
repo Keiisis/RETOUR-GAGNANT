@@ -66,7 +66,7 @@ export default function Skeleton({
     )
 }
 
-/* Block helpers — combos prédéfinis fréquents */
+/* Block helpers : combos prédéfinis fréquents */
 
 export function SkeletonText({
     lines = 3,

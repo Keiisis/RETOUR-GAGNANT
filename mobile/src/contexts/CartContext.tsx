@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import type { BoutiqueProduct, CartItemNav } from '../navigation/AppNavigator'
 
 /* ══════════════════════════════════════════════════════════════════════════
-   CartContext — global shopping cart state.
+   CartContext : global shopping cart state.
    Lives at the App level so it survives navigation between Boutique,
    ProductDetail, Checkout and back. Cleared after successful order.
    ══════════════════════════════════════════════════════════════════════════ */

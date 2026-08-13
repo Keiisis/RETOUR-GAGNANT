@@ -41,7 +41,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 const { width: SCREEN_W } = Dimensions.get('window')
 
 /* ═══════════════════════════════════════════════════════════
-   CORPORATE PREMIUM 2026 — Palette signature
+   CORPORATE PREMIUM 2026 : Palette signature
 ═══════════════════════════════════════════════════════════ */
 // Palette de l'ecran : plus de copie locale. Toutes les couleurs
 // viennent du design system v2 (blanc + tricolore Benin).
@@ -49,8 +49,28 @@ const C = screenColors
 
 interface PricingOption { label: string; price: string }
 
+/** Contenu éditorial de service, IDENTIQUE au site (voir web lib/content/serviceLanding). */
+interface ServiceLanding {
+    hero_subtitle?: string
+    piliers?: { title: string; desc: string }[]
+    intro_eyebrow?: string
+    intro_title?: string
+    intro_text?: string
+    etapes_title?: string
+    etapes?: { num: string; title: string; desc: string }[]
+    contrast_title?: string
+    contrast_accent?: string
+    contrast_intro?: string
+    solo?: string[]
+    avec?: string[]
+    features?: string[]
+    faq?: { q: string; r: string }[]
+    final_title?: string
+    final_text?: string
+}
+
 /* ═══════════════════════════════════════════════════════════
-   ANIMATED SECTION — fade + slide staggered
+   ANIMATED SECTION : fade + slide staggered
 ═══════════════════════════════════════════════════════════ */
 const AnimatedSection = ({ children, delay = 0, style }: any) => {
     const o = useSharedValue(0)
@@ -67,7 +87,7 @@ const AnimatedSection = ({ children, delay = 0, style }: any) => {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   INTERACTIVE BUTTON — press feedback premium
+   INTERACTIVE BUTTON : press feedback premium
 ═══════════════════════════════════════════════════════════ */
 const InteractiveButton = ({ children, onPress, style, disabled, accessibilityLabel }: any) => {
     const scale = useSharedValue(1)
@@ -87,6 +107,20 @@ const InteractiveButton = ({ children, onPress, style, disabled, accessibilityLa
                 {children}
             </Pressable>
         </Animated.View>
+    )
+}
+
+/* Ligne de FAQ repliable (accordéon), identique à l'esprit du site. */
+const FaqRow = ({ q, r }: { q: string; r: string }) => {
+    const [open, setOpen] = useState(false)
+    return (
+        <View style={styles.faqItem}>
+            <Pressable onPress={() => setOpen(o => !o)} style={styles.faqQRow} accessibilityRole="button" hitSlop={4}>
+                <Text style={styles.faqQ}>{q}</Text>
+                <ChevronRight size={16} color={C.textMuted} strokeWidth={2.4} style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }} />
+            </Pressable>
+            {open ? <Text style={styles.faqR}>{r}</Text> : null}
+        </View>
     )
 }
 
@@ -166,6 +200,19 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
     const [dynamicFeatures, setDynamicFeatures] = useState<string[] | null>(null)
     const [dynamicDocuments, setDynamicDocuments] = useState<string[] | null>(null)
     const [dynamicDuration, setDynamicDuration] = useState<string | null>(null)
+    // Contenu éditorial IDENTIQUE au site (piliers, étapes, contraste, FAQ...),
+    // servi par /api/service-landing/[slug] (DEFAULT + override admin fusionnés).
+    const [landing, setLanding] = useState<ServiceLanding | null>(null)
+
+    useEffect(() => {
+        if (!serviceId) return
+        let cancelled = false
+        fetchWithTimeout(`${API_BASE}/api/service-landing/${serviceId}`, { timeoutMs: 8000 })
+            .then(r => (r.ok ? r.json() : null))
+            .then(j => { if (!cancelled && j?.content) setLanding(j.content as ServiceLanding) })
+            .catch(() => { /* fallback SERVICES_DATA */ })
+        return () => { cancelled = true }
+    }, [serviceId])
 
     useEffect(() => {
         if (!serviceId) return
@@ -192,7 +239,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
 
     const price = dynamicPrice ?? paramPrice
     const duration = dynamicDuration ?? paramDuration
-    const features: string[] = dynamicFeatures ?? (paramFeatures?.length ? paramFeatures : [
+    const features: string[] = (landing?.features?.length ? landing.features : dynamicFeatures) ?? (paramFeatures?.length ? paramFeatures : [
         'Consultation initiale avec nos experts',
         'Analyse complète de votre dossier',
         'Accompagnement administratif personnalisé',
@@ -224,10 +271,10 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             'Support', 'Dédié', 'Sur devis',
             'Pièces à fournir pour les afro-descendants', 'Ce que nous proposons',
             'Pack VIP Retour Gagnant',
-            "Un accompagnement intégral en une seule journée — de l'état civil à la délivrance de votre passeport.",
+            "Un accompagnement intégral en une seule journée : de l'état civil à la délivrance de votre passeport.",
             'Enrôlement État Civil', "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois.",
             "Carte d'Identité Personnelle (CIP A)", "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois.",
-            'Passeport Express Jour-J', "Prise en charge prioritaire de votre demande de passeport biométrique — déposée et traitée le jour même.",
+            'Passeport Express Jour-J', "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même.",
             'Tarification', 'Comment ça marche ?',
             'Commandez le service', 'Déposez vos documents', 'Suivi en temps réel', 'Résultat final',
             'Documents requis', 'Prêt à démarrer ?',
@@ -253,7 +300,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
     /* On ouvre le formulaire de rendez-vous avec la prestation pre-remplie :
        le client y choisit un creneau REELLEMENT libre (/api/availability).
        Creer la demande ici, sans date ni heure, violait la contrainte
-       NOT NULL de rdv_requests — d'ou l'erreur « La demande n'a pas pu etre
+       NOT NULL de rdv_requests : d'ou l'erreur « La demande n'a pas pu etre
        envoyee » au clic sur « Prendre rendez-vous ». */
     const requestAppointment = useCallback(() => {
         if (!profile?.id) {
@@ -391,7 +438,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                         </View>
                     </AnimatedSection>
 
-                    {/* INFOS CLÉS — 3 piliers premium */}
+                    {/* INFOS CLÉS : 3 piliers premium */}
                     <AnimatedSection delay={140}>
                         <View style={styles.infoGrid}>
                             <InfoPill
@@ -433,7 +480,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.vipTitle}>{t('Pack VIP Retour Gagnant')}</Text>
                                         <Text style={styles.vipSubtitle}>
-                                            {t("Un accompagnement intégral en une seule journée — de l'état civil à la délivrance de votre passeport.")}
+                                            {t("Un accompagnement intégral en une seule journée : de l'état civil à la délivrance de votre passeport.")}
                                         </Text>
                                     </View>
                                 </View>
@@ -441,7 +488,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 {[
                                     { num: '01', title: 'Enrôlement État Civil', desc: "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois." },
                                     { num: '02', title: "Carte d'Identité Personnelle (CIP A)", desc: "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois." },
-                                    { num: '03', title: 'Passeport Express Jour-J', desc: "Prise en charge prioritaire de votre demande de passeport biométrique — déposée et traitée le jour même." },
+                                    { num: '03', title: 'Passeport Express Jour-J', desc: "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même." },
                                 ].map((step) => (
                                     <View key={step.num} style={styles.vipStep}>
                                         <Text style={styles.vipStepNum}>{step.num}</Text>
@@ -477,35 +524,64 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                         </AnimatedSection>
                     )}
 
-                    {/* PROCESSUS */}
+                    {/* ÉTAPES : les vraies étapes du service (identiques au site).
+                        Repli générique uniquement si le contenu éditorial est absent. */}
                     <AnimatedSection delay={440}>
-                        <SectionHeader icon={<ChevronRight size={16} color={C.primary} strokeWidth={2.4} />} title={t('Comment ça marche ?')} />
+                        <SectionHeader icon={<ChevronRight size={16} color={C.primary} strokeWidth={2.4} />} title={t(landing?.etapes?.length ? (landing.etapes_title || 'Comment ça se passe') : 'Comment ça marche ?')} />
                         <View style={styles.timeline}>
                             <View style={styles.timelineLine} />
-                            {[
-                                { step: '1', label: t('Commandez le service'), icon: 'cart-outline' as const },
-                                { step: '2', label: t('Déposez vos documents'), icon: 'cloud-upload-outline' as const },
-                                { step: '3', label: t('Suivi en temps réel'), icon: 'pulse-outline' as const },
-                                { step: '4', label: t('Résultat final'), icon: 'ribbon-outline' as const },
-                            ].map((item, idx) => (
-                                <View key={item.step} style={styles.processRow}>
-                                    <View style={[
-                                        styles.processStep,
-                                        { backgroundColor: idx === 0 ? C.accent : C.primary },
-                                    ]}>
-                                        <Text style={[
-                                            styles.processStepNum,
-                                            { color: idx === 0 ? C.accentDark : C.primaryText },
-                                        ]}>{item.step}</Text>
+                            {(landing?.etapes?.length
+                                ? landing.etapes.map((e, idx) => ({ step: e.num, title: e.title, desc: e.desc, idx }))
+                                : [
+                                    { step: '1', title: 'Commandez le service', desc: '', idx: 0 },
+                                    { step: '2', title: 'Déposez vos documents', desc: '', idx: 1 },
+                                    { step: '3', title: 'Suivi en temps réel', desc: '', idx: 2 },
+                                    { step: '4', title: 'Résultat final', desc: '', idx: 3 },
+                                ]
+                            ).map((item) => (
+                                <View key={`${item.step}-${item.idx}`} style={styles.processRow}>
+                                    <View style={[styles.processStep, { backgroundColor: item.idx === 0 ? C.accent : C.primary }]}>
+                                        <Text style={[styles.processStepNum, { color: item.idx === 0 ? C.accentDark : C.primaryText }]}>{item.step}</Text>
                                     </View>
-                                    <View style={styles.processCard}>
-                                        <LucideIcon name={item.icon} size={18} color={C.primary} />
-                                        <Text style={styles.processLabel}>{item.label}</Text>
+                                    <View style={styles.etapeCard}>
+                                        <Text style={styles.etapeTitle}>{t(item.title)}</Text>
+                                        {item.desc ? <Text style={styles.etapeDesc}>{t(item.desc)}</Text> : null}
                                     </View>
                                 </View>
                             ))}
                         </View>
                     </AnimatedSection>
+
+                    {/* CONTRASTE : seul vs accompagné (identique au site) */}
+                    {landing && (landing.solo?.length || landing.avec?.length) ? (
+                        <AnimatedSection delay={480}>
+                            <SectionHeader icon={<ShieldCheck size={16} color={C.primary} strokeWidth={2.4} />} title={t(landing.contrast_accent ? `${landing.contrast_title || ''} ${landing.contrast_accent}`.trim() : 'Pourquoi être accompagné')} />
+                            <View style={styles.contrastWrap}>
+                                {landing.solo?.length ? (
+                                    <View style={styles.contrastCol}>
+                                        <Text style={styles.contrastLabel}>{t('En solo')}</Text>
+                                        {landing.solo.map((s, i) => (
+                                            <View key={i} style={styles.contrastRow}>
+                                                <View style={styles.contrastBad}><Text style={styles.contrastBadX}>×</Text></View>
+                                                <Text style={styles.contrastText}>{t(s)}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : null}
+                                {landing.avec?.length ? (
+                                    <View style={[styles.contrastCol, styles.contrastColGood]}>
+                                        <Text style={[styles.contrastLabel, { color: C.primary }]}>{t('Avec Retour Gagnant')}</Text>
+                                        {landing.avec.map((s, i) => (
+                                            <View key={i} style={styles.contrastRow}>
+                                                <View style={styles.contrastGood}><Check size={11} color={C.primaryText} strokeWidth={3} /></View>
+                                                <Text style={[styles.contrastText, { color: C.text }]}>{t(s)}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : null}
+                            </View>
+                        </AnimatedSection>
+                    ) : null}
 
                     {/* DOCUMENTS REQUIS */}
                     <AnimatedSection delay={500}>
@@ -521,6 +597,18 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                             ))}
                         </View>
                     </AnimatedSection>
+
+                    {/* FAQ : questions fréquentes du service (identiques au site) */}
+                    {landing?.faq?.length ? (
+                        <AnimatedSection delay={540}>
+                            <SectionHeader icon={<ShieldCheck size={16} color={C.primary} strokeWidth={2.4} />} title={t('Questions fréquentes')} />
+                            <View>
+                                {landing.faq.map((f, i) => (
+                                    <FaqRow key={i} q={t(f.q)} r={t(f.r)} />
+                                ))}
+                            </View>
+                        </AnimatedSection>
+                    ) : null}
 
                     {/* CTA PRÊT À DÉMARRER */}
                     <AnimatedSection delay={560}>
@@ -632,7 +720,7 @@ const PressableCardLite = ({ children }: any) => {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES — HERO
+   STYLES : HERO
 ═══════════════════════════════════════════════════════════ */
 const hero = StyleSheet.create({
     wrap: { paddingBottom: spacing.lg, backgroundColor: C.surface },
@@ -663,7 +751,7 @@ const hero = StyleSheet.create({
 })
 
 /* ═══════════════════════════════════════════════════════════
-   STYLES — PAGE
+   STYLES : PAGE
 ═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
@@ -716,7 +804,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    /* Infos clés — 3 pills horizontaux */
+    /* Infos clés : 3 pills horizontaux */
     infoGrid: {
         flexDirection: 'row', gap: spacing.sm,
     },
@@ -900,6 +988,47 @@ const styles = StyleSheet.create({
         color: C.text,
     },
 
+    /* Étapes réelles (titre + description) */
+    etapeCard: {
+        flex: 1, backgroundColor: C.surface,
+        paddingHorizontal: spacing.md, paddingVertical: 12,
+        borderRadius: radius.md, borderWidth: 1, borderColor: C.border,
+    },
+    etapeTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', color: C.text, letterSpacing: -0.2 },
+    etapeDesc: { fontSize: 12.5, lineHeight: 18, fontFamily: 'Inter_400Regular', color: C.textSec, marginTop: 3 },
+
+    /* Contraste solo vs accompagné */
+    contrastWrap: { gap: spacing.sm },
+    contrastCol: {
+        backgroundColor: C.surfaceAlt, borderRadius: radius.lg, padding: spacing.md,
+        borderWidth: 1, borderColor: C.border,
+    },
+    contrastColGood: { backgroundColor: C.primarySoft, borderColor: 'rgba(0,135,81,0.25)' },
+    contrastLabel: {
+        fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.6,
+        textTransform: 'uppercase', color: C.textMuted, marginBottom: spacing.sm,
+    },
+    contrastRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: 8 },
+    contrastBad: {
+        width: 18, height: 18, borderRadius: 9, backgroundColor: C.dangerSoft,
+        alignItems: 'center', justifyContent: 'center', marginTop: 1,
+    },
+    contrastBadX: { color: C.danger, fontSize: 12, fontFamily: 'Inter_700Bold', lineHeight: 14 },
+    contrastGood: {
+        width: 18, height: 18, borderRadius: 9, backgroundColor: C.primary,
+        alignItems: 'center', justifyContent: 'center', marginTop: 1,
+    },
+    contrastText: { flex: 1, fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: C.textSec },
+
+    /* FAQ */
+    faqItem: {
+        backgroundColor: C.surface, borderRadius: radius.md, borderWidth: 1, borderColor: C.border,
+        marginBottom: 8, overflow: 'hidden',
+    },
+    faqQRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 13 },
+    faqQ: { flex: 1, fontSize: 14, fontFamily: 'Inter_700Bold', color: C.text, letterSpacing: -0.2 },
+    faqR: { paddingHorizontal: spacing.md, paddingBottom: 13, fontSize: 13, lineHeight: 20, fontFamily: 'Inter_400Regular', color: C.textSec },
+
     /* Documents */
     docsList: { gap: 10 },
     docRow: {
@@ -925,7 +1054,7 @@ const styles = StyleSheet.create({
     /* ── Bloc « Prêt à démarrer ? » ────────────────────────────
        Refait sur le vocabulaire de l'accueil. Trois défauts corrigés :
 
-       • la carte n'avait AUCUN fond — elle était transparente, et son
+       • la carte n'avait AUCUN fond : elle était transparente, et son
          ombre verte à 30 % d'opacité produisait le halo qui la faisait
          flotter au lieu de la poser ;
        • les textes étaient blancs, hérités du thème sombre d'avant la

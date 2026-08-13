@@ -34,7 +34,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   CheckoutScreen — THEME "CORPORATE PREMIUM 2026"
+   CheckoutScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans)
 ═══════════════════════════════════════════════════════════ */
 

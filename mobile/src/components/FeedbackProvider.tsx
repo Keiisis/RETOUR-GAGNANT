@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
-   TOAST + FEUILLE DE CONFIRMATION — charte v2
+   TOAST + FEUILLE DE CONFIRMATION : charte v2
 
    Monté une seule fois, au-dessus du navigateur. Rend deux surfaces :
-   — le toast, en haut, sous la barre d'état : passager, non bloquant,
+ : le toast, en haut, sous la barre d'état : passager, non bloquant,
      lisible d'un coup d'œil, il ne vole jamais le focus ;
-   — la feuille de confirmation, en bas, à portée du pouce : elle bloque,
+ : la feuille de confirmation, en bas, à portée du pouce : elle bloque,
      mais seulement pour les actions conséquentes.
 
    Accessibilité : le toast est annoncé par le lecteur d'écran sans

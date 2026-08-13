@@ -51,7 +51,7 @@ const { width } = Dimensions.get('window');
 const HERO_HEIGHT = width * 1.05;
 
 /* ─────────────────────────────────────────
-   Corporate Premium 2026 — Palette locale
+   Corporate Premium 2026 : Palette locale
    (aligné avec PaymentsScreen / RegisterScreen)
    ───────────────────────────────────────── */
 // Palette de l'ecran : plus de copie locale. Toutes les couleurs
@@ -470,7 +470,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 La marge basse vient de `insets`, jamais d'une constante : sous
                 Android 15+ l'application dessine SOUS la barre de navigation
                 système. Une valeur codée en dur (18 dp) passait dessous sur les
-                appareils à trois boutons, qui en occupent près de 48 — le
+                appareils à trois boutons, qui en occupent près de 48 : le
                 bouton devenait inatteignable. */}
             <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 14 }]}>
                 <LinearGradient

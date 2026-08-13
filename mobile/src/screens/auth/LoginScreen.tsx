@@ -26,7 +26,7 @@ import { screenColors, fonts, radius, shadows, spacing, typography } from '../..
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ═══════════════════════════════════════════════════════════
-   LoginScreen — THEME "CORPORATE PREMIUM 2026"
+   LoginScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width, height } = Dimensions.get('window')
@@ -89,7 +89,7 @@ export default function LoginScreen({ navigation }: any) {
         if (!error) return
 
         /* L'écran affichait « Email ou mot de passe incorrect » pour TOUTE
-           erreur — y compris un compte valide mais dont l'e-mail n'est pas
+           erreur : y compris un compte valide mais dont l'e-mail n'est pas
            encore confirmé. Un client qui venait de s'inscrire se voyait donc
            accuser d'un mauvais mot de passe, et croyait la création de compte
            cassée. On distingue désormais ce cas et on propose de renvoyer le
@@ -113,7 +113,7 @@ export default function LoginScreen({ navigation }: any) {
 
     /* Renvoi du lien de confirmation. La route web
        /api/client/resend-confirmation existait déjà mais n'était branchée
-       nulle part côté mobile — le client sans e-mail reçu restait bloqué. */
+       nulle part côté mobile : le client sans e-mail reçu restait bloqué. */
     const renvoyerConfirmation = async () => {
         if (!email.trim()) {
             toast(t('Email requis'), t('Saisissez votre adresse pour recevoir le lien.'))

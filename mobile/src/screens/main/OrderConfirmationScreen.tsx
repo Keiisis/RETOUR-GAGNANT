@@ -25,7 +25,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   OrderConfirmationScreen — THEME "CORPORATE PREMIUM 2026"
+   OrderConfirmationScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width } = Dimensions.get('window')

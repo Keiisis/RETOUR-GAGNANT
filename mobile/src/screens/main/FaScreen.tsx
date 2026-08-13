@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Prêtres Fa & Racines — Annuaire + réservation de consultation
+   Prêtres Fa & Racines : Annuaire + réservation de consultation
    Consomme /api/fa-priests (annuaire) + /api/services/fa-checkout
    (commande serveur) + Kkiapay (paiement natif) + /api/checkout/verify.
    Design : Nexus Emerald (mode clair), tricolore Bénin en touches.
@@ -101,14 +101,14 @@ export default function FaScreen({ navigation }: { navigation: any }) {
 
                     /* Deux sources, dans cet ordre :
 
-                       1. `pricing_options` — le detail par mode, quand l'admin l'a
+                       1. `pricing_options` : le detail par mode, quand l'admin l'a
                           renseigne. La recherche est LARGE : les libelles varient
                           d'une saisie a l'autre (« Presentiel », « En presentiel »,
                           « Sur place », « Visio », « Visioconference », « A
                           distance »). Un `includes('presentiel')` strict ne
                           trouvait rien des que le libelle differait.
 
-                       2. `price_display` — la ligne unique affichee par la liste
+                       2. `price_display` : la ligne unique affichee par la liste
                           des services, du type « Presentiel 350 € · Visio 380 € ».
                           C'est CE champ que l'ecran des services lit, et c'est
                           pour cela que la liste affichait des prix la ou cet ecran
@@ -285,7 +285,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                            Or le site ne liste aucun prêtre : il propose
                            directement le choix du mode, le prix et le paiement.
                            La réservation ne doit donc jamais dépendre de
-                           l'annuaire — celui-ci n'est qu'un confort quand des
+                           l'annuaire : celui-ci n'est qu'un confort quand des
                            prêtres sont publiés. */
                         <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}
                             accessibilityRole="button"
@@ -425,7 +425,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                     ? <ActivityIndicator color="#fff" />
                                     : <Text style={styles.ctaText}>{t('Réserver et payer')}</Text>}
                             </Pressable>
-                            <Text style={styles.secure}>{t('Paiement sécurisé — Mobile Money / Carte')}</Text>
+                            <Text style={styles.secure}>{t('Paiement sécurisé : Mobile Money / Carte')}</Text>
                         </ScrollView>
                     </View>
                 </View>

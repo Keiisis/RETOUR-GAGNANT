@@ -28,7 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 /* expo-sharing est un module NATIF : un `import` direct fait planter l'ecran
-   entier sur tout build compile avant son ajout — « Cannot find native module
+   entier sur tout build compile avant son ajout : « Cannot find native module
    'ExpoSharing' ». On le charge donc paresseusement et on tolere son absence :
    le fichier est alors ecrit sur le telephone, sans feuille de partage. */
 function chargerPartage(): { isAvailableAsync: () => Promise<boolean>; shareAsync: (u: string, o?: object) => Promise<void> } | null {
@@ -40,7 +40,7 @@ function chargerPartage(): { isAvailableAsync: () => Promise<boolean>; shareAsyn
     }
 }
 
-// Libellés de rôle (non genrés) — miroir de lib/genealogy/requirements (web).
+// Libellés de rôle (non genrés) : miroir de lib/genealogy/requirements (web).
 const ROLE_LABELS: Record<string, string> = {
     self: 'Le demandeur', father: 'Père', mother: 'Mère',
     paternal_grandfather: 'Grand-père paternel', paternal_grandmother: 'Grand-mère paternelle',
@@ -102,7 +102,7 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
        un jeton client et verifie `can_read_tree` : elle etait simplement
        inutilisee cote mobile.
 
-       Le client CONSULTE et TELECHARGE — il ne modifie rien. L'ecriture reste
+       Le client CONSULTE et TELECHARGE : il ne modifie rien. L'ecriture reste
        le privilege de l'admin, garanti par la meme fonction cote base. */
     const telechargerPlan = useCallback(async () => {
         if (!tree || telechargement) return

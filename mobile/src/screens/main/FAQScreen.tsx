@@ -28,7 +28,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   FAQScreen — THEME "CORPORATE PREMIUM 2026"
+   FAQScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans premium)
 ═══════════════════════════════════════════════════════════ */
 

@@ -24,7 +24,7 @@ import { useLang } from '../../contexts/LangContext'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   LegalScreen — THEME "CORPORATE PREMIUM 2026"
+   LegalScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width } = Dimensions.get('window')

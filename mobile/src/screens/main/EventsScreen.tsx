@@ -27,7 +27,7 @@ import { ttcFromHt } from '../../lib/tax'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   EventsScreen — THEME "CORPORATE PREMIUM 2026"
+   EventsScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans premium)
 ═══════════════════════════════════════════════════════════ */
 

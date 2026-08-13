@@ -19,7 +19,7 @@ import { supabase } from '../config/supabase'
 export async function registerPushToken(userId: string): Promise<string | null> {
     // Push notifications only work on physical devices
     if (!Device.isDevice) {
-        console.log('[Push] Skipping token registration — not a physical device')
+        console.log('[Push] Skipping token registration : not a physical device')
         return null
     }
 

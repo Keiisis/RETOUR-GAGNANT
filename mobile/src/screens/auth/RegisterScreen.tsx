@@ -24,14 +24,14 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   RegisterScreen — THEME "CORPORATE PREMIUM 2026"
+   RegisterScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width, height } = Dimensions.get('window')
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
-// Règles de mot de passe fort — IDENTIQUES au web (frontend/app/api/client/register).
+// Règles de mot de passe fort : IDENTIQUES au web (frontend/app/api/client/register).
 // L'inscription passe par l'API serveur qui revalide (obligation systeme).
 const PWD_CRITERIA: { id: string; label: string; test: (p: string) => boolean }[] = [
     { id: 'length',  label: '12 caractères minimum', test: (p) => p.length >= 12 },

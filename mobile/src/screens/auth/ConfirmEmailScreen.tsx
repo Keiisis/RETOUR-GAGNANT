@@ -87,7 +87,7 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
         try {
             /* verifyOtp confirme le compte ET ouvre la session. À la réussite,
                AuthContext capte la session et l'app bascule seule vers
-               l'accueil — rien à naviguer ici. On essaie chaque type de jeton
+               l'accueil : rien à naviguer ici. On essaie chaque type de jeton
                (voir OTP_TYPES) car inscription et renvoi n'émettent pas le
                même. */
             for (const type of OTP_TYPES) {

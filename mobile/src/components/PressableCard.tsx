@@ -42,7 +42,7 @@ const triggerHaptic = (strength: HapticStrength) => {
                 break
         }
     } catch {
-        // Haptics indisponibles (Expo Go ou device sans support) — silencieux
+        // Haptics indisponibles (Expo Go ou device sans support) : silencieux
     }
 }
 

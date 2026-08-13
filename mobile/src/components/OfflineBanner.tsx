@@ -12,7 +12,7 @@ import { typography } from '../config/theme'
 import { useLang } from '../contexts/LangContext'
 
 /* ═══════════════════════════════════════════════════════════
-   OfflineBanner — Displayed at top when device is offline.
+   OfflineBanner : Displayed at top when device is offline.
    Automatically hides when connectivity is restored.
    Migrated to Reanimated (UI thread).
 ═══════════════════════════════════════════════════════════ */

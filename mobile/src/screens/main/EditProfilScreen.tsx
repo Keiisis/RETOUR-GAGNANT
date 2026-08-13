@@ -28,7 +28,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   EditProfilScreen — THEME "CORPORATE PREMIUM 2026"
+   EditProfilScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans premium)
 ═══════════════════════════════════════════════════════════ */
 
@@ -70,7 +70,7 @@ function AnimatedSection({
 }
 
 /* ═══════════════════════════════════════════════════════════
-   COMPOSANT : FIELD (Externe au composant principal — FIX bug focus)
+   COMPOSANT : FIELD (Externe au composant principal : FIX bug focus)
 ═══════════════════════════════════════════════════════════ */
 
 interface FieldProps {
@@ -337,7 +337,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                             {prenom || nom ? `${prenom} ${nom}`.trim() : t('Votre nom')}
                         </Text>
                         <Text style={styles.identityEmail} numberOfLines={1}>
-                            {profile?.email || '—'}
+                            {profile?.email || '-'}
                         </Text>
 
                         {/* Barre de complétion */}
@@ -376,7 +376,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                         <View style={{ flex: 1 }}>
                             <Text style={styles.emailLabel}>{t('Adresse email')}</Text>
                             <Text style={styles.emailValue} numberOfLines={1}>
-                                {profile?.email || '—'}
+                                {profile?.email || '-'}
                             </Text>
                         </View>
                         <View style={styles.lockedBadge}>

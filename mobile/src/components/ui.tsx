@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   PRIMITIVES D'INTERFACE — Design System v2
+   PRIMITIVES D'INTERFACE : Design System v2
 
    Pourquoi ce fichier : l'app comptait 9 composants partagés dont 7
    n'étaient importés par AUCUN écran, pendant que 33 écrans écrivaient

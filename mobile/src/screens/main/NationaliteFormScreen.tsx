@@ -34,7 +34,7 @@ import { screenColors, typography, spacing, radius, shadows, fonts } from '../..
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 /* ═══════════════════════════════════════════════════════════
-   NationaliteFormScreen — THEME "CORPORATE PREMIUM 2026"
+   NationaliteFormScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width } = Dimensions.get('window')
@@ -55,10 +55,10 @@ const DEFAULT_DOC_SLOTS = [
     { key: 'naissance_pere', label: "Extrait de naissance du père", required: false, multi: false, ancestral: true },
     { key: 'naissance_mere', label: "Extrait de naissance de la mère", required: false, multi: false, ancestral: true },
     { key: 'livret_parents', label: "Livret de famille des parents", required: false, multi: false },
-    { key: 'agp_paternel', label: "Acte de naissance — AG paternel", required: false, multi: false, ancestral: true },
-    { key: 'agm_paternelle', label: "Acte de naissance — AGM paternelle", required: false, multi: false, ancestral: true },
-    { key: 'agp_maternel', label: "Acte de naissance — AG maternel", required: false, multi: false, ancestral: true },
-    { key: 'agm_maternelle', label: "Acte de naissance — AGM maternelle", required: false, multi: false, ancestral: true },
+    { key: 'agp_paternel', label: "Acte de naissance : AG paternel", required: false, multi: false, ancestral: true },
+    { key: 'agm_paternelle', label: "Acte de naissance : AGM paternelle", required: false, multi: false, ancestral: true },
+    { key: 'agp_maternel', label: "Acte de naissance : AG maternel", required: false, multi: false, ancestral: true },
+    { key: 'agm_maternelle', label: "Acte de naissance : AGM maternelle", required: false, multi: false, ancestral: true },
     { key: 'autres', label: "Autres documents", required: false, multi: true },
 ]
 
@@ -166,7 +166,7 @@ function Field({ label, icon, value, onChangeText, placeholder, textArea, requir
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LISTES D'OPTIONS — IDENTIQUES À CELLES DU SITE
+   LISTES D'OPTIONS : IDENTIQUES À CELLES DU SITE
 
    Le formulaire web contraint huit champs à une liste ; le mobile n'offrait
    qu'une saisie libre avec un exemple en gris. Deux consequences reelles :
@@ -195,7 +195,7 @@ const LIENS = ['Père', 'Mère', 'Grand-père paternel', 'Grand-mère paternelle
     'Grand-père maternel', 'Grand-mère maternelle', 'Arrière-grand-père',
     'Arrière-grand-mère', 'Autre']
 
-/* Ces deux listes stockent un CODE en base, pas le libellé affiché — c'est
+/* Ces deux listes stockent un CODE en base, pas le libellé affiché : c'est
    ce que fait le site, et le panel agent filtre sur ce code. */
 const SITUATIONS: Array<{ code: string; label: string }> = [
     { code: 'celibataire', label: 'Célibataire' },
@@ -215,7 +215,7 @@ const TYPES_DOCUMENT: Array<{ code: string; label: string }> = [
 /* ═══════════════════════════════════════════════════════════
    COMPOSANT : CHAMP À OPTIONS
 
-   Même anatomie que `Field` — libellé, icône, cadre — pour que les deux se
+   Même anatomie que `Field` : libellé, icône, cadre : pour que les deux se
    suivent sans rupture dans le formulaire. Le choix s'ouvre dans une feuille
    par le bas, plus confortable au pouce qu'une liste déroulante native.
 ═══════════════════════════════════════════════════════════ */
@@ -486,7 +486,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
         setLoading(true)
 
         try {
-            // Dépôt en 2 voies : 1) SERVEUR (service role, ≤ 4,4 Mo) — fiable, ne
+            // Dépôt en 2 voies : 1) SERVEUR (service role, ≤ 4,4 Mo) : fiable, ne
             // dépend ni des policies RLS ni du réseau direct vers Storage ;
             // 2) repli anon direct (gros fichiers / échec serveur). Le motif
             // d'échec est joint au marqueur (visible côté admin).
@@ -498,7 +498,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 let done = false
                 let reason = ''
 
-                // 1) Voie serveur (multipart) — la plus fiable.
+                // 1) Voie serveur (multipart) : la plus fiable.
                 try {
                     const fd = new FormData()
                     // React Native : fichier référencé par son uri.
@@ -531,7 +531,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
                 if (!done) {
                     console.warn('[Nationalité] Upload échoué pour', doc.name, reason)
-                    uploadedUrls.push(`${doc.key}: ${doc.name} (upload échoué — ${(reason || 'inconnu').slice(0, 100)})`)
+                    uploadedUrls.push(`${doc.key}: ${doc.name} (upload échoué : ${(reason || 'inconnu').slice(0, 100)})`)
                 }
             }
 
@@ -1060,13 +1060,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 </View>
             </View>
 
-            {/* EN-TÊTE — vocabulaire de l'accueil
+            {/* EN-TÊTE : vocabulaire de l'accueil
                 L'ancien en-tête annonçait la progression QUATRE fois : pastille
                 « CHAPITRE 1 / 6 », barre, six pastilles numérotées, et libellé
                 du chapitre. D'où l'impression de surcharge.
 
-                L'accueil pose un sur-titre discret puis un grand titre —
-                « BONJOUR, » puis le prénom. On applique la même grammaire :
+                L'accueil pose un sur-titre discret puis un grand titre-« BONJOUR, » puis le prénom. On applique la même grammaire :
                 le sur-titre porte le repère de progression, le titre porte le
                 nom du chapitre. Une seule barre fine complète, et les six
                 pastilles disparaissent : elles répétaient l'information sans
@@ -1144,7 +1143,7 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
     return (
         <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
             <Text style={styles.infoLabel}>{label}</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{value || '—'}</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>{value || '-'}</Text>
         </View>
     )
 }

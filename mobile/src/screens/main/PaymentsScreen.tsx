@@ -5,7 +5,7 @@
    Cet écran affichait des données ENTIÈREMENT FICTIVES : deux cartes
    bancaires au nom de « JEAN DUPONT », un solde de -219,48 €, et des
    transactions inventées (« Abonnement Premium », « Module Pro »,
-   « Licence annuelle ») — des produits que l'agence ne vend pas.
+   « Licence annuelle ») : des produits que l'agence ne vend pas.
 
    Deux corrections de fond :
 
@@ -59,8 +59,8 @@ const CHANNELS: Array<{
     label: string
     detail: string
 }> = [
-    { icon: 'phone-portrait-outline', label: 'Mobile Money', detail: 'MTN, Moov — via Kkiapay' },
-    { icon: 'card-outline', label: 'Carte bancaire', detail: 'Visa, Mastercard — via Kkiapay et FedaPay' },
+    { icon: 'phone-portrait-outline', label: 'Mobile Money', detail: 'MTN, Moov : via Kkiapay' },
+    { icon: 'card-outline', label: 'Carte bancaire', detail: 'Visa, Mastercard : via Kkiapay et FedaPay' },
     { icon: 'business-outline', label: 'Virement', detail: 'Sur demande, pour les montants importants' },
 ]
 

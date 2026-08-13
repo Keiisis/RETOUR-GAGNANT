@@ -28,7 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   MessagesScreen — THEME "CORPORATE PREMIUM 2026"
+   MessagesScreen : THEME "CORPORATE PREMIUM 2026"
 ═══════════════════════════════════════════════════════════ */
 
 const { width } = Dimensions.get('window')
@@ -253,7 +253,7 @@ export default function MessagesScreen({ navigation }: any) {
                     prenom: profile.prenom || '',
                     email: profile.email || '',
                     telephone: profile.phone || '',
-                    sujet: `Chat — ${profile.prenom || ''} ${profile.nom || ''}`.trim(),
+                    sujet: `Chat : ${profile.prenom || ''} ${profile.nom || ''}`.trim(),
                     is_read: false,
                     lu: false,
                 })

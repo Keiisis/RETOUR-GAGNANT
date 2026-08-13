@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   AFFICHAGE DES TARIFS — même règle que le site public
+   AFFICHAGE DES TARIFS : même règle que le site public
 
    Le site ne montre PAS les prix sur les fiches de prestation : le réglage
    `services_show_calculator` vaut 'false' en base, ce qui masque le
@@ -39,7 +39,7 @@ export async function pricingEnabled(): Promise<boolean> {
             const res = await fetchWithTimeout(`${API_BASE}/api/settings/frontend`, { timeoutMs: 8000 })
             // `fetch` ne lève PAS sur un 4xx/5xx : sans ce test, une réponse
             // { error: "Accès refusé." } passait pour un réglage absent et on
-            // retombait sur « prix visible » — l'inverse de ce qu'il faut.
+            // retombait sur « prix visible » : l'inverse de ce qu'il faut.
             if (!res.ok) return false
             const json = await res.json().catch(() => null)
             const settings = json?.settings

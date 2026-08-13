@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   RETOURS UTILISATEUR — point d'entrée unique
+   RETOURS UTILISATEUR : point d'entrée unique
 
    Pourquoi ce module : l'app appelait `Alert.alert` à 105 endroits. La boîte
    système est grise, non stylable, bloque l'interface pour une simple erreur
@@ -8,7 +8,7 @@
    explicite, bloquant à raison).
 
    Ce fichier n'est PAS un composant : c'est un relais. Il peut donc être
-   appelé depuis n'importe où — corps de composant, callback asynchrone,
+   appelé depuis n'importe où : corps de composant, callback asynchrone,
    fonction utilitaire hors React. Le provider s'enregistre au montage ;
    tant qu'il ne l'est pas, on retombe sur Alert.alert pour ne jamais
    perdre un message.

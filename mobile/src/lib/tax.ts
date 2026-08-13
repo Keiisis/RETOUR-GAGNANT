@@ -1,5 +1,5 @@
 // TVA « en sus » (miroir de frontend/lib/tax.ts). Le prix saisi est HORS TAXE ;
-// la TVA 18 % s'AJOUTE — le client paie le TTC. Sur mobile, les montants au
+// la TVA 18 % s'AJOUTE : le client paie le TTC. Sur mobile, les montants au
 // checkout sont en XOF (FCFA, sans décimale) → arrondi entier.
 export const TVA_RATE = 18
 

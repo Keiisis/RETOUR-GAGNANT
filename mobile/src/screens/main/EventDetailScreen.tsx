@@ -29,7 +29,7 @@ import type { AppEvent } from './EventsScreen'
 import { screenColors, typography } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   EventDetailScreen — THEME "CORPORATE PREMIUM 2026"
+   EventDetailScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans premium)
 ═══════════════════════════════════════════════════════════ */
 
@@ -429,7 +429,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
             const data = await res.json().catch(() => ({}))
 
             if (!res.ok || !data.ok) {
-                toast(t('Paiement reçu — confirmation manuelle requise'), t('Votre paiement a été reçu (réf : {tx}) mais la confirmation automatique a échoué. Notre équipe vérifiera votre billet sous 24h.').replace('{tx}', txId))
+                toast(t('Paiement reçu : confirmation manuelle requise'), t('Votre paiement a été reçu (réf : {tx}) mais la confirmation automatique a échoué. Notre équipe vérifiera votre billet sous 24h.').replace('{tx}', txId))
                 return
             }
 
@@ -462,7 +462,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         {
             icon: 'location-outline' as const,
             label: t('Lieu'),
-            value: event.address || event.location || '—',
+            value: event.address || event.location || '-',
         },
         {
             icon: 'people-outline' as const,
@@ -822,7 +822,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
             <KkiapayModal
                 visible={showKkiapay}
                 amount={String(pendingRegistration?.amount || selectedPrice)}
-                serviceName={`${event.title} — ${selectedTicket === 'vip' ? 'VIP' : 'Standard'}`}
+                serviceName={`${event.title} : ${selectedTicket === 'vip' ? 'VIP' : 'Standard'}`}
                 onClose={() => setShowKkiapay(false)}
                 onSuccess={handlePaymentSuccess}
             />

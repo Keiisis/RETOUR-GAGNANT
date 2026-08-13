@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../config/supabase'
 
 /* ══════════════════════════════════════════════════════════════════════════
-   PaymentSettingsContext — preloads Kkiapay public key + sandbox flag at app
+   PaymentSettingsContext : preloads Kkiapay public key + sandbox flag at app
    start so the payment modal opens instantly (no Supabase round-trip when
    the user taps "Pay").
    ══════════════════════════════════════════════════════════════════════════ */
@@ -42,7 +42,7 @@ export function PaymentSettingsProvider({ children }: { children: React.ReactNod
                     }
                 }
             }
-        } catch { /* ignore — fallback prod */ } finally {
+        } catch { /* ignore : fallback prod */ } finally {
             setLoaded(true)
         }
     }

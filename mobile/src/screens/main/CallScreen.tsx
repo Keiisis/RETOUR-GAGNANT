@@ -1,6 +1,6 @@
 'use strict'
 /* ══════════════════════════════════════════════════════════════
-   APPEL VOCAL — écran mobile
+   APPEL VOCAL : écran mobile
 
    Le client appelle ; tous les agents connectés voient l'appel sonner
    dans leur panel et le premier qui décroche prend la communication.
@@ -30,7 +30,7 @@ type Etat = 'connexion' | 'sonne' | 'actif' | 'termine'
    Tous les rejets ne sont pas des instances d'Error : react-native-webrtc
    rejette avec un MediaStreamError, qui est un objet simple. Le test
    `e instanceof Error` renvoyait donc une chaîne vide, et la vraie cause
-   — y compris un refus de micro — disparaissait derrière un message
+ : y compris un refus de micro : disparaissait derrière un message
    générique. */
 function detailErreur(e: unknown): string {
     if (typeof e === 'string' && e) return e
@@ -109,7 +109,7 @@ export default function CallScreen({ navigation, route }: any) {
             //
             // Deux situations mènent ici, et le message doit valoir pour les
             // deux : un build de développement antérieur à l'ajout de
-            // react-native-webrtc, ou Expo Go — qui embarque un jeu figé de
+            // react-native-webrtc, ou Expo Go : qui embarque un jeu figé de
             // modules natifs et ne pourra JAMAIS passer cet appel, quelle
             // que soit la version de l'application. Parler de simple « mise
             // à jour » envoyait chercher un correctif inexistant.
@@ -119,7 +119,7 @@ export default function CallScreen({ navigation, route }: any) {
             if (!disponible) {
                 toast(
                     t('Appel téléphonique'),
-                    t("Cet appel exige le build RGB à jour — Expo Go ne le permet pas. Nous ouvrons votre téléphone."),
+                    t("Cet appel exige le build RGB à jour : Expo Go ne le permet pas. Nous ouvrons votre téléphone."),
                 )
                 Linking.openURL(`tel:${AGENCE_TEL}`).catch(() => { })
                 navigation.goBack()
@@ -221,8 +221,8 @@ export default function CallScreen({ navigation, route }: any) {
             const id = callIdRef.current
             callIdRef.current = null
             fermer()
-            /* Quitter l'écran sans raccrocher — geste de retour, application
-               fermée — laissait l'appel ouvert en base : l'agent voyait une
+            /* Quitter l'écran sans raccrocher : geste de retour, application
+               fermée : laissait l'appel ouvert en base : l'agent voyait une
                communication qui n'existait plus. On clôt aussi côté serveur.
                La requête part sans être attendue : le composant disparaît. */
             if (id) {
@@ -316,7 +316,7 @@ export default function CallScreen({ navigation, route }: any) {
                 </Pressable>
 
                 {/* Micro bloqué : le seul geste utile est d'ouvrir les
-                    réglages du téléphone — Android ne redemandera pas. */}
+                    réglages du téléphone : Android ne redemandera pas. */}
                 {etat === 'termine' && microBloque && (
                     <Pressable
                         onPress={() => { void Linking.openSettings().catch(() => { }) }}

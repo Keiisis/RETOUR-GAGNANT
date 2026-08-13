@@ -32,7 +32,7 @@ import { screenColors, typography, spacing, radius, shadows } from '../../config
 import { FlagBar } from '../../components/ui'
 
 /* ═══════════════════════════════════════════════════════════
-   DossierScreen — THEME "CORPORATE PREMIUM 2026"
+   DossierScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec RegisterScreen & EditProfilScreen)
 ═══════════════════════════════════════════════════════════ */
 const { width } = Dimensions.get('window')
@@ -449,7 +449,7 @@ export default function DossierScreen({ navigation }: any) {
 
                             return (
                                 <>
-                                    {/* ═══ CARTE DOSSIER — timeline verticale ═══ */}
+                                    {/* ═══ CARTE DOSSIER : timeline verticale ═══ */}
                                     <AnimatedSection delay={150}>
                                         <View style={styles.progressCard}>
                                             <FlagBar height={5} radiusTop={false} />
@@ -718,7 +718,7 @@ export default function DossierScreen({ navigation }: any) {
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.modalTitle}>{t('Ajouter un document')}</Text>
                                 <Text style={styles.modalSub}>
-                                    {t('PDF, Word ou image — Max {size} Mo').replace('{size}', MAX_SIZE_MB.toString())}
+                                    {t('PDF, Word ou image : Max {size} Mo').replace('{size}', MAX_SIZE_MB.toString())}
                                 </Text>
                             </View>
                         </View>

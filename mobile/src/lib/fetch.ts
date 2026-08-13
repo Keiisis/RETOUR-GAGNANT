@@ -1,5 +1,5 @@
 /**
- * fetchWithTimeout — wraps fetch with an AbortController so requests can't hang forever.
+ * fetchWithTimeout : wraps fetch with an AbortController so requests can't hang forever.
  *
  * On unreliable mobile networks (or when EXPO_PUBLIC_API_URL points to a host
  * that no longer exists, e.g. a stale dev IP), a plain `fetch()` will keep the

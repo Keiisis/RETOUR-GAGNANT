@@ -28,7 +28,7 @@ interface Slide {
 }
 
 /* ═══════════════════════════════════════
-   Slides — Storytelling cinématique
+   Slides : Storytelling cinématique
 ═══════════════════════════════════════ */
 const SLIDES: Slide[] = [
     {
@@ -43,7 +43,7 @@ const SLIDES: Slide[] = [
         key: 'process',
         kicker: 'Votre Dossier',
         title: 'Nationalité,\npasseport,\nsimplifié',
-        body: 'Démarches administratives, obtention de la nationalité béninoise, passeport — notre expertise VIP transforme le complexe en simple.',
+        body: 'Démarches administratives, obtention de la nationalité béninoise, passeport : notre expertise VIP transforme le complexe en simple.',
         image: require('../../assets/onboarding/slide_2_process.png'),
         accent: '#FCD116',  // Jaune Bénin
     },
@@ -51,7 +51,7 @@ const SLIDES: Slide[] = [
         key: 'home',
         kicker: 'Votre Retour',
         title: 'Bienvenue\nchez vous,\nau Bénin',
-        body: 'Au-delà des papiers, c\'est une nouvelle vie qui commence. Installation, communauté, héritage — votre retour gagnant.',
+        body: 'Au-delà des papiers, c\'est une nouvelle vie qui commence. Installation, communauté, héritage : votre retour gagnant.',
         image: require('../../assets/onboarding/slide_3_home.png'),
         accent: '#E8112D',  // Rouge Bénin
     },
@@ -70,7 +70,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     const goNext = () => {
         if (current < SLIDES.length - 1) {
             const next = current + 1
-            // @ts-ignore — FlatList ref typing quirk
+            // @ts-ignore : FlatList ref typing quirk
             flatRef.current?.scrollToIndex({ index: next, animated: true })
             setCurrent(next)
         } else {
@@ -141,8 +141,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                                animated module » : le défilement est piloté par
                                le moteur natif (`useNativeDriver: true`), qui
                                n'accepte que les transformations et l'opacité.
-                               `scaleX` produit le même effet — le segment actif
-                               s'allonge — et il est nativement pris en charge. */
+                               `scaleX` produit le même effet : le segment actif
+                               s'allonge : et il est nativement pris en charge. */
                             const scaleX = scrollX.interpolate({
                                 inputRange,
                                 outputRange: [1, 3, 1],
@@ -188,7 +188,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 }
 
 /* ═══════════════════════════════════════
-   Slide individuel — Ken Burns + Parallax
+   Slide individuel : Ken Burns + Parallax
 ═══════════════════════════════════════ */
 function SlideView({
     item,

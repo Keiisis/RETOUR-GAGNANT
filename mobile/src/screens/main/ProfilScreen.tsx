@@ -34,7 +34,7 @@ import LanguagePicker from '../../components/LanguagePicker'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
-   ProfilScreen — THEME "CORPORATE PREMIUM 2026"
+   ProfilScreen : THEME "CORPORATE PREMIUM 2026"
    (Aligné avec tous les autres écrans premium)
 ═══════════════════════════════════════════════════════════ */
 
@@ -577,7 +577,7 @@ export default function ProfilScreen() {
                     <View style={styles.statsRow}>
                         {[
                             /* 'Dossier' est l'onglet réel ; 'MyServices' n'existe
-                               dans aucun navigateur — l'ancien lien était mort. */
+                               dans aucun navigateur : l'ancien lien était mort. */
                             { icon: 'folder-open' as const, value: stats.dossiers, label: t('Dossiers'), dest: 'Dossier' },
                             { icon: 'calendar' as const, value: stats.appointments, label: t('Rendez-vous'), dest: 'Appointments' },
                             { icon: 'card' as const, value: stats.payments, label: t('Paiements'), dest: 'Payments' },

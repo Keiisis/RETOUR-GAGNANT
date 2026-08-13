@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   PARCOURS RÉEL D'UN SERVICE — miroir de frontend/lib/service-mode.ts
+   PARCOURS RÉEL D'UN SERVICE : miroir de frontend/lib/service-mode.ts
    À MODIFIER EN PAIRE avec le web : même règle sur les trois surfaces.
 
    Ce module ne DÉCIDE rien : il REPRODUIT ce que le site public fait déjà.

@@ -17,14 +17,14 @@ import { screenColors, fonts } from '../config/theme'
 const { width } = Dimensions.get('window');
 
 /* ═══════════════════════════════════════
-   Couleurs — Silent Luxury
+   Couleurs : Silent Luxury
 ═══════════════════════════════════════ */
 // Palette de l'ecran : plus de copie locale. Toutes les couleurs
 // viennent du design system v2 (blanc + tricolore Benin).
 const C = screenColors
 
 /* ═══════════════════════════════════════
-   Props — Contrat avec AppNavigator
+   Props : Contrat avec AppNavigator
 ═══════════════════════════════════════ */
 interface SplashScreenProps {
     isLoading?: boolean;
@@ -53,7 +53,7 @@ export default function SplashScreen({ isLoading = false, onContinue }: SplashSc
 }
 
 /* ═══════════════════════════════════════
-   ÉCRAN 1 — Splash pur
+   ÉCRAN 1 : Splash pur
 ═══════════════════════════════════════ */
 function SplashView() {
     const opacity = useSharedValue(0);
@@ -100,7 +100,7 @@ function SplashView() {
 }
 
 /* ═══════════════════════════════════════
-   ÉCRAN 2 — Sélection langue
+   ÉCRAN 2 : Sélection langue
 ═══════════════════════════════════════ */
 function LanguageView({ onContinue }: { onContinue?: () => void }) {
     const { lang, setLang } = useLang();
@@ -134,7 +134,7 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
                 </Text>
             </View>
 
-            {/* Liste — style iOS natif */}
+            {/* Liste : style iOS natif */}
             <View style={styles.langList}>
                 {SUPPORTED_LANGUAGES.map((item, idx) => {
                     const isActive = selected === item.code;
@@ -167,7 +167,7 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
                 })}
             </View>
 
-            {/* CTA — bouton unique, plein, comme toutes les apps modernes */}
+            {/* CTA : bouton unique, plein, comme toutes les apps modernes */}
             <TouchableOpacity
                 style={[styles.cta, !selected && styles.ctaDisabled]}
                 disabled={!selected}
