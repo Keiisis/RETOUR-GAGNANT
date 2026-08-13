@@ -51,7 +51,9 @@ interface PricingOption { label: string; price: string }
 
 /** Contenu éditorial de service, IDENTIQUE au site (voir web lib/content/serviceLanding). */
 interface ServiceLanding {
+    hero_badge?: string
     hero_subtitle?: string
+    hero_chips?: string[]
     piliers?: { title: string; desc: string }[]
     intro_eyebrow?: string
     intro_title?: string
@@ -425,6 +427,31 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     onBack={() => navigation.goBack()}
                     t={t}
                 />
+
+                {/* CHIPS (mots-clés du service) */}
+                {landing?.hero_chips?.length ? (
+                    <View style={styles.chipsRow}>
+                        {landing.hero_chips.slice(0, 4).map((c, i) => (
+                            <View key={i} style={styles.chip}>
+                                <Check size={12} color={C.primary} strokeWidth={2.8} />
+                                <Text style={styles.chipText}>{t(c)}</Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : null}
+
+                {/* BANDEAU PILIERS (bande verte pleine, 4 colonnes) */}
+                {landing?.piliers?.length ? (
+                    <View style={styles.piliersBand}>
+                        {landing.piliers.slice(0, 4).map((p, i) => (
+                            <View key={i} style={styles.pilier}>
+                                <Sparkles size={18} color={C.accent} strokeWidth={2} />
+                                <Text style={styles.pilierTitle}>{t(p.title)}</Text>
+                                <Text style={styles.pilierDesc}>{t(p.desc)}</Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : null}
 
                 {/* CARTE PRINCIPALE */}
                 <View style={styles.cardWrap}>
@@ -987,6 +1014,17 @@ const styles = StyleSheet.create({
         flex: 1, fontSize: 13, fontFamily: 'Inter_600SemiBold',
         color: C.text,
     },
+
+    /* Chips (mots-clés) sous le hero */
+    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: 4, marginBottom: spacing.lg },
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surfaceAlt, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
+    chipText: { fontSize: 11.5, fontFamily: 'Inter_700Bold', color: C.text },
+
+    /* Bandeau piliers (bande verte pleine, 4 colonnes) */
+    piliersBand: { backgroundColor: C.primary, flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.md, marginBottom: spacing.lg },
+    pilier: { width: '46%', gap: 5 },
+    pilierTitle: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_700Bold', letterSpacing: 0.4, textTransform: 'uppercase' },
+    pilierDesc: { color: 'rgba(255,255,255,0.72)', fontSize: 11, lineHeight: 15, fontFamily: 'Inter_400Regular' },
 
     /* Étapes réelles (titre + description) */
     etapeCard: {
