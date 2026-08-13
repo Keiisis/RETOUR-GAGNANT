@@ -1,43 +1,24 @@
-import React, { useState, useEffect } from 'react'
-import { toast } from '../../lib/feedback'
+import React, { useState } from 'react'
 import {
-    View, Text, TextInput, StyleSheet, KeyboardAvoidingView,
-    Platform, ScrollView, ActivityIndicator, Pressable, Dimensions, Image, TouchableOpacity
+    View, Text, TextInput, Pressable, ScrollView, StyleSheet,
+    KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LucideIcon } from '../../components/Icon'
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-    withDelay,
-    withRepeat,
-    withSequence,
-    Easing,
-    interpolateColor,
-    interpolate,
-} from 'react-native-reanimated'
+import { ChevronLeft, Mail } from 'lucide-react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
-import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
-import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { toast } from '../../lib/feedback'
+import { FlagBar } from '../../components/ui'
+import { screenColors, spacing, radius } from '../../config/theme'
 
-/* ═══════════════════════════════════════════════════════════
-   ForgotPasswordScreen : THEME "CORPORATE PREMIUM 2026"
-   Cohérent avec LoginScreen & RegisterScreen
-═══════════════════════════════════════════════════════════ */
-
-const { width } = Dimensions.get('window')
-
-// Image locale
-const LOGO_IMG = require('../../../assets/adaptive-icon.png')
-
-// Palette de l'agence (identique Login/Register)
-// Palette de l'ecran : plus de copie locale. Toutes les couleurs
-// viennent du design system v2 (blanc + tricolore Benin).
 const C = screenColors
 
+/**
+ * Écran Mot de passe oublié : rendu fidèle à la maquette Sleek exportée
+ * (« Pas d'inquiétude. » + champ email + bouton « Envoyer le lien »). LOGIQUE
+ * préservée : resetPassword puis retour à la connexion.
+ */
 export default function ForgotPasswordScreen({ navigation }: any) {
     const insets = useSafeAreaInsets()
     const { resetPassword } = useAuth()
@@ -47,42 +28,14 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     const [loading, setLoading] = useState(false)
     const [focused, setFocused] = useState(false)
 
-    /* ── Animations d'entrée (Stagger) ── */
-    const headerAnim = useSharedValue(0)
-    const formAnim = useSharedValue(0)
-    const btnAnim = useSharedValue(0)
-
-    useEffect(() => {
-        headerAnim.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) })
-        formAnim.value = withDelay(150, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
-        btnAnim.value = withDelay(300, withTiming(1, { duration: 800, easing: Easing.out(Easing.quad) }))
-
-    }, [])
-
-    const styleHeader = useAnimatedStyle(() => ({
-        opacity: headerAnim.value,
-        transform: [{ translateY: 30 * (1 - headerAnim.value) }],
-    }))
-    const styleForm = useAnimatedStyle(() => ({
-        opacity: formAnim.value,
-        transform: [{ translateY: 40 * (1 - formAnim.value) }],
-    }))
-    const styleBtn = useAnimatedStyle(() => ({
-        opacity: btnAnim.value,
-        transform: [{ translateY: 50 * (1 - btnAnim.value) }],
-    }))
-
-
     const handleReset = async () => {
         if (!email.trim()) {
             toast(t('Champs requis'), t('Veuillez entrer votre adresse email.'))
             return
         }
-
         setLoading(true)
         const { error } = await resetPassword(email.trim())
         setLoading(false)
-
         if (error) {
             toast(t('Erreur'), error.message)
         } else {
@@ -92,289 +45,83 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     }
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-
-
-            {/* NAV BAR */}
-            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+            <View style={{ paddingTop: insets.top }}>
                 <FlagBar height={6} radiusTop={false} />
             </View>
-
-            <View style={styles.navBar}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.navBack}
-                    accessibilityRole="button"
-                    hitSlop={6}
-                    accessibilityLabel={t('Retour')}>
-                    <View style={styles.iconContainer}>
-                        <LucideIcon name="arrow-back" size={22} color={C.primary} />
-                    </View>
-                </Pressable>
-            </View>
-
-            <ScrollView 
-                contentContainerStyle={styles.scroll} 
-                showsVerticalScrollIndicator={false} 
-                keyboardShouldPersistTaps="handled"
-                bounces={false}
-                alwaysBounceVertical={false}
-                overScrollMode="never"
-            >
-
-                {/* HEADER */}
-                <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    {/* Logo */}
-                    <View style={styles.logoContainer}>
-                        <Image source={LOGO_IMG} style={styles.logoImage} resizeMode="contain" />
-                    </View>
-
-                    {/* Icône clé dans un cercle */}
-                    <View style={styles.keyIconWrap}>
-                        <LucideIcon name="key-outline" size={28} color={C.primary} />
-                    </View>
-
-                    <Text style={styles.title}>{t('Mot de passe oublié ?')}</Text>
-                    <Text style={styles.subtitle}>
-                        {t('Entrez votre adresse email et nous vous enverrons un lien de réinitialisation sécurisé.')}
-                    </Text>
+            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
+                        <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
+                    </Pressable>
+                    <Text style={styles.title}>{t("Pas d'inquiétude.")}</Text>
+                    <Text style={styles.subtitle}>{t('Entrez votre email pour recevoir un lien de réinitialisation.')}</Text>
                 </Animated.View>
 
-                {/* FORMULAIRE */}
-                <Animated.View style={[styles.formContainer, styleForm]}>
-                    <Field
-                        icon="mail-outline"
-                        placeholder={t('Adresse e-mail')}
-                        value={email}
-                        onChangeText={setEmail}
-                        focused={focused}
-                        onFocus={() => setFocused(true)}
-                        onBlur={() => setFocused(false)}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        onSubmitEditing={handleReset}
-                    />
-                </Animated.View>
+                <Animated.View entering={FadeInDown.duration(500).delay(120)} style={styles.form}>
+                    <Text style={styles.label}>{t('Adresse email')}</Text>
+                    <View style={[styles.field, focused && styles.fieldFocused]}>
+                        <Mail size={20} color={C.textMuted} strokeWidth={2} />
+                        <TextInput
+                            value={email}
+                            onChangeText={setEmail}
+                            onFocus={() => setFocused(true)}
+                            onBlur={() => setFocused(false)}
+                            onSubmitEditing={handleReset}
+                            placeholder="nom@exemple.com"
+                            placeholderTextColor={C.placeholder}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            style={styles.input}
+                        />
+                    </View>
 
-                {/* BOUTON & RETOUR */}
-                <Animated.View style={[styles.bottomContainer, styleBtn]}>
-                    <InteractiveButton
-                        title={t('Envoyer le lien')}
+                    <Pressable
                         onPress={handleReset}
-                        disabled={!email.trim() || loading}
-                        loading={loading}
-                    />
-
-                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink}
+                        disabled={loading}
+                        style={({ pressed }) => [styles.submitBtn, pressed && { transform: [{ scale: 0.98 }] }, loading && { opacity: 0.7 }]}
                         accessibilityRole="button"
-                        hitSlop={6}>
-                        <Text style={styles.backText}>
-                            {t('Retour à')} <Text style={styles.backBold}>{t('la connexion')}</Text>
-                        </Text>
+                    >
+                        {loading ? <ActivityIndicator color={C.primaryText} /> : <Text style={styles.submitText}>{t('Envoyer le lien')}</Text>}
+                    </Pressable>
+
+                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink} hitSlop={6}>
+                        <Text style={styles.backLinkText}>{t('Retour à la connexion')}</Text>
                     </Pressable>
                 </Animated.View>
-
-                {/* Footer signature */}
-                <View style={styles.footerContainer}>
-                    <Text style={styles.footer}>{t('Retour Gagnant Bénin')} : v1.0</Text>
-                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     )
 }
 
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : FIELD (identique Login/Register)
-═══════════════════════════════════════════════════════════ */
-function Field({ icon, placeholder, value, onChangeText, focused, onFocus, onBlur, keyboardType, autoCapitalize, secureTextEntry, rightSlot, onSubmitEditing }: any) {
-    const focusAnim = useSharedValue(0)
-
-    useEffect(() => {
-        focusAnim.value = withSpring(focused ? 1 : 0, { damping: 15, stiffness: 150 })
-    }, [focused])
-
-    const rStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(focusAnim.value, [0, 1], [C.border, C.primary]),
-        backgroundColor: focused ? C.surfaceSolid : C.surface,
-        shadowOpacity: interpolate(focusAnim.value, [0, 1], [0.01, 0.08]),
-        transform: [{ scale: interpolate(focusAnim.value, [0, 1], [1, 1.01]) }]
-    }))
-
-    const iconColor = focused ? C.accent : C.placeholder
-
-    return (
-        <Animated.View style={[styles.fieldContainer, rStyle]}>
-            <LucideIcon name={icon} size={20} color={iconColor} style={styles.fieldIcon} />
-            <TextInput
-                style={styles.fieldInput}
-                placeholder={placeholder}
-                placeholderTextColor={C.placeholder}
-                value={value}
-                onChangeText={onChangeText}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                keyboardType={keyboardType}
-                autoCapitalize={autoCapitalize}
-                secureTextEntry={secureTextEntry}
-                selectionColor={C.primary}
-                returnKeyType="send"
-                onSubmitEditing={onSubmitEditing}
-            />
-            {rightSlot}
-        </Animated.View>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COMPOSANT : BOUTON INTERACTIF (identique Login/Register)
-═══════════════════════════════════════════════════════════ */
-function InteractiveButton({ title, onPress, disabled, loading }: any) {
-    return (
-        <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.btn, disabled && styles.btnDisabled]}
-            accessibilityRole="button"
-            hitSlop={6}>
-            {loading ? (
-                <ActivityIndicator color={C.primaryText} size="small" />
-            ) : (
-                <>
-                    <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <LucideIcon name="send-outline" size={18} color={C.primary} style={{ marginLeft: 8 }} />}
-                </>
-            )}
-        </TouchableOpacity>
-    )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   STYLES
-═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: C.bg,
+    container: { flex: 1, backgroundColor: C.bg },
+    scroll: { paddingBottom: 40 },
+    header: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.lg },
+    backBtn: {
+        width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: C.border,
+        alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl,
     },
+    title: { fontSize: 30, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: C.text, letterSpacing: -0.5, marginBottom: 6 },
+    subtitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: C.textSec },
 
-    /* ── Nav Bar ── */
-    topFlag: { marginHorizontal: 20, borderRadius: radius.pill, overflow: 'hidden' },
-    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
-    navBack: {
-        width: 44,
-        height: 44,
-        justifyContent: 'center',
+    form: { paddingHorizontal: spacing.lg, gap: spacing.md },
+    label: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
+    field: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,
+        borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 14,
     },
-    iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+    fieldFocused: { borderColor: C.primary, backgroundColor: C.surface },
+    input: { flex: 1, fontSize: 15, fontFamily: 'Inter_500Medium', color: C.text, padding: 0 },
 
-    /* ── Scroll & Header ── */
-    scroll: {
-        paddingHorizontal: 28,
-        paddingBottom: 80,
+    submitBtn: {
+        marginTop: spacing.sm, backgroundColor: C.primary, borderRadius: radius.lg, paddingVertical: 18,
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
     },
-    headerContainer: {
-        alignItems: 'center',
-        marginTop: 10,
-        marginBottom: 40,
-    },
-    logoContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-    },
-    logoImage: {
-        width: 160,
-        height: 160,
-    },
-    keyIconWrap: {
-        width: 56,
-        height: 56,
-        borderRadius: radius.xxl,
-        backgroundColor: C.accentSoft,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-    },
-    title: { ...typography.h1, color: C.text },
-    subtitle: {
-        fontSize: 15,
-        color: C.textSec,
-        marginTop: 14,
-        lineHeight: 22,
-        fontFamily: fonts.regular,
-        textAlign: 'center',
-        paddingHorizontal: 10,
-    },
-
-    /* ── Formulaire ── */
-    formContainer: {
-        gap: 16,
-    },
-    fieldContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        height: 60,
-        borderWidth: 1,
-        borderRadius: radius.lg,
-        paddingHorizontal: 16,
-        ...shadows.card,
-    },
-    fieldIcon: {
-        marginRight: 12,
-    },
-    fieldInput: {
-        flex: 1,
-        color: C.primary,
-        fontSize: 15,
-        fontFamily: fonts.medium,
-        height: '100%',
-    },
-
-    /* ── Bottom ── */
-    bottomContainer: {
-        marginTop: 32,
-    },
-    btn: {
-        height: 60,
-        backgroundColor: C.primary,
-        borderRadius: radius.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...shadows.card,
-    },
-    btnDisabled: {
-        backgroundColor: C.borderStrong,
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    btnText: {
-        color: C.primaryText,
-        fontSize: 16,
-        fontFamily: fonts.bold,
-        letterSpacing: 0.2,
-    },
-    btnTextDisabled: {
-        color: C.surfaceAlt,
-    },
-    backLink: {
-        marginTop: 24,
-        alignItems: 'center',
-        padding: 12,
-    },
-    backText: {
-        color: C.textSec,
-        fontSize: 14,
-        fontFamily: fonts.medium,
-    },
-    backBold: {
-        color: C.primary,
-        fontFamily: fonts.bold,
-    },
-
-    /* ── Footer ── */
-    footerContainer: {
-        marginTop: 48,
-        alignItems: 'center',
-    },
-    footer: {
-        fontSize: 12,
-        color: C.placeholder,
-        letterSpacing: 1,
-    },
+    submitText: { color: C.primaryText, fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 0.2 },
+    backLink: { alignSelf: 'center', marginTop: spacing.lg },
+    backLinkText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: C.primary },
 })

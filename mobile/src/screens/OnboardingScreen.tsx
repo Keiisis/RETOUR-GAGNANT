@@ -1,15 +1,17 @@
 import React, { useRef, useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    Animated, Dimensions, Platform, Pressable, ImageBackground,
+    Animated, Dimensions, Pressable, ImageBackground,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import ReAnimated, { FadeIn, FadeInUp } from 'react-native-reanimated'
 import Svg, { Path } from 'react-native-svg'
 import { useLang } from '../contexts/LangContext'
-import { fonts } from '../config/theme'
+import { screenColors as C, fonts, flag } from '../config/theme'
 
 const { width, height } = Dimensions.get('window')
+const IMAGE_H = height * 0.56
 
 /* ═══════════════════════════════════════
    Types
@@ -28,32 +30,34 @@ interface Slide {
 }
 
 /* ═══════════════════════════════════════
-   Slides : Storytelling cinématique
+   Slides : storytelling clair (charte v2 : fond blanc, jamais de noir).
+   Rendu fidèle à la maquette Sleek exportée (image en haut fondue vers le
+   blanc, puce de progression, titre, corps, bouton vert plein).
 ═══════════════════════════════════════ */
 const SLIDES: Slide[] = [
     {
         key: 'roots',
         kicker: 'Vos Racines',
-        title: 'Retrouvez\nvotre terre\nd\'origine',
+        title: 'Retrouvez votre terre d\'origine',
         body: 'Vous êtes Afro-descendant et le Bénin vous appelle. Retour Gagnant vous accompagne pour reconnecter avec vos racines.',
         image: require('../../assets/onboarding/slide_1_roots.png'),
-        accent: '#008751',  // Vert Bénin
+        accent: '#008751',
     },
     {
         key: 'process',
         kicker: 'Votre Dossier',
-        title: 'Nationalité,\npasseport,\nsimplifié',
+        title: 'Nationalité, passeport, simplifié',
         body: 'Démarches administratives, obtention de la nationalité béninoise, passeport : notre expertise VIP transforme le complexe en simple.',
         image: require('../../assets/onboarding/slide_2_process.png'),
-        accent: '#FCD116',  // Jaune Bénin
+        accent: '#FCD116',
     },
     {
         key: 'home',
         kicker: 'Votre Retour',
-        title: 'Bienvenue\nchez vous,\nau Bénin',
+        title: 'Bienvenue chez vous, au Bénin',
         body: 'Au-delà des papiers, c\'est une nouvelle vie qui commence. Installation, communauté, héritage : votre retour gagnant.',
         image: require('../../assets/onboarding/slide_3_home.png'),
-        accent: '#E8112D',  // Rouge Bénin
+        accent: '#E8112D',
     },
 ]
 
@@ -79,200 +83,102 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     }
 
     const isLast = current === SLIDES.length - 1
+    const slide = SLIDES[current]
 
     return (
         <View style={styles.container}>
-            {/* Header flottant */}
-            <View style={styles.header}>
-                <View style={styles.chapterPill}>
-                    <Text style={styles.chapterText}>
-                        {String(current + 1).padStart(2, '0')}
-                        <Text style={styles.chapterDim}> / {String(SLIDES.length).padStart(2, '0')}</Text>
-                    </Text>
-                </View>
-
-                {!isLast && (
-                    <Pressable hitSlop={12} onPress={onComplete}
-                        accessibilityRole="button">
-                        <Text style={styles.skipText}>{t('Passer')}</Text>
-                    </Pressable>
-                )}
+            {/* Liseré tricolore */}
+            <View style={[styles.flag, { top: insets.top }]}>
+                <View style={[styles.flagBand, { backgroundColor: flag[0] }]} />
+                <View style={[styles.flagBand, { backgroundColor: flag[1] }]} />
+                <View style={[styles.flagBand, { backgroundColor: flag[2] }]} />
             </View>
 
-            <Animated.FlatList
-                ref={flatRef}
-                data={SLIDES}
-                keyExtractor={item => item.key}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                    { useNativeDriver: true }
-                )}
-                onMomentumScrollEnd={(e) => {
-                    const idx = Math.round(e.nativeEvent.contentOffset.x / width)
-                    setCurrent(idx)
-                }}
-                renderItem={({ item, index }) => (
-                    <SlideView item={item} index={index} scrollX={scrollX} />
-                )}
-            />
+            {/* Bouton Passer */}
+            {!isLast && (
+                <Pressable hitSlop={12} onPress={onComplete} style={[styles.skipBtn, { top: insets.top + 24 }]} accessibilityRole="button">
+                    <Text style={styles.skipText}>{t('Passer')}</Text>
+                </Pressable>
+            )}
 
-            {/* Footer flottant */}
-            <View style={styles.footer}>
+            {/* Images (pager horizontal, Ken Burns léger) */}
+            <View style={styles.imageArea}>
+                <Animated.FlatList
+                    ref={flatRef}
+                    data={SLIDES}
+                    keyExtractor={item => item.key}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                        { useNativeDriver: true }
+                    )}
+                    onMomentumScrollEnd={(e) => {
+                        const idx = Math.round(e.nativeEvent.contentOffset.x / width)
+                        setCurrent(idx)
+                    }}
+                    renderItem={({ item, index }) => (
+                        <SlideImage item={item} index={index} scrollX={scrollX} />
+                    )}
+                />
+                {/* Fondu vers le blanc en bas de l'image */}
                 <LinearGradient
-                    colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.85)']}
-                    locations={[0, 0.4, 1]}
-                    style={StyleSheet.absoluteFill}
+                    colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.55)', '#FFFFFF']}
+                    locations={[0, 0.6, 1]}
+                    style={styles.fade}
                     pointerEvents="none"
                 />
+            </View>
 
-                {/* Marge basse issue de `insets` : sous Android 15+ l'app
-                   dessine sous la barre systeme, et une constante placait le
-                   bouton « Continuer » dessous. */}
-                <View style={[styles.footerInner, { paddingBottom: insets.bottom + 20 }]}>
-                    {/* Progress segments */}
-                    <View style={styles.progressTrack}>
-                        {SLIDES.map((_, i) => {
-                            const inputRange = [(i - 1) * width, i * width, (i + 1) * width]
-                            /* `flex` était animé ici, d'où l'erreur console
-                               « Style property 'flex' is not supported by native
-                               animated module » : le défilement est piloté par
-                               le moteur natif (`useNativeDriver: true`), qui
-                               n'accepte que les transformations et l'opacité.
-                               `scaleX` produit le même effet : le segment actif
-                               s'allonge : et il est nativement pris en charge. */
-                            const scaleX = scrollX.interpolate({
-                                inputRange,
-                                outputRange: [1, 3, 1],
-                                extrapolate: 'clamp',
-                            })
-                            const opacity = scrollX.interpolate({
-                                inputRange,
-                                outputRange: [0.3, 1, 0.3],
-                                extrapolate: 'clamp',
-                            })
-                            return (
-                                <Animated.View
-                                    key={i}
-                                    style={[
-                                        styles.progressSeg,
-                                        {
-                                            opacity,
-                                            backgroundColor: '#FFFFFF',
-                                            transform: [{ scaleX }],
-                                        },
-                                    ]}
-                                />
-                            )
-                        })}
+            {/* Panneau de contenu (blanc) */}
+            <View style={[styles.panel, { paddingBottom: insets.bottom + 24 }]}>
+                <ReAnimated.View key={current} entering={FadeInUp.duration(420)} style={styles.panelInner}>
+                    {/* Puce de progression */}
+                    <View style={styles.dots}>
+                        {SLIDES.map((_, i) => (
+                            <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
+                        ))}
                     </View>
 
+                    <Text style={[styles.kicker, { color: slide.accent === '#FCD116' ? C.accentInk : slide.accent }]}>
+                        {t(slide.kicker).toUpperCase()}
+                    </Text>
+                    <Text style={styles.title}>{t(slide.title)}</Text>
+                    <Text style={styles.body}>{t(slide.body)}</Text>
+                </ReAnimated.View>
+
+                <ReAnimated.View entering={FadeIn.duration(500)}>
                     <TouchableOpacity
-                        activeOpacity={0.85}
+                        activeOpacity={0.9}
                         onPress={goNext}
                         style={styles.cta}
                         accessibilityRole="button"
                         hitSlop={6}
                     >
                         <Text style={styles.ctaText}>
-                            {isLast ? t('Commencer mon retour') : t('Continuer')}
+                            {isLast ? t('Commencer l\'aventure') : t('Continuer')}
                         </Text>
                         <ArrowIcon />
                     </TouchableOpacity>
-                </View>
+                </ReAnimated.View>
             </View>
         </View>
     )
 }
 
 /* ═══════════════════════════════════════
-   Slide individuel : Ken Burns + Parallax
+   Image d'un slide : Ken Burns + parallax doux
 ═══════════════════════════════════════ */
-function SlideView({
-    item,
-    index,
-    scrollX,
-}: {
-    item: Slide
-    index: number
-    scrollX: Animated.Value
-}) {
-    const { t } = useLang()
+function SlideImage({ item, index, scrollX }: { item: Slide; index: number; scrollX: Animated.Value }) {
     const inputRange = [(index - 1) * width, index * width, (index + 1) * width]
-
-    // Ken Burns effect : zoom léger + parallax
-    const imageScale = scrollX.interpolate({
-        inputRange,
-        outputRange: [1.15, 1, 1.15],
-        extrapolate: 'clamp',
-    })
-    const imageTranslate = scrollX.interpolate({
-        inputRange,
-        outputRange: [width * 0.3, 0, -width * 0.3],
-        extrapolate: 'clamp',
-    })
-    const textOpacity = scrollX.interpolate({
-        inputRange,
-        outputRange: [0, 1, 0],
-        extrapolate: 'clamp',
-    })
-    const textTranslate = scrollX.interpolate({
-        inputRange,
-        outputRange: [40, 0, -40],
-        extrapolate: 'clamp',
-    })
+    const scale = scrollX.interpolate({ inputRange, outputRange: [1.12, 1, 1.12], extrapolate: 'clamp' })
+    const translateX = scrollX.interpolate({ inputRange, outputRange: [width * 0.2, 0, -width * 0.2], extrapolate: 'clamp' })
 
     return (
         <View style={styles.slide}>
-            {/* Image avec parallax + Ken Burns */}
-            <Animated.View
-                style={[
-                    styles.imageWrap,
-                    {
-                        transform: [
-                            { scale: imageScale },
-                            { translateX: imageTranslate },
-                        ],
-                    },
-                ]}
-            >
-                <ImageBackground source={item.image} style={styles.image} />
-            </Animated.View>
-
-            {/* Vignette sombre pour la lisibilité du texte */}
-            <LinearGradient
-                colors={[
-                    'rgba(0,0,0,0.1)',
-                    'rgba(0,0,0,0.3)',
-                    'rgba(0,0,0,0.75)',
-                    'rgba(0,0,0,0.95)',
-                ]}
-                locations={[0, 0.35, 0.7, 1]}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-            />
-
-            {/* Texte */}
-            <Animated.View
-                style={[
-                    styles.textBlock,
-                    {
-                        opacity: textOpacity,
-                        transform: [{ translateY: textTranslate }],
-                    },
-                ]}
-            >
-                <Text style={[styles.kicker, { color: item.accent }]}>
-                    {t(item.kicker).toUpperCase()}
-                </Text>
-
-                <Text style={styles.title}>{t(item.title)}</Text>
-
-                <View style={[styles.accentLine, { backgroundColor: item.accent }]} />
-
-                <Text style={styles.body}>{t(item.body)}</Text>
+            <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ scale }, { translateX }] }]}>
+                <ImageBackground source={item.image} style={styles.image} resizeMode="cover" />
             </Animated.View>
         </View>
     )
@@ -284,162 +190,43 @@ function SlideView({
 function ArrowIcon() {
     return (
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path
-                d="M5 12h14M13 6l6 6-6 6"
-                stroke="#3C3C3C"
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
+            <Path d="M5 12h14M13 6l6 6-6 6" stroke={C.primaryText} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     )
 }
 
 /* ═══════════════════════════════════════
-   STYLES
+   STYLES (fond blanc, charte v2)
 ═══════════════════════════════════════ */
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#000',
-    },
-    header: {
-        position: 'absolute',
-        top: Platform.OS === 'ios' ? 60 : 44,
-        left: 24,
-        right: 24,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 10,
-    },
-    chapterPill: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.18)',
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: 'rgba(255, 255, 255, 0.25)',
-    },
-    chapterText: {
-        fontSize: 12,
-        fontFamily: fonts.bold,
-        color: '#FFFFFF',
-        letterSpacing: 1.5,
-    },
-    chapterDim: {
-        color: 'rgba(255, 255, 255, 0.55)',
-        fontFamily: fonts.medium,
-    },
-    skipText: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.85)',
-        fontFamily: fonts.medium,
-        letterSpacing: -0.2,
-        textShadowColor: 'rgba(0,0,0,0.5)',
-        textShadowRadius: 8,
-    },
+    container: { flex: 1, backgroundColor: C.bg },
 
-    slide: {
-        width,
-        height,
-        backgroundColor: '#000',
-    },
-    imageWrap: {
-        ...StyleSheet.absoluteFill,
-    },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
+    flag: { position: 'absolute', left: 0, right: 0, height: 6, flexDirection: 'row', zIndex: 20 },
+    flagBand: { flex: 1 },
 
-    textBlock: {
-        position: 'absolute',
-        left: 28,
-        right: 28,
-        bottom: 200,
-    },
-    kicker: {
-        fontSize: 12,
-        fontFamily: fonts.bold,
-        letterSpacing: 3,
-        marginBottom: 18,
-    },
-    title: {
-        fontSize: 44,
-        fontFamily: fonts.bold,
-        color: '#FFFFFF',
-        letterSpacing: -1.5,
-        lineHeight: 48,
-        marginBottom: 22,
-        textShadowColor: 'rgba(0,0,0,0.4)',
-        textShadowRadius: 12,
-    },
-    accentLine: {
-        width: 36,
-        height: 2,
-        borderRadius: 1,
-        marginBottom: 22,
-    },
-    body: {
-        fontSize: 17,
-        color: 'rgba(255, 255, 255, 0.88)',
-        lineHeight: 26,
-        letterSpacing: -0.2,
-        fontFamily: fonts.body,
-        textShadowColor: 'rgba(0,0,0,0.3)',
-        textShadowRadius: 8,
-    },
+    skipBtn: { position: 'absolute', right: 20, zIndex: 20, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.7)' },
+    skipText: { fontSize: 14, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: -0.2 },
 
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 180,
-    },
-    footerInner: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 24,
-        // paddingBottom fourni au montage depuis insets.bottom
-    },
-    progressTrack: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 3,
-        gap: 6,
-        marginBottom: 22,
-    },
-    progressSeg: {
-        /* Largeur fixe, indispensable depuis le passage de `flex` à `scaleX` :
-           sans elle les segments n'auraient plus aucune dimension. Le segment
-           actif est agrandi trois fois par l'animation. */
-        width: 26,
-        height: 3,
-        borderRadius: 2,
-    },
+    imageArea: { height: IMAGE_H, width },
+    slide: { width, height: IMAGE_H },
+    image: { width: '100%', height: '100%' },
+    fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: IMAGE_H * 0.5 },
+
+    panel: { flex: 1, paddingHorizontal: 28, justifyContent: 'space-between', paddingTop: 8 },
+    panelInner: {},
+
+    dots: { flexDirection: 'row', gap: 6, marginBottom: 22 },
+    dot: { width: 8, height: 6, borderRadius: 3, backgroundColor: C.primarySoft },
+    dotActive: { width: 26, backgroundColor: C.primary },
+
+    kicker: { fontSize: 12, fontFamily: fonts.bold, letterSpacing: 3, marginBottom: 14 },
+    title: { fontSize: 32, lineHeight: 38, fontFamily: fonts.extrabold, color: C.text, letterSpacing: -1, marginBottom: 16 },
+    body: { fontSize: 16, lineHeight: 25, fontFamily: fonts.regular, color: C.textMuted, letterSpacing: -0.2 },
+
     cta: {
-        height: 58,
-        borderRadius: 16,
-        backgroundColor: '#FFFFFF',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 10,
+        height: 58, borderRadius: 16, backgroundColor: C.primary,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+        shadowColor: '#008751', shadowOpacity: 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8,
     },
-    ctaText: {
-        fontSize: 16,
-        fontFamily: fonts.bold,
-        color: '#3C3C3C',
-        letterSpacing: -0.3,
-    },
+    ctaText: { fontSize: 16, fontFamily: fonts.bold, color: C.primaryText, letterSpacing: -0.3 },
 })

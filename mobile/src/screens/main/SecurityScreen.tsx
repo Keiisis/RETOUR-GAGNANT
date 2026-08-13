@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
+import { FlagBar } from '../../components/ui'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -330,11 +331,13 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={StyleSheet.absoluteFill}>
+            {/* Liseré tricolore : signature de l'export Sleek */}
+            <View style={{ paddingTop: insets.top }}>
+                <FlagBar height={6} radiusTop={false} />
             </View>
 
             {/* Header custom */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+            <View style={[styles.header, { paddingTop: 12 }]}>
                 <InteractiveButton
                     onPress={() => navigation.goBack()}
                     style={styles.headerBtn}

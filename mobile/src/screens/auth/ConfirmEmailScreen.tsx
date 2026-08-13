@@ -4,17 +4,17 @@ import {
     Platform, Pressable, ActivityIndicator,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ChevronLeft } from 'lucide-react-native'
 import Animated, {
-    useSharedValue, useAnimatedStyle, withTiming, withSequence,
+    useSharedValue, useAnimatedStyle, withTiming, withSequence, FadeInDown,
 } from 'react-native-reanimated'
 import type { EmailOtpType } from '@supabase/supabase-js'
-import { LucideIcon } from '../../components/Icon'
 import { FlagBar } from '../../components/ui'
 import { supabase } from '../../config/supabase'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { screenColors as C, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors as C, spacing, radius } from '../../config/theme'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -33,14 +33,12 @@ const OTP_TYPES: EmailOtpType[] = ['signup', 'magiclink', 'email']
 /* ═══════════════════════════════════════════════════════════
    CONFIRMATION DU COMPTE PAR CODE
 
-   Le client reçoit un code par e-mail après son inscription et le saisit
-   ici, plutôt que de cliquer un lien qui ouvre le navigateur. À la
-   validation, `verifyOtp` confirme le compte ET ouvre la session : l'app
-   bascule seule vers l'accueil (voir AuthContext.onAuthStateChange).
-
-   Direction artistique de l'écran d'accueil : blanc, liseré tricolore,
-   sur-titre discret, grand titre, cellules de code en surface blanche
-   posée, accent vert. Aucune autre couleur.
+   Rendu fidèle à la maquette Sleek exportée (« Vérification » centré,
+   grille de cellules, renvoi avec compte à rebours, bouton « Vérifier »).
+   LOGIQUE préservée : verifyOtp confirme le compte ET ouvre la session ;
+   l'app bascule seule vers l'accueil (AuthContext.onAuthStateChange). Le
+   code réel fait CODE_LEN chiffres (8), pas 6 comme dans la maquette
+   statique — la réalité fonctionnelle prime.
 ═══════════════════════════════════════════════════════════ */
 export default function ConfirmEmailScreen({ navigation, route }: any) {
     const insets = useSafeAreaInsets()
@@ -83,6 +81,10 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
 
     const verifier = async (valeur: string) => {
         if (loading) return
+        if (valeur.length < CODE_LEN) {
+            toast(t('Code incomplet'), t('Saisissez les {n} chiffres du code.').replace('{n}', String(CODE_LEN)))
+            return
+        }
         setLoading(true)
         try {
             /* verifyOtp confirme le compte ET ouvre la session. À la réussite,
@@ -149,33 +151,30 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.container}
         >
-            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+            <View style={{ paddingTop: insets.top }}>
                 <FlagBar height={6} radiusTop={false} />
             </View>
 
             <View style={styles.navBar}>
                 <Pressable
                     onPress={() => navigation.goBack()}
-                    style={styles.iconBtn}
+                    style={styles.backBtn}
                     accessibilityRole="button"
                     accessibilityLabel={t('Retour')}
                     hitSlop={8}
                 >
-                    <LucideIcon name="arrow-back" size={20} color={C.primary} />
+                    <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
                 </Pressable>
             </View>
 
             <View style={styles.body}>
-                <View style={styles.iconTile}>
-                    <LucideIcon name="mail-outline" size={26} color={C.primary} strokeWidth={2} />
-                </View>
-
-                <Text style={styles.overline}>{t('VÉRIFICATION')}</Text>
-                <Text style={styles.title}>{t('Confirmez votre compte')}</Text>
-                <Text style={styles.subtitle}>
-                    {t('Saisissez le code envoyé à')}
-                </Text>
-                <Text style={styles.email} numberOfLines={1}>{email}</Text>
+                <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
+                    <Text style={styles.title}>{t('Vérification')}</Text>
+                    <Text style={styles.subtitle}>
+                        {t('Nous avons envoyé un code à {n} chiffres à votre adresse email.').replace('{n}', String(CODE_LEN))}
+                    </Text>
+                    {!!email && <Text style={styles.email} numberOfLines={1}>{email}</Text>}
+                </Animated.View>
 
                 {/* Cellules du code. Un seul champ invisible les pilote. */}
                 <Pressable onPress={() => input.current?.focus()} style={styles.codeRow}>
@@ -213,28 +212,34 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
                     editable={!loading}
                 />
 
-                {loading && (
-                    <View style={styles.loadingRow}>
-                        <ActivityIndicator size="small" color={C.primary} />
-                        <Text style={styles.loadingText}>{t('Vérification…')}</Text>
-                    </View>
-                )}
+                {/* Renvoi avec compte à rebours */}
+                <Pressable
+                    onPress={renvoyer}
+                    disabled={renvoiEnCours || attente > 0}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    style={styles.resendBtn}
+                >
+                    <Text style={[styles.resendLink, (renvoiEnCours || attente > 0) && styles.resendLinkOff]}>
+                        {attente > 0
+                            ? `${t('Renvoyer le code')} (${attente}s)`
+                            : renvoiEnCours ? t('Envoi…') : t('Renvoyer le code')}
+                    </Text>
+                </Pressable>
 
-                <View style={styles.resendRow}>
-                    <Text style={styles.resendHint}>{t('Vous n\'avez rien reçu ?')}</Text>
-                    <Pressable
-                        onPress={renvoyer}
-                        disabled={renvoiEnCours || attente > 0}
-                        accessibilityRole="button"
-                        hitSlop={8}
-                    >
-                        <Text style={[styles.resendLink, (renvoiEnCours || attente > 0) && styles.resendLinkOff]}>
-                            {attente > 0
-                                ? `${t('Renvoyer dans')} ${attente}s`
-                                : renvoiEnCours ? t('Envoi…') : t('Renvoyer le code')}
-                        </Text>
-                    </Pressable>
-                </View>
+                {/* Bouton Vérifier (l'auto-soumission au 8e chiffre reste active) */}
+                <Pressable
+                    onPress={() => verifier(code)}
+                    disabled={loading || code.length < CODE_LEN}
+                    style={({ pressed }) => [
+                        styles.submitBtn,
+                        pressed && { transform: [{ scale: 0.98 }] },
+                        (loading || code.length < CODE_LEN) && { opacity: 0.5 },
+                    ]}
+                    accessibilityRole="button"
+                >
+                    {loading ? <ActivityIndicator color={C.primaryText} /> : <Text style={styles.submitText}>{t('Vérifier')}</Text>}
+                </Pressable>
 
                 <Text style={styles.spamHint}>
                     {t('Pensez à vérifier vos courriers indésirables.')}
@@ -244,55 +249,48 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
     )
 }
 
-const CELL = 40
+const CELL = 42
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
-    topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
-    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md },
-    iconBtn: {
-        width: 44, height: 44, borderRadius: radius.pill,
-        backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
+    navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
+    backBtn: {
+        width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
 
-    body: { flex: 1, paddingHorizontal: spacing.gutter, alignItems: 'center', paddingTop: spacing.md },
+    body: { flex: 1, paddingHorizontal: spacing.lg, alignItems: 'center', paddingTop: spacing.xl },
+    header: { alignItems: 'center', marginBottom: spacing.xxl },
+    title: { fontSize: 30, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: C.text, letterSpacing: -0.5, textAlign: 'center' },
+    subtitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: C.textSec, textAlign: 'center', marginTop: 10, paddingHorizontal: spacing.md },
+    email: { fontSize: 14, fontFamily: 'Inter_700Bold', color: C.text, textAlign: 'center', marginTop: 6 },
 
-    iconTile: {
-        width: 64, height: 64, borderRadius: radius.lg,
-        backgroundColor: C.surfaceSoft,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: spacing.lg,
-    },
-    overline: { ...typography.overline, color: C.primary },
-    title: { ...typography.h1, color: C.text, textAlign: 'center', marginTop: spacing.xs },
-    subtitle: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: spacing.sm },
-    email: { ...typography.label, color: C.text, textAlign: 'center', marginTop: spacing.xxs },
-
-    codeRow: { marginTop: spacing.xl, width: '100%', alignItems: 'center' },
-    codeRowInner: { flexDirection: 'row', gap: spacing.sm },
+    codeRow: { width: '100%', alignItems: 'center' },
+    codeRowInner: { flexDirection: 'row', gap: 8, justifyContent: 'center', flexWrap: 'wrap' },
     cell: {
-        width: CELL, height: CELL + 8, borderRadius: radius.md,
-        backgroundColor: C.surface,
+        width: CELL, height: CELL + 12, borderRadius: radius.md,
+        backgroundColor: C.surfaceAlt,
         borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    cellRempli: { borderColor: C.primary, backgroundColor: C.surfaceSoft },
-    cellActif: { borderColor: C.primary, ...shadows.card },
+    cellRempli: { borderColor: C.primary, backgroundColor: C.surface },
+    cellActif: { borderColor: C.primary },
     cellErreur: { borderColor: C.danger, backgroundColor: C.dangerSoft },
-    cellText: { ...typography.h3, color: C.text },
+    cellText: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: C.text },
 
-    hiddenInput: {
-        position: 'absolute', opacity: 0, height: 1, width: 1,
-    },
+    hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
 
-    loadingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
-    loadingText: { ...typography.bodySmall, color: C.primary },
-
-    resendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xxl },
-    resendHint: { ...typography.bodySmall, color: C.textMuted },
-    resendLink: { ...typography.label, color: C.primary },
+    resendBtn: { marginTop: spacing.xxl, paddingVertical: 8 },
+    resendLink: { fontSize: 14, fontFamily: 'Inter_700Bold', color: C.primary, textAlign: 'center' },
     resendLinkOff: { color: C.textMuted },
 
-    spamHint: { ...typography.caption, color: C.textFaint, textAlign: 'center', marginTop: spacing.md },
+    submitBtn: {
+        width: '100%', marginTop: spacing.xl,
+        backgroundColor: C.primary, borderRadius: radius.lg, paddingVertical: 18,
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
+    },
+    submitText: { color: C.primaryText, fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 0.2 },
+
+    spamHint: { fontSize: 12, fontFamily: 'Inter_500Medium', color: C.textMuted, textAlign: 'center', marginTop: spacing.lg },
 })
