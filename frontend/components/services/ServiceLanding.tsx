@@ -12,7 +12,6 @@ import {
 } from '@phosphor-icons/react';
 import { T, useTranslation } from '@/lib/translation';
 import type { ServiceLandingContent } from '@/lib/content/serviceLanding';
-import SocialProof from '@/components/shared/SocialProof';
 
 const PILIER_ICONS = [Sparkle, UsersThree, ShieldCheck, Clock];
 const CHIP_ICONS = [ShieldCheck, UsersThree, Globe, Clock];
@@ -188,8 +187,8 @@ export default function ServiceLanding({ content: c, slotAfterFeatures, slotBefo
                 </section>
             )}
 
-            {/* Preuve sociale RÉELLE (rien si aucun témoignage modéré) */}
-            <SocialProof />
+            {/* Témoignages : uniquement sur la page d'accueil (TestimonialsCarousel).
+                Les pages de services n'affichent PAS de preuve sociale globale. */}
 
             {/* Slot outil (ex : réservation Fa, choix Langues) injecté avant le CTA final */}
             {slotBeforeFinal}
