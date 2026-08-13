@@ -698,6 +698,21 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                 </View>
             </Animated.ScrollView>
 
+            {/* Barre CTA COLLANTE (bas d'écran) : signature de l'export Sleek */}
+            <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.stickyBarLabel}>{showPrice ? t('À partir de') : t('Tarif')}</Text>
+                    <Text style={styles.stickyBarPrice} numberOfLines={1}>
+                        {showPrice ? (price || t('Sur devis')) : t('En rendez-vous')}
+                    </Text>
+                </View>
+                <InteractiveButton onPress={initiateCheckout} disabled={loading} accessibilityLabel={t(modeCopy.cta)} style={styles.stickyBarBtn}>
+                    {loading
+                        ? <ActivityIndicator color={C.primaryText} size="small" />
+                        : <Text style={styles.stickyBarBtnText}>{serviceMode === 'booking' ? t('Choisir') : t('Commencer')}</Text>}
+                </InteractiveButton>
+            </View>
+
             <KkiapayModal
                 visible={showKkiapay}
                 amount={price || 'Sur devis'}
@@ -782,7 +797,24 @@ const hero = StyleSheet.create({
 ═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
-    scroll: { paddingBottom: spacing.xxl },
+    scroll: { paddingBottom: 130 },
+
+    /* Barre CTA collante (bas) */
+    stickyBar: {
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        backgroundColor: C.surface, paddingHorizontal: spacing.lg, paddingTop: 12,
+        borderTopWidth: 1, borderTopColor: C.border,
+        shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 16,
+    },
+    stickyBarLabel: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.8, textTransform: 'uppercase', color: C.textMuted },
+    stickyBarPrice: { fontSize: 19, fontFamily: 'Inter_700Bold', color: C.primaryDark, marginTop: 1 },
+    stickyBarBtn: {
+        backgroundColor: C.primary, paddingHorizontal: spacing.xl, paddingVertical: 14, borderRadius: radius.pill,
+        alignItems: 'center', justifyContent: 'center', minWidth: 120,
+        shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
+    },
+    stickyBarBtnText: { color: C.primaryText, fontSize: 15, fontFamily: 'Inter_700Bold', letterSpacing: 0.2 },
 
     /* Sticky header */
     stickyHeader: {
