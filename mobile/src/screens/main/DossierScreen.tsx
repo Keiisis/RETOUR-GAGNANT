@@ -181,7 +181,7 @@ export default function DossierScreen({ navigation }: any) {
         const channel = supabase
             .channel('dossiers-realtime')
             .on('postgres_changes', {
-                event: '*', schema: 'public', table: 'dossiers',
+                event: '*', schema: 'public', table: 'dossier_tracking',
                 filter: `client_id=eq.${profile.id}`,
             }, () => { fetchDossiers() })
             .subscribe()

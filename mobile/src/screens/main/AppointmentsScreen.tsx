@@ -360,11 +360,11 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             // Si un dossier ACTIF existe déjà pour ce service, on n'ouvre ni RDV
             // ni nouveau dossier : le client interagit via la messagerie.
             if (serviceLabel) {
-                const { data: existingDossier } = await supabase.from('dossiers')
+                const { data: existingDossier } = await supabase.from('dossier_tracking')
                     .select('id')
                     .eq('client_id', profile!.id)
                     .eq('service_type', serviceLabel)
-                    .in('status', ['soumis', 'en_attente', 'verifie', 'en_cours', 'traitement', 'validation'])
+                    .in('statut', ['reception', 'verification', 'traitement', 'validation', 'finalisation'])
                     .limit(1)
                     .maybeSingle()
                 if (existingDossier) {

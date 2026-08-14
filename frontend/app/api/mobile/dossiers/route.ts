@@ -9,6 +9,17 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/* ⚠️ SOURCE DE VÉRITÉ = `dossier_tracking` (le tracker admin/agent).
+   La table `dossiers` est celle de la GÉNÉALOGIE (tree_id/dossier_type) : elle
+   n'a PAS de client_id/service_type et faisait échouer toute création. On lit
+   et écrit donc les dossiers de SERVICE dans `dossier_tracking`, ce qui unifie
+   mobile <-> admin <-> agent sur une seule table + les statuts globaux. */
+const TRACKING_TO_MOBILE_STATUS: Record<string, string> = {
+    reception: 'soumis', verification: 'verifie', traitement: 'traitement',
+    validation: 'validation', finalisation: 'validation', termine: 'termine', annule: 'annule',
+}
+const ACTIVE_TRACKING_STATUTS = ['reception', 'verification', 'traitement', 'validation', 'finalisation']
+
 // ─── GET : tous les dossiers d'un client avec leurs documents ────────────────
 export async function GET(req: NextRequest) {
     try {
@@ -16,20 +27,22 @@ export async function GET(req: NextRequest) {
         const clientId = await getMobileUserId(req)
         if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-        const { data: dossiers, error } = await supabase
-            .from('dossiers')
-            .select('id, status, progress, service_type, notes, created_at, updated_at')
+        const { data: tracking, error } = await supabase
+            .from('dossier_tracking')
+            .select('id, dossier_ref_id, statut, progression, service_type, notes, created_at, updated_at')
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-        // Pour chaque dossier, charger ses documents
-        const dossiersWithDocs = await Promise.all((dossiers || []).map(async (d) => {
+        // Pour chaque dossier (tracking), charger ses documents + mapper le statut
+        // global vers le statut d'affichage mobile.
+        const dossiersWithDocs = await Promise.all((tracking || []).map(async (t) => {
+            const ids = [t.id, t.dossier_ref_id].filter(Boolean) as string[]
             const { data: docs } = await supabase
                 .from('dossier_documents')
                 .select('id, file_name, file_url, file_type, status, created_at')
-                .eq('dossier_id', d.id)
+                .in('dossier_id', ids)
                 .order('created_at', { ascending: false })
 
             // Fallback sur table "documents" si dossier_documents vide
@@ -38,12 +51,21 @@ export async function GET(req: NextRequest) {
                 const { data: docs2 } = await supabase
                     .from('documents')
                     .select('id, file_name, file_url, file_type, status, created_at')
-                    .eq('dossier_id', d.id)
+                    .in('dossier_id', ids)
                     .order('created_at', { ascending: false })
                 finalDocs = docs2 || []
             }
 
-            return { ...d, documents: finalDocs }
+            return {
+                id: t.id,
+                status: TRACKING_TO_MOBILE_STATUS[String(t.statut)] || 'soumis',
+                progress: typeof t.progression === 'number' ? t.progression : 0,
+                service_type: t.service_type,
+                notes: t.notes,
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+                documents: finalDocs,
+            }
         }))
 
         // ─── Conseiller assigné ───────────────────────────────────────────
@@ -133,11 +155,6 @@ export async function POST(req: NextRequest) {
         const body = (scanned ?? {}) as any
         const { service_type, service_id, notes } = body
         const transactionId: string | undefined = body.payment_tx_id || body.transaction_id
-        const paymentAmount: number | null =
-            body.payment_amount !== undefined && body.payment_amount !== null
-                ? Number(body.payment_amount)
-                : null
-        const paymentCurrency: string = String(body.payment_currency || 'XOF')
 
         if (!service_type) {
             return NextResponse.json(
@@ -146,38 +163,27 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // ── Vérification paiement Kkiapay côté serveur (anti-fraude) ──
-        // Idempotence : si un dossier existe déjà avec ce transaction_id, on le renvoie.
+        // ── Idempotence paiement + anti-fraude Kkiapay ──
         if (transactionId) {
             const { data: existingByTx } = await supabase
-                .from('dossiers')
-                .select('id, status')
+                .from('dossier_tracking')
+                .select('id')
                 .eq('transaction_id', transactionId)
                 .maybeSingle()
             if (existingByTx) {
                 return NextResponse.json({ id: existingByTx.id, exists: true, message: 'Already created' }, { status: 200 })
             }
-
-            // Vérifier le paiement Kkiapay
             const verify = await verifyKkiapayTransaction(transactionId)
             if (!verify.ok) {
                 console.warn(`[mobile/dossiers] Paiement non confirmé : ${verify.status}`)
-                return NextResponse.json(
-                    { error: `Paiement non confirmé (${verify.status})` },
-                    { status: 402 }
-                )
+                return NextResponse.json({ error: `Paiement non confirmé (${verify.status})` }, { status: 402 })
             }
         }
 
-        // S'assurer que le client existe dans client_profiles (cas inscription mobile)
-        const { data: cp } = await supabase
-            .from('client_profiles')
-            .select('id')
-            .eq('id', client_id)
-            .single()
-
+        // S'assurer que le client existe dans client_profiles + récupérer son identité
+        let cp = (await supabase.from('client_profiles')
+            .select('id, nom, prenom, email, phone').eq('id', client_id).maybeSingle()).data
         if (!cp) {
-            // Récupérer l'email depuis auth.users et créer le profil manquant
             const { data: authUser } = await supabase.auth.admin.getUserById(client_id)
             if (authUser?.user) {
                 await supabase.from('client_profiles').upsert({
@@ -188,89 +194,66 @@ export async function POST(req: NextRequest) {
                     phone: authUser.user.user_metadata?.phone || null,
                     pays: 'France',
                 }, { onConflict: 'id' })
+                cp = (await supabase.from('client_profiles')
+                    .select('id, nom, prenom, email, phone').eq('id', client_id).maybeSingle()).data
             }
         }
 
-        // Vérifier si un dossier actif existe déjà
+        // ── Anti-doublon : un dossier ACTIF pour ce service ne se recrée pas ──
         const { data: existing } = await supabase
-            .from('dossiers')
+            .from('dossier_tracking')
             .select('id')
             .eq('client_id', client_id)
             .eq('service_type', service_type)
-            .in('status', ['en_cours', 'en_attente', 'soumis', 'verifie', 'traitement', 'validation'])
+            .in('statut', ACTIVE_TRACKING_STATUTS)
             .limit(1)
-            .single()
-
+            .maybeSingle()
         if (existing) {
             return NextResponse.json({ exists: true, id: existing.id }, { status: 200 })
         }
 
-        // Créer le dossier (avec trace paiement complète si fournie)
+        // ── Créer le dossier de SERVICE dans dossier_tracking (source unique,
+        //    statut global 'reception', visible admin/agent + onglet Service Mobile) ──
+        const numDossier = `DOS-${Date.now().toString(36).toUpperCase()}`
+        const nowIso = new Date().toISOString()
         const { data, error } = await supabase
-            .from('dossiers')
+            .from('dossier_tracking')
             .insert({
                 client_id,
+                num_dossier: numDossier,
+                client_nom: cp?.nom || '',
+                client_prenom: cp?.prenom || '',
+                client_email: cp?.email || '',
+                client_phone: cp?.phone || '',
                 service_type,
                 service_id: service_id || null,
-                status: 'soumis',
-                progress: 0,
+                statut: 'reception',
+                progression: 10,
+                etapes: [],
                 notes: notes || null,
+                source: 'mobile',
                 transaction_id: transactionId || null,
                 payment_method: transactionId ? 'kkiapay' : null,
-                payment_amount: paymentAmount,
-                payment_currency: paymentCurrency,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                created_at: nowIso,
+                updated_at: nowIso,
             })
             .select('id')
             .single()
 
         if (error) {
             console.error('[api/mobile/dossiers POST]', error)
-            return NextResponse.json(
-                { error: error.message, code: error.code },
-                { status: 500 }
-            )
+            return NextResponse.json({ error: error.message, code: error.code }, { status: 500 })
         }
 
-        // Créer la notification client
+        // Notification client (cloche in-app)
         await supabase.from('notifications').insert({
             user_id: client_id,
             title: 'Dossier créé',
             body: `Votre dossier "${service_type}" a été créé. Notre équipe vous contactera sous 24h.`,
             type: 'dossier',
             is_read: false,
-            created_at: new Date().toISOString(),
+            created_at: nowIso,
         })
-
-        // ── Sync vers dossier_tracking pour le dashboard agent ──
-        try {
-            const { data: clientProfile } = await supabase
-                .from('client_profiles')
-                .select('nom, prenom, email, phone')
-                .eq('id', client_id)
-                .single()
-
-            const numDossier = `DOS-${Date.now().toString(36).toUpperCase()}`
-            await supabase.from('dossier_tracking').insert({
-                dossier_ref_id: data.id,
-                num_dossier: numDossier,
-                client_nom: clientProfile?.nom || '',
-                client_prenom: clientProfile?.prenom || '',
-                client_email: clientProfile?.email || '',
-                client_phone: clientProfile?.phone || '',
-                service_type,
-                statut: 'reception',
-                progression: 10,
-                etapes: [],
-                notes: notes || null,
-                source: 'mobile',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            })
-        } catch (syncErr) {
-            console.warn('[api/mobile/dossiers] Sync vers dossier_tracking échoué:', syncErr)
-        }
 
         return NextResponse.json({ id: data.id }, { status: 201 })
     } catch (e) {

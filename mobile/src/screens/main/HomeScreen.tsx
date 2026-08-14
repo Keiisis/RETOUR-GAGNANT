@@ -30,6 +30,11 @@ interface DossierInfo { status: string; progress: number; service_type: string |
 /* Étapes réelles du cycle de vie d'un dossier (voir mobile/CLAUDE.md).
    Sert à afficher « Étape n sur 5 » sans inventer de valeur. */
 const STATUS_STEPS = ['soumis', 'verifie', 'traitement', 'validation', 'termine'] as const
+/* Statut global (dossier_tracking, partagé admin/agent) -> statut d'affichage mobile. */
+const TRACKING_TO_MOBILE: Record<string, string> = {
+    reception: 'soumis', verification: 'verifie', traitement: 'traitement',
+    validation: 'validation', finalisation: 'validation', termine: 'termine', annule: 'annule',
+}
 const STATUS_LABEL: Record<string, string> = {
     soumis: 'Dossier soumis', verifie: 'En vérification', traitement: 'En traitement',
     validation: 'En validation', termine: 'Terminé', annule: 'Annulé',
@@ -79,7 +84,9 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
         if (!profile) return
         try {
             const [dossierRes, notifRes, conversationRes] = await Promise.all([
-                supabase.from('dossiers').select('status, progress, service_type')
+                // Source = dossier_tracking (la table `dossiers` est celle de la
+                // généalogie). On mappe le statut global vers l'affichage mobile.
+                supabase.from('dossier_tracking').select('statut, progression, service_type')
                     .eq('client_id', profile.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
                 supabase.from('notifications').select('*', { count: 'exact', head: true })
                     .eq('user_id', profile.id).eq('is_read', false),
@@ -87,7 +94,14 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                     .eq('client_id', profile.id).eq('type', 'chat')
                     .order('created_at', { ascending: false }).limit(1).maybeSingle(),
             ])
-            if (dossierRes.data) setDossier(dossierRes.data as DossierInfo)
+            if (dossierRes.data) {
+                const tr = dossierRes.data as { statut: string; progression: number | null; service_type: string | null }
+                setDossier({
+                    status: TRACKING_TO_MOBILE[tr.statut] || 'soumis',
+                    progress: typeof tr.progression === 'number' ? tr.progression : 0,
+                    service_type: tr.service_type,
+                })
+            } else { setDossier(null) }
             setUnreadNotifs(notifRes.count || 0)
             if (conversationRes.data?.id) {
                 const lastSeenKey = `@rg_chat_last_seen_${profile.id}`
