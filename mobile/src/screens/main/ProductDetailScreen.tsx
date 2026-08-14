@@ -350,7 +350,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                             <View style={styles.priceShineWrap} pointerEvents="none">
                                 <Animated.View style={[styles.priceShine, shineStyle]}>
                                     <LinearGradient
-                                        colors={['transparent', 'rgba(252,209,22,0.5)', 'transparent']}
+                                        colors={['transparent', 'rgba(0, 135, 81,0.5)', 'transparent']}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 0 }}
                                         style={StyleSheet.absoluteFill}
@@ -381,7 +381,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                         <Text style={styles.trustValue}>{t('24-48h')}</Text>
                     </View>
                     <View style={styles.trustItem}>
-                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(252,209,22,0.14)' }]}>
+                        <View style={[styles.trustIcon, { backgroundColor: 'rgba(0, 135, 81,0.14)' }]}>
                             <ShieldCheck size={16} color={C.goldDeep} strokeWidth={1.8} />
                         </View>
                         <Text style={styles.trustLabel}>{t('Garantie')}</Text>
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 999,
-        backgroundColor: 'rgba(252,209,22,0.10)',
+        backgroundColor: 'rgba(0, 135, 81,0.10)',
         marginBottom: 10,
     },
     categoryDot: {
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: 'rgba(252,209,22,0.12)',
+        backgroundColor: 'rgba(0, 135, 81,0.12)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -963,7 +963,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: 'rgba(252,209,22,0.18)',
+        backgroundColor: 'rgba(0, 135, 81,0.18)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,

@@ -49,7 +49,7 @@ const SLIDES: Slide[] = [
         title: 'Nationalité, passeport, simplifié',
         body: 'Démarches administratives, obtention de la nationalité béninoise, passeport : notre expertise VIP transforme le complexe en simple.',
         image: require('../../assets/onboarding/slide_2_process.png'),
-        accent: '#FCD116',
+        accent: '#00643C',
     },
     {
         key: 'home',
@@ -141,7 +141,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                         ))}
                     </View>
 
-                    <Text style={[styles.kicker, { color: slide.accent === '#FCD116' ? C.accentInk : slide.accent }]}>
+                    <Text style={[styles.kicker, { color: slide.accent }]}>
                         {t(slide.kicker).toUpperCase()}
                     </Text>
                     <Text style={styles.title}>{t(slide.title)}</Text>

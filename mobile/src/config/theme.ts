@@ -62,10 +62,13 @@ export const colors = {
     primaryPressed: v2.greenPressed,
     primarySoft: v2.greenSoft,
 
-    /* ── Accent premium ── */
-    accent: v2.yellow,
-    accentSoft: v2.yellowSoft,
-    accentInk: v2.yellowInk,
+    /* ── Accent premium ──
+       Décision 2026-08-14 : plus AUCUN or dans l'UI (demande client).
+       L'accent décoratif devient VERT ; seul le liseré tricolore (flag array
+       + flagYellow) conserve le jaune, car c'est le drapeau lui-même. */
+    accent: v2.green,
+    accentSoft: v2.greenSoft,
+    accentInk: v2.greenDark,
 
     /* ── Fonds : le blanc domine ── */
     background: v2.white,
@@ -90,8 +93,9 @@ export const colors = {
     /* ── Sémantique (distincte de l'accent décoratif) ── */
     success: v2.green,
     successSoft: v2.greenSoft,
-    warning: '#8A6D08',
-    warningSoft: v2.yellowSoft,
+    /* Anciennement or : neutralisé en vert foncé (plus d'or dans l'UI). */
+    warning: v2.greenDark,
+    warningSoft: v2.greenSoft,
     danger: v2.red,
     dangerSoft: v2.redSoft,
     info: v2.greenDark,
@@ -111,33 +115,34 @@ export const colors = {
     primaryMuted: v2.greenSoft,
     primaryGlow: 'rgba(0,135,81,0.20)',
     teal: v2.greenDark,
-    gold: v2.yellow,
-    goldLight: '#FDDE4F',
-    goldDark: '#D4AF0C',
-    goldSoft: v2.yellowSoft,
-    goldMuted: 'rgba(252,209,22,0.12)',
-    goldShimmer: 'rgba(252,209,22,0.06)',
+    /* ═══ Anciens tokens « or » : neutralisés en VERT (plus d'or dans l'UI) ═══ */
+    gold: v2.green,
+    goldLight: '#1FA36A',
+    goldDark: v2.greenDark,
+    goldSoft: v2.greenSoft,
+    goldMuted: 'rgba(0,135,81,0.12)',
+    goldShimmer: 'rgba(0,135,81,0.06)',
     surfaceWarm: v2.neutral,
     surfaceElevated: v2.white,
     headerBg: v2.white,
     textPrimary: v2.ink,
     textSecondary: v2.inkMuted,
-    textGold: v2.yellowInk,
+    textGold: v2.greenDark,
     textOnDark: v2.white,
-    textOnGold: v2.ink,
+    textOnGold: v2.white,
     navy: v2.ink,
     navyLight: v2.inkMuted,
     navyMuted: 'rgba(60,60,60,0.08)',
     successLight: 'rgba(0,135,81,0.20)',
     successBg: v2.greenSoft,
-    warningLight: 'rgba(184,134,11,0.20)',
-    warningBg: v2.yellowSoft,
+    warningLight: 'rgba(0,135,81,0.20)',
+    warningBg: v2.greenSoft,
     dangerLight: 'rgba(232,17,45,0.20)',
     dangerBg: v2.redSoft,
     infoLight: 'rgba(0,100,60,0.20)',
     infoBg: v2.greenSoft,
     borderLight: v2.line,
-    borderGold: 'rgba(252,209,22,0.35)',
+    borderGold: 'rgba(0,135,81,0.20)',
     borderPrimary: 'rgba(0,135,81,0.20)',
     overlay: 'rgba(60,60,60,0.55)',
     overlayLight: 'rgba(60,60,60,0.15)',
@@ -197,7 +202,10 @@ export const spacing = {
 
 /* ── Rayons : base 16 px, comme le design (--radius: 1rem) ── */
 export const radius = {
-    xs: 8, sm: 12, md: 14, lg: 16, xl: 20, xxl: 24, pill: 999, full: 999,
+    // Rafraîchissement global 2026-08 : rayons plus généreux, alignés sur les
+    // maquettes Sleek (cartes rounded-[2rem]=32, rounded-3xl=24). Un seul point
+    // de vérité → toute l'app devient plus arrondie/premium d'un coup.
+    xs: 10, sm: 14, md: 18, lg: 22, xl: 28, xxl: 32, pill: 999, full: 999,
 } as const
 
 /* ── Ombres douces, TEINTÉES du gris de texte, jamais du noir pur.
@@ -221,7 +229,7 @@ export const shadows = {
     /* Anciennes ombres colorées : ramenées sur la charte (le v2 n'utilise plus
        de halo doré ; l'accent d'action est le vert). */
     glow: { shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 20, elevation: 6 },
-    gold: { shadowColor: '#D4AF0C', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 20, elevation: 6 },
+    gold: { shadowColor: '#00643C', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 20, elevation: 6 },
     primary: { shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.40, shadowRadius: 20, elevation: 6 },
 } as const
 
@@ -249,7 +257,7 @@ export const skeletonColors = {
 export const gradients = {
     primary: [v2.green, v2.greenDark] as string[],
     primaryDark: [v2.greenDark, '#004E2E'] as string[],
-    gold: [v2.yellow, '#D4AF0C'] as string[],
+    gold: [v2.green, v2.greenDark] as string[],
     flag: [v2.green, v2.yellow, v2.red] as string[],
     flagBtn: [v2.green, v2.yellow] as string[],
     navy: [v2.ink, '#2A2A2A'] as string[],
@@ -262,11 +270,11 @@ export const royal = {
     bg: v2.white,
     bgWarm: v2.white,
     surface: v2.white,
-    gold: v2.yellow,
-    goldLight: '#FDDE4F',
-    goldDark: '#D4AF0C',
-    goldSoft: v2.yellowSoft,
-    goldShimmer: 'rgba(252,209,22,0.06)',
+    gold: v2.green,
+    goldLight: '#1FA36A',
+    goldDark: v2.greenDark,
+    goldSoft: v2.greenSoft,
+    goldShimmer: 'rgba(0,135,81,0.06)',
     emerald: v2.green,
     lightEmerald: '#1FA36A',
     deepEmerald: v2.greenDark,
@@ -317,21 +325,21 @@ export const screenColors = {
     greenSoft: '#1FA36A',
     emerald: v2.green,
     successMid: '#1FA36A',
-    accentInk: v2.yellowInk,
+    accentInk: v2.greenDark,
     floating: v2.floating,
     floatingMuted: '#9A9A9A',
     textFaint: v2.inkFaint,
 
-    /* Jaune premium. `accentDark` sert de couleur de TEXTE : on prend l'encre
-       jaune foncée, lisible sur blanc, pas un jaune vif illisible. */
-    accent: v2.yellow,
-    accentDark: v2.yellowInk,
-    accentLight: v2.yellowSoft,
-    accentSoft: v2.yellowSoft,
-    gold: v2.yellow,
-    goldSoft: v2.yellowSoft,
-    goldDeep: v2.yellowInk,
-    goldGlow: 'rgba(252,209,22,0.18)',
+    /* Ex-« jaune premium » : neutralisé en VERT (plus AUCUN or dans l'UI,
+       décision client 2026-08-14). Seul le liseré tricolore garde le jaune. */
+    accent: v2.green,
+    accentDark: v2.greenDark,
+    accentLight: v2.greenSoft,
+    accentSoft: v2.greenSoft,
+    gold: v2.green,
+    goldSoft: v2.greenSoft,
+    goldDeep: v2.greenDark,
+    goldGlow: 'rgba(0,135,81,0.18)',
 
     /* Sémantique. `info` était bleu #00643C : hors drapeau, ramené au vert
        foncé. `purple` idem. */
@@ -342,8 +350,8 @@ export const screenColors = {
     success: v2.green,
     successBg: v2.greenSoft,
     info: v2.greenDark,
-    warning: '#8A6D08',
-    purple: v2.yellowInk,
+    warning: v2.greenDark,
+    purple: v2.greenDark,
 
     /* Textes */
     text: v2.ink,

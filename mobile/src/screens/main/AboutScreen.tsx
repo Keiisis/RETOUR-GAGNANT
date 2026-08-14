@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LucideIcon } from '../../components/Icon'
+import { Ionicons } from '@expo/vector-icons'
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -21,7 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    AboutScreen : THEME "CORPORATE PREMIUM 2026"
@@ -48,10 +49,9 @@ const LINKS = [
 ]
 
 const SOCIALS = [
-    { icon: 'logo-facebook' as const, label: 'Facebook', url: 'https://facebook.com' },
-    { icon: 'logo-instagram' as const, label: 'Instagram', url: 'https://instagram.com' },
-    { icon: 'logo-youtube' as const, label: 'YouTube', url: 'https://youtube.com' },
-    { icon: 'logo-whatsapp' as const, label: 'WhatsApp', url: 'https://wa.me/' },
+    { icon: 'logo-linkedin' as const, label: 'LinkedIn', url: 'https://www.linkedin.com/company/retour-gagnant-benin' },
+    { icon: 'logo-instagram' as const, label: 'Instagram', url: 'https://www.instagram.com/retourgagnantbenin' },
+    { icon: 'logo-whatsapp' as const, label: 'WhatsApp', url: 'https://wa.me/2290194355050' },
 ]
 
 /* ═══════════════════════════════════════════════════════════
@@ -177,144 +177,71 @@ export default function AboutScreen({ navigation }: { navigation: Nav }) {
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + spacing.lg }]}
                 bounces={true}
             >
-                {/* HEADER TITRE */}
-                <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('À propos')}</Text>
-                    <Text style={styles.subtitle}>
-                        {t("L'histoire, les valeurs et l'équipe derrière votre retour gagnant.")}
-                    </Text>
+                {/* ═══ EN-TÊTE MARQUE (style export) ═══ */}
+                <Animated.View style={[styles.brandHeader, styleHeader]}>
+                    <Image
+                        source={require('../../../assets/images/logo-transparent.png')}
+                        style={styles.brandLogo}
+                        resizeMode="contain"
+                    />
+                    <Text style={styles.brandName}>{t('Retour Gagnant Bénin')}</Text>
+                    <Text style={styles.brandTagline}>{t('Expertise & Racines')}</Text>
                 </Animated.View>
 
-                {/* ═══ BRAND CARD : Logo + Nom + Version ═══ */}
+                {/* ═══ NOTRE MISSION ═══ */}
                 <AnimatedSection delay={150}>
-                    <View style={styles.brandCard}>
-                        {/* Halo doré animé */}
-                        <Animated.View style={[styles.logoHalo, logoHaloStyle]} />
+                    <Text style={styles.blockLabelCenter}>{t('Notre Mission')}</Text>
+                    <Text style={styles.missionText}>
+                        {t("Faciliter le retour de la diaspora afro-descendante vers sa terre d'origine en alliant sécurité juridique et reconnexion spirituelle.")}
+                    </Text>
+                </AnimatedSection>
 
-                        <View style={styles.logoWrap}>
-                            <Image
-                                source={require('../../../assets/icon.png')}
-                                style={styles.logo}
-                                resizeMode="contain"
-                            />
+                {/* ═══ VALEURS ═══ */}
+                <AnimatedSection delay={300}>
+                    <View style={styles.valueCard}>
+                        <View style={styles.valueIconBox}>
+                            <LucideIcon name="shield-checkmark" size={22} color={C.primary} />
                         </View>
-
-                        <Text style={styles.brandName}>RETOUR GAGNANT</Text>
-                        <View style={styles.brandSubWrap}>
-                            <View style={styles.brandLine} />
-                            <Text style={styles.brandSub}>BÉNIN</Text>
-                            <View style={styles.brandLine} />
-                        </View>
-
-                        <Text style={styles.tagline}>
-                            {t("L'Agence du Retour des Afro-descendants")}
+                        <Text style={styles.valueTitle}>{t('Sécurité Juridique')}</Text>
+                        <Text style={styles.valueDesc}>
+                            {t('Accompagnement par des avocats, notaires et experts fonciers assermentés.')}
                         </Text>
-
-                        <View style={styles.versionBadge}>
-                            <View style={styles.versionDot} />
-                            <Text style={styles.versionText}>
-                                {t('Version')} {APP_VERSION} · {t('Build')} {BUILD_NUMBER}
-                            </Text>
+                    </View>
+                    <View style={[styles.valueCard, { marginTop: 16 }]}>
+                        <View style={styles.valueIconBox}>
+                            <LucideIcon name="construct-outline" size={22} color={C.primary} />
                         </View>
+                        <Text style={styles.valueTitle}>{t('Héritage Culturel')}</Text>
+                        <Text style={styles.valueDesc}>
+                            {t('Valorisation des traditions ancestrales et de la sagesse du Fa.')}
+                        </Text>
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ NOTRE HISTOIRE ═══ */}
-                <AnimatedSection delay={350}>
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <View style={styles.cardHeaderBadge}>
-                                <LucideIcon name="book-outline" size={15} color={C.primary} />
-                            </View>
-                            <Text style={styles.cardLabel}>{t('NOTRE HISTOIRE')}</Text>
+                {/* ═══ CONTACT (dernière section) ═══ */}
+                <AnimatedSection delay={450}>
+                    <View style={styles.contactWrap}>
+                        <Text style={styles.blockLabelCenter}>{t('Contact')}</Text>
+                        <Text style={styles.contactAddress}>{t('Cotonou, Bénin')}</Text>
+                        <Text style={styles.contactEmail}>contact@retourgagnantbenin.bj</Text>
+                        <View style={styles.socialsRow}>
+                            {SOCIALS.map((s) => (
+                                <TouchableOpacity
+                                    key={s.label}
+                                    onPress={() => handleLink(s.url)}
+                                    style={styles.socialIconBtn}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={s.label}
+                                    hitSlop={8}
+                                >
+                                    <Ionicons name={s.icon} size={26} color={C.primary} />
+                                </TouchableOpacity>
+                            ))}
                         </View>
-
-                        <Text style={styles.cardTitle}>
-                            {t('Née de la diaspora,')}
-                            {'\n'}
-                            <Text style={{ color: C.primary }}>{t('pour la diaspora.')}</Text>
-                        </Text>
-
-                        <Text style={styles.cardText}>
-                            {t("Fondée par des membres de la diaspora béninoise ayant eux-mêmes vécu l'expérience du retour, Retour Gagnant est née d'un constat simple : rentrer au pays ne devrait pas être un parcours du combattant.")}
-                        </Text>
-                        <Text style={[styles.cardText, { marginTop: 12 }]}>
-                            {t("Aujourd'hui, nous avons accompagné plus de 500 projets de retour réussis. Des passeports aux investissements immobiliers, en passant par la création d'entreprise, nous sommes le partenaire de confiance de la diaspora.")}
-                        </Text>
-
-                        {/* Citation décorative */}
-                        <View style={styles.quoteBox}>
-                            <Text style={styles.quoteMark}>"</Text>
-                            <Text style={styles.quoteText}>
-                                {t("Le retour ne s'improvise pas. Il se prépare avec rigueur.")}
-                            </Text>
-                        </View>
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ LIENS LÉGAUX ═══ */}
-                <AnimatedSection delay={650}>
-                    <View style={styles.sectionTitleWrap}>
-                        <Text style={styles.sectionLabel}>{t('INFORMATIONS LÉGALES')}</Text>
-                        <View style={styles.sectionUnderline} />
-                    </View>
-
-                    <View style={styles.linksCard}>
-                        {LINKS.map((link, i) => (
-                            <LinkItem
-                                key={i}
-                                icon={link.icon}
-                                label={t(link.label)}
-                                onPress={() => handleLink(link.url)}
-                                isLast={i === LINKS.length - 1}
-                            />
-                        ))}
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ RÉSEAUX SOCIAUX ═══ */}
-                <AnimatedSection delay={750}>
-                    <View style={styles.sectionTitleWrap}>
-                        <Text style={styles.sectionLabel}>{t('SUIVEZ-NOUS')}</Text>
-                        <View style={styles.sectionUnderline} />
-                    </View>
-
-                    <View style={styles.socialRow}>
-                        {SOCIALS.map((s) => (
-                            <TouchableOpacity
-                                key={s.label}
-                                style={styles.socialBtn}
-                                activeOpacity={0.7}
-                                onPress={() => handleLink(s.url)}
-                                accessibilityRole="button"
-                                hitSlop={6}
-                            >
-                                <View style={styles.socialIconWrap}>
-                                    <LucideIcon name={s.icon} size={22} color={C.primary} />
-                                </View>
-                                <Text style={styles.socialLabel}>{s.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ COPYRIGHT ═══ */}
-                <AnimatedSection delay={850}>
-                    <View style={styles.copyrightWrap}>
-                        <View style={styles.copyrightDivider}>
-                            <View style={styles.dividerLine} />
-                            <View style={styles.dividerDot} />
-                            <View style={styles.dividerLine} />
-                        </View>
-                        <Text style={styles.copyright}>
-                            © {new Date().getFullYear()} Retour Gagnant Bénin
-                        </Text>
-                        <Text style={styles.copyrightSub}>
-                            {t('Tous droits réservés · Fait avec excellence à Cotonou')}
-                        </Text>
                     </View>
                 </AnimatedSection>
             </ScrollView>
@@ -361,86 +288,109 @@ const styles = StyleSheet.create({
             },
 
     /* ── Brand Card ── */
-    brandCard: {
-        backgroundColor: C.surface,
-        borderRadius: radius.xl,
-        padding: 28,
+    /* ── En-tête marque (style export) ── */
+    brandHeader: {
         alignItems: 'center',
+        paddingTop: spacing.lg,
+        paddingBottom: spacing.xl,
+    },
+    brandLogo: {
+        width: 116,
+        height: 116,
+        marginBottom: spacing.md,
+    },
+    brandName: {
+        ...typography.h2,
+        fontFamily: fonts.extrabold,
+        fontSize: 23,
+        color: C.text,
+        textAlign: 'center',
+        letterSpacing: -0.3,
+    },
+    brandTagline: {
+        ...typography.button,
+        fontSize: 12,
+        color: C.primary,
+        textTransform: 'uppercase',
+        letterSpacing: 3,
+        marginTop: spacing.sm,
+    },
+
+    /* ── Libellé de section centré ── */
+    blockLabelCenter: {
+        ...typography.caption,
+        fontSize: 10,
+        color: C.textMuted,
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        textAlign: 'center',
+        marginBottom: spacing.md,
+    },
+    missionText: {
+        ...typography.h3,
+        fontSize: 18,
+        color: C.text,
+        textAlign: 'center',
+        lineHeight: 27,
+        marginBottom: spacing.xl,
+    },
+
+    /* ── Cartes valeurs ── */
+    valueCard: {
+        backgroundColor: C.surface,
+        borderRadius: radius.xxl,
+        padding: spacing.lg,
         borderWidth: 1,
         borderColor: C.border,
         ...shadows.card,
-        marginBottom: spacing.gutter,
-        position: 'relative',
-        overflow: 'hidden',
     },
-    logoHalo: { display: 'none' },
-    logoWrap: {
-        width: 88,
-        height: 88,
-        borderRadius: radius.xl,
-        backgroundColor: C.primary,
+    valueIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: radius.md,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: C.border,
-        ...shadows.card,
     },
-    logo: {
-        width: 60,
-        height: 60,
+    valueTitle: {
+        ...typography.button,
+        fontSize: 16,
+        color: C.text,
+        marginBottom: spacing.xs,
     },
-    brandName: {
-        color: C.primary,
-        ...typography.h2, fontSize: 20,
-                letterSpacing: 5,
+    valueDesc: {
+        ...typography.bodySmall,
+        fontSize: 12.5,
+        color: C.textMuted,
+        lineHeight: 19,
     },
-    brandSubWrap: {
-        flexDirection: 'row',
+
+    /* ── Contact (dernière section) ── */
+    contactWrap: {
         alignItems: 'center',
-        gap: spacing.sm,
-        marginTop: spacing.xs,
+        marginTop: spacing.xl,
     },
-    brandLine: {
-        width: 30,
-        height: 1.5,
-        backgroundColor: C.accent,
-    },
-    brandSub: {
-        color: C.primary,
-        ...typography.button, fontSize: 14,
-                letterSpacing: 8,
-    },
-    tagline: {
-        color: C.textSec,
-        fontSize: 12,
-        fontStyle: 'italic',
-        letterSpacing: 0.3,
-        marginTop: spacing.md,
-        marginBottom: spacing.md,
+    contactAddress: {
+        ...typography.button,
+        fontSize: 14,
+        color: C.text,
         textAlign: 'center',
     },
-    versionBadge: {
+    contactEmail: {
+        ...typography.bodySmall,
+        color: C.textMuted,
+        marginTop: spacing.xs,
+    },
+    socialsRow: {
         flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 28,
+        marginTop: spacing.lg,
+    },
+    socialIconBtn: {
         alignItems: 'center',
-        gap: spacing.sm,
-        backgroundColor: C.surfaceSoft,
-        borderRadius: radius.pill,
-        paddingHorizontal: 12,
-        paddingVertical: spacing.xs,
-        borderWidth: 1,
-        borderColor: C.border,
-    },
-    versionDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: C.success,
-    },
-    versionText: {
-        ...typography.caption,
-        color: C.textSec,
-                letterSpacing: 0.2,
+        justifyContent: 'center',
     },
 
     /* ── Stats Row ── */

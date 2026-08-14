@@ -70,7 +70,7 @@ const SHIPPING_CONFIG: Record<string, {
     borderRgba: string
 }> = {
     pending: { label: 'En attente', icon: 'time-outline', color: C.textSec, bgRgba: C.surfaceAlt, borderRgba: C.border },
-    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.primary, bgRgba: C.accentSoft, borderRgba: C.border },
+    preparing: { label: 'En préparation', icon: 'cube-outline', color: C.primary, bgRgba: C.primarySoft, borderRgba: C.border },
     shipped: { label: 'Expédié', icon: 'paper-plane-outline', color: C.info, bgRgba: C.surfaceSoft, borderRgba: C.border },
     in_transit: { label: 'En transit', icon: 'car-outline', color: C.primary, bgRgba: C.surfaceSoft, borderRgba: C.border },
     delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: C.surfaceSoft, borderRgba: C.border },
@@ -212,80 +212,73 @@ function OrderCard({
                 hitSlop={6}
             >
                 <Animated.View style={[styles.orderCard, pressStyle]}>
-                    {/* Bordure colorée gauche */}
-                    <View style={[styles.orderCardBar, { backgroundColor: cfg.color }]} />
-
-                    <View style={styles.orderCardBody}>
-                        {/* Top row : Réf + Date + Status */}
-                        <View style={styles.orderTopRow}>
-                            <View style={styles.orderRefBlock}>
-                                <Text style={styles.orderRefLabel}>{t('COMMANDE')}</Text>
-                                <Text style={styles.orderRef}>#{shortRef}</Text>
+                    <View style={styles.ocBody}>
+                        {/* Header : réf + date | statut */}
+                        <View style={styles.ocHeader}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.ocRef}>#{shortRef}</Text>
+                                <Text style={styles.ocDate}>{t('Effectuée le')} {formatDate(order.created_at)}</Text>
                             </View>
-                            <View style={[styles.orderStatusPill, { backgroundColor: cfg.bgRgba, borderColor: cfg.borderRgba }]}>
-                                <LucideIcon name={cfg.icon} size={11} color={cfg.color} />
-                                <Text style={[styles.orderStatusText, { color: cfg.color }]}>
-                                    {t(cfg.label)}
-                                </Text>
+                            <View style={[styles.ocBadge, { backgroundColor: cfg.bgRgba, borderColor: cfg.borderRgba }]}>
+                                <LucideIcon name={cfg.icon} size={13} color={cfg.color} />
+                                <Text style={[styles.ocBadgeText, { color: cfg.color }]}>{t(cfg.label)}</Text>
                             </View>
                         </View>
 
-                        {/* Title */}
-                        <Text style={styles.orderTitle} numberOfLines={2}>
-                            {firstTitle}
-                            {moreCount > 0 && (
-                                <Text style={styles.orderTitleMore}>
-                                    {' '}{t('+ {n} autre(s)', { n: moreCount })}
+                        {/* Articles */}
+                        <View style={styles.ocItems}>
+                            {(order.cart_items && order.cart_items.length > 0
+                                ? order.cart_items.slice(0, 3)
+                                : [{ title: firstTitle, quantity: itemsCount }]
+                            ).map((it, i) => (
+                                <Text key={i} style={styles.ocItemText} numberOfLines={1}>
+                                    {it.title} <Text style={styles.ocItemQty}>×{it.quantity}</Text>
                                 </Text>
+                            ))}
+                            {order.cart_items && order.cart_items.length > 3 && (
+                                <Text style={styles.ocItemMore}>{t('+ {n} autre(s)', { n: order.cart_items.length - 3 })}</Text>
                             )}
-                        </Text>
-
-                        {/* Meta line */}
-                        <View style={styles.orderMetaRow}>
-                            <View style={styles.orderMetaItem}>
-                                <LucideIcon name="cube-outline" size={11} color={C.textMuted} />
-                                <Text style={styles.orderMetaText}>
-                                    {itemsCount} {itemsCount > 1 ? t('articles') : t('article')}
-                                </Text>
-                            </View>
-                            <View style={styles.orderMetaDot} />
-                            <View style={styles.orderMetaItem}>
-                                <LucideIcon name="calendar-outline" size={11} color={C.textMuted} />
-                                <Text style={styles.orderMetaText}>{formatDate(order.created_at)}</Text>
-                            </View>
                         </View>
 
-                        {/* Tracking code (si présent) */}
-                        {order.tracking_code ? (
-                            <View style={styles.orderTrackingRow}>
-                                <View style={styles.orderTrackingIcon}>
-                                    <LucideIcon name="paper-plane" size={10} color={C.primary} />
-                                </View>
-                                <Text style={styles.orderTrackingText} numberOfLines={1}>
-                                    {order.tracking_code}
-                                </Text>
-                                {order.tracking_carrier && (
-                                    <>
-                                        <View style={styles.orderTrackingSep} />
-                                        <Text style={styles.orderTrackingCarrier} numberOfLines={1}>
-                                            {order.tracking_carrier}
-                                        </Text>
-                                    </>
-                                )}
-                            </View>
-                        ) : null}
-
-                        {/* Footer : Amount + chevron */}
-                        <View style={styles.orderFooter}>
+                        {/* Total + paiement + détail */}
+                        <View style={styles.ocFooter}>
                             <View>
-                                <Text style={styles.orderAmountLabel}>{t('MONTANT')}</Text>
-                                <Text style={styles.orderAmount}>{formatPrice(order.amount, order.currency)}</Text>
+                                <Text style={styles.ocTotalLabel}>{t('MONTANT TOTAL')}</Text>
+                                <Text style={styles.ocTotal}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
-                            <View style={styles.orderArrow}>
-                                <LucideIcon name="arrow-forward" size={16} color={C.primaryText} />
+                            <View style={styles.ocFooterRight}>
+                                {['success', 'paid', 'completed'].includes(order.payment_status) ? (
+                                    <View style={styles.ocPayRow}>
+                                        <LucideIcon name="checkmark-circle" size={12} color={C.primary} />
+                                        <Text style={styles.ocPaidText}>{t('Payé')}</Text>
+                                    </View>
+                                ) : (
+                                    <View style={styles.ocPayRow}>
+                                        <LucideIcon name="time-outline" size={12} color={C.textSec} />
+                                        <Text style={styles.ocUnpaidText}>{t('En attente')}</Text>
+                                    </View>
+                                )}
+                                <View style={styles.ocDetailBtn}>
+                                    <Text style={styles.ocDetailText}>{t('Voir le détail')}</Text>
+                                    <LucideIcon name="chevron-forward" size={14} color={C.text} />
+                                </View>
                             </View>
                         </View>
                     </View>
+
+                    {/* Barre de suivi (si expédié) */}
+                    {order.tracking_code ? (
+                        <View style={styles.ocTrackBar}>
+                            <View style={styles.ocTrackLeft}>
+                                <LucideIcon name="cube-outline" size={15} color={C.textMuted} />
+                                <Text style={styles.ocTrackText} numberOfLines={1}>
+                                    {order.tracking_carrier ? `${order.tracking_carrier} · ` : ''}
+                                    <Text style={styles.ocTrackCode}>{order.tracking_code}</Text>
+                                </Text>
+                            </View>
+                            <Text style={styles.ocTrackBtn}>{t('Suivre le colis')}</Text>
+                        </View>
+                    ) : null}
                 </Animated.View>
             </Pressable>
         </Animated.View>
@@ -448,8 +441,8 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        tintColor={C.accent}
-                        colors={[C.accent]}
+                        tintColor={C.primary}
+                        colors={[C.primary]}
                     />
                 }
                 ListEmptyComponent={
@@ -523,12 +516,31 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ HERO VIDÉO PREMIUM ═══ */}
-                <AnimatedSection delay={100}>
-                    <View style={styles.heroWrap}>
-                        <DeliveryHero ordersCount={orders.length} activeCount={activeCount} />
-                    </View>
-                </AnimatedSection>
+                {/* ═══ BANDEAU RÉSUMÉ (style Sleek, sans fond sombre) ═══ */}
+                {orders.length > 0 && (
+                    <AnimatedSection delay={100}>
+                        <View style={styles.summaryCard}>
+                            <View style={styles.summaryLeft}>
+                                <View style={styles.summaryIcon}>
+                                    <LucideIcon name="cube" size={22} color={C.primary} />
+                                </View>
+                                <View>
+                                    <Text style={styles.summaryLabel}>{t('Actuellement')}</Text>
+                                    <Text style={styles.summaryValue}>
+                                        {activeCount > 0
+                                            ? `${activeCount} ${activeCount > 1 ? t('expéditions en cours') : t('expédition en cours')}`
+                                            : t('Tout est livré')}
+                                    </Text>
+                                </View>
+                            </View>
+                            {activeCount > 0 && (
+                                <View style={styles.summaryBadge}>
+                                    <Text style={styles.summaryBadgeText}>{t('ACTIF')}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </AnimatedSection>
+                )}
 
                 {/* ═══ TRACKING SEARCH CARD ═══ */}
                 <AnimatedSection delay={200}>
@@ -548,7 +560,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                                 <LucideIcon
                                     name="barcode-outline"
                                     size={18}
-                                    color={searchFocused ? C.accent : C.placeholder}
+                                    color={searchFocused ? C.primary : C.placeholder}
                                     style={styles.searchInputIcon}
                                 />
                                 <TextInput
@@ -653,7 +665,7 @@ function FilterPill({
         borderColor: interpolateColor(anim.value, [0, 1], [C.border, C.primary]),
     }))
 
-    const useColor = color || C.accent
+    const useColor = color || C.primary
 
     return (
         <Pressable onPress={onPress}
@@ -670,7 +682,7 @@ function FilterPill({
                 </Text>
                 <View style={[
                     styles.filterPillCount,
-                    active && { backgroundColor: C.accentSoft },
+                    active && { backgroundColor: C.primarySoft },
                 ]}>
                     <Text style={[
                         styles.filterPillCountText,
@@ -702,7 +714,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -771,7 +783,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.xs,
         alignSelf: 'flex-start',
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -782,7 +794,7 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 4,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
     },
     heroBadgeText: {
         ...typography.button, fontSize: 12,
@@ -837,7 +849,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: radius.sm,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -948,16 +960,59 @@ const styles = StyleSheet.create({
         gap: 12,
     },
 
-    /* ── Order Card ── */
-    orderCard: {
+    /* ── Bandeau résumé (Sleek) ── */
+    summaryCard: {
         flexDirection: 'row',
-        backgroundColor: C.surfaceSolid,
-        borderRadius: radius.lg,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: C.primarySoft,
+        borderRadius: radius.xxl,
+        borderWidth: 1,
+        borderColor: C.border,
+        padding: spacing.md + 2,
+        marginBottom: spacing.lg,
+    },
+    summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+    summaryIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
+    summaryLabel: { ...typography.caption, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+    summaryValue: { ...typography.button, fontSize: 14, color: C.text },
+    summaryBadge: { backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+    summaryBadgeText: { ...typography.caption, fontSize: 10, color: C.primaryText, letterSpacing: 0.5 },
+
+    /* ── Order Card (Sleek) ── */
+    orderCard: {
+        backgroundColor: C.surface,
+        borderRadius: radius.xxl,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: C.border,
+        marginBottom: spacing.md,
         ...shadows.card,
     },
+    ocBody: { padding: spacing.lg },
+    ocHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: spacing.md },
+    ocRef: { ...typography.button, fontSize: 13, color: C.text, marginBottom: 2 },
+    ocDate: { ...typography.caption, fontSize: 10.5, color: C.textMuted },
+    ocBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
+    ocBadgeText: { ...typography.caption, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.2 },
+    ocItems: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingVertical: spacing.md, gap: 6 },
+    ocItemText: { ...typography.bodySmall, fontSize: 12.5, color: C.textSec },
+    ocItemQty: { color: C.text, fontFamily: fonts.bold },
+    ocItemMore: { ...typography.caption, fontSize: 11, color: C.textMuted, marginTop: 2 },
+    ocFooter: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: spacing.md },
+    ocTotalLabel: { ...typography.caption, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
+    ocTotal: { ...typography.h2, fontSize: 20, color: C.primaryDark },
+    ocFooterRight: { alignItems: 'flex-end', gap: 8 },
+    ocPayRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    ocPaidText: { ...typography.caption, fontSize: 11, color: C.primary },
+    ocUnpaidText: { ...typography.caption, fontSize: 11, color: C.textSec },
+    ocDetailBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.surfaceSoft, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 8 },
+    ocDetailText: { ...typography.caption, fontSize: 11, color: C.text },
+    ocTrackBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surfaceSoft, paddingHorizontal: spacing.lg, paddingVertical: 12, borderTopWidth: 1, borderColor: C.border },
+    ocTrackLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+    ocTrackText: { ...typography.caption, fontSize: 11, color: C.textMuted, flex: 1 },
+    ocTrackCode: { color: C.text, fontFamily: fonts.bold },
+    ocTrackBtn: { ...typography.caption, fontSize: 10.5, color: C.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
     orderCardBar: {
         width: 4,
     },
@@ -1033,7 +1088,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.xs,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
@@ -1045,7 +1100,7 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderRadius: radius.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1058,7 +1113,7 @@ const styles = StyleSheet.create({
         width: 3,
         height: 3,
         borderRadius: 2,
-        backgroundColor: C.accentLight,
+        backgroundColor: C.primarySoft,
     },
     orderTrackingCarrier: {
         ...typography.caption,
@@ -1237,13 +1292,13 @@ const styles = StyleSheet.create({
     dividerLine: {
         width: 40,
         height: 1,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         opacity: 0.4,
     },
     dividerDot: {
         width: 6,
         height: 6,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         transform: [{ rotate: '45deg' }],
     },
     footerText: {

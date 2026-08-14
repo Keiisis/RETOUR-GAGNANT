@@ -520,32 +520,12 @@ export default function LegalScreen({ navigation }: any) {
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <LucideIcon name="mail" size={16} color={C.primary} style={{ marginRight: 8 }} />
+                            <LucideIcon name="mail" size={16} color={C.primaryText} style={{ marginRight: 8 }} />
                             <Text style={styles.contactBtnText} numberOfLines={1}>
                                 contact@retourgagnantbenin.bj
                             </Text>
-                            <LucideIcon name="arrow-forward" size={14} color={C.primary} style={{ marginLeft: 8 }} />
+                            <LucideIcon name="arrow-forward" size={14} color={C.primaryText} style={{ marginLeft: 8 }} />
                         </TouchableOpacity>
-                    </View>
-                </AnimatedSection>
-
-
-                {/* ═══ FOOTER ═══ */}
-                <AnimatedSection delay={600}>
-                    <View style={styles.footerWrap}>
-                        <View style={styles.footerDivider}>
-                            <View style={styles.dividerLine} />
-                            <View style={styles.dividerDot} />
-                            <View style={styles.dividerLine} />
-                        </View>
-                        <Text style={styles.footerCompany}>RGB SARL</Text>
-                        <Text style={styles.footerLocation}>Cotonou, Bénin</Text>
-                        <Text style={styles.footerVersion}>
-                            {t('Dernière mise à jour : Mai 2026')}
-                        </Text>
-                        <Text style={styles.footerRights}>
-                            © {new Date().getFullYear()} · {t('Tous droits réservés')}
-                        </Text>
                     </View>
                 </AnimatedSection>
             </ScrollView>
@@ -768,7 +748,7 @@ const styles = StyleSheet.create({
     },
     contactTitle: {
         ...typography.h3, fontSize: 19,
-                color: C.primaryText,
+                color: C.text,
         letterSpacing: -0.4,
         marginBottom: spacing.sm,
     },
@@ -782,13 +762,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         height: 52,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
         ...shadows.card,
     },
     contactBtnText: {
-        color: C.primary,
+        color: C.primaryText,
         ...typography.button, fontSize: 13,
                 letterSpacing: 0.2,
     },

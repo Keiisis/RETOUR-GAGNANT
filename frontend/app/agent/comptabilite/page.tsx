@@ -448,6 +448,11 @@ export default function AgentComptabilitePage() {
             setShowExpenseModal(false)
             setNewExpense({ titre: '', categorie: 'autre', montant: '', date: '', ifu: '' })
             fetchAllData()
+        } else {
+            // Ne plus échouer en silence : l'agent doit savoir POURQUOI (ex.
+            // « Période comptable clôturée », droits, réseau). Sans ce retour,
+            // le clic sur « Enregistrer » ne faisait visiblement rien.
+            alert(error.message || "Enregistrement impossible. Vérifiez votre connexion et réessayez.")
         }
         setSavingExpense(false)
     }
@@ -500,6 +505,8 @@ export default function AgentComptabilitePage() {
             setShowSalaireModal(false)
             setNewSalaire({ nom: '', prenom: '', poste: '', montant: '', mois: currentMonthKey() })
             fetchAllData()
+        } else {
+            alert(error.message || "Enregistrement impossible. Vérifiez votre connexion et réessayez.")
         }
         setSavingSalaire(false)
     }

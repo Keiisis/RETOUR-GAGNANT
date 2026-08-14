@@ -36,6 +36,17 @@ import InvoicesScreen from '../screens/main/InvoicesScreen'
 import NationaliteFormScreen from '../screens/main/NationaliteFormScreen'
 import LegalScreen from '../screens/main/LegalScreen'
 import FaScreen from '../screens/main/FaScreen'
+import PermisScreen from '../screens/main/PermisScreen'
+import LogementScreen from '../screens/main/LogementScreen'
+import BusinessScreen from '../screens/main/BusinessScreen'
+import InvestissementScreen from '../screens/main/InvestissementScreen'
+import CultureScreen from '../screens/main/CultureScreen'
+import PasseportScreen from '../screens/main/PasseportScreen'
+import ConstructionScreen from '../screens/main/ConstructionScreen'
+import LanguesScreen from '../screens/main/LanguesScreen'
+import RechercheAncestraleScreen from '../screens/main/RechercheAncestraleScreen'
+import AutresScreen from '../screens/main/AutresScreen'
+import NationaliteVipScreen from '../screens/main/NationaliteVipScreen'
 import GenealogieScreen from '../screens/main/GenealogieScreen'
 
 /* ── Types de navigation ── */
@@ -106,6 +117,17 @@ export type RootStackParamList = {
     NationaliteForm: undefined
     Legal: undefined
     Fa: undefined
+    Permis: undefined
+    Logement: undefined
+    Business: undefined
+    Investissement: undefined
+    Culture: undefined
+    Passeport: undefined
+    Construction: undefined
+    Langues: undefined
+    RechercheAncestrale: undefined
+    Autres: undefined
+    NationaliteVip: undefined
     Genealogie: undefined
 }
 
@@ -206,7 +228,7 @@ export default function AppNavigator() {
 
     useEffect(() => {
         Promise.all([
-            AsyncStorage.getItem('onboarding_complete'),
+            AsyncStorage.getItem('onboarding_complete_v2'),
             AsyncStorage.getItem('lang_chosen'),
         ]).then(([obVal, langVal]) => {
             setOnboardingDone(obVal === 'true')
@@ -258,7 +280,7 @@ export default function AppNavigator() {
                     children={() => (
                         <OnboardingScreen
                             onComplete={async () => {
-                                await AsyncStorage.setItem('onboarding_complete', 'true')
+                                await AsyncStorage.setItem('onboarding_complete_v2', 'true')
                                 setOnboardingDone(true)
                             }}
                         />
@@ -326,6 +348,17 @@ export default function AppNavigator() {
                         <Stack.Screen name="Signature" component={SignatureScreen} />
                         <Stack.Screen name="Call" component={CallScreen} />
                         <Stack.Screen name="Fa" component={FaScreen} />
+                        <Stack.Screen name="Permis" component={PermisScreen} />
+                        <Stack.Screen name="Logement" component={LogementScreen} />
+                        <Stack.Screen name="Business" component={BusinessScreen} />
+                        <Stack.Screen name="Investissement" component={InvestissementScreen} />
+                        <Stack.Screen name="Culture" component={CultureScreen} />
+                        <Stack.Screen name="Passeport" component={PasseportScreen} />
+                        <Stack.Screen name="Construction" component={ConstructionScreen} />
+                        <Stack.Screen name="Langues" component={LanguesScreen} />
+                        <Stack.Screen name="RechercheAncestrale" component={RechercheAncestraleScreen} />
+                        <Stack.Screen name="Autres" component={AutresScreen} />
+                        <Stack.Screen name="NationaliteVip" component={NationaliteVipScreen} />
                         <Stack.Screen name="Genealogie" component={GenealogieScreen} />
                     </Stack.Group>
 

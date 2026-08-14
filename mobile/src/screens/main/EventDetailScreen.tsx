@@ -115,7 +115,7 @@ function TicketCard({
         backgroundColor: interpolateColor(
             anim.value,
             [0, 1],
-            ['rgba(255,255,255,0.85)', 'rgba(252, 209, 22, 0.06)']
+            ['rgba(255,255,255,0.85)', 'rgba(0, 135, 81, 0.06)']
         ),
         transform: [{ scale: interpolate(anim.value, [0, 1], [1, 1.01]) }],
     }))
@@ -138,7 +138,7 @@ function TicketCard({
                 {/* Bandeau VIP doré */}
                 {isVip && (
                     <View style={ticketStyles.vipBanner}>
-                        <LucideIcon name="star" size={9} color={C.primary} />
+                        <LucideIcon name="star" size={9} color={C.primaryText} />
                         <Text style={ticketStyles.vipBannerText}>RECOMMANDÉ</Text>
                     </View>
                 )}
@@ -213,7 +213,7 @@ const ticketStyles = StyleSheet.create({
         zIndex: 2,
     },
     vipBannerText: {
-        color: C.primary,
+        color: C.primaryText,
         ...typography.button, fontSize: 12,
         letterSpacing: 0.6,
     },
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(252, 209, 22, 0.12)',
+        backgroundColor: 'rgba(0, 135, 81, 0.12)',
         borderRadius: 999,
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 10,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 10,

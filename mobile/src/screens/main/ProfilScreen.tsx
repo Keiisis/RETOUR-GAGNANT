@@ -108,13 +108,10 @@ function MenuItem({
         >
             <Animated.View style={[menuStyles.item, !isLast && menuStyles.itemBorder, animStyle]}>
                 <View style={[menuStyles.iconWrap, accent && menuStyles.iconWrapAccent]}>
-                    <LucideIcon name={icon} size={18} color={accent ? C.accent : C.primary} />
+                    <LucideIcon name={icon} size={18} color={accent ? C.accentInk : C.primary} />
                 </View>
-                <View style={menuStyles.textWrap}>
-                    <Text style={menuStyles.label}>{label}</Text>
-                    <Text style={menuStyles.sub} numberOfLines={1}>{sub}</Text>
-                </View>
-                <LucideIcon name="chevron-forward" size={16} color={C.textMuted} />
+                <Text style={menuStyles.label} numberOfLines={1}>{label}</Text>
+                <LucideIcon name="chevron-forward" size={18} color={C.textMuted} />
             </Animated.View>
         </Pressable>
     )
@@ -124,35 +121,33 @@ const menuStyles = StyleSheet.create({
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.md,
-        gap: 12,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md + 2,
+        gap: 14,
     },
     itemBorder: {
         borderBottomWidth: 1,
         borderBottomColor: C.border,
     },
     iconWrap: {
-        width: 38,
-        height: 38,
-        borderRadius: radius.sm,
-        backgroundColor: C.surfaceSoft,
+        width: 40,
+        height: 40,
+        borderRadius: radius.md,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: C.border,
     },
     iconWrapAccent: {
         backgroundColor: C.accentSoft,
-        borderColor: C.border,
     },
     textWrap: {
         flex: 1,
     },
     label: {
-        ...typography.button, fontSize: 13.5,
-                color: C.primary,
+        ...typography.button, fontSize: 14,
+                color: C.text,
         letterSpacing: -0.1,
+        flex: 1,
     },
     sub: {
         ...typography.caption,
@@ -489,114 +484,52 @@ export default function ProfilScreen() {
                     <FlagBar height={6} radiusTop={false} />
                 </View>
 
-                {/* EN-TÊTE */}
-                <View style={styles.navBar}>
-                    <Text style={styles.navTitle}>{t('Mon profil')}</Text>
-                    <Pressable
-                        onPress={() => navigation.navigate('EditProfil')}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('Modifier mon profil')}
-                        hitSlop={8}
-                        style={styles.navEditBtn}
-                    >
-                        <LucideIcon name="create-outline" size={19} color={C.primary} />
-                    </Pressable>
-                </View>
-
-                {/* ═══ CARTE IDENTITÉ ═══ */}
+                {/* ═══ EN-TÊTE PROFIL (style Sleek : avatar centré) ═══ */}
                 <AnimatedSection delay={100}>
-                    <View style={styles.profileCard}>
-                        <FlagBar height={5} radiusTop={false} />
-
-                        <View style={styles.profileBody}>
-                            <Pressable
-                                style={styles.avatarOuter}
-                                onPress={showAvatarOptions}
-                                disabled={uploadingAvatar}
-                                accessibilityRole="button"
-                                accessibilityLabel={t('Changer ma photo de profil')}
-                                hitSlop={6}
-                            >
-                                <View style={styles.avatarBorder}>
-                                    {renderAvatarContent()}
-                                </View>
-                                <View style={styles.cameraBadge}>
-                                    <LucideIcon name="camera" size={14} color={C.primaryText} />
-                                </View>
-                            </Pressable>
-
-                            <Text style={styles.userName}>
-                                {profile?.prenom} {profile?.nom}
-                            </Text>
-                            <Text style={styles.userEmail} numberOfLines={1}>
-                                {profile?.email}
-                            </Text>
-
-                            <View style={styles.badgesRow}>
-                                <View style={styles.roleBadge}>
-                                    <LucideIcon name="shield-checkmark" size={13} color={C.primary} />
-                                    <Text style={styles.roleText}>{t('Client vérifié')}</Text>
-                                </View>
-                                {profile?.ville ? (
-                                    <View style={styles.villeBadge}>
-                                        <LucideIcon name="location-outline" size={13} color={C.primary} />
-                                        <Text style={styles.villeText}>{profile.ville}</Text>
-                                    </View>
-                                ) : null}
+                    <View style={styles.header}>
+                        <Pressable
+                            style={styles.avatarOuter}
+                            onPress={showAvatarOptions}
+                            disabled={uploadingAvatar}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Changer ma photo de profil')}
+                            hitSlop={6}
+                        >
+                            <View style={styles.avatarBorder}>
+                                {renderAvatarContent()}
                             </View>
+                            <View style={styles.editBadge}>
+                                <LucideIcon name="create-outline" size={15} color={C.primaryText} />
+                            </View>
+                        </Pressable>
 
-                            <View style={styles.completionWrap}>
-                                <View style={styles.completionHeader}>
-                                    <Text style={styles.completionLabel}>
-                                        {t('Profil complété')}
-                                    </Text>
-                                    <Text style={styles.completionPercent}>
-                                        {completionPercent}%
-                                    </Text>
-                                </View>
-                                <View
-                                    accessible
-                                    accessibilityRole="progressbar"
-                                    accessibilityLabel={`${t('Profil complété')} ${completionPercent}%`}
-                                    style={styles.completionBar}
+                        <Text style={styles.userName}>
+                            {profile?.prenom} {profile?.nom}
+                        </Text>
+                        <Text style={styles.userSubtitle} numberOfLines={1}>
+                            {[t('Client vérifié'), profile?.ville].filter(Boolean).join('   •   ')}
+                        </Text>
+
+                        {/* Chiffres clés (2 mini-cartes) */}
+                        <View style={styles.statsRow}>
+                            {[
+                                /* 'Dossier' = onglet réel ; 'Appointments' = écran RDV réel. */
+                                { value: stats.dossiers, label: t('Dossiers'), dest: 'Dossier' },
+                                { value: stats.appointments, label: t('Rendez-vous'), dest: 'Appointments' },
+                            ].map((s) => (
+                                <Pressable
+                                    key={s.dest}
+                                    style={styles.statCard}
+                                    onPress={() => navigation.navigate(s.dest as never)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${s.value} ${s.label}`}
+                                    hitSlop={6}
                                 >
-                                    <View
-                                        style={[
-                                            styles.completionFill,
-                                            { width: `${completionPercent}%` },
-                                        ]}
-                                    />
-                                </View>
-                            </View>
+                                    <Text style={styles.statLabel} numberOfLines={1}>{s.label}</Text>
+                                    <Text style={styles.statValue}>{String(s.value).padStart(2, '0')}</Text>
+                                </Pressable>
+                            ))}
                         </View>
-                    </View>
-                </AnimatedSection>
-
-                {/* ═══ CHIFFRES CLÉS ═══ */}
-                <AnimatedSection delay={200}>
-                    <View style={styles.statsRow}>
-                        {[
-                            /* 'Dossier' est l'onglet réel ; 'MyServices' n'existe
-                               dans aucun navigateur : l'ancien lien était mort. */
-                            { icon: 'folder-open' as const, value: stats.dossiers, label: t('Dossiers'), dest: 'Dossier' },
-                            { icon: 'calendar' as const, value: stats.appointments, label: t('Rendez-vous'), dest: 'Appointments' },
-                            { icon: 'card' as const, value: stats.payments, label: t('Paiements'), dest: 'Payments' },
-                        ].map((s) => (
-                            <Pressable
-                                key={s.dest}
-                                style={styles.statCard}
-                                onPress={() => navigation.navigate(s.dest as never)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`${s.value} ${s.label}`}
-                                hitSlop={6}
-                            >
-                                <View style={styles.statIconWrap}>
-                                    <LucideIcon name={s.icon} size={20} color={C.primary} />
-                                </View>
-                                <Text style={styles.statValue}>{s.value}</Text>
-                                <Text style={styles.statLabel} numberOfLines={1}>{s.label}</Text>
-                            </Pressable>
-                        ))}
                     </View>
                 </AnimatedSection>
 
@@ -605,7 +538,6 @@ export default function ProfilScreen() {
                     <AnimatedSection key={si} delay={300 + si * 100}>
                         <View style={styles.sectionTitleWrap}>
                             <Text style={styles.sectionLabel}>{section.title}</Text>
-                            <View style={styles.sectionUnderline} />
                         </View>
 
                         <View style={styles.menuCard}>
@@ -633,24 +565,9 @@ export default function ProfilScreen() {
                         accessibilityRole="button"
                         hitSlop={6}
                     >
-                        <View style={styles.logoutIconWrap}>
-                            <LucideIcon name="log-out-outline" size={18} color={C.error} />
-                        </View>
+                        <LucideIcon name="log-out-outline" size={18} color={C.error} />
                         <Text style={styles.logoutText}>{t('Se déconnecter')}</Text>
                     </TouchableOpacity>
-                </AnimatedSection>
-
-                {/* ═══ FOOTER ═══ */}
-                <AnimatedSection delay={750}>
-                    <View style={styles.footerWrap}>
-                        <View style={styles.footerDivider}>
-                            <View style={styles.dividerLine} />
-                            <View style={styles.dividerDot} />
-                            <View style={styles.dividerLine} />
-                        </View>
-                        <Text style={styles.version}>Retour Gagnant Bénin</Text>
-                        <Text style={styles.versionSub}>v1.0.0 · {t('Fait avec excellence à Cotonou')}</Text>
-                    </View>
                 </AnimatedSection>
             </ScrollView>
 
@@ -682,40 +599,37 @@ const styles = StyleSheet.create({
     navTitle: { ...typography.h1, color: C.text, flex: 1 },
     navEditBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
 
-    /* ── Header ── */
-
-    /* ── Profile Card (Hero bleu massif) ── */
-    profileBody: { padding: spacing.lg },
+    /* ── Header (style Sleek : centré) ── */
+    header: { alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.md, paddingBottom: spacing.lg },
     topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
-    profileCard: { backgroundColor: C.surface, borderRadius: radius.xl, marginHorizontal: spacing.gutter, marginBottom: spacing.md, overflow: 'hidden', ...shadows.cardRaised },
 
     /* ── Avatar ── */
-    avatarOuter: { width: 96, height: 96, alignSelf: 'center', marginBottom: spacing.md },
-    avatarBorder: { width: 96, height: 96, borderRadius: 48, overflow: 'hidden', backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    avatarOuter: { width: 112, height: 112, alignSelf: 'center', marginBottom: spacing.md },
+    avatarBorder: { width: 112, height: 112, borderRadius: 40, overflow: 'hidden', backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: C.surface, ...shadows.cardRaised },
     avatarLoading: {
-        width: 94,
-        height: 94,
-        borderRadius: 47,
+        width: 104,
+        height: 104,
+        borderRadius: 36,
         backgroundColor: C.surfaceSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
     avatarImage: {
-        width: 94,
-        height: 94,
-        borderRadius: 47,
+        width: 104,
+        height: 104,
+        borderRadius: 36,
     },
     avatarEmoji: {
-        width: 94,
-        height: 94,
-        borderRadius: 47,
+        width: 104,
+        height: 104,
+        borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
     },
     avatarInitialsWrap: {
-        width: 94,
-        height: 94,
-        borderRadius: 47,
+        width: 104,
+        height: 104,
+        borderRadius: 36,
         backgroundColor: C.primaryDark,
         alignItems: 'center',
         justifyContent: 'center',
@@ -725,32 +639,16 @@ const styles = StyleSheet.create({
                 color: C.primaryText,
         letterSpacing: 1,
     },
-    cameraBadge: { position: 'absolute', right: -2, bottom: -2, width: 34, height: 34, borderRadius: 17, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.surface },
+    editBadge: { position: 'absolute', right: -2, bottom: 2, width: 36, height: 36, borderRadius: radius.md, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: C.bg },
 
     userName: { ...typography.h2, color: C.text, textAlign: 'center' },
-    userEmail: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: spacing.xs },
+    userSubtitle: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', marginTop: spacing.xs, fontWeight: '500' },
 
-    /* ── Badges ── */
-    badgesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.md },
-    roleBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.primarySoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
-    roleText: { ...typography.label, fontSize: 12, color: C.primary },
-    villeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: C.accentSoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
-    villeText: { ...typography.label, fontSize: 12, color: C.primary },
-
-    /* ── Completion ── */
-    completionWrap: { marginTop: spacing.lg },
-    completionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-    completionLabel: { ...typography.label, color: C.textMuted },
-    completionPercent: { ...typography.label, color: C.primary },
-    completionBar: { height: 8, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, overflow: 'hidden' },
-    completionFill: { height: '100%', borderRadius: radius.pill, backgroundColor: C.primary },
-
-    /* ── Stats Row ── */
-    statsRow: { flexDirection: 'row', gap: spacing.md, marginHorizontal: spacing.gutter, marginBottom: spacing.lg },
-    statCard: { flex: 1, alignItems: 'center', backgroundColor: C.surface, borderRadius: radius.xl, paddingVertical: spacing.md, gap: spacing.xs, ...shadows.card },
-    statIconWrap: { width: 44, height: 44, borderRadius: radius.lg, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
-    statValue: { ...typography.h2, color: C.text },
-    statLabel: { ...typography.caption, color: C.textMuted },
+    /* ── Stats Row (2 mini-cartes) ── */
+    statsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+    statCard: { alignItems: 'center', backgroundColor: C.surface, borderRadius: radius.lg, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, borderWidth: 1, borderColor: C.border, ...shadows.card },
+    statLabel: { ...typography.caption, fontSize: 10, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
+    statValue: { ...typography.h3, color: C.text },
 
     /* ── Section Titles ── */
     sectionTitleWrap: {
@@ -762,9 +660,10 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
     },
     sectionLabel: {
-        ...typography.button, fontSize: 12,
+        ...typography.button, fontSize: 11,
                 color: C.primary,
-        letterSpacing: 1.5,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
     },
     sectionUnderline: {
         flex: 1,
@@ -776,7 +675,7 @@ const styles = StyleSheet.create({
     menuCard: {
         marginHorizontal: spacing.gutter,
         backgroundColor: C.surface,
-        borderRadius: radius.lg,
+        borderRadius: radius.xxl,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: C.border,
@@ -794,9 +693,9 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm,
         backgroundColor: C.dangerSoft,
         borderRadius: radius.lg,
-        paddingVertical: spacing.md,
+        paddingVertical: spacing.lg,
         borderWidth: 1,
-        borderColor: C.danger,
+        borderColor: C.dangerSoft,
     },
     logoutIconWrap: {
         width: 32,

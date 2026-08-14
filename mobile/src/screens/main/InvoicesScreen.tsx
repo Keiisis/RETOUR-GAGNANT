@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
                 color: C.textSec,
     },
     filterCountTextActive: {
-        color: C.primary,
+        color: C.primaryText,
     },
 
     /* ── List ── */

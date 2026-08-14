@@ -274,7 +274,7 @@ const featuredStyles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         opacity: 0.3,
     },
     patternDot2: {
@@ -284,7 +284,7 @@ const featuredStyles = StyleSheet.create({
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         opacity: 0.5,
     },
     patternLine: {
@@ -293,7 +293,7 @@ const featuredStyles = StyleSheet.create({
         right: -10,
         width: 60,
         height: 1,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         opacity: 0.2,
         transform: [{ rotate: '-15deg' }],
     },
@@ -307,7 +307,7 @@ const featuredStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -356,7 +356,7 @@ const featuredStyles = StyleSheet.create({
     dateDivider: {
         width: 30,
         height: 1,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
         marginVertical: spacing.xs,
         opacity: 0.5,
     },
@@ -369,7 +369,7 @@ const featuredStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.pill,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
@@ -420,7 +420,7 @@ const featuredStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         paddingHorizontal: spacing.md,
         paddingVertical: 12,
         borderRadius: radius.sm,
@@ -632,7 +632,7 @@ const cardStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.xs,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xxs,
@@ -643,7 +643,7 @@ const cardStyles = StyleSheet.create({
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
     },
     catText: {
         ...typography.button, fontSize: 12,
@@ -654,7 +654,7 @@ const cardStyles = StyleSheet.create({
         width: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -695,7 +695,7 @@ const cardStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xxs,
         borderRadius: radius.xs,
@@ -706,7 +706,7 @@ const cardStyles = StyleSheet.create({
         width: 5,
         height: 5,
         borderRadius: 2.5,
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
     },
     soonText: {
         ...typography.button, fontSize: 12,
@@ -766,7 +766,7 @@ export default function EventsScreen({ navigation }: any) {
     const { t } = useLang()
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
-    const [category, setCategory] = useState('Tous')
+    const [tab, setTab] = useState<'upcoming' | 'tickets' | 'archives'>('upcoming')
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -798,18 +798,13 @@ export default function EventsScreen({ navigation }: any) {
     useEffect(() => { fetchEvents() }, [fetchEvents])
     const onRefresh = async () => { setRefreshing(true); await fetchEvents(); setRefreshing(false) }
 
-    const filtered = category === 'Tous'
-        ? events
-        : events.filter(e => e.category === category)
-
-    const featured = events.filter(e => e.is_featured)[0]
-    const otherEvents = featured
-        ? filtered.filter(e => e.id !== featured.id)
-        : filtered
-
-    // Comptage par catégorie
-    const getCount = (cat: string) =>
-        cat === 'Tous' ? events.length : events.filter(e => e.category === cat).length
+    const now = Date.now()
+    const upcoming = events.filter(e => new Date(e.start_date).getTime() >= now)
+    const past = events.filter(e => new Date(e.start_date).getTime() < now)
+    const mine = events.filter(e => !!e.my_registration)
+    const list = tab === 'upcoming' ? upcoming : tab === 'tickets' ? mine : past
+    const featured = tab === 'upcoming' ? upcoming.filter(e => e.is_featured)[0] : undefined
+    const otherEvents = featured ? list.filter(e => e.id !== featured.id) : list
 
     return (
         <View style={styles.container}>
@@ -851,12 +846,19 @@ export default function EventsScreen({ navigation }: any) {
                 }
                 contentContainerStyle={styles.scroll}
             >
-                {/* HEADER TITRE */}
+                {/* HEADER TITRE + ONGLETS */}
                 <Animated.View style={[styles.headerContainer, styleHeader]}>
-                    <Text style={styles.title}>{t('Événements')}</Text>
-                    <Text style={styles.subtitle}>
-                        {t('Galas, forums, circuits culturels et séminaires de la diaspora.')}
-                    </Text>
+                    <Text style={styles.title}>{t('La Communauté')}</Text>
+                    <View style={styles.tabsWrap}>
+                        {([['upcoming', 'À venir'], ['tickets', 'Mes tickets'], ['archives', 'Archives']] as const).map(([key, label]) => {
+                            const active = tab === key
+                            return (
+                                <Pressable key={key} onPress={() => setTab(key)} style={[styles.tabBtn, active && styles.tabBtnActive]} accessibilityRole="button" accessibilityState={{ selected: active }}>
+                                    <Text style={[styles.tabText, active && styles.tabTextActive]}>{t(label)}</Text>
+                                </Pressable>
+                            )
+                        })}
+                    </View>
                 </Animated.View>
 
                 {/* LOADING SKELETON */}
@@ -890,7 +892,7 @@ export default function EventsScreen({ navigation }: any) {
                             <View style={styles.emptyDecorator}>
                                 <View style={styles.emptyDot} />
                                 <View style={styles.emptyLine} />
-                                <View style={[styles.emptyDot, { backgroundColor: C.accent }]} />
+                                <View style={[styles.emptyDot, { backgroundColor: C.primary }]} />
                                 <View style={styles.emptyLine} />
                                 <View style={styles.emptyDot} />
                             </View>
@@ -913,68 +915,22 @@ export default function EventsScreen({ navigation }: any) {
                             </AnimatedSection>
                         )}
 
-                        {/* ═══ FILTRES CATÉGORIE ═══ */}
-                        <AnimatedSection delay={250}>
-                            <View style={styles.filterTitleWrap}>
-                                <Text style={styles.filterTitle}>{t('FILTRER PAR')}</Text>
-                                <View style={styles.filterUnderline} />
-                            </View>
-
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.filtersContent}
-                            >
-                                {CATEGORIES.map(cat => {
-                                    const active = category === cat
-                                    const count = getCount(cat)
-                                    return (
-                                        <CategoryPill
-                                            key={cat}
-                                            label={t(cat)}
-                                            icon={CATEGORY_ICONS[cat] || 'apps-outline'}
-                                            count={count}
-                                            active={active}
-                                            onPress={() => setCategory(cat)}
-                                        />
-                                    )
-                                })}
-                            </ScrollView>
-                        </AnimatedSection>
-
-                        {/* ═══ LISTE ═══ */}
-                        <AnimatedSection delay={350}>
-                            {category !== 'Tous' && (
-                                <View style={styles.listHeader}>
-                                    <Text style={styles.listHeaderText}>
-                                        {t(category)} · {otherEvents.length} {otherEvents.length > 1 ? t('événements') : t('événement')}
-                                    </Text>
-                                </View>
-                            )}
-
+                        {/* ═══ LISTE (selon l'onglet) ═══ */}
+                        <AnimatedSection delay={300}>
                             <View style={styles.listWrap}>
                                 {otherEvents.length === 0 ? (
                                     <View style={styles.emptyCatWrap}>
                                         <View style={styles.emptyCatIcon}>
-                                            <LucideIcon name="search-outline" size={28} color={C.textMuted} />
+                                            <LucideIcon name="calendar-outline" size={28} color={C.textMuted} />
                                         </View>
                                         <Text style={styles.emptyCatTitle}>
-                                            {t('Aucun événement')}
+                                            {tab === 'tickets' ? t('Aucun billet') : tab === 'archives' ? t('Aucun événement passé') : t('Aucun événement à venir')}
                                         </Text>
                                         <Text style={styles.emptyCatText}>
-                                            {t('Pas d\'événement dans cette catégorie pour le moment.')}
+                                            {tab === 'tickets'
+                                                ? t('Vos réservations apparaîtront ici une fois inscrit(e).')
+                                                : t('Revenez bientôt : de nouveaux événements arrivent.')}
                                         </Text>
-                                        <Pressable
-                                            onPress={() => setCategory('Tous')}
-                                            style={styles.emptyCatBtn}
-                                            accessibilityRole="button"
-                                            hitSlop={6}
-                                        >
-                                            <Text style={styles.emptyCatBtnText}>
-                                                {t('Voir tous les événements')}
-                                            </Text>
-                                            <LucideIcon name="arrow-forward" size={13} color={C.primary} />
-                                        </Pressable>
                                     </View>
                                 ) : (
                                     otherEvents.map((event, idx) => (
@@ -1028,7 +984,7 @@ function CategoryPill({
         ),
     }))
 
-    const iconColor = active ? C.accent : C.textSec
+    const iconColor = active ? C.primary : C.textSec
     const textColor = active ? C.primaryText : C.textSec
 
     return (
@@ -1081,7 +1037,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
@@ -1121,6 +1077,35 @@ const styles = StyleSheet.create({
         color: C.textSec,
         marginTop: spacing.md,
             },
+
+    /* ── Onglets segmentés (À venir / Mes tickets / Archives) ── */
+    tabsWrap: {
+        flexDirection: 'row',
+        backgroundColor: C.surfaceSoft,
+        borderRadius: radius.lg,
+        padding: 4,
+        marginTop: spacing.lg,
+        gap: 4,
+    },
+    tabBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: radius.md,
+    },
+    tabBtnActive: {
+        backgroundColor: C.surface,
+        ...shadows.card,
+    },
+    tabText: {
+        ...typography.button,
+        fontSize: 13,
+        color: C.textSec,
+    },
+    tabTextActive: {
+        color: C.primary,
+    },
 
     /* ── Skeleton ── */
     skeletonWrap: {
@@ -1200,7 +1185,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     filterCountActive: {
-        backgroundColor: C.accent,
+        backgroundColor: C.primary,
     },
     filterCountText: {
         ...typography.button, fontSize: 12,
@@ -1241,7 +1226,7 @@ const styles = StyleSheet.create({
         width: 88,
         height: 88,
         borderRadius: radius.xxl,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: spacing.gutter,
@@ -1322,7 +1307,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.accentSoft,
+        backgroundColor: C.primarySoft,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         borderRadius: radius.pill,

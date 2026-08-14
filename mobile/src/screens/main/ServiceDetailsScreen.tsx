@@ -471,7 +471,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                             <InfoPill
                                 icon={<Clock size={18} color={C.primary} strokeWidth={2} />}
                                 label={t('Délai moyen')}
-                                value={t(duration || '4–8 semaines')}
+                                value={t(duration || '4-8 semaines')}
                             />
                             <InfoPill
                                 icon={<Tag size={18} color={C.primary} strokeWidth={2} />}

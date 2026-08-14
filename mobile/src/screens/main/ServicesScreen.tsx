@@ -578,8 +578,16 @@ const FAMILY_OF: Record<string, Family> = {
     'recherche-ancestrale': 'racines',
     'consultation-fa-racines': 'racines',
     'langues-racines': 'racines',
+    'permis-conduire': 'installation',
     'autres': 'installation',
 }
+
+/* Repli : tout service dont le slug n'est pas explicitement mappe ci-dessus est
+   rattache a « Installation & logement » plutot que de disparaitre de la liste.
+   Evite qu'un nouveau service ajoute en base (ex. permis-conduire) devienne
+   invisible faute de categorie. */
+const familyOf = (id: string): Exclude<Family, 'all'> =>
+    (FAMILY_OF[id] as Exclude<Family, 'all'>) || 'installation'
 
 /* ═══════════════════════════════════════════════════════════
    COMPOSANT : SKELETON CARD
@@ -632,14 +640,14 @@ export default function ServicesScreen({ navigation }: any) {
     const visibleSections = React.useMemo(() => {
         const q = query.trim().toLowerCase()
         const matches = services.filter((svc) => {
-            if (family !== 'all' && FAMILY_OF[svc.id] !== family) return false
+            if (family !== 'all' && familyOf(svc.id) !== family) return false
             if (!q) return true
             return [svc.title, svc.subtitle, svc.desc]
                 .some((f) => String(f || '').toLowerCase().includes(q))
         })
         return FAMILY_ORDER
             .filter((f) => f !== 'all')
-            .map((fam) => ({ fam, items: matches.filter((s) => FAMILY_OF[s.id] === fam) }))
+            .map((fam) => ({ fam, items: matches.filter((s) => familyOf(s.id) === fam) }))
             .filter((sec) => sec.items.length > 0)
     }, [services, query, family])
     const { t, lang, isTranslating, preloadTexts } = useLang()
@@ -685,7 +693,7 @@ export default function ServicesScreen({ navigation }: any) {
                         subtitle: s.subtitle || staticMatch?.subtitle || '',
                         desc: s.subtitle || s.description || staticMatch?.desc || '',
                         fullDescription: s.description || staticMatch?.fullDescription || '',
-                        duration: staticMatch?.duration || '4–8 semaines',
+                        duration: staticMatch?.duration || '4-8 semaines',
                         price: s.price_display || staticMatch?.price || 'Sur devis',
                         documents: staticMatch?.documents || ["Pièce d'identité valide", 'Documents selon le service'],
                         features: (Array.isArray(s.features) && s.features.length > 0)
@@ -746,6 +754,26 @@ export default function ServicesScreen({ navigation }: any) {
             navigation.navigate('Fa')
             return
         }
+        // Permis : écran dédié (choix de catégorie + auto-école + prix serveur).
+        if (svc.id === 'permis-conduire') {
+            navigation.navigate('Permis')
+            return
+        }
+        // Logement : écran dédié (catalogue + mise en relation SIMAU, sans paiement).
+        if (svc.id === 'logement') {
+            navigation.navigate('Logement')
+            return
+        }
+        // Services par devis/RDV (sans paiement) : écrans éditoriaux dédiés.
+        if (svc.id === 'business') { navigation.navigate('Business'); return }
+        if (svc.id === 'investissement') { navigation.navigate('Investissement'); return }
+        if (svc.id === 'culture') { navigation.navigate('Culture'); return }
+        if (svc.id === 'passeport') { navigation.navigate('Passeport'); return }
+        if (svc.id === 'construction') { navigation.navigate('Construction'); return }
+        if (svc.id === 'langues-racines') { navigation.navigate('Langues'); return }
+        if (svc.id === 'recherche-ancestrale') { navigation.navigate('RechercheAncestrale'); return }
+        if (svc.id === 'autres') { navigation.navigate('Autres'); return }
+        if (svc.id === 'nationalite-vip') { navigation.navigate('NationaliteVip'); return }
         navigation.navigate('ServiceDetails', {
             serviceId: svc.id,
             title: svc.title,

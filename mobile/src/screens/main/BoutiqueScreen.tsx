@@ -1,9 +1,9 @@
 'use strict'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity, TouchableWithoutFeedback,
     Image, Dimensions, Platform, RefreshControl, ActivityIndicator,
-    ScrollView, Pressable,
+    ScrollView, Pressable, TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
@@ -398,7 +398,7 @@ const cardStyles = StyleSheet.create({
         height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(252, 209, 22, 0.08)',
+        backgroundColor: 'rgba(0, 135, 81, 0.08)',
     },
     tagWrap: {
         position: 'absolute',
@@ -588,6 +588,25 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     const formatPrice = (n: number) => n.toLocaleString('fr-FR') + ' FCFA'
     const cartItemForProduct = (id: string) => cart.find(c => c.product.id === id)
 
+    /* ── Recherche + filtre catégories (style Sleek) ── */
+    const [searchQuery, setSearchQuery] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState('Tous')
+
+    const categories = useMemo(() => {
+        const set = new Set<string>()
+        products.forEach(p => { if (p.category) set.add(p.category) })
+        return ['Tous', ...Array.from(set)]
+    }, [products])
+
+    const filteredProducts = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase()
+        return products.filter(p => {
+            const catOk = selectedCategory === 'Tous' || p.category === selectedCategory
+            const qOk = !q || (p.title || '').toLowerCase().includes(q)
+            return catOk && qOk
+        })
+    }, [products, selectedCategory, searchQuery])
+
     // Scroll handler
     const scrollHandler = useAnimatedScrollHandler({
         onScroll: (event) => {
@@ -627,26 +646,39 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     ─────────────────────────────────────────────────────── */
     const renderListHeader = () => (
         <Animated.View style={[styles.listHeader, styleHeader]}>
-            {/* Vidéo en haut */}
-            <StorefrontVideo />
-
-            {/* Titre dual-line (style RegisterScreen) */}
-            <View style={styles.titleWrap}>
-                <Text style={styles.title}>{t('Boutique')}</Text>
-                <Text style={styles.subtitle}>
-                    {t("L'essence de l'élégance béninoise, sélectionnée avec exigence.")}
-                </Text>
-
-                {/* Compteur produits */}
-                {!loading && products.length > 0 && (
-                    <View style={styles.countBadge}>
-                        <View style={styles.countDot} />
-                        <Text style={styles.countText}>
-                            {products.length} {t('pièces disponibles')}
-                        </Text>
-                    </View>
+            {/* Recherche */}
+            <View style={styles.searchBar}>
+                <LucideIcon name="search-outline" size={20} color={C.textMuted} />
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder={t('Rechercher un produit…')}
+                    placeholderTextColor={C.textMuted}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    selectionColor={C.primary}
+                    returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                    <Pressable onPress={() => setSearchQuery('')} hitSlop={8}
+                        accessibilityRole="button" accessibilityLabel={t('Effacer la recherche')}>
+                        <LucideIcon name="close-circle" size={18} color={C.textMuted} />
+                    </Pressable>
                 )}
             </View>
+
+            {/* Catégories */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+                {categories.map(cat => {
+                    const active = selectedCategory === cat
+                    return (
+                        <Pressable key={cat} onPress={() => setSelectedCategory(cat)}
+                            style={[styles.chip, active && styles.chipActive]}
+                            accessibilityRole="button" accessibilityState={{ selected: active }}>
+                            <Text style={[styles.chipText, active && styles.chipTextActive]}>{t(cat)}</Text>
+                        </Pressable>
+                    )
+                })}
+            </ScrollView>
         </Animated.View>
     )
 
@@ -683,17 +715,22 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </Pressable>
 
-                {/* Titre apparait au scroll */}
-                <Animated.View style={[styles.navTitleWrap, stickyTitleStyle]}>
-                    <Text style={styles.navTitle}>{t('La Boutique')}</Text>
-                </Animated.View>
+                {/* Titre toujours visible (style Sleek) */}
+                <View style={styles.navTitleWrap}>
+                    <Text style={styles.navTitle}>{t('Boutique')}</Text>
+                </View>
 
-                <Pressable onPress={() => navigation.navigate('Orders')} style={styles.navBtn}
+                <Pressable onPress={() => (cartCount > 0 ? setShowCart(true) : navigation.navigate('Orders'))} style={styles.navBtn}
                     accessibilityRole="button"
-                    accessibilityLabel={t('Mes commandes')}
+                    accessibilityLabel={cartCount > 0 ? t('Ouvrir le panier') : t('Mes commandes')}
                     hitSlop={6}>
                     <View style={styles.iconCircle}>
-                        <LucideIcon name="cube-outline" size={20} color={C.primary} />
+                        <LucideIcon name="bag-handle-outline" size={20} color={C.primary} />
+                        {cartCount > 0 && (
+                            <View style={styles.navCartBadge}>
+                                <Text style={styles.navCartBadgeText}>{cartCount}</Text>
+                            </View>
+                        )}
                     </View>
                 </Pressable>
             </View>
@@ -719,9 +756,9 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
                     }
                 >
-                    <Animated.View style={styleHeader}>
-                        <StorefrontVideo />
-                    </Animated.View>
+                    <View style={styles.emptyIconWrap}>
+                        <LucideIcon name="bag-handle" size={34} color={C.primary} />
+                    </View>
                     <Text style={styles.title}>{t('Collection secrète')}</Text>
                     <Text style={[styles.subtitle, { textAlign: 'center', paddingHorizontal: 20 }]}>
                         {t('Les artisans sculptent les prochaines merveilles. Revenez bientôt.')}
@@ -729,13 +766,19 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                 </ScrollView>
             ) : (
                 <Animated.FlatList
-                    data={products}
+                    data={filteredProducts}
                     keyExtractor={(item) => item.id}
                     renderItem={renderProduct}
                     numColumns={2}
                     contentContainerStyle={styles.gridContent}
                     columnWrapperStyle={styles.columnWrapper}
                     ListHeaderComponent={renderListHeader}
+                    ListEmptyComponent={
+                        <View style={styles.noResult}>
+                            <LucideIcon name="search-outline" size={26} color={C.textMuted} />
+                            <Text style={styles.noResultText}>{t('Aucun produit ne correspond.')}</Text>
+                        </View>
+                    }
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
@@ -793,8 +836,8 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
 
                         <View style={styles.sheetHeader}>
                             <View>
-                                <Text style={styles.sheetSubtitle}>{t('Votre panier')}</Text>
-                                <Text style={styles.sheetTitle}>{t('Vos Merveilles')}</Text>
+                                <Text style={styles.sheetSubtitle}>{cartCount} {cartCount > 1 ? t('articles') : t('article')}</Text>
+                                <Text style={styles.sheetTitle}>{t('Votre Panier')}</Text>
                             </View>
                             <Pressable onPress={() => setShowCart(false)} style={styles.closeBtn}
                                 accessibilityRole="button"
@@ -863,6 +906,14 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                         <View style={styles.sheetFooter}>
                             <View style={styles.totalRow}>
                                 <Text style={styles.totalLabel}>{t('Sous-total')}</Text>
+                                <Text style={styles.totalValueMuted}>{formatPrice(cartTotal)}</Text>
+                            </View>
+                            <View style={styles.totalRowNote}>
+                                <Text style={styles.totalNote}>{t('Livraison calculée au paiement')}</Text>
+                            </View>
+                            <View style={styles.totalDivider} />
+                            <View style={styles.totalRow}>
+                                <Text style={styles.totalLabelStrong}>{t('Total')}</Text>
                                 <Text style={styles.totalValue}>{formatPrice(cartTotal)}</Text>
                             </View>
 
@@ -920,12 +971,94 @@ const styles = StyleSheet.create({
     },
     navTitleWrap: {
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        paddingLeft: 4,
     },
     navTitle: {
-        ...typography.h3, fontSize: 16,
-        color: C.primary,
-        letterSpacing: 0.2,
+        ...typography.h2, fontSize: 20,
+        color: C.text,
+        letterSpacing: -0.3,
+    },
+    navCartBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: C.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: C.bg,
+    },
+    navCartBadgeText: {
+        ...typography.caption, fontSize: 9,
+        color: C.primaryText,
+    },
+
+    /* ── Recherche + chips (Sleek) ── */
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: C.surfaceSoft,
+        borderWidth: 1,
+        borderColor: C.border,
+        borderRadius: radius.lg,
+        paddingHorizontal: 16,
+        paddingVertical: Platform.OS === 'ios' ? 14 : 8,
+    },
+    searchInput: {
+        flex: 1,
+        ...typography.bodySmall,
+        color: C.text,
+        padding: 0,
+    },
+    chipsRow: {
+        gap: 8,
+        paddingVertical: 14,
+        paddingRight: 8,
+    },
+    chip: {
+        backgroundColor: C.surface,
+        borderWidth: 1,
+        borderColor: C.border,
+        borderRadius: radius.pill,
+        paddingHorizontal: 20,
+        paddingVertical: 9,
+    },
+    chipActive: {
+        backgroundColor: C.primary,
+        borderColor: C.primary,
+    },
+    chipText: {
+        ...typography.button, fontSize: 12.5,
+        color: C.textSec,
+    },
+    chipTextActive: {
+        color: C.primaryText,
+    },
+    noResult: {
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 48,
+        paddingHorizontal: 24,
+    },
+    noResultText: {
+        ...typography.bodySmall,
+        color: C.textMuted,
+        textAlign: 'center',
+    },
+    emptyIconWrap: {
+        width: 72,
+        height: 72,
+        borderRadius: 24,
+        backgroundColor: C.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
     },
 
     /* ── Bandeau traduction ── */
@@ -991,7 +1124,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 7,
         alignSelf: 'flex-start',
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 999,
@@ -1047,7 +1180,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(252, 209, 22, 0.15)',
+        backgroundColor: 'rgba(0, 135, 81, 0.15)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -1243,6 +1376,27 @@ const styles = StyleSheet.create({
         ...typography.h1, fontSize: 26,
         color: C.primary,
         letterSpacing: -0.5,
+    },
+    totalValueMuted: {
+        ...typography.button, fontSize: 14,
+        color: C.text,
+    },
+    totalLabelStrong: {
+        ...typography.button, fontSize: 15,
+        color: C.text,
+    },
+    totalRowNote: {
+        marginTop: -8,
+        marginBottom: 12,
+    },
+    totalNote: {
+        ...typography.caption, fontSize: 11,
+        color: C.textMuted,
+    },
+    totalDivider: {
+        height: 1,
+        backgroundColor: C.border,
+        marginBottom: 14,
     },
     checkoutBtn: {
         flexDirection: 'row',

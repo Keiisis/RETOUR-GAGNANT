@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import {
     ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, Sparkles,
+    GitBranch, Plus,
 } from 'lucide-react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import { Download } from 'lucide-react-native'
@@ -239,6 +240,19 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
                 >
+                    {/* Carte d'intro (style Sleek) */}
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoIcon}>
+                            <GitBranch size={22} color="#fff" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.infoTitle}>{t('Plan de composition familiale')}</Text>
+                            <Text style={styles.infoDesc}>
+                                {t('Structure de votre lignée ascendante pour le dossier de nationalité.')}
+                            </Text>
+                        </View>
+                    </View>
+
                     <View style={styles.stat}>
                         <Sparkles size={16} color={C.primary} />
                         <Text style={styles.statText}>
@@ -246,33 +260,51 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                         </Text>
                     </View>
 
-                    {tiers.map(([tier, members]) => (
-                        <View key={tier} style={styles.tier}>
-                            <View style={styles.tierHead}>
-                                <View style={styles.tierDot} />
-                                <Text style={styles.tierTitle}>{t(TIER_TITLES[tier] || TIER_TITLES[5])}</Text>
-                                <Text style={styles.tierCount}>{members.length}</Text>
-                            </View>
-                            {members.map(p => (
-                                <Pressable key={p.id} style={styles.person} onPress={() => setSelected(p)}
-                                    accessibilityRole="button"
-                                    hitSlop={6}>
-                                    <PersonAvatar uri={p.avatar_url} self={!!p.is_self} />
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.personName}>{displayName(p)}</Text>
-                                        <Text style={styles.personRole}>{t(roleLabel(p.relation_role))}</Text>
-                                        {(p.birth_date || p.death_date) && (
-                                            <Text style={styles.personDates}>
-                                                {p.birth_date ? `${t('Né(e)')} ${fmtYear(p.birth_date)}` : ''}
-                                                {p.death_date ? ` · ${t('Décédé(e)')} ${fmtYear(p.death_date)}` : ''}
-                                            </Text>
-                                        )}
+                    {/* ═══ ARBRE (générations empilées, connectées) ═══ */}
+                    <View style={styles.tree}>
+                        {tiers.map(([tier, members], ti) => {
+                            const isSelf = tier === 0
+                            const isDeep = tier >= 2
+                            return (
+                                <View key={tier} style={styles.treeTier}>
+                                    {ti > 0 && <View style={styles.connector} />}
+                                    <View style={[styles.tierPill, isSelf && styles.tierPillSelf, isDeep && styles.tierPillGold]}>
+                                        <Text style={[styles.tierPillText, isDeep && styles.tierPillTextGold]}>
+                                            {isSelf ? t('Demandeur (Vous)') : t(TIER_TITLES[tier] || TIER_TITLES[5])}
+                                        </Text>
                                     </View>
-                                    <ChevronRight size={18} color={C.textMuted} />
-                                </Pressable>
-                            ))}
-                        </View>
-                    ))}
+
+                                    {isSelf ? (
+                                        members.map(p => (
+                                            <Pressable key={p.id} style={styles.selfNode} onPress={() => setSelected(p)}
+                                                accessibilityRole="button" hitSlop={6}>
+                                                <PersonAvatar uri={p.avatar_url} self size={60} />
+                                                <Text style={styles.selfName} numberOfLines={1}>{displayName(p)}</Text>
+                                            </Pressable>
+                                        ))
+                                    ) : (
+                                        <View style={styles.tierMembers}>
+                                            {members.map(p => (
+                                                <Pressable key={p.id} style={[styles.memberCard, isDeep && styles.memberCardGold]}
+                                                    onPress={() => setSelected(p)} accessibilityRole="button" hitSlop={6}>
+                                                    <Text style={styles.memberRole} numberOfLines={1}>{t(roleLabel(p.relation_role))}</Text>
+                                                    <Text style={styles.memberName} numberOfLines={1}>{displayName(p)}</Text>
+                                                </Pressable>
+                                            ))}
+                                        </View>
+                                    )}
+                                </View>
+                            )
+                        })}
+                    </View>
+
+                    {/* Compléter : le client ne modifie pas l'arbre (l'admin le construit) ;
+                        on l'oriente vers son conseiller au lieu d'un bouton d'ajout mort. */}
+                    <Pressable style={styles.addBtn} onPress={() => navigation.navigate('Main', { screen: 'Messages' })}
+                        accessibilityRole="button" hitSlop={6}>
+                        <Plus size={18} color={C.primary} />
+                        <Text style={styles.addBtnText}>{t('Compléter avec mon conseiller')}</Text>
+                    </Pressable>
 
                     <View style={styles.note}>
                         <Info size={14} color={C.textMuted} />
@@ -371,6 +403,33 @@ const styles = StyleSheet.create({
 
     stat: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surfaceWarm, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14, marginBottom: spacing.lg, borderWidth: 1, borderColor: C.borderGold },
     statText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.textSecondary },
+
+    /* ── Carte d'intro ── */
+    infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, backgroundColor: C.primarySoft, borderRadius: 24, padding: spacing.md + 2, marginBottom: spacing.lg, borderWidth: 1, borderColor: C.border },
+    infoIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', ...shadows.card },
+    infoTitle: { fontFamily: fonts.bodyBold, fontSize: 15, color: C.textPrimary, marginBottom: 2 },
+    infoDesc: { fontFamily: fonts.body, fontSize: 12, color: C.textMuted, lineHeight: 18 },
+
+    /* ── Arbre ── */
+    tree: { alignItems: 'center', paddingVertical: spacing.sm },
+    treeTier: { alignItems: 'center', width: '100%' },
+    connector: { width: 2, height: 26, backgroundColor: C.border },
+    tierPill: { backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 9, ...shadows.xs },
+    tierPillSelf: { borderColor: C.primary },
+    tierPillGold: { backgroundColor: C.surfaceWarm, borderColor: C.borderGold },
+    tierPillText: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textPrimary },
+    tierPillTextGold: { color: C.primary },
+    selfNode: { alignItems: 'center', gap: 8, marginTop: 12 },
+    selfName: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.4 },
+    tierMembers: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 12 },
+    memberCard: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', minWidth: 130, maxWidth: 150, ...shadows.xs },
+    memberCardGold: { borderColor: C.borderGold, backgroundColor: C.surfaceWarm },
+    memberRole: { fontFamily: fonts.bodyBold, fontSize: 9.5, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 },
+    memberName: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textPrimary, textAlign: 'center' },
+
+    /* ── CTA compléter ── */
+    addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.surface, borderWidth: 1, borderColor: C.primary, borderRadius: radius.lg, paddingVertical: 15, marginTop: spacing.lg },
+    addBtnText: { fontFamily: fonts.bodyBold, fontSize: 13.5, color: C.primary },
 
     tier: { marginBottom: spacing.lg },
     tierHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },

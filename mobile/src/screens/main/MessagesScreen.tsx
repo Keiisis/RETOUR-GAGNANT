@@ -66,7 +66,7 @@ function SuggestionChip({ text, onPress, delay = 0 }: { text: string; onPress: (
     const pressStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             pressAnim.value, [0, 1],
-            [C.surface, 'rgba(252, 209, 22, 0.08)']
+            [C.surface, 'rgba(0, 135, 81, 0.08)']
         ),
         borderColor: interpolateColor(
             pressAnim.value, [0, 1],
@@ -384,11 +384,18 @@ export default function MessagesScreen({ navigation }: any) {
                     </Pressable>
                 ) : null}
 
+                <View style={styles.headerAvatar}>
+                    <LucideIcon name="people" size={20} color={C.primaryText} />
+                </View>
+
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.navTitle} numberOfLines={1}>{t('Messagerie')}</Text>
-                    {/* Aucun délai de réponse annoncé : l'app n'a pas de SLA réel
-                        à afficher. On nomme l'interlocuteur, c'est vérifiable. */}
-                    <Text style={styles.navSubtitle} numberOfLines={1}>{t('Équipe RGB')}</Text>
+                    {/* On nomme l'interlocuteur (vérifiable) + statut de présence réel :
+                        l'équipe répond depuis le panel admin, pas de SLA fictif affiché. */}
+                    <Text style={styles.navTitle} numberOfLines={1}>{t('Équipe RGB')}</Text>
+                    <View style={styles.statusRow}>
+                        <View style={styles.statusDot} />
+                        <Text style={styles.statusText} numberOfLines={1}>{t('En ligne')}</Text>
+                    </View>
                 </View>
             </View>
 
@@ -510,10 +517,21 @@ const styles = StyleSheet.create({
 
     /* ── Nav Bar ── */
     topFlag: { marginHorizontal: spacing.gutter, borderRadius: radius.pill, overflow: 'hidden' },
-    navTitle: { ...typography.h1, color: C.text },
+    navTitle: { ...typography.h3, fontSize: 17, color: C.text },
     navSubtitle: { ...typography.bodySmall, color: C.textMuted, marginTop: 2 },
     navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.md },
     iconContainer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+    headerAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: radius.lg,
+        backgroundColor: C.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...shadows.card,
+    },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+    statusText: { ...typography.bodySmall, color: C.success, fontSize: 12 },
     statusDot: {
         width: 8,
         height: 8,

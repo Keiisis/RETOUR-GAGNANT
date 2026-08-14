@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
         flexShrink: 1,
     },
     stickyTitle: {
-        fontFamily: 'PlayfairDisplay_700Bold', fontSize: 14,
+        fontFamily: fonts.extrabold, fontSize: 14,
         color: royal.gold, letterSpacing: 2, textTransform: 'uppercase',
     },
     titleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: royal.gold, opacity: 0.8 },

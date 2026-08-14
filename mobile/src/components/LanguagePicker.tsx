@@ -1,50 +1,34 @@
-import React, { useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
-    View, Text, StyleSheet, TouchableOpacity,
-    Modal, Dimensions, Platform, Pressable,
+    View, Text, StyleSheet, TextInput,
+    Modal, ScrollView, Pressable,
 } from 'react-native'
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated'
-import { Check, ChevronRight, Globe, X } from 'lucide-react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Check, ChevronLeft, Search } from 'lucide-react-native'
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext'
-import { colors, spacing, radius, typography, shadows } from '../config/theme'
-
-const { height: SCREEN_H } = Dimensions.get('window')
-const SHEET_H = SCREEN_H * 0.62
+import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../config/theme'
+import { FlagBar } from './ui'
 
 interface LanguagePickerProps {
     visible: boolean
     onClose: () => void
 }
 
+/* Écran « Langue de l'application » : plein écran, fidèle à la maquette Sleek.
+   LOGIQUE préservée : useLang / setLang / les 6 langues supportées ; le choix
+   s'applique instantanément au tap (traduction en direct), pas de bouton. */
 export default function LanguagePicker({ visible, onClose }: LanguagePickerProps) {
     const { lang, setLang, t } = useLang()
-    const slide = useSharedValue(SHEET_H)
-    const fade = useSharedValue(0)
+    const insets = useSafeAreaInsets()
+    const [query, setQuery] = useState('')
 
-    // ── Open / close animation ──
-    useEffect(() => {
-        if (visible) {
-            fade.value = withTiming(1, { duration: 240 })
-            slide.value = withSpring(0, { damping: 22, stiffness: 260 })
-        } else {
-            fade.value = withTiming(0, { duration: 180 })
-            slide.value = withTiming(SHEET_H, { duration: 200 })
-        }
-    }, [visible, fade, slide])
-
-    const backdropStyle = useAnimatedStyle(() => ({
-        opacity: fade.value,
-    }))
-
-    const sheetStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: slide.value }],
-    }))
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase()
+        if (!q) return SUPPORTED_LANGUAGES
+        return SUPPORTED_LANGUAGES.filter(l =>
+            l.nativeLabel.toLowerCase().includes(q) || l.label.toLowerCase().includes(q)
+        )
+    }, [query])
 
     const handleSelect = (code: LangCode) => {
         setLang(code)
@@ -52,243 +36,163 @@ export default function LanguagePicker({ visible, onClose }: LanguagePickerProps
     }
 
     return (
-        <Modal transparent visible={visible} animationType="none" statusBarTranslucent onRequestClose={onClose}>
-            {/* Backdrop */}
-            <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }, backdropStyle]}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}
-                    accessibilityRole="button"
-                    accessibilityLabel="Fermer"
-                    hitSlop={6}/>
-            </Animated.View>
-
-            {/* Bottom sheet */}
-            <Animated.View style={[styles.sheet, sheetStyle]}>
-                {/* Handle */}
-                <View style={styles.handle}/>
+        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+            <View style={styles.container}>
+                {/* Liseré tricolore */}
+                <View style={{ paddingTop: insets.top }}>
+                    <FlagBar height={6} radiusTop={false} />
+                </View>
 
                 {/* Header */}
-                <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.sheetHeader}>
-                    {/* Gold accent line */}
-                    <View style={styles.goldAccent}/>
-
-                    <View style={styles.headerContent}>
-                        <View>
-                            <Text style={styles.headerTitle}>{t("Langue de l'application")}</Text>
-                            <Text style={styles.headerSub}>
-                                {t('Choisissez votre langue préférée')}
-                            </Text>
-                        </View>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel="Fermer"
-                            hitSlop={6}>
-                            <X size={18} color={colors.primary} strokeWidth={1.75} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Active language badge */}
-                    <View style={styles.activeBadge}>
-                        <Text style={styles.activeBadgeFlag}>
-                            {SUPPORTED_LANGUAGES.find(l => l.code === lang)?.flag}
-                        </Text>
-                        <Text style={styles.activeBadgeText}>
-                            {SUPPORTED_LANGUAGES.find(l => l.code === lang)?.nativeLabel}
-                        </Text>
-                        <View style={styles.activeDot}/>
-                    </View>
-                </LinearGradient>
-
-                {/* Language list */}
-                <View style={styles.list}>
-                    {SUPPORTED_LANGUAGES.map((item, index) => {
-                        const isSelected = item.code === lang
-                        const isLast = index === SUPPORTED_LANGUAGES.length - 1
-
-                        return (
-                            <TouchableOpacity
-                                key={item.code}
-                                style={[
-                                    styles.langItem,
-                                    isSelected && styles.langItemActive,
-                                    !isLast && styles.langItemBorder,
-                                ]}
-                                onPress={() => handleSelect(item.code)}
-                                activeOpacity={0.65}
-                                accessibilityRole="button"
-                                hitSlop={6}
-                            >
-                                {/* Flag */}
-                                <View style={[styles.flagWrap, isSelected && styles.flagWrapActive]}>
-                                    <Text style={styles.flag}>{item.flag}</Text>
-                                </View>
-
-                                {/* Labels */}
-                                <View style={styles.langLabels}>
-                                    <Text style={[styles.nativeLabel, isSelected && styles.nativeLabelActive]}>
-                                        {item.nativeLabel}
-                                    </Text>
-                                    <Text style={styles.frenchLabel}>{item.label}</Text>
-                                </View>
-
-                                {/* Check or arrow */}
-                                {isSelected ? (
-                                    <View style={styles.checkWrap}>
-                                        <LinearGradient
-                                            colors={[colors.gold, colors.goldDark]}
-                                            style={styles.checkGradient}
-                                        >
-                                            <Check size={14} color="#FFF" strokeWidth={1.75} />
-                                        </LinearGradient>
-                                    </View>
-                                ) : (
-                                    <ChevronRight size={16} color={colors.border} strokeWidth={1.75} />
-                                )}
-                            </TouchableOpacity>
-                        )
-                    })}
+                <View style={styles.header}>
+                    <Pressable
+                        onPress={onClose}
+                        style={styles.backBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Retour')}
+                        hitSlop={8}
+                    >
+                        <ChevronLeft size={24} color={C.text} strokeWidth={2} />
+                    </Pressable>
+                    <Text style={styles.headerTitle}>{t("Langue de l'application")}</Text>
                 </View>
 
-                {/* Footer note */}
-                <View style={styles.footer}>
-                    <Globe size={13} color={colors.textMuted} strokeWidth={1.75} />
-                    <Text style={styles.footerText}>
-                        {t('La traduction est automatique et propulsée par IA')}
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + spacing.lg }]}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <Text style={styles.intro}>
+                        {t("Choisissez la langue d'affichage. La traduction s'applique instantanément.")}
                     </Text>
-                </View>
 
-                {/* Safe area padding */}
-                <View style={{ height: Platform.OS === 'ios' ? 28 : 12 }}/>
-            </Animated.View>
+                    {/* Recherche */}
+                    <View style={styles.searchBar}>
+                        <Search size={20} color={C.textMuted} strokeWidth={2} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder={t('Rechercher une langue...')}
+                            placeholderTextColor={C.textMuted}
+                            value={query}
+                            onChangeText={setQuery}
+                            selectionColor={C.primary}
+                        />
+                    </View>
+
+                    {/* Liste */}
+                    <Text style={styles.sectionLabel}>{t('Langues disponibles')}</Text>
+                    <View style={styles.card}>
+                        {filtered.map((item, index) => {
+                            const isSelected = item.code === lang
+                            const isLast = index === filtered.length - 1
+                            return (
+                                <React.Fragment key={item.code}>
+                                    <Pressable
+                                        style={styles.row}
+                                        onPress={() => handleSelect(item.code)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: isSelected }}
+                                        hitSlop={4}
+                                    >
+                                        <View style={styles.flagTile}>
+                                            <Text style={styles.flag}>{item.flag}</Text>
+                                        </View>
+                                        <View style={styles.labels}>
+                                            <Text style={styles.nativeLabel}>{item.nativeLabel}</Text>
+                                            <Text style={styles.frenchLabel}>{item.label}</Text>
+                                        </View>
+                                        {isSelected && (
+                                            <View style={styles.checkCircle}>
+                                                <Check size={14} color={C.primaryText} strokeWidth={3} />
+                                            </View>
+                                        )}
+                                    </Pressable>
+                                    {!isLast && <View style={styles.divider} />}
+                                </React.Fragment>
+                            )
+                        })}
+                    </View>
+
+                    <Text style={styles.note}>
+                        {t('La traduction est automatique et peut comporter des imperfections.')}
+                    </Text>
+                </ScrollView>
+            </View>
         </Modal>
     )
 }
 
 const styles = StyleSheet.create({
-    sheet: {
-        position: 'absolute',
-        bottom: 0, left: 0, right: 0,
-        backgroundColor: colors.surface,
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        ...shadows.lg,
-        overflow: 'hidden',
-    },
+    container: { flex: 1, backgroundColor: C.bg },
 
-    handle: {
-        width: 40, height: 4, borderRadius: 2,
-        backgroundColor: colors.border,
-        alignSelf: 'center', marginTop: spacing.sm, marginBottom: 0,
-    },
-
-    // ── Header ──
-    sheetHeader: {
-        paddingHorizontal: spacing.lg,
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.lg,
+        paddingHorizontal: spacing.gutter,
         paddingTop: spacing.md,
         paddingBottom: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: C.border,
     },
-    goldAccent: {
-        position: 'absolute', top: 0, left: 0, right: 0,
-        height: 2, backgroundColor: colors.gold,
-    },
-    headerContent: {
-        flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    headerTitle: {
-        ...typography.h3,
-        color: colors.textOnDark,
-        fontSize: 16,
-    },
-    headerSub: {
-        ...typography.caption,
-        color: colors.primary + '99',
-        marginTop: spacing.xxs,
-    },
-    closeBtn: {
-        width: 34, height: 34, borderRadius: 17,
-        backgroundColor: colors.gold + '15',
+    backBtn: {
+        width: 40, height: 40, borderRadius: radius.pill,
+        borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    activeBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-        backgroundColor: colors.gold + '12',
-        borderRadius: radius.sm, borderWidth: 1, borderColor: colors.gold + '25',
-        paddingHorizontal: 12, paddingVertical: spacing.sm,
-        alignSelf: 'flex-start',
-    },
-    activeBadgeFlag: { fontSize: 18 },
-    activeBadgeText: {
-        ...typography.label,
-        color: colors.goldLight,
-        fontSize: 13,
-    },
-    activeDot: {
-        width: 7, height: 7, borderRadius: 3.5,
-        backgroundColor: colors.success,
-        marginLeft: spacing.xxs,
-    },
+    headerTitle: { ...typography.h2, fontFamily: fonts.extrabold, fontSize: 19, color: C.text },
 
-    // ── List ──
-    list: {
-        marginHorizontal: spacing.lg,
-        marginTop: spacing.md,
-        backgroundColor: colors.surfaceElevated,
+    scroll: { paddingHorizontal: spacing.gutter, paddingTop: spacing.lg },
+
+    intro: { ...typography.bodySmall, color: C.textMuted, lineHeight: 20, marginBottom: spacing.lg, paddingHorizontal: 2 },
+
+    searchBar: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        backgroundColor: C.surfaceAlt,
+        borderWidth: 1, borderColor: C.border,
         borderRadius: radius.lg,
-        borderWidth: 1, borderColor: colors.borderLight,
+        paddingHorizontal: 16, paddingVertical: 14,
+        marginBottom: spacing.xl,
+    },
+    searchInput: { flex: 1, ...typography.bodySmall, color: C.text, padding: 0 },
+
+    sectionLabel: {
+        ...typography.caption, fontSize: 10, color: C.primary,
+        textTransform: 'uppercase', letterSpacing: 2,
+        marginBottom: spacing.md, marginLeft: 2,
+    },
+    card: {
+        backgroundColor: C.surface,
+        borderRadius: radius.xxl,
+        borderWidth: 1, borderColor: C.border,
         overflow: 'hidden',
+        ...shadows.card,
     },
-    langItem: {
-        flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: spacing.md, paddingVertical: spacing.md,
-        gap: 12,
+    row: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2,
     },
-    langItemActive: {
-        backgroundColor: colors.goldMuted,
-    },
-    langItemBorder: {
-        borderBottomWidth: 1, borderBottomColor: colors.borderLight,
-    },
-
-    flagWrap: {
-        width: 44, height: 44, borderRadius: radius.md,
-        backgroundColor: colors.background,
+    flagTile: {
+        width: 40, height: 40, borderRadius: radius.md,
+        backgroundColor: C.surfaceAlt,
+        borderWidth: 1, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: colors.borderLight,
     },
-    flagWrapActive: {
-        borderColor: colors.gold + '40',
-        backgroundColor: colors.goldShimmer,
-    },
-    flag: { fontSize: 24 },
-
-    langLabels: { flex: 1 },
-    nativeLabel: {
-        ...typography.label, fontSize: 15,
-        color: colors.textPrimary,
-    },
-    nativeLabelActive: { color: colors.primary },
-    frenchLabel: {
-        ...typography.caption,
-        color: colors.textMuted, marginTop: spacing.xxs,
-    },
-
-    checkWrap: { width: 28, height: 28 },
-    checkGradient: {
-        width: 28, height: 28, borderRadius: 14,
+    flag: { fontSize: 20 },
+    labels: { flex: 1 },
+    nativeLabel: { ...typography.button, fontSize: 14, color: C.text },
+    frenchLabel: { ...typography.caption, fontSize: 10, color: C.textMuted, marginTop: 2 },
+    checkCircle: {
+        width: 24, height: 24, borderRadius: 12,
+        backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
-        ...shadows.gold,
+        ...shadows.card,
     },
+    divider: { height: 1, backgroundColor: C.border, marginHorizontal: spacing.lg },
 
-    // ── Footer ──
-    footer: {
-        flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-        marginHorizontal: spacing.lg, marginTop: spacing.md,
-        paddingHorizontal: 12, paddingVertical: spacing.sm,
-        backgroundColor: colors.navyMuted,
-        borderRadius: radius.sm,
-    },
-    footerText: {
-        ...typography.caption, fontSize: 12,
-        color: colors.textMuted, flex: 1,
+    note: {
+        ...typography.caption, fontSize: 10, color: C.textMuted,
+        textAlign: 'center', lineHeight: 16,
+        marginTop: spacing.xl, paddingHorizontal: spacing.xl,
     },
 })

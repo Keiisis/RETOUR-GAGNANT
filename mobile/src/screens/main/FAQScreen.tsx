@@ -178,11 +178,11 @@ function FaqItem({
     const iconBgStyle = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(0, 135, 81, 0.06)', 'rgba(252, 209, 22, 0.15)']
+            ['rgba(0, 135, 81, 0.06)', 'rgba(0, 135, 81, 0.15)']
         ),
         borderColor: interpolateColor(
             anim.value, [0, 1],
-            ['rgba(0, 135, 81, 0.08)', 'rgba(252, 209, 22, 0.35)']
+            ['rgba(0, 135, 81, 0.08)', 'rgba(0, 135, 81, 0.35)']
         ),
     }))
 
@@ -458,7 +458,7 @@ export default function FAQScreen() {
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + spacing.lg }]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* HEADER TITRE */}
@@ -676,7 +676,7 @@ export default function FAQScreen() {
                             </Text>
                         </Pressable>
 
-                        <Pressable style={styles.channelCard} onPress={() => Linking.openURL('https://wa.me/2290160322121')}
+                        <Pressable style={styles.channelCard} onPress={() => Linking.openURL('https://wa.me/2290194355050')}
                             accessibilityRole="button"
                             hitSlop={6}>
                             <View style={styles.channelIconWrap}>
@@ -684,11 +684,11 @@ export default function FAQScreen() {
                             </View>
                             <Text style={styles.channelLabel}>WhatsApp</Text>
                             <Text style={styles.channelValue}>
-                                +229 01 60 32 21 21
+                                +229 01 94 35 50 50
                             </Text>
                         </Pressable>
 
-                        <Pressable style={styles.channelCard} onPress={() => Linking.openURL('tel:+2290160322121')}
+                        <Pressable style={styles.channelCard} onPress={() => Linking.openURL('tel:+2290194355050')}
                             accessibilityRole="button"
                             hitSlop={6}>
                             <View style={styles.channelIconWrap}>
@@ -696,7 +696,7 @@ export default function FAQScreen() {
                             </View>
                             <Text style={styles.channelLabel}>{t('Téléphone')}</Text>
                             <Text style={styles.channelValue}>
-                                +229 01 60 32 21 21
+                                +229 01 94 35 50 50
                             </Text>
                         </Pressable>
                     </View>
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
                 color: C.textSec,
     },
     topicCountTextActive: {
-        color: C.primary,
+        color: C.primaryText,
     },
 
     /* ── Results count ── */

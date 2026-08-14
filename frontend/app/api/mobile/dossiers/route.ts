@@ -264,6 +264,7 @@ export async function POST(req: NextRequest) {
                 progression: 10,
                 etapes: [],
                 notes: notes || null,
+                source: 'mobile',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             })

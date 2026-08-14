@@ -54,6 +54,8 @@ export default function AdminDossiersPage() {
     const refetch = () => listResult?.query?.refetch()
 
     const [searchQuery, setSearchQuery] = useState('')
+    // Onglet « Service Mobile Dossier » : filtre les dossiers ouverts depuis l'app mobile.
+    const [sourceFilter, setSourceFilter] = useState<'all' | 'mobile'>('all')
     const [expandedId, setExpandedId] = useState<string | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
     // Agents assignables (chargés une fois)
@@ -329,11 +331,15 @@ export default function AdminDossiersPage() {
     }, [])
 
     const dossiers = data || []
-    const filtered = dossiers.filter((d: Record<string, unknown>) =>
-        (d.num_dossier as string)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (d.client_nom as string)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (d.client_prenom as string)?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const mobileCount = dossiers.filter((d: Record<string, unknown>) => d.source === 'mobile').length
+    const filtered = dossiers.filter((d: Record<string, unknown>) => {
+        const matchSearch =
+            (d.num_dossier as string)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (d.client_nom as string)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (d.client_prenom as string)?.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchSource = sourceFilter === 'all' || d.source === 'mobile'
+        return matchSearch && matchSource
+    })
 
     // ── Status mapping: dossier_tracking statuts → mobile dossiers statuses ──
     const trackingToMobileStatus: Record<string, string> = {
@@ -540,6 +546,26 @@ export default function AdminDossiersPage() {
                         <p className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.count}</p>
                         <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-1">{stat.label}</p>
                     </div>
+                ))}
+            </div>
+
+            {/* Onglets d'origine : Tous / Service Mobile Dossier */}
+            <div className="flex items-center gap-2 flex-wrap">
+                {([['all', 'Tous les dossiers', dossiers.length], ['mobile', 'Service Mobile Dossier', mobileCount]] as const).map(([key, label, count]) => (
+                    <button
+                        key={key}
+                        onClick={() => setSourceFilter(key)}
+                        className={cn(
+                            'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors border',
+                            sourceFilter === key
+                                ? 'bg-[#008751] text-white border-[#008751]'
+                                : 'bg-white/[0.03] text-gray-400 border-white/10 hover:text-white',
+                        )}
+                    >
+                        {key === 'mobile' && <span aria-hidden>📱</span>}
+                        {t(label)}
+                        <span className={cn('text-xs px-2 py-0.5 rounded-full font-mono', sourceFilter === key ? 'bg-white/20' : 'bg-white/10')}>{count}</span>
+                    </button>
                 ))}
             </div>
 

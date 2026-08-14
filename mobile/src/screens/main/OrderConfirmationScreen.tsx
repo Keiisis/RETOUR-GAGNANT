@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 9,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     timelineDotActive: {
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         borderColor: C.border,
     },
     timelineConnector: {
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 12,
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,

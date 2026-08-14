@@ -1,23 +1,23 @@
 /* ═══════════════════════════════════════════════════════════
-   Prêtres Fa & Racines : Annuaire + réservation de consultation
+   Prêtres Fa & Racines : Annuaire + réservation de consultation.
    Consomme /api/fa-priests (annuaire) + /api/services/fa-checkout
    (commande serveur) + Kkiapay (paiement natif) + /api/checkout/verify.
-   Design : Nexus Emerald (mode clair), tricolore Bénin en touches.
-   ─── ui-ux-pro-max / design-taste : anti-slop, tactile, hiérarchie claire ───
+   Rendu fidèle à la maquette Sleek exportée (hero editorial, bande verte,
+   annuaire, FAQ, CTA, barre collante) ; LOGIQUE inchangée.
 ═══════════════════════════════════════════════════════════ */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from '../../lib/feedback'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image, FlatList,
-    ActivityIndicator, TextInput, Platform, Modal,
+    ActivityIndicator, TextInput, Platform, Modal, Share, LayoutAnimation, UIManager,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
 import {
-    ArrowLeft, Star, MapPin, Video, Users, Check, X, Award,
-    Languages, ShieldCheck, Sparkles, ChevronRight, Quote,
+    ChevronLeft, Share2, Star, MapPin, Video, Users, Check, Award,
+    Languages, ShieldCheck, Sparkles, ChevronDown, Quote,
 } from 'lucide-react-native'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
@@ -26,6 +26,10 @@ import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true)
+}
 
 interface Review { author_name: string; rating: number; comment: string | null; created_at: string }
 interface Priest {
@@ -46,8 +50,22 @@ interface Priest {
     reviews: Review[]
 }
 interface PricingOption { label: string; price: string }
-
 type Mode = 'presentiel' | 'visio'
+
+const PLAYFAIR = fonts.extrabold
+
+const PILIERS = [
+    { icon: Award, title: 'Authenticité', desc: 'Rites et procédés transmis depuis des millénaires.' },
+    { icon: Users, title: 'Prêtres vérifiés', desc: 'Sélectionnés pour leur éthique et leur savoir.' },
+    { icon: MapPin, title: 'Format flexible', desc: 'À Cotonou ou en visioconférence sécurisée.' },
+    { icon: ShieldCheck, title: 'Respect total', desc: 'Bienveillance envers votre parcours personnel.' },
+]
+
+const FAQ = [
+    { q: 'Comment se déroule la séance ?', r: 'Vous échangez avec le prêtre, qui procède à la consultation du Fa, interprète les signes et vous transmet des conseils clairs, avec respect et discrétion.' },
+    { q: 'Puis-je consulter à distance ?', r: 'Oui, via une visioconférence sécurisée. Le prêtre utilise les mêmes outils sacrés et la connexion spirituelle reste identique à une séance physique.' },
+    { q: 'Le paiement est-il sécurisé ?', r: 'Oui. Le paiement se fait par Mobile Money ou carte, de façon 100% sécurisée. Un reçu vous est envoyé par email dès confirmation.' },
+]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function FaScreen({ navigation }: { navigation: any }) {
@@ -56,14 +74,11 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     const { t } = useLang()
 
     const [priests, setPriests] = useState<Priest[]>([])
-    /* Distingue « aucun prêtre publié » de « la requête a échoué » :
-       le même message pour deux causes opposées empêchait de savoir
-       s'il fallait saisir des données ou corriger un accès. */
     const [erreurAnnuaire, setErreurAnnuaire] = useState<string | null>(null)
     const [prices, setPrices] = useState<{ presentiel?: string; visio?: string }>({})
     const [loading, setLoading] = useState(true)
-
     const [detail, setDetail] = useState<Priest | null>(null)
+    const [openFaq, setOpenFaq] = useState<number | null>(1)
 
     // Réservation
     const [booking, setBooking] = useState<Priest | null>(null)
@@ -98,24 +113,6 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     const sData = await sRes.json().catch(() => ({}))
                     const svc = sData?.service || sData || {}
                     const opts: PricingOption[] = svc.pricing_options || []
-
-                    /* Deux sources, dans cet ordre :
-
-                       1. `pricing_options` : le detail par mode, quand l'admin l'a
-                          renseigne. La recherche est LARGE : les libelles varient
-                          d'une saisie a l'autre (« Presentiel », « En presentiel »,
-                          « Sur place », « Visio », « Visioconference », « A
-                          distance »). Un `includes('presentiel')` strict ne
-                          trouvait rien des que le libelle differait.
-
-                       2. `price_display` : la ligne unique affichee par la liste
-                          des services, du type « Presentiel 350 € · Visio 380 € ».
-                          C'est CE champ que l'ecran des services lit, et c'est
-                          pour cela que la liste affichait des prix la ou cet ecran
-                          n'affichait rien : il interrogeait une autre colonne.
-
-                       Sans l'un ni l'autre, on n'invente rien : les cartes restent
-                       sans montant plutot que d'annoncer un prix faux. */
                     const chercher = (mots: string[]) => {
                         const trouve = opts.find(o => {
                             const l = (o.label || '').toLowerCase()
@@ -125,10 +122,8 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     }
                     let presentiel = chercher(['présentiel', 'presentiel', 'sur place', 'in-person', 'in person'])
                     let visio = chercher(['visio', 'distance', 'video', 'vidéo', 'ligne'])
-
                     if (!presentiel || !visio) {
                         const ligne: string = svc.price_display || svc.price || ''
-                        // « Présentiel 350 € · Visio 380 € » → on isole chaque montant.
                         const parts = ligne.split(/[·|,;]/)
                         for (const part of parts) {
                             const bas = part.toLowerCase()
@@ -138,7 +133,6 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                             if (!visio && /visio|distance|video|vidéo|ligne/.test(bas)) visio = montant
                         }
                     }
-
                     if (alive) setPrices({ presentiel, visio })
                 }
             } catch (e) {
@@ -228,27 +222,116 @@ export default function FaScreen({ navigation }: { navigation: any }) {
         }
     }, [pendingOrder, t])
 
+    const fromPrice = prices.presentiel || prices.visio || ''
+
+    const toggleFaq = (i: number) => {
+        LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'))
+        setOpenFaq(prev => (prev === i ? null : i))
+    }
+    const onShare = () => Share.share({ message: t('Consultez un prêtre du Fa avec Retour Gagnant : https://www.retourgagnantbenin.bj/services/consultation-fa-racines') }).catch(() => {})
+
+    const ListHeader = (
+        <View>
+            {/* Hero */}
+            <Animated.View entering={FadeInUp.duration(420)} style={styles.hero}>
+                <View style={styles.badge}>
+                    <Sparkles size={14} color={C.primary} strokeWidth={2.2} />
+                    <Text style={styles.badgeText}>{t('Consultation du Fa & Racines')}</Text>
+                </View>
+                <Text style={styles.heroTitle}>{t('La sagesse ancestrale pour éclairer votre retour')}</Text>
+                <Text style={styles.heroSub}>{t("Le Fa est bien plus qu'une géomancie : c'est une boussole spirituelle. Consultez des prêtres certifiés pour reconnecter avec votre lignée et vos racines.")}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+                    {[
+                        { icon: ShieldCheck, label: 'Prêtres certifiés' },
+                        { icon: Video, label: 'Présentiel ou visio' },
+                        { icon: Sparkles, label: 'Consultation authentique' },
+                    ].map(({ icon: Ic, label }) => (
+                        <View key={label} style={styles.heroChip}>
+                            <Ic size={14} color={C.primary} strokeWidth={2.2} />
+                            <Text style={styles.heroChipText}>{t(label)}</Text>
+                        </View>
+                    ))}
+                </ScrollView>
+            </Animated.View>
+
+            {/* Trust strip */}
+            <View style={styles.trustStrip}>
+                {['Premier échange gratuit', 'Confidentialité', 'Respect & méthode'].map((tr, i) => (
+                    <React.Fragment key={tr}>
+                        {i > 0 && <Text style={styles.trustDot}>•</Text>}
+                        <Text style={styles.trustText}>{t(tr)}</Text>
+                    </React.Fragment>
+                ))}
+            </View>
+
+            {/* Bande verte piliers */}
+            <View style={styles.pilierBand}>
+                {PILIERS.map(({ icon: Ic, title, desc }) => (
+                    <View key={title} style={styles.pilier}>
+                        <View style={styles.pilierIcon}><Ic size={22} color={"#FFFFFF"} strokeWidth={2} /></View>
+                        <Text style={styles.pilierTitle}>{t(title)}</Text>
+                        <Text style={styles.pilierDesc}>{t(desc)}</Text>
+                    </View>
+                ))}
+            </View>
+
+            {/* Notre métier */}
+            <View style={styles.metierSection}>
+                <Text style={styles.eyebrow}>{t('Notre métier')}</Text>
+                <Text style={styles.metierTitle}>{t("Faciliter le dialogue avec l'invisible")}</Text>
+                <Text style={styles.metierText}>{t("Retour Gagnant Bénin n'est pas un cabinet de voyance. Nous sommes un pont entre la diaspora et les gardiens du temple. Nous sélectionnons des prêtres dont la crédibilité est reconnue au Bénin, pour une consultation pure de tout artifice commercial.")}</Text>
+            </View>
+
+            {/* Annuaire */}
+            <Text style={styles.annuaireTitle}>{t("L'Annuaire des Prêtres")}</Text>
+        </View>
+    )
+
+    const ListFooter = (
+        <View>
+            {/* FAQ */}
+            <View style={styles.faqSection}>
+                <Text style={styles.annuaireTitle}>{t('Questions fréquentes')}</Text>
+                {FAQ.map((f, i) => {
+                    const open = openFaq === i
+                    return (
+                        <Pressable key={i} onPress={() => toggleFaq(i)} style={styles.faqCard} accessibilityRole="button">
+                            <View style={styles.faqHead}>
+                                <Text style={styles.faqQ}>{t(f.q)}</Text>
+                                <ChevronDown size={18} color={C.textMuted} style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }} />
+                            </View>
+                            {open && <Text style={styles.faqA}>{t(f.r)}</Text>}
+                        </Pressable>
+                    )
+                })}
+            </View>
+
+            {/* CTA final */}
+            <View style={styles.finalSection}>
+                <Text style={styles.finalTitle}>{t('Prêt à consulter le Fa ?')}</Text>
+                <Text style={styles.finalText}>{t('Reconnectez avec votre histoire et obtenez des réponses claires sur votre avenir.')}</Text>
+                <Pressable style={({ pressed }) => [styles.finalBtn, pressed && { transform: [{ scale: 0.98 }] }]} onPress={() => openBooking(null)} accessibilityRole="button">
+                    <Text style={styles.finalBtnText}>{t('Réserver ma consultation')}</Text>
+                </Pressable>
+            </View>
+        </View>
+    )
+
     return (
         <View style={styles.container}>
-            {/* HEADER */}
-            <View style={[styles.topFlag, { marginTop: insets.top + 8 }]}>
+            <View style={{ paddingTop: insets.top }}>
                 <FlagBar height={6} radiusTop={false} />
             </View>
 
+            {/* Header */}
             <View style={styles.header}>
-                <Pressable
-                    onPress={() => navigation.goBack()}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('Retour')}
-                    hitSlop={12}
-                    style={styles.back}
-                >
-                    <ArrowLeft size={20} color={C.textPrimary} />
+                <Pressable onPress={() => navigation.goBack()} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
+                    <ChevronLeft size={24} color={C.textPrimary} strokeWidth={2.2} />
                 </Pressable>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.hTitle}>{t('Prêtres Fa & Racines')}</Text>
-                    <Text style={styles.hSub}>{t('Consultez un maître du Fa pour renouer avec vos ancêtres')}</Text>
-                </View>
+                <Text style={styles.headerTitle}>{t('Consultation Fa')}</Text>
+                <Pressable onPress={onShare} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
+                    <Share2 size={19} color={C.textPrimary} strokeWidth={2} />
+                </Pressable>
             </View>
 
             {loading ? (
@@ -257,56 +340,40 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                 <FlatList
                     data={priests}
                     keyExtractor={p => p.id}
-                    contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + 24 }}
+                    contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
                     showsVerticalScrollIndicator={false}
-                    ListHeaderComponent={
-                        <View style={styles.intro}>
-                            <View style={styles.introIcon}><Sparkles size={18} color={C.primary} /></View>
-                            <Text style={styles.introText}>
-                                {t('Le Fa est la sagesse divinatoire du Bénin. Nos prêtres accompagnent votre quête de racines avec respect et discrétion.')}
-                            </Text>
-                        </View>
-                    }
+                    ListHeaderComponent={ListHeader}
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <Text style={styles.emptyText}>{erreurAnnuaire
                                 ? `${t('Annuaire momentanément inaccessible.')} (${erreurAnnuaire})`
-                                : t('Nos prêtres ne sont pas encore présentés ici. Vous pouvez réserver dès maintenant : notre équipe vous met en relation avec un Bokonon reconnu.')}</Text>
+                                : t("Nos prêtres ne sont pas encore présentés ici. Vous pouvez réserver dès maintenant : notre équipe vous met en relation avec un Bokonon reconnu.")}</Text>
                         </View>
                     }
                     renderItem={({ item }) => (
-                        <PriestCard priest={item} t={t} onOpen={() => setDetail(item)} onBook={() => openBooking(item)} />
+                        <View style={{ paddingHorizontal: spacing.lg }}>
+                            <PriestCard priest={item} t={t} onOpen={() => setDetail(item)} />
+                        </View>
                     )}
-                    ListFooterComponent={
-                        /* Ce bouton ne s'affichait QUE si l'annuaire contenait au
-                           moins un prêtre. L'annuaire étant vide, l'écran devenait
-                           un cul-de-sac : plus aucun moyen de réserver.
-
-                           Or le site ne liste aucun prêtre : il propose
-                           directement le choix du mode, le prix et le paiement.
-                           La réservation ne doit donc jamais dépendre de
-                           l'annuaire : celui-ci n'est qu'un confort quand des
-                           prêtres sont publiés. */
-                        <Pressable style={styles.anyBtn} onPress={() => openBooking(null)}
-                            accessibilityRole="button"
-                            hitSlop={6}>
-                            <Text style={styles.anyBtnText}>
-                                {priests.length > 0
-                                    ? t('Réserver sans choisir de prêtre')
-                                    : t('Réserver ma consultation')}
-                            </Text>
-                            <ChevronRight size={16} color={C.primary} />
-                        </Pressable>
-                    }
+                    ListFooterComponent={ListFooter}
                 />
             )}
+
+            {/* Barre collante */}
+            <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
+                <View>
+                    <Text style={styles.stickyLabel}>{fromPrice ? t('À partir de') : t('Consultation')}</Text>
+                    <Text style={styles.stickyValue}>{fromPrice || t('Sur réservation')}</Text>
+                </View>
+                <Pressable onPress={() => openBooking(null)} style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }]} accessibilityRole="button">
+                    <Text style={styles.stickyBtnText}>{t('Réserver')}</Text>
+                </Pressable>
+            </View>
 
             {/* DÉTAIL PRÊTRE */}
             <Modal visible={!!detail} animationType="slide" transparent onRequestClose={() => setDetail(null)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setDetail(null)}
-                        accessibilityRole="button"
-                        hitSlop={6} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setDetail(null)} accessibilityRole="button" hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         {detail && (
                             <ScrollView showsVerticalScrollIndicator={false}>
@@ -364,9 +431,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                     </Section>
                                 )}
 
-                                <Pressable style={styles.cta} onPress={() => { const p = detail; setDetail(null); openBooking(p) }}
-                                    accessibilityRole="button"
-                                    hitSlop={6}>
+                                <Pressable style={styles.cta} onPress={() => { const p = detail; setDetail(null); openBooking(p) }} accessibilityRole="button" hitSlop={6}>
                                     <Text style={styles.ctaText}>{t('Réserver une consultation')}</Text>
                                 </Pressable>
                             </ScrollView>
@@ -378,9 +443,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             {/* RÉSERVATION */}
             <Modal visible={booking !== null} animationType="slide" transparent onRequestClose={() => setBooking(null)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setBooking(null)}
-                        accessibilityRole="button"
-                        hitSlop={6} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setBooking(null)} accessibilityRole="button" hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <View style={styles.sheetHandle} />
@@ -407,9 +470,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                 keyboardType="phone-pad"
                                 value={form.phone} onChangeText={v => setForm(f => ({ ...f, phone: v }))} />
 
-                            <Pressable style={styles.clauseRow} onPress={() => setClause(c => !c)}
-                                accessibilityRole="button"
-                                hitSlop={6}>
+                            <Pressable style={styles.clauseRow} onPress={() => setClause(c => !c)} accessibilityRole="button" hitSlop={6}>
                                 <View style={[styles.checkbox, clause && styles.checkboxOn]}>
                                     {clause && <Check size={13} color="#fff" />}
                                 </View>
@@ -418,12 +479,8 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                                 </Text>
                             </Pressable>
 
-                            <Pressable style={[styles.cta, submitting && { opacity: 0.6 }]} disabled={submitting} onPress={submitBooking}
-                                accessibilityRole="button"
-                                hitSlop={6}>
-                                {submitting
-                                    ? <ActivityIndicator color="#fff" />
-                                    : <Text style={styles.ctaText}>{t('Réserver et payer')}</Text>}
+                            <Pressable style={[styles.cta, submitting && { opacity: 0.6 }]} disabled={submitting} onPress={submitBooking} accessibilityRole="button" hitSlop={6}>
+                                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.ctaText}>{t('Réserver et payer')}</Text>}
                             </Pressable>
                             <Text style={styles.secure}>{t('Paiement sécurisé : Mobile Money / Carte')}</Text>
                         </ScrollView>
@@ -444,10 +501,11 @@ export default function FaScreen({ navigation }: { navigation: any }) {
 
 /* ── Sous-composants ─────────────────────────────────────── */
 
-function PriestAvatar({ uri, size = 56 }: { uri?: string | null; size?: number }) {
-    if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: C.surfaceWarm }} />
+function PriestAvatar({ uri, size = 56, square = false }: { uri?: string | null; size?: number; square?: boolean }) {
+    const br = square ? radius.xxl : size / 2
+    if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: br, backgroundColor: C.surfaceWarm }} />
     return (
-        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: size, height: size, borderRadius: br, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={size * 0.4} color={C.primary} />
         </View>
     )
@@ -474,9 +532,7 @@ function RatingRow({ avg, count, t }: { avg: number; count: number; t: (s: strin
 }
 
 function Meta({ icon, text }: { icon: React.ReactNode; text: string }) {
-    return (
-        <View style={styles.meta}>{icon}<Text style={styles.metaText}>{text}</Text></View>
-    )
+    return <View style={styles.meta}>{icon}<Text style={styles.metaText}>{text}</Text></View>
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -490,9 +546,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ModeCard({ active, onPress, icon, label, price }: { active: boolean; onPress: () => void; icon: React.ReactNode; label: string; price?: string }) {
     return (
-        <Pressable style={[styles.modeCard, active && styles.modeCardActive]} onPress={onPress}
-            accessibilityRole="button"
-            hitSlop={6}>
+        <Pressable style={[styles.modeCard, active && styles.modeCardActive]} onPress={onPress} accessibilityRole="button" hitSlop={6}>
             <View style={[styles.modeIcon, active && { backgroundColor: 'rgba(255,255,255,0.2)' }]}>{icon}</View>
             <Text style={[styles.modeLabel, active && { color: '#fff' }]}>{label}</Text>
             {!!price && <Text style={[styles.modePrice, active && { color: 'rgba(255,255,255,0.9)' }]}>{price}</Text>}
@@ -501,34 +555,41 @@ function ModeCard({ active, onPress, icon, label, price }: { active: boolean; on
 }
 
 const PriestCard = React.memo(function PriestCard(
-    { priest, t, onOpen, onBook }: { priest: Priest; t: (s: string) => string; onOpen: () => void; onBook: () => void },
+    { priest, t, onOpen }: { priest: Priest; t: (s: string) => string; onOpen: () => void },
 ) {
-    const first = useMemo(() => (priest.prestations || []).slice(0, 3), [priest.prestations])
+    const chips = useMemo(() => [
+        ...(priest.langues || []).slice(0, 2),
+        priest.experience_ans ? `${priest.experience_ans} ${t('ans exp.')}` : null,
+    ].filter(Boolean) as string[], [priest.langues, priest.experience_ans, t])
+
     return (
-        <Pressable style={styles.card} onPress={onOpen}
-            accessibilityRole="button"
-            hitSlop={6}>
+        <Pressable style={styles.card} onPress={onOpen} accessibilityRole="button" hitSlop={4}>
             <View style={styles.cardTop}>
-                <PriestAvatar uri={priest.photo_url} size={64} />
+                <View>
+                    <PriestAvatar uri={priest.photo_url} size={92} square />
+                    <View style={styles.cardCheck}><Check size={13} color="#fff" strokeWidth={3} /></View>
+                </View>
                 <View style={{ flex: 1 }}>
+                    <View style={styles.cardRatingRow}>
+                        <Star size={14} color={C.gold} fill={C.gold} />
+                        <Text style={styles.cardRatingVal}>{priest.rating_count ? priest.rating_avg.toFixed(1) : t('Nouveau')}</Text>
+                        {priest.rating_count ? <Text style={styles.cardRatingCount}>({priest.rating_count} {t('avis')})</Text> : null}
+                    </View>
                     <Text style={styles.cardName}>{priest.prenom} {priest.nom}</Text>
                     {!!priest.titre && <Text style={styles.cardTitre} numberOfLines={1}>{priest.titre}</Text>}
-                    <RatingRow avg={priest.rating_avg} count={priest.rating_count} t={t} />
+                    {!!priest.localisation && (
+                        <View style={styles.cardLoc}><MapPin size={12} color={C.textMuted} /><Text style={styles.cardLocText}>{priest.localisation}</Text></View>
+                    )}
                 </View>
             </View>
-            {!!priest.localisation && (
-                <View style={styles.cardLoc}><MapPin size={12} color={C.textMuted} /><Text style={styles.cardLocText}>{priest.localisation}</Text></View>
-            )}
-            {first.length > 0 && (
-                <View style={styles.chipWrap}>
-                    {first.map((p, i) => <View key={i} style={styles.chipSm}><Text style={styles.chipSmText}>{p}</Text></View>)}
+            {chips.length > 0 && (
+                <View style={styles.cardChips}>
+                    {chips.map((c, i) => <View key={i} style={styles.chipSm}><Text style={styles.chipSmText}>{c}</Text></View>)}
                 </View>
             )}
-            <Pressable style={styles.cardBtn} onPress={onBook}
-                accessibilityRole="button"
-                hitSlop={6}>
-                <Text style={styles.cardBtnText}>{t('Réserver')}</Text>
-                <ChevronRight size={15} color="#fff" />
+            {!!priest.bio && <Text style={styles.cardBio} numberOfLines={2}>{priest.bio}</Text>}
+            <Pressable style={styles.cardBtn} onPress={onOpen} accessibilityRole="button" hitSlop={6}>
+                <Text style={styles.cardBtnText}>{t('Voir le profil complet')}</Text>
             </Pressable>
         </Pressable>
     )
@@ -538,39 +599,89 @@ const PriestCard = React.memo(function PriestCard(
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    topFlag: { marginHorizontal: spacing.lg, borderRadius: radius.pill, overflow: 'hidden' },
-    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
-    back: { width: 44, height: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
-    hTitle: { ...typography.h2, color: C.textPrimary },
-    hSub: { ...typography.bodySmall, color: C.textMuted, marginTop: 2 },
 
-    intro: { flexDirection: 'row', gap: 12, backgroundColor: C.surfaceWarm, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: C.borderGold },
-    introIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: C.goldMuted, alignItems: 'center', justifyContent: 'center' },
-    introText: { flex: 1, fontFamily: fonts.body, fontSize: 12.5, color: C.textSecondary, lineHeight: 19 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+    circleBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+    headerTitle: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textMuted, letterSpacing: 2, textTransform: 'uppercase' },
 
-    empty: { padding: spacing.xl, alignItems: 'center' },
+    /* Hero */
+    hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, marginBottom: spacing.lg },
+    badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginBottom: spacing.md },
+    badgeText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    heroTitle: { fontFamily: PLAYFAIR, fontSize: 30, lineHeight: 36, color: C.textPrimary, marginBottom: spacing.sm },
+    heroSub: { ...typography.body, color: C.textMuted, marginBottom: spacing.md, lineHeight: 23 },
+    chipsRow: { gap: spacing.sm, paddingVertical: 2 },
+    heroChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8, ...shadows.sm },
+    heroChipText: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textPrimary },
+
+    /* Trust strip */
+    trustStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: spacing.lg, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, marginBottom: spacing.xl, flexWrap: 'wrap' },
+    trustText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    trustDot: { color: C.gold, fontSize: 12 },
+
+    /* Bande verte */
+    pilierBand: { backgroundColor: C.primary, borderRadius: radius.xxl, marginHorizontal: spacing.md, paddingVertical: 28, paddingHorizontal: spacing.lg, marginBottom: spacing.xl, flexDirection: 'row', flexWrap: 'wrap', ...shadows.md },
+    pilier: { width: '50%', paddingRight: spacing.md, marginBottom: spacing.lg },
+    pilierIcon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+    pilierTitle: { color: '#FFFFFF', fontFamily: fonts.bodyBold, fontSize: 14 },
+    pilierDesc: { color: 'rgba(255,255,255,0.72)', fontSize: 11, lineHeight: 16, marginTop: 4 },
+
+    /* Notre métier */
+    metierSection: { paddingHorizontal: spacing.lg, marginBottom: spacing.xl },
+    eyebrow: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
+    metierTitle: { fontFamily: PLAYFAIR, fontSize: 22, lineHeight: 28, color: C.textPrimary, marginBottom: spacing.md },
+    metierText: { ...typography.body, color: C.textMuted, lineHeight: 23 },
+
+    annuaireTitle: { fontFamily: fonts.heading, fontSize: 19, color: C.textPrimary, paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
+
+    empty: { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, alignItems: 'center' },
     emptyText: { fontFamily: fonts.body, color: C.textMuted, textAlign: 'center' },
 
-    card: { backgroundColor: C.surface, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: C.border, ...shadows.sm },
-    cardTop: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    cardName: { fontFamily: fonts.bodyBold, fontSize: 16, color: C.textPrimary },
-    cardTitre: { fontFamily: fonts.body, fontSize: 12.5, color: C.textMuted, marginTop: 1 },
-    cardLoc: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
-    cardLocText: { fontFamily: fonts.body, fontSize: 12, color: C.textMuted },
-    cardBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: C.primary, borderRadius: radius.md, paddingVertical: 10, marginTop: spacing.md },
-    cardBtnText: { fontFamily: fonts.bodyBold, fontSize: 13.5, color: '#fff' },
-
-    anyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 14, marginTop: 4 },
-    anyBtnText: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: C.primary },
+    /* Priest card */
+    card: { backgroundColor: C.surface, borderRadius: radius.xxl, padding: spacing.lg, marginBottom: spacing.lg, borderWidth: 1, borderColor: C.border, ...shadows.md },
+    cardTop: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
+    cardCheck: { position: 'absolute', bottom: -6, right: -6, width: 26, height: 26, borderRadius: 13, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.surface },
+    cardRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+    cardRatingVal: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textPrimary },
+    cardRatingCount: { fontFamily: fonts.body, fontSize: 10, color: C.textMuted },
+    cardName: { fontFamily: fonts.bodyBold, fontSize: 18, color: C.textPrimary },
+    cardTitre: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.primary, marginTop: 2, letterSpacing: 0.5, textTransform: 'uppercase' },
+    cardLoc: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
+    cardLocText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: C.textMuted },
+    cardChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md },
+    cardBio: { fontFamily: fonts.body, fontSize: 12.5, color: C.textMuted, lineHeight: 19, marginBottom: spacing.md },
+    cardBtn: { alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.primary, borderRadius: radius.lg, paddingVertical: 13 },
+    cardBtnText: { fontFamily: fonts.bodyBold, fontSize: 13.5, color: C.primary },
 
     chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.sm },
     chip: { backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
     chipText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primaryDark },
-    chipSm: { backgroundColor: C.surfaceWarm, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
-    chipSmText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
+    chipSm: { backgroundColor: C.surfaceWarm, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: C.border },
+    chipSmText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 },
 
     ratingText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
     noRating: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primary, marginTop: 3 },
+
+    /* FAQ */
+    faqSection: { marginTop: spacing.md, marginBottom: spacing.lg },
+    faqCard: { marginHorizontal: spacing.lg, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm },
+    faqHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+    faqQ: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 14, color: C.textPrimary },
+    faqA: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: C.textMuted, marginTop: spacing.sm },
+
+    /* CTA final */
+    finalSection: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl, alignItems: 'center' },
+    finalTitle: { fontFamily: PLAYFAIR, fontSize: 24, color: C.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
+    finalText: { ...typography.body, color: C.textMuted, textAlign: 'center', marginBottom: spacing.lg },
+    finalBtn: { width: '100%', backgroundColor: C.primary, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', ...shadows.md },
+    finalBtnText: { fontFamily: fonts.bodyBold, fontSize: 15, color: '#fff' },
+
+    /* Sticky bar */
+    stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.lg, paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
+    stickyLabel: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickyValue: { fontFamily: fonts.heading, fontSize: 17, color: C.primaryDark, marginTop: 1 },
+    stickyBtn: { backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 28, paddingVertical: 13, ...shadows.sm },
+    stickyBtnText: { fontFamily: fonts.bodyBold, fontSize: 14, color: '#fff' },
 
     // Sheets
     sheetWrap: { flex: 1, justifyContent: 'flex-end' },

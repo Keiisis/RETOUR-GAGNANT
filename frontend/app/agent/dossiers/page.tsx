@@ -28,6 +28,7 @@ interface Dossier {
     message_thread_id?: string
     dossier_ref_id?: string
     agent_assigne?: string | null
+    source?: string
 }
 
 interface DossierDoc {
@@ -63,6 +64,8 @@ export default function AgentDossiersPage() {
     const [search, setSearch] = useState('')
     const [currentUserId, setCurrentUserId] = useState('')
     const [onlyMine, setOnlyMine] = useState(false)
+    // Filtre « Service Mobile Dossier » : dossiers ouverts depuis l'app mobile.
+    const [mobileOnly, setMobileOnly] = useState(false)
     const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
     const [noteText, setNoteText] = useState('')
     const [docRequest, setDocRequest] = useState('')
@@ -402,6 +405,8 @@ export default function AgentDossiersPage() {
     const filtered = dossiers.filter(d => {
         // Filtre « Mes dossiers » : uniquement ceux dont je suis responsable.
         if (onlyMine && d.agent_assigne !== currentUserId) return false
+        // Filtre « Service Mobile » : uniquement les dossiers ouverts depuis l'app.
+        if (mobileOnly && d.source !== 'mobile') return false
         const q = search.toLowerCase()
         return d.num_dossier?.toLowerCase().includes(q)
             || d.client_nom?.toLowerCase().includes(q)
@@ -409,6 +414,7 @@ export default function AgentDossiersPage() {
     })
 
     const mineCount = dossiers.filter(d => d.agent_assigne === currentUserId).length
+    const mobileCount = dossiers.filter(d => d.source === 'mobile').length
 
     const getDossiersByStatus = (status: DossierStatus) =>
         filtered.filter(d => d.statut === status)
@@ -465,6 +471,17 @@ export default function AgentDossiersPage() {
                         title="N'afficher que les dossiers dont je suis responsable"
                     >
                         Mes dossiers{mineCount > 0 ? ` (${mineCount})` : ''}
+                    </button>
+                    {/* Bascule « Service Mobile Dossier » : ouverts depuis l'app mobile. */}
+                    <button
+                        type="button"
+                        onClick={() => setMobileOnly(v => !v)}
+                        className={`py-2.5 px-3.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${mobileOnly
+                            ? 'bg-emerald-500 text-white border-emerald-500'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:border-emerald-500/40'}`}
+                        title="N'afficher que les dossiers ouverts depuis l'application mobile"
+                    >
+                        📱 Service Mobile{mobileCount > 0 ? ` (${mobileCount})` : ''}
                     </button>
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />

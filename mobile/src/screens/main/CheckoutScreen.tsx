@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cardCountBadge: {
-        backgroundColor: 'rgba(252, 209, 22, 0.10)',
+        backgroundColor: 'rgba(0, 135, 81, 0.10)',
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 999,
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 10,
-        backgroundColor: 'rgba(252, 209, 22, 0.06)',
+        backgroundColor: 'rgba(0, 135, 81, 0.06)',
         borderWidth: 1,
         borderColor: C.border,
     },

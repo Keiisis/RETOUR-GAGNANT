@@ -431,7 +431,7 @@ function PrefOption({
     }, [active])
 
     const rowStyle = useAnimatedStyle(() => ({
-        backgroundColor: active ? 'rgba(252, 209, 22, 0.06)' : 'transparent',
+        backgroundColor: active ? 'rgba(0, 135, 81, 0.06)' : 'transparent',
     }))
 
     const radioStyle = useAnimatedStyle(() => ({

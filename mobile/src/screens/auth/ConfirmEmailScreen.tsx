@@ -38,7 +38,7 @@ const OTP_TYPES: EmailOtpType[] = ['signup', 'magiclink', 'email']
    LOGIQUE préservée : verifyOtp confirme le compte ET ouvre la session ;
    l'app bascule seule vers l'accueil (AuthContext.onAuthStateChange). Le
    code réel fait CODE_LEN chiffres (8), pas 6 comme dans la maquette
-   statique — la réalité fonctionnelle prime.
+   statique - la réalité fonctionnelle prime.
 ═══════════════════════════════════════════════════════════ */
 export default function ConfirmEmailScreen({ navigation, route }: any) {
     const insets = useSafeAreaInsets()

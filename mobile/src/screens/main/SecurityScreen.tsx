@@ -1,6 +1,6 @@
 'use strict'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from '../../lib/feedback'
+import { toast, confirm } from '../../lib/feedback'
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
@@ -15,6 +15,7 @@ import { ArrowLeft, Lock, LogOut, ShieldCheck, KeyRound, Sparkles, Eye, EyeOff, 
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { FlagBar } from '../../components/ui'
@@ -200,9 +201,21 @@ function PasswordField({
    ────────────────────────────────────────────── */
 export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     const insets = useSafeAreaInsets()
+    const { signOut } = useAuth()
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const { t } = useLang()
+
+    const handleLogout = () => {
+        confirm({
+            title: t('Déconnexion'),
+            message: t('Êtes-vous sûr de vouloir vous déconnecter ?'),
+            confirmLabel: t('Se déconnecter'),
+            cancelLabel: t('Annuler'),
+            destructive: true,
+            onConfirm: signOut,
+        })
+    }
     const [loading, setLoading] = useState(false)
     const [focused, setFocused] = useState<string | null>(null)
     const [showNew, setShowNew] = useState(false)
@@ -356,26 +369,6 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* HERO */}
-                <AnimatedSection delay={0}>
-                    <SecurityHero score={strength.level} t={t} />
-                </AnimatedSection>
-
-                {/* INFO BANNER */}
-                <AnimatedSection delay={120}>
-                    <View style={styles.infoBanner}>
-                        <View style={styles.infoIconBox}>
-                            <ShieldCheck size={18} color={C.primary} strokeWidth={2} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.infoTitle}>{t('Conseil de sécurité')}</Text>
-                            <Text style={styles.infoText}>
-                                {t('Choisissez un mot de passe fort : au moins 8 caractères, avec majuscules, chiffres et symboles.')}
-                            </Text>
-                        </View>
-                    </View>
-                </AnimatedSection>
-
                 {/* PASSWORD CARD */}
                 <AnimatedSection delay={220}>
                     <View style={styles.card}>
@@ -576,29 +569,21 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </AnimatedSection>
 
-                {/* SESSION CARD */}
+                {/* DÉCONNEXION (dernière case de l'écran) */}
                 <AnimatedSection delay={340}>
-                    <View style={styles.sessionCard}>
-                        <View style={styles.sessionIconBox}>
+                    <TouchableOpacity
+                        style={styles.logoutBtn}
+                        onPress={handleLogout}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Se déconnecter')}
+                        hitSlop={6}
+                    >
+                        <View style={styles.logoutIconBox}>
                             <LogOut size={20} color={C.danger} strokeWidth={2} />
                         </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.sessionTitle}>{t('Déconnexion sécurisée')}</Text>
-                            <Text style={styles.sessionText}>
-                                {t('Si vous suspectez une activité non autorisée, déconnectez-vous immédiatement de votre compte.')}
-                            </Text>
-                        </View>
-                    </View>
-                </AnimatedSection>
-
-                {/* TRUST FOOTER */}
-                <AnimatedSection delay={460}>
-                    <View style={styles.trustFooter}>
-                        <Lock size={12} color={C.textMuted} strokeWidth={2} />
-                        <Text style={styles.trustText}>
-                            {t('Chiffrement de bout en bout · Conformité RGPD · ISO 27001')}
-                        </Text>
-                    </View>
+                        <Text style={styles.logoutText}>{t('Se déconnecter')}</Text>
+                    </TouchableOpacity>
                 </AnimatedSection>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -748,31 +733,20 @@ const styles = StyleSheet.create({
     saveBtnText: { ...typography.button, color: C.primaryText },
 
     /* SESSION CARD */
-    sessionCard: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
-        backgroundColor: C.surface,
-        borderRadius: radius.xl,
-        padding: spacing.md,
-        borderWidth: 1, borderColor: C.dangerSoft,
-        borderLeftWidth: 4, borderLeftColor: C.danger,
-        ...shadows.card, shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
-    },
-    sessionIconBox: {
-        width: 42, height: 42, borderRadius: radius.sm,
+    /* DÉCONNEXION (dernière case) */
+    logoutBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
         backgroundColor: C.dangerSoft,
-        alignItems: 'center', justifyContent: 'center',
+        borderRadius: radius.xxl,
+        padding: spacing.md + 2,
         borderWidth: 1, borderColor: C.dangerSoft,
     },
-    sessionTitle: { ...typography.button, fontSize: 14, color: C.primary, marginBottom: spacing.xs, letterSpacing: 0.2 },
-    sessionText: { fontSize: 12, color: C.textSecond, lineHeight: 19 },
-
-    /* TRUST FOOTER */
-    trustFooter: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: spacing.sm, paddingVertical: spacing.md,
+    logoutIconBox: {
+        width: 42, height: 42, borderRadius: radius.md,
+        backgroundColor: C.surface,
+        alignItems: 'center', justifyContent: 'center',
     },
-    trustText: { ...typography.overline, color: C.textMuted },
+    logoutText: { ...typography.button, fontSize: 15, color: C.danger, letterSpacing: 0.2 },
 })
 
 /* HERO styles */

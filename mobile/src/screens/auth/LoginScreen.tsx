@@ -17,7 +17,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 const C = screenColors
 
 /**
- * Écran Connexion : rendu fidèle à la maquette Sleek (exportée) — liseré
+ * Écran Connexion : rendu fidèle à la maquette Sleek (exportée) - liseré
  * tricolore, titre « Bon retour. », champs à icône, bouton vert plein. La
  * LOGIQUE est préservée à l'identique : signIn, gestion du compte non confirmé
  * et renvoi du lien de confirmation.

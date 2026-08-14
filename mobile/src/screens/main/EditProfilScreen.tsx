@@ -546,11 +546,11 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: C.accent,
+        backgroundColor: C.primaryText,
     },
     changesBadgeText: {
         ...typography.button, fontSize: 12,
-                color: C.primary,
+                color: C.primaryText,
         letterSpacing: 0.3,
     },
 

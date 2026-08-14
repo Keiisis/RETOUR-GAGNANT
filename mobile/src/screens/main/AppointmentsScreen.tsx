@@ -27,6 +27,7 @@ import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
@@ -355,6 +356,30 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
         setSubmitting(true)
         try {
+            // ── Anti-doublon : on ne commande pas deux fois le même service. ──
+            // Si un dossier ACTIF existe déjà pour ce service, on n'ouvre ni RDV
+            // ni nouveau dossier : le client interagit via la messagerie.
+            if (serviceLabel) {
+                const { data: existingDossier } = await supabase.from('dossiers')
+                    .select('id')
+                    .eq('client_id', profile!.id)
+                    .eq('service_type', serviceLabel)
+                    .in('status', ['soumis', 'en_attente', 'verifie', 'en_cours', 'traitement', 'validation'])
+                    .limit(1)
+                    .maybeSingle()
+                if (existingDossier) {
+                    setSubmitting(false)
+                    confirm({
+                        title: t('Dossier déjà ouvert'),
+                        message: t('Vous avez déjà un dossier en cours pour ce service. Pour toute question ou mise à jour, contactez votre conseiller par message.'),
+                        confirmLabel: t('Envoyer un message'),
+                        cancelLabel: t('Fermer'),
+                        onConfirm: () => { setShowModal(false); (navigation as any).navigate('Main', { screen: 'Messages' }) },
+                    })
+                    return
+                }
+            }
+
             const rdvType = APPT_TYPE_TO_RDV[formType]
             const clientName = `${profile!.prenom || ''} ${profile!.nom || ''}`.trim() || (profile!.email || '')
 
@@ -371,6 +396,26 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             }).select('id').single()
 
             if (error) throw error
+
+            // 1.5 Ouvrir un DOSSIER « soumis » associé au service.
+            //     Logique métier : une prise de rendez-vous POUR UN SERVICE
+            //     (Passeport, Business…) ouvre un dossier suivi dans « Mon Dossier »,
+            //     dont le statut évolue ensuite quand l'agent/admin le déplace.
+            //     Sans service (RDV générique via l'accueil), on n'ouvre pas de dossier.
+            //     L'API dédoublonne par service_type : pas de dossier en double.
+            if (serviceLabel) {
+                try {
+                    await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                        timeoutMs: 15000,
+                        body: JSON.stringify({
+                            service_type: serviceLabel,
+                            notes: `Dossier ouvert suite à une prise de rendez-vous le ${new Date().toLocaleDateString('fr-FR')} (${formDate} à ${formHeure}).\n${formNotes.trim()}`,
+                        }),
+                    })
+                } catch { /* non bloquant : le RDV reste enregistré même si l'ouverture du dossier échoue */ }
+            }
 
             // 2. Notification staff (email admin/agent) : même chemin que le panel web
             fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
@@ -400,7 +445,12 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
             setShowModal(false)
             setFormNotes('')
-            toast(t('Demande envoyée'), t("Notre équipe vous contactera sous 24h pour confirmer la date et l'heure de votre rendez-vous."))
+            toast(
+                t('Demande envoyée'),
+                serviceLabel
+                    ? t('Votre dossier est ouvert (statut : soumis) et visible dans « Mon Dossier ». Notre équipe vous contactera sous 24h pour votre rendez-vous.')
+                    : t("Notre équipe vous contactera sous 24h pour confirmer la date et l'heure de votre rendez-vous."),
+            )
             await fetchAppointments()
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : t('Erreur')
@@ -990,7 +1040,7 @@ const styles = StyleSheet.create({
                 color: C.textSec,
     },
     tabBadgeTextActive: {
-        color: C.primary,
+        color: C.primaryText,
     },
 
     /* ── Loading ── */

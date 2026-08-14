@@ -230,7 +230,7 @@ export default function DossierScreen({ navigation }: any) {
                     file_name: safeName, file_url: secureUrl, file_type: mimeType, status: 'pending',
                 })
             }
-            toast(t('Document envoyé'), t('Notre équipe le vérifiera sous 24–48h.'))
+            toast(t('Document envoyé'), t('Notre équipe le vérifiera sous 24-48h.'))
             await fetchDossiers()
         } catch (e: unknown) {
             toast(t('Erreur'), e instanceof Error ? e.message : t('Erreur lors de l\'envoi'))
@@ -680,7 +680,7 @@ export default function DossierScreen({ navigation }: any) {
                                                     {t('Confidentialité garantie')}
                                                 </Text>
                                                 <Text style={styles.tipText}>
-                                                    {t('Vos documents sont chiffrés, stockés via URL signée temporaire (1h) et vérifiés sous 24–48h par notre équipe.')}
+                                                    {t('Vos documents sont chiffrés, stockés via URL signée temporaire (1h) et vérifiés sous 24-48h par notre équipe.')}
                                                 </Text>
                                             </View>
                                         </View>
