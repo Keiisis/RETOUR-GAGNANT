@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, LayoutGroup, useScroll, useTransform, useReducedMotion } from 'framer-motion'
@@ -10,6 +10,7 @@ import CountUp from '@/components/logements/CountUp'
 import TransitionLink from '@/components/TransitionLink'
 import type { SitePoint } from '@/components/logements/SitesMap'
 import { trackEvent } from '@/lib/analytics'
+import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
     ssr: false,
@@ -469,6 +470,30 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             .catch(() => { /* repli 250 € */ })
     }, [])
     const feeSymbol = fee.currency === 'EUR' ? '€' : fee.currency === 'USD' ? '$' : fee.currency === 'GBP' ? '£' : 'FCFA'
+    /* Étape de paiement des frais de dossier : le prospect est d'abord
+       enregistré (rien n'est perdu si le client abandonne), puis il règle. */
+    const [leadId, setLeadId] = useState<string | null>(null)
+    const [payStep, setPayStep] = useState(false)
+    const [payError, setPayError] = useState('')
+    const [paying, setPaying] = useState(false)
+    const [paySettings, setPaySettings] = useState<Record<string, string>>({})
+    const kkiapayBound = useRef(false)
+
+    useEffect(() => {
+        fetch('/api/settings/payment').then(r => r.json()).then(setPaySettings).catch(() => { })
+    }, [])
+
+    /* Cette page ne charge pas les SDK de paiement (contrairement à la boutique) :
+       on les charge à l'ouverture de l'étape de règlement, sinon openKkiapayWidget
+       n'existe pas et le bouton reste sans effet. */
+    useEffect(() => {
+        if (!payStep) return
+        ensureKkiapaySDK().catch(() => { })
+        ensureFedaPaySDK().catch(() => { })
+    }, [payStep])
+
+    const feeXof = fee.currency === 'EUR' ? Math.round(fee.amount * 655.957) : Math.round(fee.amount)
+
     const submit = async () => {
         if (!f.nom.trim() || (!f.email.trim() && !f.telephone.trim())) { alert('Nom + email ou téléphone requis.'); return }
         setSending(true)
@@ -479,10 +504,92 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             })
             const j = await res.json().catch(() => ({}))
             if (!res.ok || !j.success) throw new Error(j.error || 'Envoi impossible.')
-            setDone(true)
+            setLeadId(j.lead_id || null)
             trackEvent('logement_lead', { programme: logement?.programme || 'general', logement: logement?.nom || null })
+            setPayStep(true) // on enchaîne sur le règlement des frais de dossier
         } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setSending(false) }
     }
+
+    /* Confirmation SERVEUR : c'est elle qui vérifie le paiement auprès de la
+       passerelle et ouvre le dossier. Le client ne décide de rien. */
+    const confirmServeur = async (provider: string, txId: string) => {
+        try {
+            const res = await fetch('/api/logements/dossier', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    payment_provider: provider, payment_tx_id: txId, lead_id: leadId,
+                    nom: f.nom, prenom: f.prenom, email: f.email, telephone: f.telephone,
+                    logement_nom: logement?.nom || null,
+                }),
+            })
+            const j = await res.json().catch(() => ({}))
+            if (!res.ok || !j.success) throw new Error(j.error || 'Confirmation impossible.')
+            setDone(true)
+        } catch (e) {
+            setPayError(e instanceof Error ? e.message : 'Confirmation impossible.')
+        } finally { setPaying(false) }
+    }
+
+    const payerKkiapay = () => {
+        const w = window as unknown as {
+            openKkiapayWidget?: (c: Record<string, unknown>) => void
+            addKkiapayListener?: (e: string, cb: (d: Record<string, unknown>) => void) => void
+        }
+        if (typeof w.openKkiapayWidget !== 'function') {
+            setPayError("Le module de paiement n'est pas encore chargé. Patientez quelques secondes puis réessayez.")
+            return
+        }
+        setPaying(true); setPayError('')
+        if (!kkiapayBound.current && typeof w.addKkiapayListener === 'function') {
+            kkiapayBound.current = true
+            w.addKkiapayListener('success', r => confirmServeur('kkiapay', String(r.transactionId || '')))
+            w.addKkiapayListener('failed', () => {
+                setPaying(false)
+                setPayError('Le paiement a échoué ou a été refusé. Essayez le Mobile Money ou un autre moyen.')
+            })
+        }
+        try {
+            w.openKkiapayWidget({
+                amount: feeXof, position: 'center',
+                key: paySettings.kkiapay_sandbox === 'true'
+                    ? (paySettings.kkiapay_sandbox_public_key || paySettings.kkiapay_public_key)
+                    : paySettings.kkiapay_public_key,
+                sandbox: paySettings.kkiapay_sandbox === 'true',
+                data: JSON.stringify({ context: 'logement-dossier', lead: leadId }),
+            })
+        } catch { setPaying(false); setPayError("Impossible d'ouvrir Kkiapay.") }
+    }
+
+    const payerFedapay = () => {
+        const w = window as unknown as { FedaPay?: { init: (s: string, c: Record<string, unknown>) => void } }
+        if (!w.FedaPay) { setPayError("FedaPay n'est pas disponible."); return }
+        setPaying(true); setPayError('')
+        try {
+            w.FedaPay.init('#fedapay-logement-btn', {
+                public_key: paySettings.fedapay_public_key,
+                environment: paySettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
+                transaction: { amount: feeXof, description: `Frais de dossier logement${logement ? ` : ${logement.nom}` : ''}` },
+                onComplete: (resp: Record<string, unknown>) => {
+                    const tx = resp.transaction as Record<string, unknown> | undefined
+                    if (resp.reason === 'APPROVED' || tx?.status === 'approved') {
+                        confirmServeur('fedapay', String(tx?.id || resp.id || ''))
+                    } else { setPaying(false); setPayError('Paiement non approuvé.') }
+                },
+            })
+        } catch { setPaying(false); setPayError("Impossible d'initialiser FedaPay.") }
+    }
+
+    const payerZeyow = () => {
+        const url = paySettings.zeyow_redirect_url
+        if (!url) { setPayError("Zeyow n'est pas configuré."); return }
+        window.location.href = `${url}?amount=${feeXof}&context=logement-dossier&lead=${leadId || ''}`
+    }
+
+    const passerelles = [
+        { id: 'kkiapay', nom: 'Kkiapay', sous: 'Mobile Money / Carte', pret: paySettings.kkiapay_enabled === 'true' && !!paySettings.kkiapay_public_key, action: payerKkiapay },
+        { id: 'fedapay', nom: 'FedaPay', sous: 'Mobile Money / Carte', pret: paySettings.fedapay_enabled === 'true' && !!paySettings.fedapay_public_key, action: payerFedapay },
+        { id: 'zeyow', nom: 'Zeyow', sous: 'Carte virtuelle', pret: paySettings.zeyow_enabled === 'true' && !!paySettings.zeyow_redirect_url, action: payerZeyow },
+    ].filter(p => p.pret)
     const inp = 'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15'
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={onClose}>
@@ -491,13 +598,67 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 {done ? (
                     <div className="p-10 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#E6F3ED] flex items-center justify-center mx-auto mb-4"><Check size={28} className="text-[#008751]" /></div>
-                        <h3 className="text-lg font-black text-slate-900">Demande transmise.</h3>
+                        <h3 className="text-lg font-black text-slate-900">Dossier ouvert.</h3>
                         <p className="text-sm text-slate-500 mt-1">
-                            Notre équipe vous recontacte pour composer votre dossier et transmettre votre demande.
-                            Les frais de constitution de dossier ({fee.amount} {feeSymbol}) vous seront indiqués à cette étape.
+                            Vos frais de constitution de dossier sont réglés. Notre équipe monte votre dossier
+                            et le transmet à notre partenaire agréé, puis vous recontacte.
                         </p>
                         <button onClick={onClose} className="mt-5 px-5 py-2.5 rounded-full bg-[#008751] text-white font-bold">Fermer</button>
                     </div>
+                ) : payStep ? (
+                    /* ── Règlement des frais de dossier ── */
+                    <>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                            <div>
+                                <h3 className="font-black text-slate-900">Frais de constitution de dossier</h3>
+                                <p className="text-xs text-slate-500">Votre demande est enregistrée. Dernière étape.</p>
+                            </div>
+                            <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={18} /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="rounded-2xl bg-[#008751] p-5 text-white border-t-4 border-[#FCD116]">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-white/85">Montant à régler</p>
+                                <p className="text-3xl font-black mt-0.5">{fee.amount} {feeSymbol}</p>
+                                <p className="text-[11px] text-white/85">Soit environ {feeXof.toLocaleString('fr-FR')} FCFA</p>
+                                <p className="text-[11px] text-white/90 mt-2">
+                                    Nous montons votre dossier complet et le transmettons à notre partenaire agréé.
+                                    Le prix du logement se règle ensuite directement auprès de lui.
+                                </p>
+                            </div>
+
+                            {payError && (
+                                <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{payError}</p>
+                            )}
+
+                            {passerelles.length === 0 ? (
+                                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                    Aucun moyen de paiement n&apos;est actif pour le moment. Notre équipe vous
+                                    recontacte : votre demande est bien enregistrée.
+                                </p>
+                            ) : (
+                                <div className="grid gap-2">
+                                    {passerelles.map(p => (
+                                        <button
+                                            key={p.id}
+                                            id={p.id === 'fedapay' ? 'fedapay-logement-btn' : undefined}
+                                            onClick={p.action}
+                                            disabled={paying}
+                                            className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-[#008751] disabled:opacity-60"
+                                        >
+                                            <span>
+                                                <span className="block text-sm font-black text-slate-900">{p.nom}</span>
+                                                <span className="block text-[11px] text-slate-500">{p.sous}</span>
+                                            </span>
+                                            {paying ? <Loader2 size={16} className="animate-spin text-[#008751]" /> : <Send size={15} className="text-[#008751]" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <p className="text-center text-[11px] text-slate-400">
+                                Paiement sécurisé. Le règlement est vérifié auprès de la passerelle avant l&apos;ouverture du dossier.
+                            </p>
+                        </div>
+                    </>
                 ) : (
                     <>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">

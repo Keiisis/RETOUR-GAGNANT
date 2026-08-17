@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { createTicketForRegistration } from '@/lib/event-tickets'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
         // Event publié
         const { data: event, error: eventError } = await supabase
             .from('events')
-            .select('id, title, price_standard, price_vip, currency, max_capacity, max_vip_seats, status, start_date')
+            .select('id, title, slug, price_standard, price_vip, currency, max_capacity, max_vip_seats, status, start_date')
             .eq('id', event_id)
             .eq('status', 'published')
             .single()
@@ -239,6 +240,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: regError.message }, { status: 500 })
         }
 
+        // Billet + QR dès que la place est acquise (événement gratuit, ou payé
+        // d'emblée). Un pass acheté depuis l'application ne donnait AUCUN billet :
+        // le client n'avait rien à présenter à l'entrée.
+        let ticket: { ticket_code: string; qr_data: string } | null = null
+        if (paymentStatus === 'paid') {
+            ticket = await createTicketForRegistration(supabase, {
+                registrationId: registration.id,
+                eventId: event_id,
+                eventSlug: String(event.slug || event.title || 'RGB'),
+                ticketType: ticket_type,
+            })
+        }
+
         // Notification client (non bloquant)
         const notifTitle = isFree
             ? 'Inscription confirmée !'
@@ -258,7 +272,7 @@ export async function POST(req: NextRequest) {
             created_at: now,
         }).then(() => null, () => null)
 
-        return NextResponse.json({ registration }, { status: 201 })
+        return NextResponse.json({ registration, ticket }, { status: 201 })
     } catch (e) {
         return NextResponse.json(
             { error: e instanceof Error ? e.message : 'Erreur serveur' },
@@ -323,6 +337,16 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: updErr.message }, { status: 500 })
         }
 
+        // Paiement vérifié auprès de la passerelle → le billet peut être émis.
+        const { data: evForTicket } = await supabase
+            .from('events').select('slug, title').eq('id', reg.event_id).maybeSingle()
+        const ticket = await createTicketForRegistration(supabase, {
+            registrationId: registration_id,
+            eventId: reg.event_id,
+            eventSlug: String(evForTicket?.slug || evForTicket?.title || 'RGB'),
+            ticketType: String((reg as Record<string, unknown>).ticket_type || 'standard'),
+        })
+
         // Notification (non bloquant)
         supabase.from('notifications').insert({
             user_id: reg.client_id,
@@ -333,7 +357,7 @@ export async function PATCH(req: NextRequest) {
             created_at: new Date().toISOString(),
         }).then(() => null, () => null)
 
-        return NextResponse.json({ ok: true, registration: updated })
+        return NextResponse.json({ ok: true, registration: updated, ticket })
     } catch (e) {
         return NextResponse.json(
             { error: e instanceof Error ? e.message : 'Erreur serveur' },

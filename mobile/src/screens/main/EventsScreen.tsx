@@ -861,6 +861,28 @@ export default function EventsScreen({ navigation }: any) {
                     </View>
                 </Animated.View>
 
+                {/* Accès aux BILLETS (QR) : l'onglet listait les événements auxquels
+                    le client est inscrit, sans jamais donner accès au billet
+                    lui-même. Le QR, le code et le téléchargement vivent ici. */}
+                {tab === 'tickets' && (
+                    <Pressable
+                        onPress={() => navigation.navigate('Tickets')}
+                        style={styles.ticketsCta}
+                        accessibilityRole="button"
+                    >
+                        <View style={styles.ticketsCtaIcon}>
+                            <LucideIcon name="qr-code" size={20} color={screenColors.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.ticketsCtaTitle}>{t('Mes billets avec QR')}</Text>
+                            <Text style={styles.ticketsCtaText}>
+                                {t('Afficher, enregistrer ou partager le billet à présenter à l’entrée.')}
+                            </Text>
+                        </View>
+                        <LucideIcon name="chevron-forward" size={18} color={screenColors.textMuted} />
+                    </Pressable>
+                )}
+
                 {/* LOADING SKELETON */}
                 {loading ? (
                     <View style={styles.skeletonWrap}>
@@ -1087,6 +1109,20 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         gap: 4,
     },
+
+    /* Accès aux billets (QR) depuis l'onglet « Mes tickets » */
+    ticketsCta: {
+        flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+        marginHorizontal: spacing.gutter, marginTop: spacing.lg,
+        backgroundColor: C.surface, borderWidth: 1, borderColor: C.primary,
+        borderRadius: radius.xl, padding: spacing.md, ...shadows.card,
+    },
+    ticketsCtaIcon: {
+        width: 42, height: 42, borderRadius: radius.lg,
+        backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center',
+    },
+    ticketsCtaTitle: { ...typography.label, fontSize: 14.5, color: C.text },
+    ticketsCtaText: { ...typography.bodySmall, fontSize: 11.5, color: C.textMuted, marginTop: 2, lineHeight: 16 },
     tabBtn: {
         flex: 1,
         paddingVertical: 10,
