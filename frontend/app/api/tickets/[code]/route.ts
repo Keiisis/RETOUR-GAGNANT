@@ -53,29 +53,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 
     const [{ data: reg }, { data: event }] = await Promise.all([
         supabase.from('event_registrations')
-            .select('full_name, email, phone, client_id')
+            // Pas de client_id sur cette table (schéma déployé) : l'inscription
+            // porte elle-même l'identité de l'invité.
+            .select('full_name, email, phone')
             .eq('id', ticket.registration_id).maybeSingle(),
         supabase.from('events')
             .select('title, start_date, location')
             .eq('id', ticket.event_id).maybeSingle(),
     ])
 
-    // Le nom peut vivre sur le profil client (inscription mobile) plutôt que
-    // sur l'inscription elle-même : on complète depuis le profil si besoin.
-    let fullName = String(reg?.full_name || '').trim()
-    let email = String(reg?.email || '').trim()
-    let phone = String(reg?.phone || '').trim()
-    if ((!fullName || !email) && reg?.client_id) {
-        const { data: cp } = await supabase
-            .from('client_profiles')
-            .select('nom, prenom, email, phone')
-            .eq('id', reg.client_id).maybeSingle()
-        if (cp) {
-            fullName = fullName || `${cp.prenom || ''} ${cp.nom || ''}`.trim()
-            email = email || String(cp.email || '')
-            phone = phone || String(cp.phone || '')
-        }
-    }
+    const fullName = String(reg?.full_name || '').trim()
+    const email = String(reg?.email || '').trim()
+    const phone = String(reg?.phone || '').trim()
 
     const template = await getTicketTemplate(supabase, ticket.event_id)
     const corps = renderTicketTemplate(template, {

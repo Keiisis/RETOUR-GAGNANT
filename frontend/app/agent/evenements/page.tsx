@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Plus, PencilSimple as Edit, Eye, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, Ticket, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink, FloppyDisk as Save, ArrowLeft, TextT as Type, TextAlignLeft as AlignLeft, MapPin, CurrencyDollar as DollarSign, Tag, CircleNotch as Loader2, QrCode, ShieldCheck, Warning as AlertTriangle, X } from '@phosphor-icons/react';
+import { Calendar, Plus, PencilSimple as Edit, Eye, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, Ticket, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink, FloppyDisk as Save, ArrowLeft, TextT as Type, TextAlignLeft as AlignLeft, MapPin, CurrencyDollar as DollarSign, Tag, CircleNotch as Loader2, QrCode, ShieldCheck, Warning as AlertTriangle, X, Camera } from '@phosphor-icons/react';
 import Link from 'next/link'
 import EventImageUpload from '@/components/events/EventImageUpload'
+import TicketScanner from '@/components/agent/TicketScanner'
 
 interface EventData {
     id: string
@@ -264,6 +265,7 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
     const [search, setSearch] = useState('')
     const [manualCode, setManualCode] = useState('')
     const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'loading'; message: string } | null>(null)
+    const [scannerOuvert, setScannerOuvert] = useState(false)
 
     const fetchRegs = useCallback(() => {
         fetch(`/api/events/${eventId}/register?admin=true`)
@@ -296,6 +298,17 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
     const totalRevenu = regs.reduce((s, r) => s + (r.amount_paid || 0), 0)
 
     return (
+        <>
+        {/* Scanner plein écran : l'agent l'ouvre depuis son téléphone à l'entrée */}
+        {scannerOuvert && (
+            <TicketScanner
+                eventId={eventId}
+                eventTitle={eventTitle}
+                validatedBy="Agent"
+                onClose={() => setScannerOuvert(false)}
+                onValidated={fetchRegs}
+            />
+        )}
         <motion.div
             initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
             className="rounded-2xl border border-white/[0.08] overflow-hidden"
@@ -328,11 +341,21 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
                     </div>
                 </div>
 
+                {/* Contrôle d'entrée : le scan caméra est la voie normale
+                    (l'agent ouvre son panel sur son téléphone), la saisie du code
+                    reste disponible en secours. */}
+                <button
+                    onClick={() => setScannerOuvert(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 font-black text-white transition-colors hover:bg-emerald-600"
+                >
+                    <Camera size={18} /> Scanner les billets
+                </button>
+
                 {/* Validation manuelle */}
                 <div className="rounded-xl border border-[#FCD116]/20 bg-[#FCD116]/5 p-4 space-y-3">
                     <div className="flex items-center gap-2">
                         <ShieldCheck size={14} className="text-[#FCD116]" />
-                        <span className="text-[11px] font-black text-[#FCD116] uppercase tracking-wider">Valider un ticket</span>
+                        <span className="text-[11px] font-black text-[#FCD116] uppercase tracking-wider">Ou saisir le code</span>
                     </div>
                     <div className="flex gap-2">
                         <input type="text" value={manualCode} onChange={e => setManualCode(e.target.value.toUpperCase())}
@@ -407,6 +430,7 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
                 )}
             </div>
         </motion.div>
+        </>
     )
 }
 

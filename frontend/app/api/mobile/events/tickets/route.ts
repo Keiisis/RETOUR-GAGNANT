@@ -18,11 +18,19 @@ export async function GET(req: NextRequest) {
     const clientId = await getMobileUserId(req)
     if (!clientId) return NextResponse.json({ error: 'Non authentifié', tickets: [] }, { status: 401 })
 
-    // 1. Les inscriptions du client.
+    // 1. Les inscriptions du client. La table event_registrations n'a PAS de
+    //    client_id (schéma réellement déployé, vérifié en base) : le seul lien
+    //    est l'email, que l'on prend sur le profil rattaché au jeton — jamais
+    //    sur un paramètre de requête, sinon on lirait les billets d'autrui.
+    const { data: cp } = await supabase
+        .from('client_profiles').select('email').eq('id', clientId).maybeSingle()
+    const email = String(cp?.email || '').trim().toLowerCase()
+    if (!email) return NextResponse.json({ tickets: [] })
+
     const { data: regs, error: regErr } = await supabase
         .from('event_registrations')
-        .select('id, event_id, ticket_type, payment_status, status, created_at')
-        .eq('client_id', clientId)
+        .select('id, event_id, ticket_type, payment_status, created_at')
+        .eq('email', email)
         .order('created_at', { ascending: false })
         .limit(100)
 
