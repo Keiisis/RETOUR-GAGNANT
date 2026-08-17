@@ -260,8 +260,30 @@ export function getIpProfileFromCache(ip: string): IpProfile | null {
     return p
 }
 
-export function setCachedIpProfile(ip: string, profile: Omit<IpProfile, 'ts'>): void {
-    ipMemoryCache.set(ip, { ...profile, ts: Date.now() })
+/**
+ * Met en cache un profil IP.
+ *
+ * `ts` mesure l'ancienneté DEPUIS LA LECTURE EN BASE, pas depuis la dernière
+ * écriture. Sans cette distinction, `updateIpMemory()` — appelé à CHAQUE
+ * requête — repoussait l'échéance en continu : un score dégradé ne périmait
+ * donc jamais tant que du trafic arrivait, et `waf_ip_memory` (la source de
+ * vérité, qui pouvait dire « trust 100 / allow ») n'était plus jamais relue.
+ * Résultat observé le 2026-08-17 : une IP légitime restait murée en 403
+ * « Trust score insuffisant » alors que la base l'autorisait, et chaque
+ * rechargement de page entretenait le blocage.
+ *
+ * `preserveAge` conserve l'horodatage d'origine lors d'une simple mise à jour
+ * locale du score : l'entrée périme donc au plus tard IP_MEMORY_TTL après sa
+ * lecture, ce qui force une relecture en base. La pénalité reste appliquée
+ * pendant ce laps de temps, et un attaquant réel demeure bloqué par la base
+ * (la pénalité y est persistée via RPC) — seul le verrouillage RAM indéfini
+ * disparaît.
+ */
+export function setCachedIpProfile(
+    ip: string, profile: Omit<IpProfile, 'ts'>, preserveAge = false
+): void {
+    const previousTs = preserveAge ? ipMemoryCache.get(ip)?.ts : undefined
+    ipMemoryCache.set(ip, { ...profile, ts: previousTs ?? Date.now() })
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -368,13 +390,15 @@ export function updateIpMemory(opts: {
     const newScore = Math.max(0, Math.min(100,
         (cached?.trust_score ?? 50) + (isAttack ? TRUST_PENALTY : TRUST_REWARD)
     ))
+    // preserveAge : mise à jour LOCALE du score, sans repousser la péremption
+    // (sinon l'entrée ne périme jamais sous trafic — voir setCachedIpProfile).
     setCachedIpProfile(ip, {
         trust_score:   newScore,
         blocked_count: (cached?.blocked_count ?? 0) + (isAttack ? 1 : 0),
         attack_types:  attackType && cached
             ? [...new Set([...cached.attack_types, attackType])]
             : attackType ? [attackType] : cached?.attack_types ?? [],
-    })
+    }, true)
 
     // Persistance async via RPC atomique
     fetch(`${supabaseUrl}/rest/v1/rpc/update_ip_memory`, {

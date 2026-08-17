@@ -638,9 +638,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
             setCurrentStep(6)
 
             /* Proposition Recherche Ancestrale : UNIQUEMENT après le paiement de
-               la nationalité, et seulement si AUCUNE pièce ancestrale (grands-parents
-               / arrière-grands-parents) n'a été fournie. Le client accepte (paie
-               250 €) ou décline depuis l'écran dédié. */
+               la nationalité ET l'enregistrement réussi du dossier, dès qu'il
+               manque AU MOINS UNE pièce ancestrale (grands-parents /
+               arrière-grands-parents). Le client accepte (et paie le forfait) ou
+               décline depuis AncestralProposalScreen — écran distinct de
+               RechercheAncestraleScreen (voie manuelle depuis Services), mais
+               relié : même forfait configurable, même service de dossier. */
             const ancestralSlots = DEFAULT_DOC_SLOTS.filter(s => s.ancestral)
             const uploadedKeys = new Set(rawDocs.map(d => d.key))
             const missingAncestral = ancestralSlots.filter(s => !uploadedKeys.has(s.key))
