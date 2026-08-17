@@ -9,7 +9,6 @@ import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, Archive, Datab
 import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
-import { ttcFromHt, fromHt } from '@/lib/tax'
 import { natFetch } from '@/lib/nationality-flow'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
@@ -93,8 +92,8 @@ function ComplementAncestralContent() {
         { id: 'zeyow' as PaymentProvider, name: 'Zeyow', subtitle: t('Carte Virtuelle'), color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', isReady: paymentSettings.zeyow_enabled === 'true' && !!paymentSettings.zeyow_redirect_url },
     ].filter(p => p.isReady)
 
-    // TVA EN SUS : researchPrice est HORS TAXE ; on charge le TTC (HT × 1,18).
-    const amountXOF = ttcFromHt(Math.round(researchPrice * EUR_TO_XOF), 'XOF')
+    // Prix FINAL (TTC) : le client paie researchPrice pile, TVA réputée incluse.
+    const amountXOF = Math.round(researchPrice * EUR_TO_XOF)
 
     const bindKkiapayListeners = () => {
         if (kkiapayBound.current) return
@@ -378,9 +377,9 @@ function ComplementAncestralContent() {
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-1">Investissement</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-black text-[#1a2332]">{fromHt(researchPrice, 'EUR').ttc} €</span>
+                                <span className="text-5xl font-black text-[#1a2332]">{researchPrice} €</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({researchPrice} € HT)</span></p>
+                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA incluse</span></p>
                         </div>
 
                         {paymentDone ? (
