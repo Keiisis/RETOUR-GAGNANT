@@ -107,7 +107,7 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#1B2A4A"
+          "backgroundColor": "#FFFFFF"
         }
       ],
       "expo-video",

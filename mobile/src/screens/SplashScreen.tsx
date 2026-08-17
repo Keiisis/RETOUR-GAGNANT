@@ -56,14 +56,15 @@ export default function SplashScreen({ isLoading = false, onContinue }: SplashSc
    ÉCRAN 1 : Splash pur
 ═══════════════════════════════════════ */
 function SplashView() {
-    const opacity = useSharedValue(0);
-    const scale = useSharedValue(0.96);
+    // Logo figé à son état final = identique au splash NATIF (blanc + logo centré).
+    // Sans ça, il repartait d'opacity 0 → clignotait entre le natif et le custom,
+    // donnant l'impression de « 2 splash ». Seul le nom s'anime maintenant.
+    const opacity = useSharedValue(1);
+    const scale = useSharedValue(1);
     const textOpacity = useSharedValue(0);
     const textY = useSharedValue(8);
 
     useEffect(() => {
-        opacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
-        scale.value = withSpring(1, { damping: 20, stiffness: 90 });
         textOpacity.value = withDelay(250, withTiming(1, { duration: 500 }));
         textY.value = withDelay(250, withSpring(0, { damping: 22, stiffness: 100 }));
     }, []);
