@@ -34,6 +34,7 @@ import SignatureScreen from '../screens/main/SignatureScreen'
 import CallScreen from '../screens/main/CallScreen'
 import InvoicesScreen from '../screens/main/InvoicesScreen'
 import NationaliteFormScreen from '../screens/main/NationaliteFormScreen'
+import AncestralProposalScreen from '../screens/main/AncestralProposalScreen'
 import LegalScreen from '../screens/main/LegalScreen'
 import FaScreen from '../screens/main/FaScreen'
 import PermisScreen from '../screens/main/PermisScreen'
@@ -115,6 +116,7 @@ export type RootStackParamList = {
     Signature: undefined
     Invoices: undefined
     NationaliteForm: undefined
+    AncestralProposal: { ref?: string; missing?: string[]; amount?: number; currency?: string } | undefined
     Legal: undefined
     Fa: undefined
     Permis: undefined
@@ -367,6 +369,11 @@ export default function AppNavigator() {
                         name="NationaliteForm"
                         component={NationaliteFormScreen}
                         options={detentSheetIOS}
+                    />
+                    <Stack.Screen
+                        name="AncestralProposal"
+                        component={AncestralProposalScreen}
+                        options={{ gestureEnabled: false }}
                     />
 
                     {/* Confirmation : fade dramatique, pas de retour gestuel */}

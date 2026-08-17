@@ -28,7 +28,8 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { thankYouMessage } from '../../lib/serviceCompletion'
 import { FlagBar } from '../../components/ui'
 
 /* ═══════════════════════════════════════════════════════════
@@ -446,6 +447,8 @@ export default function DossierScreen({ navigation }: any) {
                                 : progressFromStatus(selected.status)
                             const color = STATUS_COLOR[selected.status] || C.primary
                             const stepIdx = STEPS.findIndex(s => s.key === selected.status)
+                            // Dossier terminé : la dernière étape est FAITE (pas « en cours »).
+                            const isTermine = selected.status === 'termine'
 
                             return (
                                 <>
@@ -497,8 +500,8 @@ export default function DossierScreen({ navigation }: any) {
                                                 {/* Timeline verticale des étapes réelles */}
                                                 <View style={styles.timeline}>
                                                     {STEPS.map((step, i) => {
-                                                        const done = stepIdx > i
-                                                        const current = stepIdx === i
+                                                        const done = stepIdx > i || (isTermine && i === stepIdx)
+                                                        const current = stepIdx === i && !isTermine
                                                         const last = i === STEPS.length - 1
                                                         return (
                                                             <View key={step.key} style={styles.tlRow}>
@@ -541,6 +544,18 @@ export default function DossierScreen({ navigation }: any) {
                                                         )
                                                     })}
                                                 </View>
+
+                                                {/* Dossier terminé : message de remerciement */}
+                                                {isTermine && (
+                                                    <View style={styles.completionBanner}>
+                                                        <View style={styles.completionIcon}>
+                                                            <LucideIcon name="checkmark-circle" size={22} color={C.primaryText} />
+                                                        </View>
+                                                        <Text style={styles.completionText}>
+                                                            {t(thankYouMessage(selected.service_type))}
+                                                        </Text>
+                                                    </View>
+                                                )}
 
                                                 <Text style={styles.progressDate}>
                                                     {t('Ouvert le')}{' '}
@@ -988,6 +1003,20 @@ const styles = StyleSheet.create({
     tlSub: { ...typography.caption, color: C.textMuted, marginTop: 2 },
     progressService: { ...typography.h2, color: C.text, marginBottom: spacing.xs },
     progressDate: { ...typography.caption, color: C.textMuted, marginTop: spacing.sm },
+    completionBanner: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: C.primarySoft,
+        borderWidth: 1, borderColor: C.primary,
+        borderRadius: radius.lg,
+        padding: spacing.md,
+        marginTop: spacing.lg,
+    },
+    completionIcon: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: C.primary,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    completionText: { flex: 1, ...typography.bodySmall, fontSize: 13, color: C.primaryDark, lineHeight: 19, fontFamily: fonts.bodyBold },
 
     /* ── Progress Bar ── */
     progressBg: {

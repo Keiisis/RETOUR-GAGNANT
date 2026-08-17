@@ -17,6 +17,8 @@ interface FormSettings {
     currency: string
     payment_description: string
     required_documents: RequiredDoc[]
+    recherche_ancestrale_amount?: number
+    recherche_ancestrale_currency?: string
 }
 
 const CURRENCIES = [
@@ -40,6 +42,9 @@ export default function NationaliteSettingsPage() {
 
     const [amount, setAmount] = useState(250)
     const [currency, setCurrency] = useState('USD')
+    // Forfait recherche ancestrale (complément payant, mobile + web).
+    const [rechercheAmount, setRechercheAmount] = useState(250)
+    const [rechercheCurrency, setRechercheCurrency] = useState('EUR')
     const [paymentDescription, setPaymentDescription] = useState('')
     const [requiredDocs, setRequiredDocs] = useState<RequiredDoc[]>([])
 
@@ -62,6 +67,8 @@ export default function NationaliteSettingsPage() {
                 const c = data.content as FormSettings
                 setAmount(c.amount || 250)
                 setCurrency(c.currency || 'USD')
+                setRechercheAmount(c.recherche_ancestrale_amount || 250)
+                setRechercheCurrency(c.recherche_ancestrale_currency || 'EUR')
                 setPaymentDescription(c.payment_description || '')
                 setRequiredDocs(c.required_documents || [])
             }
@@ -77,6 +84,8 @@ export default function NationaliteSettingsPage() {
         const content: FormSettings = {
             amount,
             currency,
+            recherche_ancestrale_amount: rechercheAmount,
+            recherche_ancestrale_currency: rechercheCurrency,
             payment_description: paymentDescription,
             required_documents: requiredDocs,
         }
@@ -222,6 +231,45 @@ export default function NationaliteSettingsPage() {
                                 title={t("Devise")}
                                 value={currency}
                                 onChange={e => setCurrency(e.target.value)}
+                                className={IC}
+                            >
+                                {CURRENCIES.map(c => (
+                                    <option key={c.code} value={c.code}>{c.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Forfait recherche ancestrale (complément) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 mt-2 border-t border-white/10">
+                        <div>
+                            <label className={LC}>
+                                Forfait recherche ancestrale <span className="text-red-400">*</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={rechercheAmount}
+                                    onChange={e => setRechercheAmount(Number(e.target.value))}
+                                    min={0}
+                                    step={1}
+                                    className={IC}
+                                    placeholder="250"
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">{rechercheCurrency}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-600 mt-1.5 flex items-center gap-1">
+                                <Info size={10} /> Proposé au client (app + site) quand des pièces d&apos;ancêtres manquent.
+                            </p>
+                        </div>
+                        <div>
+                            <label className={LC}>
+                                Devise <span className="text-red-400">*</span>
+                            </label>
+                            <select
+                                title={t("Devise recherche ancestrale")}
+                                value={rechercheCurrency}
+                                onChange={e => setRechercheCurrency(e.target.value)}
                                 className={IC}
                             >
                                 {CURRENCIES.map(c => (

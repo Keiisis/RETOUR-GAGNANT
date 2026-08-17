@@ -30,7 +30,7 @@ declare global {
     }
 }
 
-const RESEARCH_PRICE = 250 // en EUR : converti en XOF pour les passerelles africaines
+const RESEARCH_PRICE_FALLBACK = 250 // repli EUR si le forfait n'est pas configuré en admin
 const EUR_TO_XOF = 655.957 // taux fixe FCFA
 
 function ComplementAncestralContent() {
@@ -42,6 +42,7 @@ function ComplementAncestralContent() {
     const [applicantName, setApplicantName] = useState('')
     const [loading, setLoading] = useState(true)
     const [paymentSettings, setPaymentSettings] = useState<Record<string, string>>({})
+    const [researchPrice, setResearchPrice] = useState(RESEARCH_PRICE_FALLBACK) // EUR HT, configurable en admin (form_settings.recherche_ancestrale_amount)
     const [paymentDone, setPaymentDone] = useState(false)
     const [paymentProvider, setPaymentProvider] = useState<PaymentProvider | null>(null)
     const [paymentTxId, setPaymentTxId] = useState('')
@@ -57,6 +58,18 @@ function ComplementAncestralContent() {
 
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(setPaymentSettings).catch(() => { })
+
+        // Forfait recherche ancestrale configurable en admin (même source que le mobile)
+        supabase
+            .from('page_sections')
+            .select('content')
+            .eq('page', 'nationalite')
+            .eq('section_key', 'form_settings')
+            .maybeSingle()
+            .then(({ data }) => {
+                const amount = Number(data?.content?.recherche_ancestrale_amount)
+                if (amount > 0) setResearchPrice(amount)
+            })
 
         if (!ref) { setLoading(false); return }
 
@@ -80,8 +93,8 @@ function ComplementAncestralContent() {
         { id: 'zeyow' as PaymentProvider, name: 'Zeyow', subtitle: t('Carte Virtuelle'), color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', isReady: paymentSettings.zeyow_enabled === 'true' && !!paymentSettings.zeyow_redirect_url },
     ].filter(p => p.isReady)
 
-    // TVA EN SUS : RESEARCH_PRICE est HORS TAXE ; on charge le TTC (HT × 1,18).
-    const amountXOF = ttcFromHt(Math.round(RESEARCH_PRICE * EUR_TO_XOF), 'XOF')
+    // TVA EN SUS : researchPrice est HORS TAXE ; on charge le TTC (HT × 1,18).
+    const amountXOF = ttcFromHt(Math.round(researchPrice * EUR_TO_XOF), 'XOF')
 
     const bindKkiapayListeners = () => {
         if (kkiapayBound.current) return
@@ -154,7 +167,7 @@ function ComplementAncestralContent() {
                     ref,
                     payment_provider: paymentProvider,
                     payment_tx_id: paymentTxId,
-                    amount: RESEARCH_PRICE,
+                    amount: researchPrice,
                     amount_xof: amountXOF,
                 }),
             })
@@ -365,9 +378,9 @@ function ComplementAncestralContent() {
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-1">Investissement</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-5xl font-black text-[#1a2332]">{fromHt(RESEARCH_PRICE, 'EUR').ttc} €</span>
+                                <span className="text-5xl font-black text-[#1a2332]">{fromHt(researchPrice, 'EUR').ttc} €</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({RESEARCH_PRICE} € HT)</span></p>
+                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA 18% incluse ({researchPrice} € HT)</span></p>
                         </div>
 
                         {paymentDone ? (
