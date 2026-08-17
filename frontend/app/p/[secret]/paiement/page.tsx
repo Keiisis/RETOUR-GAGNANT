@@ -7,7 +7,7 @@ import { ArrowLeft, CreditCard, Phone, User, Envelope as Mail, CheckCircle as Ch
 import Link from 'next/link'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin, convertCurrency, refreshRates } from '@/lib/currency'
-import { fromHt } from '@/lib/tax'
+import { fromHt, TVA_ENABLED } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
@@ -628,7 +628,8 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                     })}
                                 </div>
                                 <div className="border-t border-slate-200 pt-3">
-                                    {/* Détail HT + TVA (la TVA s'ajoute au prix) */}
+                                    {/* Détail HT + TVA (masqué en cas d'exonération : HT === total) */}
+                                    {TVA_ENABLED && (
                                     <div className="space-y-1 mb-2 text-xs text-slate-500">
                                         <div className="flex justify-between">
                                             <span>Sous-total HT</span>
@@ -639,9 +640,10 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
                                             <span><Price amount={tvaXof} currency="XOF" forceDisplayCurrency="XOF" /> XOF</span>
                                         </div>
                                     </div>
+                                    )}
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-amber-500 font-bold text-sm">
-                                            Total TTC{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
+                                            Total{TVA_ENABLED ? ' TTC' : ''}{hasItemSelection ? ` (${billableItems.filter(i => selectedIds.has(i.id)).length}/${billableItems.length} prestations)` : ''}
                                         </span>
                                         <CurrencySelector
                                             value={selectedCurrency}

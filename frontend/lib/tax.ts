@@ -11,8 +11,26 @@
 //  et la comptabilité (jamais de calcul divergent).
 // ══════════════════════════════════════════════════════════════
 
-/** Taux de TVA légal (Bénin). */
-export const TVA_RATE = 18
+/**
+ * Taux de TVA effectif appliqué au client.
+ *
+ * ⚠️ EXONÉRATION EN COURS (décision 2026-08-17) : Retour Gagnant Bénin est
+ * actuellement exonéré de TVA → taux ramené à **0 %**. AUCUNE TVA n'est
+ * appliquée, ni sur le site ni sur l'application mobile. Le prix saisi = le
+ * prix payé (HT === TTC).
+ *
+ * Levier unique : remettre `18` ici (et dans `mobile/src/lib/tax.ts`) suffit à
+ * réactiver la TVA partout — tous les calculs et libellés dérivent de cette
+ * constante et de `TVA_ENABLED` / `TVA_LABEL`. Ne jamais recoder un `0.18` ni
+ * un « 18 % » en dur ailleurs.
+ */
+export const TVA_RATE = 0
+
+/** Vrai seulement quand la TVA s'applique réellement (taux > 0). */
+export const TVA_ENABLED = TVA_RATE > 0
+
+/** Libellé de la ligne TVA (« TVA 18 % »), aligné sur le taux effectif. */
+export const TVA_LABEL = `TVA ${TVA_RATE} %`
 
 /** Devises sans décimale (le franc CFA se compte à l'unité). */
 const ZERO_DECIMAL = new Set(['XOF', 'FCFA', 'XAF', 'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XPF'])

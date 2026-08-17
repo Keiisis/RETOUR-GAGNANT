@@ -7,6 +7,7 @@ import { FileText, Plus, Trash as Trash2, CircleNotch as Loader2, ArrowLeft, Use
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { convertFromBaseSync, getCurrentRates, formatCurrencySync, refreshRates } from '@/lib/currency'
+import { TVA_RATE } from '@/lib/tax'
 
 interface DevisItem {
     description: string
@@ -34,7 +35,7 @@ export default function CreateDocumentPage() {
     const [clientPhone, setClientPhone] = useState('')
     const [clientAdresse, setClientAdresse] = useState('')
 
-    const [items, setItems] = useState<DevisItem[]>([{ description: '', quantity: 1, unit_price: 0, unit_cost: 0, tva: 18 }])
+    const [items, setItems] = useState<DevisItem[]>([{ description: '', quantity: 1, unit_price: 0, unit_cost: 0, tva: TVA_RATE }])
     const [remise, setRemise] = useState(0)
     const [notes, setNotes] = useState('')
     const [conditions, setConditions] = useState(defaultConditions)
@@ -71,7 +72,7 @@ export default function CreateDocumentPage() {
     const totalCost = items.reduce((sum, it) => sum + (it.quantity * it.unit_cost), 0)
     const margeNette = sousTotal - totalCost
 
-    const addItem = () => setItems(prev => [...prev, { description: '', quantity: 1, unit_price: 0, unit_cost: 0, tva: 18 }])
+    const addItem = () => setItems(prev => [...prev, { description: '', quantity: 1, unit_price: 0, unit_cost: 0, tva: TVA_RATE }])
     const removeItem = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i))
     const updateItem = (i: number, field: keyof DevisItem, value: string | number) => {
         setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: value } : it))

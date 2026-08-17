@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
 import QRCode from 'qrcode'
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -107,7 +108,8 @@ export async function GET(
 
     const tpl = templateRes.data?.content || {}
     const erpHeader: string = tpl.header || 'RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj'
-    const erpFooter: string = tpl.footer || 'RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes.'
+    const tvaClause = TVA_ENABLED ? `TVA ${TVA_RATE}% applicable` : 'TVA non applicable (exonération en vigueur)'
+    const erpFooter: string = tpl.footer || `RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\n${tvaClause} : En cas de litige, seules les juridictions béninoises sont compétentes.`
     const presidentTitle: string = tpl.signature_title || 'LA DIRECTION GÉNÉRALE'
     const presidentName: string = tpl.signature_name || 'Nathalie RIFFERT GERMANY'
 
@@ -224,7 +226,7 @@ export async function GET(
         </td>
         <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">${qty}</td>
         <td style="padding:10px 12px;font-size:12px;color:#445;text-align:right;border-bottom:1px solid #e2e8f0;vertical-align:top;white-space:nowrap;">${fmtPrice(price)}</td>
-        <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">18%</td>
+        <td style="padding:10px 12px;font-size:12px;color:#445;text-align:center;border-bottom:1px solid #e2e8f0;vertical-align:top;">${TVA_RATE}%</td>
         <td style="padding:10px 12px;font-size:12px;font-weight:700;color:#1a2035;text-align:right;border-bottom:1px solid #e2e8f0;vertical-align:top;white-space:nowrap;">${fmtPrice(lineTotal)}</td>
       </tr>`
     }).join('')

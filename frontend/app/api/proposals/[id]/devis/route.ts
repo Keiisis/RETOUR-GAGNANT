@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { TVA_RATE } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -79,17 +80,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const isZeroDecimal = currency === 'XOF' || currency === 'FCFA'
         const round = (v: number) => isZeroDecimal ? Math.round(v) : Math.round(v * 100) / 100
 
-        // Éléments facturables (la TVA 18 % s'ajoute au HT)
+        // Éléments facturables (TVA au taux effectif — 0 % en cas d'exonération)
         const billable = allItems.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
         const items: InvoicePdfItem[] = billable.map(i => ({
             description: `${i.title}${p.destination ? ` : ${p.destination}` : ''}`,
             quantity: 1,
             unit_price: round(Number(i.selling_price) || 0),
-            tva: 18,
+            tva: TVA_RATE,
         }))
 
         const sous_total = round(items.reduce((s, i) => s + i.unit_price, 0))
-        const total_tva = round(sous_total * 0.18)
+        const total_tva = round(sous_total * (TVA_RATE / 100))
         const total = round(sous_total + total_tva)
 
         // Document officiel : même générateur que le dashboard Agent/Admin.

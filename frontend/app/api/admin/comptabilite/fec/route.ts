@@ -180,7 +180,7 @@ async function buildFecWorkbook(
         ['Généré le', new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' })],
         ['', ''],
         ['Chiffre d’affaires facturé (TTC)', totalVentesTTC, 'num'],
-        ['dont TVA collectée (18%)', totalTVA, 'num'],
+        ['dont TVA collectée', totalTVA, 'num'],
         ['Total encaissé (entrées)', totalEncaisse, 'pos'],
         ['Total dépenses (sorties)', totalDepenses, 'neg'],
         ['Résultat (encaissé − dépenses)', resultat, resultat >= 0 ? 'pos' : 'neg'],

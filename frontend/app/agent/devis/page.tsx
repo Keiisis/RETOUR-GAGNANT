@@ -7,6 +7,7 @@ import { FileText, Plus, Trash as Trash2, X, CircleNotch as Loader2, MagnifyingG
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
+import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
 const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'XOF' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c === 'GBP' ? '£' : c
@@ -180,7 +181,7 @@ export default function AgentDevisPage() {
 
             const tpl = templateData?.content || {}
             const devisHeader = tpl.header || "RETOUR GAGNANT BÉNIN\nRCCM : RB/COT/26 B 42001 | IFU : 3202644573981\nHaie-Vive Cocotiers, Cotonou, Bénin\n+229 01 60 32 21 21 / +229 01 94 35 50 50\ncontact@retourgagnantbenin.bj"
-            const devisFooter = tpl.footer || "RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\nTVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes."
+            const devisFooter = tpl.footer || `RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981\nSiège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj\n${TVA_ENABLED ? `TVA ${TVA_RATE}% applicable` : 'TVA non applicable (exonération en vigueur)'} : En cas de litige, seules les juridictions béninoises sont compétentes.`
             const presidentName = tpl.signature_name || "Nathalie RIFFERT GERMANY"
 
             const jsPDF = (await import('jspdf')).default
@@ -416,7 +417,7 @@ export default function AgentDevisPage() {
             }
 
             drawTot('Sous-total HT', fmtN(doc.sous_total))
-            drawTot('TVA (18%)', fmtN(doc.total_tva))
+            if (doc.total_tva > 0) drawTot(`TVA (${doc.sous_total > 0 ? Math.round(doc.total_tva / doc.sous_total * 100) : TVA_RATE}%)`, fmtN(doc.total_tva))
             if (doc.remise > 0) drawTot('Remise', '-' + fmtN(doc.remise))
 
             pdf.setFillColor(0, 135, 81)

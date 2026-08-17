@@ -28,7 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { ttcFromHt, tvaFromHt } from '../../lib/tax'
+import { ttcFromHt, tvaFromHt, TVA_ENABLED } from '../../lib/tax'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
@@ -424,19 +424,23 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             )
                         })}
 
-                        {/* Sous-total HT + TVA + Total TTC */}
-                        <View style={styles.taxRow}>
-                            <Text style={styles.taxLabel}>{t('Sous-total HT')}</Text>
-                            <Text style={styles.taxValue}>{formatPrice(total)}</Text>
-                        </View>
-                        <View style={styles.taxRow}>
-                            <Text style={styles.taxLabel}>{t('TVA 18%')}</Text>
-                            <Text style={styles.taxValue}>{formatPrice(totalTva)}</Text>
-                        </View>
+                        {/* Sous-total HT + TVA (masqués en cas d'exonération : HT === total) */}
+                        {TVA_ENABLED && (
+                            <>
+                                <View style={styles.taxRow}>
+                                    <Text style={styles.taxLabel}>{t('Sous-total HT')}</Text>
+                                    <Text style={styles.taxValue}>{formatPrice(total)}</Text>
+                                </View>
+                                <View style={styles.taxRow}>
+                                    <Text style={styles.taxLabel}>{t('TVA 18%')}</Text>
+                                    <Text style={styles.taxValue}>{formatPrice(totalTva)}</Text>
+                                </View>
+                            </>
+                        )}
                         <View style={styles.totalRow}>
                             <View>
                                 <Text style={styles.totalLabel}>{t('Total à payer')}</Text>
-                                <Text style={styles.totalSubLabel}>{t('TTC, livraison incluse')}</Text>
+                                <Text style={styles.totalSubLabel}>{TVA_ENABLED ? t('TTC, livraison incluse') : t('Livraison incluse')}</Text>
                             </View>
                             <Text style={styles.totalValue}>{formatPrice(totalTtc)}</Text>
                         </View>

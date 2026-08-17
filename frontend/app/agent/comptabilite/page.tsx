@@ -7,6 +7,7 @@ import { Wallet, TrendUp as TrendingUp, ArrowUpRight, ArrowDownRight, Download, 
 import { EXPENSE_CATEGORIES, agentHasComptaAccess, expenseCategoryLabel } from '@/lib/constants/compta'
 import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
+import { TVA_RATE } from '@/lib/tax'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -669,7 +670,7 @@ export default function AgentComptabilitePage() {
             filename: `RGB_Registre_Agent_${periodSlug(selectedPeriod)}_${new Date().toISOString().split('T')[0]}`,
             moisLabel: pLabel,
             periodeISO: isMonth(selectedPeriod) ? selectedPeriod : currentMonthKey(),
-            tauxTVA: 0.18,
+            tauxTVA: TVA_RATE / 100,
             recettes,
             depenses: depensesRegistre,
         })

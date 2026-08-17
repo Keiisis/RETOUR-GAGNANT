@@ -14,7 +14,7 @@ import { Price } from '@/components/ui/Price'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
-import { fromHt } from '@/lib/tax'
+import { fromHt, TVA_ENABLED } from '@/lib/tax'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
 
 // ─── Déclarations des SDK tiers ────────────────────────────────────────────────
@@ -960,7 +960,9 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 <span className="font-bold">-<Price amount={appliedCoupon.discount_amount} currency="XOF" noConvert /></span>
                             </div>
                         )}
-                        {/* TVA en sus : la TVA s'ajoute au prix des marchandises */}
+                        {/* TVA en sus (masquée en cas d'exonération : HT === total marchandises) */}
+                        {TVA_ENABLED && (
+                        <>
                         <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
                             <span className="font-bold"><T>Sous-total HT</T></span>
                             <span className="font-bold text-white"><Price amount={htMarchandises} currency="XOF" noConvert /></span>
@@ -969,6 +971,8 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                             <span className="font-bold">TVA 18 %</span>
                             <span className="font-bold text-white">+<Price amount={tvaMarchandises} currency="XOF" noConvert /></span>
                         </div>
+                        </>
+                        )}
                         {shippingFee > 0 && (
                             <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
                                 <span className="flex items-center gap-1 font-bold">

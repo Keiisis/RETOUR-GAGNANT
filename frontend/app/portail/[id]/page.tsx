@@ -9,6 +9,7 @@ import Script from 'next/script'
 import { CheckCircle as CheckCircle2, Receipt, Download, CircleNotch as Loader2, PenNib as PenTool, ShieldCheck, Envelope as Mail, Phone, Calendar, CreditCard, X, CaretRight as ChevronRight, WarningCircle as AlertCircle, Shield } from '@phosphor-icons/react';
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, refreshRates, type CurrencyCode } from '@/lib/currency'
+import { TVA_RATE } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 
@@ -750,7 +751,7 @@ export default function ClientPortalPage() {
             }
 
             drawTotRow('Sous-total HT', fmtN(doc.sous_total) + ' ' + cur)
-            drawTotRow('TVA (18%)', '+ ' + fmtN(doc.total_tva) + ' ' + cur)
+            if (doc.total_tva > 0) drawTotRow(`TVA (${doc.sous_total > 0 ? Math.round(doc.total_tva / doc.sous_total * 100) : TVA_RATE}%)`, '+ ' + fmtN(doc.total_tva) + ' ' + cur)
             if (doc.remise > 0) drawTotRow('Remise', '- ' + fmtN(doc.remise) + ' ' + cur, false, true)
 
             pdf.setDrawColor(150, 175, 210)
@@ -1042,10 +1043,12 @@ export default function ClientPortalPage() {
                                     <span>Sous-total HT</span>
                                     <span className="font-mono">{((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.sous_total) : doc.sous_total).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
+                                {doc.total_tva > 0 && (
                                 <div className="flex justify-between items-center text-sm text-slate-500 border-b border-slate-200 pb-3">
-                                    <span>TVA</span>
+                                    <span>TVA ({doc.sous_total > 0 ? Math.round(doc.total_tva / doc.sous_total * 100) : TVA_RATE}%)</span>
                                     <span className="font-mono">+ {((doc.currency === 'XOF' || doc.currency === 'FCFA') ? Math.round(doc.total_tva) : doc.total_tva).toLocaleString('fr-FR')} {doc.currency}</span>
                                 </div>
+                                )}
                                 {doc.remise > 0 && (
                                     <div className="flex justify-between items-center text-sm text-amber-500 border-b border-slate-200 pb-3">
                                         <span>Remise appliquée</span>

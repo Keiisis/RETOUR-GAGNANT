@@ -14,7 +14,7 @@ import { Price } from '@/components/ui/Price'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
-import { fromHt } from '@/lib/tax'
+import { fromHt, TVA_ENABLED } from '@/lib/tax'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
 
 // ─── Déclarations des SDK tiers ────────────────────────────────────────────────
@@ -948,10 +948,12 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                             <div>
                                 <p className="text-sm font-bold text-white">{product.title}</p>
                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">Quantité: {quantity}</p>
-                                {/* TVA en sus : HT + TVA ajoutée */}
+                                {/* TVA en sus (masquée en cas d'exonération : HT === total) */}
+                                {TVA_ENABLED && (
                                 <p className="text-[10px] text-gray-500 mt-1">
                                     HT <Price amount={baseAmount} currency="XOF" noConvert /> · TVA 18 % +<Price amount={tvaMarchandise} currency="XOF" noConvert />
                                 </p>
+                                )}
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
                                 <p className="text-xl font-black text-[#FCD116] font-heading">

@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, FileText, PaperPlan
 import Link from 'next/link'
 import { Price, useCurrency } from '@/components/ui/Price'
 import { CurrencyCode, convertCurrency } from '@/lib/currency'
-import { ttcFromHt, fromHt } from '@/lib/tax'
+import { ttcFromHt, fromHt, TVA_ENABLED, TVA_RATE } from '@/lib/tax'
 import { useTranslation, T } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { natFetch } from '@/lib/nationality-flow'
@@ -1212,7 +1212,7 @@ export default function NationaliteFormPage() {
                                 {!resumeMode && (
                                     <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
                                         <p className="text-3xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
-                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T> · <T>TVA 18% incluse</T></p>
+                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T>{TVA_ENABLED && <> · {`TVA ${TVA_RATE}% incluse`}</>}</p>
                                     </div>
                                 )}
 
@@ -1297,7 +1297,7 @@ export default function NationaliteFormPage() {
                                 </div>
                                 {/* Montant à régler */}
                                 <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-5 text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1"><T>Montant à régler à l&apos;étape suivante</T> · <T>TVA 18% incluse</T></p>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1"><T>Montant à régler à l&apos;étape suivante</T>{TVA_ENABLED && <> · {`TVA ${TVA_RATE}% incluse`}</>}</p>
                                     <p className="text-2xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
                                 </div>
                             </div>}
