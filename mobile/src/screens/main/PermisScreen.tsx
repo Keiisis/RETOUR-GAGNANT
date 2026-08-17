@@ -26,6 +26,7 @@ import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const PLAYFAIR = fonts.extrabold
@@ -179,6 +180,25 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
             })
             const data = await res.json().catch(() => ({}))
             if (res.ok && data.success) {
+                // Ouvre le dossier « Permis de Conduire » (dossier_tracking, source=mobile)
+                // pour que l'agent et l'admin voient l'inscription dans leur panel
+                // (onglet Service Mobile), avec catégorie et auto-école demandées.
+                const school = schools.find(s => s.id === schoolId) || null
+                await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                    timeoutMs: 20000,
+                    body: JSON.stringify({
+                        service_type: 'Permis de Conduire',
+                        payment_tx_id: txId,
+                        notes: [
+                            selected ? `Catégorie : ${selected.label}.` : null,
+                            selected?.duration ? `Durée prévue : ${selected.duration}.` : null,
+                            school ? `Auto-école choisie : ${school.nom}${school.ville ? ` (${school.ville})` : ''}.` : 'Aucune auto-école choisie : à orienter par l’équipe.',
+                        ].filter(Boolean).join(' '),
+                    }),
+                }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
+
                 toast(t('Inscription confirmée'), t('Paiement confirmé. Notre équipe vous contacte sous 24 h pour lancer votre dossier de permis et planifier votre formation. Reçu envoyé par email.'))
             } else {
                 toast(t('Paiement reçu'), t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId)
@@ -188,7 +208,7 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
         } finally {
             setPendingOrder(null)
         }
-    }, [pendingOrder, t])
+    }, [pendingOrder, selected, schools, schoolId, t])
 
     const field = (name: string) => [styles.field, focused === name && styles.fieldFocused]
     const onShare = () => Share.share({ message: t('Permis de conduire béninois via Retour Gagnant : https://www.retourgagnantbenin.bj/services/permis-conduire') }).catch(() => {})

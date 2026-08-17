@@ -1,5 +1,5 @@
 'use strict'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -389,6 +389,10 @@ export default function NationaliteFormScreen({ navigation }: any) {
     const { t } = useLang()
 
     const [currentStep, setCurrentStep] = useState(0)
+    // Remonte le contenu en haut à CHAQUE changement de chapitre : sans ça, la
+    // position de défilement du chapitre précédent était conservée et l'écran
+    // s'ouvrait au milieu (voire en bas) du nouveau formulaire.
+    const scrollRef = useRef<ScrollView>(null)
     const [loading, setLoading] = useState(false)
     const [showKkiapay, setShowKkiapay] = useState(false)
     const [savedRef, setSavedRef] = useState<string | null>(null)
@@ -541,6 +545,11 @@ export default function NationaliteFormScreen({ navigation }: any) {
         else setCurrentStep(prev => prev + 1)
     }
     const prevStep = () => setCurrentStep(prev => Math.max(0, prev - 1))
+
+    /* Nouveau chapitre → on repart du haut du formulaire. */
+    useEffect(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }, [currentStep])
 
     /* ── Soumission après paiement ── */
     const handlePaymentSuccess = async (transactionId: string) => {
@@ -1209,6 +1218,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
             )}
 
             <ScrollView
+                ref={scrollRef}
                 /* Réserve pour le pied d'action, qui recouvre le contenu. */
                 contentContainerStyle={[styles.scroll, { paddingBottom: 120 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}

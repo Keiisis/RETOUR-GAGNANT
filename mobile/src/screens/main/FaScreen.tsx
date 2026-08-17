@@ -24,6 +24,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -81,7 +82,12 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     const [openFaq, setOpenFaq] = useState<number | null>(1)
 
     // Réservation
+    // `booking` = prêtre choisi (null = « pas encore choisi », choix dans la feuille).
+    // `bookingOpen` PILOTE l'ouverture : la feuille se basait avant sur
+    // `booking !== null`, donc « Réserver ma consultation » (sans prêtre présélectionné)
+    // n'ouvrait jamais rien. Les deux notions sont désormais séparées.
     const [booking, setBooking] = useState<Priest | null>(null)
+    const [bookingOpen, setBookingOpen] = useState(false)
     const [mode, setMode] = useState<Mode>('presentiel')
     const [form, setForm] = useState({ name: '', email: '', phone: '' })
     const [clause, setClause] = useState(false)
@@ -145,6 +151,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
 
     const openBooking = useCallback((p: Priest | null) => {
         setBooking(p)
+        setBookingOpen(true)
         setMode('presentiel')
         setClause(false)
         setForm({
@@ -190,7 +197,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             }
             setPendingOrder(String(data.order_id))
             setPayAmount(`${data.amount_xof} FCFA`)
-            setBooking(null)
+            setBookingOpen(false)
             setShowPay(true)
         } catch {
             toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
@@ -211,6 +218,23 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             })
             const data = await res.json().catch(() => ({}))
             if (res.ok && data.success) {
+                // Ouvre un dossier « Consultation Fa » (dossier_tracking, source=mobile) :
+                // c'est ce qui rend la demande visible côté agent et admin (onglet
+                // Service Mobile) avec le prêtre nommément demandé.
+                const priestNote = booking
+                    ? `Prêtre demandé : ${booking.prenom} ${booking.nom}${booking.localisation ? ` (${booking.localisation})` : ''}.`
+                    : 'Aucun prêtre présélectionné : à orienter par l’équipe.'
+                await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                    timeoutMs: 20000,
+                    body: JSON.stringify({
+                        service_type: 'Consultation Fa',
+                        payment_tx_id: txId,
+                        notes: `Consultation ${mode === 'presentiel' ? 'en présentiel' : 'en visio'}. ${priestNote}`,
+                    }),
+                }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
+
                 toast(t('Consultation réservée'), t('Votre paiement est confirmé. Notre équipe vous contactera pour fixer le rendez-vous. Une facture vous a été envoyée par email.'))
             } else {
                 toast(t('Paiement reçu'), t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId)
@@ -220,7 +244,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
         } finally {
             setPendingOrder(null)
         }
-    }, [pendingOrder, t])
+    }, [pendingOrder, booking, mode, t])
 
     const fromPrice = prices.presentiel || prices.visio || ''
 
@@ -441,14 +465,52 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             </Modal>
 
             {/* RÉSERVATION */}
-            <Modal visible={booking !== null} animationType="slide" transparent onRequestClose={() => setBooking(null)}>
+            <Modal visible={bookingOpen} animationType="slide" transparent onRequestClose={() => setBookingOpen(false)}>
                 <View style={styles.sheetWrap}>
-                    <Pressable style={styles.sheetBackdrop} onPress={() => setBooking(null)} accessibilityRole="button" hitSlop={6} />
+                    <Pressable style={styles.sheetBackdrop} onPress={() => setBookingOpen(false)} accessibilityRole="button" hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <View style={styles.sheetHandle} />
                             <Text style={styles.bookTitle}>{t('Réserver une consultation')}</Text>
                             {!!booking && <Text style={styles.bookPriest}>{t('Avec')} {booking.prenom} {booking.nom}</Text>}
+
+                            {/* CHOIX DU PRÊTRE — le client sélectionne qui il veut consulter.
+                                Le prêtre retenu part dans priest_id : l'agent et l'admin
+                                voient donc nommément la demande côté panel. */}
+                            {priests.length > 0 && (
+                                <>
+                                    <Text style={styles.label}>{t('Choisissez votre prêtre Fa')}</Text>
+                                    <View style={styles.priestPickRow}>
+                                        {priests.map(p => {
+                                            const on = booking?.id === p.id
+                                            return (
+                                                <Pressable
+                                                    key={p.id}
+                                                    onPress={() => setBooking(on ? null : p)}
+                                                    style={[styles.priestPick, on && styles.priestPickOn]}
+                                                    accessibilityRole="button"
+                                                    accessibilityState={{ selected: on }}
+                                                    hitSlop={4}
+                                                >
+                                                    <Text style={[styles.priestPickName, on && styles.priestPickNameOn]} numberOfLines={1}>
+                                                        {p.prenom} {p.nom}
+                                                    </Text>
+                                                    {!!p.localisation && (
+                                                        <Text style={[styles.priestPickLoc, on && styles.priestPickLocOn]} numberOfLines={1}>
+                                                            {p.localisation}
+                                                        </Text>
+                                                    )}
+                                                </Pressable>
+                                            )
+                                        })}
+                                    </View>
+                                    <Text style={styles.priestPickHint}>
+                                        {booking
+                                            ? t('Votre demande sera transmise nommément à ce prêtre.')
+                                            : t('Aucun prêtre sélectionné : notre équipe vous orientera vers le prêtre le plus adapté.')}
+                                    </Text>
+                                </>
+                            )}
 
                             <Text style={styles.label}>{t('Formule')}</Text>
                             <View style={styles.modeRow}>
@@ -710,6 +772,16 @@ const styles = StyleSheet.create({
     bookTitle: { fontFamily: fonts.heading, fontSize: 20, color: C.textPrimary },
     bookPriest: { fontFamily: fonts.body, fontSize: 13.5, color: C.textMuted, marginTop: 2, marginBottom: spacing.md },
     label: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textPrimary, marginTop: spacing.md, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.4 },
+    /* Sélecteur de prêtre (feuille de réservation) */
+    priestPickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    priestPick: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.lg, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, maxWidth: '100%' },
+    priestPickOn: { backgroundColor: C.primary, borderColor: C.primary },
+    priestPickName: { fontFamily: fonts.bodyBold, fontSize: 13, color: C.textPrimary },
+    priestPickNameOn: { color: '#FFFFFF' },
+    priestPickLoc: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, marginTop: 2 },
+    priestPickLocOn: { color: '#FFFFFF', opacity: 0.85 },
+    priestPickHint: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted, marginTop: spacing.sm, lineHeight: 16 },
+
     modeRow: { flexDirection: 'row', gap: 12 },
     modeCard: { flex: 1, backgroundColor: C.surface, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: C.border },
     modeCardActive: { backgroundColor: C.primary, borderColor: C.primary },
