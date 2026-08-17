@@ -60,6 +60,46 @@ export default function AdminLogementsPage() {
     const [content, setContent] = useState<Content>(emptyContent)
     const [contentOpen, setContentOpen] = useState(false)
     const [savingContent, setSavingContent] = useState(false)
+
+    /* ── Frais de constitution de dossier ──────────────────────────────
+       C'est LA rémunération de RGB sur le logement : nous ne vendons pas le
+       bien (les prix ci-dessous sont ceux de SIMAU, affichés à titre
+       d'information), nous constituons le dossier du client et le transmettons.
+       Stocké dans page_sections (page='logement', section_key='form_settings'),
+       même convention que le formulaire de nationalité : aucun prix codé en dur,
+       le site ET l'application lisent cette valeur. */
+    const [feeAmount, setFeeAmount] = useState<number>(250)
+    const [feeCurrency, setFeeCurrency] = useState('EUR')
+    const [savingFee, setSavingFee] = useState(false)
+    const [feeSaved, setFeeSaved] = useState(false)
+
+    useEffect(() => {
+        fetch('/api/logements/dossier-fee')
+            .then(r => r.json())
+            .then(j => {
+                if (typeof j?.amount === 'number' && j.amount > 0) setFeeAmount(j.amount)
+                if (j?.currency) setFeeCurrency(String(j.currency))
+            })
+            .catch(() => { /* repli 250 € */ })
+    }, [])
+
+    const saveFee = async () => {
+        setSavingFee(true); setFeeSaved(false)
+        try {
+            const res = await fetch('/api/logements/dossier-fee', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: feeAmount, currency: feeCurrency }),
+            })
+            if (!res.ok) throw new Error('Échec')
+            setFeeSaved(true)
+            setTimeout(() => setFeeSaved(false), 2500)
+        } catch {
+            alert("Impossible d'enregistrer les frais de dossier.")
+        } finally {
+            setSavingFee(false)
+        }
+    }
     useEffect(() => { fetch('/api/logements/content').then(r => r.json()).then(j => setContent({ ...emptyContent, ...(j.content || {}) })).catch(() => { }) }, [])
     const setC = (patch: Partial<Content>) => setContent(c => ({ ...c, ...patch }))
     const saveContent = async () => {
@@ -153,6 +193,53 @@ export default function AdminLogementsPage() {
                 <div className="flex items-center gap-2">
                     <button onClick={() => setContentOpen(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors"><Megaphone size={16} /> Contenu marketing</button>
                     <button onClick={() => setEditing(blank())} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.6)]"><Plus size={17} /> Nouveau logement</button>
+                </div>
+            </div>
+
+            {/* ── Frais de constitution de dossier : la rémunération de RGB ── */}
+            <div className="mb-8 rounded-2xl border border-[#008751]/20 bg-[#E6F3ED]/60 p-5">
+                <div className="flex flex-wrap items-end gap-4">
+                    <div>
+                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">Frais de constitution de dossier</h2>
+                        <p className="text-xs text-slate-600 mt-1 max-w-xl">
+                            Ce que le client paie à Retour Gagnant pour que nous montions son dossier et le
+                            transmettions à SIMAU. RGB ne vend pas le bien : les prix des logements ci-dessous
+                            sont ceux du partenaire, affichés à titre d&apos;information. Ce montant s&apos;applique
+                            immédiatement au site et à l&apos;application mobile.
+                        </p>
+                    </div>
+                    <div className="flex items-end gap-2 ml-auto">
+                        <label className="block">
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Montant</span>
+                            <input
+                                type="number" min={0} step="1"
+                                value={feeAmount}
+                                onChange={e => setFeeAmount(parseFloat(e.target.value) || 0)}
+                                className="w-28 rounded-xl border border-slate-300 bg-white px-3 py-2 font-bold text-slate-900 outline-none focus:border-[#008751]"
+                            />
+                        </label>
+                        <label className="block">
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Devise</span>
+                            <select
+                                value={feeCurrency}
+                                onChange={e => setFeeCurrency(e.target.value)}
+                                className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-bold text-slate-900 outline-none focus:border-[#008751]"
+                            >
+                                <option value="EUR">EUR (€)</option>
+                                <option value="XOF">XOF (FCFA)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="GBP">GBP (£)</option>
+                            </select>
+                        </label>
+                        <button
+                            onClick={saveFee}
+                            disabled={savingFee}
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#008751] px-5 py-2.5 font-bold text-white transition-colors hover:bg-[#00643C] disabled:opacity-60"
+                        >
+                            {savingFee ? <Loader2 size={16} className="animate-spin" /> : feeSaved ? <Check size={16} /> : <Save size={16} />}
+                            {savingFee ? 'Enregistrement…' : feeSaved ? 'Enregistré !' : 'Enregistrer'}
+                        </button>
+                    </div>
                 </div>
             </div>
 

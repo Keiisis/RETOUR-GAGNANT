@@ -85,5 +85,7 @@ export async function POST(request: NextRequest) {
         // Le lead est enregistré même si l'email échoue.
     }
 
-    return NextResponse.json({ success: true, transmis })
+    // `lead_id` est renvoyé pour que le client (site ou application) puisse
+    // rattacher le paiement des frais de dossier au prospect enregistré.
+    return NextResponse.json({ success: true, transmis, lead_id: saved.id })
 }

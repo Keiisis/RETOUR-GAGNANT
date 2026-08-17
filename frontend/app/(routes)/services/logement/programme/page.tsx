@@ -459,6 +459,16 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
     const [f, setF] = useState({ prenom: '', nom: '', email: '', telephone: '', pays_residence: '', diaspora: false, formule_souhaitee: '', message: '' })
     const [sending, setSending] = useState(false)
     const [done, setDone] = useState(false)
+    /* Frais de constitution de dossier : la rémunération de RGB (nous ne vendons
+       pas le bien). Montant piloté depuis l'admin, jamais codé en dur. */
+    const [fee, setFee] = useState<{ amount: number; currency: string }>({ amount: 250, currency: 'EUR' })
+    useEffect(() => {
+        fetch('/api/logements/dossier-fee')
+            .then(r => r.json())
+            .then(j => { if (typeof j?.amount === 'number' && j.amount > 0) setFee({ amount: j.amount, currency: j.currency || 'EUR' }) })
+            .catch(() => { /* repli 250 € */ })
+    }, [])
+    const feeSymbol = fee.currency === 'EUR' ? '€' : fee.currency === 'USD' ? '$' : fee.currency === 'GBP' ? '£' : 'FCFA'
     const submit = async () => {
         if (!f.nom.trim() || (!f.email.trim() && !f.telephone.trim())) { alert('Nom + email ou téléphone requis.'); return }
         setSending(true)
@@ -482,7 +492,10 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                     <div className="p-10 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#E6F3ED] flex items-center justify-center mx-auto mb-4"><Check size={28} className="text-[#008751]" /></div>
                         <h3 className="text-lg font-black text-slate-900">Demande transmise.</h3>
-                        <p className="text-sm text-slate-500 mt-1">Notre équipe vous recontacte pour composer votre dossier et transmettre votre demande.</p>
+                        <p className="text-sm text-slate-500 mt-1">
+                            Notre équipe vous recontacte pour composer votre dossier et transmettre votre demande.
+                            Les frais de constitution de dossier ({fee.amount} {feeSymbol}) vous seront indiqués à cette étape.
+                        </p>
                         <button onClick={onClose} className="mt-5 px-5 py-2.5 rounded-full bg-[#008751] text-white font-bold">Fermer</button>
                     </div>
                 ) : (
@@ -502,6 +515,15 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                             <select value={f.formule_souhaitee} onChange={e => setF({ ...f, formule_souhaitee: e.target.value })} className={inp}><option value="">Formule souhaitée</option><option>Location-accession</option><option>Comptant / crédit</option></select>
                             <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={f.diaspora} onChange={e => setF({ ...f, diaspora: e.target.checked })} className="w-4 h-4 accent-[#008751]" /> Je fais partie de la diaspora</label>
                             <textarea rows={2} value={f.message} onChange={e => setF({ ...f, message: e.target.value })} placeholder="Message (optionnel)" className={inp + ' resize-none'} />
+                            {/* Ce que RGB facture réellement : la constitution du dossier. */}
+                            <div className="rounded-xl border border-[#008751]/25 bg-[#E6F3ED]/60 p-3.5">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-[#00643C]">Frais de constitution de dossier</p>
+                                <p className="text-xl font-black text-slate-900 mt-0.5">{fee.amount} {feeSymbol}</p>
+                                <p className="text-[11px] text-slate-600 mt-1">
+                                    Nous montons votre dossier complet et le transmettons à notre partenaire agréé.
+                                    Le prix du logement se règle ensuite directement auprès de lui, jamais sur ce site.
+                                </p>
+                            </div>
                         </div>
                         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
                             <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50">Annuler</button>

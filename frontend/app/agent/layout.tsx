@@ -388,7 +388,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Leads Oracle'), icon: Compass, href: '/agent/leads' },
                 { title: t('Demandes Nat.'), icon: Globe, href: '/agent/nationalite' },
                 // Onglet Logement : réservé à l'agent nommément autorisé
-                ...(isLogementAgent(agent?.id) ? [{ title: t('Logement'), icon: Building2, href: '/agent/logements' }] : []),
+                ...(isLogementAgent(agent?.id) ? [
+                    { title: t('Logement'), icon: Building2, href: '/agent/logements' },
+                    { title: t('Prospects Logement'), icon: UsersIcon, href: '/agent/logements/prospects' },
+                ] : []),
             ],
         },
         {

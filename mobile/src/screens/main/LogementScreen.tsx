@@ -1,15 +1,27 @@
 /* ═══════════════════════════════════════════════════════════
-   Logement (Acheter ou Louer) - catalogue + mise en relation.
-   Service SANS paiement : RGB accompagne, les prospects sont transmis au
-   partenaire SIMAU. Miroir du web /services/logement :
-   /api/logements (catalogue) + /api/logements/lead (capture prospect).
+   Logement (Acheter ou Louer) — catalogue + constitution de dossier.
+
+   MODÈLE ÉCONOMIQUE : Retour Gagnant ne vend PAS le bien. Les prix affichés
+   sont ceux du partenaire SIMAU, à titre d'information ; le logement se règle
+   ensuite directement auprès de lui. La rémunération de RGB, encaissée ici,
+   ce sont les FRAIS DE CONSTITUTION DE DOSSIER : nous montons le dossier du
+   client et le transmettons à SIMAU.
+
+   Parcours : catalogue → fiche détaillée (toutes les photos + plan + visite)
+   → formulaire → paiement des frais (Kkiapay, EUR→XOF) → dossier « Logement »
+   dans dossier_tracking (visible admin + agent habilité).
+
+   Montant des frais : page_sections (page='logement', section_key='form_settings')
+   via /api/logements/dossier-fee, éditable en admin. Jamais codé en dur.
+   Le prospect est enregistré AVANT le paiement (logement_leads + email SIMAU),
+   donc rien n'est perdu si le client abandonne au paiement.
 ═══════════════════════════════════════════════════════════ */
 
 import React, { useCallback, useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image,
     ActivityIndicator, TextInput, Modal, Platform, Share,
-    LayoutAnimation, UIManager,
+    LayoutAnimation, UIManager, Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -23,6 +35,8 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
+import KkiapayModal from '../../components/KkiapayModal'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -33,11 +47,25 @@ interface Logement {
     ville: string | null
     site: string | null
     surface_m2: number | null
+    chambres: number | null
     prix_comptant: number | null
     devise: string | null
     mensualite: number | null
+    duree_annees: number | null
     programme: string | null
+    description: string | null
+    atouts: string[] | null
+    formules: string[] | null
     images: string[] | null
+    plan_url: string | null
+    visite_url: string | null
+    disponibilite: string | null
+}
+
+const EUR_TO_XOF = 655.957
+const CURRENCY_SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', XOF: 'FCFA', XAF: 'FCFA' }
+function toXof(amount: number, currency: string): number {
+    return (currency || 'EUR').toUpperCase() === 'EUR' ? Math.round(amount * EUR_TO_XOF) : Math.round(amount)
 }
 
 const fmt = (n: number | null, devise: string | null) => {
@@ -81,7 +109,7 @@ const AVEC = [
 ]
 
 const FAQ = [
-    { q: 'Dois-je payer quelque chose sur l’application ?', a: "Non. Cet écran ne comporte aucun paiement : nous recueillons votre projet, composons votre dossier et vous mettons en relation avec notre partenaire logement agréé. Notre rémunération porte sur l'accompagnement du dossier, jamais sur la vente du bien." },
+    { q: 'Que paie-t-on exactement sur l’application ?', a: "Uniquement les frais de constitution de dossier : c'est notre rémunération. Nous montons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement lui-même se règle ensuite directement auprès du partenaire, jamais sur l'application." },
     { q: 'Puis-je acheter depuis l’étranger ?', a: "Oui, c'est précisément notre métier : l'essentiel de nos clients réside hors du Bénin. Toutes les démarches préparatoires se font à distance, et nous vous représentons sur place quand c'est nécessaire." },
     { q: 'Quelle est la différence entre comptant et mensualité ?', a: "Le comptant règle le bien en une fois. La formule en mensualité (location-accession) permet d'échelonner : vous occupez le logement en versant des mensualités qui construisent votre acquisition." },
     { q: 'Que se passe-t-il après ma demande ?', a: 'Notre équipe vous recontacte par email ou WhatsApp pour préciser votre projet, puis transmet votre dossier qualifié au partenaire. Vous restez informé à chaque étape.' },
@@ -107,6 +135,23 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
     const [formule, setFormule] = useState<(typeof FORMULES)[number]>('À définir')
     const [openFaq, setOpenFaq] = useState<number | null>(0)
 
+    /* Fiche détaillée : toutes les photos et toutes les informations du bien.
+       Auparavant un appui sur une carte ouvrait directement le formulaire, et
+       seule la première image était visible — description, atouts, plan et
+       visite virtuelle n'étaient jamais affichés alors qu'ils arrivent de l'API. */
+    const [detail, setDetail] = useState<Logement | null>(null)
+    const [photoIndex, setPhotoIndex] = useState(0)
+
+    /* Frais de constitution de dossier : la rémunération de RGB. Montant piloté
+       depuis l'admin (page_sections → /api/logements/dossier-fee), jamais codé
+       en dur. RGB ne vend pas le bien : les prix affichés sont ceux du partenaire. */
+    const [feeAmount, setFeeAmount] = useState(250)
+    const [feeCurrency, setFeeCurrency] = useState('EUR')
+    const feeSymbol = CURRENCY_SYMBOL[feeCurrency.toUpperCase()] || feeCurrency
+    const feeXof = toXof(feeAmount, feeCurrency)
+    const [showPay, setShowPay] = useState(false)
+    const [pendingLeadId, setPendingLeadId] = useState<string | null>(null)
+
     const onShare = useCallback(() => {
         Share.share({ message: t('Acheter ou louer au Bénin avec Retour Gagnant : https://www.retourgagnantbenin.bj/services/logement') }).catch(() => { })
     }, [t])
@@ -120,10 +165,18 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
         let alive = true
         ;(async () => {
             try {
-                const res = await fetchWithTimeout(`${API_BASE}/api/logements`, { timeoutMs: 12000 })
-                const json = await res.json().catch(() => ({}))
+                const [lRes, fRes] = await Promise.all([
+                    fetchWithTimeout(`${API_BASE}/api/logements`, { timeoutMs: 12000 }),
+                    fetchWithTimeout(`${API_BASE}/api/logements/dossier-fee`, { timeoutMs: 12000 }),
+                ])
+                const json = await lRes.json().catch(() => ({}))
                 if (alive) setLogements(Array.isArray(json.logements) ? json.logements : [])
-            } catch { /* repli : liste vide */ }
+                const fee = await fRes.json().catch(() => ({}))
+                if (alive && typeof fee?.amount === 'number' && fee.amount > 0) {
+                    setFeeAmount(fee.amount)
+                    if (fee.currency) setFeeCurrency(String(fee.currency))
+                }
+            } catch { /* repli : liste vide, forfait 250 € */ }
             finally { if (alive) setLoading(false) }
         })()
         return () => { alive = false }
@@ -143,6 +196,41 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
         setDiaspora(true)
         setShowForm(true)
     }, [profile])
+
+    /* Frais de dossier encaissés → on ouvre le dossier « Logement » : c'est lui
+       que l'équipe traite pour constituer puis transmettre le dossier à SIMAU
+       (visible admin + agent habilité, onglet Service Mobile). */
+    const onFeePaid = useCallback(async (transactionId: string) => {
+        setShowPay(false)
+        const bien = target
+        try {
+            await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                timeoutMs: 20000,
+                body: JSON.stringify({
+                    service_type: 'Logement',
+                    payment_tx_id: transactionId,
+                    payment_amount: feeXof,
+                    payment_currency: 'XOF',
+                    notes: [
+                        'Frais de constitution de dossier réglés.',
+                        bien ? `Bien visé : ${bien.nom}${bien.ville ? ` (${bien.ville})` : ''}.` : 'Aucun bien précis : projet à qualifier.',
+                        `Formule souhaitée : ${formule}.`,
+                        pendingLeadId ? `Prospect : ${pendingLeadId}.` : null,
+                    ].filter(Boolean).join(' '),
+                }),
+            }).catch(() => { /* non bloquant : le paiement est déjà encaissé */ })
+
+            toast(
+                t('Dossier ouvert'),
+                t('Vos frais de dossier sont réglés. Notre équipe constitue votre dossier et le transmet à notre partenaire. Suivez son avancement dans « Mon Dossier ».'),
+            )
+            navigation.navigate('Main', { screen: 'Dossier' })
+        } finally {
+            setPendingLeadId(null)
+        }
+    }, [target, formule, feeXof, pendingLeadId, navigation, t])
 
     const submitLead = useCallback(async () => {
         if (!form.nom.trim()) { toast(t('Nom requis'), t('Veuillez indiquer votre nom.')); return }
@@ -174,8 +262,11 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                 toast(t('Envoi impossible'), data.error || t('Réessayez dans un instant.'))
                 return
             }
+            // Le prospect est enregistré ET transmis par email : rien n'est perdu
+            // même si le client abandonne le paiement juste après.
+            setPendingLeadId(data.lead_id || null)
             setShowForm(false)
-            toast(t('Demande envoyée'), t('Merci ! Notre équipe et notre partenaire vous recontactent rapidement pour votre projet de logement.'))
+            setShowPay(true)
         } catch {
             toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
         } finally {
@@ -209,9 +300,9 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                         <Text style={styles.heroBadgeText}>{t('Immobilier & Installation')}</Text>
                     </View>
                     <Text style={styles.title}>{t('Acheter ou Louer au Bénin')}</Text>
-                    <Text style={styles.subtitle}>{t('Accédez au programme national de logements. Nous composons votre dossier et vous mettons en relation avec notre partenaire agréé. Aucun paiement ici.')}</Text>
+                    <Text style={styles.subtitle}>{t('Accédez au programme national de logements. Nous constituons votre dossier et le transmettons à notre partenaire agréé. Vous ne réglez ici que les frais de dossier.')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.heroChipsRow}>
-                        {[{ icon: CheckCircle, label: 'Sans paiement' }, { icon: Users, label: 'Spécial diaspora' }, { icon: ShieldCheck, label: 'Partenaire agréé' }].map(({ icon: Ic, label }) => (
+                        {[{ icon: CheckCircle, label: 'Dossier pris en charge' }, { icon: Users, label: 'Spécial diaspora' }, { icon: ShieldCheck, label: 'Partenaire agréé' }].map(({ icon: Ic, label }) => (
                             <View key={label} style={styles.heroChip}>
                                 <Ic size={14} color={C.primary} strokeWidth={2.2} />
                                 <Text style={styles.heroChipText}>{t(label)}</Text>
@@ -304,7 +395,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                         const comptant = fmt(l.prix_comptant, l.devise)
                         const mens = fmt(l.mensualite, l.devise)
                         return (
-                            <Pressable key={l.id} onPress={() => openForm(l)} style={styles.card} accessibilityRole="button">
+                            <Pressable key={l.id} onPress={() => { setPhotoIndex(0); setDetail(l) }} style={styles.card} accessibilityRole="button">
                                 <View style={styles.cardImgWrap}>
                                     {l.images && l.images[0]
                                         ? <Image source={{ uri: l.images[0] }} style={styles.cardImg} />
@@ -335,7 +426,11 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                         )}
                                     </View>
                                     <View style={styles.cardCta}>
-                                        <Text style={styles.cardCtaText}>{t('Je suis intéressé(e)')}</Text>
+                                        <Text style={styles.cardCtaText}>
+                                            {l.images && l.images.length > 1
+                                                ? t('Voir les {n} photos', { n: l.images.length })
+                                                : t('Voir le détail')}
+                                        </Text>
                                         <Send size={13} color={C.primary} />
                                     </View>
                                 </View>
@@ -371,8 +466,8 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             {/* Barre d'action collante */}
             <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.stickyLabel}>{t('Mise en relation')}</Text>
-                    <Text style={styles.stickyValue}>{t('Sans paiement')}</Text>
+                    <Text style={styles.stickyLabel}>{t('Frais de dossier')}</Text>
+                    <Text style={styles.stickyValue}>{feeAmount} {feeSymbol}</Text>
                 </View>
                 <Pressable
                     onPress={() => openForm(null)}
@@ -460,14 +555,182 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                 style={({ pressed }) => [styles.submitBtn, pressed && { transform: [{ scale: 0.98 }] }, submitting && { opacity: 0.6 }]}
                                 accessibilityRole="button">
                                 {submitting ? <ActivityIndicator color={C.primaryText} /> : (
-                                    <><Send size={17} color={C.primaryText} /><Text style={styles.submitText}>{t('Envoyer ma demande')}</Text></>
+                                    <><Send size={17} color={C.primaryText} /><Text style={styles.submitText}>{t('Continuer vers le paiement')}</Text></>
                                 )}
                             </Pressable>
-                            <Text style={styles.secureCenter}>{t('Aucun paiement. Mise en relation avec notre partenaire agréé.')}</Text>
+                            <Text style={styles.secureCenter}>
+                                {t('Frais de constitution de dossier : {a} {s}. Le prix du logement se règle auprès de notre partenaire, jamais ici.', { a: feeAmount, s: feeSymbol })}
+                            </Text>
                         </ScrollView>
                     </View>
                 </View>
             </Modal>
+
+            {/* ── Fiche détaillée : TOUTES les photos et informations du bien ── */}
+            <Modal visible={!!detail} transparent animationType="slide" onRequestClose={() => setDetail(null)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setDetail(null)} />
+                    <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
+                        <View style={styles.sheetHandle} />
+                        {!!detail && (
+                            <>
+                                <View style={styles.sheetHeader}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.sheetOverline}>
+                                            {[detail.type, detail.programme === '20000' ? '20 000 logements' : 'Résidence'].filter(Boolean).join(' · ')}
+                                        </Text>
+                                        <Text style={styles.sheetTitle} numberOfLines={2}>{detail.nom}</Text>
+                                    </View>
+                                    <Pressable onPress={() => setDetail(null)} style={styles.closeBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Fermer')}>
+                                        <X size={20} color={C.text} />
+                                    </Pressable>
+                                </View>
+
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    {/* Galerie : défilement horizontal page à page */}
+                                    {detail.images && detail.images.length > 0 ? (
+                                        <>
+                                            <ScrollView
+                                                horizontal
+                                                pagingEnabled
+                                                showsHorizontalScrollIndicator={false}
+                                                onMomentumScrollEnd={e => {
+                                                    const w = e.nativeEvent.layoutMeasurement.width || 1
+                                                    setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / w))
+                                                }}
+                                                style={styles.gallery}
+                                            >
+                                                {detail.images.map((uri, i) => (
+                                                    <Image key={`${uri}-${i}`} source={{ uri }} style={styles.galleryImg} resizeMode="cover" />
+                                                ))}
+                                            </ScrollView>
+                                            {detail.images.length > 1 && (
+                                                <View style={styles.dotsRow}>
+                                                    {detail.images.map((_, i) => (
+                                                        <View key={i} style={[styles.dot, i === photoIndex && styles.dotOn]} />
+                                                    ))}
+                                                </View>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <View style={styles.galleryEmpty}>
+                                            <Home size={30} color={C.primary} />
+                                            <Text style={styles.galleryEmptyText}>{t('Photos bientôt disponibles')}</Text>
+                                        </View>
+                                    )}
+
+                                    {/* Caractéristiques */}
+                                    <View style={styles.specRow}>
+                                        {[
+                                            detail.ville && { icon: MapPin, v: [detail.ville, detail.site].filter(Boolean).join(' · ') },
+                                            detail.surface_m2 ? { icon: Ruler, v: `${detail.surface_m2} m²` } : null,
+                                            detail.chambres ? { icon: Home, v: t('{n} chambres', { n: detail.chambres }) } : null,
+                                        ].filter(Boolean).map((s: any, i) => (
+                                            <View key={i} style={styles.specChip}>
+                                                <s.icon size={13} color={C.primary} />
+                                                <Text style={styles.specText}>{s.v}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    {/* Prix du partenaire */}
+                                    <View style={styles.detailPrices}>
+                                        {!!fmt(detail.prix_comptant, detail.devise) && (
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.priceLabel}>{t('Comptant')}</Text>
+                                                <Text style={styles.detailPriceValue}>{fmt(detail.prix_comptant, detail.devise)}</Text>
+                                            </View>
+                                        )}
+                                        {!!fmt(detail.mensualite, detail.devise) && (
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.priceLabel}>
+                                                    {t('Mensualité')}{detail.duree_annees ? ` · ${detail.duree_annees} ${t('ans')}` : ''}
+                                                </Text>
+                                                <Text style={styles.detailPriceValue}>{fmt(detail.mensualite, detail.devise)}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={styles.partnerNote}>
+                                        {t('Prix du partenaire, à titre d’information : Retour Gagnant ne vend pas le bien.')}
+                                    </Text>
+
+                                    {!!detail.description && <Text style={styles.detailDesc}>{detail.description}</Text>}
+
+                                    {!!detail.atouts?.length && (
+                                        <>
+                                            <Text style={styles.detailLabel}>{t('Atouts')}</Text>
+                                            {detail.atouts.map((a, i) => (
+                                                <View key={i} style={styles.atoutRow}>
+                                                    <Check size={14} color={C.primary} strokeWidth={3} />
+                                                    <Text style={styles.atoutText}>{a}</Text>
+                                                </View>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {!!detail.formules?.length && (
+                                        <>
+                                            <Text style={styles.detailLabel}>{t('Formules possibles')}</Text>
+                                            <View style={styles.chipsRow}>
+                                                {detail.formules.map(f => (
+                                                    <View key={f} style={styles.chip}>
+                                                        <Text style={styles.chipText}>{f === 'location-accession' ? t('Location-accession') : t('Comptant')}</Text>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        </>
+                                    )}
+
+                                    {(!!detail.plan_url || !!detail.visite_url) && (
+                                        <>
+                                            <Text style={styles.detailLabel}>{t('À consulter')}</Text>
+                                            {!!detail.plan_url && (
+                                                <Pressable onPress={() => Linking.openURL(detail.plan_url!).catch(() => { })} style={styles.linkRow} accessibilityRole="button">
+                                                    <FileText size={15} color={C.primary} />
+                                                    <Text style={styles.linkText}>{t('Voir le plan du logement')}</Text>
+                                                </Pressable>
+                                            )}
+                                            {!!detail.visite_url && (
+                                                <Pressable onPress={() => Linking.openURL(detail.visite_url!).catch(() => { })} style={styles.linkRow} accessibilityRole="button">
+                                                    <Home size={15} color={C.primary} />
+                                                    <Text style={styles.linkText}>{t('Visite virtuelle / vidéo')}</Text>
+                                                </Pressable>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Ce que RGB facture réellement */}
+                                    <View style={styles.feeCard}>
+                                        <Text style={styles.feeLabel}>{t('Frais de constitution de dossier')}</Text>
+                                        <Text style={styles.feeAmount}>{feeAmount} {feeSymbol}</Text>
+                                        <Text style={styles.feeXof}>{t('Soit environ')} {feeXof.toLocaleString('fr-FR')} FCFA</Text>
+                                        <Text style={styles.feeDesc}>
+                                            {t('Nous constituons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement se règle ensuite directement auprès de lui.')}
+                                        </Text>
+                                    </View>
+
+                                    <Pressable
+                                        onPress={() => { const bien = detail; setDetail(null); openForm(bien) }}
+                                        style={({ pressed }) => [styles.submitBtn, pressed && { transform: [{ scale: 0.98 }] }]}
+                                        accessibilityRole="button"
+                                    >
+                                        <Send size={17} color={C.primaryText} />
+                                        <Text style={styles.submitText}>{t('Constituer mon dossier')}</Text>
+                                    </Pressable>
+                                </ScrollView>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
+            <KkiapayModal
+                visible={showPay}
+                amount={String(feeXof)}
+                serviceName="Frais de dossier Logement"
+                onClose={() => setShowPay(false)}
+                onSuccess={onFeePaid}
+            />
         </View>
     )
 }
@@ -536,6 +799,35 @@ const styles = StyleSheet.create({
     faqHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
     faqQ: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 13.5, color: C.text, lineHeight: 19 },
     faqA: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: C.textSec, marginTop: spacing.sm },
+
+    /* Fiche détaillée : galerie + informations complètes */
+    gallery: { height: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: C.surfaceAlt },
+    galleryImg: { width: 320, height: 220 },
+    galleryEmpty: { height: 140, borderRadius: radius.lg, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center', gap: 8 },
+    galleryEmptyText: { ...typography.bodySmall, color: C.textMuted },
+    dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.sm },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
+    dotOn: { backgroundColor: C.primary, width: 18 },
+
+    specRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.md },
+    specChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
+    specText: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.text },
+
+    detailPrices: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+    detailPriceValue: { fontFamily: fonts.extrabold, fontSize: 17, color: '#00643C', marginTop: 2 },
+    partnerNote: { ...typography.bodySmall, fontSize: 11, color: C.textMuted, marginTop: 6, fontStyle: 'italic' },
+    detailDesc: { ...typography.body, color: C.textSec, lineHeight: 21, marginTop: spacing.lg },
+    detailLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1.6, marginTop: spacing.lg, marginBottom: spacing.sm },
+    atoutRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
+    atoutText: { flex: 1, ...typography.bodySmall, color: C.text, lineHeight: 19 },
+    linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+    linkText: { fontFamily: fonts.bodyBold, fontSize: 13.5, color: C.primary },
+
+    feeCard: { backgroundColor: C.primary, borderRadius: radius.xl, padding: spacing.lg, marginTop: spacing.xl, borderTopWidth: 4, borderTopColor: '#FCD116' },
+    feeLabel: { fontFamily: fonts.bodyBold, fontSize: 11, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 1 },
+    feeAmount: { fontFamily: fonts.extrabold, fontSize: 30, color: '#FFFFFF', marginTop: 2 },
+    feeXof: { fontFamily: fonts.body, fontSize: 12, color: 'rgba(255,255,255,0.85)' },
+    feeDesc: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,0.92)', marginTop: spacing.sm },
 
     /* Barre collante */
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: spacing.md, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },

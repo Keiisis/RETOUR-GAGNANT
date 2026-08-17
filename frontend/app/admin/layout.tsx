@@ -156,6 +156,7 @@ function AdminLayoutContent({
         { title: 'Inventaire', icon: Box, href: '/admin/inventory' },
         { title: 'Boutique', icon: ShoppingBag, href: '/admin/boutique' },
         { title: 'Logements', icon: Building2, href: '/admin/logements' },
+        { title: 'Prospects Logement', icon: Building2, href: '/admin/logements/prospects' },
         { title: 'Commandes', icon: Receipt, href: '/admin/orders' },
         { title: 'Coupons', icon: Tag, href: '/admin/coupons' },
         { title: 'Messages', icon: MessageSquare, href: '/admin/messages', badge: unreadMessages },
