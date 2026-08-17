@@ -23,7 +23,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ChevronLeft, Share2, Search, FileText, GitBranch, ShieldCheck, Lock,
-    Sparkles, Check, CheckCircle, X, XCircle, ChevronDown, Clock, Users,
+    Network, Check, CheckCircle, X, XCircle, ChevronDown, Clock, Users,
 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { toast } from '../../lib/feedback'
@@ -161,7 +161,10 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                 {/* Hero */}
                 <Animated.View entering={FadeInUp.duration(420)} style={styles.hero}>
                     <View style={styles.badge}>
-                        <Sparkles size={14} color={C.primary} strokeWidth={2.2} />
+                        {/* Arborescence généalogique : glyphe structurel, cohérent avec
+                            les autres badges de service (IdCard, Home). L'étoile
+                            décorative était hors langage graphique de l'app. */}
+                        <Network size={14} color={C.primary} strokeWidth={2.2} />
                         <Text style={styles.badgeText}>{t('Racines & Généalogie')}</Text>
                     </View>
                     <Text style={styles.heroTitle}>{t('Retrouvez vos racines')}</Text>

@@ -103,7 +103,11 @@ export default function MessagesScreen({ navigation }: any) {
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
+    // `conversationId` = fil dans lequel le client ÉCRIT.
+    // `threadIds` = TOUS les fils qui le concernent (RDV, contact, nationalité,
+    // chat…), car l'agent peut écrire dans n'importe lequel depuis sa console.
     const [conversationId, setConversationId] = useState<string | null>(null)
+    const [threadIds, setThreadIds] = useState<string[]>([])
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
     const [newMessage, setNewMessage] = useState('')
     const [sending, setSending] = useState(false)
@@ -137,34 +141,56 @@ export default function MessagesScreen({ navigation }: any) {
         transform: [{ scale: interpolate(onlineDot.value, [0, 1], [0.8, 1.2]) }],
     }))
 
-    /* ── 1. Find or create the conversation thread ── */
-    const findOrCreateConversation = useCallback(async () => {
-        if (!profile) return null
-        const { data: existing, error: findErr } = await supabase
-            .from('messages')
-            .select('id')
-            .eq('client_id', profile.id)
-            .eq('type', 'chat')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
+    /* ── 1. Retrouver TOUS les fils du client ──────────────────────────
+       L'agent répond depuis sa Console Live dans la conversation qu'il a sous
+       les yeux : celle-ci peut être de type 'rdv', 'contact', 'nationality'…
+       et son `client_id` est très souvent NULL (les demandes créées hors
+       application ne portent que l'email). Ne chercher que `client_id = moi`
+       ET `type = 'chat'` rendait donc INVISIBLE tout message écrit par un agent
+       à un client qui ne lui avait pas parlé le premier : la notification
+       arrivait, mais le message restait introuvable.
 
-        if (findErr) console.warn('[Messages] Find conversation error:', findErr.message)
-        if (existing) {
-            setConversationId(existing.id)
-            return existing.id
+       On rassemble donc tous les fils rattachés au client, par identifiant OU
+       par email, quel que soit leur type. */
+    const findThreads = useCallback(async () => {
+        if (!profile) return { ids: [] as string[], writeId: null as string | null }
+
+        const email = (profile.email || '').trim().toLowerCase()
+        const filters = [`client_id.eq.${profile.id}`]
+        if (email) filters.push(`email.eq.${email}`)
+
+        const { data, error } = await supabase
+            .from('messages')
+            .select('id, type, created_at')
+            .or(filters.join(','))
+            .order('created_at', { ascending: false })
+            .limit(50)
+
+        if (error) {
+            console.warn('[Messages] Find threads error:', error.message)
+            return { ids: [], writeId: null }
         }
-        return null
+
+        const rows = data || []
+        const ids = rows.map(r => r.id)
+        // Fil d'écriture : le plus récent (l'agent y verra la réponse dans le
+        // fil qu'il utilise). À défaut, un fil 'chat' sera créé à l'envoi.
+        const writeId = rows[0]?.id ?? null
+
+        setThreadIds(ids)
+        setConversationId(writeId)
+        return { ids, writeId }
     }, [profile])
 
-    /* ── 2. Load chat history ── */
-    const fetchChatHistory = useCallback(async (convId: string) => {
+    /* ── 2. Charger l'historique de TOUS les fils, fusionné ── */
+    const fetchChatHistory = useCallback(async (ids: string[]) => {
+        if (!ids.length) { setChatMessages([]); setLoading(false); return }
         const { data, error } = await supabase
             .from('chat_messages')
             .select('id, conversation_id, role, content, created_at')
-            .eq('conversation_id', convId)
+            .in('conversation_id', ids)
             .order('created_at', { ascending: true })
-            .limit(200)
+            .limit(300)
 
         if (!error && data) setChatMessages(data as ChatMessage[])
         else if (error) console.warn('[Messages] Fetch history error:', error.message)
@@ -174,15 +200,23 @@ export default function MessagesScreen({ navigation }: any) {
     /* ── Init ── */
     useEffect(() => {
         const init = async () => {
-            const convId = await findOrCreateConversation()
-            if (convId) await fetchChatHistory(convId)
-            else setLoading(false)
+            const { ids } = await findThreads()
+            await fetchChatHistory(ids)
             if (profile?.id) {
                 AsyncStorage.setItem(`@rg_chat_last_seen_${profile.id}`, new Date().toISOString()).catch(() => { })
             }
         }
         init()
-    }, [findOrCreateConversation, fetchChatHistory, profile?.id])
+    }, [findThreads, fetchChatHistory, profile?.id])
+
+    /* Reprise au retour sur l'écran : un agent a pu écrire entre-temps. */
+    useEffect(() => {
+        const unsub = navigation?.addListener?.('focus', async () => {
+            const { ids } = await findThreads()
+            await fetchChatHistory(ids)
+        })
+        return () => { if (typeof unsub === 'function') unsub() }
+    }, [navigation, findThreads, fetchChatHistory])
 
     /* Marque la conversation comme lue : au montage, a chaque nouveau
        message affiche, et en quittant l'ecran. */
@@ -201,18 +235,23 @@ export default function MessagesScreen({ navigation }: any) {
         return () => { if (typeof unsub === 'function') unsub() }
     }, [navigation, markSeen])
 
-    /* ── 3. Realtime ── */
+    /* ── 3. Realtime ──────────────────────────────────────────────
+       Écoute TOUS les fils du client : un filtre serveur ne peut porter que sur
+       une seule valeur, donc on s'abonne à la table et on trie côté client sur
+       l'ensemble des fils connus. Sinon un message écrit par l'agent dans un
+       autre fil (RDV, contact…) n'arrivait jamais en direct. */
     useEffect(() => {
-        if (!conversationId) return
+        if (!threadIds.length) return
+        const known = new Set(threadIds)
         const channel = supabase
-            .channel(`chat-${conversationId}`)
+            .channel(`chat-threads-${threadIds[0]}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'chat_messages',
-                filter: `conversation_id=eq.${conversationId}`,
             }, (payload) => {
                 const msg = payload.new as ChatMessage
+                if (!known.has(msg.conversation_id)) return
                 setChatMessages(prev => {
                     if (prev.find(m => m.id === msg.id)) return prev
                     const tempIndex = prev.findIndex(
@@ -229,7 +268,7 @@ export default function MessagesScreen({ navigation }: any) {
             })
             .subscribe()
         return () => { supabase.removeChannel(channel) }
-    }, [conversationId])
+    }, [threadIds])
 
     /* ── 4. Send message ── */
     const sendMessage = async () => {
@@ -268,6 +307,9 @@ export default function MessagesScreen({ navigation }: any) {
             }
             activeConvId = convData.id
             setConversationId(activeConvId)
+            // Le nouveau fil doit rejoindre l'ensemble écouté en temps réel,
+            // sinon la réponse de l'agent n'arriverait pas en direct.
+            setThreadIds(prev => (prev.includes(activeConvId!) ? prev : [activeConvId!, ...prev]))
         }
 
         const tempId = `temp-${Date.now()}`
