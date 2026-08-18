@@ -144,8 +144,44 @@ ${usedBanner}
       bouton.disabled = true
       bouton.textContent = 'Préparation…'
 
+      // On capture LE BILLET, pas son conteneur : #rgb-ticket est un bloc qui
+      // occupe toute la largeur de la fenêtre, ce qui produisait une image
+      // démesurée (3776 px de large) bordée de blanc. On descend donc au
+      // premier élément VISIBLE — un design commence typiquement par un bloc
+      // <style>, que firstElementChild aurait sélectionné (capture vide).
+      var noyau = (function (racine) {
+        var enfants = racine.children
+        for (var i = 0; i < enfants.length; i++) {
+          var el = enfants[i]
+          var tag = el.tagName
+          if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'LINK' || tag === 'META') continue
+          var r = el.getBoundingClientRect()
+          if (r.width > 1 && r.height > 1) return el
+        }
+        return racine
+      })(cible)
+      var boite = noyau.getBoundingClientRect()
+
       var rendu = window.html2canvas
-        ? window.html2canvas(cible, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false })
+        ? window.html2canvas(noyau, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            width: Math.ceil(boite.width),
+            height: Math.ceil(boite.height),
+            scrollX: 0,
+            scrollY: 0,
+            onclone: function (doc) {
+              // Les encoches de la perforation sont découpées dans le fond de
+              // la page (gris) : sur un PNG à fond blanc, elles doivent être
+              // blanches, sinon deux pastilles grises flottent sur le bord.
+              var encoches = doc.querySelectorAll('.rgbt-notch')
+              for (var i = 0; i < encoches.length; i++) {
+                encoches[i].style.background = '#ffffff'
+              }
+            },
+          })
         : Promise.reject(new Error('indisponible'))
 
       rendu.then(function (canvas) {
