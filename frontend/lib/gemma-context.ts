@@ -53,7 +53,11 @@ export async function buildRgbContext(): Promise<string> {
         // 6. Partenaires & nationalité
         supabase.from('partner_applications').select('id, created_at, company_name, status').order('created_at', { ascending: false }).limit(4),
         // 7. Nationalité
-        supabase.from('nationalite_requests').select('id, created_at, full_name, status').order('created_at', { ascending: false }).limit(4),
+        // Nom exact de la table : `nationality_requests` (orthographe anglaise).
+        // Sous « nationalite_requests » la requête échouait, et le contexte
+        // fourni à l'assistant ignorait purement et simplement les demandes de
+        // nationalité. La table expose nom/prenom/statut, pas full_name/status.
+        supabase.from('nationality_requests').select('id, created_at, nom, prenom, statut').order('created_at', { ascending: false }).limit(4),
         // 8. Sécurité WAF
         supabase.from('waf_logs').select('id', { count: 'exact', head: true }).eq('is_blocked', true).gte('created_at', h24),
         // 9. Settings
@@ -67,7 +71,7 @@ export async function buildRgbContext(): Promise<string> {
     type Msg   = { id: string; created_at: string; name?: string; sujet?: string; content?: string }
     type Dos   = { id: string; created_at: string; client_name?: string; type?: string; status?: string }
     type App   = { id: string; created_at: string; company_name?: string; status?: string }
-    type Nat   = { id: string; created_at: string; full_name?: string; status?: string }
+    type Nat   = { id: string; created_at: string; nom?: string; prenom?: string; statut?: string }
     type Mem   = { type: string; content: string; importance: number }
     type Set   = { key: string; value: string }
 
@@ -135,7 +139,7 @@ export async function buildRgbContext(): Promise<string> {
         lines.push(`PARTENAIRES: ${partApps.map(p => `${p.company_name || '?'}(${p.status || '?'})`).join(', ')}`)
     }
     if (natReqs.length > 0) {
-        lines.push(`NATIONALITÉ: ${natReqs.map(n => `${n.full_name || '?'}(${n.status || '?'})`).join(', ')}`)
+        lines.push(`NATIONALITÉ: ${natReqs.map(n => `${`${n.prenom || ''} ${n.nom || ''}`.trim() || '?'}(${n.statut || '?'})`).join(', ')}`)
     }
 
     if (memory.length > 0) {

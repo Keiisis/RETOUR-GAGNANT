@@ -30,7 +30,7 @@ for (const racine of RACINES) {
         // PAS une table. Les confondre faisait passer des buckets
         // (nationality_documents, avatars…) pour des tables manquantes.
         const positions = [...src.matchAll(/\.from\(\s*['"]([a-z0-9_-]+)['"]\s*\)/g)]
-            .filter(m => !/storage\s*$/.test(src.slice(Math.max(0, m.index - 30), m.index)))
+            .filter(m => !/storage\s*$/.test(src.slice(Math.max(0, m.index - 120), m.index).replace(/\s+/g, ' ').trimEnd() + ' ') && !/storage[\s\S]{0,40}$/.test(src.slice(Math.max(0, m.index - 120), m.index)))
         for (let i = 0; i < positions.length; i++) {
             const m = positions[i]
             const table = m[1]

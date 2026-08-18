@@ -179,7 +179,12 @@ export default function AgentRedigerMailsPage() {
                 // client_profiles expose `prenom` / `nom`, pas first_name / last_name :
                 // sous ces noms, la requête échouait et la liste restait vide.
                 supabase.from('client_profiles').select('id, prenom, nom, email, phone'),
-                supabase.from('leads').select('id, full_name, email, phone'),
+                // La table `leads` n'existe pas. Vérifié avant de la créer :
+                // `ai_prospection_leads` existe mais ne porte AUCUN email (c'est
+                // de la prospection d'annuaire : titre, adresse, téléphone) —
+                // inutilisable pour écrire un courriel. La seule table de
+                // prospects réellement joignables par email est logement_leads.
+                supabase.from('logement_leads').select('id, nom, prenom, email, telephone'),
             ])
 
             const contactMap = new Map<string, Contact>()
@@ -195,10 +200,9 @@ export default function AgentRedigerMailsPage() {
 
             ;(leadsRes.data || []).forEach(l => {
                 if (l.email && !contactMap.has(l.email.toLowerCase())) {
-                    const parts = (l.full_name || '').split(' ')
                     contactMap.set(l.email.toLowerCase(), {
-                        id: l.id, email: l.email, nom: parts.slice(1).join(' ') || '', prenom: parts[0] || '',
-                        phone: l.phone || undefined, type: 'lead',
+                        id: l.id, email: l.email, nom: l.nom || '', prenom: l.prenom || '',
+                        phone: l.telephone || undefined, type: 'lead',
                     })
                 }
             })

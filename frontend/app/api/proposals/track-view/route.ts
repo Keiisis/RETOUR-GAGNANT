@@ -29,8 +29,12 @@ export async function POST(req: NextRequest) {
     })
 
     // 2. Update the proposal with last_viewed_at and view_count
+    // La table s'appelle `ai_client_proposals` — c'est d'ailleurs ce nom
+    // qu'emploie la mise à jour juste en dessous. Sous `ai_proposals`, la
+    // lecture échouait : le compteur de vues repartait donc de zéro à chaque
+    // consultation au lieu de s'incrémenter.
     const { data: proposal } = await supabase
-      .from('ai_proposals')
+      .from('ai_client_proposals')
       .select('view_count')
       .eq('id', proposalId)
       .single()

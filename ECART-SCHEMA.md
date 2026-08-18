@@ -1,35 +1,47 @@
 # Écart entre le CODE et la BASE réelle
 
 > Régénérer : `node scripts/audit-schema.mjs` depuis `frontend/`.
-> Le schéma réel est relu via l'API OpenAPI de PostgREST (`scripts/schema-reel.json`).
+> Schéma réel relu via l'API OpenAPI de PostgREST (`scripts/schema-reel.json`).
 
 ## État au 2026-08-18
 
-- **120 → 107 occurrences** après alignement du code (13 corrigées).
-- La migration `supabase/migrations/20260818_alignement_schema.sql` traite les
-  manques RÉELS restants. **Ce fichier ne reflétera la correction qu'une fois la
-  migration exécutée** dans Supabase.
+**Tables fantômes : 8 → 3.** Et les 3 restantes sont créées par la migration
+`supabase/migrations/20260818_alignement_schema.sql`. Une fois exécutée, **plus
+aucune table ne manquera**.
 
-## Comment lire
+Ce qui a été fait, et pourquoi ce n'était PAS « créer les tables manquantes » :
+
+| Référence du code | Réalité | Décision |
+|---|---|---|
+| `ai_proposals` | `ai_client_proposals` existe — le MÊME fichier l'utilisait deux lignes plus bas | coquille corrigée |
+| `nationalite_requests` | `nationality_requests` existe (orthographe anglaise) | code rebranché |
+| `leads` | `ai_prospection_leads` existe mais **sans aucun email** (prospection d'annuaire) | rebranché sur `logement_leads`, seuls prospects joignables |
+| `nationality_documents`, `dossier-documents` | ce sont des **buckets de stockage** | faux positifs, outil corrigé |
+| `client_notifications`, `invoices`, `order_tracking_events` | réellement absentes | créées par la migration |
+
+Créer `ai_proposals`, `leads` et `nationalite_requests` aurait produit des
+**doublons vides** à côté des tables déjà remplies. Le problème n'était pas la
+base : c'était le code qui appelait le mauvais nom.
+
+## Les 107 occurrences restantes
+
+Elles ne sont **pas** 107 bogues. La très grande majorité sont des **clés
+d'objets JSON** comptées à tort comme des colonnes. Colonnes `jsonb` concernées,
+vérifiées en base :
+
+- `dossier_tracking.etapes`, `.documents_manquants` → d'où `date`, `label`, `note`, `status`
+- `nationality_applications.missing_docs` → d'où `key`, `label`, `required`, `ancestral`
+- `documents_financiers.items` → d'où `description`, `quantity`, `tva`, `unit_price`
+- `orders.cart_items` → d'où plusieurs entrées
+
+Ces écritures fonctionnent : elles visent l'intérieur d'un `jsonb`, pas une
+colonne. **Ne rien « corriger » là-dessus.**
+
+## Comment lire les entrées
 
 - **[select] / [filtre] / [order]** : PostgREST rejette la requête ENTIÈRE dès
-  qu'un seul nom est inconnu. L'écran ne reçoit alors RIEN, sans erreur visible.
-  C'est ce qui rendait les événements invisibles et bloquait les compteurs à 00.
+  qu'un nom est inconnu — l'écran ne reçoit RIEN, sans erreur visible.
 - **[insert] / [update]** : l'écriture échoue, souvent en silence.
-
-## Limites connues de l'outil — À VÉRIFIER AVANT DE CORRIGER
-
-1. **Clés d'objets JSON comptées comme des colonnes.** Les lignes `items` d'une
-   facture (`documents_financiers`), les étapes (`dossier_tracking.etapes`) ou
-   les pièces manquantes (`nationality_applications.missing_docs`) sont des
-   objets DANS une colonne `jsonb`, pas des colonnes. La majorité des 107
-   occurrences restantes est de cette nature.
-2. **Buckets de stockage.** `supabase.storage.from('bucket')` n'est pas une
-   table. `nationality_documents` et `dossier-documents` sont des BUCKETS :
-   ils apparaissent à tort comme des tables absentes.
-3. **Tables réellement absentes mais non fatales** : `ai_proposals`, `leads`,
-   `nationalite_requests`. supabase-js renvoie une erreur sans lever
-   d'exception — la page fonctionne, elle perd seulement cette source.
 
 ══ COLONNES DEMANDÉES PAR LE CODE, ABSENTES DE LA BASE ══
 
@@ -162,11 +174,6 @@
 TOTAL : 107 occurrences sur 18 tables
 
 ══ TABLES RÉFÉRENCÉES MAIS NON EXPOSÉES PAR L API ══
-  ai_proposals  →  app/api/proposals/track-view/route.ts
   client_notifications  →  components/layout/ClientBell.tsx
-  dossier-documents  →  app/api/cron/cleanup/route.ts
   invoices  →  app/api/mobile/invoices/route.ts, lib/send-invoice-email.ts
-  leads  →  app/agent/rediger-mails/page.tsx
-  nationalite_requests  →  lib/gemma-context.ts
-  nationality_documents  →  ../mobile/src/screens/main/NationaliteFormScreen.tsx
   order_tracking_events  →  app/api/admin/orders/[id]/tracking/route.ts, app/api/mobile/orders/route.ts
