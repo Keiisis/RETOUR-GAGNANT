@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         destination, start_date, end_date, budget, activities, notes,
         total_amount, currency, status, signed_at, signed_name, created_at
     `
-    const SEJOUR = 'conseiller_id, nb_voyageurs, echeancier'
+    const SEJOUR = 'conseiller_id, nb_voyageurs'
 
     // PostgREST rejette la requête ENTIÈRE si une seule colonne lui est
     // inconnue : demander les colonnes de la migration 20260819 avant qu'elle

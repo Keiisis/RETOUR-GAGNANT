@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Les colonnes de séjour n'existent qu'après la migration : on les lit à
     // part pour qu'une base non migrée n'emporte pas toute la requête.
     const { data: extra } = await supabase
-        .from('ai_client_proposals').select('nb_voyageurs, echeancier, conseiller_id').eq('id', id).maybeSingle()
+        .from('ai_client_proposals').select('nb_voyageurs, conseiller_id').eq('id', id).maybeSingle()
 
     const catalogue = prestations.map((i, n) =>
         `${n + 1}. [${i.type || 'prestation'}] ${i.title || 'Sans titre'}`
@@ -111,11 +111,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         + `${i.description ? `\n   ${String(i.description).slice(0, 400)}` : ''}`
         + `${Array.isArray(i.highlights) && i.highlights.length ? `\n   Inclus : ${i.highlights.join(', ')}` : ''}`,
     ).join('\n')
-
-    const echeancier = Array.isArray(extra?.echeancier) && extra.echeancier.length
-        ? (extra.echeancier as Array<{ label?: string; pourcentage?: number }>)
-            .map(e => `${e.label || 'Échéance'} : ${e.pourcentage ?? '?'} % du total retenu`).join(' · ')
-        : 'non défini'
 
     // Persona du conseiller, telle que l'administration l'a réglée.
     let conf = await supabase.from('ai_config')
@@ -141,7 +136,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         `· Dates : ${prop.start_date || '?'} → ${prop.end_date || '?'}`,
         `· Voyageurs : ${extra?.nb_voyageurs || 1}`,
         `· Devise : ${devise} — Total si tout est retenu : ${Math.round(total)} ${devise}`,
-        `· Règlement : ${echeancier}`,
+        '· Règlement : intégral, en une seule fois, au moment de la commande (aucun acompte, aucun paiement échelonné).',
         `· État : ${prop.signed_at ? 'devis signé' : 'devis non signé'}${prop.status === 'paid' ? ', réglé' : ''}`,
         '',
         'Prestations de la proposition :',

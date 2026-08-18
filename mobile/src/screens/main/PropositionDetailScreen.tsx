@@ -81,7 +81,6 @@ interface Proposition {
     intro_image: string | null
     intro_images?: string[]
     nb_voyageurs?: number | null
-    echeancier?: Echeance[] | null
     conseiller?: Conseiller | null
 }
 
@@ -90,14 +89,6 @@ interface Conseiller {
     nom: string
     role: string
     avatar_url: string | null
-}
-
-/** Échéance exprimée en POURCENTAGE : le client peut retirer une prestation,
-    un montant figé deviendrait faux au premier décochage. */
-interface Echeance {
-    label?: string
-    pourcentage?: number
-    moment?: string
 }
 
 interface MessageIA {
@@ -596,14 +587,6 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     // concepteur de Smart Slides, pas seulement la vignette de couverture.
     const photosIntro = (prop.intro_images?.length ? prop.intro_images : prop.intro_image ? [prop.intro_image] : [])
     const photoIntro = photosIntro[Math.min(couverture, photosIntro.length - 1)] || null
-    /* Échéancier : des POURCENTAGES appliqués au total RÉELLEMENT retenu. Un
-       montant figé mentirait dès que le client décoche une prestation. */
-    const echeances = (Array.isArray(prop.echeancier) && prop.echeancier.length
-        ? prop.echeancier
-        : [
-            { label: 'Acompte de confirmation', pourcentage: 30 },
-            { label: 'Solde à l’arrivée au Bénin', pourcentage: 70 },
-        ]) as Echeance[]
 
     /* ══ VIDE — le conseiller n'a pas encore composé le séjour ══ */
     if (prestations.length === 0) {
@@ -937,20 +920,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                     </Animated.View>
 
                     <Animated.View entering={FadeInDown.delay(280).duration(420)} style={styles.recapBloc}>
-                        {echeances.map((e, i) => {
-                            const pct = Math.max(0, Math.min(100, Number(e.pourcentage) || 0))
-                            return (
-                                <View key={(e.label || '') + i} style={styles.recapBlocLigne}>
-                                    <Text style={i === 0 ? styles.recapBlocLabel : styles.recapBlocLabelDoux}>
-                                        {t(e.label || 'Échéance')} ({pct} %)
-                                    </Text>
-                                    <Text style={i === 0 ? styles.recapBlocFort : styles.recapBlocDoux}>
-                                        {money(Math.round(total * pct / 100), prop.currency)}
-                                    </Text>
-                                </View>
-                            )
-                        })}
-                        <View style={[styles.recapBlocLigne, styles.recapBlocTotal]}>
+                        <View style={styles.recapBlocLigne}>
                             <Text style={styles.recapBlocLabel}>{t('Total des prestations retenues')}</Text>
                             <Text style={styles.recapBlocFort}>{money(total, prop.currency)}</Text>
                         </View>
@@ -963,7 +933,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                         <View style={styles.recapBlocPied}>
                             <View style={styles.motPiedCote}>
                                 <ShieldCheck size={14} color={C.primary} strokeWidth={2.2} />
-                                <Text style={styles.motPiedText}>{t('Frais d’agence inclus')}</Text>
+                                <Text style={styles.motPiedText}>{t('Règlement en une fois')}</Text>
                             </View>
                             <View style={styles.motPiedCote}>
                                 <Lock size={14} color={C.primary} strokeWidth={2.2} />
@@ -1247,7 +1217,6 @@ const styles = StyleSheet.create({
     recapBlocLabelDoux: { fontFamily: fonts.body, fontSize: 12, color: C.textSec },
     recapBlocFort: { fontFamily: fonts.extrabold, fontSize: 13, color: VERT_PROFOND },
     recapBlocDoux: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
-    recapBlocTotal: { borderTopWidth: 1, borderTopColor: C.borderStrong, paddingTop: 10 },
     recapBlocPied: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: C.borderStrong, paddingTop: 10 },
 
     /* Vide */
