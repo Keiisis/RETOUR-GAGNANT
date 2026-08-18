@@ -422,6 +422,21 @@ export default function ProfilScreen() {
                     onPress: () => navigation.navigate('Appointments'),
                 },
                 {
+                    // Sans cette entrée, une proposition envoyée dans l'application
+                    // était introuvable : la notification arrivait, mais aucun
+                    // chemin ne menait à l'écran.
+                    icon: 'document-text-outline' as const,
+                    label: t('Mes propositions'),
+                    sub: t('Devis et Smart Slides reçus'),
+                    onPress: () => navigation.navigate('MesPropositions'),
+                },
+                {
+                    icon: 'qr-code-outline' as const,
+                    label: t('Mes billets'),
+                    sub: t('Billets d’événement avec QR'),
+                    onPress: () => navigation.navigate('Tickets'),
+                },
+                {
                     icon: 'create-outline' as const,
                     label: t('Ma signature'),
                     sub: t('Signer factures et devis'),

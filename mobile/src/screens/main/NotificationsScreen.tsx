@@ -54,6 +54,21 @@ interface AppNotification {
 }
 
 /* ── Config visuelle par type ── */
+/* Où mène chaque notification. Un type absent d'ici reste simplement lu.
+   `onglet: true` désigne une destination de la barre d'onglets : elle se
+   rejoint via la route 'Main', pas directement — sinon la navigation échoue. */
+const DESTINATIONS: Record<string, { ecran: string; onglet?: boolean }> = {
+    proposition: { ecran: 'MesPropositions' },
+    devis: { ecran: 'MesPropositions' },
+    dossier: { ecran: 'Dossier', onglet: true },
+    service: { ecran: 'Dossier', onglet: true },
+    event: { ecran: 'Tickets' },
+    commande: { ecran: 'Orders' },
+    order: { ecran: 'Orders' },
+    facture: { ecran: 'Invoices' },
+    rdv: { ecran: 'Appointments' },
+}
+
 const TYPE_CONFIG: Record<string, {
     icon: string
     color: string
@@ -421,7 +436,19 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 renderItem={({ item, index }) => (
                     <NotifCard
                         notif={item}
-                        onPress={() => { Haptics.selectionAsync(); markAsRead(item.id) }}
+                        onPress={() => {
+                            Haptics.selectionAsync()
+                            markAsRead(item.id)
+                            // Une notification qui annonce quelque chose doit y
+                            // MENER : sans cela on lisait « votre proposition est
+                            // arrivée » sans aucun moyen de l'ouvrir.
+                            const dest = DESTINATIONS[item.type]
+                            if (!dest) return
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            if (dest.onglet) (navigation as any).navigate('Main', { screen: dest.ecran })
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            else (navigation as any).navigate(dest.ecran)
+                        }}
                         formatDate={formatDate}
                         t={t}
                         delay={Math.min(index, 8) * 45}
