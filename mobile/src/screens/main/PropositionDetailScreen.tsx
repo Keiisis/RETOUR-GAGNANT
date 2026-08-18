@@ -23,8 +23,8 @@
 ═══════════════════════════════════════════════════════════ */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-    View, Text, StyleSheet, Pressable, Image, Dimensions,
-    ActivityIndicator, Share, ScrollView,
+    View, Text, StyleSheet, Pressable, Image, Dimensions, Modal, TextInput,
+    ActivityIndicator, Share, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
@@ -32,6 +32,7 @@ import {
     ChevronLeft, Share2, Check, MapPin, CalendarDays, Bed, UtensilsCrossed,
     Camera, Car, Sparkles, PenLine, CreditCard, CircleCheck, ArrowRight,
     ArrowLeft, ShieldCheck, Clock4, Plus, Minus, Compass, MessageCircle, Lock,
+    Users, Send, X, Bot,
 } from 'lucide-react-native'
 import Animated, {
     FadeInDown, FadeIn, Easing, Extrapolation, interpolate,
@@ -78,6 +79,31 @@ interface Proposition {
     intro_title: string | null
     intro_text: string | null
     intro_image: string | null
+    intro_images?: string[]
+    nb_voyageurs?: number | null
+    echeancier?: Echeance[] | null
+    conseiller?: Conseiller | null
+}
+
+interface Conseiller {
+    id: number
+    nom: string
+    role: string
+    avatar_url: string | null
+}
+
+/** Échéance exprimée en POURCENTAGE : le client peut retirer une prestation,
+    un montant figé deviendrait faux au premier décochage. */
+interface Echeance {
+    label?: string
+    pourcentage?: number
+    moment?: string
+}
+
+interface MessageIA {
+    id?: string
+    role: 'user' | 'assistant'
+    content: string
 }
 
 const FAMILLES: Record<string, { l: string; Icone: typeof Bed }> = {
@@ -298,6 +324,155 @@ function Slide({
     )
 }
 
+/* -- Conseiller IA -------------------------------------------
+   Le mot d'accueil avait un auteur mais pas de voix. Ici le client
+   l'interroge sur SA proposition : le serveur donne à l'assistant les
+   prestations réelles, il ne peut donc pas inventer un tarif. */
+function ConseillerIA({
+    visible, onClose, proposalId, conseiller, t,
+}: {
+    visible: boolean
+    onClose: () => void
+    proposalId: string
+    conseiller: Conseiller | null
+    t: (s: string, v?: Record<string, string | number>) => string
+}) {
+    const insets = useSafeAreaInsets()
+    const [messages, setMessages] = useState<MessageIA[]>([])
+    const [question, setQuestion] = useState('')
+    const [envoi, setEnvoi] = useState(false)
+    const [charge, setCharge] = useState(false)
+
+    const nom = conseiller?.nom || t('Assistant Retour Gagnant')
+
+    useEffect(() => {
+        if (!visible || charge) return
+        setCharge(true)
+        const lire = async () => {
+            try {
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}/assistant`, {
+                    headers: { ...(await authHeaders()) }, timeoutMs: 12000,
+                })
+                const json = await res.json().catch(() => ({}))
+                if (Array.isArray(json.messages)) setMessages(json.messages)
+            } catch { /* le fil s'ouvre vide, ce n'est pas bloquant */ }
+        }
+        lire()
+    }, [visible, charge, proposalId])
+
+    const demander = async () => {
+        const q = question.trim()
+        if (!q || envoi) return
+        setQuestion('')
+        setMessages(m => [...m, { role: 'user', content: q }])
+        setEnvoi(true)
+        try {
+            const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}/assistant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                timeoutMs: 30000,
+                body: JSON.stringify({ question: q }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.reponse) throw new Error(json.error || t('Réponse indisponible.'))
+            setMessages(m => [...m, { role: 'assistant', content: String(json.reponse) }])
+        } catch (e) {
+            toast(t('Assistant indisponible'), e instanceof Error ? e.message : t('Réessayez dans un instant.'))
+        } finally { setEnvoi(false) }
+    }
+
+    const SUGGESTIONS = [
+        'Que comprend exactement ce séjour ?',
+        'Puis-je modifier les dates ?',
+        'Comment se règle le devis ?',
+    ]
+
+    return (
+        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+            <View style={styles.container}>
+                <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
+
+                <View style={styles.entete}>
+                    <Pressable onPress={onClose} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Fermer')}>
+                        <X size={20} color={C.text} strokeWidth={2.2} />
+                    </Pressable>
+                    <View style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={styles.deckOverline}>{conseiller?.role || t('Conseiller séjour')}</Text>
+                        <Text style={styles.deckFamille} numberOfLines={1}>{nom}</Text>
+                    </View>
+                    <View style={{ width: 40 }} />
+                </View>
+
+                <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                    <ScrollView contentContainerStyle={styles.filScroll} showsVerticalScrollIndicator={false}>
+                        {messages.length === 0 && (
+                            <View style={styles.filVide}>
+                                <View style={styles.motTuile}>
+                                    <Bot size={20} color={C.primary} strokeWidth={2.2} />
+                                </View>
+                                <Text style={styles.filVideTitre}>{t('Une question sur votre séjour ?')}</Text>
+                                <Text style={styles.filVideTexte}>
+                                    {t('Je connais chaque prestation de votre proposition : prix, lieux, ce qui est compris.')}
+                                </Text>
+                                <View style={styles.suggestions}>
+                                    {SUGGESTIONS.map(sg => (
+                                        <Pressable key={sg} onPress={() => setQuestion(t(sg))} style={styles.suggestion} accessibilityRole="button">
+                                            <Text style={styles.suggestionText}>{t(sg)}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
+                        {messages.map((m, i) => (
+                            <Animated.View
+                                key={m.id || `${m.role}-${i}`}
+                                entering={FadeInDown.duration(320)}
+                                style={[styles.bulle, m.role === 'user' ? styles.bulleMoi : styles.bulleIA]}
+                            >
+                                <Text style={[styles.bulleText, m.role === 'user' && { color: '#FFFFFF' }]}>
+                                    {m.content}
+                                </Text>
+                            </Animated.View>
+                        ))}
+
+                        {envoi && (
+                            <View style={[styles.bulle, styles.bulleIA]}>
+                                <ActivityIndicator color={C.primary} size="small" />
+                            </View>
+                        )}
+                    </ScrollView>
+
+                    <View style={[styles.saisie, { paddingBottom: insets.bottom + 10 }]}>
+                        <TextInput
+                            value={question}
+                            onChangeText={setQuestion}
+                            placeholder={t('Écrire à {n}…', { n: nom })}
+                            placeholderTextColor={C.textMuted}
+                            style={styles.champ}
+                            multiline
+                            maxLength={600}
+                        />
+                        <Pressable
+                            onPress={demander}
+                            disabled={!question.trim() || envoi}
+                            style={({ pressed }) => [
+                                styles.envoyer,
+                                (!question.trim() || envoi) && { opacity: 0.4 },
+                                pressed && { transform: [{ scale: 0.94 }] },
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Envoyer')}
+                        >
+                            <Send size={18} color="#FFFFFF" strokeWidth={2.2} />
+                        </Pressable>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
+        </Modal>
+    )
+}
+
 type Vue = 'ouverture' | 'deck' | 'recap'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -313,6 +488,8 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     const [erreur, setErreur] = useState('')
     const [rang, setRang] = useState(0)
     const [vue, setVue] = useState<Vue>('ouverture')
+    const [conseillerOuvert, setConseillerOuvert] = useState(false)
+    const [couverture, setCouverture] = useState(0)
 
     const scrollX = useSharedValue(0)
     // Dernier rang notifié au fil JS : sans ce garde-fou, chaque image de
@@ -413,6 +590,20 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     const familles = new Set(prestations.map(p => familleDe(p.type).l)).size
     const budgetInitial = prestations.reduce((s, p) => s + somme(p.selling_price), 0) || somme(prop.total_amount)
     const titreSejour = prop.intro_title || prop.destination || t('Votre séjour')
+    const voyageurs = Math.max(1, Number(prop.nb_voyageurs) || 1)
+    const conseiller = prop.conseiller || null
+    // Galerie de l'ouverture : les visuels que l'agent a téléversés depuis le
+    // concepteur de Smart Slides, pas seulement la vignette de couverture.
+    const photosIntro = (prop.intro_images?.length ? prop.intro_images : prop.intro_image ? [prop.intro_image] : [])
+    const photoIntro = photosIntro[Math.min(couverture, photosIntro.length - 1)] || null
+    /* Échéancier : des POURCENTAGES appliqués au total RÉELLEMENT retenu. Un
+       montant figé mentirait dès que le client décoche une prestation. */
+    const echeances = (Array.isArray(prop.echeancier) && prop.echeancier.length
+        ? prop.echeancier
+        : [
+            { label: 'Acompte de confirmation', pourcentage: 30 },
+            { label: 'Solde à l’arrivée au Bénin', pourcentage: 70 },
+        ]) as Echeance[]
 
     /* ══ VIDE — le conseiller n'a pas encore composé le séjour ══ */
     if (prestations.length === 0) {
@@ -508,9 +699,9 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                 </View>
 
                 <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
-                    {!!prop.intro_image && (
+                    {!!photoIntro && (
                         <Animated.View entering={FadeIn.duration(600)} style={styles.introCadre}>
-                            <Image source={{ uri: prop.intro_image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                            <Image source={{ uri: photoIntro }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                             {!!duree && (
                                 <View style={styles.introPastille}>
                                     <Sparkles size={14} color={C.primary} strokeWidth={2.2} />
@@ -524,6 +715,18 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                                     {t('Réf : RG-{r}', { r: prop.id.slice(0, 8).toUpperCase() })}
                                 </Text>
                             </View>
+
+                            {photosIntro.length > 1 && (
+                                <View style={styles.vignettes}>
+                                    {photosIntro.slice(0, 4).map((u, i) => (
+                                        <Pressable key={u + i} onPress={() => setCouverture(i)} hitSlop={6}>
+                                            <View style={[styles.vignette, i === couverture && styles.vignetteOn]}>
+                                                <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
+                                            </View>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            )}
                         </Animated.View>
                     )}
 
@@ -547,34 +750,59 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                                 <Text style={styles.chipText}>{periode}</Text>
                             </View>
                         )}
+                        <View style={styles.chip}>
+                            <Users size={14} color={C.primary} strokeWidth={2.2} />
+                            <Text style={styles.chipText}>
+                                {voyageurs > 1 ? t('{n} voyageurs', { n: voyageurs }) : t('1 voyageur')}
+                            </Text>
+                        </View>
                     </Animated.View>
 
                     {/* Mot du conseiller — portrait et nom ne sont pas en base :
                         on ne les invente pas, le texte porte seul. */}
-                    {!!prop.intro_text && (
-                        <Animated.View entering={FadeInDown.delay(320).duration(500)} style={styles.carteMot}>
-                            <View style={styles.motEntete}>
+                    <Animated.View entering={FadeInDown.delay(320).duration(500)} style={styles.carteMot}>
+                        <View style={styles.motEntete}>
+                            {conseiller?.avatar_url ? (
+                                <Image source={{ uri: conseiller.avatar_url }} style={styles.motAvatar} resizeMode="cover" />
+                            ) : (
                                 <View style={styles.motTuile}>
-                                    <Sparkles size={18} color={C.primary} strokeWidth={2.2} />
+                                    <Bot size={18} color={C.primary} strokeWidth={2.2} />
                                 </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.motTitre}>{t('Mot de votre conseiller')}</Text>
-                                    <Text style={styles.motSous}>{t('Cabinet Retour Gagnant Bénin')}</Text>
-                                </View>
+                            )}
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.motTitre}>{conseiller?.nom || t('Assistant Retour Gagnant')}</Text>
+                                <Text style={styles.motSous}>
+                                    {conseiller?.role || t('Conseiller séjour diaspora')}
+                                </Text>
                             </View>
-                            <Text style={styles.motTexte}>« {prop.intro_text} »</Text>
-                            <View style={styles.motPied}>
-                                <View style={styles.motPiedCote}>
-                                    <ShieldCheck size={14} color={C.primary} strokeWidth={2.2} />
-                                    <Text style={styles.motPiedText}>{t('Tarifs négociés')}</Text>
-                                </View>
-                                <View style={styles.motPiedCote}>
-                                    <Clock4 size={14} color={C.primary} strokeWidth={2.2} />
-                                    <Text style={styles.motPiedText}>{t('Modifiable jusqu’à signature')}</Text>
-                                </View>
+                            <View style={styles.motPastille}>
+                                <View style={styles.pointVert} />
+                                <Text style={styles.motPastilleText}>{t('En ligne')}</Text>
                             </View>
-                        </Animated.View>
-                    )}
+                        </View>
+
+                        {!!prop.intro_text && <Text style={styles.motTexte}>« {prop.intro_text} »</Text>}
+
+                        <Pressable
+                            onPress={() => setConseillerOuvert(true)}
+                            style={({ pressed }) => [styles.motAction, pressed && { transform: [{ scale: 0.98 }] }]}
+                            accessibilityRole="button"
+                        >
+                            <MessageCircle size={15} color={C.primary} strokeWidth={2.2} />
+                            <Text style={styles.motActionText}>{t('Poser une question sur ce séjour')}</Text>
+                        </Pressable>
+
+                        <View style={styles.motPied}>
+                            <View style={styles.motPiedCote}>
+                                <ShieldCheck size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.motPiedText}>{t('Tarifs négociés')}</Text>
+                            </View>
+                            <View style={styles.motPiedCote}>
+                                <Clock4 size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.motPiedText}>{t('Modifiable jusqu’à signature')}</Text>
+                            </View>
+                        </View>
+                    </Animated.View>
 
                     <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.reperes}>
                         <View style={styles.repere}>
@@ -615,6 +843,14 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                         <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.4} />
                     </Pressable>
                 </View>
+
+                <ConseillerIA
+                    visible={conseillerOuvert}
+                    onClose={() => setConseillerOuvert(false)}
+                    proposalId={prop.id}
+                    conseiller={conseiller}
+                    t={t}
+                />
             </View>
         )
     }
@@ -701,7 +937,20 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                     </Animated.View>
 
                     <Animated.View entering={FadeInDown.delay(280).duration(420)} style={styles.recapBloc}>
-                        <View style={styles.recapBlocLigne}>
+                        {echeances.map((e, i) => {
+                            const pct = Math.max(0, Math.min(100, Number(e.pourcentage) || 0))
+                            return (
+                                <View key={(e.label || '') + i} style={styles.recapBlocLigne}>
+                                    <Text style={i === 0 ? styles.recapBlocLabel : styles.recapBlocLabelDoux}>
+                                        {t(e.label || 'Échéance')} ({pct} %)
+                                    </Text>
+                                    <Text style={i === 0 ? styles.recapBlocFort : styles.recapBlocDoux}>
+                                        {money(Math.round(total * pct / 100), prop.currency)}
+                                    </Text>
+                                </View>
+                            )
+                        })}
+                        <View style={[styles.recapBlocLigne, styles.recapBlocTotal]}>
                             <Text style={styles.recapBlocLabel}>{t('Total des prestations retenues')}</Text>
                             <Text style={styles.recapBlocFort}>{money(total, prop.currency)}</Text>
                         </View>
@@ -762,7 +1011,21 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                             <Text style={styles.ctaLargeText}>{t('Signer le devis en ligne')}</Text>
                         </Pressable>
                     )}
+                    <Pressable onPress={() => setConseillerOuvert(true)} style={styles.lienConseiller} accessibilityRole="button">
+                        <MessageCircle size={14} color={C.primary} strokeWidth={2.2} />
+                        <Text style={styles.lienConseillerText}>
+                            {t('Une question avant de signer ?')}
+                        </Text>
+                    </Pressable>
                 </View>
+
+                <ConseillerIA
+                    visible={conseillerOuvert}
+                    onClose={() => setConseillerOuvert(false)}
+                    proposalId={prop.id}
+                    conseiller={conseiller}
+                    t={t}
+                />
             </View>
         )
     }
@@ -893,6 +1156,29 @@ const styles = StyleSheet.create({
     motPied: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
     motPiedCote: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
     motPiedText: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
+    lienConseiller: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 4 },
+    lienConseillerText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.primary },
+    motAvatar: { width: 44, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: VERT_LISERE },
+    motPastille: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+    motPastilleText: { fontFamily: fonts.bold, fontSize: 9.5, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    motAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingVertical: 12 },
+    motActionText: { fontFamily: fonts.bold, fontSize: 12.5, color: C.primary },
+
+    /* Conversation avec le conseiller */
+    filScroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, gap: 10 },
+    filVide: { alignItems: 'center', gap: 8, paddingTop: 40, paddingHorizontal: 12 },
+    filVideTitre: { fontFamily: fonts.extrabold, fontSize: 17, color: C.text, textAlign: 'center', marginTop: 8 },
+    filVideTexte: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: C.textSec, textAlign: 'center' },
+    suggestions: { gap: 8, marginTop: 16, width: '100%' },
+    suggestion: { backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+    suggestionText: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: C.textSec },
+    bulle: { maxWidth: '86%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 11 },
+    bulleMoi: { alignSelf: 'flex-end', backgroundColor: C.primary, borderBottomRightRadius: 6 },
+    bulleIA: { alignSelf: 'flex-start', backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderBottomLeftRadius: 6 },
+    bulleText: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 20, color: C.text },
+    saisie: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface },
+    champ: { flex: 1, maxHeight: 120, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, fontFamily: fonts.body, fontSize: 13.5, color: C.text },
+    envoyer: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
 
     reperes: { flexDirection: 'row', gap: 10, marginTop: 20 },
     repere: { flex: 1, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
@@ -961,6 +1247,7 @@ const styles = StyleSheet.create({
     recapBlocLabelDoux: { fontFamily: fonts.body, fontSize: 12, color: C.textSec },
     recapBlocFort: { fontFamily: fonts.extrabold, fontSize: 13, color: VERT_PROFOND },
     recapBlocDoux: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
+    recapBlocTotal: { borderTopWidth: 1, borderTopColor: C.borderStrong, paddingTop: 10 },
     recapBlocPied: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: C.borderStrong, paddingTop: 10 },
 
     /* Vide */

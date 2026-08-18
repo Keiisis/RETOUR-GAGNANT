@@ -73,7 +73,10 @@ export default function AdminProposalsPage() {
     const [formData, setFormData] = useState({
         client_name: '', client_email: '', client_phone: '',
         destination: '', start_date: '', end_date: '',
-        budget: '', activities: '', notes: '', currency: 'XOF'
+        budget: '', activities: '', notes: '', currency: 'XOF',
+        // Le mobile affiche ces deux valeurs telles quelles : sans elles, il
+        // devrait inventer un nombre de voyageurs et un échéancier.
+        nb_voyageurs: '1', acompte_pourcentage: '30'
     })
     const [, setIsGenerating] = useState(false)
 
@@ -509,6 +512,18 @@ export default function AdminProposalsPage() {
                                             <div className="space-y-1.5">
                                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Date fin</label>
                                                 <input type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FCD116] transition-colors" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Voyageurs</label>
+                                                <input type="number" min={1} max={60} value={formData.nb_voyageurs} onChange={e => setFormData({ ...formData, nb_voyageurs: e.target.value })} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FCD116] transition-colors" />
+                                                <p className="text-[11px] text-slate-500">Affiché au client dans l&apos;application.</p>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Acompte à la signature (%)</label>
+                                                <input type="number" min={0} max={100} value={formData.acompte_pourcentage} onChange={e => setFormData({ ...formData, acompte_pourcentage: e.target.value })} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#FCD116] transition-colors" />
+                                                <p className="text-[11px] text-slate-500">Le solde suit automatiquement. Calculé sur le total réellement retenu par le client.</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
