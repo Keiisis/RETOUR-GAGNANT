@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -43,7 +43,7 @@ const PROVIDER_ENDPOINTS: Record<string, string> = {
 }
 
 const PROVIDER_MODELS: Record<string, string> = {
-    groq: 'llama-3.3-70b-versatile',
+    groq: GROQ_MODEL,
     openai: 'gpt-4o-mini',
     anthropic: 'claude-3-5-sonnet-20241022',
     google: 'gemini-2.0-flash',

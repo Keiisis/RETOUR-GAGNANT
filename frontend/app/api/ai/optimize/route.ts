@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWithGroqRotation } from "@/lib/groq";
+import { fetchWithGroqRotation, GROQ_MODEL } from "@/lib/groq";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
     patrimoine: `Tu es un curateur d'art et historien spécialiste du Bénin.
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
             : `Optimise le texte suivant pour le rendre plus professionnel et captivant :\n\n${text}`;
 
         const response = await fetchWithGroqRotation({
-            model: "llama-3.3-70b-versatile",
+            model: GROQ_MODEL,
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },

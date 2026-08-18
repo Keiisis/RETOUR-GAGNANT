@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
 
 // Modèle puissant pour détection de langue précise
-const DETECT_MODEL = "llama-3.3-70b-versatile";
+const DETECT_MODEL = GROQ_MODEL;
 // Modèle rapide pour traduction simple
 const TRANSLATE_MODEL = "llama-3.1-8b-instant";
 

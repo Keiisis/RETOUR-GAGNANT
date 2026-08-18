@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
@@ -142,7 +142,7 @@ async function translateBatch(
 
     try {
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
                 { role: 'system', content: 'You are a professional translation API. Output only strict JSON arrays, no prose.' },
                 { role: 'user', content: prompt },

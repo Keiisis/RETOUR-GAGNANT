@@ -1,4 +1,4 @@
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
@@ -105,7 +105,7 @@ French strings to translate:
 ${JSON.stringify(textsToTranslate)}`
 
             const aiRes = await fetchWithGroqRotation({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 messages: [
                     { role: 'system', content: `You are a professional translation API that translates French text to ${langConfig.groqName}. You only output valid JSON objects (key-value pairs). Never output arrays, markdown, or explanations. ${(lang === 'cr' || lang === 'ht') ? `IMPORTANT: You must output ${langConfig.groqName} text, NOT English. Every value must be in ${langConfig.groqName}.` : ''}` },
                     { role: 'user', content: prompt }

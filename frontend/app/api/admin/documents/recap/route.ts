@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
         try {
             const res = await fetchWithGroqRotation({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 messages: [
                     {
                         role: 'system',

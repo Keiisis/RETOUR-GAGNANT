@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
 import QRCode from 'qrcode'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -18,7 +18,7 @@ async function generateGroqMessage(
   if (GROQ_KEYS.length === 0) return ''
   try {
     const res = await fetchWithGroqRotation({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       max_tokens: 220,
       temperature: 0.72,
       messages: [

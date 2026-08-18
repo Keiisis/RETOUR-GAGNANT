@@ -1,3 +1,4 @@
+import { GROQ_MODEL } from '@/lib/groq'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
@@ -156,7 +157,7 @@ ${issues}
 Contraintes : ton bienveillant et pro, 120-160 mots, pas de jargon, invite à répondre ou à demander un rendez-vous téléphonique, signe "Pôle Instruction : Retour Gagnant Bénin". Réponds STRICTEMENT en JSON : {"subject": "...", "body": "..."} (body en texte simple avec sauts de ligne \\n).`
         const c = await groq.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             response_format: { type: 'json_object' },
             temperature: 0.6,
         })

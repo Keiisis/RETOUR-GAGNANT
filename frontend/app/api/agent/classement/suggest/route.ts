@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { getCategory, getStatus, daysSince } from '@/lib/classement/categories'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const days = daysSince(c.first_contact_at)
     try {
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
                 {
                     role: 'system',

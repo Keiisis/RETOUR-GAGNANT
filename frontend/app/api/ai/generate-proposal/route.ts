@@ -1,3 +1,4 @@
+import { GROQ_MODEL } from '@/lib/groq'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
@@ -23,7 +24,7 @@ async function callGroqWithRetry(keys: string[], prompt: string): Promise<string
             const groq = new Groq({ apiKey: shuffled[i] })
             const completion = await groq.chat.completions.create({
                 messages: [{ role: 'user', content: prompt }],
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 response_format: { type: 'json_object' },
                 temperature: 0.3
             })

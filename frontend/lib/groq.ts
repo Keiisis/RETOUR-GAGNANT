@@ -1,3 +1,23 @@
+// ══════════════════════════════════════════════════════════════
+//  MODÈLES GROQ — source unique.
+//
+//  `llama-3.3-70b-versatile` a été RETIRÉ par Groq : toute génération
+//  répondait « model_not_found » (404). Le nom était recopié dans 21 fichiers,
+//  donc une seule dépréciation cassait l'IA partout à la fois. Il vit
+//  désormais ici : le jour où Groq retire encore un modèle, une seule ligne
+//  change.
+//
+//  Vérifié le 2026-08-18 auprès de GET /openai/v1/models avec les clés du
+//  projet : ces deux identifiants répondent bien 200.
+// ══════════════════════════════════════════════════════════════
+
+/** Raisonnement, rédaction, génération de propositions. */
+export const GROQ_MODEL = 'openai/gpt-oss-120b'
+
+/** Tâches courtes et fréquentes (détection de langue, classement, traduction) :
+ *  même famille, plus rapide et moins coûteuse. */
+export const GROQ_MODEL_FAST = 'openai/gpt-oss-20b'
+
 export const GROQ_KEYS = [
     process.env.GROQ_API_KEY_1,
     process.env.GROQ_API_KEY_2,

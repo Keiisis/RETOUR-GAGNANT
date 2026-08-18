@@ -15,7 +15,7 @@ const PROVIDERS = [
         logo: '',
         color: '#f97316',
         description: 'Ultra-rapide, Llama 3.3',
-        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+        models: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'],
     },
     {
         id: 'openai',
@@ -61,7 +61,7 @@ export default function AIConfigPage() {
     const [form, setForm] = useState({
         provider: 'groq',
         api_key: '',
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         system_prompt: '',
         personality: '',
         tone: '',
@@ -80,7 +80,7 @@ export default function AIConfigPage() {
             setForm({
                 provider: currentConfig.provider || 'groq',
                 api_key: currentConfig.api_key || '',
-                model: currentConfig.model || 'llama-3.3-70b-versatile',
+                model: currentConfig.model || 'openai/gpt-oss-120b',
                 system_prompt: currentConfig.system_prompt || '',
                 personality: currentConfig.personality || '',
                 tone: currentConfig.tone || '',

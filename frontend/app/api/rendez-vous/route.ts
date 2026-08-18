@@ -3,7 +3,7 @@ import { isSlotBookable } from '@/lib/availability'
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, getEmailTemplates } from '@/lib/email';
 import { getStaffToLine } from '@/lib/staff-recipients';
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { trackClient } from '@/lib/classement/track';
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
@@ -64,7 +64,7 @@ async function generateAutoReply(clientName: string, service: string, message: s
         const hasMessage = !!(message && message.trim());
 
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
                 {
                     role: 'system',

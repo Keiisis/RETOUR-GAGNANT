@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fetchWithGroqRotation } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq';
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email';
 import { guardPublic, AI_LIMIT } from '@/lib/api-guard'
 
@@ -188,7 +188,7 @@ Return ONLY a JSON array of exactly 3 strings. Each string is one short insight 
 Example format: ["Insight 1.", "Insight 2.", "Insight 3."]`
 
             const res = await fetchWithGroqRotation({
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 messages: [
                     { role: 'system', content: 'You are a premium eligibility advisor. Output only strict JSON arrays of strings, no prose.' },
                     { role: 'user', content: prompt },

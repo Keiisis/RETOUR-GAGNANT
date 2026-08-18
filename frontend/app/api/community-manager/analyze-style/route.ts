@@ -1,3 +1,4 @@
+import { GROQ_MODEL } from '@/lib/groq'
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
@@ -25,7 +26,7 @@ async function callGroq(
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
                 ],
-                model: 'llama-3.3-70b-versatile',
+                model: GROQ_MODEL,
                 response_format: { type: 'json_object' },
                 temperature: opts.temperature,
                 max_tokens: opts.max_tokens,

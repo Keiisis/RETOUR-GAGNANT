@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, getEmailConfig } from '@/lib/email'
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { daysSince, dueMilestones, getCategory, getStatus, isRelanceEligible } from '@/lib/classement/categories'
 import { sendNationalityResumeEmail } from '@/lib/nationality-resume-email'
 import { executerCron } from '@/lib/cron-journal'
@@ -44,7 +44,7 @@ async function aiSuggestions(c: ClientRow, days: number, milestone: number): Pro
         const cat = getCategory(c.service_category).label
         const statut = getStatus(c.status).label
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
                 {
                     role: 'system',

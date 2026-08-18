@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchWithGroqRotation } from '@/lib/groq'
+import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq'
 
 export async function POST(req: Request) {
     let lang = 'fr'
@@ -32,7 +32,7 @@ Si la réponse ne s'y trouve pas, réponds de manière experte en tant que spéc
 Sois concis, structuré et utile.${langInstruction}`
 
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.3-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: query.trim() },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyApiAuth } from "@/lib/api-auth";
-import { fetchWithGroqRotation } from "@/lib/groq";
+import { fetchWithGroqRotation, GROQ_MODEL } from "@/lib/groq";
 
 const SYSTEM_PROMPT = `Tu es l'Expert Architecture & Admin de Retour Gagnant Bénin.
 Ton rôle est d'aider l'administrateur à gérer le site, rédiger du contenu, et optimiser les opérations.
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         }
 
         const response = await fetchWithGroqRotation({
-            model: "llama-3.3-70b-versatile",
+            model: GROQ_MODEL,
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: prompt.trim() },
