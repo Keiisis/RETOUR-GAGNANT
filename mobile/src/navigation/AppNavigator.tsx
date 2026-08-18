@@ -47,6 +47,10 @@ import ConstructionScreen from '../screens/main/ConstructionScreen'
 import LanguesScreen from '../screens/main/LanguesScreen'
 import RechercheAncestraleScreen from '../screens/main/RechercheAncestraleScreen'
 import TicketsScreen from '../screens/main/TicketsScreen'
+import SejourRequestScreen from '../screens/main/SejourRequestScreen'
+import MesPropositionsScreen from '../screens/main/MesPropositionsScreen'
+import SignatureDevisScreen from '../screens/main/SignatureDevisScreen'
+import DevisPaiementScreen from '../screens/main/DevisPaiementScreen'
 import AutresScreen from '../screens/main/AutresScreen'
 import NationaliteVipScreen from '../screens/main/NationaliteVipScreen'
 import GenealogieScreen from '../screens/main/GenealogieScreen'
@@ -130,6 +134,10 @@ export type RootStackParamList = {
     Langues: undefined
     RechercheAncestrale: undefined
     Tickets: undefined
+    SejourRequest: undefined
+    MesPropositions: undefined
+    SignatureDevis: { proposalId: string; secretKey?: string }
+    DevisPaiement: { secretKey?: string }
     Autres: undefined
     NationaliteVip: undefined
     Genealogie: undefined
@@ -362,6 +370,10 @@ export default function AppNavigator() {
                         <Stack.Screen name="Langues" component={LanguesScreen} />
                         <Stack.Screen name="RechercheAncestrale" component={RechercheAncestraleScreen} />
                         <Stack.Screen name="Tickets" component={TicketsScreen} />
+                        <Stack.Screen name="SejourRequest" component={SejourRequestScreen} />
+                        <Stack.Screen name="MesPropositions" component={MesPropositionsScreen} />
+                        <Stack.Screen name="SignatureDevis" component={SignatureDevisScreen} />
+                        <Stack.Screen name="DevisPaiement" component={DevisPaiementScreen} />
                         <Stack.Screen name="Autres" component={AutresScreen} />
                         <Stack.Screen name="NationaliteVip" component={NationaliteVipScreen} />
                         <Stack.Screen name="Genealogie" component={GenealogieScreen} />

@@ -27,6 +27,10 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export interface RdvLandingContent {
     serviceLabel: string
+    /** Écran dédié à ouvrir au lieu de la simple demande de rendez-vous.
+        Le Guide Culturel s'en sert : préparer un séjour suppose de recueillir
+        l'itinéraire souhaité, pas seulement une date. */
+    primaryScreen?: string
     shareMessage: string
     heroIcon: LucideIcon
     badge: string
@@ -109,6 +113,7 @@ export default function ServiceRdvLanding({ navigation, content: k }: {
             const nv = fs.niveaux[niveauIdx] || ''
             label = `${k.serviceLabel} (${fmt}, ${lg}, niveau ${nv})`
         }
+        if (k.primaryScreen) { navigation.navigate(k.primaryScreen); return }
         navigation.navigate('Appointments', { openRequest: true, serviceLabel: label })
     }
     const scrollToSelector = () =>

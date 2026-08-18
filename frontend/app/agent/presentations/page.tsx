@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProposalsList } from '@/app/actions/ai-proposals'
+import EnvoyerDansApp, { BadgeRattachement, type Rattachement } from '@/components/proposals/EnvoyerDansApp'
 import { deleteProposal } from '@/app/actions/ai-proposals'
 import { Plus, FileText, Globe, ArrowRight, CircleNotch as Loader2, Play, MagicWand as Wand2, X, MagnifyingGlass as Search, Check, Star, MapPin, Buildings as Hotel, ForkKnife as UtensilsCrossed, Car, Compass, Trash as Trash2, Copy, Sparkle as Sparkles } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation'
@@ -55,6 +56,20 @@ export default function AgentPresentationsPage() {
     const router = useRouter()
 
     // Form state
+    /* Distinction demandée : une proposition partagée par lien n'est PAS une
+       proposition envoyée dans l'application d'un client. Ces informations
+       vivent sur la table ; la liste vient d'une vue qui ne les expose pas —
+       on les charge à côté et on fusionne (voir /api/proposals/rattachements). */
+    const [rattachements, setRattachements] = useState<Record<string, Rattachement>>({})
+    const chargerRattachements = useCallback(async () => {
+        try {
+            const res = await fetch('/api/proposals/rattachements')
+            const j = await res.json()
+            setRattachements(j.rattachements || {})
+        } catch { /* la liste reste utilisable sans les badges */ }
+    }, [])
+    useEffect(() => { chargerRattachements() }, [chargerRattachements])
+
     const [formData, setFormData] = useState({
         client_name: '', client_email: '', client_phone: '',
         destination: '', start_date: '', end_date: '',
@@ -231,6 +246,7 @@ export default function AgentPresentationsPage() {
                                 </div>
 
                                 <h3 className="text-lg font-bold text-white mb-1 truncate">{prop.client_name}</h3>
+                                <div className="mb-2"><BadgeRattachement r={rattachements[prop.id]} /></div>
                                 <p className="text-[#FCD116] font-medium text-sm flex items-center gap-1.5 mb-4">
                                     <Globe className="w-3.5 h-3.5" /> {prop.destination}
                                 </p>
@@ -244,6 +260,14 @@ export default function AgentPresentationsPage() {
                                         <span>Montant</span>
                                         <span className="text-white font-bold text-sm">{formatCurrencySync(prop.total_amount || 0, (prop.currency as CurrencyCode) || 'XOF')}</span>
                                     </div>
+                                </div>
+
+                                <div className="mb-2">
+                                    <EnvoyerDansApp
+                                        proposalId={prop.id}
+                                        rattachement={rattachements[prop.id]}
+                                        onChange={chargerRattachements}
+                                    />
                                 </div>
 
                                 <div className="flex gap-2">

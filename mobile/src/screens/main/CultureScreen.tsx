@@ -82,6 +82,10 @@ const CONTENT: RdvLandingContent = {
     finalTitle: 'Reconnectez-vous à vos racines, pour de vrai.',
     finalText: 'Un séjour pensé pour vous, guidé par un passionné, au plus près de l\'âme du Bénin.',
     finalNote: 'Premier échange gratuit • Programme sur mesure • Sans engagement',
+    // « Préparer mon séjour » n'ouvre plus une simple demande de rendez-vous :
+    // l'agent recevait une date sans savoir ce que le client voulait vivre, et
+    // ne pouvait donc rien lui proposer. L'écran dédié recueille l'itinéraire.
+    primaryScreen: 'SejourRequest',
     primaryCtaLabel: 'Préparer mon séjour',
     stickyLabel: 'Séjour sur mesure',
     stickyValue: 'Devis gratuit sous 24h',
