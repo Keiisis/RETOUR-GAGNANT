@@ -1,44 +1,42 @@
 # Écart entre le CODE et la BASE réelle
 
-> Généré par `node scripts/audit-schema.mjs` (depuis `frontend/`).
-> Le schéma réel est relu via l API OpenAPI de PostgREST : `scripts/schema-reel.json`.
-> Régénérer ce fichier après chaque migration appliquée.
+> Régénérer : `node scripts/audit-schema.mjs` depuis `frontend/`.
+> Le schéma réel est relu via l'API OpenAPI de PostgREST (`scripts/schema-reel.json`).
+
+## État au 2026-08-18
+
+- **120 → 107 occurrences** après alignement du code (13 corrigées).
+- La migration `supabase/migrations/20260818_alignement_schema.sql` traite les
+  manques RÉELS restants. **Ce fichier ne reflétera la correction qu'une fois la
+  migration exécutée** dans Supabase.
 
 ## Comment lire
 
-- **[select]** : la colonne est demandée en lecture. PostgREST rejette la requête
-  ENTIÈRE dès qu un seul nom est inconnu — l écran ne reçoit alors RIEN, sans
-  message d erreur visible. C est ce qui empêchait les événements de s afficher.
-- **[filtre] / [order]** : la requête échoue de la même manière.
-- **[insert] / [update]** : l écriture échoue, souvent silencieusement.
+- **[select] / [filtre] / [order]** : PostgREST rejette la requête ENTIÈRE dès
+  qu'un seul nom est inconnu. L'écran ne reçoit alors RIEN, sans erreur visible.
+  C'est ce qui rendait les événements invisibles et bloquait les compteurs à 00.
+- **[insert] / [update]** : l'écriture échoue, souvent en silence.
 
-## Limites connues de l outil
+## Limites connues de l'outil — À VÉRIFIER AVANT DE CORRIGER
 
-- Les clés d un objet JSON imbriqué (ex. les lignes `items` d une facture) sont
-  comptées à tort comme des colonnes : voir `documents_financiers`. À vérifier
-  au cas par cas avant correction.
-- Les tables listées comme absentes peuvent exister sans être exposées par
-  l API (schéma non public, ou RLS sans policy).
+1. **Clés d'objets JSON comptées comme des colonnes.** Les lignes `items` d'une
+   facture (`documents_financiers`), les étapes (`dossier_tracking.etapes`) ou
+   les pièces manquantes (`nationality_applications.missing_docs`) sont des
+   objets DANS une colonne `jsonb`, pas des colonnes. La majorité des 107
+   occurrences restantes est de cette nature.
+2. **Buckets de stockage.** `supabase.storage.from('bucket')` n'est pas une
+   table. `nationality_documents` et `dossier-documents` sont des BUCKETS :
+   ils apparaissent à tort comme des tables absentes.
+3. **Tables réellement absentes mais non fatales** : `ai_proposals`, `leads`,
+   `nationalite_requests`. supabase-js renvoie une erreur sans lever
+   d'exception — la page fonctionne, elle perd seulement cette source.
 
 ══ COLONNES DEMANDÉES PAR LE CODE, ABSENTES DE LA BASE ══
 
-▸ client_documents  (10)
-    nom_fichier  [insert]  app/client/dossier/page.tsx
-    nom_fichier  [select]  app/client/dossier/page.tsx
+▸ client_documents  (2)
     storage_path  [insert]  app/client/dossier/page.tsx
     storage_path  [select]  app/client/dossier/page.tsx
-    taille  [insert]  app/client/dossier/page.tsx
-    taille  [select]  app/client/dossier/page.tsx
-    type_fichier  [insert]  app/client/dossier/page.tsx
-    type_fichier  [select]  app/client/dossier/page.tsx
-    url  [insert]  app/client/dossier/page.tsx
-    url  [select]  app/client/dossier/page.tsx
-▸ client_profiles  (8)
-    first_name  [select]  app/agent/rediger-mails/page.tsx
-    first_name  [select]  app/api/agent/classement/route.ts
-    full_name  [select]  app/api/agent/classement/route.ts
-    last_name  [select]  app/agent/rediger-mails/page.tsx
-    last_name  [select]  app/api/agent/classement/route.ts
+▸ client_profiles  (3)
     push_token  [select]  app/api/notifications/push/route.ts
     push_token  [update]  ../mobile/src/utils/pushToken.ts
     push_token_updated_at  [update]  ../mobile/src/utils/pushToken.ts
@@ -161,14 +159,14 @@
     commission_rate  [update]  app/admin/settings/erp/page.tsx
     default_currency  [update]  app/admin/settings/erp/page.tsx
 
-TOTAL : 120 occurrences sur 18 tables
+TOTAL : 107 occurrences sur 18 tables
 
 ══ TABLES RÉFÉRENCÉES MAIS NON EXPOSÉES PAR L API ══
   ai_proposals  →  app/api/proposals/track-view/route.ts
-  avatars  →  ../mobile/src/screens/main/ProfilScreen.tsx
   client_notifications  →  components/layout/ClientBell.tsx
+  dossier-documents  →  app/api/cron/cleanup/route.ts
   invoices  →  app/api/mobile/invoices/route.ts, lib/send-invoice-email.ts
   leads  →  app/agent/rediger-mails/page.tsx
   nationalite_requests  →  lib/gemma-context.ts
-  nationality_documents  →  app/(routes)/nationalite/formulaire/page.tsx, app/api/admin/nationalite/preview/route.ts, app/api/admin/nationalite/[id]/reset-documents/route.ts, app/api/admin/nationalite/[id]/route.ts, app/api/nationality/download/route.ts, ../mobile/src/screens/main/NationaliteFormScreen.tsx
+  nationality_documents  →  ../mobile/src/screens/main/NationaliteFormScreen.tsx
   order_tracking_events  →  app/api/admin/orders/[id]/tracking/route.ts, app/api/mobile/orders/route.ts

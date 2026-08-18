@@ -176,7 +176,9 @@ export default function AgentRedigerMailsPage() {
 
             const [messagesRes, clientsRes, leadsRes] = await Promise.all([
                 supabase.from('messages').select('nom, prenom, email').not('email', 'is', null),
-                supabase.from('client_profiles').select('id, first_name, last_name, email, phone'),
+                // client_profiles expose `prenom` / `nom`, pas first_name / last_name :
+                // sous ces noms, la requête échouait et la liste restait vide.
+                supabase.from('client_profiles').select('id, prenom, nom, email, phone'),
                 supabase.from('leads').select('id, full_name, email, phone'),
             ])
 
@@ -185,7 +187,7 @@ export default function AgentRedigerMailsPage() {
             ;(clientsRes.data || []).forEach(c => {
                 if (c.email) {
                     contactMap.set(c.email.toLowerCase(), {
-                        id: c.id, email: c.email, nom: c.last_name || '', prenom: c.first_name || '',
+                        id: c.id, email: c.email, nom: c.nom || '', prenom: c.prenom || '',
                         phone: c.phone || undefined, type: 'client',
                     })
                 }

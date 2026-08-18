@@ -33,10 +33,13 @@ interface Order {
 
 interface ClientDoc {
     id: string
-    nom_fichier: string
-    type_fichier: string
-    taille: number
-    url: string
+    // Noms alignés sur la base : la table expose file_name / file_type /
+    // file_size / file_url (même convention que dossier_documents). Le code
+    // employait des noms français inexistants — toute lecture échouait.
+    file_name: string
+    file_type: string
+    file_size: number
+    file_url: string
     storage_path: string
     created_at: string
 }
@@ -114,7 +117,7 @@ export default function ClientDossierPage() {
     const fetchDocs = useCallback(async (dossierId: string) => {
         const { data } = await supabase
             .from('client_documents')
-            .select('id, nom_fichier, type_fichier, taille, url, storage_path, created_at')
+            .select('id, file_name, file_type, file_size, file_url, storage_path, created_at')
             .eq('dossier_id', dossierId)
             .order('created_at', { ascending: false })
         setDocsByDossier(prev => ({ ...prev, [dossierId]: (data as ClientDoc[]) || [] }))
@@ -274,8 +277,8 @@ export default function ClientDossierPage() {
                 .from('client-documents').createSignedUrl(path, 60 * 60 * 24 * 7)
             await supabase.from('client_documents').insert({
                 client_id: userId, dossier_id: dossierId,
-                nom_fichier: file.name, type_fichier: file.type,
-                taille: file.size, url: signedData?.signedUrl || '',
+                file_name: file.name, file_type: file.type,
+                file_size: file.size, file_url: signedData?.signedUrl || '',
                 storage_path: path,
             })
             await fetchDocs(dossierId)
@@ -626,8 +629,8 @@ export default function ClientDossierPage() {
                                                                             <Paperclip size={12} className="text-[var(--panel-accent)]" />
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <p className="text-xs font-bold text-white truncate">{clientDoc.nom_fichier}</p>
-                                                                            <p className="text-[10px] text-gray-600">{fmtSize(clientDoc.taille)} · {fmtDate(clientDoc.created_at)}</p>
+                                                                            <p className="text-xs font-bold text-white truncate">{clientDoc.file_name}</p>
+                                                                            <p className="text-[10px] text-gray-600">{fmtSize(clientDoc.file_size)} · {fmtDate(clientDoc.created_at)}</p>
                                                                         </div>
                                                                         <div className="flex items-center gap-1">
                                                                             <button type="button" onClick={async () => { const url = await refreshSignedUrl(clientDoc.storage_path); window.open(url, '_blank') }}

@@ -197,10 +197,13 @@ export async function POST(request: NextRequest) {
         // 6) Profils clients (comptes créés)
         try {
             const { data } = await supabase.from('client_profiles')
-                .select('email, full_name, first_name, last_name, phone, created_at')
+                // client_profiles expose `prenom` / `nom` : sous les noms
+                // full_name / first_name / last_name la requête échouait, donc
+                // AUCUN compte client ne remontait dans le classement.
+                .select('email, prenom, nom, phone, created_at')
             for (const r of data || []) {
                 add(r.email, {
-                    full_name: r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || null,
+                    full_name: `${r.prenom || ''} ${r.nom || ''}`.trim() || null,
                     phone: r.phone || null,
                     service_category: 'autres',
                     service_label: 'Compte client',

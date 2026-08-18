@@ -26,7 +26,11 @@ for (const racine of RACINES) {
         const src = fs.readFileSync(f, 'utf8')
         const rel = path.relative('.', f).replace(/\\/g, '/')
 
-        const positions = [...src.matchAll(/\.from\(\s*['"]([a-z0-9_]+)['"]\s*\)/g)]
+        // On ignore `storage.from('bucket')` : un bucket de stockage n'est
+        // PAS une table. Les confondre faisait passer des buckets
+        // (nationality_documents, avatars…) pour des tables manquantes.
+        const positions = [...src.matchAll(/\.from\(\s*['"]([a-z0-9_-]+)['"]\s*\)/g)]
+            .filter(m => !/storage\s*$/.test(src.slice(Math.max(0, m.index - 30), m.index)))
         for (let i = 0; i < positions.length; i++) {
             const m = positions[i]
             const table = m[1]
