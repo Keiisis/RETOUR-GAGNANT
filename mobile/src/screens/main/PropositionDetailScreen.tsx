@@ -1,22 +1,27 @@
 /* ═══════════════════════════════════════════════════════════
-   Proposition — deck de slides NATIF.
+   Proposition de séjour — portage natif de l'export Sleek (4 vues).
 
    La proposition s'ouvrait dans une WebView : mise en page pour grand écran,
-   aucune sélection possible. Puis, en natif, une simple liste : correcte mais
-   sans souffle, alors qu'un séjour se VEND par l'image.
+   aucune sélection possible. Elle se lit désormais en trois temps :
 
-   Ici chaque prestation occupe l'écran entier et se balaye du doigt :
-   · la photo respire en continu (lent panoramique — le regard traverse le lieu
-     au lieu de le regarder fixe) ;
-   · elle glisse à contre-sens du doigt pendant le balayage (parallaxe) : la
-     profondeur naît du décalage entre le fond et le texte ;
-   · le texte se pose en cascade à l'arrivée de la slide ;
-   · un appui retient ou écarte la prestation, avec retour haptique, et le
-     total change immédiatement en bas.
+   · OUVERTURE — la couverture : photo panoramique, durée réelle du séjour,
+     référence du dossier, mot du conseiller, repères chiffrés.
+   · DECK — une prestation par écran, balayable. La photo respire en continu
+     (panoramique lent) et glisse à contre-sens du doigt (parallaxe) : la
+     profondeur naît de ce décalage. Le texte se pose en cascade à l'arrivée.
+     Un appui garde ou retire, avec retour haptique ; le total suit.
+   · RÉCAPITULATIF — l'étape finale : ce qui est retenu, ce qui a été retiré,
+     l'économie réalisée, puis la signature.
+   Et l'état VIDE quand le conseiller n'a pas encore composé le séjour.
+
+   Fidélité à l'export : structure, tailles, graisses, rayons repris tels
+   quels. Les blocs que la base ne peut pas nourrir (portrait et nom du
+   conseiller, nombre de voyageurs, prix à la nuit, échéancier d'acompte) ne
+   sont pas inventés : ils cèdent la place à ce qui est vrai.
 
    Charte v2 : blanc porteur, tricolore en accent, aucun fond sombre.
 ═══════════════════════════════════════════════════════════ */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     View, Text, StyleSheet, Pressable, Image, Dimensions,
     ActivityIndicator, Share, ScrollView,
@@ -25,7 +30,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 import {
     ChevronLeft, Share2, Check, MapPin, CalendarDays, Bed, UtensilsCrossed,
-    Camera, Car, Sparkles, PenLine, CreditCard, CircleCheck, ChevronRight,
+    Camera, Car, Sparkles, PenLine, CreditCard, CircleCheck, ArrowRight,
+    ArrowLeft, ShieldCheck, Clock4, Plus, Minus, Compass, MessageCircle, Lock,
 } from 'lucide-react-native'
 import Animated, {
     FadeInDown, FadeIn, Easing, Extrapolation, interpolate,
@@ -33,7 +39,7 @@ import Animated, {
     withRepeat, withTiming, runOnJS,
 } from 'react-native-reanimated'
 import type { SharedValue } from 'react-native-reanimated'
-import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
+import { screenColors as C, spacing, radius, shadows, fonts } from '../../config/theme'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
@@ -42,6 +48,8 @@ import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const { width: L } = Dimensions.get('window')
+const VERT_PROFOND = '#00643C'
+const VERT_LISERE = 'rgba(0,135,81,0.15)'
 
 interface Prestation {
     id: string
@@ -87,30 +95,47 @@ const somme = (v: number | null | undefined) => (typeof v === 'number' && v > 0 
 const money = (v: number, devise: string | null) =>
     `${new Intl.NumberFormat('fr-FR').format(Math.round(v))} ${devise === 'XOF' || !devise ? 'FCFA' : devise}`
 
-const dateFr = (iso: string | null) => {
+const dateFr = (iso: string | null, avecAnnee = false) => {
     if (!iso) return null
-    try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) }
-    catch { return null }
+    try {
+        return new Date(iso).toLocaleDateString('fr-FR', {
+            day: 'numeric', month: 'long', ...(avecAnnee ? { year: 'numeric' } : {}),
+        })
+    } catch { return null }
 }
 
-/* ── Une slide ────────────────────────────────────────────────
-   `scrollX` est partagé par toutes les slides : chacune calcule sa propre
-   position relative et en déduit sa parallaxe. Tout se passe sur le fil
-   d'animation — le doigt ne dépend jamais du fil JS. */
+/** Durée réelle du séjour, déduite des dates. Rien ne s'affiche sans elles. */
+const dureeSejour = (debut: string | null, fin: string | null) => {
+    if (!debut || !fin) return null
+    const d = new Date(debut).getTime(), f = new Date(fin).getTime()
+    if (Number.isNaN(d) || Number.isNaN(f) || f < d) return null
+    const nuits = Math.round((f - d) / 86400000)
+    if (nuits <= 0) return null
+    return { jours: nuits + 1, nuits }
+}
+
+/* ── Une slide du deck ───────────────────────────────────────
+   `scrollX` est partagé : chaque slide calcule sa position relative et en
+   déduit sa parallaxe. Tout vit sur le fil d'animation — le doigt ne dépend
+   jamais du fil JS. */
 function Slide({
-    p, index, scrollX, retenu, onToggle, devise, hauteur, t,
+    p, index, total, scrollX, retenu, onToggle, devise, hauteur, suivant, t,
 }: {
     p: Prestation
     index: number
+    total: number
     scrollX: SharedValue<number>
     retenu: boolean
     onToggle: () => void
     devise: string | null
     hauteur: number
+    suivant: string | null
     t: (s: string, v?: Record<string, string | number>) => string
 }) {
     const { l: famille, Icone } = familleDe(p.type)
     const prix = somme(p.selling_price)
+    const barre = somme(p.original_price)
+    const remise = barre > prix && prix > 0 ? Math.round(((barre - prix) / barre) * 100) : 0
     const photos = (p.images?.length ? p.images : p.image_url ? [p.image_url] : []).slice(0, 6)
     const [photo, setPhoto] = useState(0)
 
@@ -125,118 +150,155 @@ function Slide({
     }, [pano])
 
     const styleImage = useAnimatedStyle(() => {
-        const d = scrollX.value - index * L                     // décalage de la slide
-        const parallaxe = interpolate(d, [-L, 0, L], [L * 0.32, 0, -L * 0.32], Extrapolation.CLAMP)
-        const derive = interpolate(pano.value, [0, 1], [-16, 16])
-        const zoom = interpolate(pano.value, [0, 1], [1.08, 1.18])
+        const d = scrollX.value - index * L
+        const parallaxe = interpolate(d, [-L, 0, L], [L * 0.3, 0, -L * 0.3], Extrapolation.CLAMP)
+        const derive = interpolate(pano.value, [0, 1], [-14, 14])
+        const zoom = interpolate(pano.value, [0, 1], [1.08, 1.17])
         return { transform: [{ translateX: parallaxe + derive }, { scale: zoom }] }
     })
 
-    /* Le contenu s'efface légèrement quand la slide quitte l'écran : l'œil
-       sait ainsi laquelle est « active » sans qu'on le lui dise. */
+    /* Le contenu s'efface quand la slide quitte l'écran : l'œil sait laquelle
+       est active sans qu'on le lui dise. */
     const styleCorps = useAnimatedStyle(() => {
-        const d = scrollX.value - index * L
+        const d = Math.abs(scrollX.value - index * L)
         return {
-            opacity: interpolate(Math.abs(d), [0, L * 0.75], [1, 0], Extrapolation.CLAMP),
-            transform: [{ translateY: interpolate(Math.abs(d), [0, L], [0, 34], Extrapolation.CLAMP) }],
+            opacity: interpolate(d, [0, L * 0.7], [1, 0], Extrapolation.CLAMP),
+            transform: [{ translateY: interpolate(d, [0, L], [0, 30], Extrapolation.CLAMP) }],
         }
     })
 
     return (
         <View style={{ width: L, height: hauteur }}>
-            <View style={styles.cadrePhoto}>
-                {photos.length > 0 ? (
-                    <Animated.Image
-                        source={{ uri: photos[photo] }}
-                        style={[StyleSheet.absoluteFill, styleImage]}
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: C.surfaceAlt }]} />
-                )}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.slideScroll}>
+                <View style={styles.cadrePhoto}>
+                    {photos.length > 0 ? (
+                        <Animated.Image
+                            source={{ uri: photos[photo] }}
+                            style={[StyleSheet.absoluteFill, styleImage]}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: C.surfaceAlt }]} />
+                    )}
 
-                {/* Famille + rang, posés sur la photo */}
-                <Animated.View entering={FadeIn.delay(120)} style={styles.pastilleFamille}>
-                    <Icone size={13} color={C.primary} strokeWidth={2.4} />
-                    <Text style={styles.pastilleText}>{t(famille)}</Text>
-                </Animated.View>
+                    <Animated.View entering={FadeIn.delay(100)} style={styles.pastilleFamille}>
+                        <Icone size={14} color={C.primary} strokeWidth={2.4} />
+                        <Text style={styles.pastilleText}>{t(famille)}</Text>
+                    </Animated.View>
 
-                {/* Retenir / écarter : la décision se prend devant l'image. */}
-                <Pressable
-                    onPress={onToggle}
-                    style={[styles.case, retenu && styles.caseOn]}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: retenu }}
-                    accessibilityLabel={retenu ? t('Écarter cette prestation') : t('Retenir cette prestation')}
-                    hitSlop={10}
-                >
-                    <Check size={19} color={retenu ? '#FFFFFF' : C.textMuted} strokeWidth={3} />
-                </Pressable>
+                    {/* Garder / retirer : la décision se prend devant l'image. */}
+                    <Pressable
+                        onPress={onToggle}
+                        style={({ pressed }) => [
+                            styles.garder, retenu ? styles.garderOn : styles.garderOff,
+                            pressed && { transform: [{ scale: 0.9 }] },
+                        ]}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: retenu }}
+                        hitSlop={8}
+                    >
+                        {retenu
+                            ? <Check size={16} color="#FFFFFF" strokeWidth={2.6} />
+                            : <Plus size={16} color={C.primary} strokeWidth={2.6} />}
+                        <Text style={[styles.garderText, retenu && { color: '#FFFFFF' }]}>
+                            {retenu ? t('Conservé') : t('Rajouter')}
+                        </Text>
+                    </Pressable>
 
-                {/* Galerie du slide : plusieurs vues d'un même lieu. */}
-                {photos.length > 1 && (
-                    <View style={styles.vignettes}>
-                        {photos.map((u, i) => (
-                            <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}>
-                                <View style={[styles.vignette, i === photo && styles.vignetteOn]}>
-                                    <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
+                    {photos.length > 1 && (
+                        <View style={styles.vignettes}>
+                            {photos.slice(0, 3).map((u, i) => (
+                                <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}>
+                                    <View style={[styles.vignette, i === photo && styles.vignetteOn]}>
+                                        <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
+                                    </View>
+                                </Pressable>
+                            ))}
+                            {photos.length > 3 && (
+                                <View style={styles.vignettePlus}>
+                                    <Text style={styles.vignettePlusText}>+{photos.length - 3}</Text>
                                 </View>
-                            </Pressable>
-                        ))}
-                    </View>
-                )}
-            </View>
+                            )}
+                        </View>
+                    )}
 
-            <Animated.View style={[styles.corps, styleCorps]}>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.md }}>
-                    <Animated.Text entering={FadeInDown.delay(60).duration(420)} style={styles.titre}>
-                        {p.title || t('Prestation')}
-                    </Animated.Text>
+                    {remise > 0 && (
+                        <View style={styles.badgeRemise}>
+                            <Text style={styles.badgeRemiseText}>-{remise} %</Text>
+                        </View>
+                    )}
+                </View>
+
+                <Animated.View style={[styles.corps, styleCorps]}>
+                    <View style={styles.ligneTitre}>
+                        <View style={{ flex: 1 }}>
+                            <Animated.Text entering={FadeInDown.delay(60).duration(420)} style={styles.overline}>
+                                {t('Prestation {i} sur {n}', { i: index + 1, n: total })}
+                            </Animated.Text>
+                            <Animated.Text entering={FadeInDown.delay(120).duration(420)} style={styles.titre}>
+                                {p.title || t('Prestation')}
+                            </Animated.Text>
+                            {!!p.location && (
+                                <Animated.View entering={FadeInDown.delay(190).duration(420)} style={styles.lieu}>
+                                    <MapPin size={14} color={C.primary} strokeWidth={2.2} />
+                                    <Text style={styles.lieuText} numberOfLines={2}>{p.location}</Text>
+                                </Animated.View>
+                            )}
+                        </View>
+                        <Animated.View entering={FadeInDown.delay(120).duration(420)} style={styles.blocPrix}>
+                            <Text style={[styles.prix, !retenu && styles.prixOff]}>
+                                {prix > 0 ? money(prix, devise) : t('Compris')}
+                            </Text>
+                            {barre > prix && prix > 0 && (
+                                <Text style={styles.prixBarre}>{money(barre, devise)}</Text>
+                            )}
+                        </Animated.View>
+                    </View>
 
                     {!!p.subtitle && (
-                        <Animated.Text entering={FadeInDown.delay(130).duration(420)} style={styles.sousTitre}>
+                        <Animated.Text entering={FadeInDown.delay(230).duration(420)} style={styles.sousTitre}>
                             {p.subtitle}
                         </Animated.Text>
                     )}
 
-                    {!!p.location && (
-                        <Animated.View entering={FadeInDown.delay(190).duration(420)} style={styles.lieu}>
-                            <MapPin size={12} color={C.primary} strokeWidth={2.2} />
-                            <Text style={styles.lieuText}>{p.location}</Text>
-                        </Animated.View>
-                    )}
-
                     {!!p.description && (
-                        <Animated.Text entering={FadeInDown.delay(250).duration(420)} style={styles.desc}>
+                        <Animated.Text entering={FadeInDown.delay(280).duration(420)} style={styles.desc}>
                             {p.description}
                         </Animated.Text>
                     )}
 
                     {!!p.highlights?.length && (
                         <View style={styles.puces}>
-                            {p.highlights.slice(0, 5).map((h, i) => (
-                                <Animated.View key={h + i} entering={FadeInDown.delay(320 + i * 70).duration(380)} style={styles.puce}>
+                            {p.highlights.slice(0, 6).map((h, i) => (
+                                <Animated.View key={h + i} entering={FadeInDown.delay(330 + i * 70).duration(380)} style={styles.puce}>
+                                    <Check size={13} color={C.primary} strokeWidth={2.6} />
                                     <Text style={styles.puceText}>{h}</Text>
                                 </Animated.View>
                             ))}
                         </View>
                     )}
-                </ScrollView>
 
-                <View style={styles.piedSlide}>
-                    <Text style={[styles.prix, !retenu && styles.prixOff]}>
-                        {prix > 0 ? money(prix, devise) : t('Compris dans le séjour')}
-                    </Text>
-                    <Pressable onPress={onToggle} hitSlop={8} accessibilityRole="button">
-                        <Text style={[styles.etat, retenu && styles.etatOn]}>
-                            {retenu ? t('Retenu') : t('Écarté')}
-                        </Text>
-                    </Pressable>
-                </View>
-            </Animated.View>
+                    <View style={styles.indice}>
+                        <View style={styles.indiceCote}>
+                            <ArrowLeft size={12} color={C.textMuted} />
+                            <Text style={styles.indiceText}>{t('Glisser pour naviguer')}</Text>
+                        </View>
+                        {!!suivant && (
+                            <View style={styles.indiceCote}>
+                                <Text style={styles.indiceText} numberOfLines={1}>
+                                    {t('Suivant : {s}', { s: suivant })}
+                                </Text>
+                                <ArrowRight size={12} color={C.textMuted} />
+                            </View>
+                        )}
+                    </View>
+                </Animated.View>
+            </ScrollView>
         </View>
     )
 }
+
+type Vue = 'ouverture' | 'deck' | 'recap'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function PropositionDetailScreen({ navigation, route }: { navigation: any; route: any }) {
@@ -250,13 +312,12 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     const [chargement, setChargement] = useState(true)
     const [erreur, setErreur] = useState('')
     const [rang, setRang] = useState(0)
-    const [intro, setIntro] = useState(true)
+    const [vue, setVue] = useState<Vue>('ouverture')
 
     const scrollX = useSharedValue(0)
     // Dernier rang notifié au fil JS : sans ce garde-fou, chaque image de
     // défilement déclencherait un rendu React et le balayage saccaderait.
     const dernierRang = useSharedValue(0)
-    const listeRef = useRef<Animated.ScrollView>(null)
 
     const charger = useCallback(async () => {
         setChargement(true); setErreur('')
@@ -289,10 +350,10 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
         })
     }
 
-    const total = useMemo(
-        () => prestations.filter(p => retenues.has(p.id)).reduce((s, p) => s + somme(p.selling_price), 0),
-        [prestations, retenues],
-    )
+    const gardees = useMemo(() => prestations.filter(p => retenues.has(p.id)), [prestations, retenues])
+    const ecartees = useMemo(() => prestations.filter(p => !retenues.has(p.id)), [prestations, retenues])
+    const total = useMemo(() => gardees.reduce((s, p) => s + somme(p.selling_price), 0), [gardees])
+    const economie = useMemo(() => ecartees.reduce((s, p) => s + somme(p.selling_price), 0), [ecartees])
 
     const surScroll = useAnimatedScrollHandler({
         onScroll: e => {
@@ -313,6 +374,13 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                 url: `${API_BASE}/p/${prop.secret_key}`,
             })
         } catch { toast(t('Partage impossible'), t('Réessayez dans un instant.')) }
+    }
+
+    const signer = () => {
+        if (!prop) return
+        navigation.navigate('SignatureDevis', {
+            proposalId: prop.id, secretKey: prop.secret_key, selection: [...retenues],
+        })
     }
 
     if (chargement) {
@@ -338,176 +406,445 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
         )
     }
 
-    const periode = [dateFr(prop.start_date), dateFr(prop.end_date)].filter(Boolean).join(' → ')
+    const duree = dureeSejour(prop.start_date, prop.end_date)
+    const periode = [dateFr(prop.start_date), dateFr(prop.end_date, true)].filter(Boolean).join(' – ')
     const signee = !!prop.signed_at
     const reglee = prop.status === 'paid'
-    const hauteurDeck = Dimensions.get('window').height - insets.top - insets.bottom - 214
+    const familles = new Set(prestations.map(p => familleDe(p.type).l)).size
+    const budgetInitial = prestations.reduce((s, p) => s + somme(p.selling_price), 0) || somme(prop.total_amount)
+    const titreSejour = prop.intro_title || prop.destination || t('Votre séjour')
 
-    /* ── Ouverture : le séjour se présente avant de se détailler ── */
-    if (intro) {
+    /* ══ VIDE — le conseiller n'a pas encore composé le séjour ══ */
+    if (prestations.length === 0) {
         return (
             <View style={styles.container}>
                 <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
 
-                <View style={styles.header}>
-                    <Pressable onPress={() => navigation.goBack()} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
-                        <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
+                <View style={styles.entete}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
+                        <ChevronLeft size={20} color={C.text} strokeWidth={2.2} />
                     </Pressable>
-                    <View style={{ flex: 1 }} />
-                    <Pressable onPress={partager} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
-                        <Share2 size={19} color={C.text} strokeWidth={2} />
-                    </Pressable>
+                    <Text style={styles.enteteDiscret}>{t('Proposition de voyage')}</Text>
+                    <View style={{ width: 40 }} />
                 </View>
 
-                <ScrollView contentContainerStyle={styles.intro} showsVerticalScrollIndicator={false}>
-                    {!!prop.intro_image && (
-                        <Animated.Image
-                            entering={FadeIn.duration(600)}
-                            source={{ uri: prop.intro_image }}
-                            style={styles.introImg}
-                            resizeMode="cover"
-                        />
-                    )}
-                    <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.badge}>
-                        <Sparkles size={13} color={C.primary} strokeWidth={2.2} />
-                        <Text style={styles.badgeText}>{t('Votre proposition')}</Text>
+                <View style={styles.vide}>
+                    <Animated.View entering={FadeIn.duration(500)} style={styles.videTuile}>
+                        <Compass size={36} color={C.primary} strokeWidth={1.8} />
                     </Animated.View>
-                    <Animated.Text entering={FadeInDown.delay(200).duration(500)} style={styles.h1}>
-                        {prop.intro_title || prop.destination || t('Votre séjour')}
+
+                    <Animated.Text entering={FadeInDown.delay(120).duration(450)} style={styles.videOverline}>
+                        {t('Itinéraire en préparation')}
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(180).duration(450)} style={styles.videTitre}>
+                        {t('Aucune prestation détaillée')}
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(240).duration(450)} style={styles.videTexte}>
+                        {t('Votre conseiller affine actuellement la sélection de vos hébergements, guides et expériences au Bénin.')}
                     </Animated.Text>
 
-                    <Animated.View entering={FadeInDown.delay(280).duration(500)} style={styles.metaRow}>
-                        {!!prop.destination && (
-                            <View style={styles.meta}>
-                                <MapPin size={12} color={C.primary} />
-                                <Text style={styles.metaText}>{prop.destination}</Text>
+                    <Animated.View entering={FadeInDown.delay(310).duration(450)} style={styles.videCarte}>
+                        <View style={styles.videCarteEntete}>
+                            <View style={styles.motTuile}>
+                                <Sparkles size={18} color={C.primary} strokeWidth={2.2} />
                             </View>
-                        )}
-                        {!!periode && (
-                            <View style={styles.meta}>
-                                <CalendarDays size={12} color={C.primary} />
-                                <Text style={styles.metaText}>{periode}</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.motTitre}>{titreSejour}</Text>
+                                <Text style={styles.motSous}>
+                                    {periode || t('Dates à confirmer avec votre conseiller')}
+                                </Text>
                             </View>
-                        )}
+                        </View>
+                        <Text style={styles.videCarteTexte}>
+                            {t('Vous recevrez une notification dès la publication du devis, directement dans cette application.')}
+                        </Text>
                     </Animated.View>
 
-                    {!!prop.intro_text && (
-                        <Animated.Text entering={FadeInDown.delay(360).duration(500)} style={styles.introTexte}>
-                            {prop.intro_text}
-                        </Animated.Text>
-                    )}
-
-                    <Animated.View entering={FadeInDown.delay(440).duration(500)}>
+                    <Animated.View entering={FadeInDown.delay(380).duration(450)} style={styles.videActions}>
                         <Pressable
-                            onPress={() => setIntro(false)}
-                            style={({ pressed }) => [styles.ctaIntro, pressed && { transform: [{ scale: 0.97 }] }]}
+                            onPress={() => navigation.navigate('Main', { screen: 'Messages' })}
+                            style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
                             accessibilityRole="button"
                         >
-                            <Text style={styles.ctaIntroText}>
-                                {prestations.length > 0
-                                    ? t('Découvrir les {n} prestations', { n: prestations.length })
-                                    : t('Ouvrir la proposition')}
-                            </Text>
-                            <ChevronRight size={18} color="#FFFFFF" strokeWidth={2.4} />
+                            <MessageCircle size={16} color="#FFFFFF" strokeWidth={2.2} />
+                            <Text style={styles.ctaLargeText}>{t('Contacter mon conseiller')}</Text>
+                        </Pressable>
+                        <Pressable
+                            onPress={() => navigation.goBack()}
+                            style={({ pressed }) => [styles.ctaSecondaire, pressed && { transform: [{ scale: 0.98 }] }]}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.ctaSecondaireText}>{t('Retour')}</Text>
                         </Pressable>
                     </Animated.View>
-                </ScrollView>
+                </View>
+
+                <View style={[styles.piedSignature, { paddingBottom: insets.bottom + 12 }]}>
+                    <Text style={styles.piedSignatureText}>
+                        {t('Cabinet Retour Gagnant Bénin · Accompagnement diaspora')}
+                    </Text>
+                </View>
             </View>
         )
     }
+
+    /* ══ OUVERTURE ══ */
+    if (vue === 'ouverture') {
+        return (
+            <View style={styles.container}>
+                <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
+
+                <View style={styles.entete}>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
+                        <ChevronLeft size={20} color={C.text} strokeWidth={2.2} />
+                    </Pressable>
+                    <View style={styles.piluleEntete}>
+                        <View style={styles.pointVert} />
+                        <Text style={styles.piluleEnteteText}>{t('Votre proposition')}</Text>
+                    </View>
+                    <Pressable onPress={partager} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
+                        <Share2 size={18} color={C.text} strokeWidth={2} />
+                    </Pressable>
+                </View>
+
+                <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
+                    {!!prop.intro_image && (
+                        <Animated.View entering={FadeIn.duration(600)} style={styles.introCadre}>
+                            <Image source={{ uri: prop.intro_image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                            {!!duree && (
+                                <View style={styles.introPastille}>
+                                    <Sparkles size={14} color={C.primary} strokeWidth={2.2} />
+                                    <Text style={styles.introPastilleText}>
+                                        {t('Séjour {j} jours / {n} nuits', { j: duree.jours, n: duree.nuits })}
+                                    </Text>
+                                </View>
+                            )}
+                            <View style={styles.introRef}>
+                                <Text style={styles.introRefText}>
+                                    {t('Réf : RG-{r}', { r: prop.id.slice(0, 8).toUpperCase() })}
+                                </Text>
+                            </View>
+                        </Animated.View>
+                    )}
+
+                    <Animated.Text entering={FadeInDown.delay(120).duration(500)} style={styles.introOverline}>
+                        {t('Séjour sur-mesure diaspora')}
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(180).duration(500)} style={styles.h1}>
+                        {titreSejour}
+                    </Animated.Text>
+
+                    <Animated.View entering={FadeInDown.delay(250).duration(500)} style={styles.chips}>
+                        {!!prop.destination && (
+                            <View style={styles.chip}>
+                                <MapPin size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.chipText}>{prop.destination}</Text>
+                            </View>
+                        )}
+                        {!!periode && (
+                            <View style={styles.chip}>
+                                <CalendarDays size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.chipText}>{periode}</Text>
+                            </View>
+                        )}
+                    </Animated.View>
+
+                    {/* Mot du conseiller — portrait et nom ne sont pas en base :
+                        on ne les invente pas, le texte porte seul. */}
+                    {!!prop.intro_text && (
+                        <Animated.View entering={FadeInDown.delay(320).duration(500)} style={styles.carteMot}>
+                            <View style={styles.motEntete}>
+                                <View style={styles.motTuile}>
+                                    <Sparkles size={18} color={C.primary} strokeWidth={2.2} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.motTitre}>{t('Mot de votre conseiller')}</Text>
+                                    <Text style={styles.motSous}>{t('Cabinet Retour Gagnant Bénin')}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.motTexte}>« {prop.intro_text} »</Text>
+                            <View style={styles.motPied}>
+                                <View style={styles.motPiedCote}>
+                                    <ShieldCheck size={14} color={C.primary} strokeWidth={2.2} />
+                                    <Text style={styles.motPiedText}>{t('Tarifs négociés')}</Text>
+                                </View>
+                                <View style={styles.motPiedCote}>
+                                    <Clock4 size={14} color={C.primary} strokeWidth={2.2} />
+                                    <Text style={styles.motPiedText}>{t('Modifiable jusqu’à signature')}</Text>
+                                </View>
+                            </View>
+                        </Animated.View>
+                    )}
+
+                    <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.reperes}>
+                        <View style={styles.repere}>
+                            <Text style={styles.repereChiffre}>{prestations.length}</Text>
+                            <Text style={styles.repereLabel}>{t('Prestations')}</Text>
+                        </View>
+                        <View style={styles.repere}>
+                            <Text style={styles.repereChiffre}>{familles}</Text>
+                            <Text style={styles.repereLabel}>{t('Catégories')}</Text>
+                        </View>
+                        <View style={styles.repere}>
+                            <Text style={styles.repereChiffre}>100%</Text>
+                            <Text style={styles.repereLabel}>{t('Modulable')}</Text>
+                        </View>
+                    </Animated.View>
+                </ScrollView>
+
+                <View style={[styles.barre, { paddingBottom: insets.bottom + 12 }]}>
+                    <View style={styles.barreHaut}>
+                        <View>
+                            <Text style={styles.barreLabel}>{t('Budget estimatif initial')}</Text>
+                            <Text style={styles.barreTotalPetit}>{money(budgetInitial, prop.currency)}</Text>
+                        </View>
+                        <View style={styles.pilulePetite}>
+                            <Text style={styles.pilulePetiteText}>
+                                {t('{k}/{n} incluses', { k: retenues.size, n: prestations.length })}
+                            </Text>
+                        </View>
+                    </View>
+                    <Pressable
+                        onPress={() => setVue('deck')}
+                        style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.ctaLargeText}>
+                            {t('Découvrir les {n} prestations', { n: prestations.length })}
+                        </Text>
+                        <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.4} />
+                    </Pressable>
+                </View>
+            </View>
+        )
+    }
+
+    /* ══ RÉCAPITULATIF ══ */
+    if (vue === 'recap') {
+        return (
+            <View style={styles.container}>
+                <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
+
+                <View style={styles.entete}>
+                    <Pressable onPress={() => setVue('deck')} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour au deck')}>
+                        <ChevronLeft size={20} color={C.text} strokeWidth={2.2} />
+                    </Pressable>
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={styles.deckOverline}>{t('Étape finale')}</Text>
+                        <Text style={styles.deckFamille}>{t('Récapitulatif & signature')}</Text>
+                    </View>
+                    <Pressable onPress={partager} style={styles.rond} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
+                        <Share2 size={18} color={C.textSec} strokeWidth={2} />
+                    </Pressable>
+                </View>
+
+                <ScrollView contentContainerStyle={styles.recapScroll} showsVerticalScrollIndicator={false}>
+                    <Animated.Text entering={FadeInDown.duration(420)} style={styles.introOverline}>
+                        {t('Votre devis ajusté')}
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(70).duration(420)} style={styles.recapTitre}>
+                        {titreSejour}
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(140).duration(420)} style={styles.recapIntro}>
+                        {t('Vérifiez les prestations retenues avant de signer votre devis.')}
+                    </Animated.Text>
+
+                    <Animated.View entering={FadeInDown.delay(200).duration(420)} style={styles.recapCarte}>
+                        <View style={styles.recapCarteEntete}>
+                            <Text style={styles.recapCarteTitre}>
+                                {t('Prestations sélectionnées ({k}/{n})', { k: gardees.length, n: prestations.length })}
+                            </Text>
+                            <Pressable onPress={() => setVue('deck')} hitSlop={8} accessibilityRole="button">
+                                <Text style={styles.recapAjustable}>{t('Ajustable')}</Text>
+                            </Pressable>
+                        </View>
+
+                        {gardees.map((p, i) => (
+                            <View key={p.id} style={[styles.recapLigne, i > 0 && styles.recapLigneSep]}>
+                                <View style={styles.recapPastilleOn}>
+                                    <Check size={16} color={C.primary} strokeWidth={2.6} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.recapNom} numberOfLines={2}>{p.title || t('Prestation')}</Text>
+                                    <Text style={styles.recapMeta} numberOfLines={1}>
+                                        {[t(familleDe(p.type).l), p.location].filter(Boolean).join(' · ')}
+                                    </Text>
+                                </View>
+                                <Text style={styles.recapPrix}>
+                                    {somme(p.selling_price) > 0 ? money(somme(p.selling_price), prop.currency) : t('Compris')}
+                                </Text>
+                            </View>
+                        ))}
+
+                        {/* Ce qui a été retiré reste visible : le client doit
+                            pouvoir vérifier ce qu'il ne paiera pas. */}
+                        {ecartees.map(p => (
+                            <Pressable
+                                key={p.id}
+                                onPress={() => basculer(p.id)}
+                                style={[styles.recapLigne, styles.recapLigneSep, styles.recapLigneOff]}
+                                accessibilityRole="button"
+                                accessibilityLabel={t('Rajouter cette prestation')}
+                            >
+                                <View style={styles.recapPastilleOff}>
+                                    <Minus size={14} color={C.textMuted} strokeWidth={2.4} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.recapNomOff} numberOfLines={2}>{p.title || t('Prestation')}</Text>
+                                    <Text style={styles.recapMeta}>{t('Prestation décochée · toucher pour rajouter')}</Text>
+                                </View>
+                                <Text style={styles.recapPrixOff}>
+                                    {somme(p.selling_price) > 0 ? money(somme(p.selling_price), prop.currency) : '—'}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </Animated.View>
+
+                    <Animated.View entering={FadeInDown.delay(280).duration(420)} style={styles.recapBloc}>
+                        <View style={styles.recapBlocLigne}>
+                            <Text style={styles.recapBlocLabel}>{t('Total des prestations retenues')}</Text>
+                            <Text style={styles.recapBlocFort}>{money(total, prop.currency)}</Text>
+                        </View>
+                        {economie > 0 && (
+                            <View style={styles.recapBlocLigne}>
+                                <Text style={styles.recapBlocLabelDoux}>{t('Prestations retirées')}</Text>
+                                <Text style={styles.recapBlocDoux}>− {money(economie, prop.currency)}</Text>
+                            </View>
+                        )}
+                        <View style={styles.recapBlocPied}>
+                            <View style={styles.motPiedCote}>
+                                <ShieldCheck size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.motPiedText}>{t('Frais d’agence inclus')}</Text>
+                            </View>
+                            <View style={styles.motPiedCote}>
+                                <Lock size={14} color={C.primary} strokeWidth={2.2} />
+                                <Text style={styles.motPiedText}>{t('Devis certifié RGB')}</Text>
+                            </View>
+                        </View>
+                    </Animated.View>
+                </ScrollView>
+
+                <View style={[styles.barre, { paddingBottom: insets.bottom + 12 }]}>
+                    <View style={styles.barreHaut}>
+                        <View>
+                            <Text style={styles.barreLabel}>{t('Total final devis')}</Text>
+                            <Text style={styles.barreTotal}>{money(total, prop.currency)}</Text>
+                        </View>
+                        {economie > 0 && (
+                            <View style={styles.pilulePetite}>
+                                <Text style={styles.pilulePetiteText}>
+                                    {t('Économie de {m}', { m: money(economie, prop.currency) })}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                    {reglee ? (
+                        <View style={styles.regleeLarge}>
+                            <CircleCheck size={16} color={C.primary} strokeWidth={2.2} />
+                            <Text style={styles.regleeText}>{t('Proposition réglée. Merci !')}</Text>
+                        </View>
+                    ) : signee ? (
+                        <Pressable
+                            onPress={() => navigation.navigate('DevisPaiement', { secretKey: prop.secret_key })}
+                            style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
+                            accessibilityRole="button"
+                        >
+                            <CreditCard size={18} color="#FFFFFF" strokeWidth={2.2} />
+                            <Text style={styles.ctaLargeText}>{t('Régler mon séjour')}</Text>
+                        </Pressable>
+                    ) : (
+                        <Pressable
+                            onPress={signer}
+                            style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
+                            accessibilityRole="button"
+                        >
+                            <PenLine size={18} color="#FFFFFF" strokeWidth={2.2} />
+                            <Text style={styles.ctaLargeText}>{t('Signer le devis en ligne')}</Text>
+                        </Pressable>
+                    )}
+                </View>
+            </View>
+        )
+    }
+
+    /* ══ DECK ══ */
+    const courante = prestations[rang]
+    const hauteurDeck = Dimensions.get('window').height - insets.top - insets.bottom - 232
 
     return (
         <View style={styles.container}>
             <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
 
-            <View style={styles.header}>
-                <Pressable onPress={() => setIntro(true)} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
-                    <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
-                </Pressable>
-                <Text style={styles.headerTitle} numberOfLines={1}>{prop.destination || t('Proposition')}</Text>
-                <Pressable onPress={partager} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
-                    <Share2 size={19} color={C.text} strokeWidth={2} />
-                </Pressable>
-            </View>
-
-            {/* Avancement : une barre par slide, celle en cours en vert. */}
-            <View style={styles.rythme}>
-                {prestations.map((p, i) => (
-                    <View key={p.id} style={[styles.segment, i === rang && styles.segmentOn]} />
-                ))}
-            </View>
-
-            {prestations.length === 0 ? (
-                <View style={styles.centre}>
-                    <Text style={styles.erreur}>
-                        {t('Cette proposition ne détaille pas encore de prestations.')}
-                    </Text>
+            <View style={styles.enteteDeck}>
+                <View style={styles.enteteDeckHaut}>
+                    <Pressable onPress={() => setVue('ouverture')} style={styles.rondPetit} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
+                        <ChevronLeft size={18} color={C.text} strokeWidth={2.2} />
+                    </Pressable>
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={styles.deckOverline}>
+                            {t('Prestation {i} sur {n}', { i: Math.min(rang + 1, prestations.length), n: prestations.length })}
+                        </Text>
+                        <Text style={styles.deckFamille}>
+                            {courante ? t(familleDe(courante.type).l) : t('Proposition')}
+                        </Text>
+                    </View>
+                    <Pressable onPress={partager} style={styles.rondPetit} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
+                        <Share2 size={17} color={C.textSec} strokeWidth={2} />
+                    </Pressable>
                 </View>
-            ) : (
-                <Animated.ScrollView
-                    ref={listeRef}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onScroll={surScroll}
-                    scrollEventThrottle={16}
-                    decelerationRate="fast"
-                >
+                <View style={styles.rythme}>
                     {prestations.map((p, i) => (
-                        <Slide
-                            key={p.id}
-                            p={p}
-                            index={i}
-                            scrollX={scrollX}
-                            retenu={retenues.has(p.id)}
-                            onToggle={() => basculer(p.id)}
-                            devise={prop.currency}
-                            hauteur={hauteurDeck}
-                            t={t}
-                        />
+                        <View key={p.id} style={[styles.segment, i === rang && styles.segmentOn]} />
                     ))}
-                </Animated.ScrollView>
-            )}
+                </View>
+            </View>
 
-            {/* Total vivant + action */}
+            <Animated.ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={surScroll}
+                scrollEventThrottle={16}
+                decelerationRate="fast"
+            >
+                {prestations.map((p, i) => (
+                    <Slide
+                        key={p.id}
+                        p={p}
+                        index={i}
+                        total={prestations.length}
+                        scrollX={scrollX}
+                        retenu={retenues.has(p.id)}
+                        onToggle={() => basculer(p.id)}
+                        devise={prop.currency}
+                        hauteur={hauteurDeck}
+                        suivant={prestations[i + 1]?.title || null}
+                        t={t}
+                    />
+                ))}
+            </Animated.ScrollView>
+
             <View style={[styles.barre, { paddingBottom: insets.bottom + 12 }]}>
                 <View style={styles.barreHaut}>
-                    <View>
-                        <Text style={styles.barreLabel}>
-                            {retenues.size}/{prestations.length} {t('retenues')}
-                        </Text>
+                    <View style={{ flex: 1 }}>
+                        <View style={styles.barreLigne}>
+                            <Text style={styles.barreLabel}>{t('Total sélectionné')}</Text>
+                            <View style={styles.pointVert} />
+                            <Text style={styles.barreCompte}>
+                                {t('{k} sur {n} gardées', { k: retenues.size, n: prestations.length })}
+                            </Text>
+                        </View>
                         <Text style={styles.barreTotal}>{money(total, prop.currency)}</Text>
                     </View>
-                    {reglee ? (
-                        <View style={styles.regleeTag}>
-                            <CircleCheck size={15} color={C.primary} strokeWidth={2.2} />
-                            <Text style={styles.regleeText}>{t('Réglée')}</Text>
-                        </View>
-                    ) : signee ? (
-                        <Pressable
-                            onPress={() => navigation.navigate('DevisPaiement', { secretKey: prop.secret_key })}
-                            style={({ pressed }) => [styles.cta, pressed && { transform: [{ scale: 0.97 }] }]}
-                            accessibilityRole="button"
-                        >
-                            <CreditCard size={16} color="#FFFFFF" strokeWidth={2.2} />
-                            <Text style={styles.ctaText}>{t('Régler')}</Text>
-                        </Pressable>
-                    ) : (
-                        <Pressable
-                            onPress={() => navigation.navigate('SignatureDevis', {
-                                proposalId: prop.id, secretKey: prop.secret_key, selection: [...retenues],
-                            })}
-                            style={({ pressed }) => [styles.cta, pressed && { transform: [{ scale: 0.97 }] }]}
-                            accessibilityRole="button"
-                        >
-                            <PenLine size={16} color="#FFFFFF" strokeWidth={2.2} />
-                            <Text style={styles.ctaText}>{t('Signer le devis')}</Text>
-                        </Pressable>
-                    )}
+                    <Pressable
+                        onPress={() => setVue('recap')}
+                        style={({ pressed }) => [styles.cta, pressed && { transform: [{ scale: 0.97 }] }]}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.ctaText}>{t('Valider le choix')}</Text>
+                        <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.4} />
+                    </Pressable>
                 </View>
-                <Text style={styles.barreNote}>
-                    {t('Balayez pour parcourir · votre sélection est enregistrée avec votre signature.')}
-                </Text>
             </View>
         </View>
     )
@@ -517,66 +854,148 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
     centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
 
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: spacing.gutter, paddingTop: spacing.md, paddingBottom: spacing.sm },
-    headerTitle: { flex: 1, textAlign: 'center', fontFamily: fonts.bold, fontSize: 15, color: C.text },
-    circleBtn: { width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+    /* En-têtes */
+    entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
+    enteteDiscret: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    rond: { width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
+    rondPetit: { width: 36, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
+    piluleEntete: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
+    piluleEnteteText: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    pointVert: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.primary },
 
-    rythme: { flexDirection: 'row', gap: 4, paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm },
-    segment: { flex: 1, height: 3, borderRadius: 2, backgroundColor: C.border },
+    enteteDeck: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.border, gap: 12 },
+    enteteDeckHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    deckOverline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    deckFamille: { fontFamily: fonts.extrabold, fontSize: 12, color: C.text, marginTop: 2 },
+    rythme: { flexDirection: 'row', gap: 6 },
+    segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: C.border },
     segmentOn: { backgroundColor: C.primary },
 
     /* Ouverture */
-    intro: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
-    introImg: { width: '100%', height: 210, borderRadius: radius.xl, marginBottom: spacing.lg },
-    badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginBottom: spacing.sm },
-    badgeText: { ...typography.button, fontSize: 11.5, color: C.primary },
-    h1: { fontFamily: fonts.extrabold, fontSize: 30, lineHeight: 36, color: C.text },
-    metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
-    meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    metaText: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textSec },
-    introTexte: { ...typography.body, color: C.textSec, lineHeight: 23, marginTop: spacing.md },
-    ctaIntro: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 16, marginTop: spacing.xl },
-    ctaIntroText: { fontFamily: fonts.bold, fontSize: 15, color: '#FFFFFF' },
+    introScroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+    introCadre: { width: '100%', aspectRatio: 4 / 3, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: C.border, backgroundColor: C.surfaceAlt, marginBottom: 16 },
+    introPastille: { position: 'absolute', top: 16, left: 16, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 6, ...shadows.card },
+    introPastilleText: { fontFamily: fonts.bold, fontSize: 11, color: C.text },
+    introRef: { position: 'absolute', bottom: 16, right: 16, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 4, ...shadows.card },
+    introRefText: { fontFamily: fonts.bold, fontSize: 11, color: VERT_PROFOND },
+    introOverline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.5, textTransform: 'uppercase' },
+    h1: { fontFamily: fonts.extrabold, fontSize: 26, lineHeight: 30, color: C.text, marginTop: 6 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+    chipText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
+
+    carteMot: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 20, gap: 12, marginTop: 20, ...shadows.card },
+    motEntete: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    motTuile: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
+    motTitre: { fontFamily: fonts.bold, fontSize: 14, color: C.text },
+    motSous: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, marginTop: 3 },
+    motTexte: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: C.textSec, fontStyle: 'italic', backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14 },
+    motPied: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    motPiedCote: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
+    motPiedText: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
+
+    reperes: { flexDirection: 'row', gap: 10, marginTop: 20 },
+    repere: { flex: 1, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+    repereChiffre: { fontFamily: fonts.extrabold, fontSize: 18, color: VERT_PROFOND },
+    repereLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 2 },
 
     /* Slide */
-    cadrePhoto: { height: '52%', marginHorizontal: spacing.gutter, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: C.surfaceAlt },
-    pastilleFamille: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6, ...shadows.card },
-    pastilleText: { fontFamily: fonts.bold, fontSize: 10.5, color: C.primary, textTransform: 'uppercase', letterSpacing: 1 },
-    case: { position: 'absolute', top: 12, right: 12, width: 40, height: 40, borderRadius: radius.pill, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...shadows.card },
-    caseOn: { backgroundColor: C.primary },
-    vignettes: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', gap: 6 },
-    vignette: { width: 34, height: 34, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: '#FFFFFF' },
+    slideScroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
+    cadrePhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: C.border, backgroundColor: C.surfaceAlt },
+    pastilleFamille: { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 6, ...shadows.card },
+    pastilleText: { fontFamily: fonts.bold, fontSize: 10, color: C.text, letterSpacing: 1.4, textTransform: 'uppercase' },
+    garder: { position: 'absolute', top: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, ...shadows.card },
+    garderOn: { backgroundColor: C.primary, borderColor: C.primary },
+    garderOff: { backgroundColor: '#FFFFFF', borderColor: C.border },
+    garderText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary },
+    vignettes: { position: 'absolute', bottom: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 4, ...shadows.card },
+    vignette: { width: 32, height: 32, borderRadius: 8, overflow: 'hidden', borderWidth: 1.5, borderColor: 'transparent' },
     vignetteOn: { borderColor: C.primary },
     vignetteImg: { width: '100%', height: '100%' },
+    vignettePlus: { width: 32, height: 32, borderRadius: 8, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    vignettePlusText: { fontFamily: fonts.bold, fontSize: 10, color: C.textSec },
+    badgeRemise: { position: 'absolute', bottom: 14, right: 14, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 4, ...shadows.card },
+    badgeRemiseText: { fontFamily: fonts.bold, fontSize: 11, color: VERT_PROFOND },
 
-    corps: { flex: 1, paddingHorizontal: spacing.gutter, paddingTop: spacing.lg },
-    titre: { fontFamily: fonts.extrabold, fontSize: 24, lineHeight: 30, color: C.text },
-    sousTitre: { fontFamily: fonts.body, fontSize: 14, color: C.textSec, marginTop: 4 },
-    lieu: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-    lieuText: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textSec },
-    desc: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: C.textSec, marginTop: spacing.md },
-    puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: spacing.md },
-    puce: { backgroundColor: C.surfaceAlt, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 7 },
-    puceText: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: C.textSec },
-
-    piedSlide: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: C.border },
-    prix: { fontFamily: fonts.extrabold, fontSize: 18, color: '#00643C' },
+    corps: { paddingTop: 16, gap: 10 },
+    ligneTitre: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    overline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    titre: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 26, color: C.text, marginTop: 2 },
+    lieu: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    lieuText: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
+    blocPrix: { alignItems: 'flex-end' },
+    prix: { fontFamily: fonts.extrabold, fontSize: 18, color: VERT_PROFOND },
     prixOff: { color: C.textMuted, textDecorationLine: 'line-through' },
-    etat: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textMuted },
-    etatOn: { color: C.primary },
+    prixBarre: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted, textDecorationLine: 'line-through', marginTop: 2 },
+    sousTitre: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.textSec },
+    desc: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: C.textSec },
+    puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
+    puce: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+    puceText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: C.textSec },
+    indice: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8 },
+    indiceCote: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
+    indiceText: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
+
+    /* Récapitulatif */
+    recapScroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
+    recapTitre: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 27, color: C.text, marginTop: 6 },
+    recapIntro: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: C.textSec, marginTop: 6 },
+    recapCarte: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 24, padding: 20, marginTop: 20, ...shadows.card },
+    recapCarteEntete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 12, marginBottom: 4 },
+    recapCarteTitre: { flex: 1, fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    recapAjustable: { fontFamily: fonts.bodySemibold, fontSize: 11, color: C.textMuted },
+    recapLigne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+    recapLigneSep: { borderTopWidth: 1, borderTopColor: C.border },
+    recapLigneOff: { opacity: 0.55 },
+    recapPastilleOn: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
+    recapPastilleOff: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+    recapNom: { fontFamily: fonts.bold, fontSize: 13, color: C.text, lineHeight: 18 },
+    recapNomOff: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.textMuted, textDecorationLine: 'line-through', lineHeight: 18 },
+    recapMeta: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, marginTop: 3 },
+    recapPrix: { fontFamily: fonts.extrabold, fontSize: 13, color: VERT_PROFOND },
+    recapPrixOff: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.textMuted, textDecorationLine: 'line-through' },
+
+    recapBloc: { backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, gap: 12, marginTop: 16 },
+    recapBlocLigne: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    recapBlocLabel: { fontFamily: fonts.bold, fontSize: 12, color: C.text },
+    recapBlocLabelDoux: { fontFamily: fonts.body, fontSize: 12, color: C.textSec },
+    recapBlocFort: { fontFamily: fonts.extrabold, fontSize: 13, color: VERT_PROFOND },
+    recapBlocDoux: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
+    recapBlocPied: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTopWidth: 1, borderTopColor: C.borderStrong, paddingTop: 10 },
+
+    /* Vide */
+    vide: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 8 },
+    videTuile: { width: 80, height: 80, borderRadius: radius.pill, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    videOverline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    videTitre: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 28, color: C.text, textAlign: 'center', marginTop: 4 },
+    videTexte: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: C.textSec, textAlign: 'center', maxWidth: 300, marginTop: 4 },
+    videCarte: { width: '100%', backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, gap: 12, marginTop: 20 },
+    videCarteEntete: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    videCarteTexte: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: C.textSec },
+    videActions: { width: '100%', gap: 10, marginTop: 20 },
+    ctaSecondaire: { alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.pill, paddingVertical: 14 },
+    ctaSecondaireText: { fontFamily: fonts.bold, fontSize: 13, color: C.textSec },
+    piedSignature: { paddingHorizontal: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.border },
+    piedSignatureText: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, textAlign: 'center' },
 
     /* Barre de total */
-    barre: { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    barreHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-    barreLabel: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
-    barreTotal: { fontFamily: fonts.extrabold, fontSize: 22, color: '#00643C', marginTop: 1 },
-    barreNote: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted, marginTop: 8, textAlign: 'center' },
-    cta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 24, paddingVertical: 14 },
-    ctaText: { fontFamily: fonts.bold, fontSize: 14.5, color: '#FFFFFF' },
-    regleeTag: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 18, paddingVertical: 12 },
+    barre: { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 20, paddingTop: 14, gap: 12, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 30, elevation: 14 },
+    barreHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+    barreLigne: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    barreLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    barreCompte: { fontFamily: fonts.bold, fontSize: 11, color: C.primary },
+    barreTotal: { fontFamily: fonts.extrabold, fontSize: 22, color: VERT_PROFOND, marginTop: 4 },
+    barreTotalPetit: { fontFamily: fonts.extrabold, fontSize: 20, color: VERT_PROFOND, marginTop: 2 },
+    pilulePetite: { backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
+    pilulePetiteText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: C.primary },
+    ctaLarge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 16 },
+    ctaLargeText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
+    cta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 14 },
+    ctaText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
+    regleeLarge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingVertical: 15 },
     regleeText: { fontFamily: fonts.bold, fontSize: 13.5, color: C.primary },
 
-    erreur: { ...typography.body, color: C.textMuted, textAlign: 'center' },
+    erreur: { fontFamily: fonts.body, fontSize: 14, color: C.textMuted, textAlign: 'center' },
     btnRetour: { backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 24, paddingVertical: 13 },
     btnRetourText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
 })
