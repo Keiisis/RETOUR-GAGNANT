@@ -25,6 +25,10 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { authHeaders } from '../../config/api'
+import { fetchWithTimeout } from '../../lib/fetch'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/AppNavigator'
@@ -185,17 +189,57 @@ export default function ProfilScreen() {
 
     /* ── Avatars animés prédéfinis par genre ── */
 
+    /* ── Compteurs du profil ──────────────────────────────────────────────
+       Les trois interrogeaient des sources qui ne pouvaient RIEN renvoyer, d'où
+       « 00 » en permanence :
+         · `dossiers`     → table de GÉNÉALOGIE, sans colonne client_id : la
+                            requête partait en erreur, silencieusement avalée ;
+         · `appointments` → table vide ; les rendez-vous vivent dans rdv_requests ;
+         · `paiements`    → table vide également.
+
+       Autre écueil, mesuré en base : la majorité des enregistrements ne sont PAS
+       reliés par client_id mais par EMAIL (23 dossiers sur 25, 31 rendez-vous
+       sur 43) — les demandes créées hors application n'ont pas d'identifiant.
+       On interroge donc sur les deux.
+
+       Les dossiers sont comptés via /api/mobile/dossiers, la source EXACTE de
+       l'onglet Dossier : le compteur ne peut donc jamais annoncer autre chose
+       que ce que le client verra en tapant dessus. */
     useEffect(() => {
         if (!profile) return
-        Promise.all([
-            supabase.from('dossiers').select('*', { count: 'exact', head: true }).eq('client_id', profile.id),
-            supabase.from('appointments').select('*', { count: 'exact', head: true })
-                .eq('client_id', profile.id).neq('status', 'cancelled'),
-            supabase.from('paiements').select('*', { count: 'exact', head: true })
-                .eq('client_id', profile.id).eq('status', 'success'),
-        ]).then(([d, a, p]) => {
-            setStats({ dossiers: d.count || 0, appointments: a.count || 0, payments: p.count || 0 })
-        }).catch(() => { })
+        let vivant = true
+
+        ;(async () => {
+            const email = String(profile.email || '').trim().toLowerCase()
+
+            // Dossiers : même source que l'onglet Dossier.
+            let dossiers = 0
+            try {
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                    timeoutMs: 12000,
+                    headers: { ...(await authHeaders()) },
+                })
+                const json = await res.json().catch(() => ({}))
+                dossiers = Array.isArray(json.dossiers) ? json.dossiers.length : 0
+            } catch { /* on garde 0 */ }
+
+            // Rendez-vous : par identifiant OU par email, annulés exclus.
+            let rdv = 0
+            try {
+                const criteres = [`client_id.eq.${profile.id}`]
+                if (email) criteres.push(`client_email.eq.${email}`)
+                const { count } = await supabase
+                    .from('rdv_requests')
+                    .select('id', { count: 'exact', head: true })
+                    .or(criteres.join(','))
+                    .neq('statut', 'annule')
+                rdv = count || 0
+            } catch { /* on garde 0 */ }
+
+            if (vivant) setStats({ dossiers, appointments: rdv, payments: 0 })
+        })()
+
+        return () => { vivant = false }
     }, [profile])
 
     const initials = ((profile?.prenom?.[0] || '') + (profile?.nom?.[0] || '')).toUpperCase() || 'CL'

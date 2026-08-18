@@ -27,10 +27,31 @@ export async function GET(req: NextRequest) {
         const clientId = await getMobileUserId(req)
         if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
+        // Rattachement par identifiant OU par EMAIL.
+        //
+        // Mesuré en base le 2026-08-18 : 23 dossiers sur 25 n'ont PAS de
+        // client_id — les dossiers ouverts depuis le site ne portent que
+        // l'email. Filtrer sur le seul client_id revenait donc à cacher au
+        // client la quasi-totalité de ses dossiers (compteur « 00 » sur le
+        // profil, onglet Dossier vide).
+        //
+        // L'email est lu sur le PROFIL rattaché au jeton, jamais sur un
+        // paramètre : sinon il suffirait d'envoyer l'email d'autrui pour lire
+        // ses dossiers.
+        const { data: cp } = await supabase
+            .from('client_profiles')
+            .select('email')
+            .eq('id', clientId)
+            .maybeSingle()
+        const email = String(cp?.email || '').trim().toLowerCase()
+
+        const criteres = [`client_id.eq.${clientId}`]
+        if (email) criteres.push(`client_email.eq.${email}`)
+
         const { data: tracking, error } = await supabase
             .from('dossier_tracking')
             .select('id, dossier_ref_id, statut, progression, service_type, notes, created_at, updated_at')
-            .eq('client_id', clientId)
+            .or(criteres.join(','))
             .order('created_at', { ascending: false })
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
