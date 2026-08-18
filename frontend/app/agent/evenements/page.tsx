@@ -6,6 +6,7 @@ import { Calendar, Plus, PencilSimple as Edit, Eye, Users, CheckCircle as CheckC
 import Link from 'next/link'
 import EventImageUpload from '@/components/events/EventImageUpload'
 import TicketScanner from '@/components/agent/TicketScanner'
+import TicketTemplateEditor from '@/components/events/TicketTemplateEditor'
 
 interface EventData {
     id: string
@@ -43,13 +44,13 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Ch
     completed: { label: 'Terminé', color: '#FCD116', icon: CheckCircle2 },
 }
 
+// ⚠️ La contrainte events_category_check n'accepte QUE ces trois valeurs
+// (vérifié en base le 2026-08-18). Proposer « workshop », « cultural » ou
+// « other » faisait échouer la création avec une erreur incompréhensible.
 const CATEGORIES = [
     { value: 'conference', label: 'Conférence' },
     { value: 'gala', label: 'Gala' },
-    { value: 'workshop', label: 'Atelier' },
     { value: 'networking', label: 'Networking' },
-    { value: 'cultural', label: 'Culturel' },
-    { value: 'other', label: 'Autre' },
 ]
 
 const formatDate = (d: string) => {
@@ -440,6 +441,7 @@ export default function AgentEventsPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [showForm, setShowForm] = useState(false)
+    const [designGlobal, setDesignGlobal] = useState(false)
     const [editingEvent, setEditingEvent] = useState<EventData | null>(null)
     const [viewingRegs, setViewingRegs] = useState<EventData | null>(null)
 
@@ -469,6 +471,10 @@ export default function AgentEventsPage() {
 
     return (
         <div className="space-y-6">
+            {designGlobal && (
+                <TicketTemplateEditor onClose={() => setDesignGlobal(false)} />
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -484,11 +490,19 @@ export default function AgentEventsPage() {
                     </p>
                 </div>
                 {!showForm && !editingEvent && (
-                    <button onClick={() => { setShowForm(true); setViewingRegs(null) }}
-                        className="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black text-white cursor-pointer hover:scale-[1.02] transition-all"
-                        style={{ background: 'linear-gradient(135deg, #008751, #006b40)', boxShadow: '0 8px 24px rgba(0,135,81,0.3)' }}>
-                        <Plus size={14} /> Créer un événement
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Design du billet : modèle global, valable pour tous
+                            les événements sans design propre. */}
+                        <button onClick={() => setDesignGlobal(true)}
+                            className="flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-black text-gray-300 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors">
+                            <Ticket size={14} /> Design du billet
+                        </button>
+                        <button onClick={() => { setShowForm(true); setViewingRegs(null) }}
+                            className="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black text-white cursor-pointer hover:scale-[1.02] transition-all"
+                            style={{ background: 'linear-gradient(135deg, #008751, #006b40)', boxShadow: '0 8px 24px rgba(0,135,81,0.3)' }}>
+                            <Plus size={14} /> Créer un événement
+                        </button>
+                    </div>
                 )}
             </div>
 
