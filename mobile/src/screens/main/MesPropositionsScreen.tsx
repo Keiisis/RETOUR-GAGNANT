@@ -6,27 +6,20 @@
    Le serveur rattache désormais la proposition au client (identifiant, ou
    email du profil en repli) ; cet écran la présente.
 
-   Le rendu de la proposition reste celui du site (/p/{secret_key}) : une seule
-   mise en page à maintenir, et le client voit exactement ce que voit l'agent.
-   L'écran ajoute ce que le site ne peut pas faire : signer avec la signature
-   déjà enregistrée, et enchaîner sur le règlement.
+   La lecture se fait dans un écran NATIF (PropositionDetail) : la page du site
+   est faite pour une souris et un grand écran, elle ne laissait pas le client
+   choisir ses prestations. Ici il compose sa proposition, la signe, la règle.
 ═══════════════════════════════════════════════════════════ */
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-    View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator,
-    Modal, RefreshControl, Share,
+    View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { WebView } from 'react-native-webview'
-import {
-    ChevronLeft, X, Share2, PenLine, CreditCard, MapPin,
-    CalendarDays, Presentation, CircleCheck, Eye,
-} from 'lucide-react-native'
+import { ChevronLeft, MapPin, CalendarDays, Presentation } from 'lucide-react-native'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import { FlagBar } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
-import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 
@@ -74,7 +67,6 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
     const [items, setItems] = useState<Proposition[]>([])
     const [chargement, setChargement] = useState(true)
     const [rafraichit, setRafraichit] = useState(false)
-    const [ouverte, setOuverte] = useState<Proposition | null>(null)
 
     const charger = useCallback(async () => {
         try {
@@ -97,20 +89,11 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
         return () => { if (typeof unsub === 'function') unsub() }
     }, [navigation, charger])
 
-    const partager = async (p: Proposition) => {
-        try {
-            await Share.share({
-                message: t('Ma proposition Retour Gagnant : {u}', { u: `${API_BASE}/p/${p.secret_key}` }),
-                url: `${API_BASE}/p/${p.secret_key}`,
-            })
-        } catch { toast(t('Partage impossible'), t('Réessayez dans un instant.')) }
-    }
-
     const rendre = ({ item }: { item: Proposition }) => {
         const e = ETATS[item.etat] || ETATS.nouvelle
         const prix = montant(item.total_amount, item.currency)
         return (
-            <Pressable onPress={() => setOuverte(item)} style={styles.carte} accessibilityRole="button">
+            <Pressable onPress={() => navigation.navigate('PropositionDetail', { proposalId: item.id })} style={styles.carte} accessibilityRole="button">
                 <View style={styles.carteHaut}>
                     <View style={styles.tuile}>
                         <Presentation size={20} color={C.primary} strokeWidth={2.2} />
@@ -187,73 +170,6 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
                 />
             )}
 
-            {/* Lecture de la proposition + actions */}
-            <Modal visible={!!ouverte} animationType="slide" onRequestClose={() => setOuverte(null)}>
-                <View style={styles.container}>
-                    <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
-                    <View style={styles.header}>
-                        <Pressable onPress={() => setOuverte(null)} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Fermer')}>
-                            <X size={22} color={C.text} strokeWidth={2.2} />
-                        </Pressable>
-                        <Text style={styles.headerTitle} numberOfLines={1}>
-                            {ouverte?.destination || t('Proposition')}
-                        </Text>
-                        <Pressable onPress={() => ouverte && partager(ouverte)} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
-                            <Share2 size={19} color={C.text} strokeWidth={2} />
-                        </Pressable>
-                    </View>
-
-                    {!!ouverte && (
-                        <WebView
-                            source={{ uri: `${API_BASE}/p/${ouverte.secret_key}` }}
-                            style={{ flex: 1, backgroundColor: C.bg }}
-                            startInLoadingState
-                            renderLoading={() => (
-                                <View style={styles.centre}><ActivityIndicator color={C.primary} size="large" /></View>
-                            )}
-                        />
-                    )}
-
-                    <View style={[styles.pied, { paddingBottom: insets.bottom + 12 }]}>
-                        {/* Signer : masqué dès que c'est fait — un devis ne se signe qu'une fois. */}
-                        {!ouverte?.signed_at ? (
-                            <Pressable
-                                onPress={() => {
-                                    const p = ouverte
-                                    setOuverte(null)
-                                    if (p) navigation.navigate('SignatureDevis', { proposalId: p.id, secretKey: p.secret_key })
-                                }}
-                                style={styles.btnPrincipal} accessibilityRole="button"
-                            >
-                                <PenLine size={17} color="#FFFFFF" strokeWidth={2.2} />
-                                <Text style={styles.btnPrincipalText}>{t('Signer le devis')}</Text>
-                            </Pressable>
-                        ) : ouverte.etat !== 'payee' ? (
-                            <Pressable
-                                onPress={() => {
-                                    const p = ouverte
-                                    setOuverte(null)
-                                    if (p) navigation.navigate('DevisPaiement', { secretKey: p.secret_key })
-                                }}
-                                style={styles.btnPrincipal} accessibilityRole="button"
-                            >
-                                <CreditCard size={17} color="#FFFFFF" strokeWidth={2.2} />
-                                <Text style={styles.btnPrincipalText}>{t('Régler ma proposition')}</Text>
-                            </Pressable>
-                        ) : (
-                            <View style={styles.reglee}>
-                                <CircleCheck size={17} color={C.primary} strokeWidth={2.2} />
-                                <Text style={styles.regleeText}>{t('Proposition réglée. Merci !')}</Text>
-                            </View>
-                        )}
-
-                        <Pressable onPress={() => ouverte && partager(ouverte)} style={styles.btnSecondaire} accessibilityRole="button">
-                            <Share2 size={15} color={C.primary} strokeWidth={2} />
-                            <Text style={styles.btnSecondaireText}>{t('Enregistrer / Partager')}</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
         </View>
     )
 }
@@ -288,11 +204,4 @@ const styles = StyleSheet.create({
     videBtn: { marginTop: spacing.md, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 12 },
     videBtnText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
 
-    pied: { paddingHorizontal: spacing.gutter, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, gap: 8 },
-    btnPrincipal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 15 },
-    btnPrincipalText: { fontFamily: fonts.bold, fontSize: 14.5, color: '#FFFFFF' },
-    btnSecondaire: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10 },
-    btnSecondaireText: { fontFamily: fonts.bodyBold, fontSize: 13, color: C.primary },
-    reglee: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingVertical: 14 },
-    regleeText: { fontFamily: fonts.bold, fontSize: 14, color: C.primary },
 })

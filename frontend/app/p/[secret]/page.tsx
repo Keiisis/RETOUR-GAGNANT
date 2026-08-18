@@ -25,6 +25,9 @@ interface ProposalItem {
     original_price: number
     selling_price: number
     order_index: number
+    /** Choix du client fait depuis l'application mobile : il peut écarter une
+     *  prestation avant de signer. `undefined` = il n'a rien trié. */
+    metadata?: { client_retenu?: boolean } | null
 }
 
 interface Proposal {
@@ -638,12 +641,21 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                             {billableItems.map((item) => {
                                                 const pct = maxPrice > 0 ? (item.selling_price / maxPrice) * 100 : 0
                                                 const m = TYPE_META[item.type] || TYPE_META.activity
+                                                // Le client a pu écarter cette prestation depuis l'application
+                                                // avant de signer : le dire, sinon le conseiller croit le devis
+                                                // complet.
+                                                const ecarte = item.metadata?.client_retenu === false
                                                 return (
-                                                    <div key={item.id} className="pb-2.5 border-b border-slate-200 last:border-0">
+                                                    <div key={item.id} className={`pb-2.5 border-b border-slate-200 last:border-0 ${ecarte ? 'opacity-45' : ''}`}>
                                                         <div className="flex items-center justify-between mb-1.5">
                                                             <span className="text-slate-900/75 text-[11px] md:text-sm flex items-center gap-2 truncate pr-3">
                                                                 <m.Icon size={14} className="flex-shrink-0" style={{ color: m.accent }} />
-                                                                <span className="truncate">{item.title}</span>
+                                                                <span className={`truncate ${ecarte ? 'line-through' : ''}`}>{item.title}</span>
+                                                                {ecarte && (
+                                                                    <span className="flex-shrink-0 text-[8px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">
+                                                                        Écartée
+                                                                    </span>
+                                                                )}
                                                             </span>
                                                             <span className="text-slate-900 font-bold text-[11px] md:text-sm whitespace-nowrap">
                                                                 <Price amount={item.selling_price} currency={(proposal.currency as CurrencyCode) || 'XOF'} forceDisplayCurrency={(proposal.currency as CurrencyCode) || 'XOF'} />

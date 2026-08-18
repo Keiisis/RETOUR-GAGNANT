@@ -94,6 +94,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
 
+    // Prestations retenues par le client. L'écran de lecture laisse décocher ce
+    // dont il ne veut pas : sans cette trace, le conseiller signerait un devis
+    // dont il ignore le contenu réel. On écrit dans `metadata` (jsonb déjà
+    // présent), en fusionnant pour ne rien écraser.
+    if (Array.isArray(body.selection)) {
+        const retenues = new Set(body.selection.map((v: unknown) => String(v)))
+        const { data: items } = await supabase
+            .from('ai_proposal_items').select('id, metadata').eq('proposal_id', id)
+        for (const it of items || []) {
+            const meta = (it.metadata && typeof it.metadata === 'object') ? it.metadata : {}
+            await supabase.from('ai_proposal_items').update({
+                metadata: { ...meta, client_retenu: retenues.has(String(it.id)), client_choix_le: nowIso },
+            }).eq('id', it.id).then(() => undefined, () => undefined)
+        }
+    }
+
     // Mémorise la signature si le client l'a demandé pendant le tracé.
     if (traceFournie && body.memoriser === true) {
         await supabase.from('client_signatures').upsert({
