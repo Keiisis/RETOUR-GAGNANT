@@ -136,7 +136,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
                     </Text>
 
                     <Pressable
-                        onPress={() => navigation.replace('DevisPaiement', { secretKey })}
+                        onPress={() => navigation.replace('DevisPaiement', { secretKey, proposalId, selection })}
                         style={styles.finBtn} accessibilityRole="button"
                     >
                         <CreditCard size={17} color="#FFFFFF" strokeWidth={2.2} />

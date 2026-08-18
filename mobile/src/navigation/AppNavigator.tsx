@@ -139,7 +139,7 @@ export type RootStackParamList = {
     MesPropositions: undefined
     PropositionDetail: { proposalId: string }
     SignatureDevis: { proposalId: string; secretKey?: string; selection?: string[] }
-    DevisPaiement: { secretKey?: string }
+    DevisPaiement: { secretKey?: string; proposalId?: string; selection?: string[] }
     Autres: undefined
     NationaliteVip: undefined
     Genealogie: undefined

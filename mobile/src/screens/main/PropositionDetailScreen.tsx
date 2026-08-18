@@ -964,7 +964,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                         </View>
                     ) : signee ? (
                         <Pressable
-                            onPress={() => navigation.navigate('DevisPaiement', { secretKey: prop.secret_key })}
+                            onPress={() => navigation.navigate('DevisPaiement', { secretKey: prop.secret_key, proposalId: prop.id, selection: [...retenues] })}
                             style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
                             accessibilityRole="button"
                         >
