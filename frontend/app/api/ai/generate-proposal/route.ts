@@ -59,7 +59,7 @@ export async function POST(req: Request) {
             client_name, client_email, client_phone,
             destination, start_date, end_date,
             budget, activities, notes, currency,
-            nb_voyageurs, acompte_pourcentage,
+            nb_voyageurs,
             selected_items // Items selected by agent from scraping results
         } = body
 
@@ -161,18 +161,8 @@ Format :
             status: 'draft',
             total_amount: items.reduce((acc: number, item: ProposalItem) => acc + (item.original_price || 0), 0)
         }
-        // Séjour : voyageurs et échéancier. L'échéancier est stocké en
-        // POURCENTAGES — le client peut retirer une prestation avant de signer,
-        // un montant figé deviendrait faux au premier décochage.
-        const voyageurs = Math.min(60, Math.max(1, Number(nb_voyageurs) || 1))
-        const acompte = Math.min(100, Math.max(0, Number(acompte_pourcentage ?? 30)))
-        const sejour = {
-            nb_voyageurs: voyageurs,
-            echeancier: [
-                { label: 'Acompte de confirmation', pourcentage: acompte, moment: 'signature' },
-                { label: 'Solde à l\u2019arrivée au Bénin', pourcentage: 100 - acompte, moment: 'arrivee' },
-            ],
-        }
+        // Le séjour se règle EN UNE FOIS : pas d'acompte, pas d'échéancier.
+        const sejour = { nb_voyageurs: Math.min(60, Math.max(1, Number(nb_voyageurs) || 1)) }
 
         // currency est optionnel selon la version du schéma DB : on l'insère de façon conditionnelle
         // Exécuter d'abord sans currency, si ça plante par son absence c'est qu'elle n'existe pas encore
@@ -192,7 +182,6 @@ Format :
             // exécutée : on retombe sur le jeu minimal plutôt que d'échouer.
             const isColumnError = res1.error.message?.includes('currency')
                 || res1.error.message?.includes('nb_voyageurs')
-                || res1.error.message?.includes('echeancier')
                 || res1.error.code === '42703'
             const isCheckError = res1.error.code === '23514' // CHECK constraint violation
             if (isColumnError || isCheckError) {

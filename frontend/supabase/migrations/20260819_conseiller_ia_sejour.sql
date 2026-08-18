@@ -5,7 +5,7 @@
 --  trois informations lui manquaient et ne pouvaient donc qu'être inventées :
 --   · QUI parle au client (le mot d'accueil n'avait aucun auteur) ;
 --   · POUR COMBIEN de voyageurs le séjour est composé ;
---   · COMMENT le règlement s'échelonne (acompte / solde).
+--   · POUR QUI le mot d'accueil est signé.
 --
 --  Le conseiller n'est pas un agent humain de plus à gérer : c'est
 --  l'assistant IA déjà configuré dans `ai_config` (persona, ton, prompt).
@@ -64,17 +64,7 @@ UPDATE ai_client_proposals p
    SET conseiller_id = (SELECT id FROM ai_config WHERE is_active = true ORDER BY id DESC LIMIT 1)
  WHERE p.conseiller_id IS NULL;
 
--- ── 3. Échéancier de règlement ────────────────────────────────
---  Des POURCENTAGES, jamais des montants figés : le client peut retirer une
---  prestation avant de signer. Un montant écrit en base deviendrait faux au
---  premier décochage — l'application calcule sur le total réellement retenu.
---  Forme : [{"label": "...", "pourcentage": 30, "moment": "signature"}]
-ALTER TABLE ai_client_proposals
-    ADD COLUMN IF NOT EXISTS echeancier jsonb NOT NULL DEFAULT
-        '[{"label":"Acompte de confirmation","pourcentage":30,"moment":"signature"},
-          {"label":"Solde à l''arrivée au Bénin","pourcentage":70,"moment":"arrivee"}]'::jsonb;
-
--- ── 4. Conversation client ↔ conseiller IA ────────────────────
+-- ── 3. Conversation client ↔ conseiller IA ────────────────────
 --  Le client doit pouvoir demander « le petit-déjeuner est-il compris ? » et
 --  obtenir une réponse fondée sur SA proposition. On garde le fil : sans
 --  historique, l'assistant repart de zéro à chaque question et se répète.
