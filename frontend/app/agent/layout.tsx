@@ -419,6 +419,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             items: [
                 { title: t('Radar IA'), icon: Radar, href: '/agent/radar' },
                 { title: t('Smart Slides'), icon: MonitorPlay, href: '/agent/presentations' },
+                { title: t('Demandes de séjour'), icon: Compass, href: '/agent/demandes-sejour' },
                 { title: t('Grille Tarifaire'), icon: Landmark, href: '/agent/grille-tarifaire' },
                 { title: t('Devis & Paiements'), icon: Send, href: '/agent/devis' },
                 { title: t('Contrats'), icon: FileText, href: '/agent/contrats' },

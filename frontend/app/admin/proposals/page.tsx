@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProposalsList, deleteProposal } from '@/app/actions/ai-proposals'
+import EnvoyerDansApp, { BadgeRattachement, type Rattachement } from '@/components/proposals/EnvoyerDansApp'
 import { Plus, FileText, Globe, ArrowRight, CircleNotch as Loader2, Play, MagicWand as Wand2, X, MagnifyingGlass as Search, Check, Star, MapPin, Buildings as Hotel, ForkKnife as UtensilsCrossed, Car, Compass, Trash as Trash2, Copy, Sparkle as Sparkles, TrendUp as TrendingUp, ChartBar as BarChart3, CheckCircle } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation'
 import { formatCurrencySync, convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
@@ -48,6 +49,19 @@ const CATEGORY_META: Record<string, { label: string, icon: React.ReactNode, colo
 
 export default function AdminProposalsPage() {
     const [proposals, setProposals] = useState<Proposal[]>([])
+    /* Rattachement à un compte client : c'est ce qui distingue une proposition
+       simplement partagée par lien d'une proposition envoyée DANS l'application.
+       Ces colonnes vivent sur la table ; la liste vient d'une vue qui ne les
+       expose pas — on les charge à côté et on fusionne. */
+    const [rattachements, setRattachements] = useState<Record<string, Rattachement>>({})
+    const chargerRattachements = useCallback(async () => {
+        try {
+            const res = await fetch('/api/proposals/rattachements')
+            const j = await res.json()
+            setRattachements(j.rattachements || {})
+        } catch { /* la liste reste utilisable sans les badges */ }
+    }, [])
+    useEffect(() => { chargerRattachements() }, [chargerRattachements])
     const [loading, setLoading] = useState(true)
     const [newModalOpen, setNewModalOpen] = useState(false)
     const [modalStep, setModalStep] = useState<ModalStep>('form')
@@ -62,6 +76,30 @@ export default function AdminProposalsPage() {
         budget: '', activities: '', notes: '', currency: 'XOF'
     })
     const [, setIsGenerating] = useState(false)
+
+    /* Pré-remplissage depuis « Demandes de séjour » : l'agent y clique
+       « Créer la proposition » et arrive ici avec le contexte du client déjà
+       saisi — sans cela il faudrait tout recopier à la main, et une faute de
+       frappe sur l'email empêcherait ensuite le rattachement au compte. */
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const p = new URLSearchParams(window.location.search)
+        if (!p.get('client_name') && !p.get('client_email')) return
+        setFormData(f => ({
+            ...f,
+            client_name: p.get('client_name') || f.client_name,
+            client_email: p.get('client_email') || f.client_email,
+            client_phone: p.get('client_phone') || f.client_phone,
+            destination: p.get('destination') || f.destination,
+            activities: p.get('activities') || f.activities,
+            start_date: p.get('start_date') || f.start_date,
+            end_date: p.get('end_date') || f.end_date,
+            budget: p.get('budget') || f.budget,
+        }))
+        setNewModalOpen(true)
+        // On nettoie l'adresse : un rechargement ne doit pas rouvrir le formulaire.
+        window.history.replaceState({}, '', window.location.pathname)
+    }, [])
 
     // Scraping results
     const [scrapedCategories, setScrapedCategories] = useState<Record<string, ScrapedItem[]>>({})
@@ -324,6 +362,7 @@ export default function AdminProposalsPage() {
                                 </div>
 
                                 <h3 className="text-lg font-bold text-white mb-1 truncate">{prop.client_name}</h3>
+                                <div className="mb-2"><BadgeRattachement r={rattachements[prop.id]} /></div>
                                 <p className="text-[#FCD116] font-medium text-sm flex items-center gap-1.5 mb-4">
                                     <Globe className="w-3.5 h-3.5" /> {prop.destination}
                                 </p>
@@ -337,6 +376,14 @@ export default function AdminProposalsPage() {
                                         <span>Montant</span>
                                         <span className="text-white font-bold text-sm">{formatCurrencySync(prop.total_amount || 0, (prop.currency as CurrencyCode) || 'XOF')}</span>
                                     </div>
+                                </div>
+
+                                <div className="mb-2">
+                                    <EnvoyerDansApp
+                                        proposalId={prop.id}
+                                        rattachement={rattachements[prop.id]}
+                                        onChange={chargerRattachements}
+                                    />
                                 </div>
 
                                 <div className="flex gap-2">

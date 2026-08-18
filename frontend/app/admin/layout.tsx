@@ -127,6 +127,7 @@ function AdminLayoutContent({
         { title: 'Recherche', icon: Search, href: '/admin/recherche' },
         { title: 'Radar IA', icon: Radar, href: '/admin/radar' },
         { title: 'Smart Slides', icon: Sparkles, href: '/admin/proposals' },
+        { title: 'Demandes de séjour', icon: Sparkles, href: '/admin/demandes-sejour' },
         { title: 'Événements', icon: Calendar, href: '/admin/evenements' },
         { title: 'Sponsors', icon: Star, href: '/admin/sponsors' },
         { title: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
