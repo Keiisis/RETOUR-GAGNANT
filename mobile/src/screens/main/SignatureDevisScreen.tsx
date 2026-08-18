@@ -42,6 +42,10 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
 
     const proposalId: string = route?.params?.proposalId
     const secretKey: string | undefined = route?.params?.secretKey
+    /* Prestations retenues par le client dans l'écran de lecture : elles
+       partent avec la signature, sinon le conseiller ne saurait pas ce qui a
+       été écarté. */
+    const selection: string[] | undefined = route?.params?.selection
 
     const [chargement, setChargement] = useState(true)
     const [envoi, setEnvoi] = useState(false)
@@ -68,6 +72,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
                     signature_data: trace || undefined,
                     memoriser: trace ? memoriser : undefined,
                     auto_sign: trace && memoriser ? autoSign : undefined,
+                    selection,
                 }),
             })
             const json = await res.json().catch(() => ({}))
@@ -79,7 +84,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
         } finally {
             setEnvoi(false)
         }
-    }, [proposalId, memoriser, autoSign, t])
+    }, [proposalId, memoriser, autoSign, selection, t])
 
     /* Au montage : on lit ce que le client a déjà décidé. Si c'est « auto »,
        on signe immédiatement — lui redemander serait contredire son réglage. */
