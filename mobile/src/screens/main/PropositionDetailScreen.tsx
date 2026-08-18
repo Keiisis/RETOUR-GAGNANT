@@ -102,7 +102,9 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                 timeoutMs: 15000,
             })
             const json = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(json.error || 'Chargement impossible.')
+            // Sans le code HTTP, un « Chargement impossible » couvre aussi bien
+            // une session expirée qu'une route absente du serveur : on le dit.
+            if (!res.ok) throw new Error(json.error || `Chargement impossible (erreur ${res.status}).`)
             setProp(json.proposal)
             const liste: Prestation[] = Array.isArray(json.prestations) ? json.prestations : []
             setPrestations(liste)
