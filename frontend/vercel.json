@@ -1,22 +1,5 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "//": [
-    "Heap Node imposé DANS la commande de build.",
-    "",
-    "`build.env` ci-dessous est le champ HISTORIQUE : il n'a manifestement pas",
-    "été appliqué, car les déploiements du 2026-08-17 se sont bloqués 45 min",
-    "puis ont expiré. Reproduit en local : avec le heap par défaut (~2 Go) le",
-    "build meurt en 320 s sur « FATAL ERROR: Reached heap limit », alors qu'avec",
-    "--max-old-space-size=7168 il se termine en 233 s. La cause est donc la",
-    "mémoire, pas la durée du travail.",
-    "",
-    "Placer la variable dans `buildCommand` la rend non contournable. La commande",
-    "n'affecte que Vercel (Linux) : `npm run build` en local reste inchangé, la",
-    "syntaxe VAR=x n'étant pas valable sous Windows."
-  ],
   "buildCommand": "NODE_OPTIONS=--max-old-space-size=7168 next build --webpack",
-
   "build": {
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=7168"

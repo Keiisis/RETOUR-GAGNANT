@@ -96,6 +96,12 @@ const nextConfig: NextConfig = {
   //  (2 cœurs / 8 Go) : le ramasse-miettes s'emballe et la tâche n'avance plus.
   //  L'app avait déjà frôlé l'OOM (voir webpackMemoryOptimizations plus bas).
   //
+  //  Le heap Node est relevé dans `buildCommand` (vercel.json), et non plus
+  //  seulement dans `build.env`, champ historique qui n'était manifestement pas
+  //  appliqué. ⚠️ vercel.json est validé contre un schéma STRICT : toute clé
+  //  inconnue — y compris une pseudo-clé de commentaire « // » — fait échouer le
+  //  déploiement AVANT le build. Les explications vivent donc ici, pas là-bas.
+  //
   //  Cette étape est REDONDANTE au déploiement : `npx tsc --noEmit` est lancé
   //  avant chaque commit. On la retire du build pour qu'il tienne dans le
   //  plafond, et surtout sous la mémoire disponible.
