@@ -52,13 +52,27 @@ export async function GET(req: NextRequest) {
 
         let query = supabase
             .from('events')
+            // ⚠️ Colonnes ALIGNÉES sur le schéma réellement déployé (vérifié en
+            // base le 2026-08-18). Les noms visés ici n'existaient pas :
+            //   · `cover_image` → la colonne s'appelle `cover_image_url` ;
+            //   · `address`     → cette colonne n'existe pas (il y a `location`
+            //                     et `location_map_url`) ;
+            //   · `event_images.image_url` / `is_cover` → cette table expose
+            //     `url`, `alt_text` et `sort_order` (aucune notion de couverture ;
+            //     la couverture vit dans events.cover_image_url).
+            // PostgREST rejette la requête ENTIÈRE dès qu'un seul nom est
+            // inconnu : l'application ne recevait donc AUCUN événement, même
+            // publié. C'est pourquoi l'événement de test n'apparaissait pas.
+            //
+            // Les alias conservent le contrat attendu par l'application
+            // (`cover_image`, `image_url`) sans avoir à la modifier.
             .select(`
                 id, title, slug, description, short_description,
-                start_date, end_date, location, address,
+                start_date, end_date, location, location_map_url,
                 price_standard, price_vip, currency,
                 max_capacity, max_vip_seats, status,
-                is_featured, cover_image, category,
-                event_images(image_url, is_cover)
+                is_featured, cover_image:cover_image_url, category,
+                event_images(image_url:url, sort_order)
             `)
             .eq('status', 'published')
             .order('start_date', { ascending: true })

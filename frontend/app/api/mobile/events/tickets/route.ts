@@ -48,7 +48,9 @@ export async function GET(req: NextRequest) {
     const eventIds = [...new Set((regs || []).map(r => r.event_id))]
     const { data: events } = await supabase
         .from('events')
-        .select('id, title, slug, start_date, location, cover_image')
+        // La colonne s'appelle `cover_image_url` : sous son autre nom, PostgREST
+        // rejetait la requête entière et la liste des billets revenait vide.
+        .select('id, title, slug, start_date, location, cover_image:cover_image_url')
         .in('id', eventIds)
 
     const eventById = new Map((events || []).map(e => [e.id, e]))
