@@ -274,8 +274,13 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
     /* ── Temps réel : nouvelle notification poussée par le staff ── */
     useEffect(() => {
         if (!profile?.id) return
+        // Nom UNIQUE par abonnement : supabase.channel(nom) renvoie l'instance
+        // existante quand le nom est déjà pris, et .on() sur un canal déjà
+        // souscrit lève « cannot add postgres_changes callbacks after
+        // subscribe() ». Un nom stable rendait donc l'écran vulnérable au
+        // moindre remontage (rechargement à chaud, retour sur l'onglet).
         const channel = supabase
-            .channel(`notifications-${profile.id}`)
+            .channel(`notifications-${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },

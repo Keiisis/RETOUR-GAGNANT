@@ -309,8 +309,12 @@ export class MobileCallEngine {
             }
         }
 
+        // Nom UNIQUE par abonnement : supabase.channel(nom) réutilise l'instance
+        // déjà souscrite pour un nom identique, et .on() y est alors refusé.
+        // Sans risque ici : la signalisation transite par la TABLE call_signals,
+        // le nom du canal n'est pas un point de rendez-vous entre les pairs.
         this.channel = supabase
-            .channel(`call-${callId}-client`)
+            .channel(`call-${callId}-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
             .on('postgres_changes', {
                 event: 'INSERT', schema: 'public', table: 'call_signals',
                 filter: `call_id=eq.${callId}`,

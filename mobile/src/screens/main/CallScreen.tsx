@@ -171,8 +171,12 @@ export default function CallScreen({ navigation, route }: any) {
                 callIdRef.current = appel.id
                 setEtat('sonne')
 
+                // Nom UNIQUE par abonnement (voir call-engine) : un nom stable
+                // retombe sur un canal déjà souscrit au remontage, et .on() y
+                // est refusé. L'écoute porte sur la table `calls`, donc le nom
+                // n'a aucune valeur de rendez-vous.
                 canalRef.current = supabase
-                    .channel(`client-appel-${appel.id}`)
+                    .channel(`client-appel-${appel.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
                     .on('postgres_changes', {
                         event: 'UPDATE', schema: 'public', table: 'calls',
                         filter: `id=eq.${appel.id}`,

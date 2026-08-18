@@ -1,5 +1,5 @@
 'use strict'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity, Image,
@@ -177,17 +177,33 @@ export default function DossierScreen({ navigation }: any) {
 
     useEffect(() => { fetchDossiers() }, [fetchDossiers])
 
+    /* La callback est lue via une ref : sans cela, `fetchDossiers` (recréé à
+       chaque changement de `profile`) figurait dans les dépendances et faisait
+       défaire/refaire l'abonnement à tout bout de champ. */
+    const fetchRef = useRef(fetchDossiers)
+    useEffect(() => { fetchRef.current = fetchDossiers }, [fetchDossiers])
+
     useEffect(() => {
         if (!profile?.id) return
+
+        // Nom de canal UNIQUE par abonnement. supabase.channel(nom) renvoie
+        // l'instance EXISTANTE quand le nom est déjà pris : avec un nom fixe
+        // (« dossiers-realtime »), un simple re-rendu — ou un rechargement à
+        // chaud — rappelait .on() sur un canal DÉJÀ souscrit, ce que le client
+        // refuse : « cannot add postgres_changes callbacks after subscribe() ».
+        // L'écran plantait alors au rendu. Le retrait du canal est de plus
+        // asynchrone, donc l'ancien pouvait encore vivre à la resouscription.
+        const topic = `dossiers-${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const channel = supabase
-            .channel('dossiers-realtime')
+            .channel(topic)
             .on('postgres_changes', {
                 event: '*', schema: 'public', table: 'dossier_tracking',
                 filter: `client_id=eq.${profile.id}`,
-            }, () => { fetchDossiers() })
+            }, () => { fetchRef.current() })
             .subscribe()
+
         return () => { supabase.removeChannel(channel) }
-    }, [profile?.id, fetchDossiers])
+    }, [profile?.id])
 
     const onRefresh = async () => {
         setRefreshing(true); await fetchDossiers(); setRefreshing(false)

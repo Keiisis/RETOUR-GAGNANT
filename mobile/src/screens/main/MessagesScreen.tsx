@@ -243,8 +243,11 @@ export default function MessagesScreen({ navigation }: any) {
     useEffect(() => {
         if (!threadIds.length) return
         const known = new Set(threadIds)
+        // Nom UNIQUE par abonnement (même raison que DossierScreen) : un nom
+        // stable fait retomber sur un canal DÉJÀ souscrit au remontage, et .on()
+        // y est alors refusé — l'écran plante au rendu.
         const channel = supabase
-            .channel(`chat-threads-${threadIds[0]}`)
+            .channel(`chat-threads-${threadIds[0]}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
