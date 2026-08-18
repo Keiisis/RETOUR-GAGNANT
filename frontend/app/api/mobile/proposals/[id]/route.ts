@@ -49,16 +49,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { data: items } = await supabase
         .from('ai_proposal_items')
-        .select('id, type, title, subtitle, description, location, image_url, selling_price, original_price, highlights, order_index')
+        .select('id, type, title, subtitle, description, location, image_url, selling_price, original_price, highlights, order_index, metadata')
         .eq('proposal_id', id)
         .order('order_index', { ascending: true })
 
     const tous = items || []
-    const prestations = tous.filter(i => !NON_FACTURABLE.includes(String(i.type || '')) && Number(i.selling_price) > 0)
+    // Ne filtrer QUE sur le type. Un filtre sur le prix faisait disparaître les
+    // hôtels et les restaurants — dont le prix est souvent porté par le
+    // récapitulatif — et la proposition n'affichait plus qu'une seule slide.
+    const prestations = tous.filter(i => !NON_FACTURABLE.includes(String(i.type || '')))
     // Le texte de présentation vit sur l'élément « hero » : on le remonte pour
     // que l'écran ait de quoi accueillir le client, sans afficher une carte
     // vide et non sélectionnable.
     const intro = tous.find(i => String(i.type || '') === 'hero')
+
+    // Galerie multi-images du slide (metadata.images) : elle sert au balayage
+    // panoramique côté application. Sans elle, chaque slide n'a qu'une photo.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const avecImages = prestations.map((p: any) => ({
+        ...p,
+        images: [
+            ...(Array.isArray(p.metadata?.images) ? p.metadata.images.map((im: { url?: string }) => im?.url).filter(Boolean) : []),
+            ...(p.image_url ? [p.image_url] : []),
+        ].filter((u: string, i: number, t: string[]) => t.indexOf(u) === i),
+    }))
 
     return NextResponse.json({
         proposal: {
@@ -67,6 +81,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             intro_text: intro?.description || null,
             intro_image: intro?.image_url || null,
         },
-        prestations,
+        prestations: avecImages,
     })
 }
