@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { FloppyDisk as Save, ArrowSquareOut as ExternalLink, CaretRight as ChevronRight, Image as ImageIcon, Plus, Trash as Trash2, FilmStrip as Film, Users, Quotes as Quote, StackSimple as Layers, Star, Shield, ArrowRight, CheckCircle, WarningCircle as AlertCircle, CircleNotch as Loader2, type Icon as LucideIcon } from '@phosphor-icons/react';
+import ImageUploadField from '@/components/ui/ImageUploadField'
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES & DEFAULTS
@@ -135,19 +136,16 @@ function TextArea({ value, onChange, rows = 3, placeholder }: { value: string; o
 
 function ImageField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (
-        <Field label={label}>
-            <div className="space-y-2">
-                <TextInput value={value} onChange={onChange} placeholder="/images/histoire/..." />
-                {value && (
-                    <div className="relative h-32 rounded-lg overflow-hidden border border-white/10 bg-black/20">
-                        <img src={value} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/40 transition-opacity">
-                            <ImageIcon size={20} className="text-white/60" />
-                        </div>
-                    </div>
-                )}
-            </div>
-        </Field>
+        // Le champ n'acceptait qu'un chemin à taper : l'image devait déjà
+        // exister sur le serveur. On téléverse désormais depuis l'appareil.
+        <ImageUploadField
+            label={label}
+            value={value}
+            onChange={onChange}
+            dossier="histoire"
+            gabarit="couverture"
+            aide="Glissez l'image de la section, ou choisissez un fichier."
+        />
     )
 }
 

@@ -4,6 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, FloppyDisk as Save, CircleNotch as Loader2, Plus, Trash as Trash2, StackSimple as Layers, TextT as Type, TextAlignLeft as AlignLeft, Palette, Hash, CheckCircle as CheckCircle2, CurrencyDollar as DollarSign, Image as ImageIcon, DotsSixVertical as GripVertical, Sparkle as Sparkles } from '@phosphor-icons/react';
+import ImageUploadField from '@/components/ui/ImageUploadField'
 import { cn } from '@/lib/utils'
 
 interface PricingOption {
@@ -403,18 +404,18 @@ export default function ServiceCreatePage() {
                             </select>
                         </div>
 
-                        <div>
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
-                                <ImageIcon size={12} /> URL Image / Icône
-                            </label>
-                            <input
-                                type="text"
-                                value={imageUrl}
-                                onChange={e => setImageUrl(e.target.value)}
-                                placeholder={t("/assets/icones/icone_exemple.png")}
-                                className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 px-4 text-white text-xs font-mono focus:outline-none focus:border-white/10 transition-colors"
-                            />
-                        </div>
+                        {/* Le champ n'acceptait qu'une adresse : il fallait donc
+                            héberger l'image ailleurs avant de pouvoir s'en servir.
+                            On téléverse désormais depuis l'appareil ; coller une
+                            adresse reste possible. */}
+                        <ImageUploadField
+                            label="Image / Icône du service"
+                            value={imageUrl}
+                            onChange={setImageUrl}
+                            dossier="services"
+                            gabarit="photo"
+                            aide="Glissez l'image du service, ou choisissez un fichier. JPG, PNG, WebP · 8 Mo max."
+                        />
                     </div>
 
                     {/* Paramètres */}
