@@ -56,6 +56,12 @@ const CANAUX = [
 
 const CHAPITRES = ['Mon voyage', 'Où aller', 'Ce que je veux vivre', 'Rendez-vous']
 
+/* Créneaux RÉELS : mêmes disponibilités que l'écran Rendez-vous, via
+   /api/availability. La saisie libre de l'heure obligeait à taper « : » et
+   produisait des valeurs qu'aucun agenda ne pouvait exploiter. */
+interface Creneau { heure: string; restant: number }
+interface Jour { date: string; ferme?: boolean; slots?: Creneau[] }
+
 /** Masque de saisie JJ/MM/AAAA : le client ne tape que des chiffres. */
 function masqueDate(txt: string): string {
     const n = txt.replace(/\D/g, '').slice(0, 8)
@@ -93,10 +99,36 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
     const [activites, setActivites] = useState<string[]>([])
     const [recit, setRecit] = useState('')
 
-    // Chapitre 4
-    const [rdvDate, setRdvDate] = useState('')
-    const [rdvHeure, setRdvHeure] = useState('')
+    // Chapitre 4 : créneaux réels
+    const [jours, setJours] = useState<Jour[]>([])
+    const [chargeCreneaux, setChargeCreneaux] = useState(true)
+    const [rdvDate, setRdvDate] = useState<string | null>(null)
+    const [rdvHeure, setRdvHeure] = useState<string | null>(null)
     const [canal, setCanal] = useState('visio')
+
+    const joursOuverts = jours.filter(j => !j.ferme && (j.slots?.length || 0) > 0)
+    const jourChoisi = joursOuverts.find(j => j.date === rdvDate) || null
+
+    /* Les disponibilités viennent du même service que l'écran Rendez-vous :
+       une seule source, donc aucun créneau proposé qui n'existerait pas. */
+    useEffect(() => {
+        let vivant = true
+        fetchWithTimeout(`${API_BASE}/api/availability?days=21`, { timeoutMs: 12000 })
+            .then(r => r.json())
+            .then((j) => {
+                if (!vivant) return
+                // La route renvoie `jours` (et non `days`) : sous l'autre nom
+                // la liste serait restée vide et aucun créneau n'aurait été
+                // proposé. Même lecture que l'écran Rendez-vous.
+                const liste: Jour[] = Array.isArray(j?.jours) ? j.jours : []
+                setJours(liste)
+                const premier = liste.find(d => !d.ferme && (d.slots?.length || 0) > 0)
+                if (premier) { setRdvDate(premier.date); setRdvHeure(premier.slots![0].heure) }
+            })
+            .catch(() => { /* l'écran le signale plus bas */ })
+            .finally(() => { if (vivant) setChargeCreneaux(false) })
+        return () => { vivant = false }
+    }, [])
 
     /* Nouveau chapitre → on repart du haut. Sans cela on atterrit au milieu
        du formulaire, à la position héritée du chapitre précédent. */
@@ -148,7 +180,7 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                 headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 20000,
                 body: JSON.stringify({
-                    rdv: { date: versIso(rdvDate), heure: rdvHeure.trim(), type: canal },
+                    rdv: { date: rdvDate, heure: rdvHeure, type: canal },
                     itineraire: {
                         villes, activites, recit: recit.trim(),
                         date_debut: versIso(dateDebut), date_fin: versIso(dateFin),
@@ -353,12 +385,59 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                             {t('Un conseiller vous contacte pour affiner votre parcours, puis vous envoie une proposition illustrée dans l’application.')}
                         </Text>
 
-                        <View style={styles.ligne2}>
-                            <Champ label={t('Date souhaitée')} value={rdvDate} onChangeText={v => setRdvDate(masqueDate(v))}
-                                placeholder="JJ/MM/AAAA" keyboardType="number-pad" maxLength={10} flex />
-                            <Champ label={t('Heure')} value={rdvHeure} onChangeText={setRdvHeure}
-                                placeholder="14:00" maxLength={5} flex />
-                        </View>
+                        {/* Créneaux réels : plus de saisie libre. Le client ne peut
+                            choisir qu'une disponibilité qui existe vraiment. */}
+                        <Text style={styles.label}>{t('Jour')}</Text>
+                        {chargeCreneaux ? (
+                            <View style={styles.creneauxVide}><ActivityIndicator color={C.primary} /></View>
+                        ) : joursOuverts.length === 0 ? (
+                            <View style={styles.creneauxVide}>
+                                <Text style={styles.creneauxVideText}>
+                                    {t('Aucune disponibilité pour le moment. Envoyez votre projet : nous vous proposerons un créneau par messagerie.')}
+                                </Text>
+                            </View>
+                        ) : (
+                            <>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.joursRow}>
+                                    {joursOuverts.map(j => {
+                                        const on = rdvDate === j.date
+                                        const dt = new Date(`${j.date}T12:00:00`)
+                                        return (
+                                            <Pressable
+                                                key={j.date}
+                                                onPress={() => { setRdvDate(j.date); setRdvHeure(j.slots?.[0]?.heure || null) }}
+                                                style={[styles.jour, on && styles.jourOn]}
+                                                accessibilityRole="button" accessibilityState={{ selected: on }}
+                                            >
+                                                <Text style={[styles.jourSem, on && styles.jourTextOn]}>
+                                                    {dt.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                                                </Text>
+                                                <Text style={[styles.jourNum, on && styles.jourTextOn]}>{dt.getDate()}</Text>
+                                                <Text style={[styles.jourMois, on && styles.jourTextOn]}>
+                                                    {dt.toLocaleDateString('fr-FR', { month: 'short' })}
+                                                </Text>
+                                            </Pressable>
+                                        )
+                                    })}
+                                </ScrollView>
+
+                                <Text style={styles.label}>{t('Heure')}</Text>
+                                <View style={styles.puces}>
+                                    {(jourChoisi?.slots || []).map(sl => {
+                                        const on = rdvHeure === sl.heure
+                                        return (
+                                            <Pressable
+                                                key={sl.heure} onPress={() => setRdvHeure(sl.heure)}
+                                                style={[styles.puce, on && styles.puceOn]}
+                                                accessibilityRole="button" accessibilityState={{ selected: on }}
+                                            >
+                                                <Text style={[styles.puceText, on && styles.puceTextOn]}>{sl.heure}</Text>
+                                            </Pressable>
+                                        )
+                                    })}
+                                </View>
+                            </>
+                        )}
 
                         <Text style={styles.label}>{t('Par quel canal ?')}</Text>
                         <View style={styles.puces}>
@@ -465,6 +544,17 @@ const styles = StyleSheet.create({
     aide: { ...typography.bodySmall, fontSize: 12, color: C.primary, marginTop: 6 },
 
     puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+
+    /* Créneaux réels */
+    joursRow: { gap: 8, paddingRight: spacing.gutter },
+    jour: { alignItems: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, minWidth: 62 },
+    jourOn: { backgroundColor: C.primary, borderColor: C.primary },
+    jourSem: { fontFamily: fonts.bodyBold, fontSize: 10.5, color: C.textMuted, textTransform: 'uppercase' },
+    jourNum: { fontFamily: fonts.extrabold, fontSize: 19, color: C.text, marginVertical: 1 },
+    jourMois: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted },
+    jourTextOn: { color: '#FFFFFF' },
+    creneauxVide: { backgroundColor: C.surfaceAlt, borderRadius: radius.lg, padding: spacing.lg, alignItems: 'center' },
+    creneauxVideText: { ...typography.bodySmall, fontSize: 12.5, color: C.textSec, textAlign: 'center', lineHeight: 18 },
     puce: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 10 },
     puceOn: { backgroundColor: C.primary, borderColor: C.primary },
     puceText: { fontFamily: fonts.bodyBold, fontSize: 13, color: C.text },

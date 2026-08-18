@@ -69,8 +69,15 @@ export async function POST(req: NextRequest) {
         const nowIso = new Date().toISOString()
 
         // ── 1. Rendez-vous ──
+        //  `rdv_requests` impose date ET heure NOT NULL : sans les deux, rien
+        //  n'était inséré et le rendez-vous n'apparaissait donc jamais dans
+        //  l'agenda. Les créneaux venant désormais de /api/availability, les
+        //  deux valeurs sont toujours présentes — on garde néanmoins le
+        //  garde-fou, et on replie sur une heure par défaut plutôt que de
+        //  perdre le rendez-vous.
         let rdvId: string | null = null
         const dateRdv = String(rdv.date || '').trim()
+        const heureRdv = String(rdv.heure || '').trim() || '09:00'
         if (dateRdv) {
             const { data, error } = await supabase
                 .from('rdv_requests')
@@ -78,7 +85,7 @@ export async function POST(req: NextRequest) {
                     client_id: clientId,
                     client_email: email || null,
                     date: dateRdv,
-                    heure: String(rdv.heure || '').trim() || null,
+                    heure: heureRdv,
                     type: String(rdv.type || 'visio').trim(),
                     motif: 'Tourisme & Culture : préparation de séjour',
                     notes: [
@@ -129,7 +136,49 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: errIt.message }, { status: 500 })
         }
 
-        // ── 3. L'équipe est prévenue dans la messagerie ──
+        // ── 3. Dossier de service ──
+        //  Une demande de séjour est un DOSSIER comme les autres : sans lui,
+        //  elle n'existait que sous forme de message et n'apparaissait ni dans
+        //  le suivi admin, ni dans « Mon dossier » côté client.
+        //  Insertion DIRECTE plutôt qu'un appel HTTP à notre propre API : un
+        //  aller-retour réseau serait soumis au pare-feu applicatif, qui bloque
+        //  les requêtes sans navigateur — le dossier aurait pu disparaître sans
+        //  bruit. Même déduplication que /api/mobile/dossiers : un service déjà
+        //  en cours ne crée pas un second dossier.
+        const STATUTS_ACTIFS = ['reception', 'verification', 'traitement', 'validation', 'finalisation']
+        const { data: dossierExistant } = await supabase
+            .from('dossier_tracking')
+            .select('id')
+            .eq('client_id', clientId)
+            .eq('service_type', 'Tourisme & Culture')
+            .in('statut', STATUTS_ACTIFS)
+            .maybeSingle()
+
+        if (!dossierExistant) {
+            await supabase.from('dossier_tracking').insert({
+                client_id: clientId,
+                num_dossier: `DOS-${Date.now().toString(36).toUpperCase()}`,
+                client_nom: cp?.nom || '',
+                client_prenom: cp?.prenom || '',
+                client_email: email || '',
+                client_phone: cp?.phone || '',
+                service_type: 'Tourisme & Culture',
+                statut: 'reception',
+                progression: 10,
+                etapes: [],
+                source: 'mobile',
+                notes: [
+                    'Préparation de séjour demandée depuis l’application.',
+                    villes.length ? `Étapes : ${villes.join(' → ')}.` : null,
+                    activites.length ? `Activités : ${activites.join(', ')}.` : null,
+                    dateRdv ? `Rendez-vous : ${dateRdv} à ${heureRdv}.` : null,
+                ].filter(Boolean).join(' '),
+                created_at: nowIso,
+                updated_at: nowIso,
+            }).then(() => undefined, () => undefined)
+        }
+
+        // ── 4. L'équipe est prévenue dans la messagerie ──
         // Le fil est rattaché par email : c'est ce qui rend la conversation
         // visible côté Console Live comme dans l'application.
         await supabase.from('messages').insert({
@@ -151,7 +200,7 @@ export async function POST(req: NextRequest) {
             lu: false,
         }).then(() => undefined, () => undefined)
 
-        // ── 4. Accusé de réception côté client ──
+        // ── 5. Accusé de réception côté client ──
         await supabase.from('notifications').insert({
             user_id: clientId,
             title: 'Demande de séjour reçue',
