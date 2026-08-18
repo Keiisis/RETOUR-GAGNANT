@@ -90,15 +90,89 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Billet ${ticket.ticket_code}</title>
 <style>
-  body { margin:0; padding:24px 16px; background:#F3F6F4; }
-  @media print { body { background:#fff; padding:0 } .no-print { display:none } }
-  .no-print { max-width:720px; margin:0 auto 14px; display:flex; gap:8px; justify-content:flex-end }
-  .no-print button { border:0; border-radius:999px; padding:10px 18px; font:700 13px ui-sans-serif,system-ui,sans-serif; background:#008751; color:#fff; cursor:pointer }
+  body { margin:0; padding:24px 16px; background:#F3F6F4;
+         font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
+
+  .rgb-actions { max-width:760px; margin:0 auto 16px; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end }
+  .rgb-actions button { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:999px;
+    padding:11px 20px; font:700 13px inherit; cursor:pointer; }
+  .rgb-btn-dl { background:#008751; color:#fff }
+  .rgb-btn-print { background:#fff; color:#101A14; box-shadow:inset 0 0 0 1px #D9E2DC }
+  .rgb-actions button:disabled { opacity:.55; cursor:progress }
+  .rgb-hint { max-width:760px; margin:0 auto 16px; font-size:11.5px; color:#5E6A64; text-align:right }
+
+  /* ── IMPRESSION ────────────────────────────────────────────────────────
+     Trois défauts corrigés :
+     1. le billet basculait en version étroite : la zone imprimable (~700 px
+        une fois les marges retirées) passait sous le point de rupture mobile
+        du design. Celui-ci est désormais limité au media screen.
+     2. les aplats (souche sombre, bande tricolore) disparaissaient : les
+        navigateurs suppriment les fonds à l'impression sauf print-color-adjust.
+     3. le billet se retrouvait perdu en haut d'une A4 : on centre et on cadre. */
+  @page { size: A4 portrait; margin: 14mm; }
+  @media print {
+    html, body { background:#fff !important; padding:0 !important; }
+    .rgb-actions, .rgb-hint { display:none !important; }
+    /* Impose l'impression des couleurs de fond à toute la page. */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    /* Le billet ne doit jamais être coupé en deux pages. */
+    .rgbt, .rgbt-wrap { break-inside: avoid; page-break-inside: avoid; }
+  }
 </style>
 </head><body>
 ${usedBanner}
-<div class="no-print"><button onclick="window.print()">Télécharger / Imprimer</button></div>
-${corps}
+<div class="rgb-actions">
+  <button class="rgb-btn-dl" id="rgb-dl">Télécharger l'image</button>
+  <button class="rgb-btn-print" onclick="window.print()">Imprimer</button>
+</div>
+<div class="rgb-hint">L'image téléchargée s'envoie par WhatsApp ou s'imprime chez un imprimeur.</div>
+
+<div id="rgb-ticket">${corps}</div>
+
+<script src="/vendor/html2canvas.min.js"></script>
+<script>
+  // « Télécharger » ouvrait la boîte d'impression : ce n'est pas un
+  // téléchargement. On produit ici un VRAI fichier PNG, utilisable hors ligne,
+  // partageable et imprimable en boutique.
+  (function () {
+    var bouton = document.getElementById('rgb-dl')
+    var cible = document.getElementById('rgb-ticket')
+    if (!bouton || !cible) return
+
+    bouton.addEventListener('click', function () {
+      var libelle = bouton.textContent
+      bouton.disabled = true
+      bouton.textContent = 'Préparation…'
+
+      var rendu = window.html2canvas
+        ? window.html2canvas(cible, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false })
+        : Promise.reject(new Error('indisponible'))
+
+      rendu.then(function (canvas) {
+        canvas.toBlob(function (blob) {
+          if (!blob) throw new Error('image vide')
+          var url = URL.createObjectURL(blob)
+          var a = document.createElement('a')
+          a.href = url
+          a.download = 'billet-${ticket.ticket_code}.png'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          // Libération différée : Safari lit le blob après le clic.
+          setTimeout(function () { URL.revokeObjectURL(url) }, 4000)
+          bouton.disabled = false
+          bouton.textContent = libelle
+        }, 'image/png')
+      }).catch(function () {
+        // Repli honnête : on n'échoue pas en silence, on bascule sur l'impression
+        // (« Enregistrer en PDF » y est disponible sur tous les navigateurs).
+        bouton.disabled = false
+        bouton.textContent = libelle
+        alert("Le téléchargement de l'image n'a pas abouti sur cet appareil. Utilisez « Imprimer », puis choisissez « Enregistrer en PDF ».")
+      })
+    })
+  })()
+</script>
 </body></html>`
 
     return new NextResponse(html, {
