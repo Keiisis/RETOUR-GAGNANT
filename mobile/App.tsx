@@ -37,7 +37,6 @@ import { CartProvider } from './src/contexts/CartContext'
 import AppNavigator from './src/navigation/AppNavigator'
 import SplashScreen from './src/screens/SplashScreen'
 import OfflineBanner from './src/components/OfflineBanner'
-import { KkiapayProvider } from '@kkiapay-org/react-native-sdk'
 
 /* ── Notification handler global (doit être défini avant tout rendu) ── */
 Notifications.setNotificationHandler({
@@ -141,7 +140,6 @@ export default function App() {
 
     return (
         <SafeAreaProvider>
-            <KkiapayProvider>
                 <PaymentSettingsProvider>
                     <LangProvider>
                         <AuthProvider>
@@ -157,7 +155,6 @@ export default function App() {
                         </AuthProvider>
                     </LangProvider>
                 </PaymentSettingsProvider>
-            </KkiapayProvider>
         </SafeAreaProvider>
     )
 }
