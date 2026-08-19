@@ -1,5 +1,7 @@
 'use client'
 
+import RecapMyafroSection from '@/components/admin/RecapMyafroSection'
+
 import { T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
@@ -585,6 +587,10 @@ export default function AdminDocumentsPage() {
                         )}
                     </div>
                 </section>
+
+                {/* Demandes déposées depuis la page publique du service : elles
+                    arrivent déjà payées, sans qu'un agent ait eu à envoyer un lien. */}
+                <RecapMyafroSection />
 
                 {/* ═══════════════ DOCUMENTS CLIENTS (existant) ═══════════════ */}
                 <section>
