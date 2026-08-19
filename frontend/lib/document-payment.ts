@@ -37,6 +37,7 @@ const frDate = () => new Date().toLocaleString('fr-FR', { dateStyle: 'long', tim
 
 interface DocRow {
     id: string
+    client_id?: string | null
     type: string            // 'devis' | 'facture'
     numero?: string | null
     total: number
@@ -162,6 +163,20 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
     // 2. Reçu client
     if (doc.client_email) {
         try {
+            /* Paraphe du client : la facture du site l'appose dans « Bon pour
+               accord », le PDF envoyé par email doit porter le même. La
+               préférence `never` reste respectée — un client peut refuser que
+               sa signature soit apposée sans confirmation. */
+            let paraphe: string | undefined
+            if (doc.client_id) {
+                const { data: sig } = await supabase
+                    .from('client_signatures')
+                    .select('signature_data, auto_sign')
+                    .eq('client_id', doc.client_id)
+                    .maybeSingle()
+                if (sig?.signature_data && sig.auto_sign !== 'never') paraphe = sig.signature_data
+            }
+
             // Générer le PDF en PJ
             let pdfBase64 = ''
             try {
@@ -196,7 +211,8 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                     total: finalTotal,
                     notes: doc.notes || `Paiement en ligne via ${provider}\nTransaction: ${txId}`,
                     conditions: 'Paiement effectué en ligne.',
-                    isManual: true
+                    isManual: true,
+                    clientSignatureDataUrl: paraphe,
                 })
             } catch (pdfErr) {
                 console.error('[sendDocPaymentEmails] PDF Generation failed:', pdfErr)
@@ -269,7 +285,7 @@ export async function confirmDocumentPayment(opts: {
 
     const { data: doc, error: docErr } = await supabase
         .from('documents_financiers')
-        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
+        .select('id, client_id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
         .eq('id', docId)
         .maybeSingle()
     if (docErr || !doc) return { success: false, error: 'Document introuvable', status: 404 }
@@ -384,7 +400,7 @@ export async function confirmDocumentPayment(opts: {
 export async function sendDocumentPaymentEmails(docId: string, provider: string, transactionId: string): Promise<void> {
     const { data: doc } = await supabase
         .from('documents_financiers')
-        .select('id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
+        .select('id, client_id, type, numero, total, currency, status, client_nom, client_prenom, client_email, client_phone, client_adresse, items, sous_total, total_tva, remise, notes, paid_at')
         .eq('id', docId)
         .maybeSingle()
     if (doc) await sendDocPaymentEmails(doc as DocRow, provider, transactionId)

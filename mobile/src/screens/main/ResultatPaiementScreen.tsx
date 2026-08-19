@@ -17,7 +17,7 @@
    (DevisPaiementScreen) : mêmes cercles, mêmes cartes de détail, mêmes CTA.
    Charte v2 : blanc porteur, tricolore en accent, aucun fond sombre.
 ═══════════════════════════════════════════════════════════ */
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, Pressable, ScrollView, Linking,
 } from 'react-native'
@@ -33,6 +33,11 @@ import {
 import { screenColors as C, radius, shadows, fonts } from '../../config/theme'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
+import BoutonFacture from '../../components/BoutonFacture'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
 const VERT_PROFOND = '#00643C'
 const AGENCE_TEL = '+2290160322121'
@@ -49,6 +54,13 @@ export interface ParamsResultatPaiement {
     devise?: string
     /** Référence de transaction — la seule preuve que garde le client. */
     reference?: string
+    /**
+     * Transaction de la passerelle, quand elle diffère de la référence
+     * AFFICHÉE (certains services montrent leur propre numéro de demande).
+     * C'est par elle que l'écran retrouve la facture ; à défaut, `reference`
+     * fait l'affaire puisque la plupart des parcours y mettent la transaction.
+     */
+    tx?: string
     moyen?: string
     /** Motif réel renvoyé par la passerelle (échec uniquement). */
     motif?: string
@@ -105,6 +117,39 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
     useEffect(() => {
         if (echec) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined)
     }, [echec])
+
+    /* ── LA FACTURE ─────────────────────────────────────────────────
+       Elle est établie par le serveur au moment de l'encaissement, puis
+       envoyée par email. L'écran n'en lit ici que le NUMÉRO, pour l'afficher
+       dans le détail : le téléchargement, le paraphe et la feuille « bon pour
+       accord » vivent dans `BoutonFacture`, partagé avec les autres parcours.
+
+       On interroge par la TRANSACTION : la seule chose que le téléphone
+       connaisse à coup sûr. */
+    const tx = p.tx || p.reference
+    const [numeroFacture, setNumeroFacture] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!succes || !tx) return
+        let vivant = true
+        const minuteries: ReturnType<typeof setTimeout>[] = []
+        const essayer = async (rang: number) => {
+            if (!vivant) return
+            let trouve = false
+            try {
+                const r = await fetchWithTimeout(
+                    `${API_BASE}/api/mobile/facture?tx=${encodeURIComponent(tx)}`,
+                    { timeoutMs: 9000, headers: { ...(await authHeaders()) } },
+                )
+                const d = await r.json().catch(() => ({}))
+                if (r.ok && d?.facture?.id) { trouve = true; if (vivant) setNumeroFacture(d.facture.numero || null) }
+            } catch { /* réseau : on retentera */ }
+            if (!vivant || trouve || rang >= 2) return
+            minuteries.push(setTimeout(() => essayer(rang + 1), rang === 0 ? 2200 : 5000))
+        }
+        essayer(0)
+        return () => { vivant = false; minuteries.forEach(clearTimeout) }
+    }, [succes, tx])
 
     const quand = new Date().toLocaleString('fr-FR', {
         day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -186,6 +231,12 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                             <Text style={styles.valeurMono} selectable>{p.reference}</Text>
                         </View>
                     )}
+                    {!!numeroFacture && (
+                        <View style={[styles.ligne, styles.sep]}>
+                            <Text style={styles.label}>{t('Facture')}</Text>
+                            <Text style={styles.valeurMono} selectable>{numeroFacture}</Text>
+                        </View>
+                    )}
                     <View style={[styles.ligne, styles.sep]}>
                         <Text style={styles.label}>{t('Moyen')}</Text>
                         <Text style={styles.valeur}>{p.moyen || t('Mobile Money')}</Text>
@@ -209,8 +260,8 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                             <ShieldCheck size={16} color={C.primary} strokeWidth={2.2} />
                         </View>
                         <Text style={styles.blocTexte}>
-                            <Text style={styles.gras}>{t('Conservez cette référence.')} </Text>
-                            {t('Un reçu vous est envoyé par email. Elle vous suffit pour toute question sur ce règlement.')}
+                            <Text style={styles.gras}>{t('Votre facture part par email.')} </Text>
+                            {t('Elle porte l’en-tête de l’agence et vaut justificatif comptable. Vous pouvez aussi la télécharger ici, et cette référence suffit pour toute question sur ce règlement.')}
                         </Text>
                     </Animated.View>
                 ) : echec ? (
@@ -241,6 +292,9 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
             </ScrollView>
 
             <View style={[styles.bas, { paddingBottom: insets.bottom + 16 }]}>
+                {/* La facture, à un geste — sans remplacer l'envoi par email. */}
+                {succes && <BoutonFacture tx={tx} />}
+
                 <Pressable
                     onPress={retour}
                     style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
@@ -263,6 +317,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                     <Text style={styles.ctaVideText}>{t('Retour à l’accueil')}</Text>
                 </Pressable>
             </View>
+
         </View>
     )
 }

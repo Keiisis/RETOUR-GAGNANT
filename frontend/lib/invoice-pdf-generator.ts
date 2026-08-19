@@ -29,6 +29,12 @@ export interface InvoicePdfData {
     isManual?: boolean
     /** 'facture' (défaut) ou 'devis' : change le titre, le badge et le texte légal. */
     docType?: 'devis' | 'facture'
+    /**
+     * Paraphe du client (`client_signatures.signature_data`), en data URL —
+     * exactement celui que la facture du site appose dans « Bon pour accord ».
+     * Absent : le cadre garde sa mention textuelle.
+     */
+    clientSignatureDataUrl?: string
 }
 
 // Convert price to string format
@@ -346,8 +352,16 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     const sigW = CW / 2 - 4
     const sigH = 34
 
-    // Left Signature block (Client) - HIDE if manual invoice
-    if (!data.isManual) {
+    /* Bloc « Bon pour accord » du client.
+       Il était masqué sur toute facture acquittée (`isManual`) : le client qui
+       avait pris la peine d'enregistrer sa signature ne la voyait donc JAMAIS
+       sur ses factures de service. Le paraphe l'emporte désormais sur ce
+       masquage — quand il existe, le bon pour accord s'affiche, et c'est la
+       vraie signature qui y figure, comme sur la facture du site. */
+    const paraphe = data.clientSignatureDataUrl
+    const formatParaphe = paraphe?.startsWith('data:image/jpeg') || paraphe?.startsWith('data:image/jpg')
+        ? 'JPEG' : 'PNG'
+    if (!data.isManual || paraphe) {
         pdf.setFillColor(250, 253, 251)
         pdf.setDrawColor(C.primary[0], C.primary[1], C.primary[2])
         pdf.roundedRect(ML, y, sigW, sigH, 1.5, 1.5, 'FD')
@@ -357,11 +371,46 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
         pdf.text('BON POUR ACCORD : CLIENT', ML + 4, y + 4.5)
         pdf.setDrawColor(200, 230, 215)
         pdf.line(ML + 4, y + 6, ML + sigW - 4, y + 6)
+
+        let paraphePose = false
+        if (paraphe) {
+            /* Le tracé est déposé dans le cadre SANS déformation : un paraphe
+               étiré ne ressemble plus à la signature de personne. On mesure
+               l'image, on la met à l'échelle du plus contraignant des deux
+               côtés, et on la centre au-dessus de la mention de date.
+               Un fichier illisible ne doit pas emporter la facture entière :
+               on retombe alors sur la mention textuelle. */
+            try {
+                const zoneX = ML + 5
+                const zoneY = y + 7.5
+                const zoneW = sigW - 10
+                const zoneH = sigH - 15
+                const props = pdf.getImageProperties(paraphe)
+                const ratio = props.width > 0 && props.height > 0 ? props.width / props.height : zoneW / zoneH
+                let w = zoneW
+                let h = w / ratio
+                if (h > zoneH) { h = zoneH; w = h * ratio }
+                pdf.addImage(
+                    paraphe, formatParaphe,
+                    zoneX + (zoneW - w) / 2, zoneY + (zoneH - h) / 2,
+                    w, h, undefined, 'FAST',
+                )
+                paraphePose = true
+            } catch (e) {
+                console.error('[invoice-pdf] signature client illisible:', e instanceof Error ? e.message : e)
+            }
+        }
+
         pdf.setFont('helvetica', 'italic')
-        pdf.setFontSize(7)
+        pdf.setFontSize(6.5)
         pdf.setTextColor(120, 120, 120)
-        pdf.text('Signature apposée électroniquement', ML + 4, y + 12)
-        pdf.text('le ' + data.date, ML + 4, y + 16)
+        if (paraphePose) {
+            pdf.text('Signé électroniquement le ' + (data.paidAt || data.date), ML + 4, y + sigH - 3)
+        } else {
+            pdf.setFontSize(7)
+            pdf.text('Signature apposée électroniquement', ML + 4, y + 12)
+            pdf.text('le ' + data.date, ML + 4, y + 16)
+        }
     } else {
         // Manual invoice status indicator instead of signature
         pdf.setFillColor(242, 248, 244)

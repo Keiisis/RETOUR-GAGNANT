@@ -18,7 +18,18 @@ import { sendEmail } from './email'
 import { insertOnce } from './payment-integrity'
 import { fromHt, TVA_RATE } from './tax'
 
-type OrderLike = { id?: string; amount?: number; currency?: string } | null | undefined
+/* La commande d'origine. Les colonnes `transaction_id` et `client_id` existent
+   en base mais manquaient à ce type : la facture de proposition ne portait donc
+   ni la transaction (introuvable depuis l'application) ni le compte du client
+   (paraphe impossible à apposer). */
+type OrderLike = {
+    id?: string
+    amount?: number
+    currency?: string
+    transaction_id?: string | null
+    payment_method?: string | null
+    client_id?: string | null
+} | null | undefined
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 const CUR_SYM: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
@@ -176,6 +187,10 @@ export async function classifyProposalPayment(
                 total: totalTTC,
                 status: 'paye',
                 paid_at: new Date().toISOString(),
+                client_id: order?.client_id || null,
+                payment_transaction_id: order?.transaction_id || null,
+                payment_provider: order?.payment_method || null,
+                payment_method: order?.payment_method || null,
                 notes: `Facture auto-générée : Lien de paiement / Proposition\nProposal: ${shortId.toUpperCase()}\nClient: ${proposal.client_name || 'N/A'}`,
                 conditions: 'Document généré automatiquement après paiement.',
                 validite: 'Acquittée',

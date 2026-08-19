@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { scanRequestBody } from '@/lib/waf'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { facturerPaiementService } from '@/lib/service-invoice'
 
 // Service role : bypasse RLS pour créer/lire les dossiers depuis l'app mobile
 const supabase = createClient(
@@ -185,6 +186,10 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Idempotence paiement + anti-fraude Kkiapay ──
+        /* Montant CONFIRMÉ par la passerelle : il servira de base à la facture.
+           Jamais celui annoncé par le téléphone — c'est la règle depuis
+           l'incident des 0,39 € sur la nationalité. */
+        let montantEncaisseXof = 0
         if (transactionId) {
             const { data: existingByTx } = await supabase
                 .from('dossier_tracking')
@@ -192,13 +197,24 @@ export async function POST(req: NextRequest) {
                 .eq('transaction_id', transactionId)
                 .maybeSingle()
             if (existingByTx) {
-                return NextResponse.json({ id: existingByTx.id, exists: true, message: 'Already created' }, { status: 200 })
+                // Rejeu : la facture de cette transaction existe déjà, on la rend.
+                const { data: dejaFacture } = await supabase
+                    .from('documents_financiers')
+                    .select('id, numero')
+                    .eq('payment_transaction_id', transactionId)
+                    .maybeSingle()
+                return NextResponse.json({
+                    id: existingByTx.id, exists: true, message: 'Already created',
+                    facture_id: dejaFacture?.id || null,
+                    facture_numero: dejaFacture?.numero || null,
+                }, { status: 200 })
             }
             const verify = await verifyKkiapayTransaction(transactionId)
             if (!verify.ok) {
                 console.warn(`[mobile/dossiers] Paiement non confirmé : ${verify.status}`)
                 return NextResponse.json({ error: `Paiement non confirmé (${verify.status})` }, { status: 402 })
             }
+            montantEncaisseXof = Number(verify.amount) || 0
         }
 
         // S'assurer que le client existe dans client_profiles + récupérer son identité
@@ -220,6 +236,30 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        /* ── FACTURE ────────────────────────────────────────────────────
+           Un service payé donne lieu à une facture, point. Elle est établie
+           AVANT la déduplication de dossier : un client qui règle une seconde
+           prestation alors qu'un dossier du même type est encore ouvert a
+           quand même payé, et doit recevoir sa facture. L'idempotence tient à
+           la transaction, pas au dossier. */
+        let facture: { id?: string; numero?: string } = {}
+        if (transactionId && montantEncaisseXof > 0) {
+            const r = await facturerPaiementService({
+                transactionId,
+                montantXof: montantEncaisseXof,
+                libelle: String(service_type),
+                clientId: client_id,
+                clientNom: cp?.nom || null,
+                clientPrenom: cp?.prenom || null,
+                clientEmail: cp?.email || null,
+                clientPhone: cp?.phone || null,
+                provider: 'kkiapay',
+                source: 'Application mobile',
+            })
+            if (r.ok) facture = { id: r.id, numero: r.numero }
+            else console.error('[mobile/dossiers] facture non établie :', r.erreur)
+        }
+
         // ── Anti-doublon : un dossier ACTIF pour ce service ne se recrée pas ──
         const { data: existing } = await supabase
             .from('dossier_tracking')
@@ -230,7 +270,7 @@ export async function POST(req: NextRequest) {
             .limit(1)
             .maybeSingle()
         if (existing) {
-            return NextResponse.json({ exists: true, id: existing.id }, { status: 200 })
+            return NextResponse.json({ exists: true, id: existing.id, facture_id: facture.id || null, facture_numero: facture.numero || null }, { status: 200 })
         }
 
         // ── Créer le dossier de SERVICE dans dossier_tracking (source unique,
@@ -276,7 +316,7 @@ export async function POST(req: NextRequest) {
             created_at: nowIso,
         })
 
-        return NextResponse.json({ id: data.id }, { status: 201 })
+        return NextResponse.json({ id: data.id, facture_id: facture.id || null, facture_numero: facture.numero || null }, { status: 201 })
     } catch (e) {
         return NextResponse.json(
             { error: e instanceof Error ? e.message : 'Erreur serveur' },
