@@ -15,24 +15,15 @@ export async function GET() {
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-        // Essai 1 : schéma migré (avec is_active + order_index)
-        let data: Array<Record<string, unknown>> | null = null
-        let error: unknown = null
-
-        const result1 = await supabase
-            .from('services')
-            .select('id, title, subtitle, slug, description, icon_type, image_url, color, is_active, order_index, price_display, pricing_options, features, duration, documents, processus')
-
-        if (!result1.error) {
-            data = result1.data as Array<Record<string, unknown>>
-        } else {
-            // Essai 2 : ancien schéma (sans is_active ni order_index)
-            const result2 = await supabase
-                .from('services')
-                .select('id, title, subtitle, slug, description, icon_type, image_url, color, "order", price_display, pricing_options, features, duration, documents, processus')
-            data = result2.data as Array<Record<string, unknown>>
-            error = result2.error
-        }
+        // ⚠️ NE JAMAIS énumérer les colonnes ici.
+        // Les deux tentatives précédentes demandaient `duration, documents,
+        // processus` — absentes de la table déployée. PostgREST rejette la
+        // requête ENTIÈRE sur une colonne inconnue (42703) : les deux essais
+        // échouaient, la route renvoyait `{ services: [] }`, et TOUT le site
+        // basculait sur la liste codée en dur. Résultat : un service ajouté en
+        // base n'apparaissait jamais, en silence.
+        // `select('*')` suit le schéma quel qu'il soit.
+        const { data, error } = await supabase.from('services').select('*')
 
         if (error || !data) {
             return NextResponse.json({ services: [] })
