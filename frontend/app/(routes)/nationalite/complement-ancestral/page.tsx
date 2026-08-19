@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { T, useTranslation } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { natFetch } from '@/lib/nationality-flow'
+import { ouvrirKkiapay } from '@/lib/kkiapay'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -95,20 +96,6 @@ function ComplementAncestralContent() {
     // Prix FINAL (TTC) : le client paie researchPrice pile, TVA réputée incluse.
     const amountXOF = Math.round(researchPrice * EUR_TO_XOF)
 
-    const bindKkiapayListeners = () => {
-        if (kkiapayBound.current) return
-        if (typeof window.addKkiapayListener !== 'function') return
-        kkiapayBound.current = true
-        window.addKkiapayListener('success', (response) => {
-            setPaymentTxId(String(response.transactionId || ''))
-            setPaymentDone(true); setPaymentProcessing(false)
-        })
-        window.addKkiapayListener('failed', () => {
-            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
-            setPaymentProcessing(false)
-        })
-    }
-
     const handleKkiapay = () => {
         if (typeof window.openKkiapayWidget !== 'function') {
             setPaymentError(t('Le module de paiement n\'est pas encore chargé. Patientez quelques secondes puis réessayez.'))
@@ -116,14 +103,26 @@ function ComplementAncestralContent() {
         }
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
         try {
-            bindKkiapayListeners()
-            window.openKkiapayWidget({
+            ouvrirKkiapay({
                 amount: amountXOF, position: 'center',
                 key: paymentSettings.kkiapay_sandbox === 'true'
                     ? (paymentSettings.kkiapay_sandbox_public_key || paymentSettings.kkiapay_public_key)
                     : paymentSettings.kkiapay_public_key,
                 sandbox: paymentSettings.kkiapay_sandbox === 'true',
                 data: JSON.stringify({ context: 'recherche-ancestrale', ref }),
+            }, {
+                onSucces: (tx: string) => {
+            setPaymentTxId(tx)
+            setPaymentDone(true); setPaymentProcessing(false)
+                },
+                onEchec: () => {
+            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
+            setPaymentProcessing(false)
+                },
+                onAnnule: () => {
+                    setPaymentError(t('Paiement annulé. Rien n’a été débité.'))
+                    setPaymentProcessing(false)
+                },
             })
         } catch { setPaymentError(t('Impossible d\'ouvrir Kkiapay')); setPaymentProcessing(false) }
     }

@@ -881,10 +881,13 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                 visible={kkiapayVisible}
                 amount={String(totalXof ?? 0)}
                 serviceName={`Séjour ${prop.destination || 'Bénin'}`}
-                onClose={() => {
-                    setKkiapayVisible(false)
+                onClose={() => setKkiapayVisible(false)}
+                onCancel={() => {
+                    // Abandon confirmé par le modal : la commande créée juste
+                    // avant l'ouverture ne doit pas rester « en attente ».
                     const oid = orderRef.current
                     if (oid) annulerCommande(oid)
+                    setMotif('')
                 }}
                 onSuccess={surTransaction}
             />

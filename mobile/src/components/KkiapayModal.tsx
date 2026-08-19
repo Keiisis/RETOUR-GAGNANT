@@ -24,10 +24,14 @@ interface KkiapayModalProps {
     amount: string
     serviceName: string
     onClose: () => void
+    /* Appelé quand le client referme SANS avoir payé. Sans ce retour, l'écran
+       appelant restait figé et une éventuelle commande gardait le statut
+       « en attente » — le client repartait sans savoir où il en était. */
+    onCancel?: () => void
     onSuccess: (transactionId: string) => void
 }
 
-export default function KkiapayModal({ visible, amount, serviceName, onClose, onSuccess }: KkiapayModalProps) {
+export default function KkiapayModal({ visible, amount, serviceName, onClose, onSuccess, onCancel }: KkiapayModalProps) {
     const [loading, setLoading] = useState(false)
     const { profile } = useAuth()
     const { t } = useLang()
@@ -41,22 +45,49 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     // jour des callbacks via la ref (pas de stale closure non plus).
     const onSuccessRef = useRef(onSuccess)
     const onCloseRef = useRef(onClose)
+    const onCancelRef = useRef(onCancel)
+    // Un paiement a-t-il abouti pendant cette ouverture ? Sert à distinguer
+    // « fermeture après succès » de « fermeture par abandon ».
+    const abouti = useRef(false)
+    const ouvert = useRef(false)
     useEffect(() => { onSuccessRef.current = onSuccess }, [onSuccess])
     useEffect(() => { onCloseRef.current = onClose }, [onClose])
+    useEffect(() => { onCancelRef.current = onCancel }, [onCancel])
 
     // ── Listeners Kkiapay (succès / échec) : enregistrement unique ──
     useEffect(() => {
         addSuccessListener((data: any) => {
+            abouti.current = true
             const transactionId = data?.transactionId || data?.transaction_id || `KK-${Date.now()}`
             onSuccessRef.current(String(transactionId))
         })
 
         addFailedListener(() => {
+            abouti.current = true
             toast(t('Paiement échoué'), t("Le paiement n'a pas pu être finalisé. Veuillez réessayer."), 'danger')
             onCloseRef.current()
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    /* Fermeture demandée par le client (croix, geste, bouton retour).
+       Si aucun paiement n'a abouti alors que le widget avait été ouvert, c'est
+       un abandon : on le DIT, et on rend la main à l'écran appelant pour qu'il
+       annule ce qui doit l'être (commande en attente, notamment). */
+    const fermer = useCallback(() => {
+        const abandon = ouvert.current && !abouti.current
+        ouvert.current = false
+        if (abandon) {
+            toast(t('Paiement annulé'), t('Rien n’a été débité. Vous pouvez reprendre quand vous voulez.'))
+            onCancelRef.current?.()
+        }
+        onCloseRef.current()
+    }, [t])
+
+    // À chaque réouverture, on repart d'une ardoise propre.
+    useEffect(() => {
+        if (visible) { abouti.current = false; ouvert.current = false }
+    }, [visible])
 
     // ── Extrait le montant numérique depuis un texte comme "À partir de 150 000 FCFA" ──
     const getNumericAmount = (): number => {
@@ -78,6 +109,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         }
 
         setLoading(true)
+        ouvert.current = true
 
         try {
             openKkiapayWidget({
@@ -97,7 +129,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     }, [kkiapayKey, numericAmount, profile, sandbox, serviceName, openKkiapayWidget, t])
 
     return (
-        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={fermer}>
             <View style={styles.overlay}>
                 <View style={styles.sheet}>
                     {/* Header */}
@@ -111,7 +143,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                                 <Text style={styles.securedLabel}>{t('Paiement sécurisé in-app')}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        <TouchableOpacity onPress={fermer} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             accessibilityRole="button"
                             accessibilityLabel="Fermer le paiement">
                             <X size={24} color={colors.textSecondary} strokeWidth={1.75} />

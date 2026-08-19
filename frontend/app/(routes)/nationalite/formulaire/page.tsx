@@ -14,6 +14,7 @@ import { ttcFromHt, fromHt, TVA_ENABLED, TVA_RATE } from '@/lib/tax'
 import { useTranslation, T } from '@/lib/translation'
 import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { natFetch } from '@/lib/nationality-flow'
+import { ouvrirKkiapay } from '@/lib/kkiapay'
 
 type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
@@ -348,19 +349,6 @@ export default function NationaliteFormPage() {
     ].filter(p => p.isReady)
 
     // Enregistre les listeners Kkiapay une seule fois (idempotent)
-    const bindKkiapayListeners = () => {
-        if (kkiapayBound.current) return
-        if (typeof window.addKkiapayListener !== 'function') return
-        kkiapayBound.current = true
-        window.addKkiapayListener('success', (response) => {
-            setPaymentTxId(String(response.transactionId || '')); setPaymentDone(true); setPaymentProcessing(false)
-        })
-        window.addKkiapayListener('failed', () => {
-            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
-            setPaymentProcessing(false)
-        })
-    }
-
     const handleKkiapay = () => {
         if (typeof window.openKkiapayWidget !== 'function') {
             setPaymentError(t('Le module de paiement n\'est pas encore chargé. Patientez quelques secondes puis réessayez.'))
@@ -395,12 +383,13 @@ export default function NationaliteFormPage() {
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
         try {
             // Listeners enregistrés AVANT l'ouverture, une seule fois (pas d'empilement)
-            bindKkiapayListeners()
             // Configuration minimale et conforme : pas de `paymentmethod` (tableau
             // rejeté par le widget → « paramètres invalides ») ni de `callback`
             // (forcerait une redirection qui contourne le listener de succès).
             // Le widget propose nativement Mobile Money ET carte bancaire.
-            window.openKkiapayWidget({
+            // Succès, échec ET abandon : refermer la fenêtre sans payer
+            // laissait auparavant le bouton figé sur « paiement en cours ».
+            ouvrirKkiapay({
                 amount: amountXOF,
                 position: 'center',
                 key: kkiapayKey,
@@ -409,6 +398,18 @@ export default function NationaliteFormPage() {
                 email: form.email || undefined,
                 name: `${form.prenom || ''} ${form.nom || ''}`.trim() || undefined,
                 data: JSON.stringify({ context: 'nationality', email: form.email }),
+            }, {
+                onSucces: (tx: string) => {
+            setPaymentTxId(tx); setPaymentDone(true); setPaymentProcessing(false)
+                },
+                onEchec: () => {
+            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
+            setPaymentProcessing(false)
+                },
+                onAnnule: () => {
+                    setPaymentError(t('Paiement annulé. Rien n’a été débité — vous pouvez reprendre quand vous voulez.'))
+                    setPaymentProcessing(false)
+                },
             })
         } catch { setPaymentError(t('Impossible d\'ouvrir Kkiapay')); setPaymentProcessing(false) }
     }

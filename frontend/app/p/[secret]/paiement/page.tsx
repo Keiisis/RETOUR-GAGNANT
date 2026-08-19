@@ -10,6 +10,7 @@ import { CurrencyCode, getCurrencyForLang, formatPriceWithMargin, convertCurrenc
 import { fromHt, TVA_ENABLED } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 // Types SDK tiers : les déclarations globales Window sont dans PaymentModal.tsx
 // On réutilise les mêmes interfaces locales pour Stripe
@@ -414,6 +415,13 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
             // Pas de `paymentmethod` (tableau rejeté → « paramètres invalides »)
             // ni de `callback` (redirection qui contourne le listener de succès).
             // Kkiapay encaisse UNIQUEMENT en XOF -> on injecte le montant converti
+            // Le client peut refermer la fenêtre sans payer : sans ce garde-fou,
+            // la commande restait « pending » et l'écran figé sur l'attente.
+            surveillerAbandonKkiapay(() => {
+                cancelOrder(oid)
+                setErrorMessage('Paiement annulé. Rien n’a été débité.')
+                setStep('error')
+            })
             window.openKkiapayWidget({ amount: payableXof, position: 'center', key: publicKey, sandbox, phone: customerPhone || undefined, email: customerEmail || undefined, name: customerName || undefined, data: JSON.stringify({ order_id: oid }) })
             window.addKkiapayListener('success', async (response) => { await verifyPayment(oid, response.transactionId as string) })
             window.addKkiapayListener('failed', () => { cancelOrder(oid); setErrorMessage('Paiement échoué'); setStep('error') })

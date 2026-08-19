@@ -11,6 +11,7 @@ import { useTranslation, T } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, formatPrice as fmtCurrency } from '@/lib/currency'
 import { ttcFromHt } from '@/lib/tax'
+import { ouvrirKkiapay } from '@/lib/kkiapay'
 
 interface EventData {
     id: string; title: string; slug: string; description: string; short_description: string
@@ -123,17 +124,10 @@ export default function EventDetailPage() {
             await ensureKkiapaySDK()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const w = window as any
-            if (!kkiapayBound.current && typeof w.addKkiapayListener === 'function') {
-                kkiapayBound.current = true
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                w.addKkiapayListener('success', (response: any) => {
-                    verifyAndFinish(orderIdRef.current, String(response?.transactionId || ''), 'kkiapay')
-                })
-                w.addKkiapayListener('failed', () => {
-                    setError('Le paiement a échoué ou a été refusé.'); setPayProcessing(false)
-                })
-            }
-            w.openKkiapayWidget({
+            // Un seul point d'entrée : succès, échec ET abandon sont traités.
+            // Sans le troisième, refermer la fenêtre laissait l'écran figé sur
+            // « paiement en cours » et la commande en attente.
+            ouvrirKkiapay({
                 amount: Math.round(price),
                 position: 'center',
                 key: isSandbox
@@ -144,6 +138,21 @@ export default function EventDetailPage() {
                 phone: form.phone || undefined,
                 name: form.full_name || undefined,
                 data: JSON.stringify({ order_id: oid }),
+            }, {
+                onSucces: (tx: string) => {
+                    verifyAndFinish(orderIdRef.current, tx, 'kkiapay')
+                },
+                onEchec: () => {
+                    setError('Le paiement a échoué ou a été refusé.'); setPayProcessing(false)
+                },
+                onAnnule: () => {
+                setError('Paiement annulé. Rien n’a été débité.')
+                setPayProcessing(false)
+                if (orderIdRef.current) fetch('/api/checkout/cancel', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderIdRef.current }),
+                }).catch(() => { })
+                },
             })
         } catch {
             setError('Impossible d\'ouvrir le module de paiement. Réessayez.')

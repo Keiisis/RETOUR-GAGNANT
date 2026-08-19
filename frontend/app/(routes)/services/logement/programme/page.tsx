@@ -11,6 +11,7 @@ import TransitionLink from '@/components/TransitionLink'
 import type { SitePoint } from '@/components/logements/SitesMap'
 import { trackEvent } from '@/lib/analytics'
 import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
     ssr: false,
@@ -549,6 +550,10 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             })
         }
         try {
+            surveillerAbandonKkiapay(() => {
+                setPayError('Paiement annulé. Rien n’a été débité.')
+                setPaying(false)
+            })
             w.openKkiapayWidget({
                 amount: feeXof, position: 'center',
                 key: paySettings.kkiapay_sandbox === 'true'

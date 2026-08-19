@@ -13,7 +13,7 @@
  * l'information complète (loi n° 2017-20 portant Code du numérique en
  * République du Bénin — autorité : APDP).
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Script from 'next/script'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -23,6 +23,7 @@ import { useTranslation } from '@/lib/translation'
 import { Price } from '@/components/ui/Price'
 import { CurrencyCode, convertCurrency } from '@/lib/currency'
 import { ttcFromHt } from '@/lib/tax'
+import { ouvrirKkiapay } from '@/lib/kkiapay'
 
 declare global {
     interface Window {
@@ -58,7 +59,6 @@ export default function RecapMyafroForm() {
     const [erreur, setErreur] = useState('')
     const [envoi, setEnvoi] = useState(false)
     const [reference, setReference] = useState('')
-    const listenersPoses = useRef(false)
 
     // Pièces jointes : proposées APRÈS l'enregistrement, quand la référence
     // existe. Les demander avant obligerait à stocker des fichiers pour une
@@ -126,19 +126,6 @@ export default function RecapMyafroForm() {
         ? 0
         : ttcFromHt(devise === 'XOF' ? tarif : convertCurrency(tarif, devise, 'XOF'), 'XOF')
 
-    const poserListeners = () => {
-        if (listenersPoses.current || typeof window.addKkiapayListener !== 'function') return
-        listenersPoses.current = true
-        window.addKkiapayListener('success', (r) => {
-            setTxId(String(r.transactionId || r.transaction_id || ''))
-            setPaiementFait(true); setEnCours(false)
-        })
-        window.addKkiapayListener('failed', () => {
-            setErreur(t('Le paiement n’a pas abouti. Si votre carte est hors zone UEMOA, essayez le Mobile Money.'))
-            setEnCours(false)
-        })
-    }
-
     const payerKkiapay = () => {
         setErreur('')
         // Tarif pas encore lu en base : refuser plutôt qu'encaisser une valeur d'attente.
@@ -152,8 +139,7 @@ export default function RecapMyafroForm() {
 
         setProvider('kkiapay'); setEnCours(true)
         try {
-            poserListeners()
-            window.openKkiapayWidget({
+            ouvrirKkiapay({
                 amount: montantXof,
                 position: 'center',
                 key: cle,
@@ -162,6 +148,16 @@ export default function RecapMyafroForm() {
                 phone: form.telephone || undefined,
                 name: `${form.prenom} ${form.nom}`.trim() || undefined,
                 data: JSON.stringify({ context: 'recap-myafroorigins', email: form.email }),
+            }, {
+                onSucces: (tx: string) => { setTxId(tx); setPaiementFait(true); setEnCours(false) },
+                onEchec: () => {
+                    setErreur(t('Le paiement n’a pas abouti. Si votre carte est hors zone UEMOA, essayez le Mobile Money.'))
+                    setEnCours(false)
+                },
+                onAnnule: () => {
+                    setErreur(t('Paiement annulé. Rien n’a été débité — votre demande n’a pas été enregistrée.'))
+                    setEnCours(false)
+                },
             })
         } catch { setErreur(t('Impossible d’ouvrir le module de paiement.')); setEnCours(false) }
     }

@@ -16,6 +16,7 @@ import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { type CurrencyCode, getCurrencyForLang, convertWithMargin, convertCurrency, formatPrice, CONVERSION_MARGIN } from '@/lib/currency'
 import { fromHt, TVA_ENABLED } from '@/lib/tax'
 import { ensureKkiapaySDK } from '@/lib/ensurePaymentSDK'
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 // ─── Déclarations des SDK tiers ────────────────────────────────────────────────
 declare global {
@@ -615,6 +616,11 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 try { window.removeKkiapayListener('failed') } catch { /* ignore */ }
                 try { window.removeKkiapayListener('close' as Parameters<typeof window.removeKkiapayListener>[0]) } catch { /* ignore */ }
             }
+            surveillerAbandonKkiapay(() => {
+                if (orderId) cancelOrder(orderId)
+                setErrorMessage('Paiement annulé. Rien n’a été débité.')
+                setStep('error')
+            })
             window.openKkiapayWidget({
                 amount: kkAmount,
                 position: 'center',
