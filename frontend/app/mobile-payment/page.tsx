@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CircleNotch as Loader2 } from '@phosphor-icons/react';
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 function MobilePaymentContent() {
     const searchParams = useSearchParams()
@@ -31,6 +32,7 @@ function MobilePaymentContent() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const w = window as any
             if (w.openKkiapayWidget) {
+                surveillerAbandonKkiapay(() => setStatus('Paiement annulé. Rien n’a été débité — vous pouvez fermer cette page.'))
                 w.openKkiapayWidget({
                     amount: parseInt(amount, 10),
                     position: "center",

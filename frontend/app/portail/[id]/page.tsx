@@ -12,6 +12,7 @@ import { convertCurrency, getCurrencyForLang, formatPriceWithMargin, refreshRate
 import { TVA_RATE } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
@@ -328,6 +329,10 @@ export default function ClientPortalPage() {
             // Config minimale et conforme : pas de `paymentmethod` (tableau rejeté
             // par le widget → « paramètres invalides ») ni de `callback` (forcerait
             // une redirection qui contourne le listener de succès).
+            surveillerAbandonKkiapay(() => {
+                setPaymentError('Paiement annulé. Rien n’a été débité.')
+                setIsProcessing(false)
+            })
             ;(window as any).openKkiapayWidget({
                 amount: Math.round(amountXOF),
                 position: 'center',

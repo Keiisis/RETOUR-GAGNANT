@@ -9,6 +9,7 @@ import { ArrowLeft, CreditCard, CircleNotch as Loader2, CheckCircle as CheckCirc
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { type CurrencyCode, getCurrencyForLang, formatPriceWithMargin, formatPrice } from '@/lib/currency'
 import { useTranslation } from '@/lib/translation'
+import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 
 interface Doc {
     id: string
@@ -231,6 +232,11 @@ export default function ClientPayerPage() {
         kkiapayHandlerRef.current = handler
         w.addKkiapayListener?.('success', handler)
 
+        // Fermer la fenetre sans payer laissait l ecran en attente indefinie.
+        surveillerAbandonKkiapay(() => {
+            setError('Paiement annulé. Rien n’a été débité.')
+            setStep('select')
+        })
         w.openKkiapayWidget?.({
             amount: Math.round(doc.total),
             position: 'center',

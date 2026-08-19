@@ -14,6 +14,7 @@ import { IdentificationCard, Car, MapPin, Clock, Check, CircleNotch as Loader2, 
 import { useTranslation, T } from '@/lib/translation'
 import { convertCurrency } from '@/lib/currency'
 import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
+import { ouvrirKkiapay } from '@/lib/kkiapay'
 
 const ACCENT = '#008751'
 
@@ -82,18 +83,10 @@ export default function PermisBooking() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any
         const isSandbox = settings.kkiapay_sandbox === 'true'
-        if (!kkiapayBound.current && typeof w.addKkiapayListener === 'function') {
-            kkiapayBound.current = true
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            w.addKkiapayListener('success', (response: any) => {
-                verifyAndFinish(orderIdRef.current, String(response?.transactionId || ''), 'kkiapay')
-            })
-            w.addKkiapayListener('failed', () => {
-                setError(t('Le paiement a échoué ou a été refusé.'))
-                setSubmitting(false)
-            })
-        }
-        w.openKkiapayWidget({
+        // Un seul point d'entrée : succès, échec ET abandon sont traités.
+        // Sans le troisième, refermer la fenêtre laissait l'écran figé sur
+        // « paiement en cours » et la commande en attente.
+        ouvrirKkiapay({
             amount: serverAmountRef.current || amountXOF,
             position: 'center',
             key: isSandbox
@@ -104,6 +97,22 @@ export default function PermisBooking() {
             phone: form.phone || undefined,
             name: form.name || undefined,
             data: JSON.stringify({ order_id: oid }),
+        }, {
+            onSucces: (tx: string) => {
+                verifyAndFinish(orderIdRef.current, tx, 'kkiapay')
+            },
+            onEchec: () => {
+                setError(t('Le paiement a échoué ou a été refusé.'))
+                setSubmitting(false)
+            },
+            onAnnule: () => {
+            setError(t('Paiement annulé. Rien n’a été débité.'))
+            setSubmitting(false)
+            if (oid) fetch('/api/checkout/cancel', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: oid }),
+            }).catch(() => { })
+            },
         })
     }, [settings, form, amountXOF, verifyAndFinish, t])
 
