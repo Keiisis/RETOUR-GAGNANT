@@ -616,6 +616,14 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                 amount={String(totalTtc)}
                 serviceName={cart.map(c => c.product.title).join(', ')}
                 onClose={() => setShowPayment(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: t('Commande boutique'),
+                    montant: totalTtc,
+                    devise: 'XOF',
+                })}
                 onSuccess={handlePaymentSuccess}
             />
         </KeyboardAvoidingView>

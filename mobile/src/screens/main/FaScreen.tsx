@@ -235,16 +235,38 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     }),
                 }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
 
-                toast(t('Consultation réservée'), t('Votre paiement est confirmé. Notre équipe vous contactera pour fixer le rendez-vous. Une facture vous a été envoyée par email.'))
+                navigation.navigate('ResultatPaiement', {
+                    etat: 'succes',
+                    objet: t('Consultation Fa & Racines'),
+                    message: t('Notre équipe vous contactera pour fixer le rendez-vous. Une facture vous a été envoyée par email.'),
+                    reference: txId,
+                    actionLabel: t('Voir mes dossiers'),
+                    actionRoute: 'Main',
+                    actionParams: { screen: 'Dossier' },
+                })
             } else {
-                toast(t('Paiement reçu'), t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId)
+                // L'argent est parti mais rien n'est confirmé : le dire, et
+                // laisser la référence bien visible.
+                navigation.navigate('ResultatPaiement', {
+                    etat: 'echec',
+                    objet: t('Consultation Fa & Racines'),
+                    message: t('Votre paiement a été reçu par la passerelle mais notre confirmation a échoué. Conservez la référence ci-dessous et contactez-nous : nous régularisons.'),
+                    reference: txId,
+                    motif: String(data?.error || t('Vérification refusée')),
+                })
             }
         } catch {
-            toast(t('Paiement reçu'), t('Confirmation réseau échouée. Référence : ') + txId)
+            navigation.navigate('ResultatPaiement', {
+                etat: 'echec',
+                objet: t('Consultation Fa & Racines'),
+                message: t('Votre paiement a été reçu mais la confirmation n’a pas pu être transmise. Conservez la référence ci-dessous et contactez-nous.'),
+                reference: txId,
+                motif: t('Réseau interrompu après le paiement'),
+            })
         } finally {
             setPendingOrder(null)
         }
-    }, [pendingOrder, booking, mode, t])
+    }, [pendingOrder, booking, mode, navigation, t])
 
     const fromPrice = prices.presentiel || prices.visio || ''
 
@@ -555,6 +577,14 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                 amount={payAmount}
                 serviceName={t('Consultation Fa & Racines')}
                 onClose={() => setShowPay(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: t('Consultation Fa & Racines'),
+                    montant: Number(String(payAmount).replace(/\D/g, "")) || undefined,
+                    devise: 'XOF',
+                })}
                 onSuccess={onPaid}
             />
         </View>

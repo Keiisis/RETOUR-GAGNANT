@@ -363,18 +363,29 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             if (!res.ok) {
                 const msg = (json.error as string) || `Erreur ${res.status}`
                 if (res.status === 402) {
-                    toast(t('Paiement non confirmé'), t('Le paiement n\'a pas pu être vérifié auprès de Kkiapay. Si vous avez bien été débité, contactez le support avec la référence : ') + (transactionId || ''),)
+                    // Débité mais non vérifié : c'est un échec DÉCLARÉ, avec la
+                    // référence bien visible — pas un message qui s'efface.
+                    navigation.navigate('ResultatPaiement', {
+                        etat: 'echec',
+                        objet: title,
+                        message: t('Votre paiement n’a pas pu être vérifié auprès de la passerelle. Si vous avez été débité, conservez la référence ci-dessous et contactez-nous : nous régularisons.'),
+                        reference: transactionId || undefined,
+                        motif: t('Vérification refusée par la passerelle'),
+                    })
                     return
                 }
                 throw new Error(msg)
             }
 
-            toast(
-                t('Demande enregistrée'),
-                t(`Votre dossier pour "{title}" a été créé avec succès.\n\nNotre équipe vous contactera dans les 24 heures pour la suite.`, { title }),
-                'success',
-            )
-            navigation.navigate('Dossier')
+            navigation.navigate('ResultatPaiement', {
+                etat: 'succes',
+                objet: title,
+                message: t('Votre dossier est créé. Notre équipe vous contactera dans les 24 heures pour la suite.'),
+                reference: transactionId || undefined,
+                actionLabel: t('Voir mon dossier'),
+                actionRoute: 'Main',
+                actionParams: { screen: 'Dossier' },
+            })
         } catch (e: any) {
             const msg = e.message || t('Erreur lors de la création du dossier')
             toast(t('Erreur'), msg)
@@ -718,6 +729,14 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                 amount={price || 'Sur devis'}
                 serviceName={title}
                 onClose={() => setShowKkiapay(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: title,
+                    montant: undefined,
+                    devise: 'XOF',
+                })}
                 onSuccess={handlePaymentSuccess}
             />
         </View>
