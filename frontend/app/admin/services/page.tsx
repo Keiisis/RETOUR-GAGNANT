@@ -85,6 +85,7 @@ export default function AdminServicesPage() {
         if (service.slug === 'consultation-fa-racines') return '/admin/services/consultation-fa-racines/content'
         if (service.slug === 'langues-racines') return '/admin/services/langues-racines/content'
         if (service.slug === 'recherche-ancestrale') return '/admin/services/recherche-ancestrale/content'
+        if (service.slug === 'recap-myafroorigins') return '/admin/services/recap-myafroorigins/content'
         if (service.slug === 'autres') return '/admin/services/autres/content'
         return `/admin/services/edit/${service.id}`
     }
