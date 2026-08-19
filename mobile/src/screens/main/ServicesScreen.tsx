@@ -774,6 +774,10 @@ export default function ServicesScreen({ navigation }: any) {
         if (svc.id === 'recherche-ancestrale') { navigation.navigate('RechercheAncestrale'); return }
         if (svc.id === 'autres') { navigation.navigate('Autres'); return }
         if (svc.id === 'nationalite-vip') { navigation.navigate('NationaliteVip'); return }
+        // Récap MyAfroOrigins : écran dédié. La fiche générique proposait de
+        // payer 50 € SANS recueillir le consentement au traitement des données
+        // ni le récit de la situation — sans lequel l'analyse est impossible.
+        if (svc.id === 'recap-myafroorigins') { navigation.navigate('RecapMyafro'); return }
         navigation.navigate('ServiceDetails', {
             serviceId: svc.id,
             title: svc.title,
