@@ -735,14 +735,6 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                 amount={String(feeXof)}
                 serviceName="Frais de dossier Logement"
                 onClose={() => setShowPay(false)}
-                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
-                // sur un écran, pas dans un toast qui s'efface en trois secondes.
-                onCancel={() => navigation.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: t('Frais de dossier — Logement'),
-                    montant: feeXof,
-                    devise: 'XOF',
-                })}
                 onSuccess={onFeePaid}
             />
         </View>

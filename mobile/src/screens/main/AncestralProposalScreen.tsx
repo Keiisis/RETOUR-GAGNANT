@@ -255,14 +255,6 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                 amount={String(amountXof)}
                 serviceName="Recherche Ancestrale"
                 onClose={() => setShowKkiapay(false)}
-                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
-                // sur un écran, pas dans un toast qui s'efface en trois secondes.
-                onCancel={() => navigation.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: t('Recherche Ancestrale'),
-                    montant: amountXof,
-                    devise: 'XOF',
-                })}
                 onSuccess={onPaid}
             />
         </View>
