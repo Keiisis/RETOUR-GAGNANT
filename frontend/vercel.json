@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "master": false
+    }
+  },
   "buildCommand": "NODE_OPTIONS=--max-old-space-size=7168 next build --webpack",
   "build": {
     "env": {
