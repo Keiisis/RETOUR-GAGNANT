@@ -2,7 +2,7 @@
    Contenu fidèle au web (DEFAULT_CULTURE). */
 import React from 'react'
 import {
-    Compass, BookOpen, Map, Users, MapPin, Heart, Sparkles, Unlock,
+    Compass, BookOpen, Map, Users, MapPin, Heart, Unlock,
 } from 'lucide-react-native'
 import ServiceRdvLanding, { type RdvLandingContent } from '../../components/ServiceRdvLanding'
 
@@ -23,7 +23,7 @@ const CONTENT: RdvLandingContent = {
     piliers: [
         { icon: Heart, title: 'Immersion sincère', desc: 'Loin du tourisme de masse.' },
         { icon: BookOpen, title: 'Guide expert', desc: 'Historien passionné du Bénin.' },
-        { icon: Sparkles, title: 'Sur mesure', desc: 'Un programme pensé pour vous.' },
+        { icon: Compass, title: 'Sur mesure', desc: 'Un programme pensé pour vous.' },
         { icon: Users, title: 'Rencontres rares', desc: 'Dignitaires, rois, artisans.' },
     ],
     missionEyebrow: 'Notre métier',
@@ -70,7 +70,7 @@ const CONTENT: RdvLandingContent = {
     reassurance: [
         { icon: Unlock, title: 'Sans engagement', desc: 'Le premier échange est gratuit.' },
         { icon: BookOpen, title: 'Guide dédié', desc: 'Un historien passionné à vos côtés.' },
-        { icon: Sparkles, title: 'Sur mesure', desc: 'Un programme adapté à vos envies.' },
+        { icon: Compass, title: 'Sur mesure', desc: 'Un programme adapté à vos envies.' },
     ],
     faqEyebrow: 'Questions fréquentes',
     faq: [

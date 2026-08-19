@@ -116,7 +116,7 @@ async function refusPaiement(provider: string, txId: string, attenduXof: number 
 /** La fiche d'analyse. Elle décrit ce qui bloque, jamais une promesse de résultat. */
 async function genererRecap(d: Record<string, string>): Promise<string | null> {
     const systeme = [
-        'Tu es analyste de dossiers au cabinet Retour Gagnant Bénin. Tu rédiges la fiche',
+        'Tu es analyste de dossiers au agence Retour Gagnant Bénin. Tu rédiges la fiche',
         '« RÉCAP DE DOSSIER MYAFROORIGINS » remise à un afro-descendant dont la demande,',
         'déposée sur la plateforme MyAfroOrigins, n\'avance plus.',
         '',

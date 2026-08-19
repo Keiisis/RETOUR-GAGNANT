@@ -67,7 +67,7 @@ export const DEFAULT_BUSINESS: ServiceLandingContent = {
         { q: "Dois-je être présent au Bénin pour créer ma société ?", r: "Non. Nous réalisons les formalités pour vous et vous indiquons uniquement les étapes qui requièrent votre signature ou votre présence." },
         { q: "Quelle forme juridique choisir ?", r: "Cela dépend de votre activité, du nombre d'associés et de vos objectifs. Nous vous conseillons la structure la plus adaptée lors du premier échange." },
         { q: "Pouvez-vous ouvrir le compte bancaire professionnel ?", r: "Oui, nous accompagnons l'ouverture du compte pro et la constitution du dossier bancaire." },
-        { q: "Aidez-vous au recrutement local ?", r: "Oui. Notre cabinet sélectionne des talents locaux et vous met en relation avec des partenaires de confiance." },
+        { q: "Aidez-vous au recrutement local ?", r: "Oui. Notre agence sélectionne des talents locaux et vous met en relation avec des partenaires de confiance." },
     ],
 
     final_title: "Votre entreprise au Bénin, montée sur des bases solides.",

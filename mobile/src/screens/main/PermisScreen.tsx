@@ -293,7 +293,7 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                     {/* Notre métier */}
                     <Text style={styles.eyebrow}>{t('Notre métier')}</Text>
                     <Text style={styles.h2}>{t("L'échange ou l'obtention, sans files d'attente")}</Text>
-                    <Text style={styles.para}>{t("Le cabinet Retour Gagnant gère l'intégralité de votre dossier de conduite. Que vous soyez en phase d'installation ou simplement de passage, nous facilitons vos démarches auprès de l'ANATT pour vous garantir un titre authentique et légal.")}</Text>
+                    <Text style={styles.para}>{t("L’agence Retour Gagnant gère l'intégralité de votre dossier de conduite. Que vous soyez en phase d'installation ou simplement de passage, nous facilitons vos démarches auprès de l'ANATT pour vous garantir un titre authentique et légal.")}</Text>
 
                     {/* Étapes */}
                     <Text style={[styles.eyebrow, { marginTop: spacing.xxl }]}>{t('Les étapes')}</Text>

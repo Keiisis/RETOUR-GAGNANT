@@ -372,7 +372,7 @@ export default function RecapMyafroForm() {
                         <p className="text-[11px] font-bold uppercase tracking-widest text-[#1c1917]">{t('Protection de vos données')}</p>
                     </div>
                     <ul className="space-y-1.5 text-[12px] text-[#57534e] leading-relaxed mb-4">
-                        <li>· {t('Responsable du traitement : Cabinet Retour Gagnant Bénin.')}</li>
+                        <li>· {t('Responsable du traitement : Agence Retour Gagnant Bénin.')}</li>
                         <li>· {t('Finalité : analyser votre dossier et vous remettre votre fiche. Rien d’autre.')}</li>
                         <li>· {t('Destinataires : nos analystes uniquement. Aucune revente, aucun partage commercial.')}</li>
                         <li>· {t('Conservation : 3 ans, puis effacement.')}</li>

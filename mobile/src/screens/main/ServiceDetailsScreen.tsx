@@ -8,7 +8,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ArrowLeft, Calendar, Check, Clock, CreditCard, Star, Tag, Users,
-    Sparkles, ShieldCheck, Award, ChevronRight, Zap, FileText, Send,
+    BadgeCheck, ShieldCheck, Award, ChevronRight, Zap, FileText, Send,
 } from 'lucide-react-native'
 import { LucideIcon } from '../../components/Icon'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -456,7 +456,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     <View style={styles.piliersBand}>
                         {landing.piliers.slice(0, 4).map((p, i) => (
                             <View key={i} style={styles.pilier}>
-                                <Sparkles size={18} color={C.accent} strokeWidth={2} />
+                                <BadgeCheck size={18} color={C.accent} strokeWidth={2} />
                                 <Text style={styles.pilierTitle}>{t(p.title)}</Text>
                                 <Text style={styles.pilierDesc}>{t(p.desc)}</Text>
                             </View>
@@ -513,7 +513,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                             <View style={styles.vipCard}>
                                 <View style={styles.vipHeader}>
                                     <View style={styles.vipBadgeIcon}>
-                                        <Sparkles size={14} color={C.primaryText} strokeWidth={2.4} />
+                                        <BadgeCheck size={14} color={C.primaryText} strokeWidth={2.4} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.vipTitle}>{t('Pack VIP Retour Gagnant')}</Text>
@@ -690,7 +690,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                                 </InteractiveButton>
 
                                 <View style={styles.ctaFreeRow}>
-                                    <Sparkles size={12} color={C.primary} fill={C.accentDark} strokeWidth={0} />
+                                    <BadgeCheck size={12} color={C.primary} fill={C.accentDark} strokeWidth={0} />
                                     <Text style={styles.ctaFreeNote}>{t('Premier appel de 15 min gratuit')}</Text>
                                 </View>
                             </View>

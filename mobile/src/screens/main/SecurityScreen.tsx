@@ -11,7 +11,9 @@ import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, withRepeat,
     withSequence, withDelay, withSpring, interpolate, Easing,
 } from 'react-native-reanimated'
-import { ArrowLeft, Lock, LogOut, ShieldCheck, KeyRound, Sparkles, Eye, EyeOff, Check, X, Fingerprint } from 'lucide-react-native'
+import {
+    ArrowLeft, Lock, LogOut, ShieldCheck, KeyRound, Eye, EyeOff, Check, X, Fingerprint,
+} from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
@@ -99,7 +101,7 @@ function SecurityHero({ score, t }: { score: number; t: (s: string) => string })
                 {/* chip top */}
                 <View style={hero.topRow}>
                     <View style={hero.chip}>
-                        <Sparkles size={11} color={C.primary} strokeWidth={2} />
+                        <ShieldCheck size={11} color={C.primary} strokeWidth={2} />
                         <Text style={hero.chipText}>{t('PROTECTION PREMIUM')}</Text>
                     </View>
                     <View style={[hero.levelChip, { borderColor: levelColor + '60' }]}>

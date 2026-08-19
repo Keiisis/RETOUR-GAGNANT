@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 import {
     ChevronLeft, ChevronRight, Lock, Calendar, Users, Bed, UtensilsCrossed,
-    Camera, Car, Sparkles, ShieldCheck, ArrowUpRight, User, Mail, Phone,
+    Camera, Car, MapPinned, ShieldCheck, ArrowUpRight, User, Mail, Phone,
     Smartphone, CreditCard, Wallet, X, Check, AlertCircle, RotateCw,
     Headphones, FileText, ArrowLeft, UserCheck,
 } from 'lucide-react-native'
@@ -82,7 +82,7 @@ const ICONES: Record<string, typeof Bed> = {
     hotel: Bed, hebergement: Bed, restaurant: UtensilsCrossed,
     activity: Camera, activite: Camera, transport: Car,
 }
-const iconeDe = (t: string | null) => ICONES[String(t || '').toLowerCase()] || Sparkles
+const iconeDe = (t: string | null) => ICONES[String(t || '').toLowerCase()] || MapPinned
 
 const somme = (v: number | null | undefined) => (typeof v === 'number' && v > 0 ? v : 0)
 
@@ -593,7 +593,7 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                             <Headphones size={16} color={C.primary} strokeWidth={2.2} />
                         </View>
                         <Text style={styles.carteGriseText}>
-                            {t('Besoin d’aide ? Le cabinet reste joignable au ')}
+                            {t('Besoin d’aide ? L’agence reste joignable au ')}
                             <Text style={styles.gras}>{AGENCE_TEL}</Text>
                             {t(' ou par la messagerie de l’application.')}
                         </Text>

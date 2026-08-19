@@ -14,8 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import {
-    ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, Sparkles,
-    GitBranch, Plus,
+    ArrowLeft, User, MapPin, Calendar, TreePine, Info, X, ChevronRight, GitBranch, Plus,
 } from 'lucide-react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import { Download } from 'lucide-react-native'
@@ -254,7 +253,7 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
                     </View>
 
                     <View style={styles.stat}>
-                        <Sparkles size={16} color={C.primary} />
+                        <GitBranch size={16} color={C.primary} />
                         <Text style={styles.statText}>
                             {persons.length} {persons.length > 1 ? t('membres identifiés') : t('membre identifié')}{tree.name ? ` · ${tree.name}` : ''}
                         </Text>

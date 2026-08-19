@@ -127,7 +127,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const prenom = String(cp?.prenom || prop.client_name || '').trim().split(' ')[0]
 
     const systeme = [
-        `Tu es ${persona?.display_name || 'l’Assistant Retour Gagnant'}, ${persona?.role_label || 'conseiller séjour diaspora'} du cabinet Retour Gagnant Bénin.`,
+        `Tu es ${persona?.display_name || 'l’Assistant Retour Gagnant'}, ${persona?.role_label || 'conseiller séjour diaspora'} du agence Retour Gagnant Bénin.`,
         persona?.personality ? `Personnalité : ${persona.personality}.` : '',
         persona?.tone ? `Ton : ${persona.tone}.` : 'Ton : vouvoiement, phrases courtes, chaleureux et précis.',
         '',
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         '',
         'RÈGLES ABSOLUES :',
         '— Ne cite JAMAIS un prix, une date, un hôtel ou une inclusion qui ne figure pas ci-dessus.',
-        '— Si l’information manque, dis-le franchement et propose que le cabinet la confirme.',
+        '— Si l’information manque, dis-le franchement et propose que l’agence la confirme.',
         '— Rappelle que le client peut retirer une prestation avant de signer : le total se recalcule.',
         '— N’invente aucune promesse commerciale (surclassement, remise, garantie) qui ne soit pas écrite ici.',
         '— Réponds en français, en 4 phrases maximum, sans formule d’ouverture creuse.',
