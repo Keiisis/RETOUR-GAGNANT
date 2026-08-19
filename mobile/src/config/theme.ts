@@ -8,7 +8,7 @@
    Principe : LE BLANC EST LA FORCE.
    Fonds blancs francs, respiration large, aucune surface sombre en fond de
    page. L'identité vient du drapeau béninois, exactement comme sur les
-   factures officielles et la grille tarifaire du cabinet :
+   factures officielles et la grille tarifaire de l'agence :
      · vert  #008751 → toute action (boutons, liens, coches, progression)
      · jaune #FCD116 → accent premium (badges, filets)
      · rouge #E8112D → uniquement alertes et suppressions

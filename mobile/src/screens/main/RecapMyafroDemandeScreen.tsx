@@ -70,7 +70,7 @@ const LIVRABLE = [
     { Icone: FileSearch, titre: 'Votre situation, reformulée', desc: 'Ce que nous avons compris, écrit noir sur blanc. Vous corrigez si nous nous trompons.' },
     { Icone: AlertTriangle, titre: 'Ce qui bloque', desc: 'Par ordre de gravité : la plateforme, vos pièces, ou l’état civil béninois.' },
     { Icone: ListOrdered, titre: 'Les pièces à réunir', desc: 'La liste exacte, dans l’ordre où les obtenir.' },
-    { Icone: HandHeart, titre: 'La marche à suivre', desc: 'Étape par étape, et ce que le cabinet prend en charge.' },
+    { Icone: HandHeart, titre: 'La marche à suivre', desc: 'Étape par étape, et ce que l’agence prend en charge.' },
 ]
 
 const poids = (o: number | null) => {
@@ -337,7 +337,7 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                                 <Text style={styles.rgpdTitre}>{t('Protection de vos données')}</Text>
                             </View>
                             {[
-                                'Responsable : Cabinet Retour Gagnant Bénin.',
+                                'Responsable : Agence Retour Gagnant Bénin.',
                                 'Finalité : analyser votre dossier et vous remettre votre fiche.',
                                 'Destinataires : nos analystes uniquement. Aucune revente.',
                                 'Conservation : 3 ans, puis effacement.',

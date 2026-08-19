@@ -2,7 +2,7 @@
    Fidèle à la maquette Sleek complète (détail des services en cartes). */
 import React from 'react'
 import {
-    Sparkles, Car, Stethoscope, GraduationCap, FileText, Plane, HeartPulse,
+    LayoutGrid, Car, Stethoscope, GraduationCap, FileText, Plane, HeartPulse,
     BookOpen, ClipboardCheck, ShieldCheck, Settings2, PhoneCall,
 } from 'lucide-react-native'
 import ServiceRdvLanding, { type RdvLandingContent } from '../../components/ServiceRdvLanding'
@@ -10,7 +10,7 @@ import ServiceRdvLanding, { type RdvLandingContent } from '../../components/Serv
 const CONTENT: RdvLandingContent = {
     serviceLabel: 'Autres Services',
     shareMessage: 'Transport, santé, scolarité, démarches : le quotidien facilité au Bénin avec Retour Gagnant : https://www.retourgagnantbenin.bj/services/autres',
-    heroIcon: Sparkles,
+    heroIcon: LayoutGrid,
     badge: 'Services du quotidien',
     title: 'Transport, santé, scolarité : le quotidien facilité au Bénin',
     subtitle: "Parce que réussir son retour, c'est aussi s'assurer une vie quotidienne sereine pour soi et sa famille dès le premier jour.",

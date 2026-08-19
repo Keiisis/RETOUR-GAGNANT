@@ -57,6 +57,12 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     // Configuration du widget : `null` tant qu'aucun paiement n'est lancé.
     const [config, setConfig] = useState<ConfigKkiapay | null>(null)
 
+    /* Moyen choisi. Les deux passent par la même passerelle — c'est elle qui
+       présente ensuite le formulaire correspondant. Le choix n'est donc pas
+       décoratif : il dit à la passerelle par quoi commencer, et il rassure le
+       client qui cherche « carte bancaire » et ne voit que « Mobile Money ». */
+    const [moyen, setMoyen] = useState<'momo' | 'carte'>('momo')
+
     /* Les retours de l'écran appelant sont lus via des références : le widget
        peut conclure longtemps après le rendu qui l'a ouvert. */
     const onSuccessRef = useRef(onSuccess)
@@ -142,6 +148,12 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
             email: profile?.email || '',
             phone: profile?.phone || '',
             reason: serviceName || t('Paiement de service'),
+            /* ⚠️ On n'envoie PAS `paymentmethod`. Le widget attend un tableau et
+               rejette la configuration — « paramètres invalides » — comme
+               constaté sur le web (voir les trois pages de paiement, où le
+               champ est explicitement écarté pour cette raison). Le choix
+               ci-dessus reste utile : il dit au client que la carte est
+               acceptée, et la passerelle lui présente les deux onglets. */
         })
         setLoading(false)
     }, [kkiapayKey, montant, profile, sandbox, serviceName, t])
@@ -178,35 +190,56 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                     <Text style={styles.recapMontant}>{montantLisible}</Text>
                 </View>
 
-                {/* Un seul moyen est actif dans l'application : Mobile Money et
-                    carte passent par la même passerelle. On ne feint donc pas
-                    un choix qui n'existe pas — on dit ce qui est accepté. */}
                 <View style={styles.moyens}>
-                    <View style={[styles.moyen, styles.moyenActif]}>
-                        <View style={[styles.tuile, styles.tuileActive]}>
-                            <Smartphone size={22} color={C.primary} strokeWidth={2.2} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <View style={styles.moyenTitreLigne}>
-                                <Text style={styles.moyenTitre}>{t('Mobile Money')}</Text>
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>{t('Recommandé au Bénin')}</Text>
+                    {([
+                        {
+                            cle: 'momo' as const,
+                            Icone: Smartphone,
+                            titre: 'Mobile Money',
+                            sous: 'MTN MoMo · Moov Money · Celtiis',
+                            recommande: true,
+                        },
+                        {
+                            cle: 'carte' as const,
+                            Icone: CreditCard,
+                            titre: 'Carte bancaire',
+                            sous: 'Visa · Mastercard — l’onglet carte s’ouvre dans la fenêtre de paiement',
+                            recommande: false,
+                        },
+                    ]).map(m => {
+                        const actif = moyen === m.cle
+                        return (
+                            <Pressable
+                                key={m.cle}
+                                onPress={() => setMoyen(m.cle)}
+                                style={({ pressed }) => [
+                                    styles.moyen, actif && styles.moyenActif,
+                                    pressed && { transform: [{ scale: 0.99 }] },
+                                ]}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: actif }}
+                                accessibilityLabel={t(m.titre)}
+                            >
+                                <View style={[styles.tuile, actif && styles.tuileActive]}>
+                                    <m.Icone size={22} color={actif ? C.primary : C.textSec} strokeWidth={2.2} />
                                 </View>
-                            </View>
-                            <Text style={styles.moyenSous}>{t('MTN MoMo · Moov Money · Celtiis')}</Text>
-                        </View>
-                        <View style={styles.radioActif}><View style={styles.radioPoint} /></View>
-                    </View>
-
-                    <View style={styles.moyen}>
-                        <View style={styles.tuile}>
-                            <CreditCard size={22} color={C.textSec} strokeWidth={2.2} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.moyenTitre}>{t('Carte bancaire')}</Text>
-                            <Text style={styles.moyenSous}>{t('Visa · Mastercard, dans la même fenêtre')}</Text>
-                        </View>
-                    </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={styles.moyenTitreLigne}>
+                                        <Text style={styles.moyenTitre}>{t(m.titre)}</Text>
+                                        {m.recommande && (
+                                            <View style={styles.badge}>
+                                                <Text style={styles.badgeText}>{t('Recommandé au Bénin')}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={styles.moyenSous}>{t(m.sous)}</Text>
+                                </View>
+                                <View style={[styles.radio, actif && styles.radioActif]}>
+                                    {actif && <View style={styles.radioPoint} />}
+                                </View>
+                            </Pressable>
+                        )
+                    })}
                 </View>
 
                 <View style={styles.rassurance}>
@@ -295,7 +328,8 @@ const styles = StyleSheet.create({
     moyenSous: { fontFamily: fonts.body, fontSize: 11.5, color: C.textSec, marginTop: 3 },
     badge: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
     badgeText: { fontFamily: fonts.bold, fontSize: 8.5, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
-    radioActif: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
+    radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: C.borderStrong, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+    radioActif: { borderColor: C.primary, backgroundColor: C.primary },
     radioPoint: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#FFFFFF' },
 
     rassurance: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },

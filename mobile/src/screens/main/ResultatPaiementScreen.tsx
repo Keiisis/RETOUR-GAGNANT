@@ -223,7 +223,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                             <Headphones size={16} color={C.primary} strokeWidth={2.2} />
                         </View>
                         <Text style={styles.blocTexte}>
-                            {t('Besoin d’aide ? Le cabinet reste joignable au ')}
+                            {t('Besoin d’aide ? L’agence reste joignable au ')}
                             <Text style={styles.gras}>{AGENCE_TEL}</Text>
                             {t(' ou par la messagerie de l’application.')}
                         </Text>

@@ -46,7 +46,7 @@ const CONTENT: RdvLandingContent = {
     etapes: [
         { num: '01', title: 'Vous racontez', desc: "Quand vous avez déposé, ce que vous avez fourni, ce qu'on vous a répondu. En quelques lignes, avec vos mots." },
         { num: '02', title: 'Nous analysons', desc: "Un analyste reprend votre récit et le confronte à la loi n° 2024-31 et à la pratique des administrations béninoises." },
-        { num: '03', title: 'Vous recevez votre fiche', desc: "Sous 48 heures ouvrées : blocages, pièces à réunir, marche à suivre, et ce que le cabinet prend en charge ensuite." },
+        { num: '03', title: 'Vous recevez votre fiche', desc: "Sous 48 heures ouvrées : blocages, pièces à réunir, marche à suivre, et ce que l’agence prend en charge ensuite." },
     ],
 
     contrastEyebrow: 'La différence',
@@ -60,12 +60,12 @@ const CONTENT: RdvLandingContent = {
         'On vous réclame des pièces sans dire lesquelles manquent',
         'Vous relancez au hasard, sans savoir quoi demander',
     ],
-    avecTitle: 'Avec le cabinet',
+    avecTitle: 'Avec l’agence',
     avec: [
         'Un état des lieux écrit de votre dossier',
         'Les blocages nommés, hiérarchisés, expliqués',
         "La liste exacte des pièces, dans l'ordre où les obtenir",
-        'Un cabinet qui prend le relais si vous le souhaitez',
+        'Une agence qui prend le relais si vous le souhaitez',
     ],
 
     prestaEyebrow: 'Ce que contient votre fiche',
@@ -76,7 +76,7 @@ const CONTENT: RdvLandingContent = {
         "Ce qui relève de la plateforme, de vos pièces, ou de l'état civil",
         'La liste des documents à réunir, dans le bon ordre',
         'La marche à suivre, étape par étape',
-        'Ce que le cabinet peut prendre en charge à votre place',
+        'Ce que l’agence peut prendre en charge à votre place',
     ],
     prestaNote: "Aucune pièce d'identité n'est demandée à cette étape. Elles ne le seront que si l'analyse montre qu'elles sont nécessaires.",
 

@@ -20,7 +20,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-    ChevronLeft, MapPin, CalendarDays, Users, Sparkles, Check,
+    ChevronLeft, MapPin, CalendarDays, Users, MapPinned, Check,
     ArrowRight, CircleCheck, Compass,
 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
@@ -339,7 +339,7 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                 {chapitre === 2 && (
                     <Animated.View entering={FadeInUp.duration(320)}>
                         <View style={styles.badge}>
-                            <Sparkles size={13} color={C.primary} strokeWidth={2.2} />
+                            <MapPinned size={13} color={C.primary} strokeWidth={2.2} />
                             <Text style={styles.badgeText}>{t('Vos envies')}</Text>
                         </View>
                         <Text style={styles.h1}>{t('Que voulez-vous vivre ?')}</Text>

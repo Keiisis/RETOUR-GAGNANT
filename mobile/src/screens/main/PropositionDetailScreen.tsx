@@ -30,7 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 import {
     ChevronLeft, Share2, Check, MapPin, CalendarDays, Bed, UtensilsCrossed,
-    Camera, Car, Sparkles, PenLine, CreditCard, CircleCheck, ArrowRight,
+    Camera, Car, MapPinned, PenLine, CreditCard, CircleCheck, ArrowRight,
     ArrowLeft, ShieldCheck, Clock4, Plus, Minus, Compass, MessageCircle, Lock,
     Users, Send, X, Bot,
 } from 'lucide-react-native'
@@ -105,7 +105,7 @@ const FAMILLES: Record<string, { l: string; Icone: typeof Bed }> = {
     activite: { l: 'Activité', Icone: Camera },
     transport: { l: 'Transport', Icone: Car },
 }
-const familleDe = (t: string | null) => FAMILLES[String(t || '').toLowerCase()] || { l: 'Expérience', Icone: Sparkles }
+const familleDe = (t: string | null) => FAMILLES[String(t || '').toLowerCase()] || { l: 'Expérience', Icone: MapPinned }
 
 const somme = (v: number | null | undefined) => (typeof v === 'number' && v > 0 ? v : 0)
 
@@ -620,7 +620,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                     <Animated.View entering={FadeInDown.delay(310).duration(450)} style={styles.videCarte}>
                         <View style={styles.videCarteEntete}>
                             <View style={styles.motTuile}>
-                                <Sparkles size={18} color={C.primary} strokeWidth={2.2} />
+                                <MapPinned size={18} color={C.primary} strokeWidth={2.2} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.motTitre}>{titreSejour}</Text>
@@ -655,7 +655,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
 
                 <View style={[styles.piedSignature, { paddingBottom: insets.bottom + 12 }]}>
                     <Text style={styles.piedSignatureText}>
-                        {t('Cabinet Retour Gagnant Bénin · Accompagnement diaspora')}
+                        {t('Agence Retour Gagnant Bénin · Accompagnement diaspora')}
                     </Text>
                 </View>
             </View>
@@ -687,7 +687,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                             <Image source={{ uri: photoIntro }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                             {!!duree && (
                                 <View style={styles.introPastille}>
-                                    <Sparkles size={14} color={C.primary} strokeWidth={2.2} />
+                                    <MapPinned size={14} color={C.primary} strokeWidth={2.2} />
                                     <Text style={styles.introPastilleText}>
                                         {t('Séjour {j} jours / {n} nuits', { j: duree.jours, n: duree.nuits })}
                                     </Text>

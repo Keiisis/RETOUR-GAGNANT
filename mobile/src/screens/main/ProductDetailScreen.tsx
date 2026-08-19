@@ -35,7 +35,7 @@ import {
     ChevronRight,
     ShieldCheck,
     Truck,
-    Sparkles,
+    BadgeCheck,
     Heart,
     Share2,
     Check,
@@ -298,7 +298,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                                 end={{ x: 1, y: 1 }}
                                 style={styles.featuredBadge}
                             >
-                                <Sparkles size={11} color={C.primaryDeep} strokeWidth={2.2} />
+                                <BadgeCheck size={11} color={C.primaryDeep} strokeWidth={2.2} />
                                 <Text style={styles.featuredText}>{t('Coup de cœur')}</Text>
                             </LinearGradient>
                         )}
