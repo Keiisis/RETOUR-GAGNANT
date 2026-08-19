@@ -106,10 +106,28 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                 }),
             }).catch(() => { /* non bloquant */ })
 
-            toast(t('Recherche lancée'), t('Votre recherche ancestrale est ouverte. Notre équipe vous contactera par messagerie pour affiner les informations.'))
+            navigation.navigate('ResultatPaiement', {
+                etat: 'succes',
+                objet: t('Recherche Ancestrale'),
+                message: t('Votre recherche est ouverte. Notre équipe vous contactera par messagerie pour affiner les informations.'),
+                reference: transactionId,
+                montant: amountXof,
+                devise: 'XOF',
+                actionLabel: t('Voir mes dossiers'),
+                actionRoute: 'Main',
+                actionParams: { screen: 'Dossier' },
+            })
             goHome()
         } catch {
-            toast(t('Erreur'), t('Le paiement a réussi mais une étape a échoué. Notre équipe régularisera votre dossier.'))
+            navigation.navigate('ResultatPaiement', {
+                etat: 'echec',
+                objet: t('Recherche Ancestrale'),
+                message: t('Votre paiement a été reçu mais l’ouverture du dossier a échoué. Conservez la référence ci-dessous : notre équipe régularise.'),
+                reference: transactionId,
+                montant: amountXof,
+                devise: 'XOF',
+                motif: t('Ouverture du dossier interrompue'),
+            })
             goHome()
         } finally {
             setLoading(false)
@@ -237,6 +255,14 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                 amount={String(amountXof)}
                 serviceName="Recherche Ancestrale"
                 onClose={() => setShowKkiapay(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: t('Recherche Ancestrale'),
+                    montant: amountXof,
+                    devise: 'XOF',
+                })}
                 onSuccess={onPaid}
             />
         </View>

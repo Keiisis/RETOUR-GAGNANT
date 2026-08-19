@@ -50,6 +50,8 @@ import TicketsScreen from '../screens/main/TicketsScreen'
 import SejourRequestScreen from '../screens/main/SejourRequestScreen'
 import MesPropositionsScreen from '../screens/main/MesPropositionsScreen'
 import RecapMyafroScreen from '../screens/main/RecapMyafroScreen'
+import ResultatPaiementScreen from '../screens/main/ResultatPaiementScreen'
+import type { ParamsResultatPaiement } from '../screens/main/ResultatPaiementScreen'
 import PropositionDetailScreen from '../screens/main/PropositionDetailScreen'
 import SignatureDevisScreen from '../screens/main/SignatureDevisScreen'
 import DevisPaiementScreen from '../screens/main/DevisPaiementScreen'
@@ -139,6 +141,8 @@ export type RootStackParamList = {
     SejourRequest: undefined
     MesPropositions: undefined
     RecapMyafro: undefined
+    // Résultat de paiement, commun à tous les services (succès/échec/annulé).
+    ResultatPaiement: ParamsResultatPaiement
     PropositionDetail: { proposalId: string }
     SignatureDevis: { proposalId: string; secretKey?: string; selection?: string[] }
     DevisPaiement: { secretKey?: string; proposalId?: string; selection?: string[] }
@@ -377,6 +381,11 @@ export default function AppNavigator() {
                         <Stack.Screen name="SejourRequest" component={SejourRequestScreen} />
                         <Stack.Screen name="MesPropositions" component={MesPropositionsScreen} />
                         <Stack.Screen name="RecapMyafro" component={RecapMyafroScreen} />
+                        <Stack.Screen
+                            name="ResultatPaiement"
+                            component={ResultatPaiementScreen}
+                            options={{ gestureEnabled: false }}
+                        />
                         <Stack.Screen name="PropositionDetail" component={PropositionDetailScreen} />
                         <Stack.Screen name="SignatureDevis" component={SignatureDevisScreen} />
                         <Stack.Screen name="DevisPaiement" component={DevisPaiementScreen} />

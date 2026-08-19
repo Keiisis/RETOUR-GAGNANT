@@ -824,6 +824,14 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 amount={String(pendingRegistration?.amount || selectedPrice)}
                 serviceName={`${event.title} : ${selectedTicket === 'vip' ? 'VIP' : 'Standard'}`}
                 onClose={() => setShowKkiapay(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: event.title,
+                    montant: Number(pendingRegistration?.amount || selectedPrice) || undefined,
+                    devise: 'XOF',
+                })}
                 onSuccess={handlePaymentSuccess}
             />
         </View>

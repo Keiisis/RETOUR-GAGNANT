@@ -199,16 +199,36 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                     }),
                 }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
 
-                toast(t('Inscription confirmée'), t('Paiement confirmé. Notre équipe vous contacte sous 24 h pour lancer votre dossier de permis et planifier votre formation. Reçu envoyé par email.'))
+                navigation.navigate('ResultatPaiement', {
+                    etat: 'succes',
+                    objet: t('Permis de Conduire Béninois'),
+                    message: t('Notre équipe vous contacte sous 24 h pour lancer votre dossier et planifier votre formation. Reçu envoyé par email.'),
+                    reference: txId,
+                    actionLabel: t('Voir mes dossiers'),
+                    actionRoute: 'Main',
+                    actionParams: { screen: 'Dossier' },
+                })
             } else {
-                toast(t('Paiement reçu'), t('Le paiement a été reçu mais la confirmation a échoué. Référence : ') + txId)
+                navigation.navigate('ResultatPaiement', {
+                    etat: 'echec',
+                    objet: t('Permis de Conduire Béninois'),
+                    message: t('Votre paiement a été reçu par la passerelle mais notre confirmation a échoué. Conservez la référence ci-dessous et contactez-nous : nous régularisons.'),
+                    reference: txId,
+                    motif: String(data?.error || t('Vérification refusée')),
+                })
             }
         } catch {
-            toast(t('Paiement reçu'), t('Confirmation réseau échouée. Référence : ') + txId)
+            navigation.navigate('ResultatPaiement', {
+                etat: 'echec',
+                objet: t('Permis de Conduire Béninois'),
+                message: t('Votre paiement a été reçu mais la confirmation n’a pas pu être transmise. Conservez la référence ci-dessous et contactez-nous.'),
+                reference: txId,
+                motif: t('Réseau interrompu après le paiement'),
+            })
         } finally {
             setPendingOrder(null)
         }
-    }, [pendingOrder, selected, schools, schoolId, t])
+    }, [pendingOrder, selected, schools, schoolId, navigation, t])
 
     const field = (name: string) => [styles.field, focused === name && styles.fieldFocused]
     const onShare = () => Share.share({ message: t('Permis de conduire béninois via Retour Gagnant : https://www.retourgagnantbenin.bj/services/permis-conduire') }).catch(() => {})
@@ -452,6 +472,14 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                 amount={payAmount}
                 serviceName={t('Permis de Conduire Béninois')}
                 onClose={() => setShowPay(false)}
+                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
+                // sur un écran, pas dans un toast qui s'efface en trois secondes.
+                onCancel={() => navigation.navigate('ResultatPaiement', {
+                    etat: 'annule',
+                    objet: t('Permis de Conduire Béninois'),
+                    montant: Number(String(payAmount).replace(/\D/g, "")) || undefined,
+                    devise: 'XOF',
+                })}
                 onSuccess={onPaid}
             />
         </View>
