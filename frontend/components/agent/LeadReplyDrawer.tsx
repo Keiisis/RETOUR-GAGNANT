@@ -69,7 +69,7 @@ export default function LeadReplyDrawer({ lead, onClose, onSent }: LeadReplyDraw
         setAiImproved(false)
 
         try {
-            const prompt = `Tu es un conseiller senior de Retour Gagnant Bénin, cabinet spécialisé dans l'accompagnement des ressortissants béninois de la diaspora. Tu dois améliorer ce message d'agent destiné au client ${clientName} (score d'éligibilité : ${lead.eligibility_score}%, service recommandé : «${lead.recommended_service}»).\n\nGardes un ton professionnel, chaleureux et rassurant. Enrichis le contenu, rends-le plus convaincant et personnalisé. Conserve exactement la même structure (formule de politesse, corps, signature). Réponds UNIQUEMENT avec le message amélioré, sans commentaire ni explication.\n\nMessage original :\n\n${body}`
+            const prompt = `Tu es un conseiller senior de Retour Gagnant Bénin, agence spécialisée dans l'accompagnement des ressortissants béninois de la diaspora. Tu dois améliorer ce message d'agent destiné au client ${clientName} (score d'éligibilité : ${lead.eligibility_score}%, service recommandé : «${lead.recommended_service}»).\n\nGardes un ton professionnel, chaleureux et rassurant. Enrichis le contenu, rends-le plus convaincant et personnalisé. Conserve exactement la même structure (formule de politesse, corps, signature). Réponds UNIQUEMENT avec le message amélioré, sans commentaire ni explication.\n\nMessage original :\n\n${body}`
 
             const res = await fetch('/api/chat', {
                 method: 'POST',

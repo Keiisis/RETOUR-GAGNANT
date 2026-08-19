@@ -105,7 +105,7 @@ export function generateFicheAnalysePdf(data: FicheAnalyseData): string {
         pdf.setDrawColor(...CO.line); pdf.setLineWidth(0.3)
         pdf.line(ML, PH - 14, PW - MR, PH - 14)
         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(...CO.inkFaint)
-        pdf.text('RGB - Cabinet & Agence specialisee', ML, PH - 9)
+        pdf.text('RGB - Agence specialisee', ML, PH - 9)
         pdf.text(`Page ${page}`, PW - MR, PH - 9, { align: 'right' })
     }
 

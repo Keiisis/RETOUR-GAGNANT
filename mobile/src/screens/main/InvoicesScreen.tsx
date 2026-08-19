@@ -1,9 +1,10 @@
 'use strict'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { telechargerDocument } from '../../lib/documents'
 import { toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, ActivityIndicator, Linking, Pressable, Dimensions,
+    RefreshControl, Platform, ActivityIndicator, Linking, Pressable, Dimensions, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LucideIcon } from '../../components/Icon'
@@ -26,7 +27,7 @@ import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
-import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
    InvoicesScreen : THEME "CORPORATE PREMIUM 2026"
@@ -346,11 +347,29 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
         day: '2-digit', month: 'short', year: 'numeric',
     })
 
-    const openInvoice = (inv: Invoice) => {
-        const url = inv.pdf_url || `${API_BASE}/api/invoices/${inv.id}`
-        Linking.openURL(url).catch(() => {
-            toast(t('Erreur'), t("Impossible d'ouvrir la facture."))
-        })
+    /* La facture s'ouvre DANS l'application, en fiche native. Auparavant on
+       envoyait le client dans son navigateur, sur une page web où il n'était
+       même pas connecté. */
+    const [ouverte, setOuverte] = useState<Invoice | null>(null)
+    const [telechargement, setTelechargement] = useState(false)
+
+    const openInvoice = (inv: Invoice) => setOuverte(inv)
+
+    /* Téléchargement : un VRAI PDF, produit par le générateur officiel de
+       l'agence, remis au système (« Enregistrer », « Envoyer »). */
+    const telecharger = async (inv: Invoice) => {
+        setTelechargement(true)
+        try {
+            const r = await telechargerDocument(
+                `${API_BASE}/api/mobile/invoices/${inv.id}/pdf`,
+                `Facture-${inv.invoice_ref || inv.id}`,
+            )
+            if (!r.ok) {
+                toast(t('Téléchargement impossible'), r.erreur || t('Réessayez dans un instant.'))
+            } else if (!r.partage) {
+                toast(t('Facture enregistrée'), t('Le document est sur votre téléphone.'))
+            }
+        } finally { setTelechargement(false) }
     }
 
     /* ── Stats financières calculées ── */
@@ -610,9 +629,105 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     ) : null
                 }
             />
+
+            {/* ── Fiche de facture, en natif ──────────────────────────
+                Le client voit son document dans l'application : émetteur,
+                lignes, total, statut. Le PDF officiel reste à un geste. */}
+            <Modal visible={!!ouverte} animationType="slide" onRequestClose={() => setOuverte(null)}>
+                {!!ouverte && (
+                    <View style={styles.container}>
+                        <View style={{ paddingTop: insets.top }}><FlagBar height={6} radiusTop={false} /></View>
+
+                        <View style={ficheStyles.entete}>
+                            <Pressable onPress={() => setOuverte(null)} style={ficheStyles.rond} hitSlop={10}
+                                accessibilityRole="button" accessibilityLabel={t('Fermer')}>
+                                <LucideIcon name="close-outline" size={20} color={C.text} />
+                            </Pressable>
+                            <Text style={ficheStyles.enteteTitre}>{t('Facture')}</Text>
+                            <View style={{ width: 40 }} />
+                        </View>
+
+                        <ScrollView contentContainerStyle={ficheStyles.corps} showsVerticalScrollIndicator={false}>
+                            <Text style={ficheStyles.ref}>{ouverte.invoice_ref || ouverte.id}</Text>
+                            <Text style={ficheStyles.montant}>
+                                {formatPrice(ouverte.amount, ouverte.currency)}
+                            </Text>
+                            <View style={[ficheStyles.statut, (ouverte.paid_at || ouverte.status === 'payee') && ficheStyles.statutPaye]}>
+                                <Text style={[ficheStyles.statutText, (ouverte.paid_at || ouverte.status === 'payee') && ficheStyles.statutTextPaye]}>
+                                    {ouverte.paid_at || ouverte.status === 'payee' ? t('Payée') : t('En attente de règlement')}
+                                </Text>
+                            </View>
+
+                            <View style={ficheStyles.carte}>
+                                {[
+                                    [t('Émise le'), formatDate(ouverte.issued_at)],
+                                    [t('Réglée le'), ouverte.paid_at ? formatDate(ouverte.paid_at) : '—'],
+                                    [t('Client'), ouverte.customer_name || '—'],
+                                    [t('Objet'), ouverte.description || '—'],
+                                ].map(([k, v]) => (
+                                    <View key={k} style={ficheStyles.ligne}>
+                                        <Text style={ficheStyles.ligneLabel}>{k}</Text>
+                                        <Text style={ficheStyles.ligneValeur} numberOfLines={2}>{v}</Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <Text style={ficheStyles.note}>
+                                {t('Le document officiel porte l’en-tête de l’agence et vaut justificatif comptable.')}
+                            </Text>
+                        </ScrollView>
+
+                        <View style={[ficheStyles.bas, { paddingBottom: insets.bottom + 16 }]}>
+                            <Pressable
+                                onPress={() => telecharger(ouverte)}
+                                disabled={telechargement}
+                                style={({ pressed }) => [
+                                    ficheStyles.cta,
+                                    telechargement && { opacity: 0.5 },
+                                    pressed && !telechargement && { transform: [{ scale: 0.98 }] },
+                                ]}
+                                accessibilityRole="button"
+                            >
+                                {telechargement ? (
+                                    <ActivityIndicator color="#FFFFFF" size="small" />
+                                ) : (
+                                    <>
+                                        <LucideIcon name="download-outline" size={17} color="#FFFFFF" />
+                                        <Text style={ficheStyles.ctaText}>{t('Télécharger le PDF')}</Text>
+                                    </>
+                                )}
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
+            </Modal>
         </View>
     )
 }
+
+const ficheStyles = StyleSheet.create({
+    entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
+    enteteTitre: { flex: 1, textAlign: 'center', fontFamily: fonts.bold, fontSize: 15, color: C.text },
+    rond: { width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+
+    corps: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 24, alignItems: 'center' },
+    ref: { fontFamily: fonts.bold, fontSize: 12, color: C.textMuted, letterSpacing: 0.6 },
+    montant: { fontFamily: fonts.extrabold, fontSize: 30, color: '#00643C', marginTop: 8 },
+    statut: { marginTop: 12, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: C.surfaceAlt },
+    statutPaye: { backgroundColor: C.primarySoft },
+    statutText: { fontFamily: fonts.bold, fontSize: 11, color: C.textSec, letterSpacing: 0.6, textTransform: 'uppercase' },
+    statutTextPaye: { color: C.primary },
+
+    carte: { width: '100%', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, marginTop: 22 },
+    ligne: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border },
+    ligneLabel: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted },
+    ligneValeur: { flex: 1, textAlign: 'right', fontFamily: fonts.bodySemibold, fontSize: 12.5, color: C.text },
+    note: { fontFamily: fonts.body, fontSize: 11, lineHeight: 16, color: C.textMuted, textAlign: 'center', marginTop: 18 },
+
+    bas: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface },
+    cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 15 },
+    ctaText: { fontFamily: fonts.bold, fontSize: 13.5, color: '#FFFFFF' },
+})
 
 /* ═══════════════════════════════════════════════════════════
    STYLES

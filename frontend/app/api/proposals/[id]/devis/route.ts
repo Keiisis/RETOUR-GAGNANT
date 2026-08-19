@@ -10,7 +10,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
    DEVIS D'UNE PROPOSITION SMART SLIDES
 
    Avant : un générateur PDF maison, différent du devis/facture officiel
-   du cabinet → mise en page incohérente. Désormais on réutilise
+   de l'agence → mise en page incohérente. Désormais on réutilise
    EXACTEMENT le générateur officiel `generateInvoicePdf` (mode 'devis'),
    celui du dashboard Agent/Admin. Un seul document, une seule identité.
 

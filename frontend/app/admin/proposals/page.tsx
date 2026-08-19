@@ -229,7 +229,7 @@ export default function AdminProposalsPage() {
     const totalSelected = getSelectedItems().length
 
     // Stats : chaque devis peut être libellé dans une devise différente. On
-    // ramène chaque montant en XOF (devise de reporting du cabinet) avant de
+    // ramène chaque montant en XOF (devise de reporting de l'agence) avant de
     // sommer : additionner des EUR et des FCFA en affichant « FCFA » était faux.
     const toXOF = (p: Proposal) => convertCurrency(p.total_amount || 0, (p.currency as CurrencyCode) || 'XOF', 'XOF')
     const totalRevenue = proposals.filter(p => p.status === 'paid').reduce((acc, p) => acc + toXOF(p), 0)
