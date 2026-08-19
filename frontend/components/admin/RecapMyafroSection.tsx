@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
     FileMagnifyingGlass, Clock, CheckCircle, Archive, User, Envelope,
-    Phone, CircleNotch, WarningCircle, FloppyDisk, Trash, X,
+    Phone, CircleNotch, WarningCircle, FloppyDisk, Trash, X, Paperclip, DeviceMobile, Globe,
 } from '@phosphor-icons/react'
 
 interface Recap {
@@ -48,6 +48,21 @@ const STATUTS: Record<string, { label: string; classe: string; Icone: typeof Clo
     clos: { label: 'Clos', classe: 'text-gray-400 bg-white/5 border-white/10', Icone: Archive },
 }
 
+interface Piece {
+    id: string
+    file_name: string
+    file_type: string | null
+    file_size: number | null
+    status: string
+    source: string | null
+    created_at: string
+}
+
+const poids = (o: number | null) => {
+    const n = Number(o) || 0
+    return n > 1048576 ? `${(n / 1048576).toFixed(1)} Mo` : `${Math.round(n / 1024)} Ko`
+}
+
 const dateFr = (iso: string | null) => {
     if (!iso) return '—'
     try { return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
@@ -63,6 +78,10 @@ export default function RecapMyafroSection() {
     const [brouillon, setBrouillon] = useState('')
     const [notes, setNotes] = useState('')
     const [enregistre, setEnregistre] = useState(false)
+    // Les pièces déposées par le client pour CETTE demande — depuis le site ou
+    // depuis l'application. Elles vivent dans la fiche, pas dans une liste à part.
+    const [pieces, setPieces] = useState<Piece[]>([])
+    const [piecesChargees, setPiecesChargees] = useState(false)
 
     const charger = useCallback(async () => {
         setChargement(true); setErreur(''); setMigration(false)
@@ -81,10 +100,28 @@ export default function RecapMyafroSection() {
 
     useEffect(() => { charger() }, [charger])
 
-    const ouvrir = (d: Recap) => {
+    const ouvrir = async (d: Recap) => {
         setOuverte(d)
         setBrouillon(d.recap_ia || '')
         setNotes(d.notes_agent || '')
+        setPieces([]); setPiecesChargees(false)
+        try {
+            const res = await fetch(`/api/admin/myafro-recap/pieces?id=${encodeURIComponent(d.id)}`)
+            const json = await res.json().catch(() => ({}))
+            if (res.ok && Array.isArray(json.pieces)) setPieces(json.pieces)
+        } catch { /* la fiche reste lisible sans ses pièces */ }
+        finally { setPiecesChargees(true) }
+    }
+
+    /* Le coffre est privé : on demande une adresse signée, valable quelques
+       minutes, plutôt que d'exposer un lien permanent sur des pièces d'identité. */
+    const ouvrirPiece = async (pieceId: string) => {
+        try {
+            const res = await fetch(`/api/admin/myafro-recap/pieces?piece=${encodeURIComponent(pieceId)}`)
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.url) { alert(json.error || 'Ouverture impossible.'); return }
+            window.open(json.url, '_blank', 'noopener,noreferrer')
+        } catch { alert('Ouverture impossible.') }
     }
 
     const majStatut = async (id: string, statut: string) => {
@@ -255,6 +292,39 @@ export default function RecapMyafroSection() {
                                         <span className="text-gray-300 font-semibold break-words">{v}</span>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Pièces déposées par le client */}
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <Paperclip size={13} /> Pièces déposées par le client
+                                    <span className="text-gray-600">({pieces.length})</span>
+                                </p>
+                                {!piecesChargees ? (
+                                    <p className="text-xs text-gray-600">Chargement…</p>
+                                ) : pieces.length === 0 ? (
+                                    <p className="text-xs text-gray-600 bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                        Aucune pièce déposée. Le client peut en ajouter depuis la page du service
+                                        ou depuis l’application, avec sa référence.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {pieces.map(p => (
+                                            <button
+                                                key={p.id}
+                                                onClick={() => ouvrirPiece(p.id)}
+                                                className="w-full flex items-center gap-3 bg-white/[0.03] border border-white/5 hover:border-emerald-500/30 rounded-xl px-4 py-3 text-left transition-all"
+                                            >
+                                                {p.source === 'mobile'
+                                                    ? <DeviceMobile size={15} className="text-emerald-400 shrink-0" />
+                                                    : <Globe size={15} className="text-blue-400 shrink-0" />}
+                                                <span className="flex-1 min-w-0 text-xs font-semibold text-white truncate">{p.file_name}</span>
+                                                <span className="text-[10px] text-gray-500 shrink-0">{poids(p.file_size)}</span>
+                                                <span className="text-[10px] text-gray-600 shrink-0">{dateFr(p.created_at)}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* La fiche, modifiable avant remise */}

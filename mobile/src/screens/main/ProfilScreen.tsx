@@ -431,6 +431,15 @@ export default function ProfilScreen() {
                     onPress: () => navigation.navigate('MesPropositions'),
                 },
                 {
+                    // Les pièces d'un récap sont sur le téléphone (photo d'un
+                    // courrier, capture d'écran) : sans cette entrée, il fallait
+                    // passer par un ordinateur pour les envoyer.
+                    icon: 'search-outline' as const,
+                    label: t('Récap MyAfroOrigins'),
+                    sub: t('Suivi et pièces de mon dossier'),
+                    onPress: () => navigation.navigate('RecapMyafro'),
+                },
+                {
                     icon: 'qr-code-outline' as const,
                     label: t('Mes billets'),
                     sub: t('Billets d’événement avec QR'),

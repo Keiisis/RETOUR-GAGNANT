@@ -21,6 +21,7 @@ import { toXOFStrict } from '@/lib/server-rates'
 import { ttcFromHt } from '@/lib/tax'
 import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq'
 import { sendEmail, EMAIL_WRAPPER, emailInfoCard } from '@/lib/email'
+import { ouvrirDossier } from '@/lib/dossier-service'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -265,6 +266,30 @@ export async function POST(request: NextRequest) {
             },
             { status: 500 },
         )
+    }
+
+    // ── Le récap devient un DOSSIER, comme les autres services ─────
+    //  Sans cela, la prestation existait en comptabilité mais dans aucun
+    //  suivi : ni l'onglet Dossiers, ni l'application ne la voyaient passer.
+    const dossierId = await ouvrirDossier({
+        service_type: 'Récap MyAfroOrigins',
+        nom, prenom, email, telephone,
+        notes: [
+            `Réf. récap : ${reference}`,
+            donnees.myafro_reference ? `Réf. MyAfroOrigins : ${donnees.myafro_reference}` : '',
+            donnees.depuis_quand ? `Sans nouvelle depuis : ${donnees.depuis_quand}` : '',
+            '',
+            situation.slice(0, 1500),
+        ].filter(Boolean).join('\n'),
+        source: String(body.source) === 'mobile' ? 'mobile' : 'web',
+        transaction_id: donnees.paiement_ref,
+        payment_method: donnees.paiement_moyen,
+    })
+
+    if (dossierId) {
+        await supabase.from('myafro_recap_requests')
+            .update({ dossier_id: dossierId }).eq('id', cree.id)
+            .then(() => undefined, () => undefined)
     }
 
     // ── Fiche d'analyse (non bloquante) ────────────────────────────

@@ -75,20 +75,20 @@ export default function MonComptePage() {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // const fileName = `${Date.now()}_${file.name}`
-        // For now, we store metadata only (file URL would need Supabase Storage bucket)
+        // Le FICHIER part réellement : auparavant seules ses métadonnées
+        // étaient envoyées, et l'agent recevait une pièce impossible à ouvrir.
         try {
-            await fetch('/api/documents/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    client_email: email,
-                    client_nom: clientName,
-                    file_name: file.name,
-                    file_type: 'autre',
-                    file_size: file.size,
-                })
-            })
+            const fd = new FormData()
+            fd.append('file', file)
+            fd.append('client_email', email)
+            fd.append('client_nom', clientName)
+            fd.append('file_type', 'autre')
+            const res = await fetch('/api/documents/upload', { method: 'POST', body: fd })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) {
+                alert(json.error || "Le dépôt a échoué. Réessayez dans un instant.")
+                return
+            }
 
             // Refresh documents
             const { data } = await supabase.from('client_documents').select('*').eq('client_email', email).order('created_at', { ascending: false })
