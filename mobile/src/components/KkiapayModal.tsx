@@ -37,7 +37,10 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     const { t } = useLang()
     // Settings preloaded at app start : no Supabase round-trip when modal opens
     const { kkiapayPublicKey: kkiapayKey, kkiapaySandbox: sandbox } = usePaymentSettings()
-    const { openKkiapayWidget, addSuccessListener, addFailedListener } = useKkiapay()
+    const {
+        openKkiapayWidget, addSuccessListener, addFailedListener,
+        addKkiapayCloseListener, addPaymentAbortedListener,
+    } = useKkiapay()
 
     // Refs sur les callbacks pour eviter le ré-enregistrement des listeners
     // a chaque render. Le SDK ne fournit pas de removeListener officiel, donc
@@ -54,19 +57,41 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     useEffect(() => { onCloseRef.current = onClose }, [onClose])
     useEffect(() => { onCancelRef.current = onCancel }, [onCancel])
 
-    // ── Listeners Kkiapay (succès / échec) : enregistrement unique ──
+    /* On masque D'ABORD, on agit ENSUITE.
+       Naviguer pendant que le SDK démonte sa WebView et que notre Modal se
+       ferme faisait redémarrer l'application (crash natif Android). Le délai
+       laisse l'animation de fermeture se terminer avant tout changement
+       d'écran. */
+    const terminer = useCallback((suite?: () => void) => {
+        ouvert.current = false
+        onCloseRef.current()
+        if (suite) setTimeout(suite, 350)
+    }, [])
+
+    // ── Écoute du SDK : succès, échec, ET fermeture ──────────────
     useEffect(() => {
         addSuccessListener((data: any) => {
             abouti.current = true
             const transactionId = data?.transactionId || data?.transaction_id || `KK-${Date.now()}`
-            onSuccessRef.current(String(transactionId))
+            terminer(() => onSuccessRef.current(String(transactionId)))
         })
 
         addFailedListener(() => {
             abouti.current = true
             toast(t('Paiement échoué'), t("Le paiement n'a pas pu être finalisé. Veuillez réessayer."), 'danger')
-            onCloseRef.current()
+            terminer()
         })
+
+        /* Le client a refermé la fenêtre du widget. Le SDK nous le dit — encore
+           fallait-il l'écouter. Deux événements couvrent les deux façons de
+           sortir : la croix du widget, et l'abandon en cours de paiement. */
+        const abandon = () => {
+            if (abouti.current) return
+            toast(t('Paiement annulé'), t('Rien n’a été débité. Vous pouvez reprendre quand vous voulez.'))
+            terminer(() => onCancelRef.current?.())
+        }
+        addKkiapayCloseListener(abandon)
+        addPaymentAbortedListener(abandon)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -76,13 +101,13 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
        annule ce qui doit l'être (commande en attente, notamment). */
     const fermer = useCallback(() => {
         const abandon = ouvert.current && !abouti.current
-        ouvert.current = false
         if (abandon) {
             toast(t('Paiement annulé'), t('Rien n’a été débité. Vous pouvez reprendre quand vous voulez.'))
-            onCancelRef.current?.()
+            terminer(() => onCancelRef.current?.())
+            return
         }
-        onCloseRef.current()
-    }, [t])
+        terminer()
+    }, [t, terminer])
 
     // À chaque réouverture, on repart d'une ardoise propre.
     useEffect(() => {
