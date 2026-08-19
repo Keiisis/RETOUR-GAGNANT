@@ -31,7 +31,7 @@ import * as Haptics from 'expo-haptics'
 import {
     ChevronLeft, Share2, Check, MapPin, CalendarDays, Bed, UtensilsCrossed,
     Camera, Car, MapPinned, PenLine, CreditCard, CircleCheck, ArrowRight,
-    ArrowLeft, ShieldCheck, Clock4, Plus, Minus, Compass, MessageCircle, Lock,
+    ArrowLeft, ShieldCheck, Clock4, Plus, Minus, Compass, MessageCircle, Lock, Download,
     Users, Send, X, Bot,
 } from 'lucide-react-native'
 import Animated, {
@@ -45,6 +45,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { telechargerDocument } from '../../lib/documents'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -544,6 +545,26 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
         } catch { toast(t('Partage impossible'), t('Réessayez dans un instant.')) }
     }
 
+    /* Le devis PDF, tel que le client l'a composé : on transmet les
+       prestations RETENUES, sinon le document facturerait ce qu'il a écarté. */
+    const [devisEnCours, setDevisEnCours] = useState(false)
+    const telechargerDevis = async () => {
+        if (!prop || devisEnCours) return
+        setDevisEnCours(true)
+        try {
+            const choisies = [...retenues].join(',')
+            const r = await telechargerDocument(
+                `${API_BASE}/api/proposals/${prop.id}/devis?selection=${encodeURIComponent(choisies)}`,
+                `Devis-${(prop.destination || 'sejour').replace(/\s+/g, '-')}`,
+            )
+            if (!r.ok) {
+                toast(t('Téléchargement impossible'), r.erreur || t('Réessayez dans un instant.'))
+            } else if (!r.partage) {
+                toast(t('Devis enregistré'), t('Le document est sur votre téléphone.'))
+            }
+        } finally { setDevisEnCours(false) }
+    }
+
     const signer = () => {
         if (!prop) return
         navigation.navigate('SignatureDevis', {
@@ -981,6 +1002,20 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                             <Text style={styles.ctaLargeText}>{t('Signer le devis en ligne')}</Text>
                         </Pressable>
                     )}
+                    <Pressable
+                        onPress={telechargerDevis}
+                        disabled={devisEnCours}
+                        style={({ pressed }) => [styles.ctaVide, devisEnCours && { opacity: 0.5 }, pressed && { transform: [{ scale: 0.98 }] }]}
+                        accessibilityRole="button"
+                    >
+                        {devisEnCours
+                            ? <ActivityIndicator color={C.primary} size="small" />
+                            : <Download size={16} color={C.text} strokeWidth={2.2} />}
+                        <Text style={styles.ctaVideText}>
+                            {devisEnCours ? t('Préparation du devis…') : t('Télécharger le devis (PDF)')}
+                        </Text>
+                    </Pressable>
+
                     <Pressable onPress={() => setConseillerOuvert(true)} style={styles.lienConseiller} accessibilityRole="button">
                         <MessageCircle size={14} color={C.primary} strokeWidth={2.2} />
                         <Text style={styles.lienConseillerText}>
@@ -1244,6 +1279,8 @@ const styles = StyleSheet.create({
     barreTotalPetit: { fontFamily: fonts.extrabold, fontSize: 20, color: VERT_PROFOND, marginTop: 2 },
     pilulePetite: { backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
     pilulePetiteText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: C.primary },
+    ctaVide: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.surface, borderWidth: 1, borderColor: C.borderStrong, borderRadius: radius.pill, paddingVertical: 14 },
+    ctaVideText: { fontFamily: fonts.bold, fontSize: 13, color: C.text },
     ctaLarge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 16 },
     ctaLargeText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
     cta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 14 },

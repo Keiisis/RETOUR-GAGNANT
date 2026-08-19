@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
 import { TVA_RATE } from '@/lib/tax'
+import { requireStaff } from '@/lib/api-guard'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -48,19 +50,20 @@ interface ProposalRow {
 }
 
 interface ItemRow {
+    id: string
     type: string
     title: string
     selling_price: number
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
         const supabase = createClient(supabaseUrl, supabaseKey)
 
         const { data: proposal, error: pe } = await supabase
             .from('ai_client_proposals')
-            .select('id, client_name, client_email, client_phone, destination, total_amount, currency, created_at')
+            .select('id, client_id, client_name, client_email, client_phone, destination, total_amount, currency, created_at, secret_key, sent_to_mobile')
             .eq('id', id)
             .single()
 
@@ -68,9 +71,45 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
             return NextResponse.json({ error: 'Proposition introuvable' }, { status: 404 })
         }
 
+        /* ── Qui a le droit de lire CE devis ? ──────────────────────
+           La route ne demandait RIEN : un identifiant de proposition suffisait
+           à obtenir le nom, l'email, le téléphone et les montants d'un autre
+           client. Trois preuves légitimes, une seule suffit :
+             · le personnel (panels admin et agent) ;
+             · le lien secret — l'URL EST le secret, c'est le modèle de la
+               page /p/[secret] ;
+             · le client lui-même depuis l'application (jeton). */
+        const url = new URL(req.url)
+        const secret = url.searchParams.get('secret')
+
+        let autorise = !!secret && secret === proposal.secret_key
+
+        if (!autorise) {
+            const garde = await requireStaff(req, 'agent')
+            autorise = garde.ok
+        }
+
+        if (!autorise) {
+            const clientId = await getMobileUserId(req)
+            if (clientId) {
+                if (proposal.client_id === clientId) {
+                    autorise = true
+                } else if (proposal.sent_to_mobile) {
+                    const { data: cp } = await supabase
+                        .from('client_profiles').select('email').eq('id', clientId).maybeSingle()
+                    const mail = String(cp?.email || '').trim().toLowerCase()
+                    autorise = !!mail && String(proposal.client_email || '').trim().toLowerCase() === mail
+                }
+            }
+        }
+
+        if (!autorise) {
+            return NextResponse.json({ error: 'Devis non autorisé.' }, { status: 403 })
+        }
+
         const { data: rawItems } = await supabase
             .from('ai_proposal_items')
-            .select('type, title, selling_price')
+            .select('id, type, title, selling_price')
             .eq('proposal_id', id)
             .order('order_index', { ascending: true })
 
@@ -81,7 +120,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const round = (v: number) => isZeroDecimal ? Math.round(v) : Math.round(v * 100) / 100
 
         // Éléments facturables (TVA au taux effectif — 0 % en cas d'exonération)
-        const billable = allItems.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
+        /* Le client peut avoir écarté des prestations avant de signer. Un
+           devis qui les facturerait quand même ne serait pas son devis. */
+        const retenues = (url.searchParams.get('selection') || '')
+            .split(',').map(x => x.trim()).filter(Boolean)
+        const billable = allItems
+            .filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
+            .filter(i => retenues.length === 0 || retenues.includes(String(i.id)))
         const items: InvoicePdfItem[] = billable.map(i => ({
             description: `${i.title}${p.destination ? ` : ${p.destination}` : ''}`,
             quantity: 1,
