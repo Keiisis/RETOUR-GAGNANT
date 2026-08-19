@@ -268,7 +268,7 @@ const ProductCard = ({
                             </>
                         ) : (
                             <View style={cardStyles.placeholder}>
-                                <LucideIcon name="sparkles-outline" size={28} color={C.primary} />
+                                <LucideIcon name="cube-outline" size={28} color={C.primary} />
                             </View>
                         )}
 

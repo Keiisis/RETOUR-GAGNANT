@@ -15,7 +15,9 @@
  */
 
 import React from 'react'
+import Cauri from './icons/Cauri'
 import {
+    Car, BadgeCheck,
     Home, FileText, Building2, Compass, Landmark, TrendingUp,
     User, Settings, Bell, Search, ChevronRight, ChevronLeft,
     ChevronDown, ChevronUp, ArrowUp, Calendar, Clock, MapPin, Phone,
@@ -222,7 +224,7 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
     'book-outline': BookOpen,
     'briefcase-outline': Briefcase,
     'bulb-outline': Lightbulb,
-    'car-outline': Truck,
+    'car-outline': Car,
     'cart-outline': ShoppingCart,
     'cash-outline': Banknote,
     'chatbubble-ellipses': MessageCircle,
@@ -270,8 +272,10 @@ const ICON_MAP: Record<string, React.FC<LucideProps>> = {
     'ribbon-outline': Award,
     'search-circle-outline': Search,
     'share-outline': Share2,
-    'sparkles': Star,
-    'sparkles-outline': Star,
+    /* Conservés pour d'anciennes données qui nomment encore cette icône.
+       Elles pointent sur un symbole neutre : l'étincelle ne décrivait rien. */
+    'sparkles': BadgeCheck,
+    'sparkles-outline': BadgeCheck,
     'storefront': Store,
     'storefront-outline': Store,
     'qr-code': QrCode,
@@ -300,6 +304,13 @@ interface LucideIconProps {
  * automatiquement en icônes Lucide (cohérence avec le site web).
  */
 export function LucideIcon({ name, size = 24, color, strokeWidth = 2, style, fill }: LucideIconProps) {
+    /* Le cauri n'existe dans aucune bibliothèque : il est dessiné à la main
+       (components/icons/Cauri.tsx) et intercepté ici pour que les écrans
+       n'aient rien de spécial à faire. */
+    if (name === 'cauri' || name === 'cauri-outline') {
+        return <Cauri size={size} color={color} strokeWidth={strokeWidth} />
+    }
+
     const IconComponent = ICON_MAP[name]
     if (!IconComponent && __DEV__) {
         console.warn('[LucideIcon] nom sans correspondance : ' + name)

@@ -320,7 +320,7 @@ export const SERVICES_DATA: ServiceFull[] = [
     },
     {
         id: 'consultation-fa-racines',
-        icon: 'sparkles-outline',
+        icon: 'cauri',
         title: 'Consultation Fa & Racines',
         subtitle: 'Rencontrez un Bokonon, la sagesse du Fa dans un cadre organisé et respectueux',
         desc: "Mise en relation avec un Bokonon (prêtre Fa) pour une consultation traditionnelle : en présentiel au Bénin ou à distance en visioconférence.",
@@ -428,27 +428,32 @@ export const SERVICES_DATA: ServiceFull[] = [
 
 // ─── Mapping slug → icon ──────────────────────────────────────────────────────
 
-const ICON_MAP: Record<string, string> = {
-    nationalite: 'ribbon-outline', nationalite_vip: 'ribbon-outline',
-    ancestrale: 'search-circle-outline', recherche: 'search-circle-outline',
-    passeport: 'document-text-outline',
-    logement: 'home-outline', immobilier: 'home-outline',
-    business: 'briefcase-outline', entreprise: 'briefcase-outline',
-    culture: 'map-outline', tourisme: 'map-outline',
-    construction: 'hammer-outline', chantier: 'hammer-outline',
-    investissement: 'trending-up-outline',
-    consultation: 'sparkles-outline', fa: 'sparkles-outline',
-    langues: 'language-outline', racines: 'language-outline',
-    autres: 'apps-outline',
+/* Une icône par service, et une seule.
+   La colonne `services.icon` vaut « ShieldCheck » pour DOUZE services sur
+   treize : elle ne distingue rien. La correspondance approximative par
+   sous-chaîne renvoyait donc tout le monde sur la mallette — permis, récap et
+   création d'entreprise portaient le même symbole.
+   Ici, chaque slug est nommé explicitement. Ce qui n'y figure pas prend la
+   mallette, et c'est un signal : il manque une icône. */
+const ICONES_PAR_SLUG: Record<string, string> = {
+    'nationalite-vip': 'ribbon-outline',
+    'recherche-ancestrale': 'search-circle-outline',
+    'recap-myafroorigins': 'document-text-outline',
+    'passeport': 'card-outline',
+    'logement': 'home-outline',
+    'business': 'briefcase-outline',
+    'culture': 'map-outline',
+    'construction': 'hammer-outline',
+    'investissement': 'trending-up-outline',
+    // Le cauri : l'instrument même de la divination Fa, dessiné à la main.
+    'consultation-fa-racines': 'cauri',
+    'langues-racines': 'language-outline',
+    'permis-conduire': 'car-outline',
+    'autres': 'apps-outline',
 }
 
-function getIconForSlug(slug: string, icon_type?: string): string {
-    if (icon_type && ICON_MAP[icon_type]) return ICON_MAP[icon_type]
-    const key = slug.toLowerCase().replace(/-/g, '_')
-    for (const [k, v] of Object.entries(ICON_MAP)) {
-        if (key.includes(k)) return v
-    }
-    return 'briefcase-outline'
+function getIconForSlug(slug: string): string {
+    return ICONES_PAR_SLUG[slug.toLowerCase()] || 'briefcase-outline'
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -688,7 +693,7 @@ export default function ServicesScreen({ navigation }: any) {
                     )
                     return {
                         id: s.slug || s.id,
-                        icon: getIconForSlug(s.slug || '', s.icon_type),
+                        icon: getIconForSlug(s.slug || ''),
                         title: s.title || staticMatch?.title || '',
                         subtitle: s.subtitle || staticMatch?.subtitle || '',
                         desc: s.subtitle || s.description || staticMatch?.desc || '',
