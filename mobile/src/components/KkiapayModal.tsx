@@ -5,8 +5,8 @@ import {
     ActivityIndicator, Platform
 } from 'react-native'
 import { Briefcase, CreditCard, Info, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native'
-import { useKkiapay } from '@kkiapay-org/react-native-sdk'
 import { useNavigation } from '@react-navigation/native'
+import KkiapayWidget, { type ConfigKkiapay } from './KkiapayWidget'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { usePaymentSettings } from '../contexts/PaymentSettingsContext'
@@ -44,10 +44,8 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     const { t } = useLang()
     // Settings preloaded at app start : no Supabase round-trip when modal opens
     const { kkiapayPublicKey: kkiapayKey, kkiapaySandbox: sandbox } = usePaymentSettings()
-    const {
-        openKkiapayWidget, addSuccessListener, addFailedListener,
-        addKkiapayCloseListener, addPaymentAbortedListener,
-    } = useKkiapay()
+    // Configuration du widget : `null` tant qu'aucun paiement n'est lancé.
+    const [config, setConfig] = useState<ConfigKkiapay | null>(null)
 
     // Refs sur les callbacks pour eviter le ré-enregistrement des listeners
     // a chaque render. Le SDK ne fournit pas de removeListener officiel, donc
@@ -70,83 +68,53 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     useEffect(() => { onCancelRef.current = onCancel }, [onCancel])
     useEffect(() => { serviceNameRef.current = serviceName }, [serviceName])
 
-    /* On masque D'ABORD, on agit ENSUITE.
-       Naviguer pendant que le SDK démonte sa WebView et que notre Modal se
-       ferme faisait redémarrer l'application (crash natif Android). Le délai
-       laisse l'animation de fermeture se terminer avant tout changement
-       d'écran. */
+    /* On masque D'ABORD, on agit ENSUITE : changer d'écran pendant qu'un
+       Modal se ferme produit un affichage instable. Le délai laisse
+       l'animation se terminer. */
     const terminer = useCallback((suite?: () => void) => {
         ouvert.current = false
+        setConfig(null)
         onCloseRef.current()
-        if (suite) setTimeout(suite, 350)
+        if (suite) setTimeout(suite, 320)
     }, [])
 
-    // ── Écoute du SDK : succès, échec, ET fermeture ──────────────
-    useEffect(() => {
-        addSuccessListener((data: any) => {
-            abouti.current = true
-            const transactionId = data?.transactionId || data?.transaction_id || `KK-${Date.now()}`
-            terminer(() => onSuccessRef.current(String(transactionId)))
-        })
+    const surSucces = useCallback((transactionId: string) => {
+        abouti.current = true
+        terminer(() => onSuccessRef.current(transactionId))
+    }, [terminer])
 
-        addFailedListener((data: any) => {
-            abouti.current = true
-            terminer(() => nav.navigate('ResultatPaiement', {
-                etat: 'echec',
+    const surEchec = useCallback((motif?: string) => {
+        abouti.current = true
+        terminer(() => nav.navigate('ResultatPaiement', {
+            etat: 'echec',
+            objet: serviceNameRef.current,
+            montant: montantRef.current,
+            devise: 'XOF',
+            motif,
+        }))
+    }, [terminer, nav])
+
+    /* Fermeture sans paiement : le client doit le savoir sur un écran, pas
+       dans une alerte qui disparaît. */
+    const surAbandon = useCallback(() => {
+        if (abouti.current) return
+        terminer(() => {
+            // D'abord la conséquence métier (annuler une commande en attente),
+            // puis l'écran qui l'annonce.
+            onCancelRef.current?.()
+            nav.navigate('ResultatPaiement', {
+                etat: 'annule',
                 objet: serviceNameRef.current,
                 montant: montantRef.current,
                 devise: 'XOF',
-                motif: typeof data?.reason === 'string' ? data.reason : undefined,
-            }))
+            })
         })
-
-        /* Le client a refermé la fenêtre du widget. Le SDK nous le dit — encore
-           fallait-il l'écouter. Deux événements couvrent les deux façons de
-           sortir : la croix du widget, et l'abandon en cours de paiement. */
-        const abandon = () => {
-            if (abouti.current) return
-            terminer(() => {
-                // D'abord la conséquence métier (annuler une commande en
-                // attente), puis l'écran qui l'annonce au client.
-                onCancelRef.current?.()
-                nav.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: serviceNameRef.current,
-                    montant: montantRef.current,
-                    devise: 'XOF',
-                })
-            })
-        }
-        addKkiapayCloseListener(abandon)
-        addPaymentAbortedListener(abandon)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    /* Fermeture demandée par le client (croix, geste, bouton retour).
-       Si aucun paiement n'a abouti alors que le widget avait été ouvert, c'est
-       un abandon : on le DIT, et on rend la main à l'écran appelant pour qu'il
-       annule ce qui doit l'être (commande en attente, notamment). */
-    const fermer = useCallback(() => {
-        const abandon = ouvert.current && !abouti.current
-        if (abandon) {
-            terminer(() => {
-                onCancelRef.current?.()
-                nav.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: serviceNameRef.current,
-                    montant: montantRef.current,
-                    devise: 'XOF',
-                })
-            })
-            return
-        }
-        terminer()
     }, [terminer, nav])
 
-    // À chaque réouverture, on repart d'une ardoise propre.
-    useEffect(() => {
-        if (visible) { abouti.current = false; ouvert.current = false }
-    }, [visible])
+    /* Croix de NOTRE feuille : le widget n'est pas encore ouvert, il n'y a
+       donc rien à annuler — on referme simplement. L'abandon du widget
+       lui-même est traité par `surAbandon`. */
+    const fermer = useCallback(() => { terminer() }, [terminer])
 
     // ── Extrait le montant numérique depuis un texte comme "À partir de 150 000 FCFA" ──
     const getNumericAmount = (): number => {
@@ -171,22 +139,16 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         ouvert.current = true
         montantRef.current = numericAmount
 
-        try {
-            openKkiapayWidget({
-                amount: numericAmount,
-                api_key: kkiapayKey,
-                sandbox, // Lit settings.kkiapay_sandbox (default: false / prod)
-                email: profile?.email || '',
-                phone: profile?.phone || '',
-                reason: serviceName || t('Paiement de service'),
-            })
-        } catch (e) {
-            console.error('Erreur ouverture widget Kkiapay:', e)
-            toast(t('Erreur'), t("Impossible d'ouvrir le paiement. Veuillez réessayer."))
-        } finally {
-            setLoading(false)
-        }
-    }, [kkiapayKey, numericAmount, profile, sandbox, serviceName, openKkiapayWidget, t])
+        setConfig({
+            amount: numericAmount,
+            api_key: kkiapayKey,
+            sandbox, // Lit settings.kkiapay_sandbox (défaut : false / prod)
+            email: profile?.email || '',
+            phone: profile?.phone || '',
+            reason: serviceName || t('Paiement de service'),
+        })
+        setLoading(false)
+    }, [kkiapayKey, numericAmount, profile, sandbox, serviceName, t])
 
     return (
         <Modal visible={visible} animationType="slide" transparent onRequestClose={fermer}>
@@ -270,6 +232,18 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                     </View>
                 </View>
             </View>
+
+            {/* Le widget vit dans SA propre fenêtre. Il ne démonte donc pas
+                l'application — contrairement au provider du SDK, qui rendait
+                `{!widgetOpened && children}` et repartait de zéro à chaque
+                fermeture (navigation réinitialisée, saisies perdues). */}
+            <KkiapayWidget
+                visible={!!config}
+                config={config}
+                onSucces={surSucces}
+                onEchec={surEchec}
+                onAnnule={surAbandon}
+            />
         </Modal>
     )
 }

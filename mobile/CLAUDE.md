@@ -237,7 +237,14 @@ Le dev build (`expo-dev-client`) reste obligatoire, mais **à cause de
 - ✅ **Dev build obligatoire** — à cause de `react-native-webrtc` et `react-native-incall-manager`, PAS de Kkiapay (dont le SDK est du JavaScript pur)
 - ✅ Listeners `addSuccessListener` / `addFailedListener` enregistrés **une seule fois** au mount, callbacks via `useRef` (pas de stale closure, pas de listener orphelin — le SDK n'expose pas de `removeListener`)
 - ✅ Mode sandbox/prod **lu depuis Supabase**, jamais hardcodé
-- ✅ `<KkiapayProvider>` doit wrapper `App.tsx` au-dessus du Navigator pour que `useKkiapay()` fonctionne
+- ❌ **`<KkiapayProvider>` A ÉTÉ RETIRÉ** (2026-08-19). Son rendu est
+  `{widgetOpened && <WebView/>}{!widgetOpened && children}` : ouvrir le widget
+  DÉMONTAIT tout l'arbre, `NavigationContainer` compris, et le remontait à neuf
+  à la fermeture — navigation réinitialisée, saisies perdues, retour à l'accueil.
+  C'est ce qu'on prenait pour « l'application redémarre », et pourquoi aucun
+  écran de résultat n'apparaissait. Remplacé par `src/components/KkiapayWidget.tsx` :
+  même page `widget-v3.kkiapay.me`, même protocole de messages, mais dans un
+  `Modal` — donc sans toucher à l'arbre.
 
 ### Permissions
 - **Android** : `INTERNET` (déjà par défaut), `ACCESS_NETWORK_STATE`
@@ -329,8 +336,7 @@ retirer alors l'exclusion.
 - [ ] `npx tsc --noEmit` → 0 erreur
 - [ ] Les 9 services sont identiques web et mobile
 - [ ] Les `pricing_options` sont présentes sur chaque service
-- [ ] `KkiapayModal` utilise `useKkiapay()` du SDK Kkiapay, pas `Linking` ni une `<WebView>` montee a la main (le SDK gere lui-meme sa WebView interne)
-- [ ] `<KkiapayProvider>` wrap App dans `App.tsx`
+- [ ] `KkiapayModal` passe par `KkiapayWidget` (notre hôte). Ne JAMAIS revenir à `useKkiapay()` / `KkiapayProvider` : ils démontent l'application entière à l'ouverture du widget.
 - [ ] Les types dans `RootStackParamList` matchent les params passés
 - [ ] Pas d'import du composant `<T>` (supprimé) — utiliser `useLang().t()` direct
 - [ ] Aucune palette locale (`const C = {`) dans un écran — importer `screenColors` du thème
