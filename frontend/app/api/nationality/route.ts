@@ -8,6 +8,8 @@ import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/
 import { recordNationalityIncome } from '@/lib/nationality-income'
 import { markClientConverted } from '@/lib/classement/track'
 import { verifyMyafroToken, decodeMyafroToken } from '@/lib/nationality-token'
+import { toXOFStrict } from '@/lib/server-rates'
+import { ttcFromHt } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
@@ -45,6 +47,32 @@ async function verifyKkiapayTransaction(transactionId: string): Promise<{ ok: bo
     } catch (e) {
         return { ok: false, status: e instanceof Error ? e.message : 'verify_failed' }
     }
+}
+
+/**
+ * Tarif officiel du dossier nationalité, EN XOF TTC.
+ *
+ * L'autorité est `page_sections` (réglée en admin), jamais le montant envoyé
+ * par le navigateur. Sans cette lecture, le serveur ne faisait que vérifier
+ * qu'une transaction Kkiapay existait : un dossier payé 250 FCFA (≈ 0,39 €)
+ * passait exactement comme un dossier payé 260 €.
+ *
+ * Renvoie `null` si le tarif ou le taux de change est introuvable — l'appelant
+ * doit alors s'abstenir de rejeter, faute de référence fiable.
+ */
+async function tarifOfficielXof(): Promise<number | null> {
+    const { data } = await supabase
+        .from('page_sections').select('content')
+        .eq('page', 'nationalite').eq('section_key', 'form_settings').maybeSingle()
+
+    const c = (data?.content || {}) as Record<string, unknown>
+    const montant = Number(c.amount)
+    if (!isFinite(montant) || montant <= 0) return null
+
+    const devise = String(c.currency || 'XOF').toUpperCase()
+    const xof = await toXOFStrict(montant, devise)
+    if (xof === null) return null
+    return ttcFromHt(xof, 'XOF')
 }
 
 const apiKey = getGroqApiKey()
@@ -273,6 +301,35 @@ export async function POST(request: NextRequest) {
                         { status: 402 }
                     )
                 }
+
+                // ── Le montant ENCAISSÉ doit couvrir le tarif officiel ──────
+                // Le montant vient du widget, donc du navigateur : il est
+                // modifiable. On le confronte au tarif lu en base.
+                // Tolérance 2 % : le taux de change bouge entre l'affichage et
+                // l'encaissement, un écart de quelques francs n'est pas une
+                // fraude. Le mode MyAfroOrigins a son propre tarif (50 €).
+                const encaisse = Number(verify.amount)
+                const attendu = body.myafro_token
+                    ? await (async () => {
+                        const x = await toXOFStrict(50, 'EUR')
+                        return x === null ? null : ttcFromHt(x, 'XOF')
+                    })()
+                    : await tarifOfficielXof()
+
+                if (attendu !== null && isFinite(encaisse) && encaisse > 0 && encaisse < attendu * 0.98) {
+                    console.error(
+                        `[nationality] Sous-paiement REFUSÉ : encaissé ${encaisse} XOF, attendu ${attendu} XOF (tx ${body.payment_ref})`,
+                    )
+                    return NextResponse.json(
+                        {
+                            error: 'Le montant réglé ne correspond pas au tarif en vigueur. '
+                                + 'Aucun dossier n’a été créé : contactez-nous, votre paiement sera remboursé ou complété.',
+                            montant_recu: encaisse,
+                            montant_attendu: attendu,
+                        },
+                        { status: 402 },
+                    )
+                }
             }
         }
 
@@ -291,8 +348,22 @@ export async function POST(request: NextRequest) {
         const myafroPayload = body.myafro_token ? decodeMyafroToken(String(body.myafro_token)) : null
         const isMyafro = !!myafroPayload
         const initialStatus = isMyafro ? 'revue_myafro' : 'soumis'
-        const secureAmount = isMyafro ? 50 : (body.amount ?? 250)
-        const secureCurrency = isMyafro ? 'EUR' : (body.currency || 'USD')
+        // Le montant consigné vient de la BASE (tarif admin), jamais du corps
+        // de la requête : un dossier facturé 0,39 € en comptabilité était la
+        // conséquence directe de `body.amount`.
+        const { data: fsRow } = await supabase
+            .from('page_sections').select('content')
+            .eq('page', 'nationalite').eq('section_key', 'form_settings').maybeSingle()
+        const fsContent = (fsRow?.content || {}) as Record<string, unknown>
+        const tarifBase = Number(fsContent.amount)
+        const deviseBase = String(fsContent.currency || 'EUR').toUpperCase()
+
+        const secureAmount = isMyafro
+            ? 50
+            : (isFinite(tarifBase) && tarifBase > 0 ? tarifBase : (body.amount ?? 250))
+        const secureCurrency = isMyafro
+            ? 'EUR'
+            : (isFinite(tarifBase) && tarifBase > 0 ? deviseBase : (body.currency || 'USD'))
 
         const isPrepaid = myafroPayload?.paid ?? false
         const invoiceRef = myafroPayload?.invoice_id ? `facture_${myafroPayload.invoice_id}` : null
