@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
+import { toXOFStrict } from '@/lib/server-rates'
+import { ttcFromHt } from '@/lib/tax'
 import { logWebhookFailure } from '@/lib/payment-integrity'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import { markClientConverted } from '@/lib/classement/track'
@@ -122,8 +124,26 @@ async function handleNationalityPayment(
     if (c?.amount) amount = Number(c.amount)
     if (c?.currency) currency = String(c.currency)
 
+    // ── Le montant encaissé couvre-t-il le tarif ? ────────────────────
+    // Le webhook créait une fiche « payé » sans jamais confronter la somme
+    // reçue au tarif officiel : un règlement de 250 FCFA entrait en
+    // comptabilité comme un dossier complet. On n'annule rien (l'argent EST
+    // arrivé), mais la fiche part signalée pour que l'équipe régularise.
+    const attenduXof = await (async () => {
+        if (!isFinite(amount) || amount <= 0) return null
+        const x = await toXOFStrict(amount, currency)
+        return x === null ? null : ttcFromHt(x, 'XOF')
+    })()
+    const encaisseXof = Number(verify.amount)
+    const sousPaiement = attenduXof !== null && isFinite(encaisseXof) && encaisseXof > 0
+        && encaisseXof < attenduXof * 0.98
+
     const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
-    const note = `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement : le client n'a pas (encore) finalisé le formulaire. ` +
+    const note = (sousPaiement
+        ? `⚠️ SOUS-PAIEMENT À RÉGULARISER : ${encaisseXof} XOF encaissés pour ${attenduXof} XOF attendus. `
+        + `NE PAS TRAITER le dossier avant régularisation ou remboursement. `
+        : '')
+        + `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement : le client n'a pas (encore) finalisé le formulaire. ` +
         `Transaction ${transactionId} : encaissé ${verify.amount ?? '?'} XOF. ` +
         `DOCUMENTS : si le formulaire n'aboutit pas, un lien de complément sera envoyé automatiquement au client (ou utilisez « Relancer (documents) »).`
 

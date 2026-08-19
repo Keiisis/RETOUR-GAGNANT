@@ -400,6 +400,11 @@ export default function NationaliteFormScreen({ navigation }: any) {
     const [lawAccepted, setLawAccepted] = useState(false)
     const [formAmount, setFormAmount] = useState(150000)
     const [formCurrency, setFormCurrency] = useState('XOF')
+    /* Le tarif officiel vient de `page_sections` en asynchrone. Tant qu'il
+       n'est pas arrive, aucun paiement ne doit partir : le widget encaisserait
+       la valeur d'initialisation au lieu du tarif reel (incident du 2026-08-19,
+       0,39 EUR au lieu de 260 EUR cote web). */
+    const [tarifCharge, setTarifCharge] = useState(false)
     // Forfait recherche ancestrale (configurable admin, même bloc form_settings).
     const [ancestralAmount, setAncestralAmount] = useState(250)
     const [ancestralCurrency, setAncestralCurrency] = useState('EUR')
@@ -425,6 +430,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 .eq('page', 'nationalite')
                 .eq('section_key', 'form_settings')
                 .single()
+            setTarifCharge(true)
             if (data?.content) {
                 const c = data.content as Record<string, unknown>
                 if (c.amount) setFormAmount(Number(c.amount))
@@ -541,7 +547,15 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
     const nextStep = () => {
         if (!validateStep()) return
-        if (currentStep === 5) setShowKkiapay(true)
+        if (currentStep === 5) {
+            // Tarif pas encore lu en base : refuser plutot qu'encaisser la
+            // valeur d'initialisation.
+            if (!tarifCharge) {
+                toast(t('Tarif en cours de chargement'), t('Patientez une seconde puis reessayez.'))
+                return
+            }
+            setShowKkiapay(true)
+        }
         else setCurrentStep(prev => prev + 1)
     }
     const prevStep = () => setCurrentStep(prev => Math.max(0, prev - 1))

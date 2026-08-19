@@ -166,6 +166,10 @@ export default function NationaliteFormPage() {
     const [bgImageUrl, setBgImageUrl] = useState<string>('/images/bg-default-afro.jpg')
     const [formAmount, setFormAmount] = useState(250)
     const [formCurrency, setFormCurrency] = useState<CurrencyCode>('USD')
+    /* Le tarif officiel arrive de `page_sections` en asynchrone. Tant qu'il
+       n'est pas là, AUCUNE passerelle ne doit s'ouvrir : sinon elle encaisse la
+       valeur d'initialisation (250 XOF ≈ 0,39 €) au lieu du tarif réel. */
+    const [tarifCharge, setTarifCharge] = useState(false)
     const { format } = useCurrency()
 
     const [form, setForm] = useState({
@@ -216,9 +220,13 @@ export default function NationaliteFormPage() {
         fetch('/api/settings/payment').then(r => r.json()).then(d => setPaymentSettings(d)).catch(() => { })
         supabase.from('nationality_page_content').select('content_fr').eq('section_key', 'form_bg_image').single()
             .then(({ data }) => { if (data?.content_fr) setBgImageUrl(data.content_fr) })
-        // Fetch dynamic amount and documents from admin settings
+        // Tarif officiel. TANT QU'IL N'EST PAS REVENU, aucun paiement n'est
+        // possible (cf. `tarifCharge`) : sans ce verrou, le widget partait avec
+        // le tarif d'initialisation — 250 XOF, soit ~0,39 € encaissés au lieu
+        // de 260 €.
         supabase.from('page_sections').select('content').eq('page', 'nationalite').eq('section_key', 'form_settings').single()
             .then(({ data }) => {
+                setTarifCharge(true)
                 if (data?.content) {
                     const c = data.content as Record<string, unknown>
                     // En mode MyAfroOrigins, le tarif (50 €) est imposé : ne pas l'écraser.
@@ -367,6 +375,13 @@ export default function NationaliteFormPage() {
         const rawXOF = formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF')
         const amountXOF = ttcFromHt(Math.round(Number(rawXOF)), 'XOF')
 
+        // Le tarif officiel n'est pas encore arrivé : on refuse d'ouvrir le
+        // widget plutôt que d'encaisser une valeur d'attente.
+        if (!tarifCharge) {
+            setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.'))
+            return
+        }
+
         // Garde-fous : éviter le « Paramètres manquants ou invalides » du widget
         if (!kkiapayKey) {
             setPaymentError(t('Clé de paiement Kkiapay manquante. Contactez-nous pour finaliser votre paiement.'))
@@ -399,6 +414,7 @@ export default function NationaliteFormPage() {
     }
 
     const handleFedapay = () => {
+        if (!tarifCharge) { setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.')); return }
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('fedapay')
         // Convertir en FCFA + TVA en sus (on charge le TTC).
         const amountXOF = ttcFromHt(formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF'), 'XOF')
@@ -420,6 +436,7 @@ export default function NationaliteFormPage() {
     }
 
     const handleZeyow = () => {
+        if (!tarifCharge) { setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.')); return }
         setPaymentProvider('zeyow')
         const redirectUrl = paymentSettings.zeyow_redirect_url
         if (!redirectUrl) { setPaymentError(t('Zeyow non configuré.')); return }
