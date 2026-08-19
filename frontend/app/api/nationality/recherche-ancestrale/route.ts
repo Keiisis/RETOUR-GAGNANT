@@ -5,11 +5,109 @@ import { notifyStaffNationalityPayment } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
 import { markClientConverted } from '@/lib/classement/track'
 import { guardPublic, PUBLIC_FORM_LIMIT, flowKey } from '@/lib/api-guard'
+import { toXOFStrict } from '@/lib/server-rates'
+import { ttcFromHt } from '@/lib/tax'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseKey)
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
+
+
+/**
+ * Vérification serveur d'un paiement Recherche Ancestrale.
+ *
+ * Cette route marquait le dossier « payé » sur la seule foi du corps de la
+ * requête : un POST avec une référence de dossier et un identifiant de
+ * transaction inventé suffisait à obtenir une prestation à 250 €. On confronte
+ * désormais la transaction à la passerelle, PUIS son montant au tarif en base.
+ *
+ * Renvoie `null` quand tout est conforme, sinon le motif du refus.
+ */
+async function refusPaiementAncestral(
+    provider: string,
+    txId: string,
+): Promise<string | null> {
+    if (!txId) return 'Référence de transaction manquante.'
+
+    // Tarif officiel (même bloc que le formulaire nationalité).
+    const { data: fs } = await supabase
+        .from('page_sections').select('content')
+        .eq('page', 'nationalite').eq('section_key', 'form_settings').maybeSingle()
+    const c = (fs?.content || {}) as Record<string, unknown>
+    const tarif = Number(c.recherche_ancestrale_amount)
+    const devise = String(c.recherche_ancestrale_currency || 'EUR').toUpperCase()
+    const tarifXof = isFinite(tarif) && tarif > 0
+        ? await toXOFStrict(tarif, devise).then(x => (x === null ? null : ttcFromHt(x, 'XOF')))
+        : null
+
+    if (provider === 'kkiapay') {
+        const { data: settings } = await supabase
+            .from('settings').select('key, value')
+            .in('key', ['kkiapay_private_key', 'kkiapay_secret_key', 'kkiapay_sandbox'])
+        const sm: Record<string, string> = {}
+        for (const x of settings || []) sm[x.key] = x.value
+        // Fail-closed : sans clé, on ne peut rien prouver.
+        if (!sm.kkiapay_private_key || !sm.kkiapay_secret_key) return 'Vérification indisponible.'
+
+        const base = sm.kkiapay_sandbox === 'true'
+            ? 'https://api-sandbox.kkiapay.me' : 'https://api.kkiapay.me'
+        try {
+            const res = await fetch(`${base}/api/v1/transactions/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-private-key': sm.kkiapay_private_key,
+                    'x-secret-key': sm.kkiapay_secret_key,
+                },
+                body: JSON.stringify({ transactionId: txId }),
+            })
+            const d = await res.json().catch(() => ({}))
+            if (d?.status !== 'SUCCESS') return `Paiement non confirmé (${d?.status || 'inconnu'}).`
+            // Tolérance 2 % : le taux de change bouge entre l'affichage et l'encaissement.
+            const paye = Number(d?.amount)
+            if (tarifXof !== null && isFinite(paye) && paye > 0 && paye < tarifXof * 0.98) {
+                return `Montant insuffisant : ${paye} XOF reçus pour ${tarifXof} XOF attendus.`
+            }
+            return null
+        } catch {
+            return 'Passerelle injoignable.'
+        }
+    }
+
+    if (provider === 'fedapay') {
+        const { data: settings } = await supabase
+            .from('settings').select('key, value').in('key', ['fedapay_secret_key', 'fedapay_sandbox'])
+        const sm: Record<string, string> = {}
+        for (const x of settings || []) sm[x.key] = x.value
+        if (!sm.fedapay_secret_key) return 'Vérification indisponible.'
+
+        const base = sm.fedapay_sandbox === 'true'
+            ? 'https://sandbox-api.fedapay.com' : 'https://api.fedapay.com'
+        try {
+            const res = await fetch(`${base}/v1/transactions/${encodeURIComponent(txId)}`, {
+                headers: { Authorization: `Bearer ${sm.fedapay_secret_key}` },
+            })
+            const d = await res.json().catch(() => ({}))
+            const tx = d?.['v1/transaction'] || d?.transaction || d
+            if (String(tx?.status).toLowerCase() !== 'approved') {
+                return `Paiement non confirmé (${tx?.status || 'inconnu'}).`
+            }
+            const paye = Number(tx?.amount)
+            if (tarifXof !== null && isFinite(paye) && paye > 0 && paye < tarifXof * 0.98) {
+                return `Montant insuffisant : ${paye} XOF reçus pour ${tarifXof} XOF attendus.`
+            }
+            return null
+        } catch {
+            return 'Passerelle injoignable.'
+        }
+    }
+
+    // Zeyow et tout autre canal : aucune API de contrôle ici. On refuse
+    // l'enregistrement automatique — l'équipe régularise à la main plutôt que
+    // d'ouvrir une prestation sur une simple déclaration du navigateur.
+    return 'Ce moyen de paiement doit être confirmé par nos équipes.'
+}
 
 // POST /api/nationality/recherche-ancestrale
 // Enregistre le paiement Recherche Ancestrale lié à un dossier nationalité
@@ -22,6 +120,13 @@ export async function POST(request: NextRequest) {
         const { ref, payment_provider, payment_tx_id, amount, amount_xof } = body
 
         if (!ref) return NextResponse.json({ error: 'Référence manquante' }, { status: 400 })
+
+        // ── Preuve de paiement AVANT toute écriture ──────────────────
+        const refus = await refusPaiementAncestral(String(payment_provider || ''), String(payment_tx_id || ''))
+        if (refus) {
+            console.warn(`[recherche-ancestrale] REFUS (${ref}) : ${refus}`)
+            return NextResponse.json({ error: refus }, { status: 402 })
+        }
 
         // Générer une référence pour ce service de recherche
         const searchRef = `RG-ANC-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
