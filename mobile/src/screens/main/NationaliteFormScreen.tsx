@@ -1284,14 +1284,6 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 amount={String(toXof(formAmount, formCurrency))}
                 serviceName="Nationalité VIP"
                 onClose={() => setShowKkiapay(false)}
-                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
-                // sur un écran, pas dans un toast qui s'efface en trois secondes.
-                onCancel={() => navigation.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: t('Reconnaissance de nationalité'),
-                    montant: toXof(formAmount, formCurrency),
-                    devise: 'XOF',
-                })}
                 onSuccess={handlePaymentSuccess}
             />
         </KeyboardAvoidingView>

@@ -50,6 +50,7 @@ import TicketsScreen from '../screens/main/TicketsScreen'
 import SejourRequestScreen from '../screens/main/SejourRequestScreen'
 import MesPropositionsScreen from '../screens/main/MesPropositionsScreen'
 import RecapMyafroScreen from '../screens/main/RecapMyafroScreen'
+import RecapMyafroDemandeScreen from '../screens/main/RecapMyafroDemandeScreen'
 import ResultatPaiementScreen from '../screens/main/ResultatPaiementScreen'
 import type { ParamsResultatPaiement } from '../screens/main/ResultatPaiementScreen'
 import PropositionDetailScreen from '../screens/main/PropositionDetailScreen'
@@ -141,6 +142,7 @@ export type RootStackParamList = {
     SejourRequest: undefined
     MesPropositions: undefined
     RecapMyafro: undefined
+    RecapMyafroDemande: undefined
     // Résultat de paiement, commun à tous les services (succès/échec/annulé).
     ResultatPaiement: ParamsResultatPaiement
     PropositionDetail: { proposalId: string }
@@ -381,6 +383,7 @@ export default function AppNavigator() {
                         <Stack.Screen name="SejourRequest" component={SejourRequestScreen} />
                         <Stack.Screen name="MesPropositions" component={MesPropositionsScreen} />
                         <Stack.Screen name="RecapMyafro" component={RecapMyafroScreen} />
+                        <Stack.Screen name="RecapMyafroDemande" component={RecapMyafroDemandeScreen} />
                         <Stack.Screen
                             name="ResultatPaiement"
                             component={ResultatPaiementScreen}

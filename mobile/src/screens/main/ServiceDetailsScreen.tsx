@@ -729,14 +729,6 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                 amount={price || 'Sur devis'}
                 serviceName={title}
                 onClose={() => setShowKkiapay(false)}
-                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
-                // sur un écran, pas dans un toast qui s'efface en trois secondes.
-                onCancel={() => navigation.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: title,
-                    montant: undefined,
-                    devise: 'XOF',
-                })}
                 onSuccess={handlePaymentSuccess}
             />
         </View>

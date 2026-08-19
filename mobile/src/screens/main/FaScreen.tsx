@@ -577,14 +577,6 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                 amount={payAmount}
                 serviceName={t('Consultation Fa & Racines')}
                 onClose={() => setShowPay(false)}
-                // Abandon : le client a refermé la fenêtre sans payer. On le lui dit
-                // sur un écran, pas dans un toast qui s'efface en trois secondes.
-                onCancel={() => navigation.navigate('ResultatPaiement', {
-                    etat: 'annule',
-                    objet: t('Consultation Fa & Racines'),
-                    montant: Number(String(payAmount).replace(/\D/g, "")) || undefined,
-                    devise: 'XOF',
-                })}
                 onSuccess={onPaid}
             />
         </View>
