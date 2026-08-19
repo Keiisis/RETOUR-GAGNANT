@@ -22,6 +22,8 @@ import { ttcFromHt } from '@/lib/tax'
 import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq'
 import { sendEmail, EMAIL_WRAPPER, emailInfoCard } from '@/lib/email'
 import { ouvrirDossier } from '@/lib/dossier-service'
+import { facturerPaiementService } from '@/lib/service-invoice'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -291,6 +293,25 @@ export async function POST(request: NextRequest) {
             .update({ dossier_id: dossierId }).eq('id', cree.id)
             .then(() => undefined, () => undefined)
     }
+
+    /* ── FACTURE ────────────────────────────────────────────────────
+       La prestation était encaissée sans qu'aucune facture ne soit établie :
+       ni pour le client, ni pour la comptabilité. Le montant facturé est le
+       tarif VÉRIFIÉ à l'instant (`tarif.xof`), celui que la passerelle a
+       confirmé couvrir — jamais un montant venu du navigateur.
+       Le compte client, quand la demande vient de l'application, permet
+       d'apposer le paraphe enregistré sur le « Bon pour accord ». */
+    const compteClient = await getMobileUserId(request).catch(() => null)
+    void facturerPaiementService({
+        transactionId: String(donnees.paiement_ref),
+        montantXof: Number(tarif.xof) || 0,
+        libelle: 'Récap de dossier MyAfroOrigins',
+        clientId: compteClient,
+        clientNom: nom, clientPrenom: prenom, clientEmail: email, clientPhone: telephone,
+        provider: String(body.payment_provider || 'kkiapay'),
+        source: String(body.source) === 'mobile' ? 'Application mobile' : 'Site web',
+        reference,
+    })
 
     // ── Fiche d'analyse (non bloquante) ────────────────────────────
     const recap = await genererRecap({

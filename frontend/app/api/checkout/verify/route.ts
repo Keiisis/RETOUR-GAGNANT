@@ -668,6 +668,17 @@ export async function POST(request: Request) {
                         remise: 0,
                         total: fullOrder.amount,
                         status: 'paye',
+                        paid_at: new Date().toISOString(),
+                        /* La transaction en COLONNE, plus seulement dans les notes :
+                           c'est par elle que l'application retrouve la facture du
+                           règlement qu'elle vient d'effectuer, et c'est elle qui
+                           empêche qu'un second circuit facture une deuxième fois
+                           le même encaissement (cas du Permis de conduire, qui
+                           ouvre aussi un dossier avec la même transaction). */
+                        client_id: fullOrder.client_id || null,
+                        payment_transaction_id: transaction_id || null,
+                        payment_provider: method || null,
+                        payment_method: method || null,
                         notes: `Facture auto-générée : ${sourceLabel}\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transaction_id}`,
                         conditions: 'Document généré automatiquement après paiement vérifié.',
                         validite: 'Acquittée',

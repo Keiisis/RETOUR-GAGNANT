@@ -184,6 +184,9 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                 objet: t('Récap de dossier MyAfroOrigins'),
                 message: t('Un analyste reprend votre situation. Vous recevez votre fiche sous {d}.', { d: delai }),
                 reference: String(json.reference || transactionId),
+                // La référence affichée est celle de la DEMANDE : la facture,
+                // elle, se retrouve par la transaction.
+                tx: transactionId,
                 montant: montantXof,
                 devise: 'XOF',
                 actionLabel: t('Voir ma demande'),

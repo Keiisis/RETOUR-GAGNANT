@@ -114,6 +114,12 @@ export async function createErpInvoiceForOrder(opts: {
             remise: 0,
             total: fullOrder.amount,
             status: 'paye',
+            paid_at: new Date().toISOString(),
+            // Même clé que le chemin navigateur : une transaction, une facture.
+            client_id: fullOrder.client_id || null,
+            payment_transaction_id: transactionId || null,
+            payment_provider: method || null,
+            payment_method: method || null,
             notes: `Facture auto-générée : ${sourceLabel} (webhook)\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transactionId}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',

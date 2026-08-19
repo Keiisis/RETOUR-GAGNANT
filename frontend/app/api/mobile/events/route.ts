@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { facturerPaiementService } from '@/lib/service-invoice'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 import { createTicketForRegistration } from '@/lib/event-tickets'
@@ -262,6 +263,8 @@ export async function POST(req: NextRequest) {
         // (pending | completed | failed | refunded). Une place gratuite est
         // « completed » : il n'y a plus rien à régler.
         let paymentStatus: 'pending' | 'completed' = isFree ? 'completed' : 'pending'
+        // Montant CONFIRME par la passerelle : base de la facture.
+        let montantEncaisseXof = 0
 
         if (!isFree && transaction_id) {
             const verify = await verifyKkiapayTransaction(transaction_id)
@@ -272,6 +275,7 @@ export async function POST(req: NextRequest) {
                 )
             }
             paymentStatus = 'completed'
+            montantEncaisseXof = Number(verify.amount) || 0
         }
 
         const now = new Date().toISOString()
@@ -296,6 +300,26 @@ export async function POST(req: NextRequest) {
         if (regError) {
             console.error('[POST /api/mobile/events]', regError)
             return NextResponse.json({ error: regError.message }, { status: 500 })
+        }
+
+        /* FACTURE : une place payante est une prestation vendue. Elle
+           n'entrait ni en comptabilite ni dans la boite mail du client --
+           seul le billet partait. Idempotente par transaction. */
+        if (transaction_id && montantEncaisseXof > 0) {
+            const r = await facturerPaiementService({
+                transactionId: transaction_id,
+                montantXof: montantEncaisseXof,
+                libelle: `${event.title || 'Evenement'} : place ${ticket_type === 'vip' ? 'VIP' : 'standard'}`,
+                clientId: client_id,
+                clientNom: cp?.nom || inscritNom,
+                clientPrenom: cp?.prenom || '',
+                clientEmail: inscritEmail,
+                clientPhone: inscritTel,
+                provider: 'kkiapay',
+                source: 'Application mobile',
+                reference: registration.id,
+            })
+            if (!r.ok) console.error('[mobile/events] facture non etablie :', r.erreur)
         }
 
         // Billet + QR dès que la place est acquise (événement gratuit, ou payé

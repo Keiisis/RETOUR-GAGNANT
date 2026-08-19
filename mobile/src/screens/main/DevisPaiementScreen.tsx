@@ -42,6 +42,7 @@ import Animated, {
 import { screenColors as C, radius, shadows, fonts } from '../../config/theme'
 import { FlagBar } from '../../components/ui'
 import KkiapayModal from '../../components/KkiapayModal'
+import BoutonFacture from '../../components/BoutonFacture'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
@@ -525,14 +526,25 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                 </ScrollView>
 
                 <View style={[styles.centreBas, { paddingBottom: insets.bottom + 16 }]}>
-                    <Pressable
-                        onPress={() => navigation.navigate('Invoices')}
-                        style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
-                        accessibilityRole="button"
-                    >
-                        <FileText size={16} color="#FFFFFF" strokeWidth={2.2} />
-                        <Text style={styles.ctaPleinText}>{t('Voir ma facture')}</Text>
-                    </Pressable>
+                    {/* « Voir ma facture » ouvrait la liste des factures de la
+                        boutique — où celle du séjour n'apparaît pas : elle est
+                        établie dans les documents de l'agence. Le client
+                        télécharge donc ici LE document de ce règlement, et à
+                        défaut retrouve la liste. */}
+                    <BoutonFacture
+                        tx={reference}
+                        variant="plein"
+                        enAttente={
+                            <Pressable
+                                onPress={() => navigation.navigate('Invoices')}
+                                style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
+                                accessibilityRole="button"
+                            >
+                                <FileText size={16} color="#FFFFFF" strokeWidth={2.2} />
+                                <Text style={styles.ctaPleinText}>{t('Voir mes factures')}</Text>
+                            </Pressable>
+                        }
+                    />
                     <Pressable
                         onPress={() => navigation.goBack()}
                         style={({ pressed }) => [styles.ctaVide, pressed && { transform: [{ scale: 0.98 }] }]}
