@@ -15,8 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ChevronLeft, Share2, Star, MapPin, Video, Users, Check, Award,
-    Languages, ShieldCheck, Shell, ChevronDown, Quote,
+    Languages, ShieldCheck, ChevronDown, Quote,
 } from 'lucide-react-native'
+import Cauri from '../../components/icons/Cauri'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { useAuth } from '../../contexts/AuthContext'
@@ -281,7 +282,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
             {/* Hero */}
             <Animated.View entering={FadeInUp.duration(420)} style={styles.hero}>
                 <View style={styles.badge}>
-                    <Shell size={14} color={C.primary} strokeWidth={2.2} />
+                    <Cauri size={14} color={C.primary} strokeWidth={2.2} />
                     <Text style={styles.badgeText}>{t('Consultation du Fa & Racines')}</Text>
                 </View>
                 <Text style={styles.heroTitle}>{t('La sagesse ancestrale pour éclairer votre retour')}</Text>
@@ -290,7 +291,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                     {[
                         { icon: ShieldCheck, label: 'Prêtres certifiés' },
                         { icon: Video, label: 'Présentiel ou visio' },
-                        { icon: Shell, label: 'Consultation authentique' },
+                        { icon: Cauri, label: 'Consultation authentique' },
                     ].map(({ icon: Ic, label }) => (
                         <View key={label} style={styles.heroChip}>
                             <Ic size={14} color={C.primary} strokeWidth={2.2} />
@@ -590,7 +591,7 @@ function PriestAvatar({ uri, size = 56, square = false }: { uri?: string | null;
     if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: br, backgroundColor: C.surfaceWarm }} />
     return (
         <View style={{ width: size, height: size, borderRadius: br, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Shell size={size * 0.4} color={C.primary} />
+            <Cauri size={size * 0.4} color={C.primary} />
         </View>
     )
 }
