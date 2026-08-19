@@ -131,6 +131,12 @@ const nextConfig: NextConfig = {
       config.parallelism = 1
       // Pas de source maps serveur en prod (grosses allocations, inutiles).
       config.devtool = false
+      // Le cache webpack garde tout le graphe de modules en mémoire puis le
+      // sérialise. Sur un conteneur de 8 Go partagé avec Node, sharp et le
+      // service worker, c'est le poste qui a fait déborder le build
+      // (SIGKILL / OOM du 2026-08-19). Un build Vercel repart de zéro à
+      // chaque fois : ce cache ne servait à rien ici.
+      config.cache = false
     }
     return config
   },

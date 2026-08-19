@@ -4,10 +4,10 @@
       "master": false
     }
   },
-  "buildCommand": "NODE_OPTIONS=--max-old-space-size=7168 next build --webpack",
+  "buildCommand": "NODE_OPTIONS=--max-old-space-size=4096 next build --webpack",
   "build": {
     "env": {
-      "NODE_OPTIONS": "--max-old-space-size=7168"
+      "NODE_OPTIONS": "--max-old-space-size=4096"
     }
   },
   "crons": [
