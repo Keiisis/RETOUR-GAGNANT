@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react'
 import Script from 'next/script'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, CheckCircle2, ShieldCheck, Lock, Mail, Phone, User } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ShieldCheck, Lock, Mail, Phone, User, Paperclip, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/lib/translation'
 import { Price } from '@/components/ui/Price'
@@ -60,6 +60,33 @@ export default function RecapMyafroForm() {
     const [reference, setReference] = useState('')
     const listenersPoses = useRef(false)
 
+    // Pièces jointes : proposées APRÈS l'enregistrement, quand la référence
+    // existe. Les demander avant obligerait à stocker des fichiers pour une
+    // demande qui pourrait ne jamais être payée.
+    const [pieces, setPieces] = useState<{ id: string; file_name: string }[]>([])
+    const [depot, setDepot] = useState(false)
+    const [erreurPiece, setErreurPiece] = useState('')
+
+    const deposerPiece = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fichier = e.target.files?.[0]
+        e.target.value = ''
+        if (!fichier || !reference) return
+        setDepot(true); setErreurPiece('')
+        try {
+            const fd = new FormData()
+            fd.append('file', fichier)
+            fd.append('reference', reference)
+            fd.append('email', form.email)
+            fd.append('source', 'web')
+            const res = await fetch('/api/services/recap-myafroorigins/documents', { method: 'POST', body: fd })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) throw new Error(json.error || t('Dépôt impossible.'))
+            setPieces(p => [...p, { id: `${Date.now()}`, file_name: json.nom || fichier.name }])
+        } catch (err) {
+            setErreurPiece(err instanceof Error ? err.message : t('Dépôt impossible.'))
+        } finally { setDepot(false) }
+    }
+
     useEffect(() => {
         fetch('/api/settings/payment').then(r => r.json()).then(setReglages).catch(() => { })
         supabase.from('page_sections').select('content')
@@ -71,6 +98,25 @@ export default function RecapMyafroForm() {
                 if (c.delai) setDelai(String(c.delai))
             })
     }, [])
+
+    /* Ne proposer que ce qui est réellement activé côté admin. Afficher un
+       bouton grisé pour une passerelle désactivée ne sert à rien : le client
+       ne peut pas s'en servir, et cela suggère une panne. */
+    const moyens = [
+        {
+            id: 'kkiapay' as const,
+            actif: reglages.kkiapay_enabled === 'true'
+                && !!(reglages.kkiapay_sandbox === 'true'
+                    ? (reglages.kkiapay_sandbox_public_key || reglages.kkiapay_public_key)
+                    : reglages.kkiapay_public_key),
+            label: 'Mobile Money / Carte bancaire',
+        },
+        {
+            id: 'fedapay' as const,
+            actif: reglages.fedapay_enabled === 'true' && !!reglages.fedapay_public_key,
+            label: 'Carte bancaire',
+        },
+    ].filter(m => m.actif)
 
     const champsRemplis = !!(form.prenom.trim() && form.nom.trim() && form.email.trim()
         && form.telephone.trim() && form.situation.trim().length >= 40)
@@ -184,6 +230,42 @@ export default function RecapMyafroForm() {
                         <p className="text-[10px] uppercase tracking-widest text-[#a8a29e] font-bold">{t('Votre référence')}</p>
                         <p className="font-mono text-lg font-bold text-[#1c1917] mt-1">{reference}</p>
                     </div>
+                    {/* Dépôt de pièces : facultatif, mais il accélère l'analyse. */}
+                    <div className="text-left bg-[#fdfbf7] border border-[#e7e1d8] rounded-2xl p-5 mb-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Paperclip size={15} className="text-[#008751]" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#1c1917]">
+                                {t('Ajouter des pièces (facultatif)')}
+                            </p>
+                        </div>
+                        <p className="text-[12px] text-[#57534e] leading-relaxed mb-3">
+                            {t('Capture de votre espace MyAfroOrigins, courrier reçu, acte déjà obtenu… Tout ce qui aide à comprendre votre dossier. PDF ou image, 10 Mo maximum.')}
+                        </p>
+
+                        {pieces.length > 0 && (
+                            <ul className="space-y-1.5 mb-3">
+                                {pieces.map(p => (
+                                    <li key={p.id} className="flex items-center gap-2 text-[12px] text-[#1c1917]">
+                                        <CheckCircle2 size={13} className="text-[#008751] shrink-0" />
+                                        <span className="truncate">{p.file_name}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {!!erreurPiece && (
+                            <p className="flex items-center gap-2 text-[12px] text-[#E8112D] mb-2">
+                                <X size={13} /> {erreurPiece}
+                            </p>
+                        )}
+
+                        <label className={`inline-flex items-center gap-2 bg-white border border-[#e7e1d8] hover:border-[#008751]/40 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1c1917] cursor-pointer transition-all ${depot ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <Paperclip size={14} className="text-[#008751]" />
+                            {depot ? t('Dépôt en cours…') : t('Choisir un fichier')}
+                            <input type="file" onChange={deposerPiece} accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" className="hidden" />
+                        </label>
+                    </div>
+
                     <div>
                         <Link href="/" className="inline-flex items-center gap-2 bg-[#008751] hover:bg-[#007445] text-white font-bold text-sm px-7 py-3.5 rounded-2xl transition-all">
                             {t('Retour à l’accueil')} <ArrowRight size={16} />
@@ -333,7 +415,7 @@ export default function RecapMyafroForm() {
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-[#78716c]">
                             <ShieldCheck size={14} className="text-[#008751]" />
-                            {t('Règlement vérifié auprès de la passerelle')}
+                            {t('Paiement sécurisé, vérifié avant validation')}
                         </div>
                     </div>
 
@@ -342,23 +424,33 @@ export default function RecapMyafroForm() {
                             <span className="w-4 h-4 border-2 border-[#008751]/30 border-t-[#008751] rounded-full animate-spin" />
                             {t('Enregistrement de votre demande…')}
                         </div>
+                    ) : moyens.length === 0 ? (
+                        <div className="bg-[#fdfbf7] border border-[#e7e1d8] rounded-xl px-4 py-4 text-center">
+                            <p className="text-sm text-[#57534e]">
+                                {t('Le paiement en ligne est momentanément indisponible. Écrivez-nous, nous prenons votre demande autrement.')}
+                            </p>
+                        </div>
                     ) : (
-                        <div className="grid sm:grid-cols-2 gap-3">
-                            <button
-                                onClick={payerKkiapay}
-                                disabled={!pretAPayer || enCours || paiementFait}
-                                className="bg-[#008751] hover:bg-[#007445] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm px-6 py-4 rounded-2xl transition-all"
-                            >
-                                {enCours && provider === 'kkiapay' ? t('Ouverture du paiement…') : t('Payer par Mobile Money / Carte')}
-                            </button>
-                            <button
-                                id="fedapay-recap-btn"
-                                onClick={payerFedapay}
-                                disabled={!pretAPayer || enCours || paiementFait || reglages.fedapay_enabled !== 'true'}
-                                className="bg-white border border-[#e7e1d8] hover:border-[#008751]/40 disabled:opacity-40 disabled:cursor-not-allowed text-[#1c1917] font-bold text-sm px-6 py-4 rounded-2xl transition-all"
-                            >
-                                {t('Payer par FedaPay')}
-                            </button>
+                        <div className={moyens.length > 1 ? 'grid sm:grid-cols-2 gap-3' : ''}>
+                            {moyens.map((m, i) => (
+                                <button
+                                    key={m.id}
+                                    id={m.id === 'fedapay' ? 'fedapay-recap-btn' : undefined}
+                                    onClick={m.id === 'kkiapay' ? payerKkiapay : payerFedapay}
+                                    disabled={!pretAPayer || enCours || paiementFait}
+                                    className={`w-full font-bold text-sm px-6 py-4 rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${i === 0
+                                        ? 'bg-[#008751] hover:bg-[#007445] text-white'
+                                        : 'bg-white border border-[#e7e1d8] hover:border-[#008751]/40 text-[#1c1917]'}`}
+                                >
+                                    {enCours && provider === m.id
+                                        ? t('Ouverture du paiement…')
+                                        : moyens.length === 1
+                                            // Un seul moyen : le montant suffit, nommer le
+                                            // canal n'apporte rien au client.
+                                            ? `${t('Payer')} ${tarif === null ? '' : `${tarif} ${devise === 'EUR' ? '€' : devise}`}`.trim()
+                                            : t(m.label)}
+                                </button>
+                            ))}
                         </div>
                     )}
 

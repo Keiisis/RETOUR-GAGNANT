@@ -66,6 +66,9 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
     const reduce = useReducedMotion()
     const [list, setList] = useState<ServiceItem[]>([])
     const [loading, setLoading] = useState(true)
+    // Icônes dont le fichier n'existe pas (chemin obsolète en base) : on bascule
+    // sur l'icône connue du slug au lieu d'afficher le texte alternatif.
+    const [cassees, setCassees] = useState<Set<string | number>>(new Set())
 
     useEffect(() => {
         const run = async () => {
@@ -140,10 +143,11 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
                         <div className="relative mb-6 h-24 w-24">
                             {service.imageUrl ? (
                                 <Image
-                                    src={service.imageUrl}
+                                    src={cassees.has(service.id) ? (IMG_BY_SLUG[service.slug] || service.imageUrl) : service.imageUrl}
                                     alt={t(service.title)}
                                     fill
                                     sizes="96px"
+                                    onError={() => setCassees(prev => prev.has(service.id) ? prev : new Set(prev).add(service.id))}
                                     className="object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.14)] transition-all duration-500 group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:drop-shadow-[0_16px_30px_rgba(252,209,22,0.45)]"
                                 />
                             ) : (

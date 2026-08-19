@@ -49,6 +49,7 @@ import RechercheAncestraleScreen from '../screens/main/RechercheAncestraleScreen
 import TicketsScreen from '../screens/main/TicketsScreen'
 import SejourRequestScreen from '../screens/main/SejourRequestScreen'
 import MesPropositionsScreen from '../screens/main/MesPropositionsScreen'
+import RecapMyafroScreen from '../screens/main/RecapMyafroScreen'
 import PropositionDetailScreen from '../screens/main/PropositionDetailScreen'
 import SignatureDevisScreen from '../screens/main/SignatureDevisScreen'
 import DevisPaiementScreen from '../screens/main/DevisPaiementScreen'
@@ -137,6 +138,7 @@ export type RootStackParamList = {
     Tickets: undefined
     SejourRequest: undefined
     MesPropositions: undefined
+    RecapMyafro: undefined
     PropositionDetail: { proposalId: string }
     SignatureDevis: { proposalId: string; secretKey?: string; selection?: string[] }
     DevisPaiement: { secretKey?: string; proposalId?: string; selection?: string[] }
@@ -374,6 +376,7 @@ export default function AppNavigator() {
                         <Stack.Screen name="Tickets" component={TicketsScreen} />
                         <Stack.Screen name="SejourRequest" component={SejourRequestScreen} />
                         <Stack.Screen name="MesPropositions" component={MesPropositionsScreen} />
+                        <Stack.Screen name="RecapMyafro" component={RecapMyafroScreen} />
                         <Stack.Screen name="PropositionDetail" component={PropositionDetailScreen} />
                         <Stack.Screen name="SignatureDevis" component={SignatureDevisScreen} />
                         <Stack.Screen name="DevisPaiement" component={DevisPaiementScreen} />
