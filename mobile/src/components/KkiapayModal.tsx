@@ -1,24 +1,35 @@
+/* ═══════════════════════════════════════════════════════════
+   Feuille de paiement — commune à TOUS les services de l'application.
+
+   Le client arrive ici depuis dix parcours différents (Fa, permis, logement,
+   événements, boutique, récap…). Il doit y trouver la même chose, présentée
+   de la même façon : ce qu'il paie, combien, par quel moyen, et un bouton qui
+   dit le montant. C'est le portage de la maquette Sleek « Moyens de paiement »
+   déjà validée pour le règlement du séjour.
+
+   ⚠️ NE PAS revenir à `KkiapayProvider` / `useKkiapay()`. Le provider du SDK
+   rend `{!widgetOpened && children}` : ouvrir le widget démonte toute
+   l'application, et la fermer la remonte à neuf — navigation réinitialisée,
+   saisies perdues, écran de résultat impossible. Le widget passe donc par
+   `KkiapayWidget`, notre hôte, qui vit dans une fenêtre séparée.
+
+   Charte v2 : blanc porteur, tricolore en accent, aucun fond sombre.
+═══════════════════════════════════════════════════════════ */
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from '../lib/feedback'
 import {
-    View, Text, StyleSheet, Modal, TouchableOpacity,
-    ActivityIndicator, Platform
+    View, Text, StyleSheet, Modal, Pressable, ActivityIndicator,
 } from 'react-native'
-import { Briefcase, CreditCard, Info, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native'
+import { CreditCard, Lock, ShieldCheck, Smartphone, X } from 'lucide-react-native'
 import { useNavigation } from '@react-navigation/native'
 import KkiapayWidget, { type ConfigKkiapay } from './KkiapayWidget'
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { usePaymentSettings } from '../contexts/PaymentSettingsContext'
-import { colors, spacing, shadows, typography, radius } from '../config/theme'
+import { screenColors as C, radius, shadows, fonts } from '../config/theme'
 
-/* ═══════════════════════════════════════════════════════════
-   KkiapayModal : Paiement natif via SDK Kkiapay React Native
-   Fonctionne sur Android & iOS (necessite dev build, pas Expo Go)
-   Widget integre in-app : plus besoin d'ouvrir le navigateur.
-   La cle publique et le mode sandbox/prod sont lus depuis la
-   table Supabase `settings` (kkiapay_public_key / kkiapay_sandbox).
-═══════════════════════════════════════════════════════════ */
+const VERT_PROFOND = '#00643C'
+const VERT_LISERE = 'rgba(0,135,81,0.15)'
 
 interface KkiapayModalProps {
     visible: boolean
@@ -35,44 +46,38 @@ interface KkiapayModalProps {
 export default function KkiapayModal({ visible, amount, serviceName, onClose, onSuccess, onCancel }: KkiapayModalProps) {
     /* La navigation vit ICI, pas dans chaque écran appelant. Répartie, elle
        produisait exactement ce qu'on voulait éviter : certains parcours
-       menaient à l'écran de résultat, d'autres se contentaient d'une alerte.
-       Un seul propriétaire, donc un seul comportement. */
+       menaient à l'écran de résultat, d'autres à une simple alerte. */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nav = useNavigation<any>()
     const [loading, setLoading] = useState(false)
     const { profile } = useAuth()
     const { t } = useLang()
-    // Settings preloaded at app start : no Supabase round-trip when modal opens
     const { kkiapayPublicKey: kkiapayKey, kkiapaySandbox: sandbox } = usePaymentSettings()
+
     // Configuration du widget : `null` tant qu'aucun paiement n'est lancé.
     const [config, setConfig] = useState<ConfigKkiapay | null>(null)
 
-    // Refs sur les callbacks pour eviter le ré-enregistrement des listeners
-    // a chaque render. Le SDK ne fournit pas de removeListener officiel, donc
-    // on enregistre UNE SEULE FOIS au mount + on lit toujours la version a
-    // jour des callbacks via la ref (pas de stale closure non plus).
+    /* Les retours de l'écran appelant sont lus via des références : le widget
+       peut conclure longtemps après le rendu qui l'a ouvert. */
     const onSuccessRef = useRef(onSuccess)
     const onCloseRef = useRef(onClose)
     const onCancelRef = useRef(onCancel)
-    // Un paiement a-t-il abouti pendant cette ouverture ? Sert à distinguer
-    // « fermeture après succès » de « fermeture par abandon ».
-    const abouti = useRef(false)
-    const ouvert = useRef(false)
-    /* Les écouteurs du SDK ne sont posés QU'UNE FOIS : ils liraient sinon des
-       valeurs figées au premier rendu. Ces références portent le service et le
-       montant courants jusqu'à eux. */
     const serviceNameRef = useRef(serviceName)
     const montantRef = useRef(0)
+    // Un paiement a-t-il abouti pendant cette ouverture ? Sert à distinguer
+    // « fermeture après issue » de « fermeture par abandon ».
+    const abouti = useRef(false)
+
     useEffect(() => { onSuccessRef.current = onSuccess }, [onSuccess])
     useEffect(() => { onCloseRef.current = onClose }, [onClose])
     useEffect(() => { onCancelRef.current = onCancel }, [onCancel])
     useEffect(() => { serviceNameRef.current = serviceName }, [serviceName])
+    // À chaque réouverture, on repart d'une ardoise propre.
+    useEffect(() => { if (visible) abouti.current = false }, [visible])
 
-    /* On masque D'ABORD, on agit ENSUITE : changer d'écran pendant qu'un
-       Modal se ferme produit un affichage instable. Le délai laisse
-       l'animation se terminer. */
+    /* On masque D'ABORD, on agit ENSUITE : changer d'écran pendant qu'une
+       fenêtre se ferme produit un affichage instable. */
     const terminer = useCallback((suite?: () => void) => {
-        ouvert.current = false
         setConfig(null)
         onCloseRef.current()
         if (suite) setTimeout(suite, 320)
@@ -95,7 +100,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
     }, [terminer, nav])
 
     /* Fermeture sans paiement : le client doit le savoir sur un écran, pas
-       dans une alerte qui disparaît. */
+       dans une alerte qui disparaît en trois secondes. */
     const surAbandon = useCallback(() => {
         if (abouti.current) return
         terminer(() => {
@@ -111,132 +116,133 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         })
     }, [terminer, nav])
 
-    /* Croix de NOTRE feuille : le widget n'est pas encore ouvert, il n'y a
-       donc rien à annuler — on referme simplement. L'abandon du widget
-       lui-même est traité par `surAbandon`. */
+    /* Croix de CETTE feuille : le widget n'est pas encore ouvert, il n'y a donc
+       rien à annuler — on referme, simplement. */
     const fermer = useCallback(() => { terminer() }, [terminer])
 
-    // ── Extrait le montant numérique depuis un texte comme "À partir de 150 000 FCFA" ──
-    const getNumericAmount = (): number => {
-        const matches = amount.match(/\d+([\s]?\d+)*/g)
-        if (matches && matches.length > 0) {
-            return parseInt(matches[0].replace(/\s/g, ''), 10)
-        }
-        return 1000
-    }
+    /* Le montant arrive parfois habillé (« À partir de 150 000 FCFA ») : on en
+       extrait le nombre, seule chose que la passerelle accepte. */
+    const montant = (() => {
+        const trouve = amount.match(/\d+([\s]?\d+)*/g)
+        return trouve?.length ? parseInt(trouve[0].replace(/\s/g, ''), 10) : 1000
+    })()
+    const montantLisible = `${montant.toLocaleString('fr-FR')} FCFA`
 
-    const numericAmount = getNumericAmount()
-    const formattedAmount = numericAmount.toLocaleString('fr-FR') + ' FCFA'
-
-    // ── Ouvrir le widget Kkiapay natif ──
-    const handlePayNow = useCallback(() => {
+    const ouvrirWidget = useCallback(() => {
         if (!kkiapayKey) {
-            toast(t('Configuration manquante'), t("La clé de paiement Kkiapay n'est pas configurée."))
+            toast(t('Paiement indisponible'), t('La clé de paiement n’est pas configurée. Contactez-nous.'))
             return
         }
-
         setLoading(true)
-        ouvert.current = true
-        montantRef.current = numericAmount
-
+        montantRef.current = montant
         setConfig({
-            amount: numericAmount,
+            amount: montant,
             api_key: kkiapayKey,
-            sandbox, // Lit settings.kkiapay_sandbox (défaut : false / prod)
+            sandbox, // Lu depuis settings.kkiapay_sandbox — jamais codé en dur.
             email: profile?.email || '',
             phone: profile?.phone || '',
             reason: serviceName || t('Paiement de service'),
         })
         setLoading(false)
-    }, [kkiapayKey, numericAmount, profile, sandbox, serviceName, t])
+    }, [kkiapayKey, montant, profile, sandbox, serviceName, t])
 
     return (
         <Modal visible={visible} animationType="slide" transparent onRequestClose={fermer}>
-            <View style={styles.overlay}>
-                <View style={styles.sheet}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <View style={styles.headerLeft}>
-                            <View style={styles.kkiapayBadge}>
-                                <Text style={styles.kkiapayText}>KKIAPAY</Text>
-                            </View>
-                            <View style={styles.securedRow}>
-                                <ShieldCheck size={11} color={colors.primary} strokeWidth={2} />
-                                <Text style={styles.securedLabel}>{t('Paiement sécurisé in-app')}</Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity onPress={fermer} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            accessibilityRole="button"
-                            accessibilityLabel="Fermer le paiement">
-                            <X size={24} color={colors.textSecondary} strokeWidth={1.75} />
-                        </TouchableOpacity>
-                    </View>
+            <Pressable style={styles.voile} onPress={fermer} accessibilityRole="button" accessibilityLabel={t('Fermer')} />
 
-                    {/* Service info */}
-                    <View style={styles.serviceBox}>
-                        <Briefcase size={20} color={colors.primary} strokeWidth={1.75} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.serviceLabel}>{t('Service')}</Text>
-                            <Text style={styles.serviceName} numberOfLines={2}>{serviceName}</Text>
-                        </View>
-                    </View>
+            <View style={styles.feuille}>
+                <View style={styles.poignee} />
 
-                    {/* Montant */}
-                    <View style={styles.amountCard}>
-                        <Text style={styles.amountLabel}>{t('Montant à payer')}</Text>
-                        <Text style={styles.amountValue}>{formattedAmount}</Text>
+                <View style={styles.entete}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.overline}>{t('Étape 2/2')}</Text>
+                        <Text style={styles.titre}>{t('Moyen de paiement')}</Text>
                     </View>
-
-                    {/* Moyens de paiement */}
-                    <Text style={styles.sectionTitle}>{t('Moyens de paiement acceptés')}</Text>
-                    <View style={styles.methodsRow}>
-                        <View style={styles.methodChip}>
-                            <Smartphone size={16} color="#008751" strokeWidth={1.75} />
-                            <Text style={styles.methodText}>MTN MoMo</Text>
-                        </View>
-                        <View style={styles.methodChip}>
-                            <Smartphone size={16} color="#00643C" strokeWidth={1.75} />
-                            <Text style={styles.methodText}>Moov Money</Text>
-                        </View>
-                        <View style={styles.methodChip}>
-                            <CreditCard size={16} color="#00643C" strokeWidth={1.75} />
-                            <Text style={styles.methodText}>Visa / MC</Text>
-                        </View>
-                    </View>
-
-                    {/* CTA */}
-                    <TouchableOpacity
-                        style={[styles.payBtn, loading && { opacity: 0.6 }]}
-                        onPress={handlePayNow}
-                        disabled={loading || !kkiapayKey}
-                        activeOpacity={0.85}
+                    <Pressable
+                        onPress={fermer}
+                        style={styles.croix}
+                        hitSlop={10}
                         accessibilityRole="button"
-                        hitSlop={6}
+                        accessibilityLabel={t('Fermer le paiement')}
                     >
-                        {loading ? (
-                            <ActivityIndicator color="#FFF" size="small" />
-                        ) : (
-                            <>
-                                <Lock size={18} color="#FFF" strokeWidth={1.75} />
-                                <Text style={styles.payBtnText}>{t('Payer')} {formattedAmount}</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                        <X size={16} color={C.textSec} strokeWidth={2.4} />
+                    </Pressable>
+                </View>
 
-                    {/* Footer info */}
-                    <View style={styles.footerNote}>
-                        <Info size={13} color={colors.textMuted} strokeWidth={1.75} />
-                        <Text style={styles.footerText}>
-                            {t("Le widget de paiement Kkiapay s'ouvrira directement dans l'application. Android & iOS supportés.")}
-                        </Text>
+                {/* Ce qui est payé, et combien. */}
+                <View style={styles.recap}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.recapLabel}>{t('Vous réglez')}</Text>
+                        <Text style={styles.recapObjet} numberOfLines={2}>{serviceName}</Text>
+                    </View>
+                    <Text style={styles.recapMontant}>{montantLisible}</Text>
+                </View>
+
+                {/* Un seul moyen est actif dans l'application : Mobile Money et
+                    carte passent par la même passerelle. On ne feint donc pas
+                    un choix qui n'existe pas — on dit ce qui est accepté. */}
+                <View style={styles.moyens}>
+                    <View style={[styles.moyen, styles.moyenActif]}>
+                        <View style={[styles.tuile, styles.tuileActive]}>
+                            <Smartphone size={22} color={C.primary} strokeWidth={2.2} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <View style={styles.moyenTitreLigne}>
+                                <Text style={styles.moyenTitre}>{t('Mobile Money')}</Text>
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{t('Recommandé au Bénin')}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.moyenSous}>{t('MTN MoMo · Moov Money · Celtiis')}</Text>
+                        </View>
+                        <View style={styles.radioActif}><View style={styles.radioPoint} /></View>
+                    </View>
+
+                    <View style={styles.moyen}>
+                        <View style={styles.tuile}>
+                            <CreditCard size={22} color={C.textSec} strokeWidth={2.2} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.moyenTitre}>{t('Carte bancaire')}</Text>
+                            <Text style={styles.moyenSous}>{t('Visa · Mastercard, dans la même fenêtre')}</Text>
+                        </View>
                     </View>
                 </View>
+
+                <View style={styles.rassurance}>
+                    <Lock size={14} color={C.primary} strokeWidth={2.2} />
+                    <Text style={styles.rassuranceText}>
+                        {t('Paiement vérifié auprès de la passerelle avant validation.')}
+                    </Text>
+                </View>
+
+                <Pressable
+                    onPress={ouvrirWidget}
+                    disabled={loading || !kkiapayKey}
+                    style={({ pressed }) => [
+                        styles.cta,
+                        (loading || !kkiapayKey) && { opacity: 0.5 },
+                        pressed && !loading && { transform: [{ scale: 0.98 }] },
+                    ]}
+                    accessibilityRole="button"
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                        <>
+                            <ShieldCheck size={18} color="#FFFFFF" strokeWidth={2.2} />
+                            <Text style={styles.ctaText}>{t('Payer')} {montantLisible}</Text>
+                        </>
+                    )}
+                </Pressable>
+
+                <Text style={styles.mention}>
+                    {t('En confirmant, vous acceptez les conditions de vente de Retour Gagnant Bénin.')}
+                </Text>
             </View>
 
-            {/* Le widget vit dans SA propre fenêtre. Il ne démonte donc pas
-                l'application — contrairement au provider du SDK, qui rendait
-                `{!widgetOpened && children}` et repartait de zéro à chaque
-                fermeture (navigation réinitialisée, saisies perdues). */}
+            {/* Le widget vit dans SA propre fenêtre : il ne démonte pas
+                l'application, contrairement au provider du SDK. */}
             <KkiapayWidget
                 visible={!!config}
                 config={config}
@@ -249,166 +255,53 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
 }
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.55)',
-        justifyContent: 'flex-end',
-    },
-    sheet: {
-        backgroundColor: colors.surface,
+    voile: { flex: 1, backgroundColor: 'rgba(60,60,60,0.18)' },
+
+    feuille: {
+        backgroundColor: C.surface,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        padding: spacing.xl,
-        paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-        borderBottomWidth: 0,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 30,
+        gap: 14,
+        shadowColor: '#3C3C3C',
+        shadowOffset: { width: 0, height: -12 },
+        shadowOpacity: 0.12,
+        shadowRadius: 40,
+        elevation: 20,
     },
+    poignee: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.borderStrong },
 
-    /* Header */
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 20,
-    },
-    headerLeft: { gap: 6 },
-    kkiapayBadge: {
-        backgroundColor: colors.primaryMuted,
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        alignSelf: 'flex-start',
-    },
-    kkiapayText: {
-        fontSize: 13,
-        fontFamily: 'Outfit_700Bold',
-        color: colors.primary,
-        letterSpacing: 1.2,
-    },
-    securedRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    securedLabel: {
-        fontSize: 12,
-        fontFamily: 'Outfit_500Medium',
-        color: colors.primary,
-    },
-    closeBtn: { padding: 4 },
+    entete: { flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 12 },
+    overline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    titre: { fontFamily: fonts.extrabold, fontSize: 16, color: C.text, marginTop: 2 },
+    croix: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
 
-    /* Service */
-    serviceBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        backgroundColor: colors.surfaceWarm,
-        padding: 14,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-        marginBottom: 16,
-    },
-    serviceLabel: {
-        fontSize: 12,
-        fontFamily: 'Outfit_600SemiBold',
-        color: colors.textMuted,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    serviceName: {
-        ...typography.label,
-        color: colors.textPrimary,
-        marginTop: 2,
-    },
+    recap: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14 },
+    recapLabel: { fontFamily: fonts.bold, fontSize: 9.5, color: C.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
+    recapObjet: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.text, marginTop: 3 },
+    recapMontant: { fontFamily: fonts.extrabold, fontSize: 17, color: VERT_PROFOND },
 
-    /* Amount */
-    amountCard: {
-        backgroundColor: colors.headerBg,
-        padding: 20,
-        borderRadius: radius.lg,
-        alignItems: 'center',
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
-        ...shadows.glow,
-    },
-    amountLabel: {
-        fontSize: 12,
-        fontFamily: 'Outfit_600SemiBold',
-        color: 'rgba(255,255,255,0.6)',
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-    },
-    amountValue: {
-        fontSize: 28,
-        fontFamily: 'PlusJakartaSans_800ExtraBold',
-        color: colors.primary,
-        marginTop: 4,
-    },
+    moyens: { gap: 10 },
+    moyen: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 18, padding: 12 },
+    moyenActif: { borderWidth: 2, borderColor: C.primary, backgroundColor: C.primarySoft },
+    tuile: { width: 46, height: 46, borderRadius: 14, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.borderStrong, alignItems: 'center', justifyContent: 'center' },
+    tuileActive: { backgroundColor: '#FFFFFF', borderColor: VERT_LISERE },
+    moyenTitreLigne: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    moyenTitre: { fontFamily: fonts.extrabold, fontSize: 13, color: C.text },
+    moyenSous: { fontFamily: fonts.body, fontSize: 11.5, color: C.textSec, marginTop: 3 },
+    badge: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
+    badgeText: { fontFamily: fonts.bold, fontSize: 8.5, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    radioActif: { width: 20, height: 20, borderRadius: 10, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
+    radioPoint: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#FFFFFF' },
 
-    /* Methods */
-    sectionTitle: {
-        ...typography.caption,
-        color: colors.textSecondary,
-        fontFamily: 'Outfit_600SemiBold',
-        marginBottom: 10,
-    },
-    methodsRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 24,
-    },
-    methodChip: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        paddingVertical: 10,
-        backgroundColor: colors.surfaceWarm,
-        borderRadius: radius.sm,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-    },
-    methodText: {
-        fontSize: 12,
-        fontFamily: 'Outfit_600SemiBold',
-        color: colors.textPrimary,
-    },
+    rassurance: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
+    rassuranceText: { flex: 1, fontFamily: fonts.body, fontSize: 11, color: C.textSec },
 
-    /* CTA */
-    payBtn: {
-        backgroundColor: colors.primary,
-        borderRadius: radius.md,
-        paddingVertical: 17,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 10,
-        ...shadows.glow,
-    },
-    payBtnText: {
-        ...typography.button,
-        color: '#FFF',
-        fontSize: 16,
-    },
-
-    /* Footer */
-    footerNote: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        marginTop: 16,
-    },
-    footerText: {
-        fontSize: 12,
-        fontFamily: 'Outfit_400Regular',
-        color: colors.textMuted,
-        flex: 1,
-    },
+    cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 16 },
+    ctaText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
+    mention: { fontFamily: fonts.body, fontSize: 10, color: C.textMuted, textAlign: 'center' },
 })
