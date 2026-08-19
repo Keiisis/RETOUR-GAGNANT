@@ -705,7 +705,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
                                         {/* Download buttons : PDF + PPTX */}
                                         <div className="grid grid-cols-2 gap-2 relative z-10 mb-3">
                                             <a
-                                                href={`/api/proposals/${proposal.id}/devis`}
+                                                href={`/api/proposals/${proposal.id}/devis?secret=${encodeURIComponent(secret)}`}
                                                 target="_blank" rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="bg-slate-50 border border-slate-200 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/30 text-slate-500 hover:text-[#008751] py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation"
@@ -771,7 +771,7 @@ export default function PresentationView({ params }: { params: Promise<{ secret:
 
             {/* ═══ FLOATING PDF (bas gauche) ═══ */}
             <a
-                href={`/api/proposals/${proposal.id}/devis`}
+                href={`/api/proposals/${proposal.id}/devis?secret=${encodeURIComponent(secret)}`}
                 target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="fixed bottom-[88px] left-4 md:bottom-20 md:left-8 z-[60] w-12 h-12 md:w-14 md:h-14 bg-white/90 hover:bg-[#FCD116]/20 backdrop-blur-xl border border-[#FCD116]/30 hover:border-[#FCD116]/70 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 touch-manipulation"
