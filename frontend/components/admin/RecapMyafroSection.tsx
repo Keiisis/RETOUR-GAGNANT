@@ -4,7 +4,7 @@
  * Récaps de dossier MyAfroOrigins déposés depuis le site.
  *
  * Avant, reprendre un dossier bloqué supposait qu'un agent envoie un lien : la
- * démarche partait toujours du cabinet. Le service en ligne inverse le sens, et
+ * démarche partait toujours de l'agence. Le service en ligne inverse le sens, et
  * les demandes arrivent ici, déjà réglées, avec le récit du client et la fiche
  * d'analyse produite automatiquement.
  *
