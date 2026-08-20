@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import { validateStrongPassword } from '@/lib/password'
-import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
+import { guardPublic, EMAIL_LIMIT, INSCRIPTION_IP_LIMIT } from '@/lib/api-guard'
 import { buildConfirmEmail } from '@/lib/emails/confirm-email'
 
 // Service role : bypass RLS pour créer le profil, lier les documents
@@ -12,8 +12,10 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-    const trop = guardPublic(req, 'client/register', EMAIL_LIMIT)
-    if (trop) return trop
+    /* Anti-abus large par IP : vise la ferme a comptes, jamais un groupe humain
+       derriere une meme adresse publique (voir INSCRIPTION_IP_LIMIT). */
+    const tropIp = guardPublic(req, 'client/register:ip', INSCRIPTION_IP_LIMIT)
+    if (tropIp) return tropIp
 
     try {
         const body = await req.json()
@@ -22,6 +24,16 @@ export async function POST(req: NextRequest) {
         if (!email || !password) {
             return NextResponse.json({ error: 'email et mot de passe requis' }, { status: 400 })
         }
+
+        /* Quota SMTP par ADRESSE, pas par IP : trois envois par quart d'heure
+           pour une meme adresse, ce qui protege la boite du destinataire et
+           notre reputation d'expediteur, sans qu'un inscrit puisse bloquer son
+           voisin d'operateur. */
+        const tropEmail = guardPublic(
+            req, 'client/register', EMAIL_LIMIT,
+            String(email).toLowerCase().trim(),
+        )
+        if (tropEmail) return tropEmail
 
         // Validation sécurité mot de passe (serveur : ne jamais faire confiance au client seul)
         const pwdErrors = validateStrongPassword(password)

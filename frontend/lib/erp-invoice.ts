@@ -85,6 +85,16 @@ export async function createErpInvoiceForOrder(opts: {
             })
         }
 
+        // Meme regle que le chemin navigateur : le compte vient de l'adresse.
+        let compteDuPayeur: string | null = null
+        if (fullOrder.customer_email) {
+            const { data: profil } = await supabase
+                .from('client_profiles').select('id')
+                .eq('email', String(fullOrder.customer_email).toLowerCase().trim())
+                .maybeSingle()
+            compteDuPayeur = profil?.id || null
+        }
+
         const invoiceNumero = await nextDocumentNumber(supabase, 'facture')
 
         const orderCurrency = (fullOrder.currency || 'XOF').toUpperCase()
@@ -116,7 +126,7 @@ export async function createErpInvoiceForOrder(opts: {
             status: 'paye',
             paid_at: new Date().toISOString(),
             // Même clé que le chemin navigateur : une transaction, une facture.
-            client_id: fullOrder.client_id || null,
+            client_id: compteDuPayeur,
             payment_transaction_id: transactionId || null,
             payment_provider: method || null,
             payment_method: method || null,

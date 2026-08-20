@@ -28,6 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { useFocusEffect } from '@react-navigation/native'
 import { lireDossiers, enregistrerDossiers } from '../../lib/db/depots'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { thankYouMessage } from '../../lib/serviceCompletion'
@@ -191,7 +192,6 @@ export default function DossierScreen({ navigation }: any) {
         } catch { /* silent */ } finally { setLoading(false) }
     }, [profile])
 
-    useEffect(() => { fetchDossiers() }, [fetchDossiers])
 
     /* La callback est lue via une ref : sans cela, `fetchDossiers` (recréé à
        chaque changement de `profile`) figurait dans les dépendances et faisait
@@ -199,16 +199,24 @@ export default function DossierScreen({ navigation }: any) {
     const fetchRef = useRef(fetchDossiers)
     useEffect(() => { fetchRef.current = fetchDossiers }, [fetchDossiers])
 
-    useEffect(() => {
+    /* Temps reel PENDANT que l'ecran est affiche, pas tant qu'il est monte.
+       Dans un navigateur a onglets, tous les onglets visites restent montes :
+       un client pose sur l'accueil gardait ouverts les canaux « dossiers » et
+       « notifications ». Multiplie par le nombre de connectes simultanes,
+       c'est le quota de connexions temps reel de Supabase qui se remplit sans
+       que personne ne regarde l'ecran correspondant.
+       Au retour sur l'onglet, on relit d'abord (la base locale repond tout de
+       suite) puis on se rabranche. */
+    useFocusEffect(useCallback(() => {
         if (!profile?.id) return
 
+        fetchRef.current()
+
         // Nom de canal UNIQUE par abonnement. supabase.channel(nom) renvoie
-        // l'instance EXISTANTE quand le nom est déjà pris : avec un nom fixe
-        // (« dossiers-realtime »), un simple re-rendu — ou un rechargement à
-        // chaud — rappelait .on() sur un canal DÉJÀ souscrit, ce que le client
-        // refuse : « cannot add postgres_changes callbacks after subscribe() ».
-        // L'écran plantait alors au rendu. Le retrait du canal est de plus
-        // asynchrone, donc l'ancien pouvait encore vivre à la resouscription.
+        // l'instance EXISTANTE quand le nom est deja pris : avec un nom fixe,
+        // un simple re-rendu rappelait .on() sur un canal DEJA souscrit, ce que
+        // le client refuse (« cannot add postgres_changes callbacks after
+        // subscribe() ») et l'ecran plantait au rendu.
         const topic = `dossiers-${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const channel = supabase
             .channel(topic)
@@ -219,7 +227,7 @@ export default function DossierScreen({ navigation }: any) {
             .subscribe()
 
         return () => { supabase.removeChannel(channel) }
-    }, [profile?.id])
+    }, [profile?.id]))
 
     const onRefresh = async () => {
         setRefreshing(true); await fetchDossiers(); setRefreshing(false)

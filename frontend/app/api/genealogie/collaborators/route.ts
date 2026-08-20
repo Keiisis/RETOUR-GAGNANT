@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { trouverUtilisateurParEmail } from '@/lib/auth-lookup'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -125,9 +126,10 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Chercher l'user_id à partir de l'email
-        const { data: users } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
-        const targetUser = users?.users.find(u => u.email?.toLowerCase() === email)
+        /* Recherche bornee : la lecture d'une seule page de mille comptes
+           faisait repondre « aucun compte trouve » a un collaborateur qui
+           existe pourtant, des que la base depasse mille inscrits. */
+        const targetUser = await trouverUtilisateurParEmail(supabase, email)
         if (!targetUser) {
             return NextResponse.json(
                 { error: `Aucun compte trouvé pour ${email}. L'utilisateur doit d'abord créer un compte.` },

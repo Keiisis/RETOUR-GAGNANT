@@ -57,27 +57,53 @@ export async function GET(req: NextRequest) {
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-        // Pour chaque dossier (tracking), charger ses documents + mapper le statut
-        // global vers le statut d'affichage mobile.
-        const dossiersWithDocs = await Promise.all((tracking || []).map(async (t) => {
-            const ids = [t.id, t.dossier_ref_id].filter(Boolean) as string[]
-            const { data: docs } = await supabase
-                .from('dossier_documents')
-                .select('id, file_name, file_url, file_type, status, created_at')
-                .in('dossier_id', ids)
-                .order('created_at', { ascending: false })
+        /* Les pièces, en DEUX requêtes — pas deux par dossier.
+           L'ancien code interrogeait la base pour CHAQUE dossier, et une
+           seconde fois quand la première ne rendait rien : un client avec dix
+           dossiers déclenchait jusqu'à vingt allers-retours à chaque ouverture
+           de l'onglet. Multiplié par une base d'utilisateurs, c'est la base de
+           données qui paie. Ici on demande toutes les pièces d'un coup, puis
+           on les distribue en mémoire. */
+        const tousLesIds = (tracking || [])
+            .flatMap(t => [t.id, t.dossier_ref_id])
+            .filter(Boolean) as string[]
 
-            // Fallback sur table "documents" si dossier_documents vide
-            let finalDocs = docs || []
-            if (finalDocs.length === 0) {
-                const { data: docs2 } = await supabase
-                    .from('documents')
-                    .select('id, file_name, file_url, file_type, status, created_at')
-                    .in('dossier_id', ids)
-                    .order('created_at', { ascending: false })
-                finalDocs = docs2 || []
+        const CHAMPS_PIECE = 'id, dossier_id, file_name, file_url, file_type, status, created_at'
+        type Piece = {
+            id: string; dossier_id: string; file_name: string | null
+            file_url: string | null; file_type: string | null
+            status: string | null; created_at: string | null
+        }
+
+        let piecesParDossier = new Map<string, Piece[]>()
+        if (tousLesIds.length > 0) {
+            const [principales, deSecours] = await Promise.all([
+                supabase.from('dossier_documents').select(CHAMPS_PIECE)
+                    .in('dossier_id', tousLesIds).order('created_at', { ascending: false }),
+                // La table historique : certains dossiers anciens n'ont que celle-ci.
+                supabase.from('documents').select(CHAMPS_PIECE)
+                    .in('dossier_id', tousLesIds).order('created_at', { ascending: false }),
+            ])
+
+            const indexer = (lignes: Piece[] | null) => {
+                const carte = new Map<string, Piece[]>()
+                for (const p of lignes || []) {
+                    const liste = carte.get(p.dossier_id) || []
+                    liste.push(p)
+                    carte.set(p.dossier_id, liste)
+                }
+                return carte
             }
+            const carteA = indexer(principales.data as Piece[] | null)
+            const carteB = indexer(deSecours.data as Piece[] | null)
+            // Priorité à la table courante ; la table historique ne sert qu'à
+            // combler un dossier qui n'y a rien — exactement l'ancien repli.
+            piecesParDossier = new Map([...carteB, ...carteA])
+        }
 
+        const dossiersWithDocs = (tracking || []).map((t) => {
+            const ids = [t.id, t.dossier_ref_id].filter(Boolean) as string[]
+            const documents = ids.flatMap(id => piecesParDossier.get(id) || [])
             return {
                 id: t.id,
                 status: TRACKING_TO_MOBILE_STATUS[String(t.statut)] || 'soumis',
@@ -86,9 +112,9 @@ export async function GET(req: NextRequest) {
                 notes: t.notes,
                 created_at: t.created_at,
                 updated_at: t.updated_at,
-                documents: finalDocs,
+                documents,
             }
-        }))
+        })
 
         // ─── Conseiller assigné ───────────────────────────────────────────
         // L'assignation vit dans dossier_tracking.agent_assigne (voir

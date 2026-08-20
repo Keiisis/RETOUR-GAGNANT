@@ -91,7 +91,30 @@ export const CHAT_LIMIT: RateLimitConfig = {
     maxBlockDuration: 60 * 60_000,
 }
 
-/** Envoi d'e-mail déclenché par un anonyme : protège le quota SMTP. */
+/**
+ * Anti-abus d'INSCRIPTION, par IP.
+ *
+ * `EMAIL_LIMIT` (3 par quart d'heure) reste le bon quota pour une ADRESSE,
+ * mais appliqué à une IP il devient un piège : les opérateurs mobiles
+ * africains placent des milliers d'abonnés derrière une seule adresse
+ * publique (CGNAT), et le Wi-Fi d'un cybercafé ou d'une famille fait pareil.
+ * Le 4e inscrit d'un même opérateur était donc bloqué UNE HEURE, et chaque
+ * nouvel essai triplait la peine — jusqu'à 24 h. Un jour de lancement, cela
+ * ferme la porte à des quartiers entiers.
+ *
+ * Ce plafond-ci ne vise que la ferme à comptes : assez haut pour qu'aucun
+ * groupe humain ne l'atteigne, assez bas pour qu'un script se fasse cueillir.
+ */
+export const INSCRIPTION_IP_LIMIT: RateLimitConfig = {
+    limit: 40,
+    window: 15 * 60_000,
+    blockDuration: 15 * 60_000,
+    blockMultiplier: 2,
+    maxBlockDuration: 2 * 60 * 60_000,
+}
+
+/** Envoi d'e-mail déclenché par un anonyme : protège le quota SMTP.
+ *  À passer avec un IDENTIFIANT (l'adresse email), jamais par IP seule. */
 export const EMAIL_LIMIT: RateLimitConfig = {
     limit: 3,
     window: 15 * 60_000,
