@@ -35,6 +35,7 @@ import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
 import { pricingEnabled, showPriceFor } from '../../lib/pricing-visibility'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -206,13 +207,22 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
     // servi par /api/service-landing/[slug] (DEFAULT + override admin fusionnés).
     const [landing, setLanding] = useState<ServiceLanding | null>(null)
 
+    /* Contenu editorial du service : public, identique pour tous, et il change
+       rarement. Servi depuis la derniere version connue — la page s'ouvre donc
+       pleine, sans le passage par la fiche de repli. */
     useEffect(() => {
         if (!serviceId) return
         let cancelled = false
-        fetchWithTimeout(`${API_BASE}/api/service-landing/${serviceId}`, { timeoutMs: 8000 })
-            .then(r => (r.ok ? r.json() : null))
-            .then(j => { if (!cancelled && j?.content) setLanding(j.content as ServiceLanding) })
-            .catch(() => { /* fallback SERVICES_DATA */ })
+        void avecMemoire<ServiceLanding>(
+            `service-landing:${serviceId}`,
+            async () => {
+                const r = await fetchWithTimeout(`${API_BASE}/api/service-landing/${serviceId}`, { timeoutMs: 8000 })
+                const j = r.ok ? await r.json() : null
+                return j?.content ? (j.content as ServiceLanding) : null
+            },
+            (contenu) => { if (!cancelled) setLanding(contenu) },
+            { fraicheurMs: 10 * 60_000 },
+        )
         return () => { cancelled = true }
     }, [serviceId])
 
