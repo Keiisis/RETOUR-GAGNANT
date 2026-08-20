@@ -57,7 +57,7 @@
     },
     {
       "path": "/api/cron/orders-abandon",
-      "schedule": "15 * * * *"
+      "schedule": "15 3 * * *"
     }
   ]
 }
