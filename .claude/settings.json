@@ -62,7 +62,7 @@
       "Bash(node \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/safearea-codemod.js\")",
       "Bash(node -e ' *)",
       "Bash(git add *)",
-      "Bash(git commit -q -m 'docs\\(memory\\): journal session 6 — refonte native mobile \\(4 lots\\) *)",
+      "Bash(git commit -q -m 'docs\\(memory\\): journal session 6 \u2014 refonte native mobile \\(4 lots\\) *)",
       "Bash(node \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/find-clients.js\")",
       "Bash(node \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/restore-clients.js\")",
       "Bash(node \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/verify-resume-flow.js\")",
@@ -84,7 +84,7 @@
       "Bash(echo \"tsc exit: $?\")",
       "Bash(npx next *)",
       "Bash(echo \"tsc: $?\")",
-      "Bash(grep -n \"Voyage \\\\${proposal.destination}\\\\|Voyage vers\\\\|Finalisez votre réservation\\\\|voyage vers\\\\|Réservation confirmée\" \"app/p/[secret]/paiement/page.tsx\")",
+      "Bash(grep -n \"Voyage \\\\${proposal.destination}\\\\|Voyage vers\\\\|Finalisez votre r\u00e9servation\\\\|voyage vers\\\\|R\u00e9servation confirm\u00e9e\" \"app/p/[secret]/paiement/page.tsx\")",
       "Bash(python -)",
       "Bash(curl -sL \"https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json\" -o public/maps/countries-110m.json)",
       "Bash(grep -noE \"background[^,}]{0,40}#[0-9A-Fa-f]{6}|bg-\\\\[[^]]+\\\\]|from-\\\\[[^]]+\\\\]\" app/admin/genealogie/arbre/page.tsx)",
@@ -139,8 +139,8 @@
       "Bash(rtk tsc *)",
       "Bash(rtk next *)",
       "Bash(rtk git *)",
-      "Bash(sed -i 's#// client\\) : Présentiel 550 € / Visio 780 €, converti en XOF \\(taux BCEAO\\).#// client\\), lu depuis les tarifs admin du service, converti en XOF \\(taux BCEAO\\).#' app/api/services/fa-checkout/route.ts)",
-      "Bash(sed -i 's#// Prix FIXÉS CÔTÉ SERVEUR \\(/api/services/fa-checkout\\) : Présentiel 550 €,#// Prix FIXÉS CÔTÉ SERVEUR \\(/api/services/fa-checkout\\), pilotés depuis les#; s#// Visio 780 €. Pipeline standard : order → widget \\(order_id\\) → verify →#// tarifs admin du service. Pipeline : order → widget \\(order_id\\) → verify →#' components/services/FaConsultationBooking.tsx)",
+      "Bash(sed -i 's#// client\\) : Pr\u00e9sentiel 550 \u20ac / Visio 780 \u20ac, converti en XOF \\(taux BCEAO\\).#// client\\), lu depuis les tarifs admin du service, converti en XOF \\(taux BCEAO\\).#' app/api/services/fa-checkout/route.ts)",
+      "Bash(sed -i 's#// Prix FIX\u00c9S C\u00d4T\u00c9 SERVEUR \\(/api/services/fa-checkout\\) : Pr\u00e9sentiel 550 \u20ac,#// Prix FIX\u00c9S C\u00d4T\u00c9 SERVEUR \\(/api/services/fa-checkout\\), pilot\u00e9s depuis les#; s#// Visio 780 \u20ac. Pipeline standard : order \u2192 widget \\(order_id\\) \u2192 verify \u2192#// tarifs admin du service. Pipeline : order \u2192 widget \\(order_id\\) \u2192 verify \u2192#' components/services/FaConsultationBooking.tsx)",
       "Bash(sed -i 's/^            amount: amountXOF,$/            amount: serverAmountRef.current || amountXOF,/; s/transaction: { amount: amountXOF, description:/transaction: { amount: serverAmountRef.current || amountXOF, description:/' components/services/FaConsultationBooking.tsx)",
       "Bash(python -c ' *)",
       "Bash(rtk ls *)",
@@ -262,7 +262,7 @@
       "Bash(timeout 180 npx -y skills add \"leonxlnx/taste-skill\" -g -y)",
       "Bash(timeout 180 npx -y skills add \"nextlevelbuilder/ui-ux-pro-max-skill\" -g -y)",
       "Bash(timeout 150 npx -y skills add \"uizze.com@anti-ui-slop\" -g -y)",
-      "Bash(xargs grep -lE \"Félicitations|Merci pour|🎉|✨|Bravo\")",
+      "Bash(xargs grep -lE \"F\u00e9licitations|Merci pour|\ud83c\udf89|\u2728|Bravo\")",
       "Bash(sed -n \"/from 'lucide-react'/=\" \"app/\\(routes\\)/nationalite/formulaire/page.tsx\")",
       "Bash(xargs -I{} sed -n '1,{}p' \"app/\\(routes\\)/nationalite/formulaire/page.tsx\")",
       "Bash(cd \"c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE\" && rtk grep -nE \"showPrice|const price =|baseAmountXOF|ttcFromHt\" \"frontend/app/\\(routes\\)/evenements/[slug]/page.tsx\" | head; echo \"=== def showPrice ===\"; sed -n '/showPrice/,/}/p' \"frontend/app/\\(routes\\)/evenements/[slug]/page.tsx\" | head -8)",
@@ -358,10 +358,10 @@
       "Bash(rm -rf dist)",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const b=JSON.parse\\(d.slice\\(d.indexOf\\('{'\\)\\)\\);console.log\\('statut :',b.status\\);console.log\\('commit :',\\(b.gitCommitHash||''\\).slice\\(0,7\\)\\);console.log\\('cree   :',String\\(b.createdAt\\).slice\\(0,16\\).replace\\('T',' '\\)\\);}\\)\")",
       "Bash(node -e \"console.log\\('vu par node       :', new Date\\(\\).toISOString\\(\\).slice\\(0,19\\).replace\\('T',' '\\), 'UTC | fuseau systeme :', Intl.DateTimeFormat\\(\\).resolvedOptions\\(\\).timeZone\\)\")",
-      "Bash(sed -i '181s/.*/- v2 \\(actuel\\) : **Widget Kkiapay dans une `<WebView>` in-app** via `@kkiapay-org\\\\/react-native-sdk` — Android + iOS. Le mot « natif » employé ici auparavant était inexact \\(voir section ci-dessous\\)./' CLAUDE.md)",
+      "Bash(sed -i '181s/.*/- v2 \\(actuel\\) : **Widget Kkiapay dans une `<WebView>` in-app** via `@kkiapay-org\\\\/react-native-sdk` \u2014 Android + iOS. Le mot \u00ab natif \u00bb employ\u00e9 ici auparavant \u00e9tait inexact \\(voir section ci-dessous\\)./' CLAUDE.md)",
       "Bash(sed -i '220s/Widget natif   /Widget WebView /' CLAUDE.md)",
-      "Bash(sed -i '237s/.*/- ✅ **Dev build obligatoire** — à cause de `react-native-webrtc` et `react-native-incall-manager`, PAS de Kkiapay \\(dont le SDK est du JavaScript pur\\)/' CLAUDE.md)",
-      "Bash(sed -i '177s/.*/## 💳 PAIEMENT KKIAPAY — widget web en WebView \\(le titre disait « SDK natif » à tort\\)/' CLAUDE.md)",
+      "Bash(sed -i '237s/.*/- \u2705 **Dev build obligatoire** \u2014 \u00e0 cause de `react-native-webrtc` et `react-native-incall-manager`, PAS de Kkiapay \\(dont le SDK est du JavaScript pur\\)/' CLAUDE.md)",
+      "Bash(sed -i '177s/.*/## \ud83d\udcb3 PAIEMENT KKIAPAY \u2014 widget web en WebView \\(le titre disait \u00ab SDK natif \u00bb \u00e0 tort\\)/' CLAUDE.md)",
       "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java\" -version)",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const b=JSON.parse\\(d.slice\\(d.indexOf\\('{'\\)\\)\\);console.log\\('statut :',b.status,'| attente :',Math.round\\(\\(Date.now\\(\\)-new Date\\(b.createdAt\\)\\)/60000\\),'min'\\)}\\)\")",
       "Bash(cd \"c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/mobile\")",
@@ -425,7 +425,7 @@
       "Bash(strix-ar -n --mount ./frontend --target ./frontend -m standard --max-budget-usd 8 --instruction \"Audit de securite des routes API Next.js sous app/api : autorisation manquante, IDOR, injection, exposition de secrets, verification des paiements. Ignore node_modules et .next.\")",
       "Bash(grep -vE \"^\\\\s*$\")",
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); r=d.get\\('runs',[{}]\\)[0].get\\('results',[]\\); print\\('failles trouvees :', len\\(r\\)\\); [print\\(' -', x.get\\('ruleId'\\), x.get\\('message',{}\\).get\\('text',''\\)[:80]\\) for x in r[:10]]\")",
-      "Bash(strix-ar -n --target C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit -m standard --max-budget-usd 8 --instruction 'Audit de securite d'\\\\''une application Next.js \\(App Router\\) + Supabase. Concentre-toi sur les routes app/api : autorisation manquante ou insuffisante, IDOR \\(acces a des ressources d'\\\\''autrui via un id d'\\\\''URL\\), exposition de la cle service_role, verification serveur des paiements, controles d'\\\\''acces du middleware.ts. IMPORTANT : decris chaque faille de maniere ABSTRAITE, sans jamais ecrire de charge d'\\\\''attaque litterale \\(pas de chaine SQL, XSS ou path-traversal en clair\\) — nomme la classe de vulnerabilite et le fichier/ligne concernes uniquement.')",
+      "Bash(strix-ar -n --target C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit -m standard --max-budget-usd 8 --instruction 'Audit de securite d'\\\\''une application Next.js \\(App Router\\) + Supabase. Concentre-toi sur les routes app/api : autorisation manquante ou insuffisante, IDOR \\(acces a des ressources d'\\\\''autrui via un id d'\\\\''URL\\), exposition de la cle service_role, verification serveur des paiements, controles d'\\\\''acces du middleware.ts. IMPORTANT : decris chaque faille de maniere ABSTRAITE, sans jamais ecrire de charge d'\\\\''attaque litterale \\(pas de chaine SQL, XSS ou path-traversal en clair\\) \u2014 nomme la classe de vulnerabilite et le fichier/ligne concernes uniquement.')",
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); r=d.get\\('runs',[{}]\\)[0].get\\('results',[]\\); print\\('nombre :',len\\(r\\)\\)\")",
       "Bash([ -f \"$D/run.json\" ])",
       "Bash(grep -oE '\"status\": \"[a-z]*\"|\"requests\": [0-9]*|\"cost\": [0-9.]*' __TRACKED_VAR__/run.json)",
@@ -434,7 +434,7 @@
       "Bash(find C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/strix_runs/frontend-audit_8dba -name *.md -o -name *report* -o -name *.log)",
       "Bash(grep -oiE \"[a-z_/.-]*route[a-z_.-]*|factures|invoices|nationality|download|proposals|[A-Z][a-z]+ \\(is |are |was |appears\\)[a-z ]{5,50}\")",
       "Bash(xargs -r docker rm -f)",
-      "Bash(strix-ar -n --mount C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit --target C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit -m standard --instruction 'Audit de securite exhaustif d'\\\\''une application Next.js App Router + Supabase. Couvre TOUTES les routes app/api. Cherche en priorite : \\(1\\) routes utilisant la cle service_role SANS verification d'\\\\''identite, surtout hors app/api/admin et app/api/agent que le middleware.ts protege ; \\(2\\) IDOR — acces a une ressource d'\\\\''autrui via un id d'\\\\''URL sans controle de proprietaire \\(factures, dossiers, proposals, documents\\) ; \\(3\\) routes cron sans verification de CRON_SECRET ; \\(4\\) uploads sans authentification ; \\(5\\) verification serveur reelle des paiements avant d'\\\\''accorder un bien. Analyse d'\\\\''abord middleware.ts pour comprendre quelles routes sont gardees et lesquelles ne le sont pas. Decris chaque faille de maniere ABSTRAITE : classe de vulnerabilite + fichier:ligne + pourquoi c'\\\\''est exploitable, SANS jamais ecrire de charge d'\\\\''attaque litterale \\(aucune chaine SQL, XSS ou path-traversal en clair\\).')",
+      "Bash(strix-ar -n --mount C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit --target C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/frontend_audit -m standard --instruction 'Audit de securite exhaustif d'\\\\''une application Next.js App Router + Supabase. Couvre TOUTES les routes app/api. Cherche en priorite : \\(1\\) routes utilisant la cle service_role SANS verification d'\\\\''identite, surtout hors app/api/admin et app/api/agent que le middleware.ts protege ; \\(2\\) IDOR \u2014 acces a une ressource d'\\\\''autrui via un id d'\\\\''URL sans controle de proprietaire \\(factures, dossiers, proposals, documents\\) ; \\(3\\) routes cron sans verification de CRON_SECRET ; \\(4\\) uploads sans authentification ; \\(5\\) verification serveur reelle des paiements avant d'\\\\''accorder un bien. Analyse d'\\\\''abord middleware.ts pour comprendre quelles routes sont gardees et lesquelles ne le sont pas. Decris chaque faille de maniere ABSTRAITE : classe de vulnerabilite + fichier:ligne + pourquoi c'\\\\''est exploitable, SANS jamais ecrire de charge d'\\\\''attaque litterale \\(aucune chaine SQL, XSS ou path-traversal en clair\\).')",
       "Bash(rm -f /tmp/r.txt /tmp/r2.txt)",
       "Bash(cp C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/otp_test.mjs 'c:/Users/HP/Desktop/RETOUR GAGNANT TEMPLATE/frontend/otp_test_tmp.mjs')",
       "Bash(node otp_test_tmp.mjs \".env.local\" \"diag-mobile-1785745339@retourgagnant-test.bj\")",
@@ -459,9 +459,9 @@
       "WebFetch(domain:diasporaaffairs.gov.gh)",
       "WebFetch(domain:web.archive.org)",
       "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(p.dependencies.tailwindcss||p.devDependencies.tailwindcss\\)\")",
-      "Bash(rtk git commit -q -m 'feat\\(accueil\\): refonte anti-slop Phase 1 \\(Hero + Services\\) — Fraunces/Geist + Phosphor + palette claire *)",
+      "Bash(rtk git commit -q -m 'feat\\(accueil\\): refonte anti-slop Phase 1 \\(Hero + Services\\) \u2014 Fraunces/Geist + Phosphor + palette claire *)",
       "Bash(echo \"exit: $?\")",
-      "Bash(rtk git commit -q -m 'feat\\(accueil\\): refonte anti-slop complete \\(9 sections\\) — editorial clair, Fraunces/Geist, Phosphor, Lenis *)",
+      "Bash(rtk git commit -q -m 'feat\\(accueil\\): refonte anti-slop complete \\(9 sections\\) \u2014 editorial clair, Fraunces/Geist, Phosphor, Lenis *)",
       "Bash(rm -f components/home/StatsBand.tsx)",
       "Bash(sed -i 's/VolumeX/SpeakerSlash/g' AudioPlayer.tsx)",
       "Bash(sed -i 's/ChevronRight/CaretRight/g; s/<Home/<House/g' Breadcrumbs.tsx)",
@@ -472,7 +472,7 @@
       "Bash(sed -i 's/type LucideIcon/type Icon as LucideIcon/g' \"app/\\(routes\\)/a-propos/page.tsx\" app/admin/analytics-live/page.tsx app/admin/notre-histoire/page.tsx components/classement/ClassementBoard.tsx)",
       "Bash(rtk proxy *)",
       "Bash(echo \"exit=$?\")",
-      "Bash(rtk git commit -q -m 'refactor\\(icons\\): Phase 2 Lot 3-6 — migration complete Lucide -> Phosphor \\(panels internes + pages\\) *)",
+      "Bash(rtk git commit -q -m 'refactor\\(icons\\): Phase 2 Lot 3-6 \u2014 migration complete Lucide -> Phosphor \\(panels internes + pages\\) *)",
       "WebFetch(domain:v2fun.ai)",
       "Bash(xxd)",
       "Bash(node \"C:/Users/HP/AppData/Local/Temp/claude/c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE/db6750fa-7b05-43cf-ac24-3c02d5398a06/scratchpad/shrink-tex.js\" public/models/logement-batiment.glb public/models/_tex.glb 1024)",
@@ -561,9 +561,9 @@
       "Bash(EXPO_NO_UPDATE_CHECK=1 rtk npx eas-cli build --profile development --platform android --non-interactive)",
       "Bash(tee __TRACKED_VAR__/eas-build.log)",
       "Bash(EXPO_NO_UPDATE_CHECK=1 npm start)",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);if\\(!Array.isArray\\(j\\)\\){console.log\\('RESP:',d.slice\\(0,300\\)\\);return}console.log\\('TOTAL',j.length\\);j.forEach\\(s=>console.log\\(\\(s.is_active?'[ON ]':'[OFF]'\\),s.order_index,s.slug,'—',s.title\\)\\)}catch\\(e\\){console.log\\('RAW:',d.slice\\(0,300\\)\\)}}\\)\")",
-      "Bash(grep -viE \"flag = |flagYellow|liseré|drapeau|// |/\\\\*|décoratif|neutralisé|plus d'or|Anciens|Anciennement|Décision|conserve\")",
-      "Bash(grep -viE \"^\\\\s*//|/\\\\*|\\\\* |liseré|drapeau|flag\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);if\\(!Array.isArray\\(j\\)\\){console.log\\('RESP:',d.slice\\(0,300\\)\\);return}console.log\\('TOTAL',j.length\\);j.forEach\\(s=>console.log\\(\\(s.is_active?'[ON ]':'[OFF]'\\),s.order_index,s.slug,'\u2014',s.title\\)\\)}catch\\(e\\){console.log\\('RAW:',d.slice\\(0,300\\)\\)}}\\)\")",
+      "Bash(grep -viE \"flag = |flagYellow|liser\u00e9|drapeau|// |/\\\\*|d\u00e9coratif|neutralis\u00e9|plus d'or|Anciens|Anciennement|D\u00e9cision|conserve\")",
+      "Bash(grep -viE \"^\\\\s*//|/\\\\*|\\\\* |liser\u00e9|drapeau|flag\")",
       "Bash(grep -viE \"^[^:]*:[0-9]+:\\\\s*\\(//|\\\\*|/\\\\*\\)\")",
       "Bash(grep -iE \"\\\\.\\(png|jpg|jpeg|svg|webp\\)$\")",
       "Bash(grep -iE \"\\\\.\\(png|svg|webp|jpg\\)$\")",
@@ -590,6 +590,28 @@
       "c:\\Users\\HP\\.claude\\projects\\c--Users-HP-Desktop-RETOUR-GAGNANT-TEMPLATE\\memory",
       "C:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\mobile\\frontend\\app\\(routes)\\evenements\\[slug]",
       "c:\\Users\\HP\\Desktop\\RETOUR GAGNANT TEMPLATE\\mobile\\src\\screens\\main"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/HP/.local/bin/graphify.EXE hook-guard search"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/HP/.local/bin/graphify.EXE hook-guard read"
+          }
+        ]
+      }
     ]
   }
 }

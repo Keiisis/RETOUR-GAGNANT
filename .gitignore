@@ -1,31 +1,38 @@
-# ── Projets séparés (ne pas tracker dans ce repo) ──
-Aura-Link/
-KeysOsi-Link/
+# ── Projets séparés (ne pas tracker dans ce repo) ──
+Aura-Link/
+KeysOsi-Link/
+
+# ── Assets bruts de design (lourds, hors scope code) ──
+mobile/assets/Ajouts/
+mobile/stitch/
+
+# ── Notes / plans de travail locaux ──
+plan.md
+supabase_sync_dossiers_tracking.sql
+
+# ── Système ──
+.DS_Store
+Thumbs.db
+*.log
+
+# ── Editor/IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Reglages Claude Code locaux (contiennent des cles API) — jamais versionnes
+.claude/settings.local.json
+
+# Sorties d'outils d'analyse (Strix) — pas du code source
+strix_runs/
+
+# Modele 3D source (40MB) garde local, non deploye
+frontend/public/models/51782cae-*.glb
 
-# ── Assets bruts de design (lourds, hors scope code) ──
-mobile/assets/Ajouts/
-mobile/stitch/
-
-# ── Notes / plans de travail locaux ──
-plan.md
-supabase_sync_dossiers_tracking.sql
-
-# ── Système ──
-.DS_Store
-Thumbs.db
-*.log
-
-# ── Editor/IDE ──
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Reglages Claude Code locaux (contiennent des cles API) — jamais versionnes
-.claude/settings.local.json
-
-# Sorties d'outils d'analyse (Strix) — pas du code source
-strix_runs/
-
-# Modele 3D source (40MB) garde local, non deploye
-frontend/public/models/51782cae-*.glb
+# ── Graphe de connaissances (graphify) ───────────────────────
+#  20 Mo entierement REGENERABLES par `graphify update .`. Les versionner,
+#  c'est alourdir chaque deploiement Vercel (qui envoie le depot au build) et
+#  provoquer un conflit a chaque fusion, pour un fichier que personne ne relit.
+#  Le SKILL, lui, est versionne (.claude/) : c'est lui qui compte pour l'equipe.
+graphify-out/
