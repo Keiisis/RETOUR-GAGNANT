@@ -45,6 +45,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { telechargerDocument } from '../../lib/documents'
 import { authHeaders } from '../../config/api'
 
@@ -489,23 +490,36 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     const dernierRang = useSharedValue(0)
 
     const charger = useCallback(async () => {
-        setChargement(true); setErreur('')
-        try {
-            const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}`, {
-                headers: { ...(await authHeaders()) },
-                timeoutMs: 15000,
-            })
-            const json = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(json.error || `Chargement impossible (erreur ${res.status}).`)
-            setProp(json.proposal)
-            const liste: Prestation[] = Array.isArray(json.prestations) ? json.prestations : []
-            setPrestations(liste)
-            // Tout est retenu au départ : la proposition du conseiller est le
-            // point de départ, le client retire ce qu'il ne veut pas.
-            setRetenues(new Set(liste.map(p => p.id)))
-        } catch (e) {
-            setErreur(e instanceof Error ? e.message : 'Chargement impossible.')
-        } finally { setChargement(false) }
+        setErreur('')
+        /* La proposition deja consultee se rouvre instantanement. Fraicheur
+           zero : elle porte des PRIX, le reseau est donc toujours interroge et
+           le contenu remplace des qu'il repond. */
+        const r = await avecMemoire<{ proposal: Proposition; prestations: Prestation[] }>(
+            `proposition:${proposalId}`,
+            async () => {
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}`, {
+                    headers: { ...(await authHeaders()) },
+                    timeoutMs: 15000,
+                })
+                const json = await res.json().catch(() => ({}))
+                if (!res.ok) throw new Error(json.error || `Chargement impossible (erreur ${res.status}).`)
+                return {
+                    proposal: json.proposal,
+                    prestations: Array.isArray(json.prestations) ? json.prestations : [],
+                }
+            },
+            (v) => {
+                setProp(v.proposal)
+                setPrestations(v.prestations)
+                // Tout est retenu au départ : la proposition du conseiller est le
+                // point de départ, le client retire ce qu'il ne veut pas.
+                setRetenues(new Set(v.prestations.map(p => p.id)))
+                setChargement(false)
+            },
+            { fraicheurMs: 0 },
+        )
+        if (!r.ok && r.erreur) setErreur(r.erreur)
+        setChargement(false)
     }, [proposalId])
 
     useEffect(() => { charger() }, [charger])

@@ -27,6 +27,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
+import { avecMemoire } from '../../lib/memoire'
 import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -422,24 +423,31 @@ export default function NationaliteFormScreen({ navigation }: any) {
     }))
 
     /* ── Settings ── */
+    /* Tarifs. Le montant connu est PEINT tout de suite pour que l'ecran s'ouvre
+       plein, mais `tarifCharge` — le verrou pose apres l'incident des 0,39 EUR —
+       ne bascule QUE sur une reponse fraiche du serveur. Affichage immediat,
+       encaissement jamais sur une valeur memorisee. */
     useEffect(() => {
-        const fetchSettings = async () => {
-            const { data } = await supabase
-                .from('page_sections')
-                .select('content')
-                .eq('page', 'nationalite')
-                .eq('section_key', 'form_settings')
-                .single()
-            setTarifCharge(true)
-            if (data?.content) {
-                const c = data.content as Record<string, unknown>
+        void avecMemoire<Record<string, unknown>>(
+            'nationalite-tarifs',
+            async () => {
+                const { data } = await supabase
+                    .from('page_sections')
+                    .select('content')
+                    .eq('page', 'nationalite')
+                    .eq('section_key', 'form_settings')
+                    .single()
+                return (data?.content || {}) as Record<string, unknown>
+            },
+            (c, depuisCache) => {
                 if (c.amount) setFormAmount(Number(c.amount))
                 if (c.currency) setFormCurrency(String(c.currency))
                 if (c.recherche_ancestrale_amount) setAncestralAmount(Number(c.recherche_ancestrale_amount))
                 if (c.recherche_ancestrale_currency) setAncestralCurrency(String(c.recherche_ancestrale_currency))
-            }
-        }
-        fetchSettings()
+                if (!depuisCache) setTarifCharge(true)
+            },
+            { fraicheurMs: 0 },
+        )
     }, [])
 
     /* ── Form data ── */

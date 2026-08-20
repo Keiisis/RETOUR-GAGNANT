@@ -26,6 +26,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -235,19 +236,23 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
         const fetchOrder = async () => {
             // client_id requis par le WAF (vérif de propriété anti-IDOR côté serveur)
             if (!profile?.id) { setLoading(false); return }
-            try {
-                const res = await fetchWithTimeout(
-                    `${API_BASE}/api/mobile/orders?order_id=${orderId}`,
-                    { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
-                )
-                const data = await res.json().catch(() => ({}))
-                if (data.order) {
-                    setOrder(data.order)
-                    setEvents(data.events || [])
-                }
-            } finally {
-                setLoading(false)
-            }
+            // Commande deja consultee : reaffichee sans attendre.
+            await avecMemoire<{ order: OrderDetail | null; events: TrackingEvent[] }>(
+                cleDuClient(profile.id, `commande:${orderId}`),
+                async () => {
+                    const res = await fetchWithTimeout(
+                        `${API_BASE}/api/mobile/orders?order_id=${orderId}`,
+                        { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
+                    )
+                    const data = await res.json().catch(() => ({}))
+                    return data.order ? { order: data.order, events: data.events || [] } : null
+                },
+                (v) => {
+                    if (v.order) { setOrder(v.order); setEvents(v.events) }
+                    setLoading(false)
+                },
+            )
+            setLoading(false)
         }
         fetchOrder()
     }, [orderId, profile?.id])

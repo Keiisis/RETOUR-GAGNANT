@@ -22,6 +22,7 @@ import { toast } from '../../lib/feedback'
 import { authHeaders } from '../../config/api'
 import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { supabase } from '../../config/supabase'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 
@@ -152,17 +153,22 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
     }, [tree, telechargement, t])
 
     const load = useCallback(async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) { setTree(null); setPersons([]); return }
-            const { data: treeData } = await supabase
-                .from('trees').select('id, name').eq('user_id', user.id).maybeSingle()
-            if (!treeData) { setTree(null); setPersons([]); return }
-            setTree(treeData)
-            const { data: ppl } = await supabase
-                .from('persons').select('*').eq('tree_id', treeData.id)
-            setPersons(Array.isArray(ppl) ? ppl : [])
-        } catch { /* rls / réseau */ }
+        // L'arbre s'affiche depuis la derniere version connue, puis se corrige.
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setTree(null); setPersons([]); return }
+
+        await avecMemoire<{ tree: Tree | null; persons: Person[] }>(
+            cleDuClient(user.id, 'genealogie'),
+            async () => {
+                const { data: treeData } = await supabase
+                    .from('trees').select('id, name').eq('user_id', user.id).maybeSingle()
+                if (!treeData) return { tree: null, persons: [] }
+                const { data: ppl } = await supabase
+                    .from('persons').select('*').eq('tree_id', treeData.id)
+                return { tree: treeData as Tree, persons: Array.isArray(ppl) ? ppl : [] }
+            },
+            (v) => { setTree(v.tree); setPersons(v.persons) },
+        )
     }, [])
 
     useEffect(() => { (async () => { await load(); setLoading(false) })() }, [load])

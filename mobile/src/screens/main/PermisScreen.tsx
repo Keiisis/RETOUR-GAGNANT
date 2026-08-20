@@ -26,6 +26,7 @@ import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -99,22 +100,31 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
     const scrollRef = useRef<ScrollView>(null)
     const [catY, setCatY] = useState(0)
 
+    /* Categories et auto-ecoles peintes depuis la derniere version connue.
+       Fraicheur zero : ces listes portent des TARIFS, le reseau est donc
+       toujours interroge et la valeur affichee remplacee des qu'il repond. */
     useEffect(() => {
         let alive = true
-        ;(async () => {
-            try {
+        void avecMemoire<{ types: PermisType[]; schools: School[] }>(
+            'permis-types-ecoles',
+            async () => {
                 const [tRes, sRes] = await Promise.all([
                     fetchWithTimeout(`${API_BASE}/api/permis-types`, { timeoutMs: 12000 }),
                     fetchWithTimeout(`${API_BASE}/api/driving-schools`, { timeoutMs: 12000 }),
                 ])
                 const tJson = await tRes.json().catch(() => ({}))
                 const sJson = await sRes.json().catch(() => ({}))
+                return {
+                    types: Array.isArray(tJson.types) ? tJson.types : [],
+                    schools: Array.isArray(sJson.schools) ? sJson.schools : [],
+                }
+            },
+            (v) => {
                 if (!alive) return
-                setTypes(Array.isArray(tJson.types) ? tJson.types : [])
-                setSchools(Array.isArray(sJson.schools) ? sJson.schools : [])
-            } catch { /* repli : listes vides gérées à l'affichage */ }
-            finally { if (alive) setLoading(false) }
-        })()
+                setTypes(v.types); setSchools(v.schools); setLoading(false)
+            },
+            { fraicheurMs: 0 },
+        ).finally(() => { if (alive) setLoading(false) })
         return () => { alive = false }
     }, [])
 

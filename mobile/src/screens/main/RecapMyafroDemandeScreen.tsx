@@ -35,6 +35,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -95,6 +96,12 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
     // Tarif officiel : `null` tant que la base n'a pas répondu. Aucun montant
     // d'attente n'est affiché ni facturé (incident du 2026-08-19).
     const [tarif, setTarif] = useState<number | null>(null)
+    /* Le tarif peut venir de la memoire locale pour que l'ecran s'affiche
+       plein tout de suite. Mais un montant memorise ne doit JAMAIS servir a
+       encaisser : tant que le serveur n'a pas confirme, le bouton reste
+       verrouille. C'est la lecon de l'incident du 2026-08-19, tenue sans
+       renoncer a l'affichage immediat. */
+    const [tarifConfirme, setTarifConfirme] = useState(false)
     const [devise, setDevise] = useState('EUR')
     const [delai, setDelai] = useState('48 heures ouvrées')
 
@@ -109,27 +116,47 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
 
     /* ── Chargement ─────────────────────────────────────────── */
     const charger = useCallback(async () => {
-        try {
-            const res = await fetchWithTimeout(`${API_BASE}/api/mobile/recaps`, {
-                headers: { ...(await authHeaders()) }, timeoutMs: 15000,
-            })
-            const json = await res.json().catch(() => ({}))
-            setRecaps(Array.isArray(json.recaps) ? json.recaps : [])
-        } catch { /* l'écran reste utilisable sans la liste */ }
-        finally { setChargement(false); setRafraichit(false) }
-    }, [])
+        // Demandes deja deposees : affichees depuis la derniere version connue.
+        await avecMemoire<Recap[]>(
+            cleDuClient(profile?.id, 'recaps'),
+            async () => {
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/recaps`, {
+                    headers: { ...(await authHeaders()) }, timeoutMs: 15000,
+                })
+                const json = await res.json().catch(() => ({}))
+                return Array.isArray(json.recaps) ? json.recaps : []
+            },
+            (liste) => { setRecaps(liste); setChargement(false) },
+        )
+        setChargement(false); setRafraichit(false)
+    }, [profile?.id])
 
     useEffect(() => { if (profile) charger(); else setChargement(false) }, [profile, charger])
 
+    /* Tarif du service. Fraicheur zero : c'est un MONTANT, il est peint depuis
+       la derniere valeur connue pour eviter le clignotement, mais le reseau est
+       toujours consulte et remplace la valeur. */
     useEffect(() => {
-        supabase.from('page_sections').select('content')
-            .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').single()
-            .then(({ data }) => {
+        void avecMemoire<{ amount: number; currency?: string; delai?: string }>(
+            'recap-myafro-tarif',
+            async () => {
+                const { data } = await supabase.from('page_sections').select('content')
+                    .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').single()
                 const c = (data?.content || {}) as Record<string, unknown>
-                setTarif(Number(c.amount) > 0 ? Number(c.amount) : 50)
-                if (c.currency) setDevise(String(c.currency))
-                if (c.delai) setDelai(String(c.delai))
-            })
+                return {
+                    amount: Number(c.amount) > 0 ? Number(c.amount) : 50,
+                    currency: c.currency ? String(c.currency) : undefined,
+                    delai: c.delai ? String(c.delai) : undefined,
+                }
+            },
+            (v, depuisCache) => {
+                setTarif(v.amount)
+                if (v.currency) setDevise(v.currency)
+                if (v.delai) setDelai(v.delai)
+                if (!depuisCache) setTarifConfirme(true)
+            },
+            { fraicheurMs: 0 },
+        )
     }, [])
 
     // Coordonnées pré-remplies : le client ne ressaisit pas ce que son compte
@@ -153,7 +180,7 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
 
     const champsOk = !!(form.prenom.trim() && form.nom.trim() && form.email.trim()
         && form.telephone.trim() && form.situation.trim().length >= MINI_SITUATION)
-    const pretAPayer = champsOk && consentement && tarif !== null
+    const pretAPayer = champsOk && consentement && tarif !== null && tarifConfirme
 
     /* ── Paiement puis enregistrement ───────────────────────── */
     const surTransaction = async (transactionId: string) => {

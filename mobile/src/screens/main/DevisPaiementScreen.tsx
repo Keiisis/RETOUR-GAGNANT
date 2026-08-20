@@ -47,6 +47,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { ttcFromHt } from '../../lib/tax'
 
@@ -168,43 +169,69 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
     /* ── Chargement : proposition, taux, passerelles ─────────── */
     const charger = useCallback(async () => {
-        setChargement(true); setErreurChargement('')
-        try {
-            const entetes = await authHeaders()
-            const [rProp, rTaux, rPay] = await Promise.all([
-                proposalId
-                    ? fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}`, { headers: entetes, timeoutMs: 15000 })
-                    : Promise.resolve(null),
-                fetchWithTimeout(`${API_BASE}/api/settings/currency`, { timeoutMs: 12000 }).catch(() => null),
-                fetchWithTimeout(`${API_BASE}/api/settings/payment`, { timeoutMs: 12000 }).catch(() => null),
-            ])
+        setErreurChargement('')
+        /* L'ecran s'ouvre sur la derniere version connue de la proposition, des
+           taux et des passerelles — plus de page blanche a l'arrivee. Fraicheur
+           ZERO : ce sont les elements d'un ENCAISSEMENT, le reseau est donc
+           toujours interroge et tout est remplace des qu'il repond. Le montant
+           envoye a la passerelle est de toute facon recalcule par le serveur
+           dans /api/checkout. */
+        const r = await avecMemoire<{
+            proposal: Proposition
+            prestations: Prestation[]
+            taux: Record<string, number>
+            passerelles: Record<string, string>
+        }>(
+            `sejour-paiement:${proposalId}`,
+            async () => {
+                const entetes = await authHeaders()
+                const [rProp, rTaux, rPay] = await Promise.all([
+                    proposalId
+                        ? fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}`, { headers: entetes, timeoutMs: 15000 })
+                        : Promise.resolve(null),
+                    fetchWithTimeout(`${API_BASE}/api/settings/currency`, { timeoutMs: 12000 }).catch(() => null),
+                    fetchWithTimeout(`${API_BASE}/api/settings/payment`, { timeoutMs: 12000 }).catch(() => null),
+                ])
 
-            if (!rProp) throw new Error('Proposition inconnue.')
-            const jProp = await rProp.json().catch(() => ({}))
-            if (!rProp.ok) throw new Error(jProp.error || `Chargement impossible (erreur ${rProp.status}).`)
+                if (!rProp) throw new Error('Proposition inconnue.')
+                const jProp = await rProp.json().catch(() => ({}))
+                if (!rProp.ok) throw new Error(jProp.error || `Chargement impossible (erreur ${rProp.status}).`)
 
-            setProp(jProp.proposal)
-            const liste: Prestation[] = Array.isArray(jProp.prestations) ? jProp.prestations : []
-            setPrestations(liste)
-
-            if (rTaux) {
-                const jt = await rTaux.json().catch(() => [])
-                // `exchange_rate_to_base` = combien de XOF valent 1 unité.
                 const m: Record<string, number> = { XOF: 1 }
-                for (const c of Array.isArray(jt) ? jt : []) {
-                    const code = String(c.code || '').toUpperCase()
-                    const r = c.is_base ? 1 : Number(c.exchange_rate_to_base)
-                    if (code && isFinite(r) && r > 0) m[code] = r
+                if (rTaux) {
+                    const jt = await rTaux.json().catch(() => [])
+                    // `exchange_rate_to_base` = combien de XOF valent 1 unité.
+                    for (const c of Array.isArray(jt) ? jt : []) {
+                        const code = String(c.code || '').toUpperCase()
+                        const taux = c.is_base ? 1 : Number(c.exchange_rate_to_base)
+                        if (code && isFinite(taux) && taux > 0) m[code] = taux
+                    }
                 }
-                setTaux(m)
-            }
-            if (rPay) {
-                const jp = await rPay.json().catch(() => ({}))
-                setPasserelles(jp && typeof jp === 'object' ? jp : {})
-            }
-        } catch (e) {
-            setErreurChargement(e instanceof Error ? e.message : 'Chargement impossible.')
-        } finally { setChargement(false) }
+
+                let passerelles: Record<string, string> = {}
+                if (rPay) {
+                    const jp = await rPay.json().catch(() => ({}))
+                    passerelles = jp && typeof jp === 'object' ? jp : {}
+                }
+
+                return {
+                    proposal: jProp.proposal,
+                    prestations: Array.isArray(jProp.prestations) ? jProp.prestations : [],
+                    taux: m,
+                    passerelles,
+                }
+            },
+            (v) => {
+                setProp(v.proposal)
+                setPrestations(v.prestations)
+                setTaux(v.taux)
+                setPasserelles(v.passerelles)
+                setChargement(false)
+            },
+            { fraicheurMs: 0 },
+        )
+        if (!r.ok && r.erreur) setErreurChargement(r.erreur)
+        setChargement(false)
     }, [proposalId])
 
     useEffect(() => { charger() }, [charger])

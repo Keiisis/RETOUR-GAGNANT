@@ -27,6 +27,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 import { useNavigation } from '@react-navigation/native'
@@ -209,35 +210,41 @@ export default function ProfilScreen() {
         if (!profile) return
         let vivant = true
 
-        ;(async () => {
-            const email = String(profile.email || '').trim().toLowerCase()
+        // Compteurs affiches depuis la derniere valeur connue, puis corriges.
+        void avecMemoire<{ dossiers: number; appointments: number; payments: number }>(
+            cleDuClient(profile.id, 'profil-compteurs'),
+            async () => {
+                const email = String(profile.email || '').trim().toLowerCase()
 
-            // Dossiers : même source que l'onglet Dossier.
-            let dossiers = 0
-            try {
-                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                    timeoutMs: 12000,
-                    headers: { ...(await authHeaders()) },
-                })
-                const json = await res.json().catch(() => ({}))
-                dossiers = Array.isArray(json.dossiers) ? json.dossiers.length : 0
-            } catch { /* on garde 0 */ }
+                // Dossiers : même source que l'onglet Dossier.
+                let dossiers = 0
+                try {
+                    const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                        timeoutMs: 12000,
+                        headers: { ...(await authHeaders()) },
+                    })
+                    const json = await res.json().catch(() => ({}))
+                    dossiers = Array.isArray(json.dossiers) ? json.dossiers.length : 0
+                } catch { /* on garde 0 */ }
 
-            // Rendez-vous : par identifiant OU par email, annulés exclus.
-            let rdv = 0
-            try {
-                const criteres = [`client_id.eq.${profile.id}`]
-                if (email) criteres.push(`client_email.eq.${email}`)
-                const { count } = await supabase
-                    .from('rdv_requests')
-                    .select('id', { count: 'exact', head: true })
-                    .or(criteres.join(','))
-                    .neq('statut', 'annule')
-                rdv = count || 0
-            } catch { /* on garde 0 */ }
+                // Rendez-vous : par identifiant OU par email, annulés exclus.
+                let rdv = 0
+                try {
+                    const criteres = [`client_id.eq.${profile.id}`]
+                    if (email) criteres.push(`client_email.eq.${email}`)
+                    const { count } = await supabase
+                        .from('rdv_requests')
+                        .select('id', { count: 'exact', head: true })
+                        .or(criteres.join(','))
+                        .neq('statut', 'annule')
+                    rdv = count || 0
+                } catch { /* on garde 0 */ }
 
-            if (vivant) setStats({ dossiers, appointments: rdv, payments: 0 })
-        })()
+                return { dossiers, appointments: rdv, payments: 0 }
+            },
+            (v) => { if (vivant) setStats(v) },
+            { fraicheurMs: 15_000 },
+        )
 
         return () => { vivant = false }
     }, [profile])

@@ -29,6 +29,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated'
 import { toast } from '../../lib/feedback'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
@@ -90,18 +91,33 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
     const [openFaq, setOpenFaq] = useState<number | null>(0)
     // Montant configurable admin (bloc form_settings de la page nationalité).
     const [amountEur, setAmountEur] = useState(250)
+    /* Le tarif s'affiche depuis la memoire pour ouvrir l'ecran plein, mais
+       c'est LUI qui est presente a la passerelle : le bouton ne s'active
+       qu'une fois le montant confirme par le serveur. */
+    const [tarifConfirme, setTarifConfirme] = useState(false)
     const [currency, setCurrency] = useState('EUR')
     const symbol = CURRENCY_SYMBOL[currency.toUpperCase()] || currency
     const amountXof = toXof(amountEur, currency)
 
     useEffect(() => {
-        (async () => {
-            const { data } = await supabase.from('page_sections').select('content')
-                .eq('page', 'nationalite').eq('section_key', 'form_settings').single()
-            const c = (data?.content || {}) as Record<string, unknown>
-            if (c.recherche_ancestrale_amount) setAmountEur(Number(c.recherche_ancestrale_amount))
-            if (c.recherche_ancestrale_currency) setCurrency(String(c.recherche_ancestrale_currency))
-        })().catch(() => { /* repli 250 € */ })
+        void avecMemoire<{ amount?: number; currency?: string }>(
+            'recherche-ancestrale-tarif',
+            async () => {
+                const { data } = await supabase.from('page_sections').select('content')
+                    .eq('page', 'nationalite').eq('section_key', 'form_settings').single()
+                const c = (data?.content || {}) as Record<string, unknown>
+                return {
+                    amount: c.recherche_ancestrale_amount ? Number(c.recherche_ancestrale_amount) : undefined,
+                    currency: c.recherche_ancestrale_currency ? String(c.recherche_ancestrale_currency) : undefined,
+                }
+            },
+            (v, depuisCache) => {
+                if (v.amount) setAmountEur(v.amount)
+                if (v.currency) setCurrency(v.currency)
+                if (!depuisCache) setTarifConfirme(true)
+            },
+            { fraicheurMs: 0 },
+        )
     }, [])
 
     const onPaid = async (transactionId: string) => {
@@ -331,8 +347,8 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                 </View>
                 <Pressable
                     onPress={() => setShowKkiapay(true)}
-                    disabled={loading}
-                    style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, loading && { opacity: 0.6 }]}
+                    disabled={loading || !tarifConfirme}
+                    style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, (loading || !tarifConfirme) && { opacity: 0.6 }]}
                     accessibilityRole="button"
                 >
                     {loading

@@ -25,6 +25,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -99,23 +100,28 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     const [pendingOrder, setPendingOrder] = useState<string | null>(null)
     const [showPay, setShowPay] = useState(false)
 
+    /* Annuaire des pretres ET tarifs.
+       Le contenu est peint depuis la derniere version connue — l'ecran s'ouvre
+       plein au lieu de clignoter — MAIS la fraicheur est fixee a zero : le
+       reseau est TOUJOURS interroge, et le tarif affiche est remplace des qu'il
+       repond. Un prix garde en cache ne doit jamais faire autorite (voir
+       l'incident des 0,39 EUR). Le serveur, lui, recalcule de toute facon le
+       montant a l'encaissement. */
     useEffect(() => {
         let alive = true
-        ;(async () => {
-            try {
+        void avecMemoire<{ priests: Priest[]; prices: { presentiel?: string; visio?: string } }>(
+            'fa-annuaire-tarifs',
+            async () => {
                 const [pRes, sRes] = await Promise.all([
                     fetchWithTimeout(`${API_BASE}/api/fa-priests`, { timeoutMs: 15000 }),
                     fetchWithTimeout(`${API_BASE}/api/services/consultation-fa-racines`, { timeoutMs: 15000 }).catch(() => null),
                 ])
-                if (!pRes.ok) {
-                    if (alive) setErreurAnnuaire(`HTTP ${pRes.status}`)
-                } else {
-                    const pData = await pRes.json().catch(() => ({ priests: [] }))
-                    if (alive) {
-                        setPriests(Array.isArray(pData.priests) ? pData.priests : [])
-                        setErreurAnnuaire(null)
-                    }
-                }
+                if (!pRes.ok) throw new Error(`HTTP ${pRes.status}`)
+
+                const pData = await pRes.json().catch(() => ({ priests: [] }))
+                const priests: Priest[] = Array.isArray(pData.priests) ? pData.priests : []
+
+                let prices: { presentiel?: string; visio?: string } = {}
                 if (sRes) {
                     const sData = await sRes.json().catch(() => ({}))
                     const svc = sData?.service || sData || {}
@@ -140,13 +146,24 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                             if (!visio && /visio|distance|video|vidéo|ligne/.test(bas)) visio = montant
                         }
                     }
-                    if (alive) setPrices({ presentiel, visio })
+                    prices = { presentiel, visio }
                 }
-            } catch (e) {
-                if (alive) setErreurAnnuaire(e instanceof Error ? e.message : 'réseau')
-            }
-            if (alive) setLoading(false)
-        })()
+
+                return { priests, prices }
+            },
+            (v) => {
+                if (!alive) return
+                setPriests(v.priests)
+                setPrices(v.prices)
+                setErreurAnnuaire(null)
+                setLoading(false)
+            },
+            { fraicheurMs: 0 },
+        ).then(r => {
+            if (!alive) return
+            if (!r.ok && r.erreur) setErreurAnnuaire(r.erreur)
+            setLoading(false)
+        })
         return () => { alive = false }
     }, [])
 
