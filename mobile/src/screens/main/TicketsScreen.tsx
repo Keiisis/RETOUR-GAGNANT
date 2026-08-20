@@ -31,7 +31,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -62,8 +62,11 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
     const { t } = useLang()
     const { profile } = useAuth()
 
-    const [tickets, setTickets] = useState<TicketItem[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = cleDuClient(profile?.id, 'billets')
+    const [tickets, setTickets] = useState<TicketItem[]>(() => etatMemorise<TicketItem[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
     const [open, setOpen] = useState<TicketItem | null>(null)
 
@@ -72,7 +75,7 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
         // precisement le moment ou l'on en a besoin, a l'entree d'un evenement.
         try {
             await avecMemoire<TicketItem[]>(
-                cleDuClient(profile?.id, 'billets'),
+                cleAffichage,
                 async () => {
                     const res = await fetchWithTimeout(`${API_BASE}/api/mobile/events/tickets`, {
                         headers: { ...(await authHeaders()) },

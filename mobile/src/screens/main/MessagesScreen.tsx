@@ -21,7 +21,7 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated'
 import { ecrire } from '../../lib/stockage'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
@@ -109,10 +109,14 @@ export default function MessagesScreen({ navigation }: any) {
     // chat…), car l'agent peut écrire dans n'importe lequel depuis sa console.
     const [conversationId, setConversationId] = useState<string | null>(null)
     const [threadIds, setThreadIds] = useState<string[]>([])
-    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+    /* Le fil deja lu est peint des la premiere image : on retrouve sa
+       conversation la ou on l'avait laissee, meme avant que le reseau ne
+       reponde, meme hors ligne. */
+    const cleFil = cleDuClient(profile?.id, 'messagerie')
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => etatMemorise<ChatMessage[]>(cleFil, []))
     const [newMessage, setNewMessage] = useState('')
     const [sending, setSending] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleFil))
     const [inputFocused, setInputFocused] = useState(false)
     const flatListRef = useRef<FlatList>(null)
 
@@ -191,7 +195,7 @@ export default function MessagesScreen({ navigation }: any) {
            conversation la ou on l'avait laissee, meme sans reseau. Le temps
            reel (plus bas) apporte ensuite les nouveaux messages. */
         await avecMemoire<ChatMessage[]>(
-            cleDuClient(profile?.id, 'messagerie'),
+            cleFil,
             async () => {
                 const { data, error } = await supabase
                     .from('chat_messages')

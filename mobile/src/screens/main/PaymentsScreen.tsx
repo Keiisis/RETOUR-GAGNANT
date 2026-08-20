@@ -35,7 +35,7 @@ import { useLang } from '../../contexts/LangContext'
 import { FlagBar } from '../../components/ui'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const C = screenColors
@@ -83,8 +83,11 @@ export default function PaymentsScreen({ navigation }: any) {
     const { t } = useLang()
 
     const [tab, setTab] = useState<'history' | 'channels'>('history')
-    const [entries, setEntries] = useState<Entry[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = cleDuClient(profile?.id, 'paiements')
+    const [entries, setEntries] = useState<Entry[]>(() => etatMemorise<Entry[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
 
     const formatPrice = (n: number, c: string) => {
@@ -100,7 +103,7 @@ export default function PaymentsScreen({ navigation }: any) {
         if (!profile) { setLoading(false); return }
         // Historique affiche depuis la derniere version connue, puis corrige.
         await avecMemoire<Entry[]>(
-            cleDuClient(profile.id, 'paiements'),
+            cleAffichage,
             async () => {
             const headers = { ...(await authHeaders()) }
             const [ordersRes, invoicesRes] = await Promise.all([
@@ -139,7 +142,7 @@ export default function PaymentsScreen({ navigation }: any) {
             (liste) => { setEntries(liste); setLoading(false) },
         )
         setLoading(false)
-    }, [profile, t])
+    }, [profile, cleAffichage, t])
 
     useEffect(() => { fetchEntries() }, [fetchEntries])
 

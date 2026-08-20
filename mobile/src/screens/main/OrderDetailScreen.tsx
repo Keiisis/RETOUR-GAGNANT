@@ -26,7 +26,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -210,9 +210,11 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     const { orderId } = route.params
     const { t } = useLang()
     const { profile } = useAuth()
-    const [order, setOrder] = useState<OrderDetail | null>(null)
+    const cleCommande = cleDuClient(profile?.id, `commande:${orderId}`)
+    const memorise = etatMemorise<{ order: OrderDetail | null; events: TrackingEvent[] } | null>(cleCommande, null)
+    const [order, setOrder] = useState<OrderDetail | null>(memorise?.order ?? null)
     const [events, setEvents] = useState<TrackingEvent[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleCommande))
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -238,7 +240,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             if (!profile?.id) { setLoading(false); return }
             // Commande deja consultee : reaffichee sans attendre.
             await avecMemoire<{ order: OrderDetail | null; events: TrackingEvent[] }>(
-                cleDuClient(profile.id, `commande:${orderId}`),
+                cleCommande,
                 async () => {
                     const res = await fetchWithTimeout(
                         `${API_BASE}/api/mobile/orders?order_id=${orderId}`,

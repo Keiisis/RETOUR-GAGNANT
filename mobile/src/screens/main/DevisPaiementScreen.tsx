@@ -47,7 +47,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { ttcFromHt } from '../../lib/tax'
 
@@ -145,11 +145,20 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
     const secretKey: string | undefined = route?.params?.secretKey
     const selection: string[] | undefined = route?.params?.selection
 
-    const [prop, setProp] = useState<Proposition | null>(null)
-    const [prestations, setPrestations] = useState<Prestation[]>([])
-    const [taux, setTaux] = useState<Record<string, number>>({ XOF: 1 })
-    const [passerelles, setPasserelles] = useState<Record<string, string>>({})
-    const [chargement, setChargement] = useState(true)
+    /* Ouverture immediate sur la derniere version connue — les elements de
+       l'encaissement sont neanmoins TOUJOURS redemandes au serveur (fraicheur
+       zero) et remplaces avant tout paiement. */
+    const clePaiement = `sejour-paiement:${route?.params?.proposalId}`
+    const memorise = etatMemorise<{
+        proposal: Proposition; prestations: Prestation[]
+        taux: Record<string, number>; passerelles: Record<string, string>
+    } | null>(clePaiement, null)
+
+    const [prop, setProp] = useState<Proposition | null>(memorise?.proposal ?? null)
+    const [prestations, setPrestations] = useState<Prestation[]>(memorise?.prestations ?? [])
+    const [taux, setTaux] = useState<Record<string, number>>(memorise?.taux ?? { XOF: 1 })
+    const [passerelles, setPasserelles] = useState<Record<string, string>>(memorise?.passerelles ?? {})
+    const [chargement, setChargement] = useState(() => !aEnMemoire(clePaiement))
     const [erreurChargement, setErreurChargement] = useState('')
 
     const [etat, setEtat] = useState<Etat>('recap')
@@ -182,7 +191,7 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
             taux: Record<string, number>
             passerelles: Record<string, string>
         }>(
-            `sejour-paiement:${proposalId}`,
+            clePaiement,
             async () => {
                 const entetes = await authHeaders()
                 const [rProp, rTaux, rPay] = await Promise.all([

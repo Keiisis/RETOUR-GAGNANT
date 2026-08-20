@@ -25,7 +25,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -72,11 +72,18 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
     const sigRef = useRef<SignatureViewRef>(null)
-    const [loading, setLoading] = useState(true)
+    /* Peinture au PREMIER rendu : le paraphe deja enregistre est en memoire
+       synchrone, l'ecran s'ouvre donc directement dessus. Sans cela on
+       affichait un rond, PUIS l'image — et pire, on passait par le mode
+       edition, qui monte une toile WebView dont le cout n'a rien a voir avec
+       les donnees. */
+    const cleSignature = cleDuClient(profile?.id, 'signature')
+    const signatureMemorisee = etatMemorise<ServerSignature | null>(cleSignature, null)
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleSignature))
     const [saving, setSaving] = useState(false)
     const [editing, setEditing] = useState(false)
-    const [savedSig, setSavedSig] = useState<ServerSignature | null>(null)
-    const [autoSign, setAutoSign] = useState<AutoSign>('ask')
+    const [savedSig, setSavedSig] = useState<ServerSignature | null>(signatureMemorisee)
+    const [autoSign, setAutoSign] = useState<AutoSign>(signatureMemorisee?.auto_sign || 'ask')
 
     /* ── Animations d'entrée (Stagger) ── */
     const headerAnim = useSharedValue(0)
@@ -118,7 +125,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
             if (!profile) { setLoading(false); return }
             // Le paraphe deja enregistre s'affiche sans attendre le reseau.
             await avecMemoire<ServerSignature | null>(
-                cleDuClient(profile.id, 'signature'),
+                cleSignature,
                 async () => {
                     const res = await fetchWithTimeout(
                         `${API_BASE}/api/mobile/signature`,

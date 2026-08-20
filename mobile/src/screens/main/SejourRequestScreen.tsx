@@ -30,7 +30,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { avecMemoire, aEnMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -102,7 +102,7 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
 
     // Chapitre 4 : créneaux réels
     const [jours, setJours] = useState<Jour[]>([])
-    const [chargeCreneaux, setChargeCreneaux] = useState(true)
+    const [chargeCreneaux, setChargeCreneaux] = useState(() => !aEnMemoire('disponibilites-21j'))
     const [rdvDate, setRdvDate] = useState<string | null>(null)
     const [rdvHeure, setRdvHeure] = useState<string | null>(null)
     const [canal, setCanal] = useState('visio')

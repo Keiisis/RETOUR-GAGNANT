@@ -24,7 +24,7 @@ import Animated, {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
@@ -209,8 +209,11 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
-    const [appointments, setAppointments] = useState<Appointment[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = cleDuClient(profile?.id, 'rendez-vous')
+    const [appointments, setAppointments] = useState<Appointment[]>(() => etatMemorise<Appointment[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
     const [showModal, setShowModal] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -301,7 +304,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
         if (!profile) return
         // Rendez-vous affiches depuis la derniere version connue, puis corriges.
         await avecMemoire<Appointment[]>(
-            cleDuClient(profile.id, 'rendez-vous'),
+            cleAffichage,
             async () => {
             // Source unifiée avec le site web : rdv_requests (vus par les agents)
             const { data } = await supabase
@@ -329,7 +332,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             (liste) => { setAppointments(liste); setLoading(false) },
         )
         setLoading(false)
-    }, [profile])
+    }, [profile, cleAffichage])
 
     useEffect(() => { fetchAppointments() }, [fetchAppointments])
 

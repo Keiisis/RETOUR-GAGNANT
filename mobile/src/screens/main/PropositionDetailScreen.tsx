@@ -45,7 +45,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { telechargerDocument } from '../../lib/documents'
 import { authHeaders } from '../../config/api'
 
@@ -474,10 +474,18 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     const { t } = useLang()
     const proposalId: string = route?.params?.proposalId
 
-    const [prop, setProp] = useState<Proposition | null>(null)
-    const [prestations, setPrestations] = useState<Prestation[]>([])
-    const [retenues, setRetenues] = useState<Set<string>>(new Set())
-    const [chargement, setChargement] = useState(true)
+    /* Ouverture immediate sur la derniere version connue. Les prix affiches
+       sont remplaces des que le reseau repond (fraicheur zero plus bas) : rien
+       ne s'engage sur une valeur memorisee. */
+    const cleProp = `proposition:${proposalId}`
+    const memorise = etatMemorise<{ proposal: Proposition; prestations: Prestation[] } | null>(cleProp, null)
+
+    const [prop, setProp] = useState<Proposition | null>(memorise?.proposal ?? null)
+    const [prestations, setPrestations] = useState<Prestation[]>(memorise?.prestations ?? [])
+    const [retenues, setRetenues] = useState<Set<string>>(
+        () => new Set((memorise?.prestations ?? []).map(p => p.id)),
+    )
+    const [chargement, setChargement] = useState(() => !aEnMemoire(cleProp))
     const [erreur, setErreur] = useState('')
     const [rang, setRang] = useState(0)
     const [vue, setVue] = useState<Vue>('ouverture')
@@ -495,7 +503,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
            zero : elle porte des PRIX, le reseau est donc toujours interroge et
            le contenu remplace des qu'il repond. */
         const r = await avecMemoire<{ proposal: Proposition; prestations: Prestation[] }>(
-            `proposition:${proposalId}`,
+            cleProp,
             async () => {
                 const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals/${proposalId}`, {
                     headers: { ...(await authHeaders()) },

@@ -27,7 +27,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 import { useNavigation } from '@react-navigation/native'
@@ -172,7 +172,11 @@ export default function ProfilScreen() {
     const { langConfig, t } = useLang()
     const [langPickerVisible, setLangPickerVisible] = useState(false)
     const [uploadingAvatar, setUploadingAvatar] = useState(false)
-    const [stats, setStats] = useState({ dossiers: 0, appointments: 0, payments: 0 })
+    // Compteurs : derniere valeur connue des la premiere image.
+    const [stats, setStats] = useState(() => etatMemorise(
+        cleDuClient(profile?.id, 'profil-compteurs'),
+        { dossiers: 0, appointments: 0, payments: 0 },
+    ))
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)

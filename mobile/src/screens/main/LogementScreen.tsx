@@ -35,7 +35,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import KkiapayModal from '../../components/KkiapayModal'
 
@@ -122,8 +122,12 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
     const { profile } = useAuth()
     const { t } = useLang()
 
-    const [logements, setLogements] = useState<Logement[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre plein, sans image
+       de chargement. Le reseau reste interroge (voir plus bas) et remplace
+       tout ce qui a change ; aucun paiement ne s'appuie sur cette valeur. */
+    const memorise = etatMemorise<{ logements: Logement[]; amount: number | null; currency: string | null }>('logements-catalogue', { logements: [], amount: null, currency: null })
+    const [logements, setLogements] = useState<Logement[]>(memorise.logements)
+    const [loading, setLoading] = useState(() => !aEnMemoire('logements-catalogue'))
 
     const [showForm, setShowForm] = useState(false)
     const [target, setTarget] = useState<Logement | null>(null)
@@ -146,7 +150,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
     /* Frais de constitution de dossier : la rémunération de RGB. Montant piloté
        depuis l'admin (page_sections → /api/logements/dossier-fee), jamais codé
        en dur. RGB ne vend pas le bien : les prix affichés sont ceux du partenaire. */
-    const [feeAmount, setFeeAmount] = useState(250)
+    const [feeAmount, setFeeAmount] = useState(memorise.amount ?? 250)
     /* Le forfait peut etre peint depuis la memoire locale pour que l'ecran
        s'ouvre plein. Mais c'est CE montant qui est presente a la passerelle :
        tant que le serveur ne l'a pas confirme, on n'ouvre pas le paiement.
