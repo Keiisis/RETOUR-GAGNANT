@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import { rateLimit, getClientIp, type RateLimitConfig } from '@/lib/rate-limit'
 import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
+import { trouverUtilisateurParEmail } from '@/lib/auth-lookup'
 import { buildConfirmEmail } from '@/lib/emails/confirm-email'
 
 // Limite par IP (en plus de la limite par email) : empêche un attaquant de
@@ -31,9 +32,6 @@ function isRateLimited(email: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-    const trop = guardPublic(req, 'client/resend-confirmation', EMAIL_LIMIT)
-    if (trop) return trop
-
     try {
         // Limite par IP (anti-abus SMTP par rotation d'emails)
         const ipLimit = rateLimit(`resend:${getClientIp(req)}`, RESEND_IP_LIMIT)
@@ -52,10 +50,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans 1 heure.' }, { status: 429 })
         }
 
+        /* Quota SMTP par ADRESSE. Il etait applique a l'IP : trois renvois par
+           quart d'heure pour tout un operateur mobile (CGNAT), puis une heure
+           de blocage pour des gens qui ne se connaissent pas. */
+        const trop = guardPublic(req, 'client/resend-confirmation', EMAIL_LIMIT, normalizedEmail)
+        if (trop) return trop
+
         // Vérifier que l'utilisateur existe
-        const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-        const users = usersData?.users ?? []
-        const existingUser = users.find((u: { email?: string; email_confirmed_at?: string | null }) => u.email === normalizedEmail)
+        /* Recherche BORNEE. L'ancien code lisait la premiere page de mille
+           comptes et s'arretait la : passe mille inscrits, le suivant devenait
+           introuvable et repartait avec un « succes » silencieux, sans jamais
+           recevoir son email. */
+        const existingUser = await trouverUtilisateurParEmail(supabase, normalizedEmail)
 
         // Succès silencieux si absent ou déjà confirmé
         if (!existingUser || existingUser.email_confirmed_at) {

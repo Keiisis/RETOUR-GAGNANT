@@ -649,6 +649,19 @@ export async function POST(request: Request) {
                         if (curData) invoiceExchangeRate = Number(curData.exchange_rate_to_base)
                     }
 
+                    /* `orders` ne porte pas de client_id : on retrouve le compte
+                       par l'adresse du payeur. Sans cela, la facture n'etait
+                       rattachee a personne — donc pas de paraphe appose, et
+                       l'application ne pouvait la retrouver que par email. */
+                    let compteDuPayeur: string | null = null
+                    if (fullOrder.customer_email) {
+                        const { data: profil } = await supabase
+                            .from('client_profiles').select('id')
+                            .eq('email', String(fullOrder.customer_email).toLowerCase().trim())
+                            .maybeSingle()
+                        compteDuPayeur = profil?.id || null
+                    }
+
                     // Insérer la facture ERP
                     await supabase.from('documents_financiers').insert({
                         type: 'facture',
@@ -675,7 +688,7 @@ export async function POST(request: Request) {
                            empêche qu'un second circuit facture une deuxième fois
                            le même encaissement (cas du Permis de conduire, qui
                            ouvre aussi un dossier avec la même transaction). */
-                        client_id: fullOrder.client_id || null,
+                        client_id: compteDuPayeur,
                         payment_transaction_id: transaction_id || null,
                         payment_provider: method || null,
                         payment_method: method || null,

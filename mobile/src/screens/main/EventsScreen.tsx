@@ -23,6 +23,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { lireEvenements, enregistrerEvenements } from '../../lib/db/depots'
 import { ttcFromHt } from '../../lib/tax'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
@@ -782,12 +783,20 @@ export default function EventsScreen({ navigation }: any) {
     }))
 
     const fetchEvents = useCallback(async () => {
+        // Base locale d'abord : l'agenda s'affiche sans attendre le reseau.
+        try {
+            const locaux = await lireEvenements<AppEvent>()
+            if (locaux.length > 0) { setEvents(locaux); setLoading(false) }
+        } catch { /* confort seulement */ }
+
         try {
             const clientParam = profile?.id ? `&client_id=${profile.id}` : ''
             const text = await fetchWithTimeout(`${API_BASE}/api/mobile/events?${clientParam}`, { timeoutMs: 10000 }).then(r => r.text())
             let json: { events?: AppEvent[] } = {}
             try { json = JSON.parse(text) } catch { /* ignore */ }
-            setEvents(json.events || [])
+            const liste = json.events || []
+            setEvents(liste)
+            void enregistrerEvenements(liste as unknown as Array<Record<string, unknown>>)
         } catch (err) {
             console.warn('[Events] fetch error:', err)
         } finally {

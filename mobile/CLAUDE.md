@@ -24,7 +24,10 @@
 | expo-secure-store | 15.x | Stockage sécurisé credentials |
 | **@kkiapay-org/react-native-sdk** | 0.1.x | Paiement Mobile Money / Carte (widget natif in-app, Android + iOS) |
 | react-native-webview | 13.x | Dépendance interne du SDK Kkiapay |
-| @react-native-async-storage | 2.x | Stockage local (onboarding flag, lang, cache traductions) |
+| **react-native-mmkv** | 4.x | Cle-valeur SYNCHRONE (langue, onboarding, cache traductions, brouillons) |
+| **react-native-nitro-modules** | 0.36.x | Socle natif de MMKV v4 (pair, autolink) |
+| **expo-sqlite** | 56.x | Base locale des donnees STRUCTUREES (dossiers, factures, notifications, services, evenements) |
+| @react-native-async-storage | 2.x | CONSERVE uniquement pour la reprise unique des donnees vers MMKV |
 
 > ⚠️ **Build de développement OBLIGATOIRE** (`expo-dev-client` actif).
 > **Expo Go ne peut pas exécuter ce projet, quelle que soit sa version.** Expo Go
@@ -79,6 +82,46 @@ Aucun fond sombre nulle part — règle absolue.
 
 > Exceptions tolérées (couleurs de marque tierces, pas de la charte) : `#EB001B` (logo Mastercard),
 > `#2C3E50` (couleur d'avatar). Ne pas les étendre.
+
+---
+
+## 💾 STOCKAGE LOCAL — MMKV + SQLite (2026-08-20)
+
+**Deux outils, deux roles. Ne pas les confondre.**
+
+| Besoin | Outil | Fichier |
+|---|---|---|
+| Preferences, drapeaux, cache de traduction, brouillons | **MMKV** (synchrone) | `src/lib/stockage.ts` |
+| Listes metier (dossiers, factures, notifications, services, evenements) | **SQLite** | `src/lib/db/base.ts` + `src/lib/db/depots.ts` |
+| Jetons de session | **expo-secure-store** (inchange) | `src/config/supabase.ts` |
+
+- **Interdit** : `AsyncStorage` dans du code neuf. Il n'existe plus que pour la
+  reprise unique (`reprendreDonneesAsyncStorage()`, appelee dans `App.tsx` avant
+  le premier rendu). La retirer ferait reapparaitre l'onboarding chez les
+  utilisateurs deja installes.
+- **MMKV v4** : `createMMKV({ id })` (pas `new MMKV()`), `remove()` (pas
+  `delete()`). MMKV n'est PAS chiffre : aucun jeton, aucun secret.
+- **Lecture synchrone assumee** : `LangContext` et `AppNavigator` lisent leur
+  etat initial dans `useState(() => lire(...))`. C'est ce qui supprime l'eclair
+  de francais au lancement et le passage force par l'ecran d'attente.
+- **SQLite, convention de schema** : colonnes reelles pour ce qu'on TRIE ou
+  FILTRE, plus une colonne `charge_utile` qui garde l'objet complet de l'API.
+  Un nouveau champ serveur n'exige donc aucune migration.
+- **Les depots REMPLACENT le jeu de donnees** (DELETE + INSERT en transaction) :
+  sinon un dossier annule ou une facture supprimee resterait visible a vie.
+- **Cloisonnement** : toute donnee personnelle porte `client_id`, et
+  `oublierClient()` est appelee au `signOut`. Telephone partage = pas de fuite.
+- **Schema versionne** par `PRAGMA user_version` (`VERSION_SCHEMA` dans
+  `base.ts`) : pour changer une table, AJOUTER une migration, jamais editer
+  l'existante.
+- **Motif de branchement** dans un ecran : lire la base locale -> afficher ->
+  appeler le reseau -> reafficher -> enregistrer. Voir `DossierScreen`,
+  `InvoicesScreen`, `NotificationsScreen`, `ServicesScreen`, `EventsScreen`.
+
+> ⚠️ **Modules natifs** : un nouveau build EAS est obligatoire. Un dev client
+> compile avant le 2026-08-20 plantera au lancement (« Cannot find native
+> module »). Le projet n'utilise PAS `expo-updates` : aucun risque de pousser ce
+> JS a des telephones sans le natif correspondant.
 
 ---
 
@@ -340,6 +383,7 @@ retirer alors l'exclusion.
 - [ ] Les types dans `RootStackParamList` matchent les params passés
 - [ ] Pas d'import du composant `<T>` (supprimé) — utiliser `useLang().t()` direct
 - [ ] Aucune palette locale (`const C = {`) dans un écran — importer `screenColors` du thème
+- [ ] Aucun `AsyncStorage` dans du code neuf — `src/lib/stockage.ts` (MMKV) ou `src/lib/db/depots.ts` (SQLite)
 - [ ] Aucun fond sombre ni couleur hors charte v2 (hors exceptions marque documentées)
 
 ---

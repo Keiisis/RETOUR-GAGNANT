@@ -84,11 +84,24 @@ export async function GET(
     // ── Signature client (si elle existe et auto_sign != 'never') ──
     // Injectée dans la zone "Bon pour accord : Client" de la facture.
     let clientSignatureDataUrl: string | null = null
-    if (order.client_id) {
+    /* `orders` ne porte PAS de colonne client_id (verifie en base) : ce test
+       etait donc TOUJOURS faux, et le cadre « Bon pour accord » de la facture
+       web restait vide meme pour un client ayant enregistre son paraphe. Le
+       compte se retrouve par l'adresse du payeur. */
+    let compteDuPayeur: string | null = null
+    if (order.customer_email) {
+      const { data: profil } = await supabase
+        .from('client_profiles').select('id')
+        .eq('email', String(order.customer_email).toLowerCase().trim())
+        .maybeSingle()
+      compteDuPayeur = profil?.id || null
+    }
+
+    if (compteDuPayeur) {
       const { data: sigRow } = await supabase
         .from('client_signatures')
         .select('signature_data, auto_sign')
-        .eq('client_id', order.client_id)
+        .eq('client_id', compteDuPayeur)
         .maybeSingle()
       if (sigRow?.signature_data && sigRow.auto_sign !== 'never') {
         clientSignatureDataUrl = sigRow.signature_data

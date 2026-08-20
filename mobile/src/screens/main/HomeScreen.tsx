@@ -9,7 +9,7 @@ import {
     Calendar, Headphones, HelpCircle, ShieldCheck, ShoppingBag,
     BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone,
 } from 'lucide-react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { lire } from '../../lib/stockage'
 import Animated, {
     useSharedValue, useAnimatedStyle,
     withSpring, withTiming, withDelay, Easing,
@@ -106,7 +106,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
             setUnreadNotifs(notifRes.count || 0)
             if (conversationRes.data?.id) {
                 const lastSeenKey = `@rg_chat_last_seen_${profile.id}`
-                const lastSeenIso = await AsyncStorage.getItem(lastSeenKey).catch(() => null)
+                const lastSeenIso = lire(lastSeenKey) ?? null
                 let q = supabase.from('chat_messages')
                     .select('id', { count: 'exact', head: true })
                     .eq('conversation_id', conversationRes.data.id).eq('role', 'agent')

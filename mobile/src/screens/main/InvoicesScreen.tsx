@@ -25,6 +25,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { lireFactures, enregistrerFactures } from '../../lib/db/depots'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -315,13 +316,22 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
     const fetchInvoices = useCallback(async () => {
         if (!profile) { setLoading(false); return }
+
+        // Base locale d'abord : les factures s'affichent meme hors ligne.
+        try {
+            const locales = await lireFactures<Invoice>(profile.id)
+            if (locales.length > 0) { setInvoices(locales); setLoading(false) }
+        } catch { /* confort seulement */ }
+
         try {
             const res = await fetchWithTimeout(
                 `${API_BASE}/api/mobile/invoices`,
                 { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
             )
             const data = await res.json().catch(() => ({}))
-            setInvoices(data.invoices || [])
+            const liste = data.invoices || []
+            setInvoices(liste)
+            void enregistrerFactures(profile.id, liste as unknown as Array<Record<string, unknown>>)
         } catch {
             setInvoices([])
         } finally {

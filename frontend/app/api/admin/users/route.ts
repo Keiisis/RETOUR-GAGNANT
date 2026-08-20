@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { listerTousLesComptes } from '@/lib/auth-lookup'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
 
@@ -14,13 +15,13 @@ export async function GET(request: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceKey)
 
     // Récupère users auth + profils agents/admins + IDs clients
-    const [authRes, profilesRes, clientIdsRes] = await Promise.all([
-        supabase.auth.admin.listUsers({ perPage: 500 }),
+    /* Toutes les pages : a cinq cents comptes, la liste s'arretait la et un
+       agent cree apres ce seuil devenait invisible dans le panel. */
+    const [comptes, profilesRes, clientIdsRes] = await Promise.all([
+        listerTousLesComptes(supabase),
         supabase.from('user_profiles').select('id, full_name, role, is_active, last_seen_at, created_at'),
         supabase.from('client_profiles').select('id'),
     ])
-
-    if (authRes.error) return NextResponse.json({ error: authRes.error.message }, { status: 500 })
 
     const profileMap  = new Map((profilesRes.data || []).map(p => [p.id, p]))
     // Set des IDs clients pour exclusion stricte
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const VALID_ROLES = ['agent', 'admin', 'super_admin', 'superadmin']
 
-    const users = authRes.data.users
+    const users = comptes
         .filter(u => {
             // Exclure les clients purs : dans client_profiles ET pas dans user_profiles
             if (clientIdSet.has(u.id) && !profileMap.has(u.id)) return false

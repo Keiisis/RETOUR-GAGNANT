@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { trouverUtilisateurParEmail } from '@/lib/auth-lookup'
 import { createClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { validateStrongPassword } from '@/lib/password'
@@ -30,9 +31,11 @@ export async function POST(request: NextRequest) {
     const cleanEmail = email.trim().toLowerCase()
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    // Vérifier si l'email existe déjà dans Supabase Auth
-    const { data: existingUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-    const existingUser = existingUsers?.users?.find(u => u.email === cleanEmail)
+    /* Anti-doublon BORNE : la lecture de la premiere page de mille comptes
+       laissait passer un doublon des que la base depassait mille inscrits —
+       et deux comptes pour une meme adresse, c'est un client qui se connecte
+       un jour sur deux au mauvais. */
+    const existingUser = await trouverUtilisateurParEmail(supabase, cleanEmail)
 
     let userId: string
 

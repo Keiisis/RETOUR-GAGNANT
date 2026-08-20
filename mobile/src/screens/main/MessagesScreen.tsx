@@ -20,7 +20,7 @@ import Animated, {
     interpolate,
     interpolateColor,
 } from 'react-native-reanimated'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ecrire } from '../../lib/stockage'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
@@ -203,7 +203,7 @@ export default function MessagesScreen({ navigation }: any) {
             const { ids } = await findThreads()
             await fetchChatHistory(ids)
             if (profile?.id) {
-                AsyncStorage.setItem(`@rg_chat_last_seen_${profile.id}`, new Date().toISOString()).catch(() => { })
+                ecrire(`@rg_chat_last_seen_${profile.id}`, new Date().toISOString())
             }
         }
         init()
@@ -222,10 +222,7 @@ export default function MessagesScreen({ navigation }: any) {
        message affiche, et en quittant l'ecran. */
     const markSeen = useCallback(() => {
         if (!profile?.id) return
-        AsyncStorage.setItem(
-            `@rg_chat_last_seen_${profile.id}`,
-            new Date().toISOString(),
-        ).catch(() => { })
+        ecrire(`@rg_chat_last_seen_${profile.id}`, new Date().toISOString())
     }, [profile?.id])
 
     useEffect(() => { markSeen() }, [markSeen, chatMessages.length])

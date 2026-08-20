@@ -25,6 +25,7 @@ import Constants from 'expo-constants'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { lireNotifications, enregistrerNotifications } from '../../lib/db/depots'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
@@ -264,6 +265,13 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
     /* ── Charger notifications ── */
     const fetchNotifications = useCallback(async () => {
         if (!profile) return
+
+        // Base locale d'abord : la cloche a toujours quelque chose a montrer.
+        try {
+            const locales = await lireNotifications<AppNotification>(profile.id)
+            if (locales.length > 0) { setNotifications(locales); setLoading(false) }
+        } catch { /* confort seulement */ }
+
         try {
             const { data } = await supabase
                 .from('notifications')
@@ -271,7 +279,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 .eq('user_id', profile.id)
                 .order('created_at', { ascending: false })
                 .limit(50)
-            setNotifications((data || []) as AppNotification[])
+            const liste = (data || []) as AppNotification[]
+            setNotifications(liste)
+            void enregistrerNotifications(profile.id, liste as unknown as Array<Record<string, unknown>>)
         } catch { /* ignore */ } finally { setLoading(false) }
     }, [profile])
 

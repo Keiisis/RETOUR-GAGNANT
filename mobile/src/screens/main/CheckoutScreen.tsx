@@ -20,7 +20,7 @@ import Animated, {
     interpolate,
     interpolateColor,
 } from 'react-native-reanimated'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { lireJson, ecrireJson } from '../../lib/stockage'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { FlagBar } from '../../components/ui'
@@ -214,26 +214,23 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
     /* ── Charger l'adresse précédemment utilisée ── */
     useEffect(() => {
-        AsyncStorage.getItem(SHIPPING_KEY).then(raw => {
-            if (raw) {
-                try {
-                    const saved = JSON.parse(raw) as SavedShipping
-                    setForm({ ...EMPTY_SHIPPING, ...saved })
-                    return
-                } catch { /* ignore */ }
-            }
-            // Fallback : pré-remplir depuis le profil
-            if (profile) {
-                setForm(f => ({
-                    ...f,
-                    name: `${profile.prenom || ''} ${profile.nom || ''}`.trim(),
-                    phone: profile.phone || '',
-                    email: profile.email || '',
-                    city: profile.ville || '',
-                    country: profile.pays || 'Bénin',
-                }))
-            }
-        }).catch(() => { })
+        // Lecture immédiate : le formulaire s'ouvre déjà rempli, sans clignoter.
+        const saved = lireJson<SavedShipping>(SHIPPING_KEY)
+        if (saved) {
+            setForm({ ...EMPTY_SHIPPING, ...saved })
+            return
+        }
+        // Repli : pré-remplir depuis le profil
+        if (profile) {
+            setForm(f => ({
+                ...f,
+                name: `${profile.prenom || ''} ${profile.nom || ''}`.trim(),
+                phone: profile.phone || '',
+                email: profile.email || '',
+                city: profile.ville || '',
+                country: profile.pays || 'Bénin',
+            }))
+        }
     }, [profile])
 
     const set = (key: keyof SavedShipping) => (v: string) => setForm(f => ({ ...f, [key]: v }))
@@ -256,7 +253,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
     /* ── Sauvegarder l'adresse ── */
     const persistShipping = useCallback(() => {
-        AsyncStorage.setItem(SHIPPING_KEY, JSON.stringify(form)).catch(() => { })
+        ecrireJson(SHIPPING_KEY, form)
     }, [form])
 
     /* ── Lancer le paiement ── */

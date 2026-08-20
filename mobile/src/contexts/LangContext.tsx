@@ -2,7 +2,7 @@ import React, {
     createContext, useContext, useState, useEffect, useCallback, useRef,
 } from 'react'
 import { AppState, type AppStateStatus } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { lire, ecrire, supprimer } from '../lib/stockage'
 
 // ─── Supported languages (same as website) ───────────────────────────────────
 
@@ -77,9 +77,38 @@ export const useLang = () => useContext(LangContext)
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
+/* Lecture SYNCHRONE du cache disque (MMKV) : l'ancien chargement asynchrone
+   affichait d'abord le francais, puis les traductions arrivaient -- un clignotement
+   a chaque lancement. Ici le premier rendu porte deja les textes traduits. */
+function lireCacheDisque(code: LangCode): Map<string, string> {
+    if (code === DEFAULT_LANG) return new Map()
+    const version = lire(`${CACHE_VERSION_KEY}_${code}`)
+    if (version !== String(CACHE_VERSION)) {
+        // Cache d'une version anterieure : il est purge, jamais servi.
+        supprimer(`${CACHE_KEY_PREFIX}${code}`)
+        ecrire(`${CACHE_VERSION_KEY}_${code}`, String(CACHE_VERSION))
+        return new Map()
+    }
+    const brut = lire(`${CACHE_KEY_PREFIX}${code}`)
+    if (!brut) return new Map()
+    try {
+        return new Map<string, string>(Object.entries(JSON.parse(brut)))
+    } catch {
+        supprimer(`${CACHE_KEY_PREFIX}${code}`)
+        return new Map()
+    }
+}
+
+function lireLangueChoisie(): LangCode {
+    const stocke = lire(STORAGE_KEY)
+    return stocke && SUPPORTED_LANGUAGES.find(l => l.code === stocke)
+        ? (stocke as LangCode)
+        : DEFAULT_LANG
+}
+
 export function LangProvider({ children }: { children: React.ReactNode }) {
-    const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
-    const [cache, setCache] = useState<Map<string, string>>(new Map())
+    const [lang, setLangState] = useState<LangCode>(lireLangueChoisie)
+    const [cache, setCache] = useState<Map<string, string>>(() => lireCacheDisque(lireLangueChoisie()))
     const [isTranslating, setIsTranslating] = useState(false)
 
     // Refs to avoid stale closures in flushBatch
@@ -100,61 +129,20 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     // Cleared when language changes OR when retryFailed() is called (e.g. on foreground).
     const failedForever = useRef<Set<string>>(new Set())
 
-    // ── Load persisted language ──
+    // ── Cache du disque quand la langue change ──
+    //    Lecture synchrone : le rendu suivant porte deja les traductions.
+    const premierRendu = useRef(true)
     useEffect(() => {
-        AsyncStorage.getItem(STORAGE_KEY).then(stored => {
-            if (stored && SUPPORTED_LANGUAGES.find(l => l.code === stored)) {
-                setLangState(stored as LangCode)
-            }
-        }).catch(() => {})
-    }, [])
-
-    // ── Load cached translations when lang changes (with version check) ──
-    useEffect(() => {
-        // Clear failed set when language changes
         failedForever.current.clear()
-
-        if (lang === DEFAULT_LANG) {
-            setCache(new Map())
-            return
-        }
-        const cacheKey = `${CACHE_KEY_PREFIX}${lang}`
-        const versionKey = `${CACHE_VERSION_KEY}_${lang}`
-
-        AsyncStorage.getItem(versionKey).then(storedVersion => {
-            if (storedVersion !== String(CACHE_VERSION)) {
-                // Version mismatch : old/corrupted cache, purge it
-                console.log(`[LangContext] Cache version mismatch for ${lang} (stored=${storedVersion}, current=${CACHE_VERSION}). Purging local cache.`)
-                AsyncStorage.removeItem(cacheKey).catch(() => {})
-                AsyncStorage.setItem(versionKey, String(CACHE_VERSION)).catch(() => {})
-                setCache(new Map())
-                return
-            }
-
-            // Version matches : load from AsyncStorage
-            return AsyncStorage.getItem(cacheKey).then(raw => {
-                if (raw) {
-                    try {
-                        const parsed = JSON.parse(raw)
-                        const newMap = new Map<string, string>(Object.entries(parsed))
-                        console.log(`[LangContext] Loaded ${newMap.size} cached translations for ${lang} (v${CACHE_VERSION})`)
-                        setCache(newMap)
-                    } catch {
-                        setCache(new Map())
-                    }
-                } else {
-                    setCache(new Map())
-                }
-            })
-        }).catch(() => {
-            setCache(new Map())
-        })
+        // Au montage, l'etat initial a deja ete lu : ne pas le relire.
+        if (premierRendu.current) { premierRendu.current = false; return }
+        setCache(lireCacheDisque(lang))
     }, [lang])
 
     // ── Persist language choice ──
     const setLang = useCallback((newLang: LangCode) => {
         setLangState(newLang)
-        AsyncStorage.setItem(STORAGE_KEY, newLang).catch(() => {})
+        ecrire(STORAGE_KEY, newLang)
         // Clear pending texts + failed set when language changes
         pendingTexts.current.clear()
         failedForever.current.clear()
@@ -242,8 +230,8 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
                             const storageKey = `${CACHE_KEY_PREFIX}${currentLang}`
                             const obj: Record<string, string> = {}
                             next.forEach((v, k) => { obj[k] = v })
-                            AsyncStorage.setItem(storageKey, JSON.stringify(obj)).catch(() => {})
-                            AsyncStorage.setItem(`${CACHE_VERSION_KEY}_${currentLang}`, String(CACHE_VERSION)).catch(() => {})
+                            ecrire(storageKey, JSON.stringify(obj))
+                            ecrire(`${CACHE_VERSION_KEY}_${currentLang}`, String(CACHE_VERSION))
 
                             return next
                         })
@@ -385,8 +373,8 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     const clearCache = useCallback(async (target?: LangCode) => {
         const targets = target ? [target] : SUPPORTED_LANGUAGES.map(l => l.code).filter(c => c !== 'fr')
         for (const code of targets) {
-            await AsyncStorage.removeItem(`${CACHE_KEY_PREFIX}${code}`).catch(() => {})
-            await AsyncStorage.removeItem(`${CACHE_VERSION_KEY}_${code}`).catch(() => {})
+            supprimer(`${CACHE_KEY_PREFIX}${code}`)
+            supprimer(`${CACHE_VERSION_KEY}_${code}`)
         }
         // If we just wiped the active language, clear in-memory cache too
         if (!target || target === langRef.current) {
