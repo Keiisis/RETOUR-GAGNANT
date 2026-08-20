@@ -1,3 +1,17 @@
+// ⚠️ FRÉQUENCE : UNE FOIS PAR JOUR — ET CE N'EST PAS UN CHOIX.
+//
+//  Ce balayage était programmé toutes les heures (« 15 * * * * »). Le plan
+//  Hobby de Vercel REFUSE tout cron plus fréquent qu'une fois par jour, et il
+//  le refuse AU DÉPLOIEMENT : à partir du 19/08 13:46, TOUS les déploiements
+//  ont échoué — pendant plus d'une journée, sans que le rapport d'échec ne
+//  pointe vers autre chose qu'une ligne de `vercel.json`.
+//
+//  Conséquence assumée : une commande abandonnée reste « en attente » jusqu'au
+//  passage suivant, au lieu de 90 minutes. La route reste correcte — elle
+//  revérifie `payment_status = 'pending'` avant d'écrire — elle est seulement
+//  moins prompte.
+//
+//  À REMETTRE À L'HEURE le jour du passage en plan Pro : « 15 * * * * ».
 // ══════════════════════════════════════════════════════════════
 //  CRON : commandes abandonnées en caisse.
 //
