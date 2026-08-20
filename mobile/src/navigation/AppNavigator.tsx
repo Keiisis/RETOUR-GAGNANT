@@ -11,6 +11,7 @@ import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import ConfirmEmailScreen from '../screens/auth/ConfirmEmailScreen'
+import AblawaScreen from '../screens/main/AblawaScreen'
 import TwoFactorScreen from '../screens/auth/TwoFactorScreen'
 import MainTabNavigator from './MainTabNavigator'
 import SplashScreen from '../screens/SplashScreen'
@@ -124,6 +125,7 @@ export type RootStackParamList = {
         transactionId: string
     }
     Signature: undefined
+    Ablawa: undefined
     Invoices: undefined
     NationaliteForm: undefined
     AncestralProposal: { ref?: string; missing?: string[]; amount?: number; currency?: string } | undefined
@@ -357,6 +359,7 @@ export default function AppNavigator() {
                     <Stack.Group screenOptions={formSheetIOS}>
                         <Stack.Screen name="EditProfil" component={EditProfilScreen} />
                         <Stack.Screen name="Signature" component={SignatureScreen} />
+                        <Stack.Screen name="Ablawa" component={AblawaScreen} />
                         <Stack.Screen name="Call" component={CallScreen} />
                         <Stack.Screen name="Fa" component={FaScreen} />
                         <Stack.Screen name="Permis" component={PermisScreen} />

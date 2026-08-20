@@ -30,7 +30,11 @@ const CACHE_KEY_PREFIX = '@rg_trans_cache_'
 // ── CACHE_VERSION ─────────────────────────────────────────────────────────────
 // Bump this number to force ALL phones to discard their local translation cache.
 // v2: Purged corrupted Creole cache (English translations stored as Creole)
-const CACHE_VERSION = 2
+/* 3 (2026-08-20) : purge des traductions ou la MARQUE avait ete traduite
+   (« Retour Gagnant Benin » -> « Winning Return Benin »). Les telephones
+   gardaient ces textes en cache ; sans ce bump, la correction serveur ne les
+   aurait jamais atteints. */
+const CACHE_VERSION = 3
 const CACHE_VERSION_KEY = '@rg_trans_cache_version'
 
 // ─── Translation API URL ──────────────────────────────────────────────────────

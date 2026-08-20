@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     Bell, FolderOpen, MessageSquare, FileText, CreditCard,
     Calendar, Headphones, HelpCircle, ShieldCheck, ShoppingBag,
-    BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone,
+    BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone, MessageCircle,
 } from 'lucide-react-native'
 import { lire } from '../../lib/stockage'
 import { avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
@@ -203,7 +203,10 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
     const SECONDARY = useMemo(() => ([
         { icon: Calendar, label: t('Rendez-vous'), desc: t('Planifier un entretien'), dest: 'Appointments' },
         { icon: CreditCard, label: t('Paiements'), desc: t('Factures et règlements'), dest: 'Payments' },
-        { icon: Headphones, label: t('Support'), desc: t('Assistance dédiée'), dest: 'Messages' },
+        /* Deux portes, jamais confondues : Ablawa repond tout de suite, l'equipe
+           reprend la main des qu'il faut un engagement. */
+        { icon: MessageCircle, label: t('Support IA'), desc: t('Ablawa répond tout de suite'), dest: 'Ablawa' },
+        { icon: Headphones, label: t('Support humain'), desc: t('Écrire à l’équipe'), dest: 'Messages' },
         { icon: HelpCircle, label: t('Aide & FAQ'), desc: t('Questions fréquentes'), dest: 'FAQ' },
     ]), [t])
 
