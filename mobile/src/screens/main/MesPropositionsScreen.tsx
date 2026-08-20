@@ -21,6 +21,7 @@ import { FlagBar } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -69,16 +70,21 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
     const [rafraichit, setRafraichit] = useState(false)
 
     const charger = useCallback(async () => {
-        try {
-            const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals`, {
-                headers: { ...(await authHeaders()) },
-                timeoutMs: 15000,
-            })
-            const json = await res.json().catch(() => ({}))
-            setItems(Array.isArray(json.proposals) ? json.proposals : [])
-        } catch { /* l'écran affiche son état vide */ }
-        finally { setChargement(false); setRafraichit(false) }
-    }, [])
+        // Dernieres propositions connues affichees tout de suite.
+        await avecMemoire<Proposition[]>(
+            cleDuClient(profile?.id, 'propositions'),
+            async () => {
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals`, {
+                    headers: { ...(await authHeaders()) },
+                    timeoutMs: 15000,
+                })
+                const json = await res.json().catch(() => ({}))
+                return Array.isArray(json.proposals) ? json.proposals : []
+            },
+            (liste) => { setItems(liste); setChargement(false) },
+        )
+        setChargement(false); setRafraichit(false)
+    }, [profile?.id])
 
     useEffect(() => { if (profile) charger(); else setChargement(false) }, [profile, charger])
 

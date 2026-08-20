@@ -35,6 +35,7 @@ import { useLang } from '../../contexts/LangContext'
 import { FlagBar } from '../../components/ui'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 const C = screenColors
@@ -97,7 +98,10 @@ export default function PaymentsScreen({ navigation }: any) {
     /* ── Historique réel : commandes + factures ── */
     const fetchEntries = useCallback(async () => {
         if (!profile) { setLoading(false); return }
-        try {
+        // Historique affiche depuis la derniere version connue, puis corrige.
+        await avecMemoire<Entry[]>(
+            cleDuClient(profile.id, 'paiements'),
+            async () => {
             const headers = { ...(await authHeaders()) }
             const [ordersRes, invoicesRes] = await Promise.all([
                 fetchWithTimeout(`${API_BASE}/api/mobile/orders`, { timeoutMs: 10000, headers })
@@ -128,11 +132,13 @@ export default function PaymentsScreen({ navigation }: any) {
                 icon: 'receipt-outline',
             }))
 
-            const all = [...fromOrders, ...fromInvoices]
+            return [...fromOrders, ...fromInvoices]
                 .filter(e => !!e.date)
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            setEntries(all)
-        } catch { /* silencieux : l'état vide suffit */ } finally { setLoading(false) }
+            },
+            (liste) => { setEntries(liste); setLoading(false) },
+        )
+        setLoading(false)
     }, [profile, t])
 
     useEffect(() => { fetchEntries() }, [fetchEntries])

@@ -27,6 +27,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useCart } from '../../contexts/CartContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
@@ -554,14 +555,21 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     }, [showCart])
 
     const fetchProducts = useCallback(async () => {
+        // Catalogue affiche depuis la derniere version connue, puis rafraichi.
         try {
-            const res = await fetchWithTimeout(`${API_BASE}/api/products`, { timeoutMs: 10000 })
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            const data = await res.json()
-            setProducts(data.products || [])
+            await avecMemoire<BoutiqueProduct[]>(
+                'boutique-produits',
+                async () => {
+                    const res = await fetchWithTimeout(`${API_BASE}/api/products`, { timeoutMs: 10000 })
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                    const data = await res.json()
+                    return data.products || []
+                },
+                (liste) => { setProducts(liste); setLoading(false) },
+                { fraicheurMs: 60_000 },
+            )
         } catch (e: any) {
             console.warn('[Boutique] Fetch failed:', e?.message)
-            setProducts([])
         } finally {
             setLoading(false)
         }

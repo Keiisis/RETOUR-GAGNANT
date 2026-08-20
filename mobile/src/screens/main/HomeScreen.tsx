@@ -10,6 +10,7 @@ import {
     BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone,
 } from 'lucide-react-native'
 import { lire } from '../../lib/stockage'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import Animated, {
     useSharedValue, useAnimatedStyle,
     withSpring, withTiming, withDelay, Easing,
@@ -80,10 +81,22 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
     }, [dossier])
     const progressBarStyle = useAnimatedStyle(() => ({ width: `${progressAnim.value}%` }))
 
-    /* ─── Données (logique inchangée) ─── */
+    /* ─── Donnees : l'ecran s'affiche AVANT le reseau ───
+       L'accueil attendait trois requetes Supabase avant de montrer le moindre
+       chiffre : sur un reseau mobile, une a deux secondes de vide a chaque
+       ouverture de l'application. Le resume du dernier dossier et les deux
+       compteurs sont desormais peints depuis la derniere valeur connue, puis
+       corriges quand le reseau repond. */
     const fetchData = async () => {
         if (!profile) return
-        try {
+
+        await avecMemoire<{
+            dossier: DossierInfo | null
+            notifs: number
+            messages: number
+        }>(
+            cleDuClient(profile.id, 'accueil'),
+            async () => {
             const [dossierRes, notifRes, conversationRes] = await Promise.all([
                 // Source = dossier_tracking (la table `dossiers` est celle de la
                 // généalogie). On mappe le statut global vers l'affichage mobile.
@@ -95,30 +108,43 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
                     .eq('client_id', profile.id).eq('type', 'chat')
                     .order('created_at', { ascending: false }).limit(1).maybeSingle(),
             ])
-            if (dossierRes.data) {
-                const tr = dossierRes.data as { statut: string; progression: number | null; service_type: string | null }
-                setDossier({
+
+            const tr = dossierRes.data as { statut: string; progression: number | null; service_type: string | null } | null
+            const resume: DossierInfo | null = tr
+                ? {
                     status: TRACKING_TO_MOBILE[tr.statut] || 'soumis',
                     progress: typeof tr.progression === 'number' ? tr.progression : 0,
                     service_type: tr.service_type,
-                })
-            } else { setDossier(null) }
-            setUnreadNotifs(notifRes.count || 0)
+                }
+                : null
+
+            let messages = 0
             if (conversationRes.data?.id) {
-                const lastSeenKey = `@rg_chat_last_seen_${profile.id}`
-                const lastSeenIso = lire(lastSeenKey) ?? null
+                const lastSeenIso = lire(`@rg_chat_last_seen_${profile.id}`) ?? null
                 let q = supabase.from('chat_messages')
                     .select('id', { count: 'exact', head: true })
                     .eq('conversation_id', conversationRes.data.id).eq('role', 'agent')
                 if (lastSeenIso) q = q.gt('created_at', lastSeenIso)
                 const { count } = await q
-                setUnreadMessages(count || 0)
-            } else { setUnreadMessages(0) }
-        } catch { /* silencieux */ }
+                messages = count || 0
+            }
+
+            return { dossier: resume, notifs: notifRes.count || 0, messages }
+            },
+            (v) => {
+                setDossier(v.dossier)
+                setUnreadNotifs(v.notifs)
+                setUnreadMessages(v.messages)
+            },
+            // Les compteurs doivent rester vifs : on rappelle le reseau des
+            // qu'ils ont plus de dix secondes.
+            { fraicheurMs: 10_000 },
+        )
     }
-    /* Sans cela, revenir de la messagerie laissait le compteur de messages
-       non lus fige : `profile` n'ayant pas change, fetchData ne rejouait pas. */
-    useEffect(() => { fetchData() }, [profile])
+    /* `useFocusEffect` se declenche AUSSI au montage : garder en plus un
+       `useEffect` faisait partir deux fois les memes trois requetes a chaque
+       ouverture de l'application. Une seule suffit, et le retour de la
+       messagerie rafraichit toujours le compteur. */
     useFocusEffect(useCallback(() => { fetchData() }, [profile]))
 
     /* Conseiller reellement assigne (dossier_tracking.agent_assigne, expose par

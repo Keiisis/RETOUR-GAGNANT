@@ -24,6 +24,7 @@ import Animated, {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
@@ -298,7 +299,10 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
 
     const fetchAppointments = useCallback(async () => {
         if (!profile) return
-        try {
+        // Rendez-vous affiches depuis la derniere version connue, puis corriges.
+        await avecMemoire<Appointment[]>(
+            cleDuClient(profile.id, 'rendez-vous'),
+            async () => {
             // Source unifiée avec le site web : rdv_requests (vus par les agents)
             const { data } = await supabase
                 .from('rdv_requests')
@@ -320,8 +324,11 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     notes: msg || String(r.motif || ''),
                 }
             })
-            setAppointments(mapped)
-        } catch { /* ignore */ } finally { setLoading(false) }
+            return mapped
+            },
+            (liste) => { setAppointments(liste); setLoading(false) },
+        )
+        setLoading(false)
     }, [profile])
 
     useEffect(() => { fetchAppointments() }, [fetchAppointments])

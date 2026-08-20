@@ -26,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -317,18 +318,20 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
 
     const fetchOrders = useCallback(async () => {
         if (!profile) { setLoading(false); return }
-        try {
-            const res = await fetchWithTimeout(
-                `${API_BASE}/api/mobile/orders`,
-                { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
-            )
-            const data = await res.json().catch(() => ({}))
-            setOrders(data.orders || [])
-        } catch {
-            setOrders([])
-        } finally {
-            setLoading(false)
-        }
+        // Derniere liste connue affichee tout de suite, puis rafraichie.
+        await avecMemoire<OrderListItem[]>(
+            cleDuClient(profile.id, 'commandes'),
+            async () => {
+                const res = await fetchWithTimeout(
+                    `${API_BASE}/api/mobile/orders`,
+                    { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
+                )
+                const data = await res.json().catch(() => ({}))
+                return data.orders || []
+            },
+            (liste) => { setOrders(liste); setLoading(false) },
+        )
+        setLoading(false)
     }, [profile])
 
     useEffect(() => { fetchOrders() }, [fetchOrders])

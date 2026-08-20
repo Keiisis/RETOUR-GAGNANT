@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { lire, ecrire, supprimer } from '../lib/stockage'
 import { oublierClient } from '../lib/db/base'
+import { oublierMemoireDuClient } from '../lib/memoire'
 import { supabase } from '../config/supabase'
 import { registerPushToken, clearPushToken } from '../utils/pushToken'
 
@@ -170,6 +171,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                sur un appareil partagé, le suivant ne doit pas retrouver les
                dossiers et factures du précédent dans la base locale. */
             await oublierClient(state.user?.id)
+            /* Les reponses mises en memoire (accueil, paiements, commandes,
+               rendez-vous, propositions) portent l'identifiant du compte :
+               elles partent avec lui. Le catalogue public reste. */
+            if (state.user?.id) oublierMemoireDuClient(state.user.id)
             await supabase.auth.signOut()
         } catch (e) {
             console.error('Sign out error:', e)
