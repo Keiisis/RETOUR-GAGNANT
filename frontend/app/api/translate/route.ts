@@ -1,4 +1,5 @@
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
+import { masquerMarques, demasquerMarques, jetonsIntacts, CONSIGNE_MARQUES } from '@/lib/translation/marques'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
@@ -85,7 +86,15 @@ export async function POST(req: Request) {
         // 4. Translate missing texts with Groq (graceful degradation)
         if (missingTexts.length > 0 && GROQ_KEYS.length > 0) {
             try {
-            const textsToTranslate = missingTexts.map(m => m.text)
+            /* MASQUAGE DES MARQUES. « Retour Gagnant Bénin » revenait en
+               « Winning Return Benin » : une marque n'a pas de traduction.
+               Le modèle ne voit plus le nom — il voit un jeton qu'il recopie —
+               donc il ne peut plus le traduire. */
+            const masques = missingTexts.map(m => {
+                const { texte, remplacements } = masquerMarques(m.text)
+                return { original: m.text, masque: texte, remplacements, hash: m.hash }
+            })
+            const textsToTranslate = masques.map(m => m.masque)
 
             // Build language-specific hint for Creole languages
             const langHint = langConfig.promptHint ? `\n6. LANGUAGE CONTEXT: ${langConfig.promptHint}` : ''
@@ -98,7 +107,8 @@ CRITICAL RULES:
 1. Return ONLY a valid JSON object where the keys are the exact original French strings provided, and the values are the translations in ${langConfig.groqName}.
 2. DO NOT add any markdown formatting, explanations, or notes.
 3. Preserve shortcodes like {name}, {RG}, {RGB1}, {RGB2} exactly as they are.
-4. IMPORTANT: Translate everything to a natural, high-quality ${langConfig.groqName} translation for a premium service. For the exact phrase "VOTRE RETOUR GAGNANT", translate it appropriately. But DO NOT translate the tags {RG}, {RGB1}, {RGB2} if they appear.
+4. IMPORTANT: Translate everything to a natural, high-quality ${langConfig.groqName} translation for a premium service. DO NOT translate the tags {RG}, {RGB1}, {RGB2} if they appear.
+4b. ${CONSIGNE_MARQUES}
 5. EXTREMELY IMPORTANT: Preserve ANY and ALL HTML tags exactly identical. Do not modify or remove attributes like 'class', 'className', 'style'. Do not translate the class names or style values.${langHint}${creoleEnforcement}
 
 French strings to translate:
@@ -142,10 +152,15 @@ ${JSON.stringify(textsToTranslate)}`
                     if (Array.isArray(parsed)) {
                         // FALLBACK: Groq returned an array : map by index
                         console.log('[translate] Groq returned array format, mapping by index')
-                        for (let i = 0; i < missingTexts.length && i < parsed.length; i++) {
-                            const translated = parsed[i]
-                            if (translated && typeof translated === 'string') {
-                                const original = missingTexts[i].text
+                        for (let i = 0; i < masques.length && i < parsed.length; i++) {
+                            const brut = parsed[i]
+                            if (brut && typeof brut === 'string') {
+                                const { original, remplacements } = masques[i]
+                                if (!jetonsIntacts(brut, remplacements.length)) {
+                                    console.warn(`[translate] Marque abîmée (tableau), texte source conservé`)
+                                    continue
+                                }
+                                const translated = demasquerMarques(brut, remplacements)
                                 if (looksEnglish(translated)) {
                                     console.warn(`[translate] Rejected English translation for ${lang}: "${translated.substring(0, 50)}..."`)
                                     continue
@@ -153,7 +168,7 @@ ${JSON.stringify(textsToTranslate)}`
                                 translations[original] = translated
                                 recordsToInsert.push({
                                     source_text: original,
-                                    source_hash: missingTexts[i].hash,
+                                    source_hash: masques[i].hash,
                                     lang: lang,
                                     translated_text: translated,
                                     context: 'auto'
@@ -163,19 +178,30 @@ ${JSON.stringify(textsToTranslate)}`
                     } else if (typeof parsed === 'object' && parsed !== null) {
                         // EXPECTED: Groq returned an object : map by key
                         console.log('[translate] Groq returned object format, mapping by key')
-                        for (let i = 0; i < missingTexts.length; i++) {
-                            const original = missingTexts[i].text
-                            const translated = parsed[original]
+                        for (let i = 0; i < masques.length; i++) {
+                            const { original, masque, remplacements, hash } = masques[i]
+                            // Le modèle répond sur le texte MASQUÉ ; on accepte
+                            // aussi la clé d'origine s'il l'a recopiée.
+                            const brut = parsed[masque] ?? parsed[original]
 
-                            if (translated && typeof translated === 'string') {
-                                if (looksEnglish(translated)) {
-                                    console.warn(`[translate] Rejected English translation for ${lang}: "${translated.substring(0, 50)}..."`)
+                            if (brut && typeof brut === 'string') {
+                                if (looksEnglish(brut)) {
+                                    console.warn(`[translate] Rejected English translation for ${lang}: "${brut.substring(0, 50)}..."`)
                                     continue
                                 }
+                                /* Un jeton perdu = un nom d'agence absent de la
+                                   phrase. On préfère alors le texte français :
+                                   une phrase non traduite se comprend, un nom
+                                   manquant ne se devine pas. */
+                                if (!jetonsIntacts(brut, remplacements.length)) {
+                                    console.warn(`[translate] Marque abîmée, texte source conservé : "${original.substring(0, 60)}"`)
+                                    continue
+                                }
+                                const translated = demasquerMarques(brut, remplacements)
                                 translations[original] = translated
                                 recordsToInsert.push({
                                     source_text: original,
-                                    source_hash: missingTexts[i].hash,
+                                    source_hash: hash,
                                     lang: lang,
                                     translated_text: translated,
                                     context: 'auto'
