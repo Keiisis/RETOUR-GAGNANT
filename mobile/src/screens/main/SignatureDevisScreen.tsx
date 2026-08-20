@@ -48,7 +48,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
        été écarté. */
     const selection: string[] | undefined = route?.params?.selection
 
-    const [chargement, setChargement] = useState(true)
+    const [chargement, setChargement] = useState(() => !lireMemoire('signature-parapheur'))
     const [envoi, setEnvoi] = useState(false)
     const [signee, setSignee] = useState(false)
     const [automatique, setAutomatique] = useState(false)

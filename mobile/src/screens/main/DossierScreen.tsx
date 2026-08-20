@@ -30,6 +30,7 @@ import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { useFocusEffect } from '@react-navigation/native'
 import { lireDossiers, enregistrerDossiers } from '../../lib/db/depots'
+import { aEnMemoire, avecMemoire, cleDuClient, ecrireMemoire, etatMemorise } from '../../lib/memoire'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { thankYouMessage } from '../../lib/serviceCompletion'
 import { FlagBar } from '../../components/ui'
@@ -137,10 +138,14 @@ export default function DossierScreen({ navigation }: any) {
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
-    const [dossiers, setDossiers] = useState<Dossier[]>([])
+    /* SQLite garde les dossiers pour les trier et les filtrer, mais sa lecture
+       est ASYNCHRONE : l'onglet commencait donc quand meme par un rond qui
+       tourne. La memoire rapide, elle, repond avant la premiere image. */
+    const cleAffichage = cleDuClient(profile?.id, 'dossiers-affichage')
+    const [dossiers, setDossiers] = useState<Dossier[]>(() => etatMemorise<Dossier[]>(cleAffichage, []))
     const [selected, setSelected] = useState<Dossier | null>(null)
     const [refreshing, setRefreshing] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [uploading, setUploading] = useState(false)
     const [showUploadModal, setShowUploadModal] = useState(false)
     const [uploadTargetDossier, setUploadTargetDossier] = useState<Dossier | null>(null)
@@ -182,6 +187,7 @@ export default function DossierScreen({ navigation }: any) {
             try { json = JSON.parse(text) } catch { /* ignore */ }
             const list = json.dossiers || []
             setDossiers(list)
+            ecrireMemoire(cleAffichage, list)
             // Miroir local : c'est cette liste qui s'affichera au prochain lancement.
             void enregistrerDossiers(profile.id, list as unknown as Array<Record<string, unknown>>)
             if (list.length > 0 && !selected) setSelected(list[0])

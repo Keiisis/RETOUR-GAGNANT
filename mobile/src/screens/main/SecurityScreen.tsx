@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { FlagBar } from '../../components/ui'
@@ -225,8 +225,8 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     const [showConfirm, setShowConfirm] = useState(false)
 
     // ── 2FA (double authentification) ──
-    const [twofaEnabled, setTwofaEnabled] = useState(false)
-    const [twofaLoading, setTwofaLoading] = useState(true)
+    const [twofaEnabled, setTwofaEnabled] = useState(() => etatMemorise<boolean>('securite-2fa', false))
+    const [twofaLoading, setTwofaLoading] = useState(() => !aEnMemoire('securite-2fa'))
     const [twofaStep, setTwofaStep] = useState<'idle' | 'enroll' | 'disable'>('idle')
     const [twofaQr, setTwofaQr] = useState('')
     const [twofaSecret, setTwofaSecret] = useState('')

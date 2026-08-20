@@ -26,6 +26,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { lireNotifications, enregistrerNotifications } from '../../lib/db/depots'
+import { aEnMemoire, cleDuClient, ecrireMemoire, etatMemorise } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
@@ -237,8 +238,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
     const { profile, updateProfile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
-    const [notifications, setNotifications] = useState<AppNotification[]>([])
-    const [loading, setLoading] = useState(true)
+    const cleAffichage = cleDuClient(profile?.id, 'notifications-affichage')
+    const [notifications, setNotifications] = useState<AppNotification[]>(() => etatMemorise<AppNotification[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
     const [pushEnabled, setPushEnabled] = useState(false)
     const [registeringPush, setRegisteringPush] = useState(false)
@@ -281,6 +283,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 .limit(50)
             const liste = (data || []) as AppNotification[]
             setNotifications(liste)
+            ecrireMemoire(cleAffichage, liste)
             void enregistrerNotifications(profile.id, liste as unknown as Array<Record<string, unknown>>)
         } catch { /* ignore */ } finally { setLoading(false) }
     }, [profile])

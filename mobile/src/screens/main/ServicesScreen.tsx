@@ -25,6 +25,7 @@ import { pricingEnabled, showPriceFor } from '../../lib/pricing-visibility'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { lireServices, enregistrerServices } from '../../lib/db/depots'
+import { etatMemorise, aEnMemoire, ecrireMemoire } from '../../lib/memoire'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
@@ -632,8 +633,19 @@ function SkeletonServiceCard() {
 
 export default function ServicesScreen({ navigation }: any) {
     const insets = useSafeAreaInsets()
-    const [services, setServices] = useState<ServiceFull[]>(SERVICES_DATA)
-    const [loading, setLoading] = useState(true)
+    /* Depart sur le DERNIER catalogue reellement servi, pas sur la copie figee
+       dans le code : les libelles et les prix affiches a la premiere image sont
+       ceux que l'admin a publies. SERVICES_DATA ne sert plus que de repli a la
+       toute premiere ouverture, avant tout reseau. */
+    const [services, setServices] = useState<ServiceFull[]>(
+        () => {
+            const memorise = etatMemorise<ServiceFull[]>('services-affichage', [])
+            return memorise.length > 0
+                ? memorise.map(x => ({ ...x, icon: getIconForSlug(x.id) }))
+                : SERVICES_DATA
+        },
+    )
+    const [loading, setLoading] = useState(() => !aEnMemoire('services-affichage'))
     const [refreshing, setRefreshing] = useState(false)
     const [query, setQuery] = useState('')
     const [pricingOn, setPricingOn] = useState(false)
@@ -723,6 +735,7 @@ export default function ServicesScreen({ navigation }: any) {
                     }
                 })
                 setServices(mapped)
+                ecrireMemoire('services-affichage', mapped.map(m => ({ ...m, icon: undefined })))
                 // Miroir local : premier affichage du prochain lancement.
                 void enregistrerServices(mapped.map(m => ({ ...m, slug: m.id, icon: undefined })))
             } else {

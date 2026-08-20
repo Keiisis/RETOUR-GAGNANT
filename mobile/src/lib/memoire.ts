@@ -69,9 +69,13 @@ export function oublierMemoireDuClient(idClient: string): void {
 
 export interface OptionsMemoire {
     /**
-     * Tant que la donnée est plus jeune que cela, on ne rappelle pas le réseau.
-     * Évite qu'un aller-retour entre deux onglets déclenche dix requêtes.
-     * `0` force toujours le rafraîchissement. Défaut : 30 secondes.
+     * Tant que la donnée est plus jeune que cela, on ne rappelle PAS le réseau
+     * du tout : le téléphone répond seul, le serveur ne voit rien passer.
+     *
+     * Le défaut est volontairement large — cinq minutes — parce que l'objectif
+     * est que la charge vive sur l'appareil, pas sur Supabase. Les écrans qui
+     * ont besoin de vif l'abaissent (compteurs : 10 s), ceux qui touchent à
+     * l'argent le mettent à `0` pour interroger le serveur à chaque fois.
      */
     fraicheurMs?: number
     /** Ne pas servir le cache — utile après une action de l'utilisateur. */
@@ -101,7 +105,7 @@ export async function avecMemoire<T>(
     appliquer: (valeur: T, depuisCache: boolean) => void,
     options: OptionsMemoire = {},
 ): Promise<ResultatMemoire> {
-    const { fraicheurMs = 30_000, ignorerCache = false } = options
+    const { fraicheurMs = 5 * 60_000, ignorerCache = false } = options
 
     let servi = false
     if (!ignorerCache) {
@@ -136,4 +140,28 @@ export async function avecMemoire<T>(
             erreur: e instanceof Error ? e.message : 'Réseau indisponible',
         }
     }
+}
+
+/**
+ * Valeur de départ d'un `useState`, lue AVANT le premier rendu.
+ *
+ * C'était la pièce manquante. Mettre les données en cache ne sert à rien si
+ * l'écran commence quand même par afficher un rond qui tourne : la lecture se
+ * faisait dans un effet, donc APRÈS la première image. MMKV étant synchrone,
+ * rien n'oblige à attendre.
+ *
+ *     const [factures, setFactures] = useState(() => etatMemorise(cle, []))
+ *     const [chargement, setChargement] = useState(() => !aEnMemoire(cle))
+ *
+ * L'écran s'ouvre alors directement sur son contenu, sans une seule image
+ * intermédiaire.
+ */
+export function etatMemorise<T>(cle: string, defaut: T): T {
+    const v = lireMemoire<T>(cle)
+    return v === null || v === undefined ? defaut : v
+}
+
+/** Y a-t-il quelque chose à afficher tout de suite ? (pilote l'état « chargement ») */
+export function aEnMemoire(cle: string): boolean {
+    return lireMemoire<unknown>(cle) !== null
 }

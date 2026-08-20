@@ -27,7 +27,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useCart } from '../../contexts/CartContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
@@ -523,8 +523,11 @@ const cardStyles = StyleSheet.create({
 
 export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     const insets = useSafeAreaInsets()
-    const [products, setProducts] = useState<BoutiqueProduct[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = 'boutique-produits'
+    const [products, setProducts] = useState<BoutiqueProduct[]>(() => etatMemorise<BoutiqueProduct[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
     const [showCart, setShowCart] = useState(false)
     const { t, lang, isTranslating, preloadTexts } = useLang()
@@ -558,7 +561,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
         // Catalogue affiche depuis la derniere version connue, puis rafraichi.
         try {
             await avecMemoire<BoutiqueProduct[]>(
-                'boutique-produits',
+                cleAffichage,
                 async () => {
                     const res = await fetchWithTimeout(`${API_BASE}/api/products`, { timeoutMs: 10000 })
                     if (!res.ok) throw new Error(`HTTP ${res.status}`)

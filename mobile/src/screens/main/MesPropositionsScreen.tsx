@@ -21,7 +21,7 @@ import { FlagBar } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -65,14 +65,17 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
     const { t } = useLang()
     const { profile } = useAuth()
 
-    const [items, setItems] = useState<Proposition[]>([])
-    const [chargement, setChargement] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = cleDuClient(profile?.id, 'propositions')
+    const [items, setItems] = useState<Proposition[]>(() => etatMemorise<Proposition[]>(cleAffichage, []))
+    const [chargement, setChargement] = useState(() => !aEnMemoire(cleAffichage))
     const [rafraichit, setRafraichit] = useState(false)
 
     const charger = useCallback(async () => {
         // Dernieres propositions connues affichees tout de suite.
         await avecMemoire<Proposition[]>(
-            cleDuClient(profile?.id, 'propositions'),
+            cleAffichage,
             async () => {
                 const res = await fetchWithTimeout(`${API_BASE}/api/mobile/proposals`, {
                     headers: { ...(await authHeaders()) },

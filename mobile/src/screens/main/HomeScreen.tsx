@@ -10,7 +10,7 @@ import {
     BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone,
 } from 'lucide-react-native'
 import { lire } from '../../lib/stockage'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import Animated, {
     useSharedValue, useAnimatedStyle,
     withSpring, withTiming, withDelay, Easing,
@@ -65,9 +65,16 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
     const insets = useSafeAreaInsets()
     const { profile } = useAuth()
     const { t } = useLang()
-    const [dossier, setDossier] = useState<DossierInfo | null>(null)
-    const [unreadMessages, setUnreadMessages] = useState(0)
-    const [unreadNotifs, setUnreadNotifs] = useState(0)
+    /* Les compteurs partaient de zero et sautaient a leur valeur : l'accueil
+       clignotait a chaque ouverture. Ils demarrent maintenant sur la derniere
+       valeur connue, corrigee dans la foulee. */
+    const cleAccueil = cleDuClient(profile?.id, 'accueil')
+    const memorise = etatMemorise<{ dossier: DossierInfo | null; notifs: number; messages: number }>(
+        cleAccueil, { dossier: null, notifs: 0, messages: 0 },
+    )
+    const [dossier, setDossier] = useState<DossierInfo | null>(memorise.dossier)
+    const [unreadMessages, setUnreadMessages] = useState(memorise.messages)
+    const [unreadNotifs, setUnreadNotifs] = useState(memorise.notifs)
     const [advisor, setAdvisor] = useState<string | null>(null)
 
     const progressAnim = useSharedValue(0)
@@ -95,7 +102,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
             notifs: number
             messages: number
         }>(
-            cleDuClient(profile.id, 'accueil'),
+            cleAccueil,
             async () => {
             const [dossierRes, notifRes, conversationRes] = await Promise.all([
                 // Source = dossier_tracking (la table `dossiers` est celle de la

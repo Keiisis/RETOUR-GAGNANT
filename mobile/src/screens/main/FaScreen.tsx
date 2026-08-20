@@ -25,7 +25,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -76,10 +76,14 @@ export default function FaScreen({ navigation }: { navigation: any }) {
     const { profile } = useAuth()
     const { t } = useLang()
 
-    const [priests, setPriests] = useState<Priest[]>([])
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre plein, sans image
+       de chargement. Le reseau reste interroge (voir plus bas) et remplace
+       tout ce qui a change ; aucun paiement ne s'appuie sur cette valeur. */
+    const memorise = etatMemorise<{ priests: Priest[]; prices: { presentiel?: string; visio?: string } }>('fa-annuaire-tarifs', { priests: [], prices: {} })
+    const [priests, setPriests] = useState<Priest[]>(memorise.priests)
     const [erreurAnnuaire, setErreurAnnuaire] = useState<string | null>(null)
-    const [prices, setPrices] = useState<{ presentiel?: string; visio?: string }>({})
-    const [loading, setLoading] = useState(true)
+    const [prices, setPrices] = useState<{ presentiel?: string; visio?: string }>(memorise.prices)
+    const [loading, setLoading] = useState(() => !aEnMemoire('fa-annuaire-tarifs'))
     const [detail, setDetail] = useState<Priest | null>(null)
     const [openFaq, setOpenFaq] = useState<number | null>(1)
 

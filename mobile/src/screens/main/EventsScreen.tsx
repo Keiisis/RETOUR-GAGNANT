@@ -24,6 +24,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { lireEvenements, enregistrerEvenements } from '../../lib/db/depots'
+import { aEnMemoire, ecrireMemoire, etatMemorise } from '../../lib/memoire'
 import { ttcFromHt } from '../../lib/tax'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
@@ -763,9 +764,9 @@ const cardStyles = StyleSheet.create({
 export default function EventsScreen({ navigation }: any) {
     const { profile } = useAuth()
     const insets = useSafeAreaInsets()
-    const [events, setEvents] = useState<AppEvent[]>([])
+    const [events, setEvents] = useState<AppEvent[]>(() => etatMemorise<AppEvent[]>('evenements-affichage', []))
     const { t } = useLang()
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => !aEnMemoire('evenements-affichage'))
     const [refreshing, setRefreshing] = useState(false)
     const [tab, setTab] = useState<'upcoming' | 'tickets' | 'archives'>('upcoming')
 
@@ -796,6 +797,7 @@ export default function EventsScreen({ navigation }: any) {
             try { json = JSON.parse(text) } catch { /* ignore */ }
             const liste = json.events || []
             setEvents(liste)
+            ecrireMemoire('evenements-affichage', liste)
             void enregistrerEvenements(liste as unknown as Array<Record<string, unknown>>)
         } catch (err) {
             console.warn('[Events] fetch error:', err)

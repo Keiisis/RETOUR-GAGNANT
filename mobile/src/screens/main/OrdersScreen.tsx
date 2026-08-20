@@ -26,7 +26,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -293,8 +293,11 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
-    const [orders, setOrders] = useState<OrderListItem[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre sur son contenu,
+       sans passer par une image de chargement. */
+    const cleAffichage = cleDuClient(profile?.id, 'commandes')
+    const [orders, setOrders] = useState<OrderListItem[]>(() => etatMemorise<OrderListItem[]>(cleAffichage, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
     const [searchCode, setSearchCode] = useState('')
     const [searching, setSearching] = useState(false)
@@ -320,7 +323,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
         if (!profile) { setLoading(false); return }
         // Derniere liste connue affichee tout de suite, puis rafraichie.
         await avecMemoire<OrderListItem[]>(
-            cleDuClient(profile.id, 'commandes'),
+            cleAffichage,
             async () => {
                 const res = await fetchWithTimeout(
                     `${API_BASE}/api/mobile/orders`,
@@ -332,7 +335,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
             (liste) => { setOrders(liste); setLoading(false) },
         )
         setLoading(false)
-    }, [profile])
+    }, [profile, cleAffichage])
 
     useEffect(() => { fetchOrders() }, [fetchOrders])
 

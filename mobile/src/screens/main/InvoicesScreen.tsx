@@ -26,6 +26,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { lireFactures, enregistrerFactures } from '../../lib/db/depots'
+import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -287,8 +288,13 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     const { profile } = useAuth()
     const { t } = useLang()
     const insets = useSafeAreaInsets()
-    const [invoices, setInvoices] = useState<Invoice[]>([])
-    const [loading, setLoading] = useState(true)
+    /* Peinture au PREMIER rendu. La base SQLite etait bien lue, mais APRES un
+       `await` : l'ecran commencait donc toujours par un rond qui tourne. MMKV
+       est synchrone, la liste est donc deja la avant la premiere image ; SQLite
+       reste la reserve durable et interrogeable. */
+    const cleFactures = cleDuClient(profile?.id, 'factures-affichage')
+    const [invoices, setInvoices] = useState<Invoice[]>(() => etatMemorise<Invoice[]>(cleFactures, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleFactures))
     const [refreshing, setRefreshing] = useState(false)
     const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all')
 
@@ -317,27 +323,35 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     const fetchInvoices = useCallback(async () => {
         if (!profile) { setLoading(false); return }
 
-        // Base locale d'abord : les factures s'affichent meme hors ligne.
-        try {
-            const locales = await lireFactures<Invoice>(profile.id)
-            if (locales.length > 0) { setInvoices(locales); setLoading(false) }
-        } catch { /* confort seulement */ }
-
-        try {
-            const res = await fetchWithTimeout(
-                `${API_BASE}/api/mobile/invoices`,
-                { timeoutMs: 10000, headers: { ...(await authHeaders()) } }
-            )
-            const data = await res.json().catch(() => ({}))
-            const liste = data.invoices || []
-            setInvoices(liste)
-            void enregistrerFactures(profile.id, liste as unknown as Array<Record<string, unknown>>)
-        } catch {
-            setInvoices([])
-        } finally {
-            setLoading(false)
+        // Repli : la reserve SQLite, si la memoire rapide etait vide.
+        if (!aEnMemoire(cleFactures)) {
+            try {
+                const locales = await lireFactures<Invoice>(profile.id)
+                if (locales.length > 0) { setInvoices(locales); setLoading(false) }
+            } catch { /* confort seulement */ }
         }
-    }, [profile])
+
+        await avecMemoire<Invoice[]>(
+            cleFactures,
+            async () => {
+                const res = await fetchWithTimeout(
+                    `${API_BASE}/api/mobile/invoices`,
+                    { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
+                )
+                const data = await res.json().catch(() => ({}))
+                return data.invoices || []
+            },
+            (liste, depuisCache) => {
+                setInvoices(liste)
+                setLoading(false)
+                // La reserve durable n'est reecrite que sur du frais.
+                if (!depuisCache) {
+                    void enregistrerFactures(profile.id, liste as unknown as Array<Record<string, unknown>>)
+                }
+            },
+        )
+        setLoading(false)
+    }, [profile, cleFactures])
 
     useEffect(() => { fetchInvoices() }, [fetchInvoices])
 

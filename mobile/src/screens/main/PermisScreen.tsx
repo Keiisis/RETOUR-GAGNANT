@@ -26,7 +26,7 @@ import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -83,13 +83,17 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
     const { profile } = useAuth()
     const { t } = useLang()
 
-    const [types, setTypes] = useState<PermisType[]>([])
+    /* Valeur de depart lue en memoire : l'ecran s'ouvre plein, sans image
+       de chargement. Le reseau reste interroge (voir plus bas) et remplace
+       tout ce qui a change ; aucun paiement ne s'appuie sur cette valeur. */
+    const memorise = etatMemorise<{ types: PermisType[]; schools: School[] }>('permis-types-ecoles', { types: [], schools: [] })
+    const [types, setTypes] = useState<PermisType[]>(memorise.types)
     const [typeId, setTypeId] = useState('')
-    const [schools, setSchools] = useState<School[]>([])
+    const [schools, setSchools] = useState<School[]>(memorise.schools)
     const [schoolId, setSchoolId] = useState('')
     const [form, setForm] = useState({ name: '', email: '', phone: '' })
     const [focused, setFocused] = useState<string | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(() => !aEnMemoire('permis-types-ecoles'))
     const [submitting, setSubmitting] = useState(false)
     const [openFaq, setOpenFaq] = useState<number | null>(null)
 

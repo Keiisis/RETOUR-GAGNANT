@@ -35,7 +35,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -88,8 +88,9 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
     const { profile } = useAuth()
 
     const [vue, setVue] = useState<Vue>('formulaire')
-    const [recaps, setRecaps] = useState<Recap[]>([])
-    const [chargement, setChargement] = useState(true)
+    const cleRecaps = cleDuClient(profile?.id, 'recaps')
+    const [recaps, setRecaps] = useState<Recap[]>(() => etatMemorise<Recap[]>(cleRecaps, []))
+    const [chargement, setChargement] = useState(() => !aEnMemoire(cleRecaps))
     const [rafraichit, setRafraichit] = useState(false)
     const [depotEnCours, setDepotEnCours] = useState<string | null>(null)
 
@@ -118,7 +119,7 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
     const charger = useCallback(async () => {
         // Demandes deja deposees : affichees depuis la derniere version connue.
         await avecMemoire<Recap[]>(
-            cleDuClient(profile?.id, 'recaps'),
+            cleRecaps,
             async () => {
                 const res = await fetchWithTimeout(`${API_BASE}/api/mobile/recaps`, {
                     headers: { ...(await authHeaders()) }, timeoutMs: 15000,

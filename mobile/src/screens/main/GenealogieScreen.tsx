@@ -22,7 +22,8 @@ import { toast } from '../../lib/feedback'
 import { authHeaders } from '../../config/api'
 import { colors as C, spacing, radius, shadows, fonts, typography } from '../../config/theme'
 import { supabase } from '../../config/supabase'
-import { avecMemoire, cleDuClient } from '../../lib/memoire'
+import { useAuth } from '../../contexts/AuthContext'
+import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 
@@ -89,11 +90,16 @@ interface Tree { id: string; name?: string | null }
 export default function GenealogieScreen({ navigation }: { navigation: any }) {
     const insets = useSafeAreaInsets()
     const { t } = useLang()
+    const { profile } = useAuth()
 
-    const [loading, setLoading] = useState(true)
+    /* L'arbre deja construit s'affiche des la premiere image. */
+    const cleArbre = cleDuClient(profile?.id, 'genealogie')
+    const memorise = etatMemorise<{ tree: Tree | null; persons: Person[] } | null>(cleArbre, null)
+
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleArbre))
     const [refreshing, setRefreshing] = useState(false)
-    const [tree, setTree] = useState<Tree | null>(null)
-    const [persons, setPersons] = useState<Person[]>([])
+    const [tree, setTree] = useState<Tree | null>(memorise?.tree ?? null)
+    const [persons, setPersons] = useState<Person[]>(memorise?.persons ?? [])
     const [selected, setSelected] = useState<Person | null>(null)
     const [telechargement, setTelechargement] = useState(false)
 
@@ -158,7 +164,7 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
         if (!user) { setTree(null); setPersons([]); return }
 
         await avecMemoire<{ tree: Tree | null; persons: Person[] }>(
-            cleDuClient(user.id, 'genealogie'),
+            cleArbre,
             async () => {
                 const { data: treeData } = await supabase
                     .from('trees').select('id, name').eq('user_id', user.id).maybeSingle()
