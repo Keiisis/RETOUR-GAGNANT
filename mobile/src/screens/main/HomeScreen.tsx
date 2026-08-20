@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     Bell, FolderOpen, MessageSquare, FileText, CreditCard,
-    Calendar, Headphones, HelpCircle, ShieldCheck, ShoppingBag,
+    Calendar, HelpCircle, ShieldCheck, ShoppingBag,
     BadgeCheck, ChevronRight, ArrowRight, FileCheck2, Phone, MessageCircle,
 } from 'lucide-react-native'
 import { lire } from '../../lib/stockage'
@@ -203,10 +203,10 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
     const SECONDARY = useMemo(() => ([
         { icon: Calendar, label: t('Rendez-vous'), desc: t('Planifier un entretien'), dest: 'Appointments' },
         { icon: CreditCard, label: t('Paiements'), desc: t('Factures et règlements'), dest: 'Payments' },
-        /* Deux portes, jamais confondues : Ablawa repond tout de suite, l'equipe
-           reprend la main des qu'il faut un engagement. */
+        /* Le support HUMAIN n'est pas repete ici : la barre « SUPPORT — Equipe
+           RGB » en bas de l'accueil l'offre deja, avec l'appel ET l'ecrit. Deux
+           entrees pour la meme chose, c'est une hesitation, pas un choix. */
         { icon: MessageCircle, label: t('Support IA'), desc: t('Ablawa répond tout de suite'), dest: 'Ablawa' },
-        { icon: Headphones, label: t('Support humain'), desc: t('Écrire à l’équipe'), dest: 'Messages' },
         { icon: HelpCircle, label: t('Aide & FAQ'), desc: t('Questions fréquentes'), dest: 'FAQ' },
     ]), [t])
 

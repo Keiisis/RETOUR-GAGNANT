@@ -113,7 +113,19 @@ export default function AblawaScreen({ navigation }: { navigation: any }) {
             const dit = String(json?.reponse || json?.repli || '').trim()
 
             if (!dit) {
-                toast(t('Ablawa n’a pas répondu'), json?.error || t('Réessayez dans un instant.'), 'warning')
+                /* Le message DIT ce qui s'est passé. « Réessayez dans un
+                   instant » masquait tout : un 404 (route pas encore
+                   déployée), un 401 (session expirée) et une panne du modèle
+                   avaient le même visage — impossible à diagnostiquer, pour
+                   vous comme pour nous. */
+                const detail = res.status === 401
+                    ? t('Session expirée. Reconnectez-vous.')
+                    : res.status === 404
+                        ? t('Service indisponible sur le serveur (404). Il vient d’être publié : réessayez dans quelques minutes.')
+                        : res.status === 429
+                            ? t('Trop de questions d’un coup. Laissez-lui un instant.')
+                            : `${json?.error || t('Réessayez dans un instant.')} (${res.status})`
+                toast(t('Ablawa n’a pas répondu'), detail, 'warning')
                 return
             }
             setTours(prev => [...prev, {
