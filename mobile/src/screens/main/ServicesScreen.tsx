@@ -772,7 +772,7 @@ export default function ServicesScreen({ navigation }: any) {
             'Des solutions sur-mesure pour votre retour au Bénin.',
             'En savoir plus',
             'LE PLUS POPULAIRE',
-            'Nationalité Béninoise VIP',
+            'Nationalité Béninoise',
             'Accompagnement complet de A à Z · À partir de 150 000 FCFA',
             'Traduction en cours...',
         )

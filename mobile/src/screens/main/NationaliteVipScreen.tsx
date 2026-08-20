@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Nationalité Béninoise VIP - landing du service phare (RDV/formulaire).
+   Nationalité Béninoise - landing du service phare (RDV/formulaire).
    Fidèle à la maquette Sleek : hero editorial, bande verte, engagement +
    timeline, contraste, MINI-QUIZ d'éligibilité (indicatif, rien enregistré),
    pièces à fournir, réassurance, FAQ, DOUBLE CTA. Aucun paiement ici : le

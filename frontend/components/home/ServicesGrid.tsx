@@ -23,7 +23,7 @@ const IMG_BY_SLUG: Record<string, string> = {
     culture: '/assets/icones/icone_Guide_culturel.png',
     construction: '/assets/icones/icone_Construction.png',
     investissement: '/assets/icones/icone_Investissement.png',
-    'nationalite-vip': '/assets/icones/Nationalité Béninoise VIP.png',
+    'nationalite-vip': '/assets/icones/Nationalité Béninoise.png',
     'recherche-ancestrale': '/assets/icones/Recherche Ancestrale.png',
     'consultation-fa-racines': '/assets/icones/icone_Consultation_Fa_Racines.png',
     'langues-racines': '/assets/icones/icone_Langues_Racines.png',
