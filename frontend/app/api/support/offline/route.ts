@@ -1,6 +1,19 @@
+/* ══════════════════════════════════════════════════════════════
+   Ticket de support depose quand aucun agent n'est en ligne.
+
+   Cette route avait sa PROPRE configuration SMTP (`email_smtp_*`), pointant
+   vers `contact@retour-gagnant.bj` — un domaine qui n'existe pas. Elle etait
+   la seule du projet a lire ces cles : les douze autres passent par
+   `lib/email.ts` et `contact@retourgagnantbenin.bj`. Les accuses de reception
+   du support partaient donc d'une adresse morte, ou pas du tout, sans que
+   rien ne le signale.
+
+   Desormais : le meme expediteur que tout le reste de la plateforme, et le
+   meme journal d'envoi.
+   ══════════════════════════════════════════════════════════════ */
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import nodemailer from 'nodemailer';
+import { sendEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -16,28 +29,6 @@ export async function POST(request: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: settingsData } = await supabase.from('settings').select('key, value').in('key', [
-      'email_smtp_host', 'email_smtp_port', 'email_smtp_user', 'email_smtp_pass', 'email_from_name', 'email_from_email'
-    ]);
-
-    let smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-    let smtpPort = 587;
-    let smtpUser = process.env.SMTP_USER || '';
-    let smtpPass = process.env.SMTP_PASS || '';
-    let fromName = 'Retour Gagnant Bénin';
-    let fromEmail = process.env.SMTP_FROM || '';
-
-    if (settingsData && settingsData.length > 0) {
-      settingsData.forEach(s => {
-        if (s.key === 'email_smtp_host' && s.value) smtpHost = s.value;
-        if (s.key === 'email_smtp_port' && s.value) smtpPort = parseInt(s.value, 10) || 587;
-        if (s.key === 'email_smtp_user' && s.value) smtpUser = s.value;
-        if (s.key === 'email_smtp_pass' && s.value) smtpPass = s.value;
-        if (s.key === 'email_from_name' && s.value) fromName = s.value;
-        if (s.key === 'email_from_email' && s.value) fromEmail = s.value;
-      });
-    }
-
     // 1. Sauvegarde dans la BD (Panel Admin / Section Messages)
     const { error: dbError } = await supabase.from('messages').insert({
       nom: nom,
@@ -51,15 +42,8 @@ export async function POST(request: Request) {
 
     if (dbError) throw dbError;
 
-    // 2. Envoi du mail intelligent au client
-    if (smtpHost && smtpUser && smtpPass) {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: { user: smtpUser, pass: smtpPass },
-      });
-
+    // 2. Accuse de reception au client
+    {
       const emailHtml = `
             <!DOCTYPE html>
             <html>
@@ -92,12 +76,17 @@ export async function POST(request: Request) {
             </html>
             `;
 
-      await transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
+      /* Non bloquant : le ticket est deja enregistre en base, un echec
+         d'envoi ne doit pas faire croire au client que sa demande est perdue. */
+      const envoi = await sendEmail({
         to: email,
- subject: "[URGENT] Votre Super Assistance Retour Gagnant",
+        subject: "[URGENT] Votre Super Assistance Retour Gagnant",
         html: emailHtml,
+        context: 'support_offline',
       });
+      if (!envoi.success) {
+        console.error('[support/offline] accuse de reception non envoye :', envoi.error);
+      }
     }
 
     return NextResponse.json({ success: true });
