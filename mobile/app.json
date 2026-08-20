@@ -111,7 +111,8 @@
         }
       ],
       "expo-video",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-sqlite"
     ],
     "owner": "keysosi"
   }

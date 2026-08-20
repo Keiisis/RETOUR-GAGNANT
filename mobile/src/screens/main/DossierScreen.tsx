@@ -28,6 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { lireDossiers, enregistrerDossiers } from '../../lib/db/depots'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { thankYouMessage } from '../../lib/serviceCompletion'
 import { FlagBar } from '../../components/ui'
@@ -158,6 +159,19 @@ export default function DossierScreen({ navigation }: any) {
     /* ═══ DATA : Fetch + Realtime (LOGIQUE INCHANGÉE) ═══ */
     const fetchDossiers = useCallback(async () => {
         if (!profile) { setLoading(false); return }
+
+        /* D'abord la base locale : la liste s'affiche tout de suite, meme sans
+           reseau, meme au premier dixieme de seconde. Le reseau vient ensuite
+           corriger ce qui a change. */
+        try {
+            const locaux = await lireDossiers<Dossier>(profile.id)
+            if (locaux.length > 0) {
+                setDossiers(locaux)
+                setSelected(prev => prev ? (locaux.find(d => d.id === prev.id) || prev) : locaux[0])
+                setLoading(false)
+            }
+        } catch { /* la base locale n'est qu'un confort : jamais bloquante */ }
+
         try {
             const text = await fetchWithTimeout(
                 `${API_BASE}/api/mobile/dossiers`,
@@ -167,6 +181,8 @@ export default function DossierScreen({ navigation }: any) {
             try { json = JSON.parse(text) } catch { /* ignore */ }
             const list = json.dossiers || []
             setDossiers(list)
+            // Miroir local : c'est cette liste qui s'affichera au prochain lancement.
+            void enregistrerDossiers(profile.id, list as unknown as Array<Record<string, unknown>>)
             if (list.length > 0 && !selected) setSelected(list[0])
             else if (selected) {
                 const updated = list.find(d => d.id === selected.id)

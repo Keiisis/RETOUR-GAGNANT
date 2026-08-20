@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -29,6 +29,8 @@ import {
 } from '@expo-google-fonts/outfit'
 import * as Notifications from 'expo-notifications'
 
+import { reprendreDonneesAsyncStorage } from './src/lib/stockage'
+import { ouvrirBase } from './src/lib/db/base'
 import { AuthProvider } from './src/contexts/AuthContext'
 import { LangProvider } from './src/contexts/LangContext'
 import { FeedbackProvider } from './src/components/FeedbackProvider'
@@ -65,6 +67,23 @@ const linking = {
 }
 
 export default function App() {
+    /* ── Amorcage du stockage ──────────────────────────────────────
+       Deux choses avant le premier rendu :
+       1. la REPRISE des donnees deja presentes dans AsyncStorage (langue,
+          onboarding, cache de traduction). Elle doit finir avant que les
+          contextes ne lisent MMKV, sinon un habitue reverrait l'onboarding ;
+       2. l'ouverture de la base locale, lancee en meme temps.
+       L'attente s'ajoute a celle des polices : elle ne rallonge rien. */
+    const [stockagePret, setStockagePret] = useState(false)
+    useEffect(() => {
+        let vivant = true
+        reprendreDonneesAsyncStorage()
+            .finally(() => { if (vivant) setStockagePret(true) })
+        // La base s'ouvre en arriere-plan : les depots l'attendront d'eux-memes.
+        ouvrirBase().catch(e => { if (__DEV__) console.warn('[db] ouverture impossible :', e) })
+        return () => { vivant = false }
+    }, [])
+
     const [fontsLoaded] = useFonts({
         // Design v2 : Plus Jakarta Sans porte toute l'interface.
         PlusJakartaSans_400Regular,
@@ -133,8 +152,8 @@ export default function App() {
         return () => sub.remove()
     }, [])
 
-    // Attendre que les polices soient prêtes avant d'afficher l'app
-    if (!fontsLoaded) {
+    // Attendre polices ET stockage avant d'afficher l'app
+    if (!fontsLoaded || !stockagePret) {
         return <SplashScreen isLoading />
     }
 

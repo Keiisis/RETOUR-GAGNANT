@@ -24,6 +24,7 @@ import { getServiceMode, MODE_COPY } from '../../lib/service-mode'
 import { pricingEnabled, showPriceFor } from '../../lib/pricing-visibility'
 import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
+import { lireServices, enregistrerServices } from '../../lib/db/depots'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 
 /* ═══════════════════════════════════════════════════════════
@@ -674,6 +675,17 @@ export default function ServicesScreen({ navigation }: any) {
 
 
     const fetchServices = useCallback(async () => {
+        /* Catalogue local d'abord. Il remplace avantageusement SERVICES_DATA
+           comme premier affichage : c'est le dernier catalogue REEL connu, pas
+           une copie figee dans le code. */
+        try {
+            const locaux = await lireServices<ServiceFull>()
+            if (locaux.length > 0) {
+                setServices(locaux.map(s => ({ ...s, icon: getIconForSlug(s.id) })))
+                setLoading(false)
+            }
+        } catch { /* confort seulement */ }
+
         try {
             const { data, error } = await supabase
                 .from('services')
@@ -711,6 +723,8 @@ export default function ServicesScreen({ navigation }: any) {
                     }
                 })
                 setServices(mapped)
+                // Miroir local : premier affichage du prochain lancement.
+                void enregistrerServices(mapped.map(m => ({ ...m, slug: m.id, icon: undefined })))
             } else {
                 console.warn('[Services] No data from Supabase, using static data')
                 setServices(SERVICES_DATA)

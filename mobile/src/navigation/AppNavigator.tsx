@@ -4,7 +4,7 @@ import {
     createNativeStackNavigator,
     NativeStackNavigationOptions,
 } from '@react-navigation/native-stack'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { lire, ecrire } from '../lib/stockage'
 import { useAuth } from '../contexts/AuthContext'
 
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -243,22 +243,11 @@ const rootSwitch: NativeStackNavigationOptions = {
 
 export default function AppNavigator() {
     const { session, loading, twoFactorRequired } = useAuth()
-    const [onboardingChecked, setOnboardingChecked] = useState(false)
-    const [onboardingDone, setOnboardingDone] = useState(false)
-    const [langChosen, setLangChosen] = useState(false)
-    const [langChecked, setLangChecked] = useState(false)
-
-    useEffect(() => {
-        Promise.all([
-            AsyncStorage.getItem('onboarding_complete_v2'),
-            AsyncStorage.getItem('lang_chosen'),
-        ]).then(([obVal, langVal]) => {
-            setOnboardingDone(obVal === 'true')
-            setLangChosen(langVal === 'true')
-            setOnboardingChecked(true)
-            setLangChecked(true)
-        })
-    }, [])
+    /* Lecture immediate : ces deux drapeaux decidaient quel ecran montrer, et
+       leur lecture asynchrone imposait un passage par l'ecran d'attente A CHAQUE
+       lancement, meme pour un habitue. MMKV les rend sur-le-champ. */
+    const [onboardingDone, setOnboardingDone] = useState(() => lire('onboarding_complete_v2') === 'true')
+    const [langChosen, setLangChosen] = useState(() => lire('lang_chosen') === 'true')
 
     const globalScreenOptions = useMemo<NativeStackNavigationOptions>(
         () => ({
@@ -278,15 +267,15 @@ export default function AppNavigator() {
         []
     )
 
-    if (loading || !onboardingChecked || !langChecked) {
+    if (loading) {
         return <SplashScreen isLoading />
     }
 
     if (!langChosen) {
         return (
             <SplashScreen
-                onContinue={async () => {
-                    await AsyncStorage.setItem('lang_chosen', 'true')
+                onContinue={() => {
+                    ecrire('lang_chosen', 'true')
                     setLangChosen(true)
                 }}
             />
@@ -301,8 +290,8 @@ export default function AppNavigator() {
                     options={{ gestureEnabled: false, animation: 'fade' }}
                     children={() => (
                         <OnboardingScreen
-                            onComplete={async () => {
-                                await AsyncStorage.setItem('onboarding_complete_v2', 'true')
+                            onComplete={() => {
+                                ecrire('onboarding_complete_v2', 'true')
                                 setOnboardingDone(true)
                             }}
                         />

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { lire, ecrire, supprimer } from '../lib/stockage'
+import { oublierClient } from '../lib/db/base'
 import { supabase } from '../config/supabase'
 import { registerPushToken, clearPushToken } from '../utils/pushToken'
 
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
             const json = await res.json().catch(() => ({}))
             if (!json?.enabled) { setState(prev => ({ ...prev, twoFactorRequired: false })); return }
-            const until = await AsyncStorage.getItem(TWOFA_UNTIL_KEY)
+            const until = lire(TWOFA_UNTIL_KEY)
             const stillValid = until && Date.now() < Number(until)
             setState(prev => ({ ...prev, twoFactorRequired: !stillValid }))
         } catch {
@@ -164,7 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (state.user?.id) {
                 await clearPushToken(state.user.id).catch(() => {})
             }
-            await AsyncStorage.removeItem(TWOFA_UNTIL_KEY).catch(() => {})
+            supprimer(TWOFA_UNTIL_KEY)
+            /* Les données personnelles quittent le téléphone avec le compte :
+               sur un appareil partagé, le suivant ne doit pas retrouver les
+               dossiers et factures du précédent dans la base locale. */
+            await oublierClient(state.user?.id)
             await supabase.auth.signOut()
         } catch (e) {
             console.error('Sign out error:', e)
@@ -184,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
             const json = await res.json().catch(() => ({}))
             if (!res.ok) return { error: new Error(json?.error || 'Code incorrect') }
-            await AsyncStorage.setItem(TWOFA_UNTIL_KEY, String(Date.now() + TWOFA_WINDOW_MS))
+            ecrire(TWOFA_UNTIL_KEY, String(Date.now() + TWOFA_WINDOW_MS))
             setState(prev => ({ ...prev, twoFactorRequired: false }))
             return { error: null }
         } catch (e: any) {
