@@ -30,6 +30,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -113,9 +114,13 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
        une seule source, donc aucun créneau proposé qui n'existerait pas. */
     useEffect(() => {
         let vivant = true
-        fetchWithTimeout(`${API_BASE}/api/availability?days=21`, { timeoutMs: 12000 })
-            .then(r => r.json())
-            .then((j) => {
+        void avecMemoire<{ jours?: Jour[] }>(
+            'disponibilites-21j',
+            async () => {
+                const r = await fetchWithTimeout(`${API_BASE}/api/availability?days=21`, { timeoutMs: 12000 })
+                return await r.json()
+            },
+            (j) => {
                 if (!vivant) return
                 // La route renvoie `jours` (et non `days`) : sous l'autre nom
                 // la liste serait restée vide et aucun créneau n'aurait été
@@ -124,9 +129,10 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                 setJours(liste)
                 const premier = liste.find(d => !d.ferme && (d.slots?.length || 0) > 0)
                 if (premier) { setRdvDate(premier.date); setRdvHeure(premier.slots![0].heure) }
-            })
-            .catch(() => { /* l'écran le signale plus bas */ })
-            .finally(() => { if (vivant) setChargeCreneaux(false) })
+            },
+            // Les creneaux se prennent : trente secondes de cache au plus.
+            { fraicheurMs: 30_000 },
+        ).finally(() => { if (vivant) setChargeCreneaux(false) })
         return () => { vivant = false }
     }, [])
 

@@ -21,6 +21,7 @@ import Animated, {
     interpolateColor,
 } from 'react-native-reanimated'
 import { ecrire } from '../../lib/stockage'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
@@ -185,17 +186,27 @@ export default function MessagesScreen({ navigation }: any) {
     /* ── 2. Charger l'historique de TOUS les fils, fusionné ── */
     const fetchChatHistory = useCallback(async (ids: string[]) => {
         if (!ids.length) { setChatMessages([]); setLoading(false); return }
-        const { data, error } = await supabase
-            .from('chat_messages')
-            .select('id, conversation_id, role, content, created_at')
-            .in('conversation_id', ids)
-            .order('created_at', { ascending: true })
-            .limit(300)
 
-        if (!error && data) setChatMessages(data as ChatMessage[])
-        else if (error) console.warn('[Messages] Fetch history error:', error.message)
+        /* L'historique deja lu se reaffiche immediatement : on retrouve sa
+           conversation la ou on l'avait laissee, meme sans reseau. Le temps
+           reel (plus bas) apporte ensuite les nouveaux messages. */
+        await avecMemoire<ChatMessage[]>(
+            cleDuClient(profile?.id, 'messagerie'),
+            async () => {
+                const { data, error } = await supabase
+                    .from('chat_messages')
+                    .select('id, conversation_id, role, content, created_at')
+                    .in('conversation_id', ids)
+                    .order('created_at', { ascending: true })
+                    .limit(300)
+                if (error) throw new Error(error.message)
+                return (data || []) as ChatMessage[]
+            },
+            (liste) => { setChatMessages(liste); setLoading(false) },
+            { fraicheurMs: 0 },
+        )
         setLoading(false)
-    }, [])
+    }, [profile?.id])
 
     /* ── Init ── */
     useEffect(() => {

@@ -29,6 +29,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { lireMemoire, ecrireMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -92,12 +93,14 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
         let vivant = true
         ;(async () => {
             try {
+                const memorise = lireMemoire<{ signature_data?: string; auto_sign?: string }>('signature-parapheur')
                 const res = await fetchWithTimeout(`${API_BASE}/api/mobile/signature`, {
                     headers: { ...(await authHeaders()) },
                     timeoutMs: 15000,
                 })
                 const json = await res.json().catch(() => ({}))
-                const sig = json?.signature
+                const sig = json?.signature ?? memorise
+                if (sig) ecrireMemoire('signature-parapheur', sig)
                 if (!vivant) return
 
                 const data = sig?.signature_data || null

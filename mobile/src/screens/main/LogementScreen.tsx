@@ -35,6 +35,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import KkiapayModal from '../../components/KkiapayModal'
 
@@ -146,6 +147,11 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
        depuis l'admin (page_sections → /api/logements/dossier-fee), jamais codé
        en dur. RGB ne vend pas le bien : les prix affichés sont ceux du partenaire. */
     const [feeAmount, setFeeAmount] = useState(250)
+    /* Le forfait peut etre peint depuis la memoire locale pour que l'ecran
+       s'ouvre plein. Mais c'est CE montant qui est presente a la passerelle :
+       tant que le serveur ne l'a pas confirme, on n'ouvre pas le paiement.
+       Un forfait perime encaisserait moins que le tarif reel, en silence. */
+    const [feeConfirme, setFeeConfirme] = useState(false)
     const [feeCurrency, setFeeCurrency] = useState('EUR')
     const feeSymbol = CURRENCY_SYMBOL[feeCurrency.toUpperCase()] || feeCurrency
     const feeXof = toXof(feeAmount, feeCurrency)
@@ -161,24 +167,36 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
         setOpenFaq(prev => (prev === i ? null : i))
     }
 
+    /* Catalogue et frais de dossier peints depuis la derniere version connue.
+       Fraicheur zero : le forfait est un MONTANT, le reseau reste donc
+       systematiquement interroge. */
     useEffect(() => {
         let alive = true
-        ;(async () => {
-            try {
+        void avecMemoire<{ logements: Logement[]; amount: number | null; currency: string | null }>(
+            'logements-catalogue',
+            async () => {
                 const [lRes, fRes] = await Promise.all([
                     fetchWithTimeout(`${API_BASE}/api/logements`, { timeoutMs: 12000 }),
                     fetchWithTimeout(`${API_BASE}/api/logements/dossier-fee`, { timeoutMs: 12000 }),
                 ])
                 const json = await lRes.json().catch(() => ({}))
-                if (alive) setLogements(Array.isArray(json.logements) ? json.logements : [])
                 const fee = await fRes.json().catch(() => ({}))
-                if (alive && typeof fee?.amount === 'number' && fee.amount > 0) {
-                    setFeeAmount(fee.amount)
-                    if (fee.currency) setFeeCurrency(String(fee.currency))
+                return {
+                    logements: Array.isArray(json.logements) ? json.logements : [],
+                    amount: typeof fee?.amount === 'number' && fee.amount > 0 ? fee.amount : null,
+                    currency: fee?.currency ? String(fee.currency) : null,
                 }
-            } catch { /* repli : liste vide, forfait 250 € */ }
-            finally { if (alive) setLoading(false) }
-        })()
+            },
+            (v, depuisCache) => {
+                if (!alive) return
+                setLogements(v.logements)
+                if (v.amount !== null) setFeeAmount(v.amount)
+                if (v.currency) setFeeCurrency(v.currency)
+                if (!depuisCache && v.amount !== null) setFeeConfirme(true)
+                setLoading(false)
+            },
+            { fraicheurMs: 0 },
+        ).finally(() => { if (alive) setLoading(false) })
         return () => { alive = false }
     }, [])
 
@@ -272,13 +290,19 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             // même si le client abandonne le paiement juste après.
             setPendingLeadId(data.lead_id || null)
             setShowForm(false)
+            if (!feeConfirme) {
+                // Le prospect est enregistre : rien n'est perdu, on demande
+                // simplement de reessayer une fois le tarif confirme.
+                toast(t('Tarif en cours de vérification'), t('Votre demande est enregistrée. Relancez le paiement dans un instant.'))
+                return
+            }
             setShowPay(true)
         } catch {
             toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
         } finally {
             setSubmitting(false)
         }
-    }, [form, target, diaspora, formule, t])
+    }, [form, target, diaspora, formule, feeConfirme, t])
 
     const field = (name: string) => [styles.field, focused === name && styles.fieldFocused]
 

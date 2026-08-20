@@ -25,6 +25,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -115,19 +116,23 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
     useEffect(() => {
         const load = async () => {
             if (!profile) { setLoading(false); return }
-            try {
-                const res = await fetchWithTimeout(
-                    `${API_BASE}/api/mobile/signature`,
-                    { timeoutMs: 8000, headers: { ...(await authHeaders()) } }
-                )
-                const data = await res.json().catch(() => ({}))
-                if (data.signature) {
-                    setSavedSig(data.signature)
-                    setAutoSign(data.signature.auto_sign || 'ask')
-                }
-            } catch { /* ignore */ } finally {
-                setLoading(false)
-            }
+            // Le paraphe deja enregistre s'affiche sans attendre le reseau.
+            await avecMemoire<ServerSignature | null>(
+                cleDuClient(profile.id, 'signature'),
+                async () => {
+                    const res = await fetchWithTimeout(
+                        `${API_BASE}/api/mobile/signature`,
+                        { timeoutMs: 8000, headers: { ...(await authHeaders()) } },
+                    )
+                    const data = await res.json().catch(() => ({}))
+                    return data.signature ?? null
+                },
+                (sig) => {
+                    if (sig) { setSavedSig(sig); setAutoSign(sig.auto_sign || 'ask') }
+                    setLoading(false)
+                },
+            )
+            setLoading(false)
         }
         load()
     }, [profile])

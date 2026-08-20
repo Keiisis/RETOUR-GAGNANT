@@ -31,6 +31,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { avecMemoire, cleDuClient } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -67,13 +68,21 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
     const [open, setOpen] = useState<TicketItem | null>(null)
 
     const charger = useCallback(async () => {
+        // Billets deja emis : affiches instantanement, meme hors ligne — c'est
+        // precisement le moment ou l'on en a besoin, a l'entree d'un evenement.
         try {
-            const res = await fetchWithTimeout(`${API_BASE}/api/mobile/events/tickets`, {
-                headers: { ...(await authHeaders()) },
-                timeoutMs: 15000,
-            })
-            const json = await res.json().catch(() => ({}))
-            setTickets(Array.isArray(json.tickets) ? json.tickets : [])
+            await avecMemoire<TicketItem[]>(
+                cleDuClient(profile?.id, 'billets'),
+                async () => {
+                    const res = await fetchWithTimeout(`${API_BASE}/api/mobile/events/tickets`, {
+                        headers: { ...(await authHeaders()) },
+                        timeoutMs: 15000,
+                    })
+                    const json = await res.json().catch(() => ({}))
+                    return Array.isArray(json.tickets) ? json.tickets : []
+                },
+                (liste) => { setTickets(liste); setLoading(false) },
+            )
         } catch {
             /* liste vide : l'écran affiche son état vide */
         } finally {

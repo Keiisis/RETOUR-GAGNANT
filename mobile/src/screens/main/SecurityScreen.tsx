@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from '../../config/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { avecMemoire } from '../../lib/memoire'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { FlagBar } from '../../components/ui'
@@ -238,15 +239,18 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     }, [])
 
     useEffect(() => {
-        (async () => {
-            try {
+        // Etat connu affiche tout de suite : l'interrupteur ne clignote plus.
+        void avecMemoire<boolean>(
+            'securite-2fa',
+            async () => {
                 const token = await getToken()
-                if (!token) { setTwofaLoading(false); return }
+                if (!token) return null
                 const res = await fetch(`${API_BASE}/api/client/2fa/status`, { headers: { Authorization: `Bearer ${token}` } })
                 const json = await res.json().catch(() => ({}))
-                setTwofaEnabled(!!json?.enabled)
-            } catch { /* ignore */ } finally { setTwofaLoading(false) }
-        })()
+                return !!json?.enabled
+            },
+            (actif) => { setTwofaEnabled(actif); setTwofaLoading(false) },
+        ).finally(() => setTwofaLoading(false))
     }, [getToken])
 
     const startEnroll2fa = useCallback(async () => {
