@@ -84,7 +84,22 @@ export default function RegisterScreen({ navigation }: any) {
                 toast(t('Erreur'), json.error || t('Inscription impossible. Réessayez.'))
                 return
             }
-            toast(t('Bienvenue'), t('Un code de confirmation vient de partir vers votre e-mail.'), 'success')
+            /* Le serveur DIT si l'email est reellement parti (`emailSent`), et
+               l'application l'ignorait : elle annoncait « votre code vient de
+               partir » meme quand l'envoi avait echoue. Le client attendait
+               alors un code qui n'arriverait jamais, sans rien comprendre.
+               Le compte existe dans les deux cas — on continue donc vers la
+               saisie du code, mais on dit la verite, et on oriente vers le
+               bouton « Renvoyer le code » de l'ecran suivant. */
+            if (json.emailSent === false) {
+                toast(
+                    t('Compte cree, e-mail non parti'),
+                    t('Votre compte existe, mais l’envoi du code a echoue. Touchez « Renvoyer le code » sur l’ecran suivant.'),
+                    'warning',
+                )
+            } else {
+                toast(t('Bienvenue'), t('Un code de confirmation vient de partir vers votre e-mail.'), 'success')
+            }
             navigation.navigate('ConfirmEmail', { email: email.trim().toLowerCase() })
         } catch {
             setLoading(false)
