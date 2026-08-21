@@ -39,6 +39,26 @@
     }
   ],
   "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Espace Agent",
+      "short_name": "Agent",
+      "description": "Bureau agent : dossiers, messages, agenda",
+      "url": "/agent",
+      "icons": [
+        { "src": "/images/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Espace Admin",
+      "short_name": "Admin",
+      "description": "Panel d'administration",
+      "url": "/admin",
+      "icons": [
+        { "src": "/images/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ],
   "categories": [
     "business",
     "lifestyle",
