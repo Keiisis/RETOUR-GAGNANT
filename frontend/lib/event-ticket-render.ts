@@ -129,26 +129,33 @@ function arbre(d: DonneesBillet): any {
 
             // Deux colonnes : l'événement à gauche, la date à droite.
             e('div', { style: { display: 'flex', marginBottom: 26 } },
-                e('div', { style: { display: 'flex', flexDirection: 'column', width: 400, paddingRight: 24 } },
+                /* LARGEURS EXPLICITES, pas `flexGrow`.
+                   Avec une colonne extensible, Satori ne renvoie pas le texte à
+                   la ligne : « lundi 7 septembre 2026 à 16:17 » débordait du
+                   panneau et passait SOUS la souche sombre, tronqué. Une
+                   largeur fixée force le retour à la ligne. */
+                e('div', { style: { display: 'flex', flexDirection: 'column', width: 372, paddingRight: 22 } },
                     microTitre('Événement'),
-                    e('div', { style: { display: 'flex', fontSize: 27, fontWeight: 700, color: ENCRE, lineHeight: 1.25 } }, d.event_title),
+                    e('div', { style: { display: 'flex', fontSize: 26, fontWeight: 700, color: ENCRE, lineHeight: 1.25 } }, d.event_title),
                 ),
-                e('div', { style: { display: 'flex', flexDirection: 'column', flexGrow: 1 } },
+                e('div', { style: { display: 'flex', flexDirection: 'column', width: 300 } },
                     microTitre('Date'),
-                    e('div', { style: { display: 'flex', fontSize: 24, fontWeight: 700, color: ENCRE, lineHeight: 1.3 } }, d.event_date),
+                    e('div', { style: { display: 'flex', fontSize: 22, fontWeight: 700, color: ENCRE, lineHeight: 1.3 } }, d.event_date),
                 ),
             ),
 
             microTitre('Lieu'),
-            e('div', { style: { display: 'flex', fontSize: 24, fontWeight: 700, color: ENCRE } }, d.event_location),
+            e('div', { style: { display: 'flex', fontSize: 23, fontWeight: 700, color: ENCRE } }, d.event_location),
 
             // La mention légale ferme le panneau : c'est ce qui fait du dessin
-            // un billet opposable, et non une jolie carte.
-            e('div', { style: { display: 'flex', flexGrow: 1 } }),
+            // un billet opposable, et non une jolie carte. `flexGrow` la
+            // repousse en bas, avec une marge minimale pour qu'elle ne colle
+            // jamais au lieu quand le titre tient sur une seule ligne.
+            e('div', { style: { display: 'flex', flexGrow: 1, minHeight: 22 } }),
             e('div', {
                 style: {
                     display: 'flex', flexDirection: 'column', borderLeft: `3px solid ${ROUGE}`,
-                    paddingLeft: 12, marginBottom: 26,
+                    paddingLeft: 12, marginBottom: 30,
                 },
             },
                 e('div', { style: { display: 'flex', fontSize: 13, color: '#5E6A64', lineHeight: 1.5 } },
