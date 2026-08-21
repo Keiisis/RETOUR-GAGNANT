@@ -68,7 +68,7 @@ const heure = (iso: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function AblawaScreen({ navigation }: { navigation: any }) {
     const insets = useSafeAreaInsets()
-    const { t } = useLang()
+    const { t, lang } = useLang()
     const { profile } = useAuth()
 
     /* Le fil est peint dès la première image : on retrouve sa conversation là
@@ -107,7 +107,13 @@ export default function AblawaScreen({ navigation }: { navigation: any }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 30000,
-                body: JSON.stringify({ question: q, historique }),
+                /* `langue` n'était PAS envoyée : le serveur ignorait donc le
+                   réglage de l'application, et un prompt entièrement rédigé en
+                   français ramenait Ablawa au français — y compris face à une
+                   question posée en anglais. Elle sert de langue PAR DÉFAUT ;
+                   le serveur bascule de lui-même si le message est écrit dans
+                   une autre langue. */
+                body: JSON.stringify({ question: q, historique, langue: lang }),
             })
             const json = await res.json().catch(() => ({}))
             const dit = String(json?.reponse || json?.repli || '').trim()
@@ -141,7 +147,7 @@ export default function AblawaScreen({ navigation }: { navigation: any }) {
         } finally {
             setEnvoi(false)
         }
-    }, [question, envoi, tours, versLeBas, t])
+    }, [question, envoi, tours, versLeBas, t, lang])
 
     const bulle = ({ item }: { item: Tour }) => {
         const moi = item.role === 'user'
