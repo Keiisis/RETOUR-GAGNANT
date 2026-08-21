@@ -74,6 +74,22 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  /* Les polices du BILLET doivent voyager avec la fonction.
+     Le billet en image est rendu par `next/og`, qui exige qu'on lui FOURNISSE
+     les polices : une fonction serverless n'en a aucune d'installée (premier
+     essai : chaque lettre sortait en carré vide). Ces deux fichiers sont lus
+     avec `fs` au moment du rendu ; sans cette déclaration, le traçage de Next
+     ne les embarquerait pas et la lecture échouerait en production.
+     Ils ne sont PAS dans `public/` : ce dossier part sur le CDN et n'est pas
+     garanti présent dans le système de fichiers de la fonction. */
+  outputFileTracingIncludes: {
+    // La route qui sert l'image et le PDF…
+    '/api/tickets/[code]': ['./assets/fonts/**'],
+    // …et TOUTES celles qui envoient le billet par email, qui le rendent aussi.
+    '/api/mobile/events': ['./assets/fonts/**'],
+    '/api/events/[id]/register': ['./assets/fonts/**'],
+    '/api/checkout/verify': ['./assets/fonts/**'],
+  },
   headers: async () => [
     {
       source: '/(.*)',

@@ -7,18 +7,26 @@
    pas. Le bouton natif, lui, ne partageait qu'une URL — donc un lien, pas un
    billet. Un fichier réel doit venir de quelque part : il vient d'ici.
 
-   POURQUOI PAS DE NAVIGATEUR SANS TÊTE. Rendre le HTML existant en image
-   demanderait Chromium (~50 Mo) sur une fonction serverless, avec des
-   démarrages à froid de plusieurs secondes à chaque billet. `sharp` (déjà
-   présent) rastérise un SVG, et `jspdf` (déjà présent) écrit le PDF avec ses
-   propres polices : aucune dépendance nouvelle.
+   POURQUOI PAS `sharp` + SVG (première tentative, ABANDONNÉE).
+   `sharp` rastérise le texte SVG avec les polices du SYSTÈME. Une fonction
+   serverless Vercel n'en embarque AUCUNE : le billet produit sortait avec
+   chaque lettre remplacée par un carré vide (□□□□), QR intact et texte
+   illisible. Un contrôle statistique ne l'avait pas vu — les carrés sont des
+   pixels comme les autres ; il a fallu regarder l'image.
 
-   ⚠️ POLICES. `sharp` rastérise le texte SVG avec les polices du SYSTÈME, et
-   une fonction serverless n'en embarque presque aucune. On ne nomme donc que
-   des familles génériques, et on vérifie le rendu réel après déploiement — un
-   billet dont le texte manque serait pire que pas d'image du tout.
+   CE QU'ON UTILISE À LA PLACE. `next/og` (Satori + resvg, déjà fourni par
+   Next.js) rend une image à partir de polices qu'on lui DONNE explicitement.
+   Les deux graisses d'Inter vivent dans `public/fonts/` : le rendu ne dépend
+   donc plus de ce que l'hôte a installé. `jspdf` pose ensuite cette image sur
+   une page A4.
+
+   ⚠️ Satori ne comprend qu'un sous-ensemble de CSS : `display:flex` partout
+   (jamais `block`), pas de `gap` sur certains axes, pas de position absolue
+   complexe. Toute évolution doit rester dans ce sous-ensemble.
 ═══════════════════════════════════════════════════════════ */
-import sharp from 'sharp'
+import fs from 'node:fs'
+import path from 'node:path'
+import { ImageResponse } from 'next/og'
 import { jsPDF } from 'jspdf'
 
 export interface DonneesBillet {
@@ -41,104 +49,125 @@ const ENCRE = '#17201C'
 const GRIS = '#8A8A8A'
 const NUIT = '#111A15'
 
-const L = 720   // largeur
-const H = 1120  // hauteur
+const L = 720
+const H = 1120
 
-/** Le texte d'un billet ne doit jamais devenir du markup. */
-function esc(v: string): string {
-    return String(v || '').replace(/[&<>"']/g, c => (
-        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
-    ))
+/** Chargées une seule fois par instance : un fichier de 330 Ko ne se relit pas
+ *  à chaque billet. `public/` est déployé avec la fonction. */
+let policesCache: Array<{ name: string; data: Buffer; weight: 400 | 700; style: 'normal' }> | null = null
+
+function polices() {
+    if (policesCache) return policesCache
+    const dossier = path.join(process.cwd(), 'assets', 'fonts')
+    policesCache = [
+        { name: 'Inter', data: fs.readFileSync(path.join(dossier, 'Inter-Regular.ttf')), weight: 400 as const, style: 'normal' as const },
+        { name: 'Inter', data: fs.readFileSync(path.join(dossier, 'Inter-Bold.ttf')), weight: 700 as const, style: 'normal' as const },
+    ]
+    return policesCache
 }
 
-/** Coupe un texte trop long pour la largeur donnée (approximation par caractère). */
-function couper(texte: string, maxCar: number): string[] {
-    const mots = String(texte || '').split(/\s+/).filter(Boolean)
-    const lignes: string[] = []
-    let courante = ''
-    for (const mot of mots) {
-        const essai = courante ? `${courante} ${mot}` : mot
-        if (essai.length > maxCar && courante) { lignes.push(courante); courante = mot }
-        else courante = essai
-    }
-    if (courante) lignes.push(courante)
-    return lignes.slice(0, 3)
-}
+/* Satori consomme une arborescence d'éléments. On l'écrit à la main plutôt
+   qu'en JSX : ce fichier reste un `.ts`, sans étape de compilation à part. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const e = (type: string, props: Record<string, unknown>, ...enfants: any[]): any =>
+    ({ type, props: { ...props, children: enfants.length === 1 ? enfants[0] : enfants } })
 
-function svgBillet(d: DonneesBillet): string {
-    const POLICE = "'DejaVu Sans','Liberation Sans',Arial,Helvetica,sans-serif"
-    const MONO = "'DejaVu Sans Mono','Liberation Mono','Courier New',monospace"
+const microTitre = (texte: string) => e('div', {
+    style: {
+        display: 'flex', fontSize: 15, fontWeight: 700, letterSpacing: 3,
+        color: GRIS, textTransform: 'uppercase', marginBottom: 6,
+    },
+}, texte)
 
-    const titre = couper(d.event_title, 30)
-    const titreSvg = titre.map((l, i) =>
-        `<text x="86" y="${470 + i * 44}" font-family="${POLICE}" font-size="34" font-weight="bold" fill="${ENCRE}">${esc(l)}</text>`,
-    ).join('')
-    const apresTitre = 470 + (titre.length - 1) * 44
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function arbre(d: DonneesBillet): any {
+    return e('div', {
+        style: {
+            display: 'flex', width: L, height: H, backgroundColor: '#FFFFFF',
+            fontFamily: 'Inter',
+        },
+    },
+        // Arête tricolore : signature de l'agence, en structure et non en ornement.
+        e('div', { style: { display: 'flex', flexDirection: 'column', width: 18, height: H } },
+            e('div', { style: { display: 'flex', backgroundColor: VERT, width: 18, height: Math.round(H * 0.42) } }),
+            e('div', { style: { display: 'flex', backgroundColor: JAUNE, width: 18, height: Math.round(H * 0.16) } }),
+            e('div', { style: { display: 'flex', backgroundColor: ROUGE, width: 18, height: Math.round(H * 0.14) } }),
+        ),
 
-    const qrBase64 = d.qr_uri.includes(',') ? d.qr_uri.split(',')[1] : d.qr_uri
+        e('div', { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, height: H } },
+            // ── Corps ──
+            e('div', { style: { display: 'flex', flexDirection: 'column', padding: '54px 56px 0 62px', flexGrow: 1 } },
+                e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 46 } },
+                    e('div', { style: { display: 'flex', fontSize: 18, fontWeight: 700, letterSpacing: 4, color: VERT } }, 'RETOUR GAGNANT BÉNIN'),
+                    e('div', {
+                        style: {
+                            display: 'flex', border: `2px solid ${ENCRE}`, padding: '8px 20px',
+                            fontSize: 17, fontWeight: 700, letterSpacing: 3, color: ENCRE,
+                        },
+                    }, d.ticket_type.toUpperCase()),
+                ),
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${L}" height="${H}" viewBox="0 0 ${L} ${H}">
-  <rect width="${L}" height="${H}" fill="#FFFFFF"/>
+                microTitre('Au nom de'),
+                e('div', { style: { display: 'flex', fontSize: 44, fontWeight: 700, color: ENCRE, marginBottom: 10 } }, d.full_name || 'Invité'),
+                e('div', { style: { display: 'flex', fontSize: 23, color: GRIS } }, d.email),
+                d.phone
+                    ? e('div', { style: { display: 'flex', fontSize: 23, color: GRIS, marginTop: 4 } }, d.phone)
+                    : e('div', { style: { display: 'flex' } }),
 
-  <!-- Arête tricolore : la signature de l'agence, en structure et non en ornement -->
-  <rect x="0" y="0" width="18" height="${Math.round(H * 0.42)}" fill="${VERT}"/>
-  <rect x="0" y="${Math.round(H * 0.42)}" width="18" height="${Math.round(H * 0.16)}" fill="${JAUNE}"/>
-  <rect x="0" y="${Math.round(H * 0.58)}" width="18" height="${Math.round(H * 0.14)}" fill="${ROUGE}"/>
+                e('div', { style: { display: 'flex', height: 2, backgroundColor: '#E4E4E4', margin: '38px 0' } }),
 
-  <text x="86" y="96" font-family="${POLICE}" font-size="19" font-weight="bold" letter-spacing="4" fill="${VERT}">RETOUR GAGNANT BÉNIN</text>
+                microTitre('Événement'),
+                e('div', { style: { display: 'flex', fontSize: 34, fontWeight: 700, color: ENCRE, marginBottom: 36, lineHeight: 1.2 } }, d.event_title),
 
-  <rect x="${L - 240}" y="68" width="176" height="42" fill="none" stroke="${ENCRE}" stroke-width="2"/>
-  <text x="${L - 152}" y="96" font-family="${POLICE}" font-size="18" font-weight="bold" letter-spacing="3" fill="${ENCRE}" text-anchor="middle">${esc(d.ticket_type.toUpperCase())}</text>
+                microTitre('Date'),
+                e('div', { style: { display: 'flex', fontSize: 26, fontWeight: 700, color: ENCRE, marginBottom: 32 } }, d.event_date),
 
-  <text x="86" y="190" font-family="${POLICE}" font-size="17" font-weight="bold" letter-spacing="3" fill="${GRIS}">AU NOM DE</text>
-  <text x="86" y="248" font-family="${POLICE}" font-size="42" font-weight="bold" fill="${ENCRE}">${esc(couper(d.full_name, 24)[0] || 'Invité')}</text>
-  <text x="86" y="292" font-family="${POLICE}" font-size="24" fill="${GRIS}">${esc(d.email)}</text>
-  ${d.phone ? `<text x="86" y="330" font-family="${POLICE}" font-size="24" fill="${GRIS}">${esc(d.phone)}</text>` : ''}
+                microTitre('Lieu'),
+                e('div', { style: { display: 'flex', fontSize: 26, fontWeight: 700, color: ENCRE } }, d.event_location),
+            ),
 
-  <line x1="86" y1="376" x2="${L - 64}" y2="376" stroke="#E4E4E4" stroke-width="2"/>
+            // ── Perforation : la souche se détache ici ──
+            e('div', { style: { display: 'flex', height: 3, backgroundColor: '#FFFFFF', borderTop: '3px dashed #C9D2CC' } }),
 
-  <text x="86" y="428" font-family="${POLICE}" font-size="17" font-weight="bold" letter-spacing="3" fill="${GRIS}">ÉVÉNEMENT</text>
-  ${titreSvg}
-
-  <text x="86" y="${apresTitre + 66}" font-family="${POLICE}" font-size="17" font-weight="bold" letter-spacing="3" fill="${GRIS}">DATE</text>
-  <text x="86" y="${apresTitre + 108}" font-family="${POLICE}" font-size="27" font-weight="bold" fill="${ENCRE}">${esc(d.event_date)}</text>
-
-  <text x="86" y="${apresTitre + 166}" font-family="${POLICE}" font-size="17" font-weight="bold" letter-spacing="3" fill="${GRIS}">LIEU</text>
-  <text x="86" y="${apresTitre + 208}" font-family="${POLICE}" font-size="27" font-weight="bold" fill="${ENCRE}">${esc(couper(d.event_location, 34)[0] || '')}</text>
-
-  <!-- Perforation : la souche se détache ici -->
-  <line x1="0" y1="${H - 366}" x2="${L}" y2="${H - 366}" stroke="#C9D2CC" stroke-width="3" stroke-dasharray="12 10"/>
-  <circle cx="0" cy="${H - 366}" r="22" fill="#FFFFFF"/>
-  <circle cx="${L}" cy="${H - 366}" r="22" fill="#FFFFFF"/>
-
-  <rect x="0" y="${H - 364}" width="${L}" height="364" fill="${NUIT}"/>
-  <rect x="${L / 2 - 130}" y="${H - 330}" width="260" height="260" fill="#FFFFFF"/>
-  <image x="${L / 2 - 118}" y="${H - 318}" width="236" height="236"
-         href="data:image/png;base64,${qrBase64}" />
-  <text x="${L / 2}" y="${H - 34}" font-family="${MONO}" font-size="30" font-weight="bold" letter-spacing="2" fill="#FFFFFF" text-anchor="middle">${esc(d.ticket_code)}</text>
-</svg>`
+            // ── Souche ──
+            e('div', {
+                style: {
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    backgroundColor: NUIT, padding: '34px 0 26px',
+                },
+            },
+                e('div', { style: { display: 'flex', backgroundColor: '#FFFFFF', padding: 12 } },
+                    e('img', { src: d.qr_uri, width: 236, height: 236 }),
+                ),
+                e('div', {
+                    style: {
+                        display: 'flex', marginTop: 22, fontSize: 29, fontWeight: 700,
+                        letterSpacing: 2, color: '#FFFFFF',
+                    },
+                }, d.ticket_code),
+            ),
+        ),
+    )
 }
 
 /** Le billet en PNG. */
 export async function billetEnPng(d: DonneesBillet): Promise<Buffer> {
-    return sharp(Buffer.from(svgBillet(d)))
-        .png({ compressionLevel: 9 })
-        .toBuffer()
+    const reponse = new ImageResponse(arbre(d), { width: L, height: H, fonts: polices() })
+    return Buffer.from(await reponse.arrayBuffer())
 }
 
 /**
  * Le billet en PDF, format A4 portrait.
  *
- * L'image PNG est posée dans la page plutôt que redessinée en vecteur : le PDF
- * reste ainsi RIGOUREUSEMENT identique à l'image, et un seul dessin est à
- * maintenir. Le PDF est le format qu'on garde et qu'on imprime — c'est aussi
- * lui qu'on joint à l'email, comme le fait toute billetterie.
+ * L'image est posée dans la page plutôt que redessinée en vecteur : le PDF
+ * reste RIGOUREUSEMENT identique à l'image, et un seul dessin est à maintenir.
+ * Le PDF est ce qu'on garde et qu'on imprime — c'est aussi lui qu'on joint à
+ * l'email, comme le fait toute billetterie.
  */
 export async function billetEnPdf(d: DonneesBillet): Promise<Buffer> {
     const png = await billetEnPng(d)
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
 
-    // A4 = 210 × 297 mm. On centre en gardant les proportions du billet.
     const margeX = 20
     const largeur = 210 - margeX * 2
     const hauteur = largeur * (H / L)
