@@ -19,6 +19,7 @@
 ═══════════════════════════════════════════════════════════ */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
+import { billetEnPdf, billetEnPng } from './event-ticket-render'
 import {
     getTicketTemplate, renderTicketTemplate, qrDataUri, defaultTicketTemplate,
 } from './event-tickets'
@@ -167,18 +168,49 @@ export async function envoyerBilletParEmail(
 </table>
 </body></html>`
 
+        /* Les pièces jointes.
+           · le QR en INLINE (`cid`), pour que le billet du corps s'affiche ;
+           · le billet complet en PDF, et en PNG.
+           Le PDF est ce qu'on garde, imprime et présente — comme chez toute
+           billetterie. Le PNG répond à un usage local très concret : on
+           l'envoie par WhatsApp.
+           Un échec de rendu ne doit PAS empêcher l'envoi : le corps du message
+           porte déjà le billet et le code. On joint ce qu'on a pu produire. */
+        const pieces: Array<{ filename: string; content: string; contentType?: string; cid?: string }> = [{
+            filename: `qr-${ticket.ticket_code}.png`,
+            content: qrUri,
+            contentType: 'image/png',
+            cid: CID_QR,
+        }]
+
+        try {
+            const donnees = {
+                ticket_code: String(ticket.ticket_code),
+                full_name: String(reg?.full_name || 'Invité'),
+                email: destinataire,
+                phone: String(reg?.phone || ''),
+                ticket_type: ticket.ticket_type === 'vip' ? 'VIP' : 'Standard',
+                event_title: String(event?.title || 'Événement'),
+                event_date: dateLongue(event?.start_date),
+                event_location: lieu,
+                qr_uri: qrUri,
+            }
+            const [pdf, png] = await Promise.all([billetEnPdf(donnees), billetEnPng(donnees)])
+            pieces.push(
+                { filename: `billet-${ticket.ticket_code}.pdf`, content: pdf.toString('base64'), contentType: 'application/pdf' },
+                { filename: `billet-${ticket.ticket_code}.png`, content: png.toString('base64'), contentType: 'image/png' },
+            )
+        } catch (e) {
+            console.error('[billet email] rendu PDF/PNG impossible :', e)
+        }
+
         const envoi = await sendEmail({
             to: destinataire,
             subject: `Votre billet — ${String(event?.title || 'Événement')}`,
             html,
             context: 'event_ticket',
             relatedId: registrationId,
-            attachments: [{
-                filename: `billet-${ticket.ticket_code}.png`,
-                content: qrUri,
-                contentType: 'image/png',
-                cid: CID_QR,
-            }],
+            attachments: pieces,
         })
 
         return envoi.success ? { ok: true } : { ok: false, erreur: envoi.error }

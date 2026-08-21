@@ -34,6 +34,11 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { lireEvenements } from '../../lib/db/depots'
+/* API « legacy » d'expo-file-system : `expo-file-system` v57 expose une API
+   objet (`File`, `Directory`) et a deplace `downloadAsync` / `cacheDirectory`
+   sous `/legacy`, qui reste maintenu et fourni exprès pour cet usage. */
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Sharing from 'expo-sharing'
 import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -105,16 +110,43 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
         return () => { if (typeof unsub === 'function') unsub() }
     }, [navigation, charger])
 
-    const partager = async (ti: TicketItem) => {
-        if (!ti.ticket_code) return
-        const url = `${API_BASE}/api/tickets/${encodeURIComponent(ti.ticket_code)}`
+    /* Enregistrer / partager le billet — un FICHIER, pas un lien.
+       Avant : `Share.share({ url })` n'envoyait que l'adresse de la page. Un
+       contact recevait donc « https://…/api/tickets/RGB-… » sur WhatsApp, pas
+       un billet ; et sans réseau ou sans compte, ce lien ne vaut rien. Le
+       serveur produit maintenant l'image et le PDF : on télécharge le fichier
+       demandé et c'est LUI qu'on partage.
+
+       `expo-sharing` ouvre la feuille de partage du système, celle qui sait
+       déposer une image dans WhatsApp ou un PDF dans Fichiers. */
+    const [enPreparation, setEnPreparation] = useState<'image' | 'pdf' | null>(null)
+
+    const partagerFichier = async (ti: TicketItem, format: 'image' | 'pdf') => {
+        if (!ti.ticket_code || enPreparation) return
+        setEnPreparation(format)
         try {
-            await Share.share({
-                message: t('Mon billet pour « {e} » : {u}', { e: ti.event_title, u: url }),
-                url,
+            const ext = format === 'pdf' ? 'pdf' : 'png'
+            const cible = `${FileSystem.cacheDirectory}billet-${ti.ticket_code}.${ext}`
+            const url = `${API_BASE}/api/tickets/${encodeURIComponent(ti.ticket_code)}?format=${format}`
+
+            const { status } = await FileSystem.downloadAsync(url, cible, {
+                headers: { ...(await authHeaders()) },
+            })
+            if (status !== 200) throw new Error(`HTTP ${status}`)
+
+            if (!(await Sharing.isAvailableAsync())) {
+                toast(t('Partage indisponible'), t('Votre téléphone ne propose pas de partage de fichier.'))
+                return
+            }
+            await Sharing.shareAsync(cible, {
+                mimeType: format === 'pdf' ? 'application/pdf' : 'image/png',
+                dialogTitle: t('Mon billet'),
+                UTI: format === 'pdf' ? 'com.adobe.pdf' : 'public.png',
             })
         } catch {
-            toast(t('Partage impossible'), t('Réessayez dans un instant.'))
+            toast(t('Billet indisponible'), t('Impossible de préparer le fichier. Réessayez dans un instant.'))
+        } finally {
+            setEnPreparation(null)
         }
     }
 
@@ -265,14 +297,14 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
                             <X size={22} color={C.text} strokeWidth={2.2} />
                         </Pressable>
                         <Text style={styles.headerTitle} numberOfLines={1}>{open?.event_title}</Text>
-                        <Pressable onPress={() => open && partager(open)} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
+                        <Pressable onPress={() => open && partagerFichier(open, 'image')} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
                             <Share2 size={19} color={C.text} strokeWidth={2} />
                         </Pressable>
                     </View>
 
                     {!!open?.ticket_code && (
                         <WebView
-                            source={{ uri: `${API_BASE}/api/tickets/${encodeURIComponent(open.ticket_code)}` }}
+                            source={{ uri: `${API_BASE}/api/tickets/${encodeURIComponent(open.ticket_code)}?app=1` }}
                             style={{ flex: 1, backgroundColor: C.bg }}
                             startInLoadingState
                             renderLoading={() => (
@@ -281,10 +313,35 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
                         />
                     )}
 
+                    {/* Deux sorties, deux usages reels : l'image part sur
+                        WhatsApp, le PDF s'imprime et se garde. Les boutons de la
+                        page HTML (« Telecharger l'image », « Imprimer ») ne
+                        fonctionnaient pas ici — une WebView n'a pas de
+                        gestionnaire de telechargement et ignore `window.print()`
+                        — ce sont donc ces boutons NATIFS qui agissent. */}
                     <View style={[styles.viewerFooter, { paddingBottom: insets.bottom + 12 }]}>
-                        <Pressable onPress={() => open && partager(open)} style={styles.dlBtn} accessibilityRole="button">
-                            <Download size={17} color="#FFFFFF" strokeWidth={2} />
-                            <Text style={styles.dlBtnText}>{t('Enregistrer / Partager mon billet')}</Text>
+                        <Pressable
+                            onPress={() => open && partagerFichier(open, 'image')}
+                            style={[styles.dlBtn, !!enPreparation && styles.dlBtnEteint]}
+                            disabled={!!enPreparation}
+                            accessibilityRole="button"
+                        >
+                            {enPreparation === 'image'
+                                ? <ActivityIndicator color="#FFFFFF" size="small" />
+                                : <Download size={17} color="#FFFFFF" strokeWidth={2} />}
+                            <Text style={styles.dlBtnText}>{t('Enregistrer l’image')}</Text>
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => open && partagerFichier(open, 'pdf')}
+                            style={[styles.pdfBtn, !!enPreparation && styles.dlBtnEteint]}
+                            disabled={!!enPreparation}
+                            accessibilityRole="button"
+                        >
+                            {enPreparation === 'pdf'
+                                ? <ActivityIndicator color={C.primary} size="small" />
+                                : <Share2 size={16} color={C.primary} strokeWidth={2} />}
+                            <Text style={styles.pdfBtnText}>{t('PDF à imprimer')}</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -332,4 +389,11 @@ const styles = StyleSheet.create({
     viewerFooter: { paddingHorizontal: spacing.gutter, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface },
     dlBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 15 },
     dlBtnText: { fontFamily: fonts.bold, fontSize: 14.5, color: '#FFFFFF' },
+    dlBtnEteint: { opacity: 0.6 },
+    pdfBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+        backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.primary,
+        borderRadius: radius.pill, paddingVertical: 13, marginTop: 10,
+    },
+    pdfBtnText: { fontFamily: fonts.bold, fontSize: 14, color: C.primary },
 })

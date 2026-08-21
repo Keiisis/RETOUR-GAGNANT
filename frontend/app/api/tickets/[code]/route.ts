@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getTicketTemplate, renderTicketTemplate, qrDataUri } from '@/lib/event-tickets'
+import { billetEnPng, billetEnPdf } from '@/lib/event-ticket-render'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,6 +35,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 
     const { searchParams } = new URL(req.url)
     const format = (searchParams.get('format') || 'html').toLowerCase()
+
+    /* Affichage DANS l'application (`?app=1`).
+       Les deux boutons de cette page — « Télécharger l'image » et
+       « Imprimer » — sont inertes dans une WebView React Native : elle n'a pas
+       de gestionnaire de téléchargement et ne connaît pas `window.print()`.
+       Les laisser visibles, c'est proposer deux actions qui ne se passent
+       jamais. L'application a ses propres boutons natifs, qui téléchargent
+       vraiment le fichier via `?format=image` / `?format=pdf`. */
+    const dansApp = searchParams.get('app') === '1'
 
     const { data: ticket } = await supabase
         .from('event_tickets')
@@ -65,6 +75,45 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
     const fullName = String(reg?.full_name || '').trim()
     const email = String(reg?.email || '').trim()
     const phone = String(reg?.phone || '').trim()
+
+    /* IMAGE et PDF du billet entier.
+       Ils existent parce que les boutons « Télécharger l'image » et
+       « Imprimer » de la page ne font RIEN dans l'application : une WebView
+       React Native n'a pas de gestionnaire de téléchargement et ne connaît pas
+       `window.print()`. Le fichier doit donc être produit ici, puis enregistré
+       ou partagé par le code natif. */
+    if (format === 'image' || format === 'pdf') {
+        const donnees = {
+            ticket_code: String(ticket.ticket_code),
+            full_name: fullName || 'Invité',
+            email,
+            phone,
+            ticket_type: ticket.ticket_type === 'vip' ? 'VIP' : 'Standard',
+            event_title: String(event?.title || 'Événement'),
+            event_date: dateFr(event?.start_date),
+            event_location: String(event?.location || ''),
+            qr_uri: qrUri,
+        }
+        const nom = `billet-${ticket.ticket_code}`
+        if (format === 'pdf') {
+            const pdf = await billetEnPdf(donnees)
+            return new NextResponse(new Uint8Array(pdf), {
+                headers: {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `attachment; filename="${nom}.pdf"`,
+                    'Cache-Control': 'private, max-age=300',
+                },
+            })
+        }
+        const img = await billetEnPng(donnees)
+        return new NextResponse(new Uint8Array(img), {
+            headers: {
+                'Content-Type': 'image/png',
+                'Content-Disposition': `attachment; filename="${nom}.png"`,
+                'Cache-Control': 'private, max-age=300',
+            },
+        })
+    }
 
     const template = await getTicketTemplate(supabase, ticket.event_id)
     const corps = renderTicketTemplate(template, {
@@ -121,11 +170,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 </style>
 </head><body>
 ${usedBanner}
-<div class="rgb-actions">
+${dansApp ? '' : `<div class="rgb-actions">
   <button class="rgb-btn-dl" id="rgb-dl">Télécharger l'image</button>
   <button class="rgb-btn-print" onclick="window.print()">Imprimer</button>
 </div>
-<div class="rgb-hint">L'image téléchargée s'envoie par WhatsApp ou s'imprime chez un imprimeur.</div>
+<div class="rgb-hint">L'image téléchargée s'envoie par WhatsApp ou s'imprime chez un imprimeur.</div>`}
 
 <div id="rgb-ticket">${corps}</div>
 
