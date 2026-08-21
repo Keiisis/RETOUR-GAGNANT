@@ -3,7 +3,7 @@
 import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Calendar, Plus, Trash as Trash2, PencilSimple as Edit, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
+import { Calendar, Plus, Trash as Trash2, PencilSimple as Edit, Users, CheckCircle as CheckCircle2, XCircle, Clock, Crown, MagnifyingGlass as Search, CaretDown as ChevronDown, ArrowSquareOut as ExternalLink, QrCode } from '@phosphor-icons/react';
 
 interface EventData {
     id: string; title: string; slug: string; status: string
@@ -166,6 +166,15 @@ export default function AdminEventsPage() {
                                                     <Link href={`/admin/evenements/${evt.id}/registrations`}
                                                         className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title={t("Inscrits")} aria-label={t("Voir les inscriptions de l'événement")}>
                                                         <Users size={13} />
+                                                    </Link>
+                                                    {/* Le contrôle d'entrée, en clair depuis la liste.
+                                                        Il n'était atteignable qu'en ouvrant « Inscrits »
+                                                        puis en cherchant un bouton au fond du panneau :
+                                                        trois clics et une icône grise sans libellé pour
+                                                        l'action la plus opérationnelle qui soit. */}
+                                                    <Link href={`/admin/evenements/${evt.id}/registrations?scan=1`}
+                                                        className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#008751] text-white text-[11px] font-black hover:bg-[#00643C] transition-colors" title={t("Scanner les billets")} aria-label={t("Scanner les billets à l'entrée")}>
+                                                        <QrCode size={13} weight="bold" /> <T>Scanner</T>
                                                     </Link>
                                                     <button onClick={() => handleDelete(evt.id)} disabled={deleting === evt.id}
                                                         className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-30" title={t("Supprimer")} aria-label={t("Supprimer l'événement")}>
