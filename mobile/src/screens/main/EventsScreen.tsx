@@ -957,7 +957,13 @@ export default function EventsScreen({ navigation }: any) {
                         {/* ═══ LISTE (selon l'onglet) ═══ */}
                         <AnimatedSection delay={300}>
                             <View style={styles.listWrap}>
-                                {otherEvents.length === 0 ? (
+                                {/* L'evenement mis « a la une » est affiche AU-DESSUS, hors de
+                                   cette liste : avec un seul evenement publie, `otherEvents`
+                                   est donc vide et ce message s'affichait sous la carte —
+                                   « Aucun evenement a venir » juste sous un evenement a venir.
+                                   Un message d'absence n'a de sens que si l'onglet ne montre
+                                   VRAIMENT rien : on regarde donc aussi la carte a la une. */}
+                                {otherEvents.length === 0 && !featured ? (
                                     <View style={styles.emptyCatWrap}>
                                         <View style={styles.emptyCatIcon}>
                                             <LucideIcon name="calendar-outline" size={28} color={C.textMuted} />

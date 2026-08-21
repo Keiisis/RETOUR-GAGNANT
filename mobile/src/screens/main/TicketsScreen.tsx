@@ -33,6 +33,7 @@ import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { lireEvenements } from '../../lib/db/depots'
 import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -117,15 +118,42 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
         }
     }
 
+    /* Reprendre un paiement abandonne.
+       Avant : la carte n'affichait qu'un message (« votre billet sera emis des
+       que le paiement sera confirme ») et le toucher ne menait NULLE PART. Une
+       personne ayant ferme le widget de paiement se retrouvait donc bloquee :
+       son inscription existait, elle ne pouvait plus la regler, et rien ne le
+       lui disait. On la ramene sur la fiche de l'evenement, ou le paiement
+       repart. L'evenement est cherche d'abord dans la base LOCALE (immediat),
+       et seulement a defaut sur le reseau. */
+    const reprendrePaiement = useCallback(async (item: TicketItem) => {
+        try {
+            const locaux = await lireEvenements<Record<string, unknown>>()
+            const trouve = locaux.find(e => String(e.id) === item.event_id)
+            if (trouve) { navigation.navigate('EventDetail', { event: trouve }); return }
+
+            const r = await fetchWithTimeout(`${API_BASE}/api/mobile/events`, {
+                timeoutMs: 9000, headers: { ...(await authHeaders()) },
+            })
+            const d = await r.json().catch(() => ({}))
+            const dist = (d?.events || []).find((e: Record<string, unknown>) => String(e.id) === item.event_id)
+            if (dist) navigation.navigate('EventDetail', { event: dist })
+            else toast(t('Événement indisponible'), t('Il n’est plus proposé à l’inscription.'))
+        } catch {
+            toast(t('Connexion interrompue'), t('Réessayez dans un instant.'))
+        }
+    }, [navigation, t])
+
     const renderItem = ({ item }: { item: TicketItem }) => {
         const emis = !!item.ticket_code
-        const attente = item.payment_status !== 'paid' && !emis
+        /* `payment_status` vaut pending | completed | failed | refunded : la
+           valeur 'paid' testee ici n'a JAMAIS existe en base, la comparaison
+           etait donc toujours vraie. Sans consequence visible (l'emission du
+           billet tranchait), mais trompeuse a la lecture. */
+        const attente = item.payment_status !== 'completed' && !emis
         return (
             <Pressable
-                onPress={() => emis ? setOpen(item) : toast(
-                    t('Billet en attente'),
-                    t('Votre billet sera émis dès que le paiement sera confirmé.'),
-                )}
+                onPress={() => emis ? setOpen(item) : reprendrePaiement(item)}
                 style={[styles.card, item.is_used && styles.cardUsed]}
                 accessibilityRole="button"
             >
@@ -167,12 +195,15 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
                             {t('Déjà scanné')}{item.used_at ? ` · ${dateFr(item.used_at)}` : ''}
                         </Text>
                     ) : attente ? (
-                        <Text style={styles.pendingText}>{t('En attente de paiement')}</Text>
+                        <Text style={styles.pendingText}>{t('Paiement à finaliser')}</Text>
                     ) : (
                         <Text style={styles.codeText}>{item.ticket_code}</Text>
                     )}
                     {emis && !item.is_used && (
                         <Text style={styles.openHint}>{t('Voir mon billet')}</Text>
+                    )}
+                    {attente && (
+                        <Text style={styles.openHint}>{t('Reprendre le paiement')}</Text>
                     )}
                 </View>
             </Pressable>
