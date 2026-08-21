@@ -248,9 +248,19 @@ function FeaturedEventCard({
                         </Text>
                     </View>
 
+                    {/* Le badge du haut disait « Inscrit » pendant que ce bouton
+                       disait encore « S'inscrire » : la meme carte donnait deux
+                       informations contraires. Une place deja reglee mene au
+                       billet, pas a une nouvelle inscription. */}
                     <View style={featuredStyles.cta}>
-                        <Text style={featuredStyles.ctaText}>{t("S'inscrire")}</Text>
-                        <LucideIcon name="arrow-forward" size={14} color={C.primary} />
+                        <Text style={featuredStyles.ctaText}>
+                            {isRegistered ? t('Voir mon billet') : t("S'inscrire")}
+                        </Text>
+                        <LucideIcon
+                            name={isRegistered ? 'ticket' : 'arrow-forward'}
+                            size={14}
+                            color={C.primary}
+                        />
                     </View>
                 </View>
             </Animated.View>
