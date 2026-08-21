@@ -505,9 +505,9 @@ function InteractiveButton({
                 <ActivityIndicator color={C.primaryText} size="small" />
             ) : (
                 <>
-                    {icon && <LucideIcon name={icon} size={18} color={C.primary} style={{ marginRight: 8 }} />}
+                    {icon && <LucideIcon name={icon} size={18} color={C.primaryText} style={{ marginRight: 8 }} />}
                     <Text style={[styles.btnText, disabled && styles.btnTextDisabled]}>{title}</Text>
-                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />}
+                    {!disabled && <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />}
                 </>
             )}
         </TouchableOpacity>

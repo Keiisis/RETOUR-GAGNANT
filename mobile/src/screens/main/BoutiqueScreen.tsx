@@ -782,7 +782,12 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     keyExtractor={(item) => item.id}
                     renderItem={renderProduct}
                     numColumns={2}
-                    contentContainerStyle={styles.gridContent}
+                    contentContainerStyle={[
+                        styles.gridContent,
+                        // Le dernier rang restait sous la barre panier + la barre
+                        // systeme : on reserve la hauteur reelle.
+                        { paddingBottom: 110 + insets.bottom + (cartCount > 0 ? 62 : 0) },
+                    ]}
                     columnWrapperStyle={styles.columnWrapper}
                     ListHeaderComponent={renderListHeader}
                     ListEmptyComponent={
@@ -807,7 +812,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
 
             {/* FAB PANIER (bleu massif, accent Or) */}
             {cartCount > 0 && (
-                <Animated.View style={[styles.cartFabWrap, pulseStyle]}>
+                <Animated.View style={[styles.cartFabWrap, { bottom: insets.bottom + 16 }, pulseStyle]}>
                     <TouchableOpacity
                         style={styles.cartFab}
                         activeOpacity={0.85}
@@ -825,7 +830,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                             <Text style={styles.cartFabLabel}>{t('Ouvrir le panier')}</Text>
                             <Text style={styles.cartFabTotal}>{formatPrice(cartTotal)}</Text>
                         </View>
-                        <LucideIcon name="arrow-forward" size={18} color={C.primary} />
+                        <LucideIcon name="arrow-forward" size={18} color={C.primaryText} />
                     </TouchableOpacity>
                 </Animated.View>
             )}
@@ -1158,7 +1163,7 @@ const styles = StyleSheet.create({
 
     /* ── Grid ── */
     gridContent: {
-        paddingBottom: 140,
+        // paddingBottom calcule au montage (barre panier + barre systeme)
     },
     columnWrapper: {
         paddingHorizontal: H_PADDING,
@@ -1169,7 +1174,8 @@ const styles = StyleSheet.create({
     /* ── Cart FAB ── */
     cartFabWrap: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 30 : 20,
+        // `bottom` est fourni au montage : insets.bottom + 16. Une valeur fixe
+        // faisait chevaucher la barre de navigation Android (3 boutons/geste).
         left: H_PADDING,
         right: H_PADDING,
     },
@@ -1192,11 +1198,13 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: 'rgba(0, 135, 81, 0.15)',
+        // Pastille claire sur la barre verte : un vert translucide sur du vert
+        // ne se voyait pas.
+        backgroundColor: 'rgba(255,255,255,0.18)',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: C.border,
+        borderColor: 'rgba(255,255,255,0.35)',
     },
     cartBadge: {
         position: 'absolute',
@@ -1205,7 +1213,8 @@ const styles = StyleSheet.create({
         minWidth: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: C.accent,
+        // Pastille blanche : C.accent est vert, donc invisible sur la barre verte.
+        backgroundColor: C.primaryText,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 2,
@@ -1214,14 +1223,14 @@ const styles = StyleSheet.create({
     },
     cartBadgeText: {
         ...typography.button, fontSize: 12,
-        color: C.primaryText,
+        color: C.primary,
     },
     cartFabTextWrap: {
         flex: 1,
     },
     cartFabLabel: {
         ...typography.caption,
-        color: 'rgba(255,255,255,0.7)',
+        color: 'rgba(255,255,255,0.88)',
         letterSpacing: 0.3,
     },
     cartFabTotal: {

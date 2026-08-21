@@ -467,7 +467,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     <View style={styles.piliersBand}>
                         {landing.piliers.slice(0, 4).map((p, i) => (
                             <View key={i} style={styles.pilier}>
-                                <BadgeCheck size={18} color={C.accent} strokeWidth={2} />
+                                <BadgeCheck size={18} color="#FFFFFF" strokeWidth={2} />
                                 <Text style={styles.pilierTitle}>{t(p.title)}</Text>
                                 <Text style={styles.pilierDesc}>{t(p.desc)}</Text>
                             </View>

@@ -584,9 +584,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     accessibilityRole="button"
                                     hitSlop={6}
                                 >
-                                    <LucideIcon name="calendar" size={16} color={C.primary} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="calendar" size={16} color={C.primaryText} style={{ marginRight: 8 }} />
                                     <Text style={styles.emptyBtnText}>{t('Prendre rendez-vous')}</Text>
-                                    <LucideIcon name="arrow-forward" size={16} color={C.primary} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={16} color={C.primaryText} style={{ marginLeft: 8 }} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -861,9 +861,9 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                     <ActivityIndicator color={C.primaryText} size="small" />
                                 ) : (
                                     <>
-                                        <LucideIcon name="paper-plane-outline" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                                        <LucideIcon name="paper-plane-outline" size={18} color={C.primaryText} style={{ marginRight: 8 }} />
                                         <Text style={styles.submitBtnText}>{t('Envoyer la demande')}</Text>
-                                        <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
