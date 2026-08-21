@@ -238,10 +238,16 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                             <Text style={styles.valeurMono} selectable>{numeroFacture}</Text>
                         </View>
                     )}
-                    <View style={[styles.ligne, styles.sep]}>
-                        <Text style={styles.label}>{t('Moyen')}</Text>
-                        <Text style={styles.valeur}>{p.moyen || t('Mobile Money')}</Text>
-                    </View>
+                    {/* Plus de repli « Mobile Money » : c'etait une affirmation
+                        codee en dur, fausse des qu'on avait choisi la carte.
+                        Moyen inconnu = ligne absente ; mieux vaut ne rien dire
+                        que dire le contraire de ce que le client a fait. */}
+                    {!!p.moyen && (
+                        <View style={[styles.ligne, styles.sep]}>
+                            <Text style={styles.label}>{t('Moyen')}</Text>
+                            <Text style={styles.valeur}>{t(p.moyen)}</Text>
+                        </View>
+                    )}
                     <View style={[styles.ligne, styles.sep]}>
                         <Text style={styles.label}>{t('Date & heure')}</Text>
                         <Text style={styles.valeur}>{quand}</Text>

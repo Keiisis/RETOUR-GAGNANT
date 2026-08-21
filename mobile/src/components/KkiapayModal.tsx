@@ -95,6 +95,15 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         terminer(() => onSuccessRef.current(transactionId))
     }, [terminer])
 
+    /* Le moyen REELLEMENT choisi, pour le recapitulatif.
+       L'ecran de resultat affichait « Mobile Money » en dur : quelqu'un ayant
+       choisi la carte bancaire lisait donc le contraire de ce qu'il avait fait.
+       La valeur suit ici la selection, et une reference evite de capturer un
+       etat perime dans les rappels du widget. */
+    const moyenRef = useRef(moyen)
+    useEffect(() => { moyenRef.current = moyen }, [moyen])
+    const libelleMoyen = () => (moyenRef.current === 'carte' ? 'Carte bancaire' : 'Mobile Money')
+
     const surEchec = useCallback((motif?: string) => {
         abouti.current = true
         terminer(() => nav.navigate('ResultatPaiement', {
@@ -102,6 +111,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
             objet: serviceNameRef.current,
             montant: montantRef.current,
             devise: 'XOF',
+            moyen: libelleMoyen(),
             motif,
         }))
     }, [terminer, nav])
@@ -119,6 +129,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
                 objet: serviceNameRef.current,
                 montant: montantRef.current,
                 devise: 'XOF',
+                moyen: libelleMoyen(),
             })
         })
     }, [terminer, nav])
