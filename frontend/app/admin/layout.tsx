@@ -59,14 +59,22 @@ function AdminLayoutContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoginPage])
 
+    // Le contenu défile dans un conteneur interne (le body ne bouge pas) :
+    // écouter `window` ne déclenchait jamais l'ombre du header.
     useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 20)
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
+        const el = document.getElementById('admin-content-scroll')
+        if (!el) return
+        const handleScroll = () => setScrolled(el.scrollTop > 20)
+        el.addEventListener('scroll', handleScroll)
+        return () => el.removeEventListener('scroll', handleScroll)
+    }, [pathname])
 
-    // (Removed useEffect that was closing menu to avoid cascading render warning. 
-    // Now Handled directly in menu onClick below).
+    // Fermeture du tiroir mobile au changement de route.
+    // Dépendance UNIQUEMENT sur `pathname` : ajouter `mobileMenuOpen` ferait
+    // rejouer l'effet à l'ouverture et refermerait le menu aussitôt.
+    useEffect(() => {
+        setMobileMenuOpen(false)
+    }, [pathname])
 
     // Unread Counters
     const [unreadMessages, setUnreadMessages] = useState(0)
@@ -300,13 +308,15 @@ function AdminLayoutContent({
             fallback={<LoginRedirect />}
         >
             <ThemeProvider panel="admin" defaultTheme="dark">
-            <div className="flex h-screen text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
+            {/* h-[100dvh] : 100vh dépasse la zone visible sur mobile (barre
+                d'URL) et coupait le bas du panel. */}
+            <div className="flex h-[100dvh] text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
                 {/* ═══════════ DESKTOP SIDEBAR ═══════════ */}
                 <motion.aside
                     initial={false}
                     animate={{ width: isSidebarOpen ? 260 : 68 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="hidden lg:flex h-full border-r flex-col relative z-50 overflow-hidden shadow-[10px_0_30px_rgba(0,0,0,0.5)]"
+                    className="hidden md:flex h-full border-r flex-col relative z-50 overflow-hidden shadow-[10px_0_30px_rgba(0,0,0,0.5)]"
                     style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                 >
                     <div className="absolute top-0 left-0 w-full h-[300px] bg-benin-gradient opacity-10 blur-[100px] pointer-events-none" />
@@ -321,7 +331,7 @@ function AdminLayoutContent({
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden"
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
                                 onClick={() => setMobileMenuOpen(false)}
                             />
                             <motion.aside
@@ -329,7 +339,7 @@ function AdminLayoutContent({
                                 animate={{ x: 0, opacity: 1 }}
                                 exit={{ x: -320, opacity: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                className="fixed left-0 top-0 h-full w-[280px] border-r flex flex-col z-[101] lg:hidden shadow-2xl"
+                                className="fixed left-0 top-0 h-full w-[85vw] max-w-[300px] border-r flex flex-col z-[101] md:hidden shadow-2xl"
                                 style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                             >
                                 <button
@@ -371,7 +381,7 @@ function AdminLayoutContent({
                             <button
                                 onClick={() => setMobileMenuOpen(true)}
                                 title={t("Ouvrir le menu")}
-                                className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400 lg:hidden"
+                                className="p-2 -ml-1 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors text-gray-400 md:hidden"
                             >
                                 <Menu size={20} />
                             </button>
@@ -379,7 +389,7 @@ function AdminLayoutContent({
                             {/* Desktop sidebar toggle */}
                             <button
                                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="hidden lg:flex p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400"
+                                className="hidden md:flex p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400"
                                 title={isSidebarOpen ? 'Réduire' : 'Agrandir'}
                             >
                                 {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
@@ -414,7 +424,7 @@ function AdminLayoutContent({
                     </header>
 
                     {/* ═══ CONTENT ═══ */}
-                    <div className="flex-1 overflow-y-auto relative z-10 scrollbar-premium">
+                    <div id="admin-content-scroll" className="flex-1 overflow-y-auto relative z-10 scrollbar-premium">
                         <div className="p-4 lg:p-6 xl:p-8 max-w-[1600px] mx-auto pb-20">
                             {/* Transition de page : léger glissement SANS fondu
                                 d'opacité : le fondu restait parfois bloqué à mi-

@@ -337,13 +337,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         return () => window.removeEventListener('keydown', handler)
     }, [])
 
-    // ─── Close mobile menu on route change ───
+    // ─── Fermeture du menu mobile au changement de route ───
+    // ⚠️ Ne PAS mettre `mobileMenuOpen` en dépendance : l'effet se rejouait à
+    // l'ouverture et refermait le tiroir dans la foulée (menu inutilisable sur
+    // mobile). On ne réagit qu'au changement de `pathname`.
     useEffect(() => {
-        if (mobileMenuOpen) {
-            const timer = setTimeout(() => setMobileMenuOpen(false), 0)
-            return () => clearTimeout(timer)
-        }
-    }, [pathname, mobileMenuOpen])
+        setMobileMenuOpen(false)
+    }, [pathname])
 
     // Login page: no shell
     if (isLoginPage) return <>{children}</>
@@ -458,6 +458,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             >
                 <Link
                     href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                         'group relative flex items-center gap-3 rounded-xl transition-all duration-200',
                         compact ? 'justify-center p-3' : 'px-3.5 py-2.5',
@@ -603,13 +604,15 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     return (
         <ThemeProvider panel="agent" defaultTheme="dark">
         <AgentCallCenter />
-        <div className="flex h-screen text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
+        {/* h-[100dvh] : sur mobile, 100vh dépasse la zone visible (barre d'URL
+            Chrome) et coupait le bas du contenu. */}
+        <div className="flex h-[100dvh] text-white font-sans overflow-hidden" style={{ background: 'var(--panel-bg)', color: 'var(--panel-text)' }}>
             {/* ═══════════ DESKTOP SIDEBAR ═══════════ */}
             <motion.aside
                 initial={false}
                 animate={{ width: sidebarOpen ? 260 : 68 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="hidden lg:flex h-full glass-nexus-sidebar flex-col relative z-50 overflow-hidden"
+                className="hidden md:flex h-full glass-nexus-sidebar flex-col relative z-50 overflow-hidden"
             >
                 {/* Glow ambient light */}
                 <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-emerald-500/[0.07] to-transparent blur-[60px] pointer-events-none" />
@@ -626,7 +629,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className="fixed inset-0 glass-nexus-overlay z-[100] lg:hidden"
+                            className="fixed inset-0 glass-nexus-overlay z-[100] md:hidden"
                             onClick={() => setMobileMenuOpen(false)}
                         />
                         <motion.aside
@@ -634,7 +637,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className="fixed left-0 top-0 h-full w-[280px] glass-nexus-sidebar flex flex-col z-[101] lg:hidden"
+                            className="fixed left-0 top-0 h-full w-[85vw] max-w-[300px] glass-nexus-sidebar flex flex-col z-[101] md:hidden"
                         >
                             <button
                                 onClick={() => setMobileMenuOpen(false)}
@@ -668,7 +671,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             title={t('Ouvrir le menu')}
-                            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-nexus-text-muted lg:hidden"
+                            className="p-2 -ml-1 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors text-nexus-text-muted md:hidden"
                         >
                             <Menu size={20} />
                         </button>
@@ -676,7 +679,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                         {/* Desktop sidebar toggle */}
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="hidden lg:flex p-2 rounded-lg hover:bg-white/5 transition-colors text-nexus-text-muted"
+                            className="hidden md:flex p-2 rounded-lg hover:bg-white/5 transition-colors text-nexus-text-muted"
                             title={sidebarOpen ? t('Réduire') : t('Agrandir')}
                         >
                             {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
