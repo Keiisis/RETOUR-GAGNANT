@@ -367,6 +367,28 @@ export const screenColors = {
     placeholder: v2.inkFaint,
 
     overlay: 'rgba(60,60,60,0.55)',
+
+    /* ═══ ACCENTS DU DRAPEAU — a ne pas confondre avec l'« or » ═══
+       La decision du 2026-08-14 retirait l'OR (#C9A84C, couleur de luxe hors
+       charte). Elle a ete appliquee en aliasant `gold`, `accent`, `warning` et
+       `info` sur le vert : l'or a bien disparu, mais le JAUNE DU DRAPEAU
+       (#FCD116) avec lui — alors que l'en-tete de ce fichier le prescrit comme
+       accent premium. L'ecran est devenu un mur de vert, au point qu'un badge
+       vert portait un texte vert.
+
+       Ces trois jetons rendent le jaune et le rouge du drapeau, et EUX SEULS.
+       `gold` reste volontairement vert : la decision client tient.
+
+       Ratios calcules (WCAG), a respecter :
+         · texte `ink` (#3C3C3C) sur `premium`     → 7,4:1  ✓
+         · texte `premiumInk` sur `premiumSoft`    → 4,6:1  ✓
+         · texte `premiumInk` sur `premium`        → 3,4:1  ✗ trop faible
+         · texte blanc sur `premium`               → 1,5:1  ✗ illisible */
+    premium: v2.yellow,        // fond de badge « phare » : ecrire en `ink`
+    premiumSoft: v2.yellowSoft, // fond doux : ecrire en `premiumInk`
+    premiumInk: v2.yellowInk,
+    alert: v2.red,             // fond plein : ecrire en blanc (4,8:1)
+    alertSoft: v2.redSoft,     // fond doux : ecrire en `alert`
 } as const
 
 export const theme = { colors, flag, fonts, typography, spacing, radius, shadows, motion, skeletonColors, screenColors }

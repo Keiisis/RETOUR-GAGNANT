@@ -34,6 +34,7 @@ import { aEnMemoire, avecMemoire, cleDuClient, ecrireMemoire, etatMemorise } fro
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { thankYouMessage } from '../../lib/serviceCompletion'
 import { FlagBar } from '../../components/ui'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    DossierScreen : THEME "CORPORATE PREMIUM 2026"
@@ -605,7 +606,7 @@ export default function DossierScreen({ navigation }: any) {
 
                                                 <Text style={styles.progressDate}>
                                                     {t('Ouvert le')}{' '}
-                                                    {new Date(selected.created_at).toLocaleDateString('fr-FR', {
+                                                    {new Date(selected.created_at).toLocaleDateString(localeActuelle(), {
                                                         day: '2-digit', month: 'long', year: 'numeric',
                                                     })}
                                                 </Text>
@@ -683,7 +684,7 @@ export default function DossierScreen({ navigation }: any) {
                                                                         {doc.file_name}
                                                                     </Text>
                                                                     <Text style={styles.docDate}>
-                                                                        {new Date(doc.created_at).toLocaleDateString('fr-FR', {
+                                                                        {new Date(doc.created_at).toLocaleDateString(localeActuelle(), {
                                                                             day: '2-digit', month: 'short', year: 'numeric',
                                                                         })}
                                                                     </Text>

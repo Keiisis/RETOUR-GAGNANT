@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { ttcFromHt } from '@/lib/tax'
+import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -140,6 +141,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 .single()
 
             ticket = ticketData
+
+            /* Le site souffrait du meme oubli que l'application : le billet
+               etait cree, jamais expedie. Non bloquant. */
+            if (ticketData) {
+                const envoi = await envoyerBilletParEmail(supabase, registration.id)
+                if (!envoi.ok) console.error('[events/register] billet non envoye :', envoi.erreur)
+            }
         }
 
         return NextResponse.json({

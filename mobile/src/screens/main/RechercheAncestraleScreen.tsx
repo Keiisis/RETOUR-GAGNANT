@@ -35,6 +35,7 @@ import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import KkiapayModal from '../../components/KkiapayModal'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -294,7 +295,7 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.priceLabel}>{t('Forfait recherche ancestrale')}</Text>
                                 <Text style={styles.priceAmount}>{amountEur} {symbol}</Text>
-                                <Text style={styles.priceXof}>{t('Soit environ')} {amountXof.toLocaleString('fr-FR')} FCFA</Text>
+                                <Text style={styles.priceXof}>{t('Soit environ')} {amountXof.toLocaleString(localeActuelle())} FCFA</Text>
                             </View>
                             <View style={styles.priceSecure}>
                                 <Lock size={12} color="#FFFFFF" strokeWidth={2} />

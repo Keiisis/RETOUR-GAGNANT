@@ -64,6 +64,16 @@ export interface EmailAttachment {
     filename: string
     content: string // base64 (avec ou sans prefixe data:...;base64,)
     contentType?: string
+    /**
+     * Identifiant d'image INLINE, référencé dans le HTML par `src="cid:mon-id"`.
+     *
+     * Indispensable pour le QR d'un billet : Gmail et Outlook suppriment les
+     * images en `data:` URI. Le QR s'affichait donc comme une image cassée
+     * partout ailleurs que dans un aperçu local. Avec un `cid`, l'image voyage
+     * dans le message lui-même et s'affiche sans que le destinataire ait à
+     * « autoriser les images distantes ».
+     */
+    cid?: string
 }
 
 export async function sendEmail(options: {
@@ -90,6 +100,8 @@ export async function sendEmail(options: {
                 filename: a.filename,
                 content: Buffer.from(raw, 'base64'),
                 contentType: a.contentType,
+                // `cid` transforme la piece jointe en image inline (nodemailer).
+                ...(a.cid ? { cid: a.cid, contentDisposition: 'inline' as const } : {}),
             }
         })
 

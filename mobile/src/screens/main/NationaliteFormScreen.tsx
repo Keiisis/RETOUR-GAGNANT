@@ -31,6 +31,7 @@ import { avecMemoire } from '../../lib/memoire'
 import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -87,7 +88,7 @@ const EUR_TO_XOF = 655.957
 const CURRENCY_SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', XOF: 'FCFA', XAF: 'FCFA' }
 function fmtMoney(amount: number, currency: string): string {
     const c = (currency || 'XOF').toUpperCase()
-    return `${amount.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL[c] || c}`
+    return `${amount.toLocaleString(localeActuelle())} ${CURRENCY_SYMBOL[c] || c}`
 }
 function toXof(amount: number, currency: string): number {
     const c = (currency || 'XOF').toUpperCase()
@@ -1104,12 +1105,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             </View>
                             <Text style={styles.paymentLabel}>{t('Frais de dossier')}</Text>
                             <Text style={styles.paymentAmount}>
-                                {formAmount.toLocaleString('fr-FR')}{' '}
+                                {formAmount.toLocaleString(localeActuelle())}{' '}
                                 <Text style={styles.paymentCurrency}>{CURRENCY_SYMBOL[(formCurrency || 'XOF').toUpperCase()] || formCurrency}</Text>
                             </Text>
                             {(formCurrency || '').toUpperCase() === 'EUR' && (
                                 <Text style={styles.paymentXof}>
-                                    {t('Soit environ {x} FCFA', { x: toXof(formAmount, formCurrency).toLocaleString('fr-FR') })}
+                                    {t('Soit environ {x} FCFA', { x: toXof(formAmount, formCurrency).toLocaleString(localeActuelle()) })}
                                 </Text>
                             )}
                             <View style={styles.paymentDivider} />

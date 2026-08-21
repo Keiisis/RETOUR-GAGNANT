@@ -50,6 +50,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { ttcFromHt } from '../../lib/tax'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const VERT_PROFOND = '#00643C'
@@ -99,7 +100,7 @@ const money = (v: number, devise: string) => {
 
 const dateFr = (iso: string | null) => {
     if (!iso) return null
-    try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) }
+    try { return new Date(iso).toLocaleDateString(localeActuelle(), { day: 'numeric', month: 'short', year: 'numeric' }) }
     catch { return null }
 }
 
@@ -502,7 +503,7 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
     /* ══ SUCCÈS ══ */
     if (etat === 'succes') {
-        const maintenant = new Date().toLocaleString('fr-FR', {
+        const maintenant = new Date().toLocaleString(localeActuelle(), {
             day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
         })
         return (

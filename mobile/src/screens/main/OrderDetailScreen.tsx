@@ -30,6 +30,7 @@ import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/me
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -260,12 +261,12 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     }, [orderId, profile?.id])
 
     const formatPrice = (n: number, c: string) => {
-        if (c === 'XOF' || c === 'XAF') return `${n.toLocaleString('fr-FR')} FCFA`
-        if (c === 'EUR') return `${n.toLocaleString('fr-FR')} €`
+        if (c === 'XOF' || c === 'XAF') return `${n.toLocaleString(localeActuelle())} FCFA`
+        if (c === 'EUR') return `${n.toLocaleString(localeActuelle())} €`
         return `${n} ${c}`
     }
 
-    const formatDateTime = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', {
+    const formatDateTime = (iso: string) => new Date(iso).toLocaleDateString(localeActuelle(), {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
 

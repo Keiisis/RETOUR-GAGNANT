@@ -31,6 +31,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -421,7 +422,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                         timeoutMs: 15000,
                         body: JSON.stringify({
                             service_type: serviceLabel,
-                            notes: `Dossier ouvert suite à une prise de rendez-vous le ${new Date().toLocaleDateString('fr-FR')} (${formDate} à ${formHeure}).\n${formNotes.trim()}`,
+                            notes: `Dossier ouvert suite à une prise de rendez-vous le ${new Date().toLocaleDateString(localeActuelle())} (${formDate} à ${formHeure}).\n${formNotes.trim()}`,
                         }),
                     })
                 } catch { /* non bloquant : le RDV reste enregistré même si l'ouverture du dossier échoue */ }
@@ -493,17 +494,17 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
     const formatDateTime = (iso: string | null) => {
         if (!iso) return t('Date à confirmer')
         const d = new Date(iso)
-        return d.toLocaleDateString('fr-FR', {
+        return d.toLocaleDateString(localeActuelle(), {
             weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-        }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        }) + ' à ' + d.toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
     }
 
     const formatDateShort = (iso: string | null) => {
         if (!iso) return { day: '-', month: '' }
         const d = new Date(iso)
         return {
-            day: d.toLocaleDateString('fr-FR', { day: '2-digit' }),
-            month: d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '').toUpperCase(),
+            day: d.toLocaleDateString(localeActuelle(), { day: '2-digit' }),
+            month: d.toLocaleDateString(localeActuelle(), { month: 'short' }).replace('.', '').toUpperCase(),
         }
     }
 
@@ -792,13 +793,13 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                                     style={[styles.dayChip, active && styles.dayChipActive]}
                                                 >
                                                     <Text style={[styles.dayChipWeek, active && styles.dayChipTextActive]}>
-                                                        {dt.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                                                        {dt.toLocaleDateString(localeActuelle(), { weekday: 'short' })}
                                                     </Text>
                                                     <Text style={[styles.dayChipNum, active && styles.dayChipTextActive]}>
                                                         {dt.getDate()}
                                                     </Text>
                                                     <Text style={[styles.dayChipMonth, active && styles.dayChipTextActive]}>
-                                                        {dt.toLocaleDateString('fr-FR', { month: 'short' })}
+                                                        {dt.toLocaleDateString(localeActuelle(), { month: 'short' })}
                                                     </Text>
                                                 </Pressable>
                                             )

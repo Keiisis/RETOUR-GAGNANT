@@ -27,6 +27,7 @@ import { lireEvenements, enregistrerEvenements } from '../../lib/db/depots'
 import { aEnMemoire, ecrireMemoire, etatMemorise } from '../../lib/memoire'
 import { ttcFromHt } from '../../lib/tax'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    EventsScreen : THEME "CORPORATE PREMIUM 2026"
@@ -79,18 +80,18 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 function formatDate(iso: string) {
     const d = new Date(iso)
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return d.toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    return new Date(iso).toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
 }
 
 // TVA « en sus » : le prix billet est HORS TAXE en base ; on affiche le TTC
 // (HT × 1,18), identique au montant réellement payé. Gratuit (0) reste gratuit.
 function formatPrice(price: number, currency: string, t: any) {
     if (price === 0) return t('Gratuit')
-    return `${ttcFromHt(price).toLocaleString('fr-FR')} ${currency}`
+    return `${ttcFromHt(price).toLocaleString(localeActuelle())} ${currency}`
 }
 
 function getDaysUntil(iso: string): number {
@@ -157,7 +158,7 @@ function FeaturedEventCard({
     }))
 
     const daysUntil = getDaysUntil(event.start_date)
-    const isRegistered = !!event.my_registration
+    const isRegistered = event.my_registration?.status === 'confirmed'
 
     return (
         <Pressable
@@ -199,7 +200,7 @@ function FeaturedEventCard({
                         </Text>
                         <View style={featuredStyles.dateDivider} />
                         <Text style={featuredStyles.dateMonth}>
-                            {new Date(event.start_date).toLocaleDateString('fr-FR', { month: 'short' })
+                            {new Date(event.start_date).toLocaleDateString(localeActuelle(), { month: 'short' })
                                 .toUpperCase().replace('.', '')}
                         </Text>
                     </View>
@@ -243,7 +244,7 @@ function FeaturedEventCard({
                         <Text style={featuredStyles.priceValue}>
                             {event.price_standard === 0
                                 ? t('Gratuite')
-                                : `${ttcFromHt(event.price_standard).toLocaleString('fr-FR')} ${event.currency}`}
+                                : `${ttcFromHt(event.price_standard).toLocaleString(localeActuelle())} ${event.currency}`}
                         </Text>
                     </View>
 
@@ -305,18 +306,23 @@ const featuredStyles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.md,
     },
+    /* « ÉVÉNEMENT PHARE » : le fond ET le texte etaient `C.primary`. Le badge
+       s'affichait donc comme une pastille verte vide — c'est ce qu'on voyait a
+       l'ecran. Il prend le JAUNE DU DRAPEAU, role que la charte lui donne
+       depuis le depart pour un accent premium, avec l'encre anthracite
+       par-dessus (7,4:1). */
     starBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
-        backgroundColor: C.primary,
+        backgroundColor: C.premium,
         borderRadius: radius.pill,
         paddingHorizontal: 12,
         paddingVertical: spacing.xs,
     },
     starText: {
         ...typography.button, fontSize: 12,
-                color: C.primary,
+        color: C.ink,
         letterSpacing: 1,
     },
     registeredBadge: {
@@ -467,7 +473,7 @@ function EventCard({
     }))
 
     const isFree = event.price_standard === 0
-    const isRegistered = !!event.my_registration
+    const isRegistered = event.my_registration?.status === 'confirmed'
     const daysUntil = getDaysUntil(event.start_date)
 
     return (
@@ -487,7 +493,7 @@ function EventCard({
                         </Text>
                         <Text style={cardStyles.dateMonth}>
                             {new Date(event.start_date)
-                                .toLocaleDateString('fr-FR', { month: 'short' })
+                                .toLocaleDateString(localeActuelle(), { month: 'short' })
                                 .toUpperCase().replace('.', '')}
                         </Text>
                         <View style={cardStyles.dateLine} />
@@ -812,7 +818,7 @@ export default function EventsScreen({ navigation }: any) {
     const now = Date.now()
     const upcoming = events.filter(e => new Date(e.start_date).getTime() >= now)
     const past = events.filter(e => new Date(e.start_date).getTime() < now)
-    const mine = events.filter(e => !!e.my_registration)
+    const mine = events.filter(e => e.my_registration?.status === 'confirmed')
     const list = tab === 'upcoming' ? upcoming : tab === 'tickets' ? mine : past
     const featured = tab === 'upcoming' ? upcoming.filter(e => e.is_featured)[0] : undefined
     const otherEvents = featured ? list.filter(e => e.id !== featured.id) : list
@@ -1083,9 +1089,12 @@ const styles = StyleSheet.create({
         borderRadius: 3,
         backgroundColor: C.success,
     },
+    /* `primaryText` est le BLANC : il se lit sur le vert plein, jamais sur le
+       vert pale du fond de cette pilule (1,14:1 — le texte disparaissait).
+       Le vert fonce donne 6,4:1 sur ce meme fond. */
     navCounterText: {
         ...typography.button, fontSize: 12,
-                color: C.primaryText,
+        color: C.primaryDark,
         letterSpacing: 0.3,
     },
 

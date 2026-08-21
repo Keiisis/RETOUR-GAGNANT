@@ -32,6 +32,7 @@ import { ttcFromHt, tvaFromHt, TVA_ENABLED } from '../../lib/tax'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    CheckoutScreen : THEME "CORPORATE PREMIUM 2026"
@@ -234,7 +235,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
     }, [profile])
 
     const set = (key: keyof SavedShipping) => (v: string) => setForm(f => ({ ...f, [key]: v }))
-    const formatPrice = (n: number) => n.toLocaleString('fr-FR') + ' FCFA'
+    const formatPrice = (n: number) => n.toLocaleString(localeActuelle()) + ' FCFA'
 
     /* ── Validation ── */
     const validateForm = (): string | null => {
@@ -574,11 +575,14 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     </View>
                 </AnimatedSection>
 
-                <View style={{ height: 140 }} />
+                <View style={{ height: 140 + insets.bottom }} />
             </ScrollView>
 
             {/* ═══ CTA FIXE : PAY ═══ */}
-            <View style={styles.bottomBar}>
+            {/* Meme correctif que l'ecran d'evenement : la marge basse suit
+               l'inset reel, sinon le total et le bouton de paiement passent
+               sous les touches du systeme sur un telephone a 3 boutons. */}
+            <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
                 <View style={styles.bottomBarInfo}>
                     <Text style={styles.bottomBarLabel}>{t('Total')}</Text>
                     <Text style={styles.bottomBarTotal}>{formatPrice(totalTtc)}</Text>
@@ -942,7 +946,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 14,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 18,
+        // paddingBottom fourni au rendu depuis insets.bottom (voir le JSX).
         backgroundColor: 'rgba(255, 255, 255, 0.96)',
         borderTopWidth: 1,
         borderTopColor: C.border,

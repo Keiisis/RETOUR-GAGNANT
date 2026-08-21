@@ -26,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/memoire'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -371,7 +372,7 @@ function fmtYear(d: string): string { const y = new Date(d).getFullYear(); retur
 function fmtDate(d: string): string {
     const dt = new Date(d)
     if (isNaN(dt.getTime())) return d
-    return dt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    return dt.toLocaleDateString(localeActuelle(), { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function PersonAvatar({ uri, self, size = 48 }: { uri?: string | null; self?: boolean; size?: number }) {

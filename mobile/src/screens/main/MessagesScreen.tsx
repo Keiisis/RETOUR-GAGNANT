@@ -27,6 +27,7 @@ import { supabase } from '../../config/supabase'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    MessagesScreen : THEME "CORPORATE PREMIUM 2026"
@@ -357,9 +358,9 @@ export default function MessagesScreen({ navigation }: any) {
 
     /* ── Helpers ── */
     const fmtTime = (d: string) =>
-        new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        new Date(d).toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
     const fmtDate = (d: string) =>
-        new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+        new Date(d).toLocaleDateString(localeActuelle(), { weekday: 'long', day: 'numeric', month: 'long' })
 
     /* ── Render Message ── */
     const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {

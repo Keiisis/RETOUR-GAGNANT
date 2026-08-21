@@ -38,6 +38,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import KkiapayModal from '../../components/KkiapayModal'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -737,7 +738,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                     <View style={styles.feeCard}>
                                         <Text style={styles.feeLabel}>{t('Frais de constitution de dossier')}</Text>
                                         <Text style={styles.feeAmount}>{feeAmount} {feeSymbol}</Text>
-                                        <Text style={styles.feeXof}>{t('Soit environ')} {feeXof.toLocaleString('fr-FR')} FCFA</Text>
+                                        <Text style={styles.feeXof}>{t('Soit environ')} {feeXof.toLocaleString(localeActuelle())} FCFA</Text>
                                         <Text style={styles.feeDesc}>
                                             {t('Nous constituons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement se règle ensuite directement auprès de lui.')}
                                         </Text>

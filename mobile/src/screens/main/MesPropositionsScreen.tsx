@@ -23,6 +23,7 @@ import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -52,7 +53,7 @@ const ETATS: Record<Etat, { label: string; fond: string; encre: string }> = {
 
 const dateFr = (iso: string | null) => {
     if (!iso) return ''
-    try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) }
+    try { return new Date(iso).toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short', year: 'numeric' }) }
     catch { return '' }
 }
 

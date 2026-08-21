@@ -37,6 +37,7 @@ import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const { width: SCREEN_W } = Dimensions.get('window')
@@ -355,7 +356,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                     payment_tx_id: transactionId,
                     payment_amount: isNaN(numericPrice) ? 0 : numericPrice,
                     payment_currency: 'XOF',
-                    notes: `Commande initiée via l'application mobile le ${new Date().toLocaleDateString('fr-FR')}${transactionId ? `\nTransaction: ${transactionId}` : ''}`,
+                    notes: `Commande initiée via l'application mobile le ${new Date().toLocaleDateString(localeActuelle())}${transactionId ? `\nTransaction: ${transactionId}` : ''}`,
                 }),
             })
             const json = await res.json().catch(() => ({}))
@@ -1035,8 +1036,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
         borderRadius: radius.pill, backgroundColor: C.accent,
     },
+    /* Le prix etait vert sur une pastille verte : invisible. En blanc sur le
+       vert plein, 4,6:1 — et c'est le prix, il doit sauter aux yeux. */
     pricingPrice: {
-        fontSize: 13, fontFamily: fonts.bodyBold, color: C.primary,
+        fontSize: 13, fontFamily: fonts.bodyBold, color: C.primaryText,
     },
 
     /* Timeline / Processus */

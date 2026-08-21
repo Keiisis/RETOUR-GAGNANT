@@ -48,6 +48,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { telechargerDocument } from '../../lib/documents'
 import { authHeaders } from '../../config/api'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const { width: L } = Dimensions.get('window')
@@ -117,7 +118,7 @@ const money = (v: number, devise: string | null) =>
 const dateFr = (iso: string | null, avecAnnee = false) => {
     if (!iso) return null
     try {
-        return new Date(iso).toLocaleDateString('fr-FR', {
+        return new Date(iso).toLocaleDateString(localeActuelle(), {
             day: 'numeric', month: 'long', ...(avecAnnee ? { year: 'numeric' } : {}),
         })
     } catch { return null }

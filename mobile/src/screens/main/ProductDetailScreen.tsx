@@ -46,6 +46,7 @@ import { RouteProp } from '@react-navigation/native';
 import { useLang } from '../../contexts/LangContext';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { screenColors } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 const { width } = Dimensions.get('window');
 const HERO_HEIGHT = width * 1.05;
@@ -136,7 +137,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     const hasDiscount = product.sale_price && product.sale_price < product.price;
     const displayPrice = hasDiscount ? product.sale_price! : product.price;
     const outOfStock = product.stock <= 0;
-    const formatPrice = (n: number) => n.toLocaleString('fr-FR') + ' FCFA';
+    const formatPrice = (n: number) => n.toLocaleString(localeActuelle()) + ' FCFA';
 
     /* Scroll parallax */
     const scrollY = useSharedValue(0);

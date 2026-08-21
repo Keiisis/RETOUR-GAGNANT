@@ -30,6 +30,7 @@ import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/me
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    InvoicesScreen : THEME "CORPORATE PREMIUM 2026"
@@ -362,12 +363,12 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     }
 
     const formatPrice = (n: number, c: string) => {
-        if (c === 'XOF' || c === 'XAF') return `${n.toLocaleString('fr-FR')} FCFA`
-        if (c === 'EUR') return `${n.toLocaleString('fr-FR')} €`
+        if (c === 'XOF' || c === 'XAF') return `${n.toLocaleString(localeActuelle())} FCFA`
+        if (c === 'EUR') return `${n.toLocaleString(localeActuelle())} €`
         return `${n} ${c}`
     }
 
-    const formatDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', {
+    const formatDate = (iso: string) => new Date(iso).toLocaleDateString(localeActuelle(), {
         day: '2-digit', month: 'short', year: 'numeric',
     })
 
