@@ -286,7 +286,15 @@ export async function POST(req: NextRequest) {
                 event_id,
                 full_name: inscritNom || 'Invité',
                 email: inscritEmail,
-                phone: inscritTel || null,
+                /* `phone` est NOT NULL en base (verifie le 2026-08-21 : l'insert
+                   echouait en 500 « null value in column "phone" ... violates
+                   not-null constraint »). Tout client dont le profil ne porte
+                   pas de telephone ne pouvait donc PAS s'inscrire, sans qu'aucun
+                   message ne le lui dise. Le site, lui, exige le champ ; le
+                   mobile le prend sur le profil, ou il peut manquer. On stocke
+                   une chaine vide : la contrainte est satisfaite, et l'absence
+                   de numero reste visible telle quelle. */
+                phone: inscritTel || '',
                 ticket_type,
                 amount_paid: paymentStatus === 'completed' ? totalAmount : 0,
                 currency: event.currency || 'XOF',
