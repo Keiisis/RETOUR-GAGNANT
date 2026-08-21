@@ -395,9 +395,9 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
                             accessibilityRole="button"
                             hitSlop={6}
                         >
-                            <LucideIcon name="cube" size={18} color={C.primary} style={{ marginRight: 10 }} />
+                            <LucideIcon name="cube" size={18} color={C.primaryText} style={{ marginRight: 10 }} />
                             <Text style={styles.primaryBtnText}>{t('Suivre ma commande')}</Text>
-                            <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 10 }} />
+                            <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 10 }} />
                         </TouchableOpacity>
 
                         <TouchableOpacity

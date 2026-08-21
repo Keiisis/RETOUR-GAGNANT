@@ -463,7 +463,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                     <TouchableOpacity onPress={openCarrierUrl} style={styles.trackingBtnPrimary} activeOpacity={0.85}
                                         accessibilityRole="button"
                                         hitSlop={6}>
-                                        <LucideIcon name="open-outline" size={14} color={C.primary} />
+                                        <LucideIcon name="open-outline" size={14} color={C.primaryText} />
                                         <Text style={styles.trackingBtnPrimaryText}>{t('Suivre en ligne')}</Text>
                                     </TouchableOpacity>
                                 ) : null}
@@ -990,7 +990,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        backgroundColor: 'rgba(0, 135, 81, 0.18)',
+        // Fond clair translucide : un vert a 18 % sur la carte verte donnait un
+        // bouton invisible.
+        backgroundColor: 'rgba(255,255,255,0.20)',
         borderRadius: 12,
         paddingVertical: 12,
         paddingHorizontal: 14,
@@ -999,7 +1001,7 @@ const styles = StyleSheet.create({
     },
     trackingBtnPrimaryText: {
         ...typography.button, fontSize: 12.5,
-        color: C.primary,
+        color: C.primaryText,
         letterSpacing: 0.2,
     },
 

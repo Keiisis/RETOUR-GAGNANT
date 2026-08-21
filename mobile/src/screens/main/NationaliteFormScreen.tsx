@@ -1116,15 +1116,15 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <View style={styles.paymentDivider} />
                             <View style={styles.paymentFeatures}>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primaryText} />
                                     <Text style={styles.paymentFeatureText}>{t('Suivi en temps réel')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primaryText} />
                                     <Text style={styles.paymentFeatureText}>{t('Email de confirmation')}</Text>
                                 </View>
                                 <View style={styles.paymentFeature}>
-                                    <LucideIcon name="checkmark-circle" size={13} color={C.primary} />
+                                    <LucideIcon name="checkmark-circle" size={13} color={C.primaryText} />
                                     <Text style={styles.paymentFeatureText}>{t('Accompagnement dédié')}</Text>
                                 </View>
                             </View>
@@ -1279,7 +1279,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 <LucideIcon
                                     name={currentStep === 5 ? 'lock-closed' : 'arrow-forward'}
                                     size={18}
-                                    color={C.primary}
+                                    color={C.primaryText}
                                     style={{ marginLeft: 10 }}
                                 />
                             </>
