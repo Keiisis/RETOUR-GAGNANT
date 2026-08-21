@@ -24,6 +24,7 @@ import {
 } from './event-tickets'
 
 const CID_QR = 'qr-billet-rgb'
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
 /**
  * Le design personnalisé enregistré en admin est-il utilisable EN EMAIL ?
@@ -140,7 +141,21 @@ export async function envoyerBilletParEmail(
     ${billet}
 
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;border-collapse:collapse">
-      <tr><td style="padding:22px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+      <tr><td align="center" style="padding:22px 6px 0">
+        <!-- Vers la VERSION WEB du billet : c'est la, et seulement la, que vit
+             le design complet (perforation decoupee, arete tricolore) qu'aucune
+             boite mail ne sait afficher. Le lien porte le code du billet, qui
+             fait office de cle — comme une carte d'embarquement. -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+          <tr><td style="background:#008751;padding:14px 28px" align="center">
+            <a href="${SITE}/api/tickets/${encodeURIComponent(String(ticket.ticket_code))}"
+               style="display:inline-block;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;text-decoration:none;letter-spacing:.02em">
+              Voir et imprimer mon billet
+            </a>
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:20px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
         <p style="margin:0;font-size:12px;line-height:1.7;color:#8A8A8A">
           Vous retrouvez ce billet à tout moment dans l’application Retour Gagnant Bénin,
           onglet Événements. Une question sur votre place ? Répondez simplement à ce message.
