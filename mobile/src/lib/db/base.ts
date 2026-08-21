@@ -26,7 +26,7 @@ import * as SQLite from 'expo-sqlite'
 const NOM_BASE = 'rgb.db'
 
 /** Version du schéma. À incrémenter en AJOUTANT une migration ci-dessous. */
-const VERSION_SCHEMA = 1
+const VERSION_SCHEMA = 2
 
 let instance: SQLite.SQLiteDatabase | null = null
 let ouverture: Promise<SQLite.SQLiteDatabase> | null = null
@@ -128,6 +128,36 @@ async function migrer(db: SQLite.SQLiteDatabase): Promise<void> {
                 cle   TEXT PRIMARY KEY NOT NULL,
                 maj   INTEGER NOT NULL
             );
+        `)
+    }
+
+    if (version < 2) {
+        /* ── TRADUCTIONS ──────────────────────────────────────────
+           Elles vivaient uniquement dans MMKV, sous forme d'UN SEUL objet JSON
+           par langue. Conséquence : chaque lot reçu du serveur réécrivait la
+           TOTALITÉ du cache — plus l'utilisateur traduisait, plus chaque
+           nouvelle phrase coûtait cher à enregistrer. C'est exactement le
+           défaut qu'on avait corrigé en quittant AsyncStorage, et il avait
+           survécu au déménagement.
+
+           En base, une phrase traduite est une LIGNE : on n'écrit que les
+           nouvelles, le reste ne bouge pas. La clé primaire (langue, source)
+           rend l'insertion idempotente.
+
+           MMKV n'est pas abandonné pour autant : il garde le cache de la langue
+           courante pour que le premier rendu soit traduit SANS attendre une
+           lecture asynchrone — c'est ce qui supprime l'éclair de français au
+           lancement. SQLite est la mémoire longue, MMKV la mémoire immédiate. */
+        await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS traductions (
+                langue  TEXT NOT NULL,
+                source  TEXT NOT NULL,
+                cible   TEXT NOT NULL,
+                maj     INTEGER NOT NULL,
+                PRIMARY KEY (langue, source)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_traductions_langue ON traductions(langue);
         `)
     }
 

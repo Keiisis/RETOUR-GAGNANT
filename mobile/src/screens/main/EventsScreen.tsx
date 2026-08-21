@@ -967,8 +967,15 @@ export default function EventsScreen({ navigation }: any) {
                     )
                 )}
 
-                {/* LOADING SKELETON */}
-                {loading ? (
+                {/* ═══ LISTE DES ÉVÉNEMENTS ═══
+                    Exclue de l'onglet « Mes billets », qui a sa propre source.
+                    Sans cette garde, ce bloc continuait de tourner sur une
+                    liste vidée et affichait SON état vide — « Aucun billet » —
+                    juste sous le billet qu'on venait d'afficher. Exactement la
+                    même faute que « Aucun événement à venir » sous un
+                    événement : un état vide doit regarder ce qui est
+                    RÉELLEMENT à l'écran, pas sa propre variable. */}
+                {tab === 'tickets' ? null : loading ? (
                     <View style={styles.skeletonWrap}>
                         {[0, 1, 2].map(i => (
                             <View key={i} style={styles.skeletonCard}>
@@ -1035,13 +1042,14 @@ export default function EventsScreen({ navigation }: any) {
                                         <View style={styles.emptyCatIcon}>
                                             <LucideIcon name="calendar-outline" size={28} color={C.textMuted} />
                                         </View>
+                                        {/* Ce bloc ne sert plus qu'à « À venir » et
+                                            « Archives » : l'onglet des billets a son
+                                            propre état vide, plus haut. */}
                                         <Text style={styles.emptyCatTitle}>
-                                            {tab === 'tickets' ? t('Aucun billet') : tab === 'archives' ? t('Aucun événement passé') : t('Aucun événement à venir')}
+                                            {tab === 'archives' ? t('Aucun événement passé') : t('Aucun événement à venir')}
                                         </Text>
                                         <Text style={styles.emptyCatText}>
-                                            {tab === 'tickets'
-                                                ? t('Vos réservations apparaîtront ici une fois inscrit(e).')
-                                                : t('Revenez bientôt : de nouveaux événements arrivent.')}
+                                            {t('Revenez bientôt : de nouveaux événements arrivent.')}
                                         </Text>
                                     </View>
                                 ) : (
