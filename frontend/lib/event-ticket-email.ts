@@ -50,15 +50,20 @@ export async function envoyerBilletParEmail(
             supabase.from('event_registrations')
                 .select('full_name, email, phone')
                 .eq('id', registrationId).maybeSingle(),
+            /* `address` N'EXISTE PAS sur `events` (verifie en base le
+               2026-08-21). La demander faisait echouer la requete ENTIERE :
+               `event` revenait vide, et le billet partait avec « Evenement »
+               en guise de titre, sans date ni lieu. Une colonne de trop coute
+               ici tout le contenu utile du message. */
             supabase.from('events')
-                .select('title, start_date, location, address')
+                .select('title, start_date, location')
                 .eq('id', ticket.event_id).maybeSingle(),
         ])
 
         const destinataire = String(reg?.email || '').trim()
         if (!destinataire) return { ok: false, erreur: 'aucun email sur l’inscription' }
 
-        const lieu = [event?.location, event?.address].filter(Boolean).join(' — ')
+        const lieu = String(event?.location || '')
 
         /* Le QR part en pièce jointe inline ; le gabarit reçoit `cid:` à la
            place de la data URI. `renderTicketTemplate` n'échappe pas ce
