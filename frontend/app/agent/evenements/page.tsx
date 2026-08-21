@@ -444,6 +444,12 @@ export default function AgentEventsPage() {
     const [designGlobal, setDesignGlobal] = useState(false)
     const [editingEvent, setEditingEvent] = useState<EventData | null>(null)
     const [viewingRegs, setViewingRegs] = useState<EventData | null>(null)
+    /* Le scanner, accessible DEPUIS LA LISTE.
+       Il n'existait qu'au fond du panneau « Inscrits », lui-même ouvert par une
+       icône grise de 32 px sans libellé : personne ne le trouvait. Or scanner
+       les billets est le geste principal d'un agent le soir de l'événement,
+       debout à l'entrée — il doit être à un clic, pas à trois. */
+    const [scanEvent, setScanEvent] = useState<EventData | null>(null)
 
     const fetchEvents = useCallback(() => {
         setLoading(true)
@@ -533,6 +539,17 @@ export default function AgentEventsPage() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Scanner plein écran, ouvert directement depuis la liste. */}
+            {scanEvent && (
+                <TicketScanner
+                    eventId={scanEvent.id}
+                    eventTitle={scanEvent.title}
+                    validatedBy="Agent"
+                    onClose={() => setScanEvent(null)}
+                    onValidated={fetchEvents}
+                />
+            )}
 
             {/* Registrations panel */}
             <AnimatePresence>
@@ -631,6 +648,12 @@ export default function AgentEventsPage() {
                                                         <button onClick={() => { setViewingRegs(evt); setShowForm(false); setEditingEvent(null) }}
                                                             className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer" title="Inscrits">
                                                             <Users size={13} />
+                                                        </button>
+                                                        {/* Le contrôle d'entrée, en clair et en vert : c'est
+                                                            l'action du soir de l'événement. */}
+                                                        <button onClick={() => setScanEvent(evt)}
+                                                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#008751] text-white text-[11px] font-black hover:bg-[#00643C] transition-colors cursor-pointer" title="Scanner les billets à l'entrée">
+                                                            <QrCode size={13} weight="bold" /> Scanner
                                                         </button>
                                                     </div>
                                                 </td>

@@ -57,6 +57,17 @@ export default function EventRegistrationsPage() {
         if (eventId) fetchRegs()
     }, [eventId, fetchRegs])
 
+    /* `?scan=1` ouvre la caméra d'emblée : c'est le lien « Scanner » de la
+       liste des événements. À l'entrée, on ne veut pas traverser un écran
+       d'inscriptions avant de pouvoir contrôler un billet. */
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        if (new URLSearchParams(window.location.search).get('scan') === '1') {
+            setScanMode(true)
+            setScannerOuvert(true)
+        }
+    }, [])
+
     const validateTicket = async (code: string) => {
         setScanResult({ status: 'loading', message: 'Validation en cours...' })
         try {
