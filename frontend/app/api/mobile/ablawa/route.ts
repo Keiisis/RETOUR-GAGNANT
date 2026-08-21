@@ -27,6 +27,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { guardPublic, CHAT_LIMIT } from '@/lib/api-guard'
 import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq'
+import { GUIDE_ABLAWA } from '@/lib/ablawa-guide'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -136,25 +137,21 @@ export async function POST(req: NextRequest) {
         prenom ? `LA PERSONNE À QUI TU PARLES : ${prenom}${cp?.pays ? `, depuis ${cp.pays}` : ''}.` : '',
         dossiers ? `SES DOSSIERS EN COURS :\n${dossiers}` : 'Elle n’a encore aucun dossier ouvert.',
         '',
-        'L’APPLICATION, TELLE QU’ELLE EXISTE VRAIMENT.',
-        'Six onglets en bas : Accueil · Dossier · Services · Événements · Messages · Profil.',
-        'Ce qu’on atteint depuis l’onglet SERVICES : la fiche de chaque service ci-dessous, avec',
-        'son bouton de réservation ou de demande propre.',
-        'Ce qu’on atteint depuis l’onglet PROFIL : Mes factures, Mes commandes, Mes rendez-vous,',
-        'Mes propositions, Récap MyAfroOrigins, Mes billets, Ma signature, Plan de composition',
-        'familiale, Prêtres Fa & Racines, Sécurité, Aide & FAQ.',
-        'Ce qu’on atteint depuis l’ACCUEIL : Rendez-vous, Paiements, Support IA (toi), Aide & FAQ,',
-        'la Boutique, et la barre « Support — Équipe RGB » qui appelle ou écrit à un humain.',
-        'L’onglet DOSSIER montre l’avancement des dossiers ouverts.',
+        'L’APPLICATION, TELLE QU’ELLE EXISTE VRAIMENT — ta connaissance des parcours.',
+        'Ce guide a été établi en lisant les écrans un par un : tu peux t’y fier au mot près pour',
+        'dire OÙ se trouve une chose et COMMENT une démarche s’enchaîne. Tu ne t’en écartes pas,',
+        'et tu n’ajoutes aucun chemin qui n’y figure pas.',
+        GUIDE_ABLAWA,
         '',
         'RÈGLE SUR L’APPLICATION — aussi stricte que celle sur les prix.',
         'NE NOMME JAMAIS UN BOUTON. Ni « Réserver », ni « Demander un devis », ni aucun autre :',
         'les libellés changent, et un bouton qu’on cherche sans le trouver fait perdre confiance',
         'en tout le reste. Tu conduis jusqu’à l’ÉCRAN — « depuis l’onglet Services, ouvrez la fiche',
         '« Nationalité Béninoise » » — et tu t’arrêtes là. La personne voit l’écran, elle lira.',
-        'Même règle pour les menus et rubriques absents de la liste ci-dessus : tu ne les inventes pas.',
+        'Même règle pour les menus et rubriques absents du guide ci-dessus : tu ne les inventes pas.',
         '',
-        'LES SERVICES ET LEURS PRIX RÉELS (lus en base à l’instant) :',
+        'LES SERVICES ET LEURS PRIX RÉELS (lus en base à l’instant — ils font AUTORITÉ sur les prix,',
+        'le guide ci-dessus ne dit jamais de montant) :',
         catalogue || '(catalogue momentanément indisponible)',
         '',
         'RÈGLES ABSOLUES — elles priment sur tout le reste.',
@@ -175,21 +172,40 @@ export async function POST(req: NextRequest) {
         '  une étoile s’y afficherait comme une étoile.',
     ].filter(Boolean).join('\n')
 
-    let reponse = ''
-    try {
+    const messages = [
+        { role: 'system' as const, content: systeme },
+        ...historique,
+        { role: 'user' as const, content: question },
+    ]
+
+    /* Le modèle (gpt-oss-120b) RAISONNE avant de répondre : ces tokens de
+       réflexion comptent dans `max_tokens`. Diagnostiqué en direct :
+       `finish_reason=length` avec un contenu VIDE — sur une question ouverte
+       comme « comment marche l'achat d'un logement », les 600 tokens partaient
+       entièrement en réflexion, sans qu'un seul mot de réponse ne sorte. Ce
+       n'était ni un quota ni un filtre.
+       Deux réglages, à la source du problème :
+         · `reasoning_effort: 'low'` — Ablawa dispose d'un guide factuel, elle
+           n'a pas à disserter ; elle doit répondre. On coupe la réflexion
+           superflue.
+         · un budget large — la réponse VISIBLE reste courte (le prompt exige
+           4 à 6 phrases), mais le budget doit absorber la réflexion résiduelle. */
+    async function interroger(temperature: number): Promise<string> {
         const res = await fetchWithGroqRotation({
-            model: GROQ_MODEL,
-            messages: [
-                { role: 'system', content: systeme },
-                ...historique,
-                { role: 'user', content: question },
-            ],
-            temperature: 0.6,   // assez pour qu'elle ait une voix, pas assez pour qu'elle divague
-            max_tokens: 600,
+            model: GROQ_MODEL, messages, temperature,
+            max_tokens: 2500,
+            reasoning_effort: 'low',
         })
         const json = await res.json()
         if (!res.ok) throw new Error(json?.error?.message || 'Assistante indisponible.')
-        reponse = String(json?.choices?.[0]?.message?.content || '').trim()
+        return String(json?.choices?.[0]?.message?.content || '').trim()
+    }
+
+    let reponse = ''
+    try {
+        reponse = await interroger(0.6)   // assez pour une voix, pas assez pour divaguer
+        // Filet : une réflexion résiduelle peut, rarement, encore tout manger.
+        if (!reponse) reponse = await interroger(0.8)
     } catch (e) {
         console.error('[ablawa]', e instanceof Error ? e.message : e)
         return NextResponse.json({
@@ -207,6 +223,8 @@ export async function POST(req: NextRequest) {
         .replace(/^#{1,6}\s+/gm, '')             // # titres
         .replace(/^\s*[-*•]\s+/gm, '· ')         // puces -> point médian
         .replace(/`([^`]+)`/g, '$1')             // `code`
+        .replace(/ +$/gm, '')                    // espaces en fin de ligne (retours markdown)
+        .replace(/\n{3,}/g, '\n\n')              // pas plus d'une ligne vide d'affilée
         .trim()
 
     if (!reponse) {

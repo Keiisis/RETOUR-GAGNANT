@@ -70,3 +70,10 @@ strix_runs/
 
 # Modele 3D source (40MB) garde local, non deploye
 frontend/public/models/51782cae-*.glb
+
+# ── Graphe de connaissances (graphify) ───────────────────────
+#  20 Mo entierement REGENERABLES par `graphify update .`. Les versionner,
+#  c'est alourdir chaque deploiement Vercel (qui envoie le depot au build) et
+#  provoquer un conflit a chaque fusion, pour un fichier que personne ne relit.
+#  Le SKILL, lui, est versionne (.claude/) : c'est lui qui compte pour l'equipe.
+graphify-out/
