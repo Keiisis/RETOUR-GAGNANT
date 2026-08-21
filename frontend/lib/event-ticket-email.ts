@@ -19,9 +19,36 @@
 ═══════════════════════════════════════════════════════════ */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
-import { getTicketTemplate, renderTicketTemplate, qrDataUri } from './event-tickets'
+import {
+    getTicketTemplate, renderTicketTemplate, qrDataUri, defaultTicketTemplate,
+} from './event-tickets'
 
 const CID_QR = 'qr-billet-rgb'
+
+/**
+ * Le design personnalisé enregistré en admin est-il utilisable EN EMAIL ?
+ *
+ * Le gabarit stocké dans `page_sections` (posé le 2026-08-18) est un vrai
+ * travail de mise en page — mais pensé pour la PAGE WEB du billet : bloc
+ * `<style>`, variables CSS (`--ink`), `display:flex`, encoches de perforation
+ * en `radial-gradient`. Impeccable dans un navigateur, illisible dans une boîte
+ * mail : Outlook ignore flex et les variables CSS, et l'application Gmail
+ * supprime le `<style>` pour les comptes non-Gmail. Le billet arrivait donc
+ * decompose, ce qui est exactement le « il est moche » constate.
+ *
+ * On n'ECRASE PAS ce design : il reste servi tel quel sur /api/tickets/[code].
+ * L'email, lui, exige des `<table>` et des styles inline — s'il en manque, on
+ * bascule sur le gabarit email par defaut. Un design personnalise ECRIT pour
+ * l'email (tableaux, styles inline) passe donc le controle et sera respecte.
+ */
+function utilisableEnEmail(html: string): boolean {
+    if (!html.trim()) return false
+    if (/<style[\s>]/i.test(html)) return false          // souvent supprime
+    if (/display\s*:\s*(flex|grid)/i.test(html)) return false // ignore par Outlook
+    if (/var\(--/.test(html)) return false               // variables CSS non supportees
+    if (!/<table/i.test(html)) return false              // pas de mise en page fiable
+    return true
+}
 
 function dateLongue(iso?: string | null): string {
     if (!iso) return ''
@@ -69,7 +96,8 @@ export async function envoyerBilletParEmail(
            place de la data URI. `renderTicketTemplate` n'échappe pas ce
            marqueur, il est donc inséré tel quel dans le `src`. */
         const qrUri = await qrDataUri(String(ticket.qr_data), 420)
-        const gabarit = await getTicketTemplate(supabase, String(ticket.event_id))
+        const personnalise = await getTicketTemplate(supabase, String(ticket.event_id))
+        const gabarit = utilisableEnEmail(personnalise) ? personnalise : defaultTicketTemplate()
         const billet = renderTicketTemplate(gabarit, {
             ticket_code: String(ticket.ticket_code),
             qr_uri: `cid:${CID_QR}`,
