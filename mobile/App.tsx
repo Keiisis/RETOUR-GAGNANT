@@ -29,7 +29,7 @@ import {
 } from '@expo-google-fonts/outfit'
 import * as Notifications from 'expo-notifications'
 
-import { reprendreDonneesAsyncStorage } from './src/lib/stockage'
+import { reprendreDonneesAsyncStorage, rejouerOnboardingEnDev } from './src/lib/stockage'
 import { ouvrirBase } from './src/lib/db/base'
 import { AuthProvider } from './src/contexts/AuthContext'
 import { LangProvider } from './src/contexts/LangContext'
@@ -78,7 +78,16 @@ export default function App() {
     useEffect(() => {
         let vivant = true
         reprendreDonneesAsyncStorage()
-            .finally(() => { if (vivant) setStockagePret(true) })
+            .finally(() => {
+                /* APRES la reprise, jamais avant : `reprendreDonneesAsyncStorage`
+                   recopie `onboarding_complete_v2` depuis AsyncStorage, et
+                   effacer d'abord aurait donc ete annule dans la foulee sur un
+                   telephone n'ayant pas encore migre. Ici l'effacement a le
+                   dernier mot, et il reste devant le premier rendu puisque
+                   `stockagePret` ne bascule qu'ensuite. Sans effet en production. */
+                rejouerOnboardingEnDev('2026-08-21')
+                if (vivant) setStockagePret(true)
+            })
         // La base s'ouvre en arriere-plan : les depots l'attendront d'eux-memes.
         ouvrirBase().catch(e => { if (__DEV__) console.warn('[db] ouverture impossible :', e) })
         return () => { vivant = false }

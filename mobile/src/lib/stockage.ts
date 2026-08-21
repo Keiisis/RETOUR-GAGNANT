@@ -101,6 +101,27 @@ const CLES_CONNUES = [
     '@rg_shipping_form',
 ]
 
+/* ── Rejouer l'onboarding, en développement seulement ─────────
+   Les drapeaux d'onboarding vivent sur le téléphone : impossible de les effacer
+   depuis un poste de développement. Pour revoir le parcours de première
+   ouverture, on change la MARQUE ci-dessous — les drapeaux sont alors effacés
+   UNE fois, au prochain lancement, puis le comportement normal reprend.
+
+   `__DEV__` est la garde essentielle : sans elle, changer cette marque
+   renverrait TOUS les utilisateurs déjà installés dans l'onboarding, ce que le
+   passage à MMKV s'était justement donné pour règle d'éviter. */
+const MARQUE_REINIT = 'dev:onboarding-rejoue'
+
+export function rejouerOnboardingEnDev(marque: string): void {
+    if (!__DEV__) return
+    if (stockage.getString(MARQUE_REINIT) === marque) return
+
+    stockage.remove('onboarding_complete_v2')
+    stockage.remove('lang_chosen')
+    stockage.set(MARQUE_REINIT, marque)
+    console.log('[stockage] onboarding réarmé (développement) — marque :', marque)
+}
+
 export async function reprendreDonneesAsyncStorage(): Promise<void> {
     if (stockage.getBoolean(DRAPEAU_REPRISE)) return
 
