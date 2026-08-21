@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Users, QrCode, CheckCircle as CheckCircle2, Ticket, MagnifyingGlass as Search, Download, ArrowLeft, Envelope as Mail, Phone, Crown, Warning as AlertTriangle, ShieldCheck } from '@phosphor-icons/react';
 
-// Dummy dynamic import placeholder for a hypothetical QR scanner
-// import { Html5QrcodeScanner } from 'html5-qrcode'
+// Le scanner de l'agent, reutilise tel quel : meme caméra, meme anti-fraude.
+import TicketScanner from '@/components/agent/TicketScanner'
 
 interface TicketData {
     id: string
@@ -43,6 +43,7 @@ export default function EventRegistrationsPage() {
     const [scanMode, setScanMode] = useState(false)
     const [scanResult, setScanResult] = useState<{ status: 'success' | 'error' | 'loading', message: string, data?: any } | null>(null)
     const [manualCode, setManualCode] = useState('')
+    const [scannerOuvert, setScannerOuvert] = useState(false)
 
     const fetchRegs = useCallback(() => {
         fetch(`/api/events/${eventId}/register?admin=true`)
@@ -115,6 +116,17 @@ export default function EventRegistrationsPage() {
                 </div>
             </div>
 
+            {/* Scanner plein écran : le MÊME que celui de l'agent à l'entrée. */}
+            {scannerOuvert && (
+                <TicketScanner
+                    eventId={eventId}
+                    eventTitle="Événement"
+                    validatedBy="Administrateur"
+                    onClose={() => setScannerOuvert(false)}
+                    onValidated={fetchRegs}
+                />
+            )}
+
             {/* SCANNER VIEW */}
             {scanMode && (
                 <div className="rounded-2xl border border-[#FCD116]/30 bg-[#FCD116]/5 p-6 animate-in fade-in slide-in-from-top-4">
@@ -125,12 +137,26 @@ export default function EventRegistrationsPage() {
                             <p className="text-xs text-gray-400"><T>Pour valider avec un pistolet laser, scannez le QR code ou utilisez la caméra de votre appareil.</T></p>
                         </div>
 
-                        <div className="aspect-square bg-black rounded-xl border border-white/10 flex flex-col items-center justify-center text-gray-500 relative overflow-hidden">
-                            <QrCode size={48} className="opacity-20 mb-4" />
-                            <p className="text-xs font-bold text-center px-4"><T>Scanner caméra désactivé</T> <br /><T>(Simulé pour le test)</T></p>
-                            {/* Scanning laser effect */}
-                            <div className="absolute top-0 left-0 w-full h-[2px] bg-[#FCD116] shadow-[0_0_10px_#FCD116] animate-[scan_2s_ease-in-out_infinite] opacity-50" />
-                        </div>
+                        {/* LA CAMÉRA, POUR DE VRAI.
+                            Il y avait ici un carré noir affichant « Scanner caméra
+                            désactivé (Simulé pour le test) », avec une ligne laser
+                            animée pour faire illusion. Rien ne scannait : à l'entrée
+                            d'un événement, un administrateur n'avait que la saisie
+                            manuelle du code, billet après billet.
+                            `TicketScanner` est le composant que l'agent utilise déjà
+                            sur le terrain — caméra arrière, lecture continue,
+                            anti-double-scan, repli manuel si la permission est
+                            refusée. Il n'y avait aucune raison d'en avoir deux. */}
+                        <button
+                            onClick={() => setScannerOuvert(true)}
+                            className="w-full aspect-square bg-black rounded-xl border border-white/10 flex flex-col items-center justify-center text-gray-300 hover:border-[#FCD116]/50 transition-all"
+                        >
+                            <QrCode size={48} className="opacity-70 mb-4 text-[#FCD116]" />
+                            <p className="text-sm font-black"><T>Ouvrir la caméra</T></p>
+                            <p className="text-[11px] text-gray-500 mt-1 px-6 text-center">
+                                <T>Lecture continue du QR, comme à l’entrée.</T>
+                            </p>
+                        </button>
 
                         <div className="flex gap-2">
                             <input

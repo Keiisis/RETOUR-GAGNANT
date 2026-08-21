@@ -49,8 +49,14 @@ const ENCRE = '#17201C'
 const GRIS = '#8A8A8A'
 const NUIT = '#111A15'
 
-const L = 720
-const H = 1120
+/* Format PAYSAGE, calqué sur la page web du billet : le panneau d'informations
+   à gauche, la souche sombre détachable à droite. La première version était
+   verticale — plus simple à écrire, mais elle ne ressemblait pas au billet que
+   le client voit dans son navigateur, et deux dessins différents pour un même
+   objet, c'est un objet qu'on ne reconnaît plus. */
+const L = 1200
+const H = 560
+const SOUCHE = 380 // largeur de la souche à QR
 
 /** Chargées une seule fois par instance : un fichier de 330 Ko ne se relit pas
  *  à chaque billet. `public/` est déployé avec la fonction. */
@@ -87,65 +93,94 @@ function arbre(d: DonneesBillet): any {
             fontFamily: 'Inter',
         },
     },
-        // Arête tricolore : signature de l'agence, en structure et non en ornement.
-        e('div', { style: { display: 'flex', flexDirection: 'column', width: 18, height: H } },
-            e('div', { style: { display: 'flex', backgroundColor: VERT, width: 18, height: Math.round(H * 0.42) } }),
-            e('div', { style: { display: 'flex', backgroundColor: JAUNE, width: 18, height: Math.round(H * 0.16) } }),
-            e('div', { style: { display: 'flex', backgroundColor: ROUGE, width: 18, height: Math.round(H * 0.14) } }),
+        // Arête tricolore verticale : signature de l'agence, en structure.
+        e('div', { style: { display: 'flex', flexDirection: 'column', width: 16, height: H } },
+            e('div', { style: { display: 'flex', backgroundColor: VERT, width: 16, height: Math.round(H * 0.42) } }),
+            e('div', { style: { display: 'flex', backgroundColor: JAUNE, width: 16, height: Math.round(H * 0.29) } }),
+            e('div', { style: { display: 'flex', backgroundColor: ROUGE, width: 16, height: Math.round(H * 0.29) } }),
         ),
 
-        e('div', { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, height: H } },
-            // ── Corps ──
-            e('div', { style: { display: 'flex', flexDirection: 'column', padding: '54px 56px 0 62px', flexGrow: 1 } },
-                e('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 46 } },
-                    e('div', { style: { display: 'flex', fontSize: 18, fontWeight: 700, letterSpacing: 4, color: VERT } }, 'RETOUR GAGNANT BÉNIN'),
-                    e('div', {
-                        style: {
-                            display: 'flex', border: `2px solid ${ENCRE}`, padding: '8px 20px',
-                            fontSize: 17, fontWeight: 700, letterSpacing: 3, color: ENCRE,
-                        },
-                    }, d.ticket_type.toUpperCase()),
-                ),
-
-                microTitre('Au nom de'),
-                e('div', { style: { display: 'flex', fontSize: 44, fontWeight: 700, color: ENCRE, marginBottom: 10 } }, d.full_name || 'Invité'),
-                e('div', { style: { display: 'flex', fontSize: 23, color: GRIS } }, d.email),
-                d.phone
-                    ? e('div', { style: { display: 'flex', fontSize: 23, color: GRIS, marginTop: 4 } }, d.phone)
-                    : e('div', { style: { display: 'flex' } }),
-
-                e('div', { style: { display: 'flex', height: 2, backgroundColor: '#E4E4E4', margin: '38px 0' } }),
-
-                microTitre('Événement'),
-                e('div', { style: { display: 'flex', fontSize: 34, fontWeight: 700, color: ENCRE, marginBottom: 36, lineHeight: 1.2 } }, d.event_title),
-
-                microTitre('Date'),
-                e('div', { style: { display: 'flex', fontSize: 26, fontWeight: 700, color: ENCRE, marginBottom: 32 } }, d.event_date),
-
-                microTitre('Lieu'),
-                e('div', { style: { display: 'flex', fontSize: 26, fontWeight: 700, color: ENCRE } }, d.event_location),
-            ),
-
-            // ── Perforation : la souche se détache ici ──
-            e('div', { style: { display: 'flex', height: 3, backgroundColor: '#FFFFFF', borderTop: '3px dashed #C9D2CC' } }),
-
-            // ── Souche ──
-            e('div', {
-                style: {
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    backgroundColor: NUIT, padding: '34px 0 26px',
-                },
+        // ── PANNEAU PRINCIPAL ──
+        e('div', {
+            style: {
+                display: 'flex', flexDirection: 'column', width: L - 16 - SOUCHE, height: H,
+                padding: '46px 44px 0 48px',
             },
-                e('div', { style: { display: 'flex', backgroundColor: '#FFFFFF', padding: 12 } },
-                    e('img', { src: d.qr_uri, width: 236, height: 236 }),
-                ),
+        },
+            e('div', { style: { display: 'flex', alignItems: 'center', marginBottom: 40 } },
+                e('div', { style: { display: 'flex', fontSize: 17, fontWeight: 700, letterSpacing: 4, color: VERT } }, 'RETOUR GAGNANT BÉNIN'),
+                e('div', { style: { display: 'flex', flexGrow: 1, height: 1, backgroundColor: '#E4E4E4', margin: '0 18px' } }),
                 e('div', {
                     style: {
-                        display: 'flex', marginTop: 22, fontSize: 29, fontWeight: 700,
-                        letterSpacing: 2, color: '#FFFFFF',
+                        display: 'flex', border: `2px solid ${ENCRE}`, padding: '7px 18px',
+                        fontSize: 15, fontWeight: 700, letterSpacing: 3, color: ENCRE,
                     },
-                }, d.ticket_code),
+                }, d.ticket_type.toUpperCase()),
             ),
+
+            microTitre('Au nom de'),
+            e('div', { style: { display: 'flex', fontSize: 42, fontWeight: 700, color: ENCRE, marginBottom: 10 } }, d.full_name || 'Invité'),
+            e('div', { style: { display: 'flex', fontSize: 21, color: GRIS } }, d.email),
+            d.phone
+                ? e('div', { style: { display: 'flex', fontSize: 21, color: GRIS, marginTop: 4 } }, d.phone)
+                : e('div', { style: { display: 'flex' } }),
+
+            e('div', { style: { display: 'flex', height: 1, backgroundColor: '#E4E4E4', margin: '32px 0 30px' } }),
+
+            // Deux colonnes : l'événement à gauche, la date à droite.
+            e('div', { style: { display: 'flex', marginBottom: 26 } },
+                e('div', { style: { display: 'flex', flexDirection: 'column', width: 400, paddingRight: 24 } },
+                    microTitre('Événement'),
+                    e('div', { style: { display: 'flex', fontSize: 27, fontWeight: 700, color: ENCRE, lineHeight: 1.25 } }, d.event_title),
+                ),
+                e('div', { style: { display: 'flex', flexDirection: 'column', flexGrow: 1 } },
+                    microTitre('Date'),
+                    e('div', { style: { display: 'flex', fontSize: 24, fontWeight: 700, color: ENCRE, lineHeight: 1.3 } }, d.event_date),
+                ),
+            ),
+
+            microTitre('Lieu'),
+            e('div', { style: { display: 'flex', fontSize: 24, fontWeight: 700, color: ENCRE } }, d.event_location),
+
+            // La mention légale ferme le panneau : c'est ce qui fait du dessin
+            // un billet opposable, et non une jolie carte.
+            e('div', { style: { display: 'flex', flexGrow: 1 } }),
+            e('div', {
+                style: {
+                    display: 'flex', flexDirection: 'column', borderLeft: `3px solid ${ROUGE}`,
+                    paddingLeft: 12, marginBottom: 26,
+                },
+            },
+                e('div', { style: { display: 'flex', fontSize: 13, color: '#5E6A64', lineHeight: 1.5 } },
+                    'Billet nominatif, valable pour une seule entrée. Le premier scan l’invalide :'),
+                e('div', { style: { display: 'flex', fontSize: 13, color: '#5E6A64', lineHeight: 1.5 } },
+                    'une copie ou un second passage seront refusés à l’accueil.'),
+            ),
+        ),
+
+        // ── SOUCHE DÉTACHABLE ──
+        e('div', {
+            style: {
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', width: SOUCHE, height: H, backgroundColor: NUIT,
+                borderLeft: '3px dashed #4A554E',
+            },
+        },
+            e('div', { style: { display: 'flex', backgroundColor: '#FFFFFF', padding: 14 } },
+                e('img', { src: d.qr_uri, width: 232, height: 232 }),
+            ),
+            e('div', {
+                style: {
+                    display: 'flex', marginTop: 24, fontSize: 26, fontWeight: 700,
+                    letterSpacing: 2, color: '#FFFFFF',
+                },
+            }, d.ticket_code),
+            e('div', {
+                style: {
+                    display: 'flex', marginTop: 12, fontSize: 13, fontWeight: 700,
+                    letterSpacing: 3, color: '#8FA396',
+                },
+            }, 'À SCANNER À L’ENTRÉE'),
         ),
     )
 }
@@ -168,10 +203,12 @@ export async function billetEnPdf(d: DonneesBillet): Promise<Buffer> {
     const png = await billetEnPng(d)
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
 
-    const margeX = 20
+    /* Le billet est en paysage : posé sur une A4 portrait, il occupe toute la
+       largeur utile et se découpe d'un trait de ciseaux. */
+    const margeX = 14
     const largeur = 210 - margeX * 2
     const hauteur = largeur * (H / L)
-    const y = (297 - hauteur) / 2
+    const y = 42
 
     pdf.addImage(
         `data:image/png;base64,${png.toString('base64')}`,
