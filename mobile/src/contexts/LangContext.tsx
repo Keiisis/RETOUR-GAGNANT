@@ -3,6 +3,7 @@ import React, {
 } from 'react'
 import { AppState, type AppStateStatus } from 'react-native'
 import { lire, ecrire, supprimer } from '../lib/stockage'
+import { ajouterTraductions, lireTraductions, oublierTraductions } from '../lib/db/depots'
 
 // ─── Supported languages (same as website) ───────────────────────────────────
 
@@ -84,12 +85,45 @@ export const useLang = () => useContext(LangContext)
 /* Lecture SYNCHRONE du cache disque (MMKV) : l'ancien chargement asynchrone
    affichait d'abord le francais, puis les traductions arrivaient -- un clignotement
    a chaque lancement. Ici le premier rendu porte deja les textes traduits. */
+/* ── Le miroir MMKV, écrit AU PLUS UNE FOIS PAR SECONDE ────────
+   MMKV garde une copie du cache de la langue courante, dans un seul objet
+   JSON. C'est ce que `lireCacheDisque` relit SYNCHRONEMENT au lancement : sans
+   cette copie, le premier rendu se ferait en français le temps qu'une lecture
+   SQLite revienne, et l'éclair de français réapparaîtrait.
+
+   Mais réécrire ce bloc à chaque lot reçu coûte de plus en plus cher à mesure
+   que le cache grossit. La vérité durable étant désormais en base, ce miroir
+   peut attendre : on le regroupe. Un lot arrivé pendant l'attente est inclus
+   dans l'écriture suivante — rien ne se perd, et en cas de fermeture brutale
+   SQLite a déjà tout. */
+let minuterieMiroir: ReturnType<typeof setTimeout> | null = null
+
+function planifierMiroirMmkv(code: LangCode, carte: Map<string, string>): void {
+    if (minuterieMiroir) clearTimeout(minuterieMiroir)
+    minuterieMiroir = setTimeout(() => {
+        minuterieMiroir = null
+        try {
+            const obj: Record<string, string> = {}
+            carte.forEach((v, k) => { obj[k] = v })
+            ecrire(`${CACHE_KEY_PREFIX}${code}`, JSON.stringify(obj))
+            ecrire(`${CACHE_VERSION_KEY}_${code}`, String(CACHE_VERSION))
+        } catch { /* la base garde la vérité : rien de perdu */ }
+    }, 1000)
+}
+
 function lireCacheDisque(code: LangCode): Map<string, string> {
     if (code === DEFAULT_LANG) return new Map()
     const version = lire(`${CACHE_VERSION_KEY}_${code}`)
     if (version !== String(CACHE_VERSION)) {
-        // Cache d'une version anterieure : il est purge, jamais servi.
+        /* Cache d'une version anterieure : il est purge, jamais servi.
+           LA BASE AUSSI, imperativement. `CACHE_VERSION` sert a rattraper des
+           traductions FAUSSES (v3 : la marque « Retour Gagnant Benin » traduite
+           en « Winning Return »). Ne purger que MMKV laisserait ces textes en
+           base, et la fusion de demarrage les reinstallerait — la correction
+           serveur n'atteindrait jamais le telephone, ce que ce compteur existe
+           precisement pour garantir. */
         supprimer(`${CACHE_KEY_PREFIX}${code}`)
+        void oublierTraductions(code)
         ecrire(`${CACHE_VERSION_KEY}_${code}`, String(CACHE_VERSION))
         return new Map()
     }
@@ -139,8 +173,32 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         failedForever.current.clear()
         // Au montage, l'etat initial a deja ete lu : ne pas le relire.
-        if (premierRendu.current) { premierRendu.current = false; return }
-        setCache(lireCacheDisque(lang))
+        if (premierRendu.current) { premierRendu.current = false } else {
+            setCache(lireCacheDisque(lang))
+        }
+
+        /* Puis la MÉMOIRE LONGUE, en arrière-plan.
+           MMKV ne garde qu'une copie de la langue courante, et elle peut être
+           partielle (purge de version, réinstallation, miroir différé jamais
+           écrit). La base, elle, a tout et pour toutes les langues : on la
+           fusionne dès qu'elle répond. Les valeurs déjà en mémoire gagnent —
+           elles sont au moins aussi fraîches. */
+        let vivant = true
+        lireTraductions(lang).then(depuisBase => {
+            if (!vivant || depuisBase.size === 0) return
+            setCache(prev => {
+                let ajouts = 0
+                const next = new Map(prev)
+                depuisBase.forEach((cible, source) => {
+                    if (!next.has(source)) { next.set(source, cible); ajouts++ }
+                })
+                if (ajouts === 0) return prev
+                if (__DEV__) console.log(`[lang] ${ajouts} traduction(s) reprises de la base`)
+                planifierMiroirMmkv(lang, next)
+                return next
+            })
+        })
+        return () => { vivant = false }
     }, [lang])
 
     // ── Persist language choice ──
@@ -224,19 +282,19 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
                         const untranslated = chunk.filter(t => !translationsMap[t])
                         if (untranslated.length > 0) failedTexts.push(...untranslated)
 
+                        /* SQLite : on n'écrit QUE les nouvelles lignes.
+                           Le bloc précédent re-sérialisait tout le cache à
+                           chaque lot — plus l'utilisateur traduisait, plus
+                           chaque phrase coûtait cher à enregistrer. */
+                        void ajouterTraductions(currentLang, translationsMap)
+
                         setCache(prev => {
                             const next = new Map(prev)
                             for (const [key, value] of Object.entries(translationsMap)) {
                                 next.set(key, value)
                             }
-
-                            // Persist to AsyncStorage
-                            const storageKey = `${CACHE_KEY_PREFIX}${currentLang}`
-                            const obj: Record<string, string> = {}
-                            next.forEach((v, k) => { obj[k] = v })
-                            ecrire(storageKey, JSON.stringify(obj))
-                            ecrire(`${CACHE_VERSION_KEY}_${currentLang}`, String(CACHE_VERSION))
-
+                            // MMKV : réécriture DIFFÉRÉE (voir `planifierMiroirMmkv`).
+                            planifierMiroirMmkv(currentLang, next)
                             return next
                         })
                     } else {
@@ -379,6 +437,9 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
         for (const code of targets) {
             supprimer(`${CACHE_KEY_PREFIX}${code}`)
             supprimer(`${CACHE_VERSION_KEY}_${code}`)
+            // La base est la memoire longue : une purge qui l'oublierait
+            // ne purgerait rien du tout.
+            await oublierTraductions(code)
         }
         // If we just wiped the active language, clear in-memory cache too
         if (!target || target === langRef.current) {

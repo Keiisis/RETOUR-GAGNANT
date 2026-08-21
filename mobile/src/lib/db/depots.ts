@@ -260,3 +260,61 @@ export async function enregistrerEvenements(
         if (__DEV__) console.warn('[depots] événements non enregistrés :', e)
     }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TRADUCTIONS — mémoire longue du téléphone.
+
+   Ces deux fonctions ne REMPLACENT jamais le jeu de données, contrairement aux
+   autres dépôts : une traduction déjà obtenue reste valable indéfiniment, et
+   l'effacer obligerait à la redemander au serveur pour rien. On n'ajoute donc
+   que ce qui manque.
+═══════════════════════════════════════════════════════════ */
+
+/** Toutes les traductions connues pour une langue. */
+export async function lireTraductions(langue: string): Promise<Map<string, string>> {
+    const carte = new Map<string, string>()
+    try {
+        const db = await ouvrirBase()
+        const lignes = await db.getAllAsync<{ source: string; cible: string }>(
+            'SELECT source, cible FROM traductions WHERE langue = ?',
+            langue,
+        )
+        for (const l of lignes) carte.set(l.source, l.cible)
+    } catch (e) {
+        if (__DEV__) console.warn('[depots] traductions illisibles :', e)
+    }
+    return carte
+}
+
+/**
+ * Ajoute des traductions. Seules les NOUVELLES lignes sont écrites : le reste
+ * du cache n'est pas touché, quelle que soit sa taille.
+ */
+export async function ajouterTraductions(
+    langue: string, entrees: Record<string, string>,
+): Promise<void> {
+    const paires = Object.entries(entrees).filter(([s, c]) => s && c)
+    if (paires.length === 0) return
+    try {
+        const db = await ouvrirBase()
+        const maintenant = Date.now()
+        await db.withTransactionAsync(async () => {
+            for (const [source, cible] of paires) {
+                await db.runAsync(
+                    'INSERT OR REPLACE INTO traductions (langue, source, cible, maj) VALUES (?, ?, ?, ?)',
+                    langue, source, cible, maintenant,
+                )
+            }
+        })
+    } catch (e) {
+        if (__DEV__) console.warn('[depots] traductions non enregistrées :', e)
+    }
+}
+
+/** Purge d'une langue — utilisée quand la VERSION de cache change. */
+export async function oublierTraductions(langue: string): Promise<void> {
+    try {
+        const db = await ouvrirBase()
+        await db.runAsync('DELETE FROM traductions WHERE langue = ?', langue)
+    } catch { /* sans conséquence : le serveur les renverra */ }
+}
