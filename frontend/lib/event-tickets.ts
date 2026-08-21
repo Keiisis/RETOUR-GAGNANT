@@ -178,33 +178,87 @@ export function renderTicketTemplate(template: string, d: TicketRenderData): str
     return out
 }
 
-/** Design par défaut, utilisé tant qu'aucun design n'a été fourni en admin. */
+/**
+ * Design par défaut, utilisé tant qu'aucun design n'a été fourni en admin.
+ *
+ * ⚠️ MISE EN PAGE EN TABLEAUX, PAS EN FLEXBOX. La version précédente reposait
+ * sur `display:flex` : Gmail, Outlook (moteur Word) et Yahoo l'ignorent
+ * purement et simplement. Les deux colonnes retombaient donc l'une sous
+ * l'autre, le QR se retrouvait seul en bas, et le billet arrivait « moche »
+ * chez le destinataire alors qu'il s'affichait bien dans un navigateur.
+ * Toute évolution de ce gabarit doit rester en `<table>` et en styles INLINE.
+ *
+ * Le dessin reprend l'objet réel : une souche perforée. À gauche l'invité et
+ * son code, à droite le QR détachable — c'est ce que le porteur présente. Les
+ * trois couleurs du drapeau tiennent lieu de signature, comme sur les factures
+ * de l'agence ; le jaune ne sert qu'une fois, sur la ligne de perforation.
+ */
 export function defaultTicketTemplate(): string {
-    return `<div style="width:720px;margin:0 auto;font-family:ui-sans-serif,system-ui,'Segoe UI',Roboto,sans-serif;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 18px 44px rgba(0,0,0,.12)">
-  <div style="display:flex;height:6px"><span style="flex:46;background:#008751"></span><span style="flex:27;background:#FCD116"></span><span style="flex:27;background:#E8112D"></span></div>
-  <div style="padding:28px 32px 8px">
-    <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#008751">Retour Gagnant Bénin</p>
-    <h1 style="margin:6px 0 0;font-size:28px;line-height:1.15;color:#17201C">{{EVENT_TITLE}}</h1>
-    <p style="margin:8px 0 0;font-size:14px;color:#5E6A64">{{EVENT_DATE}} · {{EVENT_LOCATION}}</p>
-  </div>
-  <div style="display:flex;gap:28px;align-items:center;padding:24px 32px 32px">
-    <div style="flex:1">
-      <p style="margin:0;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8A938E">Invité</p>
-      <p style="margin:2px 0 14px;font-size:20px;font-weight:800;color:#17201C">{{FULL_NAME}}</p>
-      <p style="margin:0;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8A938E">Formule</p>
-      <p style="margin:2px 0 14px;font-size:15px;font-weight:700;color:#008751">{{TICKET_TYPE}}</p>
-      <p style="margin:0;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8A938E">Code</p>
-      <p style="margin:2px 0 0;font-family:ui-monospace,monospace;font-size:16px;font-weight:700;color:#17201C">{{TICKET_CODE}}</p>
-    </div>
-    <div style="text-align:center">
-      <img src="{{QR_CODE}}" alt="QR du billet" style="width:190px;height:190px;display:block;border:1px solid #E4E9E6;border-radius:12px" />
-      <p style="margin:8px 0 0;font-size:10px;color:#8A938E">À présenter à l'entrée</p>
-    </div>
-  </div>
-  <div style="padding:14px 32px;background:#F3F6F4;font-size:11px;color:#5E6A64">
-    Billet nominatif et valable une seule fois. Toute reproduction est sans effet : le premier scan invalide le billet.
-  </div>
-</div>`
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;border-collapse:collapse;background:#FFFFFF;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <tr><td style="padding:0">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse">
+      <tr style="height:7px">
+        <td width="46%" style="background:#008751;height:7px;line-height:7px;font-size:0">&nbsp;</td>
+        <td width="27%" style="background:#FCD116;height:7px;line-height:7px;font-size:0">&nbsp;</td>
+        <td width="27%" style="background:#E8112D;height:7px;line-height:7px;font-size:0">&nbsp;</td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:30px 34px 0">
+    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:.20em;text-transform:uppercase;color:#008751">Retour Gagnant Bénin</p>
+    <h1 style="margin:10px 0 0;font-size:26px;line-height:1.2;font-weight:700;color:#3C3C3C">{{EVENT_TITLE}}</h1>
+  </td></tr>
+
+  <tr><td style="padding:18px 34px 0">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-top:1px solid #F0F0F0;border-bottom:1px solid #F0F0F0">
+      <tr>
+        <td style="padding:14px 0">
+          <p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A8A8A">Date</p>
+          <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#3C3C3C">{{EVENT_DATE}}</p>
+        </td>
+        <td style="padding:14px 0;text-align:right">
+          <p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A8A8A">Lieu</p>
+          <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#3C3C3C">{{EVENT_LOCATION}}</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:26px 34px 30px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse">
+      <tr>
+        <td valign="top" style="padding-right:22px">
+          <p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A8A8A">Invité</p>
+          <p style="margin:5px 0 20px;font-size:19px;font-weight:700;line-height:1.25;color:#3C3C3C">{{FULL_NAME}}</p>
+
+          <p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A8A8A">Formule</p>
+          <p style="margin:5px 0 20px;font-size:15px;font-weight:700;color:#00643C">{{TICKET_TYPE}}</p>
+
+          <p style="margin:0;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A8A8A">Code du billet</p>
+          <p style="margin:5px 0 0;font-family:Consolas,'Courier New',monospace;font-size:17px;font-weight:700;letter-spacing:.04em;color:#3C3C3C">{{TICKET_CODE}}</p>
+        </td>
+
+        <td width="1" style="border-left:2px dashed #E4E4E4;font-size:0;line-height:0">&nbsp;</td>
+
+        <td valign="top" width="212" style="padding-left:22px;text-align:center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="190" style="border-collapse:collapse;background:#E6F3ED">
+            <tr><td style="padding:12px;text-align:center">
+              <img src="{{QR_CODE}}" alt="Code QR du billet" width="166" height="166" style="display:block;width:166px;height:166px;border:0;background:#FFFFFF" />
+            </td></tr>
+          </table>
+          <p style="margin:10px 0 0;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#008751">À présenter à l'entrée</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="padding:16px 34px;background:#F5F5F5;border-top:1px solid #F0F0F0">
+    <p style="margin:0;font-size:11px;line-height:1.6;color:#505050">
+      Billet nominatif, valable une seule fois. Le premier scan l'invalide : une copie ne laisse pas entrer deux personnes.
+    </p>
+  </td></tr>
+</table>`
 }
 
 /** Récupère le design applicable : par événement sinon global sinon défaut. */

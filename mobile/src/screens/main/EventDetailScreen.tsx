@@ -354,8 +354,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
        regardait que sa presence, et annoncait donc « Vous etes inscrit —
        confirmation envoyee par email » a quelqu'un qui n'avait rien regle et ne
        recevrait rien. Le serveur distingue deja les deux etats : on s'en sert. */
-    const registrationConfirmee = !!registration
-        && (registration.status ? registration.status === 'confirmed' : true)
+    /* Egalite STRICTE : en l'absence de statut, on ne suppose pas que c'est
+       paye. Se tromper dans ce sens laisse un bouton « reprendre le paiement »
+       inutile ; se tromper dans l'autre annonce un billet qui n'existe pas. */
+    const registrationConfirmee = registration?.status === 'confirmed'
     const paiementAFinaliser = !!registration && !registrationConfirmee
     const isRegistered = registrationConfirmee
 
@@ -390,14 +392,51 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 throw new Error((json.error as string) || `Erreur ${res.status}`)
             }
 
-            const reg = (json.registration as { id: string; status: string; ticket_type: string; payment_status?: string }) ||
-                (json.exists ? { ...(json.registration as object || {}), status: 'confirmed' } : null)
+            /* L'etat vient du PAIEMENT, jamais d'une supposition.
+               Ce code forcait `status: 'confirmed'` des que le serveur repondait
+               « exists » — donc une place JAMAIS REGLEE s'affichait « Vous etes
+               inscrit — billet envoye par email ». Le serveur renvoie pourtant
+               `payment_status` : on le lit. */
+            const brut = (json.registration || {}) as {
+                id?: string; status?: string; ticket_type?: string; payment_status?: string
+            }
+            const regle = brut.payment_status
+                ? brut.payment_status === 'completed'
+                : brut.status === 'confirmed'
+            const reg = brut.id
+                ? {
+                    id: brut.id,
+                    status: regle ? 'confirmed' : 'pending_payment',
+                    ticket_type: brut.ticket_type || selectedTicket,
+                }
+                : null
 
             setRegistration(reg)
             setShowModal(false)
 
             if (json.exists) {
-                toast(t('Déjà inscrit'), t('Vous êtes déjà inscrit à cet événement.'), 'warning')
+                /* Deja inscrit ET deja paye : rien a faire, on le dit.
+                   Deja inscrit mais NON paye : c'est une place abandonnee en
+                   cours de reglement. On repartait ici avec un simple
+                   avertissement, sans aucun moyen de payer — la personne etait
+                   bloquee pour de bon. On rouvre le paiement sur l'inscription
+                   EXISTANTE (le serveur la confirmera par PATCH). */
+                if (regle) {
+                    toast(t('Déjà inscrit'), t('Vous êtes déjà inscrit à cet événement.'), 'warning')
+                    return
+                }
+                if (reg?.id && !isFreeTicket) {
+                    /* Le montant suit la formule DEJA inscrite, pas celle
+                       selectionnee a l'ecran : sinon on ferait payer un VIP
+                       pour une place standard reservee la veille. */
+                    const prixHt = reg.ticket_type === 'vip'
+                        ? (event.price_vip || event.price_standard || 0)
+                        : event.price_standard
+                    setPendingRegistration({ id: reg.id, amount: ttcFromHt(prixHt) })
+                    setShowKkiapay(true)
+                    return
+                }
+                toast(t('Paiement à finaliser'), t('Votre place vous attend : reprenez le règlement.'), 'warning')
                 return
             }
 

@@ -82,22 +82,46 @@ export async function envoyerBilletParEmail(
             event_location: lieu,
         })
 
+        const prenom = String(reg?.full_name || '').trim().split(' ')[0]
+
+        /* Enveloppe en TABLEAUX elle aussi, pour la meme raison que le billet :
+           un `div` centre par `margin:auto` ne se centre pas dans Outlook. La
+           largeur 600 px est la seule qui tienne dans tous les volets de
+           lecture sans declencher de zoom arriere sur telephone. */
         const html = `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" /></head>
-<body style="margin:0;padding:24px 12px;background:#F3F6F4;font-family:ui-sans-serif,system-ui,'Segoe UI',Roboto,sans-serif">
-  <div style="max-width:720px;margin:0 auto">
-    <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#3C3C3C">
-      Bonjour ${String(reg?.full_name || '').split(' ')[0] || ''},<br />
-      votre place pour <strong>${String(event?.title || 'l’événement')}</strong> est confirmée.
-      Votre billet est ci-dessous : présentez le QR à l’entrée, depuis ce mail ou imprimé.
-    </p>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Votre billet</title></head>
+<body style="margin:0;padding:0;background:#EDF1EF;-webkit-text-size-adjust:100%">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background:#EDF1EF">
+  <tr><td align="center" style="padding:28px 12px 34px">
+
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;border-collapse:collapse">
+      <tr><td style="padding:0 6px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+        <p style="margin:0;font-size:16px;line-height:1.65;color:#3C3C3C">
+          ${prenom ? `Bonjour ${prenom},` : 'Bonjour,'}
+        </p>
+        <p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#505050">
+          Votre place pour <strong style="color:#3C3C3C">${String(event?.title || 'l’événement')}</strong>
+          est réservée. Votre billet est ci-dessous — présentez le code QR à l’entrée,
+          depuis ce message ou imprimé.
+        </p>
+      </td></tr>
+    </table>
+
     ${billet}
-    <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#8A8A8A">
-      Billet nominatif, valable une seule fois. Vous le retrouvez à tout moment dans
-      l’application Retour Gagnant Bénin, onglet Événements.
-    </p>
-  </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;border-collapse:collapse">
+      <tr><td style="padding:22px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+        <p style="margin:0;font-size:12px;line-height:1.7;color:#8A8A8A">
+          Vous retrouvez ce billet à tout moment dans l’application Retour Gagnant Bénin,
+          onglet Événements. Une question sur votre place ? Répondez simplement à ce message.
+        </p>
+      </td></tr>
+    </table>
+
+  </td></tr>
+</table>
 </body></html>`
 
         const envoi = await sendEmail({
