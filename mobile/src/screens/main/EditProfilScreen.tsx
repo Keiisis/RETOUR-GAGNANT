@@ -88,6 +88,9 @@ const Field = React.memo(function Field({
     label, value, onChange, placeholder, icon, keyboardType = 'default',
     required = false, helper,
 }: FieldProps) {
+    // Le libelle d'accessibilite du bouton « effacer » etait ecrit en dur :
+    // un lecteur d'ecran annoncait donc du francais en interface anglaise.
+    const { t } = useLang()
     const [focused, setFocused] = useState(false)
     const focusAnim = useSharedValue(0)
 
@@ -136,7 +139,7 @@ const Field = React.memo(function Field({
                         style={fieldStyles.clearBtn}
                         hitSlop={10}
                         accessibilityRole="button"
-                        accessibilityLabel="Effacer le champ"
+                        accessibilityLabel={t('Effacer le champ')}
                     >
                         <LucideIcon name="close-circle" size={18} color={C.textMuted} />
                     </Pressable>
@@ -502,7 +505,7 @@ export default function EditProfilScreen({ navigation }: { navigation: Nav }) {
                                 {t('Enregistrer')}
                             </Text>
                             {hasChanges && (
-                                <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                             )}
                         </>
                     )}

@@ -105,6 +105,10 @@ interface TicketCardProps {
 function TicketCard({
     type, selected, onSelect, label, description, price, isFree, isVip, perks,
 }: TicketCardProps) {
+    /* Ce composant recevait ses libelles deja traduits par son parent, MAIS
+       ecrivait « RECOMMANDÉ » en dur : un mot francais restait donc affiche au
+       milieu d'une interface anglaise. Il lui faut sa propre traduction. */
+    const { t } = useLang()
     const anim = useSharedValue(selected ? 1 : 0)
 
     useEffect(() => {
@@ -140,7 +144,7 @@ function TicketCard({
                 {isVip && (
                     <View style={ticketStyles.vipBanner}>
                         <LucideIcon name="star" size={9} color={C.primaryText} />
-                        <Text style={ticketStyles.vipBannerText}>RECOMMANDÉ</Text>
+                        <Text style={ticketStyles.vipBannerText}>{t('RECOMMANDÉ')}</Text>
                     </View>
                 )}
 
@@ -808,7 +812,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 <ActivityIndicator color={C.primaryText} size="small" />
                             ) : (
                                 <>
-                                    <LucideIcon name="ticket" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="ticket" size={18} color={C.primaryText} style={{ marginRight: 8 }} />
                                     <Text style={styles.btnText}>{t('Reprendre')}</Text>
                                 </>
                             )}
@@ -837,9 +841,9 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                 <ActivityIndicator color={C.primaryText} size="small" />
                             ) : (
                                 <>
-                                    <LucideIcon name="ticket" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                                    <LucideIcon name="ticket" size={18} color={C.primaryText} style={{ marginRight: 8 }} />
                                     <Text style={styles.btnText}>{t("S'inscrire")}</Text>
-                                    <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                    <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -954,13 +958,13 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                         <LucideIcon
                                             name={isFreeTicket ? 'checkmark-circle' : 'card-outline'}
                                             size={18}
-                                            color={C.primary}
+                                            color={C.primaryText}
                                             style={{ marginRight: 8 }}
                                         />
                                         <Text style={styles.confirmBtnText}>
                                             {isFreeTicket ? t("Confirmer l'inscription") : t('Confirmer et payer')}
                                         </Text>
-                                        <LucideIcon name="arrow-forward" size={18} color={C.primary} style={{ marginLeft: 8 }} />
+                                        <LucideIcon name="arrow-forward" size={18} color={C.primaryText} style={{ marginLeft: 8 }} />
                                     </>
                                 )}
                             </TouchableOpacity>
