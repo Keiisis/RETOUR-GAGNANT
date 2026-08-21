@@ -358,6 +358,52 @@ export default function EventDetailScreen({ route, navigation }: any) {
        paye. Se tromper dans ce sens laisse un bouton « reprendre le paiement »
        inutile ; se tromper dans l'autre annonce un billet qui n'existe pas. */
     const registrationConfirmee = registration?.status === 'confirmed'
+
+    /* Ce qu'on dit à quelqu'un dont la place est acquise.
+       Le message suit l'ÉCHÉANCE, parce que c'est ce qui change son besoin :
+       loin, il veut noter la date ; la veille, il veut l'heure et le lieu ; le
+       jour même, il veut son QR sous la main ; après, on le remercie. Un texte
+       unique aurait sonné faux dans trois cas sur quatre. */
+    const accueil = (() => {
+        const debut = new Date(event.start_date)
+        /* Écart en JOURS DE CALENDRIER, pas en tranches de 24 h : à 23 h la
+           veille, « demain » reste demain, alors qu'un calcul en heures aurait
+           dit « aujourd'hui ». */
+        const auJour = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+        const jours = Math.round((auJour(debut) - auJour(new Date())) / 86400000)
+        const heure = debut.toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
+        const lieu = String(event.location || '')
+        const jour = debut.toLocaleDateString(localeActuelle(), { weekday: 'long', day: 'numeric', month: 'long' })
+
+        if (jours < 0) {
+            return {
+                titre: t('Merci d’être venu'),
+                texte: t('Nous espérons que ce moment vous a plu. À très bientôt pour le prochain rendez-vous.'),
+            }
+        }
+        if (jours === 0) {
+            return {
+                titre: t('C’est aujourd’hui !'),
+                texte: `${t('Rendez-vous à')} ${heure}${lieu ? `, ${lieu}` : ''}. ${t('Gardez votre billet à portée de main : il sera scanné à l’entrée.')}`,
+            }
+        }
+        if (jours === 1) {
+            return {
+                titre: t('C’est demain'),
+                texte: `${t('On vous attend à')} ${heure}${lieu ? `, ${lieu}` : ''}. ${t('Pensez à télécharger votre billet ce soir : il fonctionne sans réseau.')}`,
+            }
+        }
+        if (jours <= 7) {
+            return {
+                titre: t('Votre place est réservée'),
+                texte: `${t('Plus que')} ${jours} ${t('jours')} : ${jour} ${t('à')} ${heure}${lieu ? `, ${lieu}` : ''}. ${t('Nous avons hâte de vous y retrouver.')}`,
+            }
+        }
+        return {
+            titre: t('Nous avons hâte de vous accueillir'),
+            texte: `${t('Notez la date')} : ${jour} ${t('à')} ${heure}${lieu ? `, ${lieu}` : ''}. ${t('Votre billet vous attend dans l’application, et vous l’avez aussi reçu par email.')}`,
+        }
+    })()
     const paiementAFinaliser = !!registration && !registrationConfirmee
     const isRegistered = registrationConfirmee
 
@@ -623,7 +669,36 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     </View>
                 </AnimatedSection>
 
-                {/* ═══ TARIFS & BILLETS ═══ */}
+                {/* ═══ PLACE ACQUISE : on n'essaie plus de vendre ═══
+                    Une personne qui a payé revenait sur la grille tarifaire, le
+                    comparatif Standard / VIP et la mention « paiement sécurisé
+                    via Kkiapay ». Elle ne vient pas acheter : elle vient
+                    vérifier où et quand. Le ton change avec l'échéance — c'est
+                    la seule chose qui compte à ce moment-là. */}
+                {isRegistered ? (
+                    <AnimatedSection delay={350}>
+                        <View style={styles.venueCard}>
+                            <View style={styles.venueIcon}>
+                                <LucideIcon name="checkmark-circle" size={22} color={C.primary} />
+                            </View>
+                            <Text style={styles.venueTitre}>{accueil.titre}</Text>
+                            <Text style={styles.venueTexte}>{accueil.texte}</Text>
+
+                            <Pressable
+                                /* Sans code de billet ici : `my_registration` ne le
+                                   porte pas, et aller le chercher imposerait une
+                                   jointure sur CHAQUE chargement de l'agenda pour
+                                   économiser un seul appui. */
+                                onPress={() => navigation.navigate('Tickets')}
+                                style={styles.venueBtn}
+                                accessibilityRole="button"
+                            >
+                                <LucideIcon name="qr-code" size={16} color={C.primaryText} />
+                                <Text style={styles.venueBtnText}>{t('Afficher mon billet')}</Text>
+                            </Pressable>
+                        </View>
+                    </AnimatedSection>
+                ) : (
                 <AnimatedSection delay={350}>
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
@@ -671,8 +746,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         )}
                     </View>
                 </AnimatedSection>
+                )}
 
-                {/* ═══ NOTE INFO ═══ */}
+                {/* ═══ NOTE INFO ═══ — rassure AVANT de payer ; sans objet après. */}
+                {!isRegistered && (
                 <AnimatedSection delay={450}>
                     <View style={styles.infoBox}>
                         <View style={styles.infoIconWrap}>
@@ -686,6 +763,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         </View>
                     </View>
                 </AnimatedSection>
+                )}
 
                 {/* Reserve sous le contenu : elle doit grandir avec la barre
                    basse, sinon le dernier bloc passe dessous. */}
@@ -1115,6 +1193,37 @@ const styles = StyleSheet.create({
         color: C.primary,
         letterSpacing: -0.1,
     },
+
+    /* ── Accueil d'une place déjà acquise ── */
+    venueCard: {
+        backgroundColor: C.primarySoft,
+        borderRadius: 16,
+        padding: 22,
+        borderWidth: 1,
+        borderColor: C.primary,
+        marginBottom: 18,
+        alignItems: 'flex-start',
+    },
+    venueIcon: {
+        width: 44, height: 44, borderRadius: 22,
+        backgroundColor: C.surface,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 14,
+    },
+    venueTitre: {
+        ...typography.h2, fontSize: 19, color: C.primaryDark,
+        marginBottom: 8, letterSpacing: -0.2,
+    },
+    venueTexte: {
+        ...typography.body, fontSize: 14, lineHeight: 21, color: C.textSec,
+        marginBottom: 18,
+    },
+    venueBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: C.primary,
+        borderRadius: 999, paddingVertical: 12, paddingHorizontal: 20,
+    },
+    venueBtnText: { ...typography.button, fontSize: 13.5, color: C.primaryText },
 
     /* ── Card générique ── */
     card: {
