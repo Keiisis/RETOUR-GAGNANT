@@ -14,7 +14,7 @@
    serveur : on l'affiche dans une WebView et on peut le partager /
    l'enregistrer hors de l'application.
 ═══════════════════════════════════════════════════════════ */
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
     View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator,
     Modal, RefreshControl, Share,
@@ -64,7 +64,7 @@ const dateFr = (iso: string | null) => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function TicketsScreen({ navigation }: { navigation: any }) {
+export default function TicketsScreen({ navigation, route }: { navigation: any; route?: any }) {
     const insets = useSafeAreaInsets()
     const { t } = useLang()
     const { profile } = useAuth()
@@ -102,6 +102,17 @@ export default function TicketsScreen({ navigation }: { navigation: any }) {
     }, [])
 
     useEffect(() => { if (profile) charger(); else setLoading(false) }, [profile, charger])
+
+    /* Ouverture directe d'un billet (`route.params.ouvrir`).
+       L'onglet « Mes billets » de l'agenda liste desormais les billets
+       eux-memes : le toucher doit montrer LE billet, pas une liste de plus. */
+    const codeAOuvrir = route?.params?.ouvrir as string | undefined
+    const dejaOuvert = useRef(false)
+    useEffect(() => {
+        if (!codeAOuvrir || dejaOuvert.current) return
+        const trouve = tickets.find(x => x.ticket_code === codeAOuvrir)
+        if (trouve) { dejaOuvert.current = true; setOpen(trouve) }
+    }, [codeAOuvrir, tickets])
 
     /* Un billet peut être émis pendant que l'écran est ouvert (paiement
        confirmé depuis l'écran événement) : on rafraîchit au retour. */

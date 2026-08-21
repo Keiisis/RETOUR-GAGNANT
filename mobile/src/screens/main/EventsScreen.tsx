@@ -23,6 +23,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
+import { authHeaders } from '../../config/api'
 import { lireEvenements, enregistrerEvenements } from '../../lib/db/depots'
 import { aEnMemoire, ecrireMemoire, etatMemorise } from '../../lib/memoire'
 import { ttcFromHt } from '../../lib/tax'
@@ -63,6 +64,15 @@ export interface AppEvent {
     status: string
     category?: string
     my_registration?: { id: string; status: string; ticket_type: string } | null
+}
+
+/** Un billet émis, tel que le rend `/api/mobile/events/tickets`. */
+interface Billet {
+    registration_id: string
+    event_title: string
+    event_date: string | null
+    ticket_type: string
+    ticket_code: string | null
 }
 
 const CATEGORIES = ['Tous', 'Gala', 'Forum', 'Tourisme', 'Séminaire', 'Conférence']
@@ -785,6 +795,8 @@ export default function EventsScreen({ navigation }: any) {
     const [loading, setLoading] = useState(() => !aEnMemoire('evenements-affichage'))
     const [refreshing, setRefreshing] = useState(false)
     const [tab, setTab] = useState<'upcoming' | 'tickets' | 'archives'>('upcoming')
+    const [billets, setBillets] = useState<Billet[]>([])
+    const [chargeBillets, setChargeBillets] = useState(false)
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -823,13 +835,38 @@ export default function EventsScreen({ navigation }: any) {
     }, [profile?.id])
 
     useEffect(() => { fetchEvents() }, [fetchEvents])
-    const onRefresh = async () => { setRefreshing(true); await fetchEvents(); setRefreshing(false) }
+
+    /* Les billets, source de l'onglet « Mes billets ».
+       Chargés seulement quand on ouvre cet onglet : la plupart des visites
+       restent sur « À venir », inutile d'appeler pour rien. */
+    const fetchBillets = useCallback(async () => {
+        if (!profile) return
+        setChargeBillets(true)
+        try {
+            const r = await fetchWithTimeout(`${API_BASE}/api/mobile/events/tickets`, {
+                headers: { ...(await authHeaders()) }, timeoutMs: 12000,
+            })
+            const j = await r.json().catch(() => ({}))
+            // Seuls les billets EMIS : une place en attente de paiement n'en a pas.
+            setBillets((Array.isArray(j.tickets) ? j.tickets : []).filter((b: Billet) => !!b.ticket_code))
+        } catch { /* l'onglet affiche son état vide */ }
+        finally { setChargeBillets(false) }
+    }, [profile])
+
+    useEffect(() => { if (tab === 'tickets') fetchBillets() }, [tab, fetchBillets])
+
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await Promise.all([fetchEvents(), tab === 'tickets' ? fetchBillets() : Promise.resolve()])
+        setRefreshing(false)
+    }
 
     const now = Date.now()
     const upcoming = events.filter(e => new Date(e.start_date).getTime() >= now)
     const past = events.filter(e => new Date(e.start_date).getTime() < now)
-    const mine = events.filter(e => e.my_registration?.status === 'confirmed')
-    const list = tab === 'upcoming' ? upcoming : tab === 'tickets' ? mine : past
+    /* L'onglet « Mes billets » a sa propre source : les BILLETS, pas les
+       événements. On ne liste donc plus d'événements dans cet onglet. */
+    const list = tab === 'upcoming' ? upcoming : tab === 'tickets' ? [] : past
     const featured = tab === 'upcoming' ? upcoming.filter(e => e.is_featured)[0] : undefined
     const otherEvents = featured ? list.filter(e => e.id !== featured.id) : list
 
@@ -888,26 +925,46 @@ export default function EventsScreen({ navigation }: any) {
                     </View>
                 </Animated.View>
 
-                {/* Accès aux BILLETS (QR) : l'onglet listait les événements auxquels
-                    le client est inscrit, sans jamais donner accès au billet
-                    lui-même. Le QR, le code et le téléchargement vivent ici. */}
+                {/* L'ONGLET « MES BILLETS » MONTRE LES BILLETS.
+                    Il affichait une bannière « Mes billets avec QR » renvoyant
+                    vers un autre écran, PUIS la liste des événements auxquels on
+                    est inscrit. Donc : deux écrans pour la même chose, et le
+                    billet — la seule chose qu'on vient chercher — nulle part.
+                    Ici, ce sont les billets eux-mêmes ; toucher l'un d'eux
+                    ouvre son QR. */}
                 {tab === 'tickets' && (
-                    <Pressable
-                        onPress={() => navigation.navigate('Tickets')}
-                        style={styles.ticketsCta}
-                        accessibilityRole="button"
-                    >
-                        <View style={styles.ticketsCtaIcon}>
-                            <LucideIcon name="qr-code" size={20} color={screenColors.primary} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.ticketsCtaTitle}>{t('Mes billets avec QR')}</Text>
-                            <Text style={styles.ticketsCtaText}>
-                                {t('Afficher, enregistrer ou partager le billet à présenter à l’entrée.')}
+                    billets.length === 0 && !chargeBillets ? (
+                        <View style={styles.emptyCatWrap}>
+                            <View style={styles.emptyCatIcon}>
+                                <LucideIcon name="qr-code" size={28} color={C.textMuted} />
+                            </View>
+                            <Text style={styles.emptyCatTitle}>{t('Aucun billet')}</Text>
+                            <Text style={styles.emptyCatText}>
+                                {t('Vos billets apparaîtront ici dès qu’une place sera réglée.')}
                             </Text>
                         </View>
-                        <LucideIcon name="chevron-forward" size={18} color={screenColors.textMuted} />
-                    </Pressable>
+                    ) : (
+                        billets.map(b => (
+                            <Pressable
+                                key={b.ticket_code || b.registration_id}
+                                onPress={() => navigation.navigate('Tickets', { ouvrir: b.ticket_code })}
+                                style={styles.ticketsCta}
+                                accessibilityRole="button"
+                            >
+                                <View style={styles.ticketsCtaIcon}>
+                                    <LucideIcon name="qr-code" size={20} color={C.primary} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.ticketsCtaTitle} numberOfLines={2}>{b.event_title}</Text>
+                                    <Text style={styles.ticketsCtaText}>
+                                        {[b.event_date ? formatDate(b.event_date) : '', b.ticket_code]
+                                            .filter(Boolean).join(' · ')}
+                                    </Text>
+                                </View>
+                                <LucideIcon name="chevron-forward" size={18} color={C.textMuted} />
+                            </Pressable>
+                        ))
+                    )
                 )}
 
                 {/* LOADING SKELETON */}
