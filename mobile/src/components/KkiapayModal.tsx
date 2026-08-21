@@ -27,6 +27,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { usePaymentSettings } from '../contexts/PaymentSettingsContext'
 import { screenColors as C, radius, shadows, fonts } from '../config/theme'
+import { localeActuelle } from '../lib/dates'
 
 const VERT_PROFOND = '#00643C'
 const VERT_LISERE = 'rgba(0,135,81,0.15)'
@@ -132,7 +133,7 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
         const trouve = amount.match(/\d+([\s]?\d+)*/g)
         return trouve?.length ? parseInt(trouve[0].replace(/\s/g, ''), 10) : 1000
     })()
-    const montantLisible = `${montant.toLocaleString('fr-FR')} FCFA`
+    const montantLisible = `${montant.toLocaleString(localeActuelle())} FCFA`
 
     const ouvrirWidget = useCallback(() => {
         if (!kkiapayKey) {

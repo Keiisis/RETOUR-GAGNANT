@@ -32,6 +32,7 @@ import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { avecMemoire, aEnMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -416,11 +417,11 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                                                 accessibilityRole="button" accessibilityState={{ selected: on }}
                                             >
                                                 <Text style={[styles.jourSem, on && styles.jourTextOn]}>
-                                                    {dt.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                                                    {dt.toLocaleDateString(localeActuelle(), { weekday: 'short' })}
                                                 </Text>
                                                 <Text style={[styles.jourNum, on && styles.jourTextOn]}>{dt.getDate()}</Text>
                                                 <Text style={[styles.jourMois, on && styles.jourTextOn]}>
-                                                    {dt.toLocaleDateString('fr-FR', { month: 'short' })}
+                                                    {dt.toLocaleDateString(localeActuelle(), { month: 'short' })}
                                                 </Text>
                                             </Pressable>
                                         )

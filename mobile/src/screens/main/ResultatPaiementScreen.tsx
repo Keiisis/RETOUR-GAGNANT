@@ -36,6 +36,7 @@ import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import BoutonFacture from '../../components/BoutonFacture'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -151,7 +152,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
         return () => { vivant = false; minuteries.forEach(clearTimeout) }
     }, [succes, tx])
 
-    const quand = new Date().toLocaleString('fr-FR', {
+    const quand = new Date().toLocaleString(localeActuelle(), {
         day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
 

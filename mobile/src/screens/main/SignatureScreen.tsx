@@ -29,6 +29,7 @@ import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/me
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    SignatureScreen : THEME "CORPORATE PREMIUM 2026"
@@ -296,7 +297,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                         <View style={styles.savedFooter}>
                             <LucideIcon name="time-outline" size={12} color={C.textMuted} />
                             <Text style={styles.savedDate}>
-                                {t('Mise à jour')} : {new Date(savedSig.updated_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {t('Mise à jour')} : {new Date(savedSig.updated_at).toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short', year: 'numeric' })}
                             </Text>
                         </View>
                     </Animated.View>

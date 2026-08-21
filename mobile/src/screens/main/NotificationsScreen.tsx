@@ -31,6 +31,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    NotificationsScreen : THEME "CORPORATE PREMIUM 2026"
@@ -406,7 +407,7 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
         if (diff < 3600) return `${Math.floor(diff / 60)} min`
         if (diff < 86400) return `${Math.floor(diff / 3600)} h`
         if (diff < 604800) return `${Math.floor(diff / 86400)} j`
-        return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+        return d.toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short' })
     }
 
     const filteredNotifs = filter === 'unread'
@@ -780,9 +781,10 @@ const styles = StyleSheet.create({
         borderRadius: 3,
         backgroundColor: C.success,
     },
+    /* Badge « ACTIF » : blanc sur vert pale (1,14:1). En vert fonce, 6,4:1. */
     pushStatusText: {
         ...typography.button, fontSize: 12,
-                color: C.primaryText,
+        color: C.primaryDark,
         letterSpacing: 0.8,
     },
     pushSub: {

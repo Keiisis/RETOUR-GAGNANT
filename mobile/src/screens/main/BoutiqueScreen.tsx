@@ -30,6 +30,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    BoutiqueScreen : THEME "CORPORATE PREMIUM 2026"
@@ -336,11 +337,11 @@ const ProductCard = ({
                         {/* Prix */}
                         <View style={cardStyles.priceRow}>
                             <Text style={cardStyles.price}>
-                                {displayPrice.toLocaleString('fr-FR')} F
+                                {displayPrice.toLocaleString(localeActuelle())} F
                             </Text>
                             {hasDiscount && (
                                 <Text style={cardStyles.priceOld}>
-                                    {item.price.toLocaleString('fr-FR')}
+                                    {item.price.toLocaleString(localeActuelle())}
                                 </Text>
                             )}
                         </View>
@@ -596,7 +597,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
 
     const getProductPrice = (p: BoutiqueProduct) =>
         (p.sale_price && p.sale_price < p.price) ? p.sale_price : p.price
-    const formatPrice = (n: number) => n.toLocaleString('fr-FR') + ' FCFA'
+    const formatPrice = (n: number) => n.toLocaleString(localeActuelle()) + ' FCFA'
     const cartItemForProduct = (id: string) => cart.find(c => c.product.id === id)
 
     /* ── Recherche + filtre catégories (style Sleek) ── */

@@ -37,6 +37,7 @@ import { authHeaders } from '../../config/api'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 const C = screenColors
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -91,12 +92,12 @@ export default function PaymentsScreen({ navigation }: any) {
     const [refreshing, setRefreshing] = useState(false)
 
     const formatPrice = (n: number, c: string) => {
-        if (c === 'XOF' || c === 'XAF') return `${Math.round(n).toLocaleString('fr-FR')} FCFA`
-        if (c === 'EUR') return `${n.toLocaleString('fr-FR')} €`
+        if (c === 'XOF' || c === 'XAF') return `${Math.round(n).toLocaleString(localeActuelle())} FCFA`
+        if (c === 'EUR') return `${n.toLocaleString(localeActuelle())} €`
         return `${n} ${c}`
     }
     const formatDate = (iso: string) =>
-        new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+        new Date(iso).toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short', year: 'numeric' })
 
     /* ── Historique réel : commandes + factures ── */
     const fetchEntries = useCallback(async () => {

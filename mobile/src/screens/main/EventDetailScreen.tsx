@@ -27,6 +27,7 @@ import KkiapayModal from '../../components/KkiapayModal'
 import { ttcFromHt } from '../../lib/tax'
 import type { AppEvent } from './EventsScreen'
 import { screenColors, typography } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    EventDetailScreen : THEME "CORPORATE PREMIUM 2026"
@@ -45,16 +46,16 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDateLong(iso: string) {
-    return new Date(iso).toLocaleDateString('fr-FR', {
+    return new Date(iso).toLocaleDateString(localeActuelle(), {
         weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
     })
 }
 function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    return new Date(iso).toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
 }
 function formatPrice(price: number, currency: string, t: any) {
     if (price === 0) return t('Gratuit')
-    return `${price.toLocaleString('fr-FR')} ${currency}`
+    return `${price.toLocaleString(localeActuelle())} ${currency}`
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -348,7 +349,15 @@ export default function EventDetailScreen({ route, navigation }: any) {
 
     const isFree = event.price_standard === 0
     const hasVip = (event.price_vip ?? 0) > 0
-    const isRegistered = !!registration
+    /* Une inscription EXISTE des qu'on a ouvert le paiement — meme si on l'a
+       ensuite ferme sans payer : elle reste alors `pending_payment`. L'ecran ne
+       regardait que sa presence, et annoncait donc « Vous etes inscrit —
+       confirmation envoyee par email » a quelqu'un qui n'avait rien regle et ne
+       recevrait rien. Le serveur distingue deja les deux etats : on s'en sert. */
+    const registrationConfirmee = !!registration
+        && (registration.status ? registration.status === 'confirmed' : true)
+    const paiementAFinaliser = !!registration && !registrationConfirmee
+    const isRegistered = registrationConfirmee
 
     const selectedPrice = selectedTicket === 'vip' ? (event.price_vip || 0) : event.price_standard
     // TVA « en sus » : prix billet HORS TAXE ; le client paie le TTC (HT × 1,18).
@@ -511,7 +520,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         </Text>
                         <View style={styles.dateDivider} />
                         <Text style={styles.dateMonth}>
-                            {new Date(event.start_date).toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '')}
+                            {new Date(event.start_date).toLocaleDateString(localeActuelle(), { month: 'short' }).toUpperCase().replace('.', '')}
                         </Text>
                         <Text style={styles.dateYear}>
                             {new Date(event.start_date).getFullYear()}
@@ -639,11 +648,17 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     </View>
                 </AnimatedSection>
 
-                <View style={{ height: 130 }} />
+                {/* Reserve sous le contenu : elle doit grandir avec la barre
+                   basse, sinon le dernier bloc passe dessous. */}
+                <View style={{ height: 130 + insets.bottom }} />
             </ScrollView>
 
             {/* ═══ CTA FIXE ═══ */}
-            <View style={styles.bottomBar}>
+            {/* La marge basse vient de l'INSET REEL, jamais d'un nombre ecrit a
+               la main : 18 px suffisaient sur un telephone a gestes, mais une
+               barre a trois touches mesure ~48 dp — « Vous etes inscrit » se
+               retrouvait alors colle aux touches du systeme, illisible. */}
+            <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
                 {isRegistered ? (
                     <View style={styles.registeredBtn}>
                         <View style={styles.registeredIconWrap}>
@@ -651,9 +666,37 @@ export default function EventDetailScreen({ route, navigation }: any) {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.registeredBtnLabel}>{t('Vous êtes inscrit')}</Text>
-                            <Text style={styles.registeredBtnSub}>{t('Confirmation envoyée par email')}</Text>
+                            <Text style={styles.registeredBtnSub}>{t('Billet envoyé par email')}</Text>
                         </View>
                     </View>
+                ) : paiementAFinaliser ? (
+                    /* Place reservee mais NON reglee : on le dit, et le bouton
+                       reste actif pour reprendre le paiement. */
+                    <>
+                        <View style={styles.bottomBarPrice}>
+                            <Text style={styles.bottomBarLabel}>{t('Paiement à finaliser')}</Text>
+                            <Text style={styles.bottomBarValue}>
+                                {formatPrice(selectedPriceTtc, event.currency, t)}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.btn, loading && styles.btnDisabled]}
+                            activeOpacity={0.85}
+                            onPress={() => setShowModal(true)}
+                            disabled={loading}
+                            accessibilityRole="button"
+                            hitSlop={6}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color={C.primaryText} size="small" />
+                            ) : (
+                                <>
+                                    <LucideIcon name="ticket" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                                    <Text style={styles.btnText}>{t('Reprendre')}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </>
                 ) : (
                     <>
                         <View style={styles.bottomBarPrice}>
@@ -750,7 +793,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
                                     </View>
                                     <Text style={styles.recapLabel}>{t('Date')}</Text>
                                     <Text style={styles.recapValue} numberOfLines={1}>
-                                        {new Date(event.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        {new Date(event.start_date).toLocaleDateString(localeActuelle(), { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </Text>
                                 </View>
 
@@ -1127,7 +1170,7 @@ const styles = StyleSheet.create({
         gap: 14,
         paddingHorizontal: 20,
         paddingTop: 14,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 18,
+        // paddingBottom fourni au rendu depuis insets.bottom (voir le JSX).
         backgroundColor: 'rgba(255, 255, 255, 0.96)',
         borderTopWidth: 1,
         borderTopColor: C.border,

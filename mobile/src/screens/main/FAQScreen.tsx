@@ -1002,9 +1002,11 @@ const styles = StyleSheet.create({
         letterSpacing: 1.2,
         marginBottom: spacing.xs,
     },
+    /* Blanc sur le vert pale de `contactCard` : 1,14:1, le titre etait
+       invisible. L'encre anthracite donne 9,5:1 sur ce fond. */
     contactTitle: {
         ...typography.button,
-                color: C.primaryText,
+        color: C.ink,
         letterSpacing: -0.2,
     },
     contactText: {

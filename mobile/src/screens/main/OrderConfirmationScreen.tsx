@@ -23,6 +23,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
+import { localeActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    OrderConfirmationScreen : THEME "CORPORATE PREMIUM 2026"
@@ -170,10 +171,10 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
 
     const shortRef = orderId.slice(0, 8).toUpperCase()
     const now = new Date()
-    const formattedDate = now.toLocaleDateString('fr-FR', {
+    const formattedDate = now.toLocaleDateString(localeActuelle(), {
         day: '2-digit', month: 'long', year: 'numeric',
     })
-    const formattedTime = now.toLocaleTimeString('fr-FR', {
+    const formattedTime = now.toLocaleTimeString(localeActuelle(), {
         hour: '2-digit', minute: '2-digit',
     })
 

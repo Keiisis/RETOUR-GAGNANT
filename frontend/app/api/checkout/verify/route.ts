@@ -8,6 +8,8 @@ import { nextDocumentNumber } from '@/lib/document-numbering'
 import { classifyProposalPayment } from '@/lib/proposal-classify'
 import { toXOFStrict } from '@/lib/server-rates'
 import { TVA_RATE } from '@/lib/tax'
+import { createTicketForRegistration } from '@/lib/event-tickets'
+import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -550,6 +552,44 @@ export async function POST(request: Request) {
                     notes: `Vente E-Commerce (Ref: ${order_id.slice(0, 8).toUpperCase()}, Pmt: ${method})`
                 });
             }
+        }
+
+        /* ─── Billet d'événement payé sur le SITE ─────────────────────────
+           Trou verifie le 2026-08-21 : cette route etablissait bien la facture
+           d'une place payee, mais n'emettait AUCUN billet — donc ni QR a
+           presenter a l'entree, ni email. Seul l'evenement GRATUIT recevait un
+           billet (dans /api/events/[id]/register). Un client qui payait sa
+           place sur le site repartait donc les mains vides.
+
+           Bloc autonome, volontairement HORS de la garde d'idempotence de la
+           facture ci-dessous : si la facture existe deja, cette garde saute
+           tout le bloc, et le billet ne serait jamais cree lors d'une reprise.
+           `createTicketForRegistration` porte sa propre idempotence (il rend le
+           billet existant), l'appel est donc sur a repeter. */
+        try {
+            const { data: regPayee } = await supabase
+                .from('event_registrations')
+                .select('id, event_id, ticket_type')
+                .eq('order_id', order_id)
+                .maybeSingle()
+
+            if (regPayee?.id) {
+                const { data: ev } = await supabase
+                    .from('events').select('slug, title').eq('id', regPayee.event_id).maybeSingle()
+                const billet = await createTicketForRegistration(supabase, {
+                    registrationId: String(regPayee.id),
+                    eventId: String(regPayee.event_id),
+                    eventSlug: String(ev?.slug || ev?.title || 'RGB'),
+                    ticketType: String(regPayee.ticket_type || 'standard'),
+                })
+                if (billet) {
+                    const envoi = await envoyerBilletParEmail(supabase, String(regPayee.id))
+                    if (!envoi.ok) console.error('[checkout/verify] billet non envoye :', envoi.erreur)
+                }
+            }
+        } catch (e) {
+            // Un billet en echec ne doit jamais invalider un paiement encaisse.
+            console.error('[checkout/verify] emission du billet impossible :', e)
         }
 
         // ─── Auto-génération Facture ERP ─────────────────────────────────────

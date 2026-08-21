@@ -5,6 +5,7 @@ import { facturerPaiementService } from '@/lib/service-invoice'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 import { createTicketForRegistration } from '@/lib/event-tickets'
+import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -333,6 +334,16 @@ export async function POST(req: NextRequest) {
                 eventSlug: String(event.slug || event.title || 'RGB'),
                 ticketType: ticket_type,
             })
+
+            /* L'email de confirmation : il etait ANNONCE par l'application
+               (« Confirmation envoyee par email », sous le bouton) mais aucune
+               route ne l'envoyait. Le client n'avait donc que l'application
+               pour retrouver son billet. Non bloquant : une inscription deja
+               payee ne doit pas echouer parce que le SMTP tousse. */
+            if (ticket) {
+                const envoi = await envoyerBilletParEmail(supabase, registration.id)
+                if (!envoi.ok) console.error('[mobile/events] billet non envoye :', envoi.erreur)
+            }
         }
 
         // Notification client (non bloquant)
@@ -435,6 +446,13 @@ export async function PATCH(req: NextRequest) {
             eventSlug: String(evForTicket?.slug || evForTicket?.title || 'RGB'),
             ticketType: String((reg as Record<string, unknown>).ticket_type || 'standard'),
         })
+
+        // Meme email que sur le parcours direct : c'est ICI qu'aboutit une
+        // inscription reglee en deux temps (place reservee, puis payee).
+        if (ticket) {
+            const envoi = await envoyerBilletParEmail(supabase, registration_id)
+            if (!envoi.ok) console.error('[mobile/events PATCH] billet non envoye :', envoi.erreur)
+        }
 
         // Notification (non bloquant)
         supabase.from('notifications').insert({

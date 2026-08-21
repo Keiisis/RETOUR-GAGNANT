@@ -36,6 +36,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { authHeaders } from '../../config/api'
 import { toast } from '../../lib/feedback'
 import { cleDuClient, etatMemorise, ecrireMemoire } from '../../lib/memoire'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const AGENCE_TEL = '+2290160322121'
@@ -61,7 +62,7 @@ const AMORCES = [
 
 const heure = (iso: string) => {
     try {
-        return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        return new Date(iso).toLocaleTimeString(localeActuelle(), { hour: '2-digit', minute: '2-digit' })
     } catch { return '' }
 }
 

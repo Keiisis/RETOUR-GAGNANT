@@ -29,6 +29,7 @@ import { authHeaders } from '../../config/api'
 import { FlagBar } from '../../components/ui'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import KkiapayModal from '../../components/KkiapayModal'
+import { localeActuelle } from '../../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -219,7 +220,7 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                         </View>
                     </View>
                     <Text style={styles.priceXof}>
-                        {t('Soit environ {x} FCFA', { x: amountXof.toLocaleString('fr-FR') })}
+                        {t('Soit environ {x} FCFA', { x: amountXof.toLocaleString(localeActuelle()) })}
                     </Text>
                 </View>
             </ScrollView>
