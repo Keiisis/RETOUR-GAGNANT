@@ -109,7 +109,9 @@ async function sendNationalityInvoiceEmail(f: {
             pdfBase64 = generateInvoicePdf({
                 invoiceRef: f.numero,
                 date: new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }),
-                paidAt: new Date().toISOString(),
+                // Date lisible, pas l'horodatage brut de la base : le PDF
+                // affichait « 2026-08-21T11:52:35.626Z » au client.
+                paidAt: new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }),
                 isPaid: true,
                 clientName: `${f.prenom} ${f.nom}`.trim() || 'Client',
                 clientEmail: f.email,

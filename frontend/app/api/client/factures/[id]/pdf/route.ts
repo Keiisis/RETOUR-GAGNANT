@@ -20,6 +20,16 @@ const db = () => createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
+/* La date était passée BRUTE (« 2026-08-21T11:52:35.626706+00:00 ») : c'est
+   l'horodatage de la base qui s'imprimait sur le document du client. */
+const dateFr = (iso?: string | null) => {
+    if (!iso) return ''
+    const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime()) ? String(iso) : `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> },
@@ -53,10 +63,25 @@ export async function GET(
         }))
         : []
 
+    const estDevis = String(doc.type || 'facture') === 'devis'
+
+    /* Paraphe du client : le document signé porte SA signature, sinon le
+       paraphe enregistré au profil pour une facture. Un devis non signé
+       reste vierge — on ne fait pas signer quelqu'un qui n'a rien accepté. */
+    let paraphe: string | undefined = doc.signature_url || undefined
+    if (!paraphe && !estDevis) {
+        const { data: sig } = await supabase
+            .from('client_signatures')
+            .select('signature_data, auto_sign')
+            .eq('client_id', user.id)
+            .maybeSingle()
+        if (sig?.signature_data && sig.auto_sign !== 'never') paraphe = sig.signature_data
+    }
+
     const base64 = generateInvoicePdf({
         invoiceRef: doc.numero || doc.id,
-        date: doc.created_at,
-        paidAt: doc.paid_at || undefined,
+        date: dateFr(doc.created_at),
+        paidAt: doc.paid_at ? dateFr(doc.paid_at) : undefined,
         isPaid: doc.status === 'paye',
         clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || doc.client_email || 'Client',
         clientEmail: doc.client_email || undefined,
@@ -71,10 +96,13 @@ export async function GET(
         notes: doc.notes || undefined,
         conditions: doc.conditions || undefined,
         validite: doc.validite || undefined,
+        // Sans ce type, un DEVIS téléchargé ici s'intitulait « FACTURE ».
+        docType: estDevis ? 'devis' : 'facture',
+        clientSignatureDataUrl: paraphe,
     })
 
     const pdf = Buffer.from(base64, 'base64')
-    const nom = `Facture-${(doc.numero || doc.id).replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`
+    const nom = `${estDevis ? 'Devis' : 'Facture'}-${(doc.numero || doc.id).replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`
 
     return new NextResponse(new Uint8Array(pdf), {
         status: 200,

@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublicBody, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { facturerPaiementService } from '@/lib/service-invoice'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -102,6 +103,8 @@ export async function POST(request: NextRequest) {
 
     // Kkiapay : vérification serveur obligatoire. Les autres passerelles sont
     // confirmées par leur webhook dédié ; on enregistre alors sans revérifier ici.
+    // Montant CONFIRMÉ par la passerelle : c'est lui qui sera facturé.
+    let encaisseXof = 0
     if (provider === 'kkiapay') {
         const v = await verifyKkiapay(txId)
         if (!v.ok) {
@@ -116,6 +119,10 @@ export async function POST(request: NextRequest) {
                 { status: 402 },
             )
         }
+        encaisseXof = typeof v.amount === 'number' && v.amount > 0 ? v.amount : expectedXof
+    } else {
+        // Passerelle confirmée par son webhook dédié : le tarif serveur fait foi.
+        encaisseXof = expectedXof
     }
 
     const nowIso = new Date().toISOString()
@@ -148,6 +155,38 @@ export async function POST(request: NextRequest) {
     if (error) {
         console.error('[logements/dossier]', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    /* FACTURE + REÇU PAR EMAIL : des frais de dossier encaissés sont une
+       prestation vendue. Ce parcours ouvrait le dossier et s'arrêtait là —
+       aucune facture en comptabilité, aucun justificatif pour le client.
+       Idempotente par transaction (`payment_transaction_id`), non bloquante :
+       des frais déjà réglés ne doivent pas être refusés si le SMTP tousse. */
+    if (encaisseXof > 0) {
+        // Rattachement au compte, si le payeur en a un : sans lui, la facture
+        // n'apparaîtrait pas dans « Mes documents » de l'application.
+        let compte: string | null = null
+        if (email) {
+            const { data: profil } = await supabase
+                .from('client_profiles').select('id').eq('email', email).maybeSingle()
+            compte = profil?.id || null
+        }
+        const r = await facturerPaiementService({
+            transactionId: txId,
+            montantXof: encaisseXof,
+            libelle: logementNom
+                ? `Frais de constitution de dossier Logement — ${logementNom}`
+                : 'Frais de constitution de dossier Logement',
+            clientId: compte,
+            clientNom: nom,
+            clientPrenom: String(body.prenom || '').trim() || '',
+            clientEmail: email,
+            clientPhone: telephone,
+            provider: provider || 'kkiapay',
+            source: 'Site web — Logement',
+            reference: dossier.id,
+        })
+        if (!r.ok) console.error('[logements/dossier] facture non établie :', r.erreur)
     }
 
     // Le prospect passe en « traité » : les frais sont réglés, le dossier est ouvert.
