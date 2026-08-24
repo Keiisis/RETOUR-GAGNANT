@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
 import { requireStaff } from '@/lib/api-guard'
+import { deposerLivrable } from '@/lib/livrables'
 import { generateFicheAnalysePdf, type FicheAnalyseData, type FichePiece } from '@/lib/fiche-analyse-pdf'
 
 const supabase = createClient(
@@ -253,5 +254,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } catch (e) {
         return NextResponse.json({ error: e instanceof Error ? e.message : 'Envoi impossible' }, { status: 502 })
     }
+    /* La fiche est envoyee ET conservee. Sans ce depot, elle n existait
+       que dans la boite mail du client : perdu le courriel, perdu le travail,
+       et l application mobile n avait rien a lui montrer.
+       Volontairement APRES l'envoi et sans `await` bloquant la reponse : un
+       depot rate ne doit jamais faire echouer un envoi reussi. */
+    void deposerLivrable({
+        email: a.email,
+        categorie: 'fiche_analyse',
+        titre: a.application_ref
+            ? `Fiche d'analyse — dossier ${a.application_ref}`
+            : "Fiche d'analyse de votre dossier",
+        nomFichier: filename,
+        pdfBase64,
+        nationalityId: a.id,
+    })
+
     return NextResponse.json({ success: true, sentTo: a.email })
 }

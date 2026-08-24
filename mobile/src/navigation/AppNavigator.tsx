@@ -32,6 +32,7 @@ import OrdersScreen from '../screens/main/OrdersScreen'
 import OrderDetailScreen from '../screens/main/OrderDetailScreen'
 import OrderConfirmationScreen from '../screens/main/OrderConfirmationScreen'
 import SignatureScreen from '../screens/main/SignatureScreen'
+import DocumentsScreen from '../screens/main/DocumentsScreen'
 import CallScreen from '../screens/main/CallScreen'
 import InvoicesScreen from '../screens/main/InvoicesScreen'
 import NationaliteFormScreen from '../screens/main/NationaliteFormScreen'
@@ -125,6 +126,7 @@ export type RootStackParamList = {
         transactionId: string
     }
     Signature: undefined
+    Documents: undefined
     Ablawa: undefined
     Invoices: undefined
     NationaliteForm: undefined
@@ -359,6 +361,7 @@ export default function AppNavigator() {
                     <Stack.Group screenOptions={formSheetIOS}>
                         <Stack.Screen name="EditProfil" component={EditProfilScreen} />
                         <Stack.Screen name="Signature" component={SignatureScreen} />
+                        <Stack.Screen name="Documents" component={DocumentsScreen} />
                         <Stack.Screen name="Ablawa" component={AblawaScreen} />
                         <Stack.Screen name="Call" component={CallScreen} />
                         <Stack.Screen name="Fa" component={FaScreen} />

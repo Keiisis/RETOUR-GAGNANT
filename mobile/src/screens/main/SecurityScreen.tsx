@@ -4,7 +4,7 @@ import { toast, confirm } from '../../lib/feedback'
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Dimensions, Pressable, Image,
+    ActivityIndicator, Dimensions, Pressable, Image, Modal,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
@@ -222,32 +222,84 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
     }
 
     /* ── Suppression de compte ──────────────────────────────────
-       Exigée par Apple (5.1.1(v)) et Google dès lors qu'une app permet
-       de créer un compte : la suppression doit pouvoir être menée à son
-       terme DANS l'application, sans renvoyer vers un site ni vers le
-       service client. Deux confirmations, parce que c'est irréversible.  */
+       Exigée par Apple (5.1.1(v)) et Google dès lors qu'une app permet de
+       créer un compte : elle doit pouvoir être menée à son terme DANS
+       l'application.
+
+       POURQUOI CE N'EST PLUS UNE DOUBLE CONFIRMATION.
+
+       La version précédente enchaînait deux feuilles `confirm()`. Elle ne
+       fonctionnait pas — et pas « mal » : PAS DU TOUT. `FeedbackProvider`
+       exécute `await onConfirm()` puis, dans un `finally`, appelle
+       `closeConfirm()` qui remet l'état à `null`. La seconde feuille était
+       donc ouverte puis immédiatement effacée par la fermeture de la
+       première : l'appui restait sans effet visible.
+
+       Le parcours par CODE règle les deux problèmes à la fois. Il supprime
+       l'imbrication, et il prouve quelque chose que deux tapotements ne
+       prouvaient pas : que la personne contrôle la boîte mail du compte.
+       Un téléphone déverrouillé posé sur une table ne suffit plus à
+       détruire un dossier constitué pendant des mois. */
+    const [etapeSuppression, setEtapeSuppression] = useState<'ferme' | 'avertir' | 'code'>('ferme')
+    const [codeSuppression, setCodeSuppression] = useState('')
+    const [emailMasque, setEmailMasque] = useState('')
     const [suppression, setSuppression] = useState(false)
 
-    const supprimerLeCompte = useCallback(async () => {
+    /** Jeton de session, ou chaîne vide. */
+    const jeton = useCallback(async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        return session?.access_token || ''
+    }, [])
+
+    /** Étape 1 : l'agence envoie le code par e-mail. */
+    const envoyerCodeSuppression = useCallback(async () => {
         setSuppression(true)
         try {
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-            if (!token) {
-                toast(t('Session expirée'), t('Reconnectez-vous puis réessayez.'))
-                return
-            }
-            const res = await fetch(`${API_BASE}/api/mobile/account/delete`, {
+            const token = await jeton()
+            if (!token) { toast(t('Session expirée'), t('Reconnectez-vous puis réessayez.')); return }
+            const res = await fetch(`${API_BASE}/api/mobile/account/delete/request`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
             })
-            const json = await res.json().catch(() => ({}))
+            const json = await res.json().catch(() => ({} as any))
+            if (!res.ok) {
+                toast(t('Envoi impossible'), json.error || t('Réessayez dans quelques minutes.'))
+                return
+            }
+            setEmailMasque(String(json.email || ''))
+            setCodeSuppression('')
+            setEtapeSuppression('code')
+        } catch {
+            toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
+        } finally {
+            setSuppression(false)
+        }
+    }, [jeton, t])
+
+    /** Étape 2 : le code saisi déclenche l'effacement réel. */
+    const confirmerSuppression = useCallback(async () => {
+        if (!/^\d{6}$/.test(codeSuppression)) {
+            toast(t('Code requis'), t('Saisissez les 6 chiffres reçus par e-mail.'))
+            return
+        }
+        setSuppression(true)
+        try {
+            const token = await jeton()
+            if (!token) { toast(t('Session expirée'), t('Reconnectez-vous puis réessayez.')); return }
+            const res = await fetch(`${API_BASE}/api/mobile/account/delete`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: codeSuppression }),
+            })
+            const json = await res.json().catch(() => ({} as any))
             if (!res.ok) {
                 toast(t('Suppression impossible'), json.error || t('Réessayez dans quelques minutes.'))
                 return
             }
-            /* Le compte n'existe plus : la session locale n'a plus d'objet.
-               `signOut` vide aussi la base locale du client (oublierClient). */
+            /* Le compte n'existe plus. `signOut` vide aussi la base locale
+               (oublierClient) et fait basculer AppNavigator sur l'écran de
+               connexion : c'est la fin normale du parcours. */
+            setEtapeSuppression('ferme')
             toast(t('Compte supprimé'), t('Vos données ont été effacées.'), 'success')
             await signOut()
         } catch {
@@ -255,29 +307,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
         } finally {
             setSuppression(false)
         }
-    }, [signOut, t])
-
-    const demanderSuppression = () => {
-        confirm({
-            title: t('Supprimer mon compte'),
-            message: t('Cette action est définitive. Votre compte, vos dossiers, vos documents et votre historique seront effacés ou anonymisés. Vous ne pourrez plus vous connecter.'),
-            confirmLabel: t('Continuer'),
-            cancelLabel: t('Annuler'),
-            destructive: true,
-            onConfirm: () => {
-                /* Seconde confirmation : la première annonce ce qui va se
-                   passer, celle-ci demande un accord explicite. */
-                confirm({
-                    title: t('Confirmer la suppression'),
-                    message: t('Dernière étape : voulez-vous vraiment supprimer définitivement votre compte ?'),
-                    confirmLabel: t('Supprimer définitivement'),
-                    cancelLabel: t('Non, garder mon compte'),
-                    destructive: true,
-                    onConfirm: () => { void supprimerLeCompte() },
-                })
-            },
-        })
-    }
+    }, [codeSuppression, jeton, signOut, t])
     const [loading, setLoading] = useState(false)
     const [focused, setFocused] = useState<string | null>(null)
     const [showNew, setShowNew] = useState(false)
@@ -317,7 +347,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
         try {
             const token = await getToken()
             const res = await fetch(`${API_BASE}/api/client/2fa/setup`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
-            const json = await res.json()
+            const json = await res.json().catch(() => ({} as any))
             if (!res.ok) { toast(t('Erreur'), json.error || t('Erreur')); return }
             setTwofaQr(json.qrCode); setTwofaSecret(json.secret); setTwofaCode(''); setTwofaStep('enroll')
         } catch { toast(t('Erreur'), t('Erreur de connexion')) } finally { setTwofaBusy(false) }
@@ -332,7 +362,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ code: twofaCode, action: 'setup' }),
             })
-            const json = await res.json()
+            const json = await res.json().catch(() => ({} as any))
             if (!res.ok) { toast(t('Erreur'), json.error || t('Code incorrect')); return }
             setTwofaEnabled(true); setTwofaStep('idle'); setTwofaQr(''); setTwofaSecret(''); setTwofaCode('')
             toast(t('2FA activée'), t('La double authentification est maintenant active sur votre compte.'))
@@ -348,7 +378,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ code: twofaCode }),
             })
-            const json = await res.json()
+            const json = await res.json().catch(() => ({} as any))
             if (!res.ok) { toast(t('Erreur'), json.error || t('Code incorrect')); return }
             setTwofaEnabled(false); setTwofaStep('idle'); setTwofaCode('')
             toast(t('2FA désactivée'), t('La double authentification a été retirée de votre compte.'))
@@ -660,7 +690,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                         </Text>
                         <TouchableOpacity
                             style={styles.deleteBtn}
-                            onPress={demanderSuppression}
+                            onPress={() => setEtapeSuppression('avertir')}
                             disabled={suppression}
                             activeOpacity={0.85}
                             accessibilityRole="button"
@@ -679,9 +709,155 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                     </View>
                 </AnimatedSection>
             </ScrollView>
+
+            {/* ═══ SUPPRESSION DE COMPTE : avertissement, puis code reçu par
+                e-mail. Une feuille autonome, et non deux `confirm()` imbriqués
+                — l'imbrication ne s'affichait jamais (voir la note plus haut). */}
+            <Modal
+                visible={etapeSuppression !== 'ferme'}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setEtapeSuppression('ferme')}
+            >
+                <KeyboardAvoidingView
+                    style={supp.voile}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    enabled={Platform.OS === 'ios'}
+                >
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => !suppression && setEtapeSuppression('ferme')}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Fermer')}
+                    />
+                    <View style={[supp.feuille, { paddingBottom: insets.bottom + spacing.lg }]}>
+                        <View style={supp.poignee} />
+
+                        <View style={supp.tuile}>
+                            <Trash2 size={22} color={C.danger} strokeWidth={2} />
+                        </View>
+
+                        {etapeSuppression === 'avertir' ? (
+                            <>
+                                <Text style={supp.titre}>{t('Supprimer mon compte')}</Text>
+                                <Text style={supp.texte}>
+                                    {t('Cette action est définitive. Votre compte, vos dossiers, vos documents et votre historique seront effacés ou anonymisés, et vous ne pourrez plus vous connecter.')}
+                                </Text>
+                                <Text style={supp.texte}>
+                                    {t('Pour confirmer que c’est bien vous, nous enverrons un code à 6 chiffres à l’adresse e-mail de votre compte.')}
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={[supp.btnRouge, suppression && { opacity: 0.6 }]}
+                                    onPress={envoyerCodeSuppression}
+                                    disabled={suppression}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={t('Recevoir le code par e-mail')}
+                                >
+                                    {suppression
+                                        ? <ActivityIndicator size="small" color={C.primaryText} />
+                                        : <Text style={supp.btnRougeTexte}>{t('Recevoir le code par e-mail')}</Text>}
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={supp.titre}>{t('Entrez le code reçu')}</Text>
+                                <Text style={supp.texte}>
+                                    {emailMasque
+                                        ? `${t('Code envoyé à')} ${emailMasque}. ${t('Il expire dans 10 minutes.')}`
+                                        : t('Code envoyé. Il expire dans 10 minutes.')}
+                                </Text>
+
+                                <TextInput
+                                    value={codeSuppression}
+                                    onChangeText={v => setCodeSuppression(v.replace(/\D/g, '').slice(0, 6))}
+                                    keyboardType="number-pad"
+                                    maxLength={6}
+                                    placeholder="000000"
+                                    placeholderTextColor={C.placeholder}
+                                    textContentType="oneTimeCode"
+                                    autoComplete="sms-otp"
+                                    accessibilityLabel={t('Code à 6 chiffres')}
+                                    style={supp.champCode}
+                                />
+
+                                <TouchableOpacity
+                                    style={[supp.btnRouge, (suppression || codeSuppression.length < 6) && { opacity: 0.6 }]}
+                                    onPress={confirmerSuppression}
+                                    disabled={suppression || codeSuppression.length < 6}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={t('Supprimer définitivement')}
+                                >
+                                    {suppression
+                                        ? <ActivityIndicator size="small" color={C.primaryText} />
+                                        : <Text style={supp.btnRougeTexte}>{t('Supprimer définitivement')}</Text>}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={envoyerCodeSuppression}
+                                    disabled={suppression}
+                                    style={supp.lienRenvoi}
+                                    accessibilityRole="button"
+                                    hitSlop={8}
+                                >
+                                    <Text style={supp.lienRenvoiTexte}>{t('Renvoyer un code')}</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+
+                        <TouchableOpacity
+                            onPress={() => setEtapeSuppression('ferme')}
+                            disabled={suppression}
+                            style={supp.annuler}
+                            accessibilityRole="button"
+                            hitSlop={8}
+                        >
+                            <Text style={supp.annulerTexte}>{t('Non, garder mon compte')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </KeyboardAvoidingView>
     )
 }
+
+/* Feuille de suppression : le seul endroit de l'application où le rouge
+   occupe tout un bouton. C'est voulu — on ne supprime pas un compte par
+   inadvertance. */
+const supp = StyleSheet.create({
+    voile: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(60,60,60,0.45)' },
+    feuille: {
+        backgroundColor: C.bg,
+        borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingHorizontal: spacing.lg, paddingTop: 12,
+        gap: spacing.sm,
+    },
+    poignee: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: spacing.md },
+    tuile: {
+        alignSelf: 'center', width: 56, height: 56, borderRadius: 28,
+        backgroundColor: C.dangerSoft, alignItems: 'center', justifyContent: 'center',
+        marginBottom: spacing.xs,
+    },
+    titre: { ...typography.h3, fontSize: 18, color: C.text, textAlign: 'center' },
+    texte: { ...typography.body, fontSize: 13.5, lineHeight: 20, color: C.textSec, textAlign: 'center' },
+    champCode: {
+        marginTop: spacing.sm,
+        borderWidth: 1, borderColor: C.border, borderRadius: radius.lg,
+        backgroundColor: C.surface,
+        textAlign: 'center', fontSize: 26, letterSpacing: 10,
+        color: C.text, minHeight: 60, paddingVertical: 10,
+    },
+    btnRouge: {
+        marginTop: spacing.sm,
+        minHeight: 52, paddingVertical: 10, borderRadius: radius.xxl,
+        backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center',
+    },
+    btnRougeTexte: { ...typography.button, fontSize: 15, color: C.primaryText },
+    lienRenvoi: { alignSelf: 'center', paddingVertical: spacing.sm },
+    lienRenvoiTexte: { ...typography.label, fontSize: 13, color: C.primary },
+    annuler: { alignSelf: 'center', paddingVertical: spacing.sm },
+    annulerTexte: { ...typography.label, fontSize: 13.5, color: C.textMuted },
+})
 
 /* ──────────────────────────────────────────────
    STYLES
