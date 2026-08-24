@@ -23,16 +23,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     View, Text, StyleSheet, FlatList, Pressable,
-    ActivityIndicator, RefreshControl,
+    ActivityIndicator, RefreshControl, Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ChevronLeft, ChevronRight, FileText, ReceiptText, FileSignature,
-    FileSearch, Paperclip, FolderOpen,
+    FileSearch, Paperclip, FolderOpen, FileBadge, Download,
 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { FlagBar } from '../../components/ui'
+import { toast } from '../../lib/feedback'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
@@ -46,7 +47,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Documents'>
 
-type Categorie = 'facture' | 'devis' | 'proposition' | 'recap' | 'piece'
+type Categorie = 'livrable' | 'facture' | 'devis' | 'proposition' | 'recap' | 'piece'
 
 interface Doc {
     id: string
@@ -54,11 +55,17 @@ interface Doc {
     titre: string
     detail: string
     date: string
-    /** Renseigné pour les propositions : nécessaire à l'écran de détail. */
-    proposalId?: string
+    /** Lien signé, court : présent quand un fichier est téléchargeable. */
+    lien?: string | null
+    /** Analyse rédigée par l'agence, à lire dans l'application. */
+    texte?: string | null
+    /** Écran de destination quand il n'y a pas de fichier. */
+    cible?: string | null
+    cibleId?: string | null
 }
 
 const ICONES: Record<Categorie, typeof FileText> = {
+    livrable: FileBadge,
     facture: ReceiptText,
     devis: FileSignature,
     proposition: FileText,
@@ -67,6 +74,7 @@ const ICONES: Record<Categorie, typeof FileText> = {
 }
 
 const LIBELLES: Record<Categorie, string> = {
+    livrable: 'Fiche d’analyse',
     facture: 'Facture',
     devis: 'Devis',
     proposition: 'Proposition',
@@ -77,6 +85,7 @@ const LIBELLES: Record<Categorie, string> = {
 /* Filtres. « Tout » d'abord : c'est la raison d'être de l'écran. */
 const FILTRES: Array<{ cle: 'tout' | Categorie; libelle: string }> = [
     { cle: 'tout', libelle: 'Tout' },
+    { cle: 'livrable', libelle: 'Analyses' },
     { cle: 'facture', libelle: 'Factures' },
     { cle: 'devis', libelle: 'Devis' },
     { cle: 'proposition', libelle: 'Propositions' },
@@ -105,85 +114,22 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
     const [rafraichit, setRafraichit] = useState(false)
     const [filtre, setFiltre] = useState<'tout' | Categorie>('tout')
 
-    /* Les quatre sources sont interrogées EN PARALLÈLE et de façon
-       indépendante : si le service des récaps répond mal, les factures
-       s'affichent quand même. Une liste partielle vaut mieux qu'un écran
-       vide — c'est le sens de `allSettled` ici. */
+    /* UNE seule route, côté serveur, qui rassemble les cinq sources.
+       L'écran interrogeait d'abord quatre routes et recollait les morceaux
+       ici ; chaque nouveau type de document imposait alors de modifier
+       l'application, donc un build et une attente. Et les livrables de
+       l'agence — les fiches d'analyse — n'y figuraient pas, faute d'exister
+       en base. Le serveur décide désormais de ce qui appartient au client ;
+       l'écran ne fait que l'afficher. */
     const rassembler = useCallback(async (): Promise<Doc[]> => {
-        const entetes = { ...(await authHeaders()) }
-        const appel = (chemin: string) =>
-            fetchWithTimeout(`${API_BASE}${chemin}`, { headers: entetes, timeoutMs: 15000 })
-                .then(r => r.ok ? r.json() : {})
-                .catch(() => ({}))
-
-        const [fin, prop, rec, dos] = await Promise.allSettled([
-            appel('/api/mobile/invoices'),
-            appel('/api/mobile/proposals'),
-            appel('/api/mobile/recaps'),
-            appel('/api/mobile/dossiers'),
-        ])
-
-        const sortie: Doc[] = []
-        const valeur = <T,>(r: PromiseSettledResult<T>): T | null =>
-            r.status === 'fulfilled' ? r.value : null
-
-        /* Factures ET devis viennent de la même table `documents_financiers`,
-           distingués par leur colonne `type`. */
-        const f = valeur(fin) as { documents?: any[]; invoices?: any[] } | null
-        for (const d of (f?.documents || f?.invoices || [])) {
-            const estDevis = String(d.type || '').toLowerCase() === 'devis'
-            sortie.push({
-                id: `fin-${d.id}`,
-                categorie: estDevis ? 'devis' : 'facture',
-                titre: d.numero ? `${estDevis ? t('Devis') : t('Facture')} ${d.numero}` : (estDevis ? t('Devis') : t('Facture')),
-                detail: [d.status && t(String(d.status)), d.total != null ? `${Number(d.total).toLocaleString(localeActuelle())} ${d.currency || 'FCFA'}` : null]
-                    .filter(Boolean).join(' · '),
-                date: d.created_at || d.due_date || '',
-            })
-        }
-
-        const p = valeur(prop) as { proposals?: any[] } | null
-        for (const d of (p?.proposals || [])) {
-            sortie.push({
-                id: `prop-${d.id}`,
-                categorie: 'proposition',
-                titre: d.destination ? `${t('Séjour')} — ${d.destination}` : t('Proposition de séjour'),
-                detail: [d.status && t(String(d.status)), d.signed_at ? t('signée') : null].filter(Boolean).join(' · '),
-                date: d.created_at || '',
-                proposalId: String(d.id),
-            })
-        }
-
-        const r = valeur(rec) as { recaps?: any[] } | null
-        for (const d of (r?.recaps || [])) {
-            const pieces = Array.isArray(d.pieces) ? d.pieces.length : 0
-            sortie.push({
-                id: `rec-${d.id}`,
-                categorie: 'recap',
-                titre: d.reference ? `${t('Récap')} ${d.reference}` : t('Récap MyAfroOrigins'),
-                detail: [d.statut && t(String(d.statut)), pieces ? `${pieces} ${t('pièce(s)')}` : null].filter(Boolean).join(' · '),
-                date: d.created_at || '',
-            })
-        }
-
-        /* Pièces déposées : elles vivent DANS les dossiers, on les en extrait
-           pour que le client les retrouve sans se souvenir du dossier. */
-        const dd = valeur(dos) as { dossiers?: any[] } | null
-        for (const dossier of (dd?.dossiers || [])) {
-            for (const piece of (dossier.documents || [])) {
-                sortie.push({
-                    id: `piece-${piece.id}`,
-                    categorie: 'piece',
-                    titre: piece.file_name || piece.nom || t('Pièce jointe'),
-                    detail: dossier.dossier_ref_id ? `${t('Dossier')} ${dossier.dossier_ref_id}` : t('Dossier'),
-                    date: piece.created_at || dossier.created_at || '',
-                })
-            }
-        }
-
-        // Le plus récent en premier : c'est ce qu'on vient chercher.
-        return sortie.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    }, [t])
+        const res = await fetchWithTimeout(`${API_BASE}/api/mobile/documents`, {
+            headers: { ...(await authHeaders()) },
+            timeoutMs: 20000,
+        })
+        if (!res.ok) return []
+        const json = await res.json().catch(() => ({}))
+        return Array.isArray(json.documents) ? json.documents as Doc[] : []
+    }, [])
 
     const charger = useCallback(async () => {
         await avecMemoire<Doc[]>(cle, rassembler, (liste) => {
@@ -204,28 +150,32 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
         [docs, filtre],
     )
 
-    /* Chaque catégorie renvoie vers l'écran qui sait déjà la traiter :
-       télécharger le PDF, signer, déposer une pièce. Rien n'est réimplémenté
-       ici. */
+    /* Deux comportements, décidés par la DONNÉE et non par la catégorie :
+         · un fichier existe  → on l'ouvre (lien signé, valable 10 minutes) ;
+         · sinon              → on renvoie vers l'écran qui sait le traiter.
+
+       Décider sur `lien` plutôt que sur `categorie` évite d'avoir à toucher
+       cet écran le jour où un nouveau type de livrable apparaîtra : s'il
+       porte un fichier, il s'ouvrira. */
     const ouvrir = useCallback((d: Doc) => {
-        switch (d.categorie) {
-            case 'facture':
-            case 'devis':
-                navigation.navigate('Invoices')
-                return
-            case 'proposition':
-                if (d.proposalId) navigation.navigate('PropositionDetail', { proposalId: d.proposalId })
-                return
-            case 'recap':
-                navigation.navigate('RecapMyafroDemande')
-                return
-            case 'piece':
-                /* « Dossier » est un ONGLET, pas un ecran de la pile : on passe par
-                   le navigateur d onglets, sinon la route reste introuvable. */
-                navigation.navigate('Main', { screen: 'Dossier' } as never)
-                return
+        if (d.lien) {
+            Linking.openURL(d.lien).catch(() => {
+                toast(t('Ouverture impossible'), t('Réessayez dans un instant.'))
+            })
+            return
         }
-    }, [navigation])
+        if (d.cible === 'PropositionDetail' && d.cibleId) {
+            navigation.navigate('PropositionDetail', { proposalId: d.cibleId })
+            return
+        }
+        if (d.cible === 'Invoices') { navigation.navigate('Invoices'); return }
+        if (d.cible === 'RecapMyafroDemande') { navigation.navigate('RecapMyafroDemande'); return }
+        if (d.categorie === 'piece') {
+            /* « Dossier » est un ONGLET, pas un écran de la pile : on passe par
+               le navigateur d'onglets, sinon la route reste introuvable. */
+            navigation.navigate('Main', { screen: 'Dossier' } as never)
+        }
+    }, [navigation, t])
 
     const compteur = useCallback(
         (cleFiltre: 'tout' | Categorie) => cleFiltre === 'tout' ? docs.length : docs.filter(d => d.categorie === cleFiltre).length,
@@ -330,7 +280,11 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
                                     </View>
                                     <View style={styles.fin}>
                                         <Text style={styles.date}>{formaterDate(item.date, t)}</Text>
-                                        <ChevronRight size={18} color={C.textMuted} strokeWidth={2} />
+                                        {/* L'icône annonce ce qui va se passer : une flèche
+                                            mène ailleurs, un téléchargement ouvre un fichier. */}
+                                        {item.lien
+                                            ? <Download size={18} color={C.primary} strokeWidth={2} />
+                                            : <ChevronRight size={18} color={C.textMuted} strokeWidth={2} />}
                                     </View>
                                 </Pressable>
                             </Animated.View>
