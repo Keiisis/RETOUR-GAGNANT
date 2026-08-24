@@ -29,7 +29,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1B2A4A"
+        "backgroundColor": "#00000000"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -89,7 +89,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#C9A84C",
+          "color": "#008751",
           "defaultChannel": "default",
           "sounds": []
         }
