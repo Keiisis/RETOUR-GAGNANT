@@ -16,11 +16,12 @@
         "NSPhotoLibraryUsageDescription": "Sélectionnez des photos pour votre profil ou vos documents.",
         "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "associatedDomains": [
-        "applinks:www.retourgagnantbenin.bj",
-        "applinks:retourgagnantbenin.bj"
+        "applinks:www.retourgagnantbenin.bj"
       ]
     },
     "android": {
@@ -28,7 +29,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1B2A4A"
+        "backgroundColor": "#00000000"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -48,11 +49,6 @@
             {
               "scheme": "https",
               "host": "www.retourgagnantbenin.bj",
-              "pathPrefix": "/mobile-payment"
-            },
-            {
-              "scheme": "https",
-              "host": "retourgagnantbenin.bj",
               "pathPrefix": "/mobile-payment"
             }
           ],
@@ -93,7 +89,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#C9A84C",
+          "color": "#008751",
           "defaultChannel": "default",
           "sounds": []
         }
