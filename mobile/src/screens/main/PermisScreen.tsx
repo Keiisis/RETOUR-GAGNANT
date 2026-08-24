@@ -476,7 +476,7 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                     </Text>
                 </View>
                 {typeId ? (
-                    <Pressable onPress={submitBooking} disabled={submitting} style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, submitting && { opacity: 0.6 }]} accessibilityRole="button">
+                    <Pressable onPress={submitBooking} disabled={submitting || !priceReady} style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, (submitting || !priceReady) && { opacity: 0.6 }]} accessibilityRole="button">
                         {submitting ? <ActivityIndicator color={C.primaryText} /> : <Text style={styles.stickyBtnText}>{t('Payer')}</Text>}
                     </Pressable>
                 ) : (

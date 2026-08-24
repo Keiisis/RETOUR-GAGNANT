@@ -25,8 +25,13 @@ const supabase = createClient(
 
 const PAGE = 'logement'
 const SECTION = 'form_settings'
-/** Repli si la configuration n'existe pas encore en base. */
-const FALLBACK = { amount: 250, currency: 'EUR' }
+/* PAS DE MONTANT DE REPLI. Un tarif codé en dur ici finissait par
+   s'afficher alors qu'il n'avait jamais été décidé : c'est ainsi que
+   « 250 € » est resté visible dans l'application. Quand le prix n'est pas
+   fixé en base, la route le dit — `amount: null` — et les écrans
+   s'adaptent. La devise, elle, garde une valeur par défaut : elle ne
+   trompe personne. */
+const DEVISE_DEFAUT = 'EUR'
 
 export async function GET() {
     const { data, error } = await supabase
@@ -36,13 +41,15 @@ export async function GET() {
         .eq('section_key', SECTION)
         .maybeSingle()
 
-    if (error) return NextResponse.json(FALLBACK)
+    if (error) return NextResponse.json({ amount: null, currency: DEVISE_DEFAUT, defini: false })
 
     const content = (data?.content || {}) as Record<string, unknown>
     const amount = Number(content.dossier_amount)
+    const defini = isFinite(amount) && amount > 0
     return NextResponse.json({
-        amount: isFinite(amount) && amount > 0 ? amount : FALLBACK.amount,
-        currency: String(content.dossier_currency || FALLBACK.currency),
+        amount: defini ? amount : null,
+        currency: String(content.dossier_currency || DEVISE_DEFAUT),
+        defini,
     })
 }
 
