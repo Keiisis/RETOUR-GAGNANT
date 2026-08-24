@@ -1163,8 +1163,17 @@ export const config = {
          * - _next/static (fichiers statiques Next.js)
          * - _next/image (optimisation images)
          * - favicon.ico, sw.js, robots.txt, sitemap.xml
+         * - .well-known (voir ci-dessous)
          * - Fichiers statiques publics (images, fonts, icons)
+         *
+         * ⚠ `.well-known` est exclu VOLONTAIREMENT du WAF : Apple et Google
+         * viennent y lire les fichiers d'association des liens universels
+         * avec leurs propres robots, sans cookie ni référent. Le passer par
+         * la détection de robots reviendrait à risquer un 403 qui casserait
+         * l'ouverture des liens dans les applications — panne silencieuse et
+         * très difficile à diagnostiquer, puisque le navigateur, lui,
+         * continuerait de fonctionner.
          */
-        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|icons/|images/|fonts/|models/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm|mp3|pdf|glb|gltf|bin)$).*)',
+        '/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|robots\\.txt|sitemap\\.xml|manifest\\.json|\\.well-known/|icons/|images/|fonts/|models/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm|mp3|pdf|glb|gltf|bin)$).*)',
     ],
 }
