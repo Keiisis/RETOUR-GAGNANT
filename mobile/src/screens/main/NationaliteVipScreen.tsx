@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
 
     hero: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md, marginBottom: spacing.lg },
     badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginBottom: spacing.md },
-    badgeText: { fontSize: 10, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    badgeText: { fontSize: 11, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
     heroTitle: { fontFamily: PLAYFAIR, fontSize: 32, lineHeight: 38, color: C.text, marginBottom: spacing.sm },
     heroSub: { ...typography.body, color: C.textMuted, marginBottom: spacing.md, lineHeight: 24 },
     chipsRow: { gap: spacing.sm, paddingVertical: 2 },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     chipText: { fontSize: 11, fontFamily: fonts.bold, color: C.text },
 
     trustStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: spacing.gutter, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, marginBottom: spacing.xl, flexWrap: 'wrap' },
-    trustText: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    trustText: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     trustDot: { color: C.accent, fontSize: 12 },
 
     pilierBand: { backgroundColor: C.primary, borderRadius: radius.xxl, marginHorizontal: spacing.md, paddingVertical: 28, paddingHorizontal: spacing.gutter, marginBottom: spacing.xl, flexDirection: 'row', flexWrap: 'wrap', ...shadows.cardRaised },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     pilierDesc: { color: 'rgba(255,255,255,0.75)', fontSize: 11, lineHeight: 16, marginTop: 4 },
 
     body: { paddingHorizontal: spacing.gutter },
-    eyebrow: { fontSize: 10, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
+    eyebrow: { fontSize: 11, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
     h2: { fontFamily: PLAYFAIR, fontSize: 22, lineHeight: 28, color: C.text, marginBottom: spacing.md },
     para: { ...typography.body, color: C.textMuted, lineHeight: 23 },
 
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
 
     /* Quiz */
     quizCard: { backgroundColor: C.surface, borderRadius: radius.xxl, borderWidth: 1, borderColor: C.accentSoft, padding: spacing.lg, ...shadows.card },
-    quizEyebrow: { fontSize: 10, fontFamily: fonts.extrabold, color: C.accentInk, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
+    quizEyebrow: { fontSize: 11, fontFamily: fonts.extrabold, color: C.accentInk, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
     quizTitle: { fontFamily: fonts.extrabold, fontSize: 19, color: C.text, marginBottom: spacing.lg },
     quizQ: { fontSize: 14, fontFamily: fonts.semibold, color: C.text, marginBottom: spacing.md, lineHeight: 20 },
     yesNoRow: { flexDirection: 'row', gap: spacing.sm },
@@ -363,13 +363,13 @@ const styles = StyleSheet.create({
     pieceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, padding: spacing.md, ...shadows.card },
     pieceIcon: { width: 26, height: 26, borderRadius: radius.sm, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
     pieceText: { flex: 1, fontSize: 12.5, fontFamily: fonts.semibold, color: C.text },
-    pieceNote: { fontSize: 10, fontStyle: 'italic', color: C.textMuted, textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xxl },
+    pieceNote: { fontSize: 11, fontStyle: 'italic', color: C.textMuted, textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xxl },
 
     /* Réassurance */
     reassureRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xxl, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: C.border },
     reassure: { flex: 1, alignItems: 'center', gap: spacing.sm },
     reassureIcon: { width: 48, height: 48, borderRadius: radius.lg, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-    reassureLabel: { fontSize: 10, fontFamily: fonts.bold, color: C.text, letterSpacing: 0.3, textTransform: 'uppercase', textAlign: 'center' },
+    reassureLabel: { fontSize: 11, fontFamily: fonts.bold, color: C.text, letterSpacing: 0.3, textTransform: 'uppercase', textAlign: 'center' },
 
     /* FAQ */
     faqCard: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm },
@@ -385,12 +385,12 @@ const styles = StyleSheet.create({
     finalBtnText: { fontSize: 16, fontFamily: fonts.bold, color: C.primaryText },
     finalBtnGhost: { width: '100%', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.xl, paddingVertical: 18, alignItems: 'center', marginTop: spacing.sm },
     finalBtnGhostText: { fontSize: 16, fontFamily: fonts.bold, color: C.text },
-    finalNote: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginTop: spacing.lg },
+    finalNote: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginTop: spacing.lg },
 
     /* Sticky */
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    stickyLabel: { fontSize: 10, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 0.5, textTransform: 'uppercase' },
-    stickySub: { fontSize: 9, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 1 },
+    stickyLabel: { fontSize: 11, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickySub: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 1 },
     stickyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, borderRadius: radius.lg, paddingHorizontal: 24, paddingVertical: 13, ...shadows.card },
     stickyBtnText: { fontSize: 14, fontFamily: fonts.bold, color: C.primaryText },
 })

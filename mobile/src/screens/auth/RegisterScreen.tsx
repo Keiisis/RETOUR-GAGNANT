@@ -134,6 +134,7 @@ export default function RegisterScreen({ navigation }: any) {
                                     value={prenom} onChangeText={setPrenom}
                                     onFocus={() => setFocused('prenom')} onBlur={() => setFocused(null)}
                                     placeholder="Jean" placeholderTextColor={C.placeholder} style={styles.input}
+                                    autoComplete="given-name" textContentType="givenName" autoCapitalize="words"
                                 />
                             </View>
                         </View>
@@ -145,6 +146,7 @@ export default function RegisterScreen({ navigation }: any) {
                                     value={nom} onChangeText={setNom}
                                     onFocus={() => setFocused('nom')} onBlur={() => setFocused(null)}
                                     placeholder="Baptiste" placeholderTextColor={C.placeholder} style={styles.input}
+                                    autoComplete="family-name" textContentType="familyName" autoCapitalize="words"
                                 />
                             </View>
                         </View>
@@ -159,6 +161,7 @@ export default function RegisterScreen({ navigation }: any) {
                                 value={email} onChangeText={setEmail}
                                 onFocus={() => setFocused('email')} onBlur={() => setFocused(null)}
                                 placeholder="jean.b@exemple.com" placeholderTextColor={C.placeholder}
+                                autoComplete="email" textContentType="emailAddress"
                                 keyboardType="email-address" autoCapitalize="none" autoCorrect={false} style={styles.input}
                             />
                         </View>
@@ -173,6 +176,7 @@ export default function RegisterScreen({ navigation }: any) {
                                 value={phone} onChangeText={setPhone}
                                 onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)}
                                 placeholder="+229 01 60 32 21 21" placeholderTextColor={C.placeholder}
+                                autoComplete="tel" textContentType="telephoneNumber"
                                 keyboardType="phone-pad" style={styles.input}
                             />
                         </View>
@@ -188,6 +192,7 @@ export default function RegisterScreen({ navigation }: any) {
                                 onFocus={() => setFocused('password')} onBlur={() => setFocused(null)}
                                 placeholder="••••••••" placeholderTextColor={C.placeholder}
                                 secureTextEntry={!showPassword} autoCapitalize="none" style={styles.input}
+                                autoComplete="new-password" textContentType="newPassword"
                             />
                             <Pressable onPress={() => setShowPassword(s => !s)} hitSlop={8} accessibilityLabel={t('Afficher le mot de passe')}>
                                 {showPassword ? <EyeOff size={20} color={C.textMuted} /> : <Eye size={20} color={C.textMuted} />}
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     form: { paddingHorizontal: spacing.lg, gap: spacing.md },
     row: { flexDirection: 'row', gap: spacing.md },
     rowItem: { flex: 1 },
-    label: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
+    label: { fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
     field: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,

@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
         borderColor: C.bg,
     },
     navCartBadgeText: {
-        ...typography.caption, fontSize: 9,
+        ...typography.caption, fontSize: 11,
         color: C.primaryText,
     },
 

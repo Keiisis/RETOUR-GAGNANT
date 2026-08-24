@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
 
     /* Corps */
     body: { paddingHorizontal: spacing.gutter, paddingTop: spacing.xxl },
-    eyebrow: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.sm },
+    eyebrow: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.sm },
     h2: { fontFamily: fonts.extrabold, fontSize: 21, lineHeight: 28, color: C.text, marginBottom: spacing.md },
     para: { ...typography.body, color: C.textSec, lineHeight: 22 },
 
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     priceAmount: { fontFamily: fonts.extrabold, fontSize: 34, color: '#FFFFFF', marginTop: 2 },
     priceXof: { fontFamily: fonts.body, fontSize: 12.5, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
     priceSecure: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
-    priceSecureText: { fontFamily: fonts.bold, fontSize: 9.5, color: '#FFFFFF', letterSpacing: 1 },
+    priceSecureText: { fontFamily: fonts.bold, fontSize: 11, color: '#FFFFFF', letterSpacing: 1 },
     priceSep: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 2 },
     priceItem: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
     priceItemText: { flex: 1, fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: '#FFFFFF' },
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
 
     /* Barre collante */
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    stickyLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickyLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     stickyValue: { fontFamily: fonts.extrabold, fontSize: 20, color: '#00643C', marginTop: 1 },
     stickyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 26, paddingVertical: 14 },
     stickyBtnText: { fontFamily: fonts.bold, fontSize: 14.5, color: '#FFFFFF' },

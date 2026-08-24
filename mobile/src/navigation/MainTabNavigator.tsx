@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
         borderColor: colors.surface,
     },
     badgeText: {
-        fontSize: 9,
+        fontSize: 11,
         fontFamily: fonts.bodyBold,
         color: '#FFFFFF',
         lineHeight: 11,

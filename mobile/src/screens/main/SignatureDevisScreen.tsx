@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     intro: { ...typography.body, color: C.textSec, lineHeight: 21, marginBottom: spacing.xl },
 
     apercuWrap: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.xl, padding: spacing.lg, ...shadows.card },
-    apercuLabel: { fontFamily: fonts.bold, fontSize: 9.5, color: C.textMuted, letterSpacing: 1.6, marginBottom: spacing.sm },
+    apercuLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.6, marginBottom: spacing.sm },
     apercu: { width: '100%', height: 120 },
     ligneBase: { height: 1, backgroundColor: C.border, marginTop: 6 },
 

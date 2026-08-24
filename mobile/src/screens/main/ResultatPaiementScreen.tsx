@@ -332,7 +332,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg },
     haut: { alignItems: 'center', paddingTop: 22 },
-    surtitre: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    surtitre: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
     corps: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 18, paddingBottom: 24 },
 
     cercle: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },

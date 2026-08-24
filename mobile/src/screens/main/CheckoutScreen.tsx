@@ -6,6 +6,7 @@ import {
     TextInput, Platform, ActivityIndicator,
     KeyboardAvoidingView, Pressable, Dimensions,
 } from 'react-native'
+import type { TextInputProps } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LucideIcon } from '../../components/Icon'
 import Animated, {
@@ -105,6 +106,7 @@ function Field({
     label, value, onChange, placeholder, icon,
     keyboardType = 'default', autoCapitalize = 'sentences',
     multiline = false, required = false,
+    autoComplete, textContentType,
 }: {
     label: string
     value: string
@@ -115,6 +117,10 @@ function Field({
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
     multiline?: boolean
     required?: boolean
+    /* Indices de remplissage automatique : sans eux, ni le trousseau iOS ni
+       Google Password Manager ne proposent l'adresse de livraison. */
+    autoComplete?: TextInputProps['autoComplete']
+    textContentType?: TextInputProps['textContentType']
 }) {
     const [focused, setFocused] = useState(false)
     const focusAnim = useSharedValue(0)
@@ -163,6 +169,8 @@ function Field({
                     placeholderTextColor={C.placeholder}
                     keyboardType={keyboardType}
                     autoCapitalize={autoCapitalize}
+                    autoComplete={autoComplete}
+                    textContentType={textContentType}
                     autoCorrect={false}
                     multiline={multiline}
                     numberOfLines={multiline ? 3 : 1}
@@ -461,6 +469,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             onChange={set('name')}
                             icon="person-outline"
                             placeholder={t('Jean Dupont')}
+                            autoComplete="name"
+                            textContentType="name"
                             required
                         />
                         <Field
@@ -470,6 +480,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             icon="call-outline"
                             placeholder="+229 XX XX XX XX"
                             keyboardType="phone-pad"
+                            autoComplete="tel"
+                            textContentType="telephoneNumber"
                             required
                         />
                         <Field
@@ -480,6 +492,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             placeholder="email@example.com"
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            autoComplete="email"
+                            textContentType="emailAddress"
                         />
                         <Field
                             label={t('Adresse complète')}
@@ -487,6 +501,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             onChange={set('address')}
                             icon="location-outline"
                             placeholder={t('Quartier, rue, immeuble…')}
+                            autoComplete="street-address"
+                            textContentType="fullStreetAddress"
                             multiline
                             required
                         />
@@ -498,6 +514,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                                     value={form.city}
                                     onChange={set('city')}
                                     placeholder={t('Cotonou')}
+                                    autoComplete="postal-address-locality"
+                                    textContentType="addressCity"
                                     required
                                 />
                             </View>
@@ -507,6 +525,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                                     value={form.postal}
                                     onChange={set('postal')}
                                     placeholder="00229"
+                                    autoComplete="postal-code"
+                                    textContentType="postalCode"
                                 />
                             </View>
                         </View>
@@ -517,6 +537,8 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                             onChange={set('country')}
                             icon="earth-outline"
                             placeholder={t('Bénin')}
+                            autoComplete="country"
+                            textContentType="countryName"
                             required
                         />
                         <Field

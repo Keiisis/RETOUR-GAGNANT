@@ -10,7 +10,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image,
-    ActivityIndicator, TextInput, Share, LayoutAnimation, Platform, UIManager,
+    ActivityIndicator, TextInput, Share, LayoutAnimation, Platform, UIManager, KeyboardAvoidingView,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -269,6 +269,7 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                 </Pressable>
             </View>
 
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" enabled={Platform.OS === 'ios'}>
             <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {/* Hero */}
                 <Animated.View entering={FadeInUp.duration(420)} style={styles.hero}>
@@ -420,17 +421,20 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                     <Text style={styles.inputLabel}>{t('Nom complet')}</Text>
                     <View style={field('name')}>
                         <User size={18} color={C.textMuted} strokeWidth={2} />
-                        <TextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} placeholder={t('Nom complet')} placeholderTextColor={C.placeholder} style={styles.input} />
+                        <TextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} placeholder={t('Ex : Jean Baptiste')} placeholderTextColor={C.placeholder} style={styles.input}
+                            autoComplete="name" textContentType="name" autoCapitalize="words" accessibilityLabel={t('Nom complet')} />
                     </View>
                     <Text style={styles.inputLabel}>{t('Email')}</Text>
                     <View style={field('email')}>
                         <Mail size={18} color={C.textMuted} strokeWidth={2} />
-                        <TextInput value={form.email} onChangeText={v => setForm(p => ({ ...p, email: v }))} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} placeholder="nom@exemple.com" placeholderTextColor={C.placeholder} keyboardType="email-address" autoCapitalize="none" style={styles.input} />
+                        <TextInput value={form.email} onChangeText={v => setForm(p => ({ ...p, email: v }))} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} placeholder="nom@exemple.com" placeholderTextColor={C.placeholder} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
+                            autoComplete="email" textContentType="emailAddress" accessibilityLabel={t('Email')} style={styles.input} />
                     </View>
                     <Text style={styles.inputLabel}>{t('Téléphone')}</Text>
                     <View style={field('phone')}>
                         <Phone size={18} color={C.textMuted} strokeWidth={2} />
-                        <TextInput value={form.phone} onChangeText={v => setForm(p => ({ ...p, phone: v }))} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} placeholder="+229 …" placeholderTextColor={C.placeholder} keyboardType="phone-pad" style={styles.input} />
+                        <TextInput value={form.phone} onChangeText={v => setForm(p => ({ ...p, phone: v }))} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} placeholder="+229 01 60 32 21 21" placeholderTextColor={C.placeholder} keyboardType="phone-pad"
+                            autoComplete="tel" textContentType="telephoneNumber" accessibilityLabel={t('Téléphone')} style={styles.input} />
                     </View>
 
                     {/* FAQ */}
@@ -459,6 +463,7 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                     </View>
                 </View>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Barre collante récap */}
             <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
@@ -502,7 +507,7 @@ const styles = StyleSheet.create({
 
     hero: { paddingHorizontal: spacing.gutter, paddingTop: spacing.md, marginBottom: spacing.lg },
     badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginBottom: spacing.md },
-    badgeText: { fontSize: 10, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    badgeText: { fontSize: 11, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
     heroTitle: { fontFamily: PLAYFAIR, fontSize: 30, lineHeight: 36, color: C.text, marginBottom: spacing.sm },
     heroSub: { ...typography.body, color: C.textMuted, marginBottom: spacing.md, lineHeight: 23 },
     chipsRow: { gap: spacing.sm, paddingVertical: 2 },
@@ -510,7 +515,7 @@ const styles = StyleSheet.create({
     chipText: { fontSize: 11, fontFamily: fonts.bold, color: C.text },
 
     trustStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: spacing.gutter, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, marginBottom: spacing.xl, flexWrap: 'wrap' },
-    trustText: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    trustText: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     trustDot: { color: C.accent, fontSize: 12 },
 
     pilierBand: { backgroundColor: C.primary, borderRadius: radius.xxl, marginHorizontal: spacing.md, paddingVertical: 28, paddingHorizontal: spacing.gutter, marginBottom: spacing.xl, flexDirection: 'row', flexWrap: 'wrap', ...shadows.cardRaised },
@@ -520,7 +525,7 @@ const styles = StyleSheet.create({
     pilierDesc: { color: 'rgba(255,255,255,0.72)', fontSize: 11, lineHeight: 16, marginTop: 4 },
 
     body: { paddingHorizontal: spacing.gutter },
-    eyebrow: { fontSize: 10, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
+    eyebrow: { fontSize: 11, fontFamily: fonts.extrabold, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
     h2: { fontFamily: PLAYFAIR, fontSize: 22, lineHeight: 28, color: C.text, marginBottom: spacing.md },
     para: { ...typography.body, color: C.textMuted, lineHeight: 23 },
 
@@ -547,7 +552,7 @@ const styles = StyleSheet.create({
     /* Steps interactifs */
     stepHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
     sectionTitle: { fontFamily: fonts.extrabold, fontSize: 18, color: C.text },
-    stepBadge: { fontSize: 9, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+    stepBadge: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
 
     loadingBox: { paddingVertical: 40, alignItems: 'center' },
     warnBox: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', backgroundColor: C.accentSoft, borderRadius: radius.lg, padding: spacing.md },
@@ -561,17 +566,17 @@ const styles = StyleSheet.create({
     catBadgeActive: { backgroundColor: C.primary },
     catBadgeText: { fontSize: 18, fontFamily: fonts.extrabold, color: C.textSec },
     catName: { fontSize: 15, fontFamily: fonts.bold, color: C.text },
-    catSub: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 2 },
+    catSub: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 2 },
     catDesc: { fontSize: 12, lineHeight: 18, color: C.textMuted, marginBottom: spacing.md },
     catFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: C.border },
     catDuration: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    catDurationText: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted },
+    catDurationText: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted },
     catPrice: { fontSize: 16, fontFamily: fonts.extrabold, color: '#00643C' },
 
     rgbCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.xxl, padding: spacing.md, marginBottom: spacing.md },
     rgbCardActive: { borderColor: C.primary, backgroundColor: C.primarySoft },
     rgbIcon: { width: 48, height: 48, borderRadius: radius.lg, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
-    orLabel: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.md },
+    orLabel: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.md },
     schoolRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.sm },
     schoolRowActive: { borderColor: C.primary, backgroundColor: C.primarySoft },
     schoolImgWrap: { width: 52, height: 52, borderRadius: radius.md, overflow: 'hidden', backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
@@ -580,7 +585,7 @@ const styles = StyleSheet.create({
     schoolSub: { fontSize: 11, color: C.textMuted },
     schoolCityRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 },
 
-    inputLabel: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm, marginLeft: 4 },
+    inputLabel: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm, marginLeft: 4 },
     field: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 14, marginBottom: spacing.md },
     fieldFocused: { borderColor: C.primary, backgroundColor: C.surface },
     input: { flex: 1, ...typography.body, color: C.text, padding: 0 },
@@ -595,10 +600,10 @@ const styles = StyleSheet.create({
     finalText: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', marginBottom: spacing.lg, paddingHorizontal: spacing.md },
     finalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', backgroundColor: C.primary, borderRadius: radius.xl, paddingVertical: 18, ...shadows.cardRaised },
     finalBtnText: { fontSize: 16, fontFamily: fonts.bold, color: C.primaryText },
-    finalNote: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginTop: spacing.lg },
+    finalNote: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginTop: spacing.lg },
 
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    stickyLabel: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickyLabel: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     stickyValue: { fontSize: 20, fontFamily: fonts.extrabold, color: '#00643C', marginTop: 1 },
     stickyBtn: { minWidth: 96, alignItems: 'center', backgroundColor: C.primary, borderRadius: radius.lg, paddingHorizontal: 28, paddingVertical: 14, ...shadows.card },
     stickyBtnText: { fontSize: 15, fontFamily: fonts.bold, color: C.primaryText },

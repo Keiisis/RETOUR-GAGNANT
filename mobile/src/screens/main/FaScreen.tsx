@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from '../../lib/feedback'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image, FlatList,
-    ActivityIndicator, TextInput, Platform, Modal, Share, LayoutAnimation, UIManager,
+    ActivityIndicator, TextInput, Platform, Modal, Share, LayoutAnimation, UIManager, KeyboardAvoidingView,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -510,7 +510,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
 
             {/* RÉSERVATION */}
             <Modal visible={bookingOpen} animationType="slide" transparent onRequestClose={() => setBookingOpen(false)}>
-                <View style={styles.sheetWrap}>
+                <KeyboardAvoidingView style={styles.sheetWrap} behavior="padding" enabled={Platform.OS === 'ios'}>
                     <Pressable style={styles.sheetBackdrop} onPress={() => setBookingOpen(false)} accessibilityRole="button" hitSlop={6} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -567,13 +567,28 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                             </View>
 
                             <Text style={styles.label}>{t('Vos coordonnées')}</Text>
-                            <TextInput style={styles.input} placeholder={t('Nom complet')} placeholderTextColor={C.textMuted}
+
+                            {/* Libellé visible AU-DESSUS du champ : le placeholder
+                                disparaît dès la première frappe, il ne peut donc pas
+                                servir de libellé. Il ne garde qu'un exemple de format. */}
+                            <Text style={styles.champLabel}>{t('Nom complet')}</Text>
+                            <TextInput style={styles.input} placeholder={t('Ex : Jean Baptiste')} placeholderTextColor={C.textMuted}
+                                autoComplete="name" textContentType="name" autoCapitalize="words"
+                                accessibilityLabel={t('Nom complet')}
                                 value={form.name} onChangeText={v => setForm(f => ({ ...f, name: v }))} />
-                            <TextInput style={styles.input} placeholder={t('Email')} placeholderTextColor={C.textMuted}
-                                keyboardType="email-address" autoCapitalize="none"
+
+                            <Text style={styles.champLabel}>{t('Email')}</Text>
+                            <TextInput style={styles.input} placeholder="nom@exemple.com" placeholderTextColor={C.textMuted}
+                                keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
+                                autoComplete="email" textContentType="emailAddress"
+                                accessibilityLabel={t('Email')}
                                 value={form.email} onChangeText={v => setForm(f => ({ ...f, email: v }))} />
-                            <TextInput style={styles.input} placeholder={t('Téléphone')} placeholderTextColor={C.textMuted}
+
+                            <Text style={styles.champLabel}>{t('Téléphone')}</Text>
+                            <TextInput style={styles.input} placeholder="+229 01 60 32 21 21" placeholderTextColor={C.textMuted}
                                 keyboardType="phone-pad"
+                                autoComplete="tel" textContentType="telephoneNumber"
+                                accessibilityLabel={t('Téléphone')}
                                 value={form.phone} onChangeText={v => setForm(f => ({ ...f, phone: v }))} />
 
                             <Pressable style={styles.clauseRow} onPress={() => setClause(c => !c)} accessibilityRole="button" hitSlop={6}>
@@ -591,7 +606,7 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                             <Text style={styles.secure}>{t('Paiement sécurisé : Mobile Money / Carte')}</Text>
                         </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             <KkiapayModal
@@ -713,7 +728,7 @@ const styles = StyleSheet.create({
     /* Hero */
     hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, marginBottom: spacing.lg },
     badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6, marginBottom: spacing.md },
-    badgeText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    badgeText: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
     heroTitle: { fontFamily: PLAYFAIR, fontSize: 30, lineHeight: 36, color: C.textPrimary, marginBottom: spacing.sm },
     heroSub: { ...typography.body, color: C.textMuted, marginBottom: spacing.md, lineHeight: 23 },
     chipsRow: { gap: spacing.sm, paddingVertical: 2 },
@@ -722,7 +737,7 @@ const styles = StyleSheet.create({
 
     /* Trust strip */
     trustStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: spacing.lg, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, marginBottom: spacing.xl, flexWrap: 'wrap' },
-    trustText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    trustText: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     trustDot: { color: C.primary, fontSize: 12 },
 
     /* Bande verte */
@@ -734,7 +749,7 @@ const styles = StyleSheet.create({
 
     /* Notre métier */
     metierSection: { paddingHorizontal: spacing.lg, marginBottom: spacing.xl },
-    eyebrow: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
+    eyebrow: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: spacing.sm },
     metierTitle: { fontFamily: PLAYFAIR, fontSize: 22, lineHeight: 28, color: C.textPrimary, marginBottom: spacing.md },
     metierText: { ...typography.body, color: C.textMuted, lineHeight: 23 },
 
@@ -749,7 +764,7 @@ const styles = StyleSheet.create({
     cardCheck: { position: 'absolute', bottom: -6, right: -6, width: 26, height: 26, borderRadius: 13, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.surface },
     cardRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
     cardRatingVal: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textPrimary },
-    cardRatingCount: { fontFamily: fonts.body, fontSize: 10, color: C.textMuted },
+    cardRatingCount: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
     cardName: { fontFamily: fonts.bodyBold, fontSize: 18, color: C.textPrimary },
     cardTitre: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.primary, marginTop: 2, letterSpacing: 0.5, textTransform: 'uppercase' },
     cardLoc: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
@@ -763,7 +778,7 @@ const styles = StyleSheet.create({
     chip: { backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
     chipText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primaryDark },
     chipSm: { backgroundColor: C.surfaceWarm, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: C.border },
-    chipSmText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 },
+    chipSmText: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 },
 
     ratingText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.textSecondary },
     noRating: { fontFamily: fonts.bodyMedium, fontSize: 12, color: C.primary, marginTop: 3 },
@@ -784,7 +799,7 @@ const styles = StyleSheet.create({
 
     /* Sticky bar */
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.lg, paddingTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    stickyLabel: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickyLabel: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     stickyValue: { fontFamily: fonts.heading, fontSize: 17, color: C.primaryDark, marginTop: 1 },
     stickyBtn: { backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 28, paddingVertical: 13, ...shadows.sm },
     stickyBtnText: { fontFamily: fonts.bodyBold, fontSize: 14, color: '#fff' },
@@ -833,6 +848,7 @@ const styles = StyleSheet.create({
     modeLabel: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.textPrimary },
     modePrice: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: C.primary, marginTop: 2 },
 
+    champLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textSecondary, marginBottom: 5 },
     input: { backgroundColor: C.surfaceWarm, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 13 : 10, fontFamily: fonts.body, fontSize: 14.5, color: C.textPrimary, borderWidth: 1, borderColor: C.border, marginBottom: spacing.sm },
 
     clauseRow: { flexDirection: 'row', gap: 10, marginTop: spacing.md, alignItems: 'flex-start' },

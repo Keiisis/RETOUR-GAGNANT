@@ -16,7 +16,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, TextInput,
-    ActivityIndicator, Platform,
+    ActivityIndicator, Platform, KeyboardAvoidingView,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -255,6 +255,11 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                 </View>
             </View>
 
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior="padding"
+                enabled={Platform.OS === 'ios'}
+            >
             <ScrollView
                 ref={scrollRef}
                 contentContainerStyle={[styles.scroll, { paddingBottom: 140 + insets.bottom }]}
@@ -471,6 +476,7 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
                     </Animated.View>
                 )}
             </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Barre d'action */}
             <View style={[styles.barre, { paddingBottom: insets.bottom + 12 }]}>
@@ -556,9 +562,9 @@ const styles = StyleSheet.create({
     joursRow: { gap: 8, paddingRight: spacing.gutter },
     jour: { alignItems: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, minWidth: 62 },
     jourOn: { backgroundColor: C.primary, borderColor: C.primary },
-    jourSem: { fontFamily: fonts.bodyBold, fontSize: 10.5, color: C.textMuted, textTransform: 'uppercase' },
+    jourSem: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, textTransform: 'uppercase' },
     jourNum: { fontFamily: fonts.extrabold, fontSize: 19, color: C.text, marginVertical: 1 },
-    jourMois: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted },
+    jourMois: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
     jourTextOn: { color: '#FFFFFF' },
     creneauxVide: { backgroundColor: C.surfaceAlt, borderRadius: radius.lg, padding: spacing.lg, alignItems: 'center' },
     creneauxVideText: { ...typography.bodySmall, fontSize: 12.5, color: C.textSec, textAlign: 'center', lineHeight: 18 },
@@ -567,7 +573,7 @@ const styles = StyleSheet.create({
     puceText: { fontFamily: fonts.bodyBold, fontSize: 13, color: C.text },
     puceTextOn: { color: '#FFFFFF' },
     rang: { width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-    rangText: { fontFamily: fonts.extrabold, fontSize: 10, color: '#FFFFFF' },
+    rangText: { fontFamily: fonts.extrabold, fontSize: 11, color: '#FFFFFF' },
 
     ligneAjout: { flexDirection: 'row', gap: 8, alignItems: 'center' },
     btnAjout: { backgroundColor: C.primarySoft, borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 14 },
@@ -575,7 +581,7 @@ const styles = StyleSheet.create({
 
     recap: { marginTop: spacing.lg, backgroundColor: C.primarySoft, borderRadius: radius.lg, padding: spacing.md },
     recapFinal: { marginTop: spacing.xl, backgroundColor: C.surfaceAlt, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
-    recapLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.6, marginBottom: 6 },
+    recapLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.6, marginBottom: 6 },
     recapText: { fontFamily: fonts.bodyBold, fontSize: 14, color: C.text, lineHeight: 21 },
     recapLigne: { flexDirection: 'row', gap: spacing.md },
     recapCle: { fontFamily: fonts.bodyBold, fontSize: 11.5, color: C.textMuted, width: 84 },

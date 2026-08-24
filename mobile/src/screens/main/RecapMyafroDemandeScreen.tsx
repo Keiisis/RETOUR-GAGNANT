@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     scrollForm: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 30 },
 
     badge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
-    badgeText: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    badgeText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
     h1: { fontFamily: fonts.extrabold, fontSize: 25, lineHeight: 31, color: C.text, marginTop: 12 },
     chapeau: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 21, color: C.textSec, marginTop: 10 },
 
@@ -625,21 +625,21 @@ const styles = StyleSheet.create({
 
     carte: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, gap: 12, marginBottom: 12, ...shadows.card },
     carteHaut: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    carteEtat: { fontFamily: fonts.bold, fontSize: 9.5, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
+    carteEtat: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase' },
     carteRef: { fontFamily: fonts.bold, fontSize: 13, color: C.text, marginTop: 2 },
     cartePrix: { fontFamily: fonts.extrabold, fontSize: 12.5, color: VERT_PROFOND },
     carteSituation: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 19, color: C.textSec },
 
     fiche: { backgroundColor: C.primarySoft, borderRadius: 14, padding: 14 },
-    ficheTitre: { fontFamily: fonts.bold, fontSize: 10.5, color: C.primary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
+    ficheTitre: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
     ficheTexte: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 20, color: VERT_PROFOND },
 
     pieces: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12, gap: 8 },
     piecesEntete: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    piecesTitre: { fontFamily: fonts.bold, fontSize: 9.5, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+    piecesTitre: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
     piece: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surfaceAlt, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
     pieceNom: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 12, color: C.text },
-    piecePoids: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted },
+    piecePoids: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
     ajouter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: 'rgba(0,135,81,0.15)', borderRadius: radius.pill, paddingVertical: 11 },
     ajouterText: { fontFamily: fonts.bold, fontSize: 12, color: C.primary },
 
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     /* Formulaire */
     formIntro: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: C.textSec, marginBottom: 18 },
     champ: { marginBottom: 14 },
-    champLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.9, textTransform: 'uppercase', marginBottom: 6 },
+    champLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 0.9, textTransform: 'uppercase', marginBottom: 6 },
     requis: { color: C.danger },
     champLigne: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingHorizontal: 14 },
     champInput: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 13.5, color: C.text, paddingVertical: 12 },
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
 
     rgpd: { backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginTop: 4 },
     rgpdEntete: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8 },
-    rgpdTitre: { fontFamily: fonts.bold, fontSize: 10.5, color: C.text, letterSpacing: 1, textTransform: 'uppercase' },
+    rgpdTitre: { fontFamily: fonts.bold, fontSize: 11, color: C.text, letterSpacing: 1, textTransform: 'uppercase' },
     rgpdLigne: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 17, color: C.textSec },
     consentement: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 12 },
     case: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: C.borderStrong, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     /* Barre */
     barre: { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 20, paddingTop: 12, gap: 10, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.05, shadowRadius: 24, elevation: 12 },
     barreHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-    barreLabel: { fontFamily: fonts.bold, fontSize: 9.5, color: C.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
+    barreLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
     barreMontant: { fontFamily: fonts.extrabold, fontSize: 20, color: VERT_PROFOND, marginTop: 2 },
     securise: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     securiseText: { fontFamily: fonts.body, fontSize: 11, color: C.textSec },
@@ -676,5 +676,5 @@ const styles = StyleSheet.create({
     ctaLargeText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
     ctaAttente: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15 },
     ctaAttenteText: { fontFamily: fonts.bold, fontSize: 13, color: C.primary },
-    barreNote: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted, textAlign: 'center' },
+    barreNote: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, textAlign: 'center' },
 })

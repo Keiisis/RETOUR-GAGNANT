@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     /* ── Stats Row (2 mini-cartes) ── */
     statsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
     statCard: { alignItems: 'center', backgroundColor: C.surface, borderRadius: radius.lg, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.lg, borderWidth: 1, borderColor: C.border, ...shadows.card },
-    statLabel: { ...typography.caption, fontSize: 10, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
+    statLabel: { ...typography.caption, fontSize: 11, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
     statValue: { ...typography.h3, color: C.text },
 
     /* ── Section Titles ── */

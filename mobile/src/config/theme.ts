@@ -186,6 +186,13 @@ export const fonts = {
     PlayfairDisplay_400Regular: 'PlayfairDisplay_400Regular',
 } as const
 
+/* ── Typographie ──────────────────────────────────────────────
+   PLANCHER : 11 px. En dessous, un texte n'est plus lisible sans zoom pour
+   une bonne partie de nos clients — la cible du service a majoritairement
+   plus de 45 ans. 109 tailles de 8 à 10,5 px ont été relevées à 11 px le
+   2026-08-24 ; ne pas en réintroduire, même pour un surtitre en capitales.
+   Ces huit rôles suffisent : un écran qui invente sa propre taille ajoute
+   du désordre, pas de la hiérarchie. */
 export const typography = {
     /** Titre d'écran (« Nos prestations », « Mon dossier ») */
     h1: { fontSize: 30, lineHeight: 36, fontFamily: fonts.extrabold, letterSpacing: -0.5 },

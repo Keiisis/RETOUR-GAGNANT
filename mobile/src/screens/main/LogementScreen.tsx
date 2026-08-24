@@ -20,7 +20,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, ScrollView, Pressable, Image,
-    ActivityIndicator, TextInput, Modal, Platform, Share,
+    ActivityIndicator, TextInput, Modal, Platform, Share, KeyboardAvoidingView,
     LayoutAnimation, UIManager, Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -516,7 +516,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
 
             {/* ── Formulaire de mise en relation ── */}
             <Modal visible={showForm} transparent animationType="slide" onRequestClose={() => setShowForm(false)}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding" enabled={Platform.OS === 'ios'}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowForm(false)}
                         accessibilityRole="button" accessibilityLabel={t('Fermer le formulaire')} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
@@ -536,33 +536,52 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
 
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <View style={styles.row2}>
-                                <View style={[field('prenom'), styles.rowItem]}>
-                                    <TextInput value={form.prenom} onChangeText={v => setForm(p => ({ ...p, prenom: v }))}
-                                        onFocus={() => setFocused('prenom')} onBlur={() => setFocused(null)}
-                                        placeholder={t('Prénom')} placeholderTextColor={C.placeholder} style={styles.input} />
+                                <View style={styles.rowItem}>
+                                    <Text style={styles.champLabel}>{t('Prénom')}</Text>
+                                    <View style={field('prenom')}>
+                                        <TextInput value={form.prenom} onChangeText={v => setForm(p => ({ ...p, prenom: v }))}
+                                            onFocus={() => setFocused('prenom')} onBlur={() => setFocused(null)}
+                                            placeholder={t('Ex : Jean')} placeholderTextColor={C.placeholder} style={styles.input}
+                                            autoComplete="given-name" textContentType="givenName" autoCapitalize="words"
+                                            accessibilityLabel={t('Prénom')} />
+                                    </View>
                                 </View>
-                                <View style={[field('nom'), styles.rowItem]}>
-                                    <TextInput value={form.nom} onChangeText={v => setForm(p => ({ ...p, nom: v }))}
-                                        onFocus={() => setFocused('nom')} onBlur={() => setFocused(null)}
-                                        placeholder={t('Nom')} placeholderTextColor={C.placeholder} style={styles.input} />
+                                <View style={styles.rowItem}>
+                                    <Text style={styles.champLabel}>{t('Nom')}</Text>
+                                    <View style={field('nom')}>
+                                        <TextInput value={form.nom} onChangeText={v => setForm(p => ({ ...p, nom: v }))}
+                                            onFocus={() => setFocused('nom')} onBlur={() => setFocused(null)}
+                                            placeholder={t('Ex : Baptiste')} placeholderTextColor={C.placeholder} style={styles.input}
+                                            autoComplete="family-name" textContentType="familyName" autoCapitalize="words"
+                                            accessibilityLabel={t('Nom')} />
+                                    </View>
                                 </View>
                             </View>
+                            <Text style={styles.champLabel}>{t('Email')}</Text>
                             <View style={field('email')}>
                                 <TextInput value={form.email} onChangeText={v => setForm(p => ({ ...p, email: v }))}
                                     onFocus={() => setFocused('email')} onBlur={() => setFocused(null)}
-                                    placeholder={t('Email')} placeholderTextColor={C.placeholder}
-                                    keyboardType="email-address" autoCapitalize="none" style={styles.input} />
+                                    placeholder="nom@exemple.com" placeholderTextColor={C.placeholder}
+                                    keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
+                                    autoComplete="email" textContentType="emailAddress"
+                                    accessibilityLabel={t('Email')} style={styles.input} />
                             </View>
+                            <Text style={styles.champLabel}>{t('Téléphone (WhatsApp)')}</Text>
                             <View style={field('tel')}>
                                 <TextInput value={form.telephone} onChangeText={v => setForm(p => ({ ...p, telephone: v }))}
                                     onFocus={() => setFocused('tel')} onBlur={() => setFocused(null)}
-                                    placeholder={t('Téléphone (WhatsApp)')} placeholderTextColor={C.placeholder}
-                                    keyboardType="phone-pad" style={styles.input} />
+                                    placeholder="+229 01 60 32 21 21" placeholderTextColor={C.placeholder}
+                                    keyboardType="phone-pad"
+                                    autoComplete="tel" textContentType="telephoneNumber"
+                                    accessibilityLabel={t('Téléphone (WhatsApp)')} style={styles.input} />
                             </View>
+                            <Text style={styles.champLabel}>{t('Pays de résidence')}</Text>
                             <View style={field('pays')}>
                                 <TextInput value={form.pays_residence} onChangeText={v => setForm(p => ({ ...p, pays_residence: v }))}
                                     onFocus={() => setFocused('pays')} onBlur={() => setFocused(null)}
-                                    placeholder={t('Pays de résidence')} placeholderTextColor={C.placeholder} style={styles.input} />
+                                    placeholder={t('Ex : France')} placeholderTextColor={C.placeholder} style={styles.input}
+                                    autoComplete="country" textContentType="countryName" autoCapitalize="words"
+                                    accessibilityLabel={t('Pays de résidence')} />
                             </View>
 
                             <Text style={styles.miniLabel}>{t('Formule souhaitée')}</Text>
@@ -587,10 +606,12 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                 <Text style={styles.checkText}>{t('Je fais partie de la diaspora')}</Text>
                             </Pressable>
 
+                            <Text style={styles.champLabel}>{t('Votre message (facultatif)')}</Text>
                             <View style={[field('msg'), styles.msgField]}>
                                 <TextInput value={form.message} onChangeText={v => setForm(p => ({ ...p, message: v }))}
                                     onFocus={() => setFocused('msg')} onBlur={() => setFocused(null)}
-                                    placeholder={t('Votre message (facultatif)')} placeholderTextColor={C.placeholder}
+                                    placeholder={t('Ce que vous cherchez, votre budget, vos délais…')} placeholderTextColor={C.placeholder}
+                                    accessibilityLabel={t('Votre message (facultatif)')}
                                     multiline numberOfLines={4} textAlignVertical="top" style={[styles.input, { minHeight: 80 }]} />
                             </View>
 
@@ -606,7 +627,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                             </Text>
                         </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             {/* ── Fiche détaillée : TOUTES les photos et informations du bien ── */}
@@ -813,7 +834,7 @@ const styles = StyleSheet.create({
     pilierDesc: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: 'rgba(255,255,255,0.9)' },
 
     /* Sections éditoriales */
-    eyebrow: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.sm },
+    eyebrow: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.sm },
     h2: { fontFamily: fonts.extrabold, fontSize: 21, lineHeight: 28, color: C.text, marginBottom: spacing.md },
     para: { ...typography.body, color: C.textSec, lineHeight: 22 },
 
@@ -861,7 +882,7 @@ const styles = StyleSheet.create({
     detailPriceValue: { fontFamily: fonts.extrabold, fontSize: 17, color: '#00643C', marginTop: 2 },
     partnerNote: { ...typography.bodySmall, fontSize: 11, color: C.textMuted, marginTop: 6, fontStyle: 'italic' },
     detailDesc: { ...typography.body, color: C.textSec, lineHeight: 21, marginTop: spacing.lg },
-    detailLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1.6, marginTop: spacing.lg, marginBottom: spacing.sm },
+    detailLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 1.6, marginTop: spacing.lg, marginBottom: spacing.sm },
     atoutRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
     atoutText: { flex: 1, ...typography.bodySmall, color: C.text, lineHeight: 19 },
     linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
@@ -875,7 +896,7 @@ const styles = StyleSheet.create({
 
     /* Barre collante */
     stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: spacing.gutter, paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: spacing.md, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 32, elevation: 14 },
-    stickyLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    stickyLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
     stickyValue: { fontFamily: fonts.extrabold, fontSize: 17, color: '#00643C', marginTop: 1 },
     stickyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 14 },
     stickyBtnText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
@@ -900,7 +921,7 @@ const styles = StyleSheet.create({
     cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
     cardMetaText: { flex: 1, ...typography.caption, color: C.textMuted },
     cardPrices: { flexDirection: 'row', gap: spacing.xl, marginTop: spacing.md },
-    priceLabel: { ...typography.caption, fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+    priceLabel: { ...typography.caption, fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
     priceValue: { ...typography.button, fontSize: 15, color: C.primary, marginTop: 1 },
     cardCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: spacing.md, paddingVertical: 12, borderRadius: radius.md, backgroundColor: C.primarySoft },
     cardCtaText: { ...typography.button, fontSize: 13, color: C.primary },
@@ -925,6 +946,9 @@ const styles = StyleSheet.create({
     msgField: { marginTop: spacing.xs },
 
     miniLabel: { ...typography.overline, color: C.primary, marginTop: spacing.sm, marginBottom: spacing.sm },
+    /* Libellé de champ : il reste affiché pendant la saisie, contrairement au
+       placeholder qui disparaît à la première frappe. */
+    champLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: C.textSec, marginBottom: 5, marginTop: spacing.sm },
     chipsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
     chip: { paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface },
     chipActive: { borderColor: C.primary, backgroundColor: C.primarySoft },

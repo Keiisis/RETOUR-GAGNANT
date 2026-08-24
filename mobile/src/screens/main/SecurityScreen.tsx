@@ -534,7 +534,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                 <Text selectable style={styles.twofaSecret}>{twofaSecret}</Text>
                                 <Text style={styles.twofaHint}>{t('2. Entrez le code à 6 chiffres généré :')}</Text>
                                 <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
-                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted} textContentType="oneTimeCode"
                                     style={styles.twofaInput} maxLength={6} />
                                 <TouchableOpacity onPress={confirmEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}
                                     accessibilityRole="button"
@@ -556,7 +556,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                             <View style={{ gap: 10 }}>
                                 <Text style={styles.twofaHint}>{t('Entrez un code pour confirmer la désactivation :')}</Text>
                                 <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
-                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted} textContentType="oneTimeCode"
                                     style={styles.twofaInput} maxLength={6} />
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
                                     <TouchableOpacity onPress={disable2fa} disabled={twofaBusy} style={[styles.twofaDangerBtn, { flex: 1 }]}

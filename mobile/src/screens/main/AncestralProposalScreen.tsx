@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
         borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 12,
     },
     okDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
-    okText: { flex: 1, ...typography.caption, fontSize: 10.5, color: C.primary, textTransform: 'uppercase', letterSpacing: 0.8, fontFamily: fonts.bold },
+    okText: { flex: 1, ...typography.caption, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 0.8, fontFamily: fonts.bold },
 
     titleWrap: { paddingHorizontal: spacing.gutter, marginBottom: spacing.xl },
     title: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 30, lineHeight: 36, color: C.text, marginBottom: spacing.sm },
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     alertItem: { flex: 1, ...typography.bodySmall, fontSize: 11.5, color: C.textSec },
 
     sectionWrap: { paddingHorizontal: spacing.gutter, marginBottom: spacing.xxl },
-    sectionLabel: { ...typography.caption, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.md, marginLeft: 2 },
+    sectionLabel: { ...typography.caption, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: spacing.md, marginLeft: 2 },
     solutionCard: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.xxl, padding: spacing.lg, ...shadows.card },
     solutionTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, color: C.text, marginBottom: spacing.lg },
     inclRow: { flexDirection: 'row', gap: 14, marginBottom: spacing.lg },
@@ -308,10 +308,10 @@ const styles = StyleSheet.create({
         borderRadius: radius.xxl, padding: spacing.xl, ...shadows.cardRaised,
     },
     priceTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: spacing.sm },
-    priceLabel: { ...typography.caption, fontSize: 10, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 },
+    priceLabel: { ...typography.caption, fontSize: 11, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 },
     priceAmount: { fontFamily: fonts.extrabold, fontSize: 36, color: C.primaryText, letterSpacing: -1 },
     priceSecure: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
-    priceSecureText: { ...typography.caption, fontSize: 9, color: C.primaryText, letterSpacing: 0.5 },
+    priceSecureText: { ...typography.caption, fontSize: 11, color: C.primaryText, letterSpacing: 0.5 },
     priceXof: { ...typography.bodySmall, fontSize: 13, color: 'rgba(255,255,255,0.9)' },
 
     footer: {
@@ -330,5 +330,5 @@ const styles = StyleSheet.create({
         borderRadius: radius.lg, paddingVertical: 15,
     },
     declineBtnText: { ...typography.button, fontSize: 14, color: C.textSec },
-    footerNote: { ...typography.caption, fontSize: 10.5, color: C.textMuted, textAlign: 'center' },
+    footerNote: { ...typography.caption, fontSize: 11, color: C.textMuted, textAlign: 'center' },
 })

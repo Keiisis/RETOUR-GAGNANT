@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { confirm, toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, ActivityIndicator, Modal,
+    RefreshControl, Platform, ActivityIndicator, Modal, KeyboardAvoidingView,
     TextInput, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -696,7 +696,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     animationType="none"
                     onRequestClose={() => setShowModal(false)}
                 >
-                    <View style={styles.modalOverlayContainer}>
+                    <KeyboardAvoidingView style={styles.modalOverlayContainer} behavior="padding" enabled={Platform.OS === 'ios'}>
                         <Animated.View style={[styles.modalBg, overlayStyle]}>
                             <Pressable
                                 style={StyleSheet.absoluteFill}
@@ -868,7 +868,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
-                    </View>
+                    </KeyboardAvoidingView>
                 </Modal>
             )}
         </View>
