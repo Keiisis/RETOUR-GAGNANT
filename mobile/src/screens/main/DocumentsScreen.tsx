@@ -23,12 +23,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     View, Text, StyleSheet, FlatList, Pressable,
-    ActivityIndicator, RefreshControl, Linking,
+    ActivityIndicator, RefreshControl, Linking, Modal, ScrollView, Share,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
     ChevronLeft, ChevronRight, FileText, ReceiptText, FileSignature,
-    FileSearch, Paperclip, FolderOpen, FileBadge, Download,
+    FileSearch, Paperclip, FolderOpen, FileBadge, Download, Share2,
 } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -113,6 +113,8 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
     const [chargement, setChargement] = useState(() => !aEnMemoire(cle))
     const [rafraichit, setRafraichit] = useState(false)
     const [filtre, setFiltre] = useState<'tout' | Categorie>('tout')
+    /** Document dont l'analyse est ouverte en lecture, s'il y en a un. */
+    const [lecture, setLecture] = useState<Doc | null>(null)
 
     /* UNE seule route, côté serveur, qui rassemble les cinq sources.
        L'écran interrogeait d'abord quatre routes et recollait les morceaux
@@ -164,6 +166,11 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
             })
             return
         }
+        /* Analyse rédigée sans fichier associé — un récap livré avant que la
+           fiche PDF n'existe, par exemple. Elle se lit dans l'application
+           plutôt que de renvoyer le client vers un écran de demande où il
+           devrait la chercher. */
+        if (d.texte) { setLecture(d); return }
         if (d.cible === 'PropositionDetail' && d.cibleId) {
             navigation.navigate('PropositionDetail', { proposalId: d.cibleId })
             return
@@ -292,6 +299,62 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
                     }}
                 />
             )}
+
+            {/* ═══ LECTURE DE L'ANALYSE ═══
+                Plein écran plutôt qu'une feuille basse : une analyse de
+                dossier fait plusieurs paragraphes, elle se lit, elle ne se
+                survole pas. */}
+            <Modal
+                visible={!!lecture}
+                animationType="slide"
+                onRequestClose={() => setLecture(null)}
+            >
+                <View style={styles.conteneur}>
+                    <View style={{ paddingTop: insets.top }}>
+                        <FlagBar height={6} radiusTop={false} />
+                    </View>
+                    <View style={styles.entete}>
+                        <Pressable
+                            onPress={() => setLecture(null)}
+                            style={styles.boutonRond}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Fermer')}
+                        >
+                            <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
+                        </Pressable>
+                        <Text style={styles.enteteTitre} numberOfLines={1}>
+                            {lecture?.titre || t('Analyse')}
+                        </Text>
+                        <Pressable
+                            onPress={() => {
+                                if (!lecture?.texte) return
+                                Share.share({ message: `${lecture.titre}\n\n${lecture.texte}` }).catch(() => undefined)
+                            }}
+                            style={styles.boutonRond}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Partager l’analyse')}
+                        >
+                            <Share2 size={19} color={C.text} strokeWidth={2} />
+                        </Pressable>
+                    </View>
+
+                    <ScrollView
+                        contentContainerStyle={[styles.lecture, { paddingBottom: insets.bottom + 40 }]}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <Text style={styles.lectureMeta}>
+                            {lecture ? formaterDate(lecture.date, t) : ''}
+                        </Text>
+                        {/* `selectable` : un client copie souvent un passage pour
+                            le transmettre à une administration. */}
+                        <Text style={styles.lectureTexte} selectable>
+                            {lecture?.texte || ''}
+                        </Text>
+                    </ScrollView>
+                </View>
+            </Modal>
         </View>
     )
 }
@@ -355,4 +418,10 @@ const styles = StyleSheet.create({
     },
     videTitre: { ...typography.h3, fontSize: 17, color: C.text, textAlign: 'center' },
     videTexte: { ...typography.body, fontSize: 13.5, lineHeight: 20, color: C.textSec, textAlign: 'center' },
+
+    /* Lecture d une analyse : mesure de ligne confortable, interligne genereux.
+       C est un document, pas une notification. */
+    lecture: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, gap: spacing.md },
+    lectureMeta: { ...typography.caption, fontSize: 12, color: C.textMuted },
+    lectureTexte: { ...typography.body, fontSize: 15, lineHeight: 24, color: C.text },
 })

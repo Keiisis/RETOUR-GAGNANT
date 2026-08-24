@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
+import { livrerRecap, type RecapALivrer } from '@/lib/recap-livraison'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -71,7 +72,29 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase.from('myafro_recap_requests').update(patch).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
+
+    /* ── Livraison au client ──────────────────────────────────
+       Passer au statut « récap livré » EST l'acte de livraison : la fiche
+       PDF part par e-mail et se dépose dans l'espace documents du client.
+       Rien de nouveau à cliquer côté panel — l'action qui portait déjà le
+       sens porte désormais l'effet.
+
+       Volontairement après la mise à jour et sans la conditionner : une
+       panne d'envoi ne doit pas empêcher l'analyste d'avancer son dossier.
+       Le résultat remonte quand même dans la réponse, pour que le panel
+       puisse le dire. */
+    let livraison: { envoye: boolean; motif?: string } | null = null
+    if (patch.statut === 'recap_livre') {
+        const { data: recap } = await supabase
+            .from('myafro_recap_requests')
+            .select('id, reference, nom, prenom, email, situation, recap_ia')
+            .eq('id', id)
+            .maybeSingle()
+
+        if (recap) livraison = await livrerRecap(supabase, recap as RecapALivrer)
+    }
+
+    return NextResponse.json({ success: true, livraison })
 }
 
 export async function DELETE(request: NextRequest) {
