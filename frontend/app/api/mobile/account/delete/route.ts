@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { eraseByEmail } from '@/lib/rgpd/erase'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { empreinteCodeSuppression } from '@/lib/suppression-compte'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -36,6 +37,52 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createClient(supabaseUrl, serviceKey)
+
+    /* ── Code reçu par e-mail ──────────────────────────────────
+       Le jeton de session prouve qu'on est connecté ; il ne prouve pas que
+       le titulaire décide. Un téléphone déverrouillé et posé sur une table
+       suffirait à détruire un dossier constitué pendant des mois. Le code
+       prouve le contrôle de la boîte du compte. */
+    const corps = await request.json().catch(() => ({}))
+    const code = String(corps?.code || '').trim()
+    if (!/^\d{6}$/.test(code)) {
+        return NextResponse.json({ error: 'Code à six chiffres requis.' }, { status: 400 })
+    }
+
+    const { data: ligne } = await admin
+        .from('account_deletion_codes')
+        .select('id, code_hash, expires_at, attempts')
+        .eq('user_id', userId)
+        .is('used_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (!ligne) {
+        return NextResponse.json({ error: 'Aucun code en cours. Demandez-en un nouveau.' }, { status: 400 })
+    }
+    if (new Date(String(ligne.expires_at)).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'Code expiré. Demandez-en un nouveau.' }, { status: 400 })
+    }
+    if (Number(ligne.attempts || 0) >= 3) {
+        return NextResponse.json({ error: 'Trop d’essais. Demandez un nouveau code.' }, { status: 429 })
+    }
+
+    if (empreinteCodeSuppression(code) !== String(ligne.code_hash)) {
+        /* L'essai raté est compté AVANT de répondre : sans ce compteur, six
+           chiffres se devinent par force brute en quelques minutes. */
+        await admin
+            .from('account_deletion_codes')
+            .update({ attempts: Number(ligne.attempts || 0) + 1 })
+            .eq('id', ligne.id)
+        return NextResponse.json({ error: 'Code incorrect.' }, { status: 400 })
+    }
+
+    // Consommé : il ne servira plus, quoi qu'il arrive ensuite.
+    await admin
+        .from('account_deletion_codes')
+        .update({ used_at: new Date().toISOString() })
+        .eq('id', ligne.id)
 
     // L'e-mail sert de clé d'effacement dans toutes les tables métier.
     const { data: userData, error: userErr } = await admin.auth.admin.getUserById(userId)
