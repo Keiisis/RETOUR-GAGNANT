@@ -16,11 +16,12 @@
         "NSPhotoLibraryUsageDescription": "Sélectionnez des photos pour votre profil ou vos documents.",
         "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "associatedDomains": [
-        "applinks:www.retourgagnantbenin.bj",
-        "applinks:retourgagnantbenin.bj"
+        "applinks:www.retourgagnantbenin.bj"
       ]
     },
     "android": {
@@ -48,11 +49,6 @@
             {
               "scheme": "https",
               "host": "www.retourgagnantbenin.bj",
-              "pathPrefix": "/mobile-payment"
-            },
-            {
-              "scheme": "https",
-              "host": "retourgagnantbenin.bj",
               "pathPrefix": "/mobile-payment"
             }
           ],
