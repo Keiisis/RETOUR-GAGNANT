@@ -15,7 +15,8 @@
         "NSCameraUsageDescription": "Prenez une photo pour votre profil ou vos documents.",
         "NSPhotoLibraryUsageDescription": "Sélectionnez des photos pour votre profil ou vos documents.",
         "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["audio"]
       },
       "associatedDomains": [
         "applinks:www.retourgagnantbenin.bj",

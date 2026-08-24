@@ -355,6 +355,28 @@ soumis → verifie → traitement → validation → termine
 
 ---
 
+## 📞 APPEL VOCAL — ce que l'app fait, et ce qu'elle NE fait pas
+
+**Appels SORTANTS uniquement.** Une seule entrée : `HomeScreen` → `Call`.
+Aucun appel entrant, donc ni PushKit, ni CallKit, ni ConnectionService.
+
+Conséquences de configuration, décidées le 2026-08-24 :
+
+| Plateforme | Réglage | Pourquoi |
+|---|---|---|
+| iOS | `UIBackgroundModes: ["audio"]` | Couvre le seul cas réel : l'utilisateur bascule vers une autre app pendant l'appel (consulter un document, un numéro). Sans ce mode, iOS suspend l'app et l'appel tombe. |
+| iOS | **PAS** `"voip"` | Apple exige PushKit + un signalement CallKit à chaque appel entrant. Le déclarer sans appel entrant, c'est un rejet — et ça ne servirait à rien ici. |
+| Android | rien à déclarer | L'écran reste allumé (`setKeepScreenOn(true)` dans `ouvrirSessionAudio`), donc l'app reste au premier plan pendant tout l'appel. |
+
+> ⚠️ **Limite connue, Android 14+** : si l'utilisateur quitte l'app pendant un
+> appel, le système coupe le micro. Y remédier demande un service de premier
+> plan de type `microphone` (permissions `FOREGROUND_SERVICE` +
+> `FOREGROUND_SERVICE_MICROPHONE` ET un service natif — les permissions seules
+> ne suffisent pas). Non fait : à décider après un test réel, car l'écran
+> restant allumé, le cas est rare. iOS, lui, est couvert par `audio`.
+
+---
+
 ## 🎙️ APPEL VOCAL — pourquoi expo-doctor est mis en sourdine sur 2 paquets
 
 `react-native-webrtc` et `react-native-incall-manager` sont exclus du contrôle

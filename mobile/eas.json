@@ -45,6 +45,19 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3dnNmaHFkdGtnemF2eHN1bW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMTkzMzEsImV4cCI6MjA4NzU5NTMzMX0.qmkPXae5LvD-GFuWsvKg4v_D4g_YVJdlzmskipVd1XA"
       },
       "autoIncrement": true
+    },
+    "ios-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://www.retourgagnantbenin.bj",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ywvsfhqdtkgzavxsumnk.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3dnNmaHFkdGtnemF2eHN1bW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMTkzMzEsImV4cCI6MjA4NzU5NTMzMX0.qmkPXae5LvD-GFuWsvKg4v_D4g_YVJdlzmskipVd1XA"
+      }
     }
   },
   "submit": {
