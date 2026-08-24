@@ -793,7 +793,8 @@ const styles = StyleSheet.create({
     },
     cancelBtn: {
         flex: 0.5,
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         backgroundColor: C.surface,
         borderRadius: radius.md,
         borderWidth: 1,
@@ -809,7 +810,8 @@ const styles = StyleSheet.create({
     saveBtn: {
         flex: 1,
         flexDirection: 'row',
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: radius.md,
         alignItems: 'center',

@@ -35,7 +35,7 @@ export default function EmptyState({
     const Wrapper = (
         <View style={[variant === 'soft' ? styles.card : styles.plain, style]}>
             <LinearGradient
-                colors={[colors.goldSoft, '#FFFFFF']}
+                colors={[colors.primarySoft, '#FFFFFF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.iconCircle}
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
         borderWidth: 1,
         borderColor: colors.borderGold,
-        ...shadows.gold,
+        ...shadows.accentDeep,
     },
     title: {
         ...typography.h3,

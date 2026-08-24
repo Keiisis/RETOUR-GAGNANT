@@ -46,18 +46,29 @@ const C = screenColors
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Invoices'>
 
+/* Un DEVIS et une FACTURE sont le même objet en base (`documents_financiers`,
+   colonne `type`) : même numérotation, même PDF, même propriétaire. L'écran les
+   affiche dans deux onglets, mais n'en manipule qu'un seul type de données. */
+type TypeDoc = 'facture' | 'devis'
+
 interface Invoice {
     id: string
+    type?: TypeDoc
     invoice_ref: string
-    order_id: string | null
-    dossier_id: string | null
+    numero?: string | null
+    order_id?: string | null
+    dossier_id?: string | null
     customer_name: string
     amount: number
     currency: string
     description: string | null
     status: string
+    /** Statut d'origine du panel : « envoye », « signe », « accepte »… */
+    raw_status?: string | null
     issued_at: string
     paid_at: string | null
+    signed_at?: string | null
+    validite?: string | null
     sent_to_email: boolean
     pdf_url: string | null
     items: unknown
@@ -93,6 +104,27 @@ const STATUS_CONFIG: Record<string, {
         bg: C.surfaceSoft,
         icon: 'return-up-back-outline',
     },
+}
+
+/* Un devis ne se dit pas « payé » : il est envoyé, signé, accepté ou refusé.
+   Afficher « En attente » sur un devis signé serait faux. */
+const STATUT_DEVIS: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+    brouillon: { label: 'Brouillon', color: C.textMuted, bg: C.surfaceAlt, icon: 'document-outline' },
+    envoye: { label: 'Reçu', color: C.info, bg: C.surfaceSoft, icon: 'mail-outline' },
+    accepte: { label: 'Accepté', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
+    signe: { label: 'Signé', color: C.success, bg: C.primarySoft, icon: 'create-outline' },
+    refuse: { label: 'Refusé', color: C.error, bg: C.dangerSoft, icon: 'close-circle-outline' },
+    expire: { label: 'Expiré', color: C.textMuted, bg: C.surfaceAlt, icon: 'time-outline' },
+    paye: { label: 'Réglé', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
+}
+
+function configStatut(doc: Invoice) {
+    if (doc.type === 'devis') {
+        const brut = String(doc.raw_status || '').toLowerCase()
+        return STATUT_DEVIS[brut]
+            || (doc.signed_at ? STATUT_DEVIS.signe : STATUT_DEVIS.envoye)
+    }
+    return STATUS_CONFIG[doc.status] || STATUS_CONFIG.pending
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -208,8 +240,9 @@ function InvoiceCard({
         ],
     }))
 
-    const cfg = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.pending
-    const isPaid = invoice.status === 'paid'
+    const cfg = configStatut(invoice)
+    const estDevis = invoice.type === 'devis'
+    const isPaid = !estDevis && invoice.status === 'paid'
 
     return (
         <Animated.View style={cardStyle}>
@@ -232,12 +265,16 @@ function InvoiceCard({
                     {/* Contenu */}
                     <View style={styles.invInfo}>
                         <View style={styles.refRow}>
-                            <LucideIcon name="receipt-outline" size={11} color={C.primary} />
+                            <LucideIcon
+                                name={estDevis ? 'document-text-outline' : 'receipt-outline'}
+                                size={11}
+                                color={C.primary}
+                            />
                             <Text style={styles.invRef}>{invoice.invoice_ref}</Text>
                         </View>
 
                         <Text style={styles.invDesc} numberOfLines={1}>
-                            {t(invoice.description || 'Facture')}
+                            {t(invoice.description || (estDevis ? 'Devis' : 'Facture'))}
                         </Text>
 
                         <View style={styles.metaRow}>
@@ -293,11 +330,21 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
        `await` : l'ecran commencait donc toujours par un rond qui tourne. MMKV
        est synchrone, la liste est donc deja la avant la premiere image ; SQLite
        reste la reserve durable et interrogeable. */
-    const cleFactures = cleDuClient(profile?.id, 'factures-affichage')
-    const [invoices, setInvoices] = useState<Invoice[]>(() => etatMemorise<Invoice[]>(cleFactures, []))
-    const [loading, setLoading] = useState(() => !aEnMemoire(cleFactures))
+    /* Une seule reserve pour les deux onglets : devis et factures sont le meme
+       document en base. La cle a change (`documents-affichage`) parce que
+       l'ancienne ne contenait que des factures — et venait d'une table vide. */
+    const cleDocs = cleDuClient(profile?.id, 'documents-affichage')
+    const [docs, setDocs] = useState<Invoice[]>(() => etatMemorise<Invoice[]>(cleDocs, []))
+    const [loading, setLoading] = useState(() => !aEnMemoire(cleDocs))
     const [refreshing, setRefreshing] = useState(false)
     const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all')
+    const [onglet, setOnglet] = useState<TypeDoc>('facture')
+
+    /* Les deux piles, tirees de la meme liste. */
+    const factures = useMemo(() => docs.filter(d => d.type !== 'devis'), [docs])
+    const devis = useMemo(() => docs.filter(d => d.type === 'devis'), [docs])
+    const invoices = onglet === 'devis' ? devis : factures
+    const estOngletDevis = onglet === 'devis'
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -325,25 +372,30 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
         if (!profile) { setLoading(false); return }
 
         // Repli : la reserve SQLite, si la memoire rapide etait vide.
-        if (!aEnMemoire(cleFactures)) {
+        if (!aEnMemoire(cleDocs)) {
             try {
                 const locales = await lireFactures<Invoice>(profile.id)
-                if (locales.length > 0) { setInvoices(locales); setLoading(false) }
+                if (locales.length > 0) { setDocs(locales); setLoading(false) }
             } catch { /* confort seulement */ }
         }
 
         await avecMemoire<Invoice[]>(
-            cleFactures,
+            cleDocs,
             async () => {
                 const res = await fetchWithTimeout(
                     `${API_BASE}/api/mobile/invoices`,
                     { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
                 )
                 const data = await res.json().catch(() => ({}))
-                return data.invoices || []
+                /* La route sert les deux natures. Le `type` est pose ici pour
+                   les documents anciens qui ne le portent pas : sans lui, un
+                   devis atterrirait dans l'onglet des factures. */
+                const f: Invoice[] = (data.invoices || []).map((d: Invoice) => ({ ...d, type: d.type || 'facture' }))
+                const dv: Invoice[] = (data.devis || []).map((d: Invoice) => ({ ...d, type: 'devis' as const }))
+                return [...f, ...dv]
             },
             (liste, depuisCache) => {
-                setInvoices(liste)
+                setDocs(liste)
                 setLoading(false)
                 // La reserve durable n'est reecrite que sur du frais.
                 if (!depuisCache) {
@@ -352,7 +404,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
             },
         )
         setLoading(false)
-    }, [profile, cleFactures])
+    }, [profile, cleDocs])
 
     useEffect(() => { fetchInvoices() }, [fetchInvoices])
 
@@ -383,16 +435,20 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
     /* Téléchargement : un VRAI PDF, produit par le générateur officiel de
        l'agence, remis au système (« Enregistrer », « Envoyer »). */
     const telecharger = async (inv: Invoice) => {
+        const devisCi = inv.type === 'devis'
         setTelechargement(true)
         try {
             const r = await telechargerDocument(
                 `${API_BASE}/api/mobile/invoices/${inv.id}/pdf`,
-                `Facture-${inv.invoice_ref || inv.id}`,
+                `${devisCi ? 'Devis' : 'Facture'}-${inv.invoice_ref || inv.id}`,
             )
             if (!r.ok) {
                 toast(t('Téléchargement impossible'), r.erreur || t('Réessayez dans un instant.'))
             } else if (!r.partage) {
-                toast(t('Facture enregistrée'), t('Le document est sur votre téléphone.'))
+                toast(
+                    devisCi ? t('Devis enregistré') : t('Facture enregistrée'),
+                    t('Le document est sur votre téléphone.'),
+                )
             }
         } finally { setTelechargement(false) }
     }
@@ -413,10 +469,12 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
         }
     }, [invoices])
 
+    /* Les filtres « Payées / En attente » n'ont de sens que pour des factures :
+       un devis n'a pas d'echeance de paiement, il a un cycle de signature. */
     const filteredInvoices = useMemo(() => {
-        if (filter === 'all') return invoices
+        if (estOngletDevis || filter === 'all') return invoices
         return invoices.filter(inv => inv.status === filter)
-    }, [invoices, filter])
+    }, [invoices, filter, estOngletDevis])
 
     return (
         <View style={styles.container}>
@@ -438,9 +496,12 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
                 {!loading && invoices.length > 0 && (
                     <View style={styles.navCounter}>
-                        <LucideIcon name="receipt" size={12} color={C.primary} />
+                        <LucideIcon name={estOngletDevis ? 'document-text' : 'receipt'} size={12} color={C.primary} />
                         <Text style={styles.navCounterText}>
-                            {invoices.length} {invoices.length > 1 ? t('factures') : t('facture')}
+                            {invoices.length}{' '}
+                            {estOngletDevis
+                                ? (invoices.length > 1 ? t('devis') : t('devis'))
+                                : (invoices.length > 1 ? t('factures') : t('facture'))}
                         </Text>
                     </View>
                 )}
@@ -479,13 +540,19 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     ) : invoices.length === 0 ? (
                         <View style={styles.emptyCard}>
                             <View style={styles.emptyIconWrap}>
-                                <LucideIcon name="receipt-outline" size={42} color={C.primary} />
+                                <LucideIcon
+                                    name={estOngletDevis ? 'document-text-outline' : 'receipt-outline'}
+                                    size={42}
+                                    color={C.primary}
+                                />
                             </View>
                             <Text style={styles.emptyTitle}>
-                                {t('Aucune facture')}
+                                {estOngletDevis ? t('Aucun devis') : t('Aucune facture')}
                             </Text>
                             <Text style={styles.emptyText}>
-                                {t('Vos factures apparaîtront ici après chaque commande ou prestation payée.')}
+                                {estOngletDevis
+                                    ? t('Les devis établis par l’agence apparaîtront ici dès leur envoi.')
+                                    : t('Vos factures apparaîtront ici après chaque commande ou prestation payée.')}
                             </Text>
 
                             <View style={styles.emptyDecorator}>
@@ -527,12 +594,36 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                 }
                 ListHeaderComponent={
                     <>
-                        {/* HEADER TITRE */}
+                        {/* HEADER TITRE + ONGLETS */}
                         <Animated.View style={[styles.headerContainer, styleHeader]}>
-                            <Text style={styles.title}>{t('Mes factures')}</Text>
+                            <Text style={styles.title}>{t('Mes documents')}</Text>
                             <Text style={styles.subtitle}>
-                                {t('Historique complet de votre facturation Retour Gagnant.')}
+                                {estOngletDevis
+                                    ? t('Les devis reçus de l’agence, à consulter et à télécharger.')
+                                    : t('Historique complet de votre facturation Retour Gagnant.')}
                             </Text>
+
+                            {/* Deux natures de document, deux onglets : un devis
+                                n'est pas une facture, et les mélanger dans une
+                                seule liste rendait le total illisible. */}
+                            <View style={styles.tabsWrap}>
+                                {([['devis', 'Devis', devis.length], ['facture', 'Factures', factures.length]] as const).map(([cle, label, n]) => {
+                                    const actif = onglet === cle
+                                    return (
+                                        <Pressable
+                                            key={cle}
+                                            onPress={() => { setOnglet(cle); setFilter('all') }}
+                                            style={[styles.tabBtn, actif && styles.tabBtnActive]}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ selected: actif }}
+                                        >
+                                            <Text style={[styles.tabText, actif && styles.tabTextActive]}>
+                                                {t(label)}{n > 0 ? ` (${n})` : ''}
+                                            </Text>
+                                        </Pressable>
+                                    )
+                                })}
+                            </View>
                         </Animated.View>
 
                         {!loading && invoices.length > 0 && (
@@ -550,7 +641,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         <View style={styles.totalBadge}>
                                             <LucideIcon name="wallet-outline" size={11} color={C.primary} />
                                             <Text style={styles.totalBadgeText}>
-                                                {t('TOTAL FACTURÉ')}
+                                                {estOngletDevis ? t('TOTAL PROPOSÉ') : t('TOTAL FACTURÉ')}
                                             </Text>
                                         </View>
 
@@ -559,12 +650,17 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         </Text>
 
                                         <Text style={styles.totalSub}>
-                                            {invoices.length} {invoices.length > 1 ? t('factures émises') : t('facture émise')}
+                                            {invoices.length}{' '}
+                                            {estOngletDevis
+                                                ? (invoices.length > 1 ? t('devis reçus') : t('devis reçu'))
+                                                : (invoices.length > 1 ? t('factures émises') : t('facture émise'))}
                                         </Text>
 
-                                        <View style={styles.totalDivider} />
+                                        {/* Le partage payé / en attente ne concerne que des factures :
+                                            un devis n'est pas une créance. */}
+                                        {!estOngletDevis && <View style={styles.totalDivider} />}
 
-                                        {/* Split paid/pending */}
+                                        {!estOngletDevis && (
                                         <View style={styles.totalSplit}>
                                             <View style={styles.totalSplitItem}>
                                                 <View style={styles.totalSplitDot}>
@@ -592,10 +688,12 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                                 </View>
                                             </View>
                                         </View>
+                                        )}
                                     </View>
                                 </AnimatedSection>
 
-                                {/* ═══ FILTRES STATUT ═══ */}
+                                {/* ═══ FILTRES STATUT (factures seulement) ═══ */}
+                                {!estOngletDevis && (
                                 <AnimatedSection delay={250}>
                                     <View style={styles.filterTitleWrap}>
                                         <Text style={styles.filterTitle}>{t('FILTRER')}</Text>
@@ -630,6 +728,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         />
                                     </ScrollView>
                                 </AnimatedSection>
+                                )}
                             </>
                         )}
                     </>
@@ -646,7 +745,9 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         {t('Téléchargement & partage')}
                                     </Text>
                                     <Text style={styles.infoText}>
-                                        {t('Touchez une facture pour la consulter, la télécharger en PDF ou la partager par email.')}
+                                        {estOngletDevis
+                                            ? t('Touchez un devis pour le consulter, le télécharger en PDF ou le partager.')
+                                            : t('Touchez une facture pour la consulter, la télécharger en PDF ou la partager par email.')}
                                     </Text>
                                 </View>
                             </View>
@@ -668,7 +769,9 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                 accessibilityRole="button" accessibilityLabel={t('Fermer')}>
                                 <LucideIcon name="close-outline" size={20} color={C.text} />
                             </Pressable>
-                            <Text style={ficheStyles.enteteTitre}>{t('Facture')}</Text>
+                            <Text style={ficheStyles.enteteTitre}>
+                                {ouverte.type === 'devis' ? t('Devis') : t('Facture')}
+                            </Text>
                             <View style={{ width: 40 }} />
                         </View>
 
@@ -677,19 +780,38 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                             <Text style={ficheStyles.montant}>
                                 {formatPrice(ouverte.amount, ouverte.currency)}
                             </Text>
-                            <View style={[ficheStyles.statut, (ouverte.paid_at || ouverte.status === 'payee') && ficheStyles.statutPaye]}>
-                                <Text style={[ficheStyles.statutText, (ouverte.paid_at || ouverte.status === 'payee') && ficheStyles.statutTextPaye]}>
-                                    {ouverte.paid_at || ouverte.status === 'payee' ? t('Payée') : t('En attente de règlement')}
-                                </Text>
-                            </View>
+                            {(() => {
+                                const cfg = configStatut(ouverte)
+                                const acquis = ouverte.type === 'devis'
+                                    ? !!ouverte.signed_at || String(ouverte.raw_status) === 'accepte'
+                                    : !!ouverte.paid_at || ouverte.status === 'paid'
+                                return (
+                                    <View style={[ficheStyles.statut, acquis && ficheStyles.statutPaye]}>
+                                        <Text style={[ficheStyles.statutText, acquis && ficheStyles.statutTextPaye]}>
+                                            {ouverte.type === 'devis'
+                                                ? t(cfg.label)
+                                                : (acquis ? t('Payée') : t('En attente de règlement'))}
+                                        </Text>
+                                    </View>
+                                )
+                            })()}
 
                             <View style={ficheStyles.carte}>
-                                {[
-                                    [t('Émise le'), formatDate(ouverte.issued_at)],
-                                    [t('Réglée le'), ouverte.paid_at ? formatDate(ouverte.paid_at) : '—'],
-                                    [t('Client'), ouverte.customer_name || '—'],
-                                    [t('Objet'), ouverte.description || '—'],
-                                ].map(([k, v]) => (
+                                {(ouverte.type === 'devis'
+                                    ? [
+                                        [t('Établi le'), formatDate(ouverte.issued_at)],
+                                        [t('Signé le'), ouverte.signed_at ? formatDate(ouverte.signed_at) : '—'],
+                                        [t('Validité'), ouverte.validite || '—'],
+                                        [t('Client'), ouverte.customer_name || '—'],
+                                        [t('Objet'), ouverte.description || '—'],
+                                    ]
+                                    : [
+                                        [t('Émise le'), formatDate(ouverte.issued_at)],
+                                        [t('Réglée le'), ouverte.paid_at ? formatDate(ouverte.paid_at) : '—'],
+                                        [t('Client'), ouverte.customer_name || '—'],
+                                        [t('Objet'), ouverte.description || '—'],
+                                    ]
+                                ).map(([k, v]) => (
                                     <View key={k} style={ficheStyles.ligne}>
                                         <Text style={ficheStyles.ligneLabel}>{k}</Text>
                                         <Text style={ficheStyles.ligneValeur} numberOfLines={2}>{v}</Text>
@@ -698,7 +820,9 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                             </View>
 
                             <Text style={ficheStyles.note}>
-                                {t('Le document officiel porte l’en-tête de l’agence et vaut justificatif comptable.')}
+                                {ouverte.type === 'devis'
+                                    ? t('Ce devis engage l’agence sur le prix indiqué pendant sa durée de validité.')
+                                    : t('Le document officiel porte l’en-tête de l’agence et vaut justificatif comptable.')}
                             </Text>
                         </ScrollView>
 
@@ -807,6 +931,34 @@ const styles = StyleSheet.create({
         color: C.textSec,
         marginTop: spacing.md,
             },
+
+    /* ── Onglets segmentés (Devis / Factures) — même pilule que
+       l'écran des événements, pour un seul geste appris. ── */
+    tabsWrap: {
+        flexDirection: 'row',
+        backgroundColor: C.surfaceSoft,
+        borderRadius: radius.lg,
+        padding: 4,
+        marginTop: spacing.lg,
+        gap: 4,
+    },
+    tabBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: radius.md,
+    },
+    tabBtnActive: {
+        backgroundColor: C.surface,
+        ...shadows.card,
+    },
+    tabText: {
+        ...typography.button,
+        fontSize: 13,
+        color: C.textSec,
+    },
+    tabTextActive: { color: C.primary },
 
     /* ── Loading ── */
     centerState: {

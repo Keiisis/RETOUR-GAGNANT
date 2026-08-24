@@ -370,5 +370,5 @@ const styles = StyleSheet.create({
     envoyer: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border, ...shadows.card },
     envoyerEteint: { backgroundColor: C.borderStrong, shadowOpacity: 0, elevation: 0, borderColor: 'transparent' },
 
-    mention: { fontFamily: fonts.body, fontSize: 10.5, lineHeight: 15, color: C.textMuted, textAlign: 'center', paddingHorizontal: 24, paddingTop: 8, backgroundColor: C.surfaceSolid },
+    mention: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15, color: C.textMuted, textAlign: 'center', paddingHorizontal: 24, paddingTop: 8, backgroundColor: C.surfaceSolid },
 })

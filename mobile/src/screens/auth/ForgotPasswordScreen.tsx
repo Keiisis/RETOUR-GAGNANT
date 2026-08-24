@@ -71,6 +71,8 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                             placeholder="nom@exemple.com"
                             placeholderTextColor={C.placeholder}
                             keyboardType="email-address"
+                            autoComplete="email"
+                            textContentType="emailAddress"
                             autoCapitalize="none"
                             autoCorrect={false}
                             style={styles.input}
@@ -86,7 +88,8 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                         {loading ? <ActivityIndicator color={C.primaryText} /> : <Text style={styles.submitText}>{t('Envoyer le lien')}</Text>}
                     </Pressable>
 
-                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink} hitSlop={6}>
+                    <Pressable onPress={() => navigation.navigate('Login')} style={styles.backLink} hitSlop={6}
+                        accessibilityRole="link" accessibilityLabel={t('Retour à la connexion')}>
                         <Text style={styles.backLinkText}>{t('Retour à la connexion')}</Text>
                     </Pressable>
                 </Animated.View>
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: C.textSec },
 
     form: { paddingHorizontal: spacing.lg, gap: spacing.md },
-    label: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
+    label: { fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
     field: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,

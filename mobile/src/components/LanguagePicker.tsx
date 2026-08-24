@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     searchInput: { flex: 1, ...typography.bodySmall, color: C.text, padding: 0 },
 
     sectionLabel: {
-        ...typography.caption, fontSize: 10, color: C.primary,
+        ...typography.caption, fontSize: 11, color: C.primary,
         textTransform: 'uppercase', letterSpacing: 2,
         marginBottom: spacing.md, marginLeft: 2,
     },
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     flag: { fontSize: 20 },
     labels: { flex: 1 },
     nativeLabel: { ...typography.button, fontSize: 14, color: C.text },
-    frenchLabel: { ...typography.caption, fontSize: 10, color: C.textMuted, marginTop: 2 },
+    frenchLabel: { ...typography.caption, fontSize: 11, color: C.textMuted, marginTop: 2 },
     checkCircle: {
         width: 24, height: 24, borderRadius: 12,
         backgroundColor: C.primary,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: C.border, marginHorizontal: spacing.lg },
 
     note: {
-        ...typography.caption, fontSize: 10, color: C.textMuted,
+        ...typography.caption, fontSize: 11, color: C.textMuted,
         textAlign: 'center', lineHeight: 16,
         marginTop: spacing.xl, paddingHorizontal: spacing.xl,
     },

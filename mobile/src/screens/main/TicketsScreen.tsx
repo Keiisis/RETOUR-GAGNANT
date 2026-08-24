@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     metaText: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted },
     badge: { backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
     badgeVip: { backgroundColor: '#FEF7DC' },
-    badgeText: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 0.5 },
+    badgeText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 0.5 },
     badgeTextVip: { color: '#8A6D08' },
 
     cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: C.border },

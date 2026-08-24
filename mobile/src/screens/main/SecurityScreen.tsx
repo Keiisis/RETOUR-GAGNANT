@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import {
     ArrowLeft, Lock, LogOut, ShieldCheck, KeyRound, Eye, EyeOff, Check, X, Fingerprint,
+    Trash2,
 } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -217,6 +218,64 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
             cancelLabel: t('Annuler'),
             destructive: true,
             onConfirm: signOut,
+        })
+    }
+
+    /* ── Suppression de compte ──────────────────────────────────
+       Exigée par Apple (5.1.1(v)) et Google dès lors qu'une app permet
+       de créer un compte : la suppression doit pouvoir être menée à son
+       terme DANS l'application, sans renvoyer vers un site ni vers le
+       service client. Deux confirmations, parce que c'est irréversible.  */
+    const [suppression, setSuppression] = useState(false)
+
+    const supprimerLeCompte = useCallback(async () => {
+        setSuppression(true)
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+            if (!token) {
+                toast(t('Session expirée'), t('Reconnectez-vous puis réessayez.'))
+                return
+            }
+            const res = await fetch(`${API_BASE}/api/mobile/account/delete`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                toast(t('Suppression impossible'), json.error || t('Réessayez dans quelques minutes.'))
+                return
+            }
+            /* Le compte n'existe plus : la session locale n'a plus d'objet.
+               `signOut` vide aussi la base locale du client (oublierClient). */
+            toast(t('Compte supprimé'), t('Vos données ont été effacées.'), 'success')
+            await signOut()
+        } catch {
+            toast(t('Erreur réseau'), t('Vérifiez votre connexion et réessayez.'))
+        } finally {
+            setSuppression(false)
+        }
+    }, [signOut, t])
+
+    const demanderSuppression = () => {
+        confirm({
+            title: t('Supprimer mon compte'),
+            message: t('Cette action est définitive. Votre compte, vos dossiers, vos documents et votre historique seront effacés ou anonymisés. Vous ne pourrez plus vous connecter.'),
+            confirmLabel: t('Continuer'),
+            cancelLabel: t('Annuler'),
+            destructive: true,
+            onConfirm: () => {
+                /* Seconde confirmation : la première annonce ce qui va se
+                   passer, celle-ci demande un accord explicite. */
+                confirm({
+                    title: t('Confirmer la suppression'),
+                    message: t('Dernière étape : voulez-vous vraiment supprimer définitivement votre compte ?'),
+                    confirmLabel: t('Supprimer définitivement'),
+                    cancelLabel: t('Non, garder mon compte'),
+                    destructive: true,
+                    onConfirm: () => { void supprimerLeCompte() },
+                })
+            },
         })
     }
     const [loading, setLoading] = useState(false)
@@ -534,7 +593,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                                 <Text selectable style={styles.twofaSecret}>{twofaSecret}</Text>
                                 <Text style={styles.twofaHint}>{t('2. Entrez le code à 6 chiffres généré :')}</Text>
                                 <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
-                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted} textContentType="oneTimeCode"
                                     style={styles.twofaInput} maxLength={6} />
                                 <TouchableOpacity onPress={confirmEnroll2fa} disabled={twofaBusy} style={styles.twofaPrimaryBtn}
                                     accessibilityRole="button"
@@ -556,7 +615,7 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                             <View style={{ gap: 10 }}>
                                 <Text style={styles.twofaHint}>{t('Entrez un code pour confirmer la désactivation :')}</Text>
                                 <TextInput value={twofaCode} onChangeText={v => setTwofaCode(v.replace(/\D/g, '').slice(0, 6))}
-                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted}
+                                    keyboardType="number-pad" placeholder="123456" placeholderTextColor={C.textMuted} textContentType="oneTimeCode"
                                     style={styles.twofaInput} maxLength={6} />
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
                                     <TouchableOpacity onPress={disable2fa} disabled={twofaBusy} style={[styles.twofaDangerBtn, { flex: 1 }]}
@@ -590,6 +649,34 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                         </View>
                         <Text style={styles.logoutText}>{t('Se déconnecter')}</Text>
                     </TouchableOpacity>
+                </AnimatedSection>
+
+                {/* SUPPRESSION DE COMPTE (exigence Apple 5.1.1(v) et Google) */}
+                <AnimatedSection delay={380}>
+                    <View style={styles.dangerZone}>
+                        <Text style={styles.dangerTitle}>{t('Zone sensible')}</Text>
+                        <Text style={styles.dangerHint}>
+                            {t('La suppression efface votre compte et vos données. Elle est définitive.')}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.deleteBtn}
+                            onPress={demanderSuppression}
+                            disabled={suppression}
+                            activeOpacity={0.85}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('Supprimer mon compte')}
+                            hitSlop={6}
+                        >
+                            {suppression ? (
+                                <ActivityIndicator size="small" color={C.primaryText} />
+                            ) : (
+                                <>
+                                    <Trash2 size={18} color={C.primaryText} strokeWidth={2} />
+                                    <Text style={styles.deleteText}>{t('Supprimer mon compte')}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </AnimatedSection>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -753,6 +840,33 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     logoutText: { ...typography.button, fontSize: 15, color: C.danger, letterSpacing: 0.2 },
+
+    /* ZONE SENSIBLE : suppression de compte.
+       Volontairement en bas de l'écran, séparée par un trait, et le seul
+       bouton rouge plein de l'application : on ne clique pas dessus par
+       inadvertance. */
+    dangerZone: {
+        marginTop: spacing.xl,
+        paddingTop: spacing.lg,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+        gap: spacing.sm,
+    },
+    dangerTitle: {
+        ...typography.overline, color: C.danger, letterSpacing: 1.2,
+    },
+    dangerHint: {
+        ...typography.caption, color: C.textMuted, lineHeight: 18,
+    },
+    deleteBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: spacing.sm,
+        minHeight: 52, paddingVertical: 10,
+        borderRadius: radius.xxl,
+        backgroundColor: C.danger,
+        marginTop: spacing.xs,
+    },
+    deleteText: { ...typography.button, fontSize: 15, color: C.primaryText, letterSpacing: 0.2 },
 })
 
 /* HERO styles */

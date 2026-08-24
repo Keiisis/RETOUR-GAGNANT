@@ -10,10 +10,13 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "bj.retourgagnantbenin.app",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Prenez une photo pour votre profil ou vos documents.",
         "NSPhotoLibraryUsageDescription": "Sélectionnez des photos pour votre profil ou vos documents.",
-        "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux."
+        "NSMicrophoneUsageDescription": "Accès au microphone pour les messages vocaux.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["audio"]
       },
       "associatedDomains": [
         "applinks:www.retourgagnantbenin.bj",
@@ -22,6 +25,7 @@
     },
     "android": {
       "package": "bj.retourgagnantbenin.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1B2A4A"

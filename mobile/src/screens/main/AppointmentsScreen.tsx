@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { confirm, toast } from '../../lib/feedback'
 import {
     View, Text, ScrollView, FlatList, StyleSheet, TouchableOpacity,
-    RefreshControl, Platform, ActivityIndicator, Modal,
+    RefreshControl, Platform, ActivityIndicator, Modal, KeyboardAvoidingView,
     TextInput, Pressable, Dimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -696,7 +696,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     animationType="none"
                     onRequestClose={() => setShowModal(false)}
                 >
-                    <View style={styles.modalOverlayContainer}>
+                    <KeyboardAvoidingView style={styles.modalOverlayContainer} behavior="padding" enabled={Platform.OS === 'ios'}>
                         <Animated.View style={[styles.modalBg, overlayStyle]}>
                             <Pressable
                                 style={StyleSheet.absoluteFill}
@@ -868,7 +868,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
-                    </View>
+                    </KeyboardAvoidingView>
                 </Modal>
             )}
         </View>
@@ -1103,7 +1103,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: C.primary,
-        height: 50,
+        minHeight: 50,
+        paddingVertical: 10,
         borderRadius: radius.md,
         paddingHorizontal: spacing.lg,
         ...shadows.card,
@@ -1386,7 +1387,8 @@ const styles = StyleSheet.create({
 
     /* Submit button */
     submitBtn: {
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: radius.lg,
         flexDirection: 'row',

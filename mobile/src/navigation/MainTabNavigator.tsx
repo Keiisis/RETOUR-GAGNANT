@@ -100,9 +100,12 @@ function TabButton({
         ],
     }))
 
-    const dotStyle = useAnimatedStyle(() => ({
+    /* Pastille d'état actif. Elle remplace le point vert de 4 px : posée
+       DERRIÈRE l'icône, en absolu, elle ne déplace donc aucune mise en page
+       au changement d'onglet. */
+    const pillStyle = useAnimatedStyle(() => ({
         opacity: progress.value,
-        transform: [{ scale: 0.4 + progress.value * 0.6 }],
+        transform: [{ scale: 0.6 + progress.value * 0.4 }],
     }))
 
     const handlePressIn = () => {
@@ -123,7 +126,13 @@ function TabButton({
         onPress()
     }
 
-    // Sur la pilule sombre : vert pour l'onglet actif, gris clair sinon.
+    /* Contraste mesuré sur la barre anthracite #3C3C3C :
+         · ancien état actif — vert #008751 sur la barre .......... 2,41:1  ✗
+         · état inactif      — gris #9A9A9A sur la barre .......... 3,92:1  ✓
+       L'onglet actif était donc MOINS visible que les inactifs. On inverse :
+       pastille blanche (11,03:1 sur la barre) portant l'icône verte (4,58:1
+       sur la pastille). Le vert reste le signal d'activité voulu par la
+       charte, et les deux niveaux repassent le seuil de 3:1. */
     const tint = focused ? colors.primary : colors.floatingMuted
     const strokeWidth = focused ? 2.4 : 1.8
 
@@ -142,6 +151,8 @@ function TabButton({
             style={styles.tabBtn}
         >
             <View style={styles.tabBtnInner}>
+                <Animated.View style={[styles.activePill, pillStyle]} />
+
                 <Animated.View style={[styles.iconWrap, iconStyle]}>
                     <Icon size={22} color={tint} strokeWidth={strokeWidth} />
                     {badgeCount != null && badgeCount > 0 && (
@@ -156,8 +167,6 @@ function TabButton({
                 {/* Design v2 : pilule d'icônes, sans libellé visible.
                     Le nom de l'onglet reste annoncé aux lecteurs d'écran
                     via accessibilityLabel sur le bouton. */}
-
-                <Animated.View style={[styles.activeDot, dotStyle]} />
             </View>
         </Pressable>
     )
@@ -300,13 +309,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    activeDot: {
+    activePill: {
         position: 'absolute',
-        bottom: -5,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: colors.primary,
+        /* 38 px : sur un écran de 320 px, chaque onglet occupe ≈ 45 px — la
+           pastille garde donc un jour de part et d'autre, sans jamais toucher
+           sa voisine. La zone tactile reste celle du bouton entier (56 px). */
+        width: 38,
+        height: 32,
+        borderRadius: radius.pill,
+        backgroundColor: colors.floatingText,
     },
     badge: {
         position: 'absolute',
@@ -323,7 +334,7 @@ const styles = StyleSheet.create({
         borderColor: colors.surface,
     },
     badgeText: {
-        fontSize: 9,
+        fontSize: 11,
         fontFamily: fonts.bodyBold,
         color: '#FFFFFF',
         lineHeight: 11,

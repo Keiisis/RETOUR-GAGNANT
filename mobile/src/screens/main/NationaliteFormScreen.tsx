@@ -325,10 +325,15 @@ function SelectField({
             </Pressable>
 
             <Modal visible={ouvert} transparent animationType="slide" onRequestClose={() => setOuvert(false)}>
-                <Pressable style={styles.selectOverlay} onPress={() => setOuvert(false)}>
+                <Pressable style={styles.selectOverlay} onPress={() => setOuvert(false)}
+                    accessibilityRole="button" accessibilityLabel={t('Fermer la liste')}>
                     <Pressable
                         style={[styles.selectSheet, { paddingBottom: insets.bottom + spacing.md }]}
                         onPress={e => e.stopPropagation()}
+                        /* Ce n'est pas un bouton : la zone empêche seulement la
+                           fermeture. `accessible={false}` évite de l'annoncer
+                           comme un contrôle, sans masquer ses enfants. */
+                        accessible={false}
                     >
                         <View style={styles.selectHandle} />
                         <Text style={styles.selectTitle}>{label}</Text>
@@ -1438,7 +1443,7 @@ const styles = StyleSheet.create({
         borderColor: C.primary,
     },
     stepLabel: {
-        fontSize: 8,
+        fontSize: 11,
         fontFamily: fonts.bold,
         color: C.textMuted,
         textTransform: 'uppercase',
@@ -1592,7 +1597,8 @@ const styles = StyleSheet.create({
     fieldContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         borderWidth: 1,
         borderColor: C.border,
         backgroundColor: C.surface,
@@ -1746,7 +1752,7 @@ const styles = StyleSheet.create({
     /* ── Doc Slot ── */
     /* Séparation des groupes de documents */
     docGroupLabel: {
-        ...typography.caption, fontSize: 10, color: C.primary,
+        ...typography.caption, fontSize: 11, color: C.primary,
         textTransform: 'uppercase', letterSpacing: 2,
         marginTop: spacing.md, marginBottom: spacing.sm, marginLeft: 2,
     },
@@ -2009,7 +2015,8 @@ const styles = StyleSheet.create({
         ...shadows.card,
     },
     primaryBtn: {
-        height: 58,
+        minHeight: 58,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: radius.lg,
         flexDirection: 'row',
@@ -2149,9 +2156,9 @@ const styles = StyleSheet.create({
     successSubNew: { ...typography.bodySmall, color: C.textMuted, textAlign: 'center', lineHeight: 21, marginBottom: spacing.xl, paddingHorizontal: spacing.sm },
     refCard: { width: '100%', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: radius.xxl, padding: spacing.lg, marginBottom: spacing.xl, ...shadows.card },
     refCardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: spacing.md, marginBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: C.border },
-    refCardLabel: { fontSize: 10, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
+    refCardLabel: { fontSize: 11, fontFamily: fonts.bold, color: C.textMuted, letterSpacing: 1, textTransform: 'uppercase' },
     refCardValue: { fontSize: 13, fontFamily: fonts.extrabold, color: C.primary },
-    stepsTitle: { fontSize: 10, fontFamily: fonts.bold, color: C.text, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.md },
+    stepsTitle: { fontSize: 11, fontFamily: fonts.bold, color: C.text, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.md },
     stepRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md, alignItems: 'flex-start' },
     stepIcon: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
     stepText: { flex: 1, fontSize: 11.5, lineHeight: 17, color: C.textMuted },

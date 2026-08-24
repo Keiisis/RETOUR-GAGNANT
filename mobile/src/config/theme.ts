@@ -37,7 +37,10 @@ const v2 = {
 
     yellow: '#FCD116',
     yellowSoft: '#FEF7DC',
-    yellowInk: '#8A6D08',
+    /* #8A6D08 tenait sur blanc (4,92:1) et sur jaune doux (4,58:1) mais tombait
+       à 4,31:1 sur le vert doux — or la jauge de mot de passe l'y pose en 12 px.
+       #856809 repasse AA sur les trois fonds : 5,27 / 4,91 / 4,62. */
+    yellowInk: '#856809',
 
     red: '#E8112D',
     redSoft: '#FDECEA',
@@ -45,12 +48,16 @@ const v2 = {
     white: '#FFFFFF',
     neutral: '#F5F5F5',
 
-    ink: '#3C3C3C',       // anthracite, jamais #000
-    inkMuted: '#505050',
-    inkFaint: '#8A8A8A',
+    ink: '#3C3C3C',       // anthracite, jamais #000 — 11,03:1 sur blanc
+    inkMuted: '#505050',  // 8,06:1 sur blanc
+    /* #8A8A8A tombait a 3,45:1 sur blanc : sous le seuil AA (4,5:1) alors
+       qu'il porte des textes de 10 a 13 px. Remonte a 5,10:1. */
+    inkFaint: '#6E6E6E',
 
-    line: '#F0F0F0',
-    lineStrong: '#E4E4E4',
+    /* Separateurs : #F0F0F0 valait 1,14:1, invisible en plein soleil. La
+       hierarchie line < lineStrong est conservee (1,27 puis 1,45). */
+    line: '#E4E4E4',
+    lineStrong: '#D6D6D6',
 
     floating: '#3C3C3C',  // barres flottantes (pattern iOS)
 } as const
@@ -93,9 +100,13 @@ export const colors = {
     /* ── Sémantique (distincte de l'accent décoratif) ── */
     success: v2.green,
     successSoft: v2.greenSoft,
-    /* Anciennement or : neutralisé en vert foncé (plus d'or dans l'UI). */
-    warning: v2.greenDark,
-    warningSoft: v2.greenSoft,
+    /* Un avertissement vert ne fait s'arrêter personne : `warning` était le
+       même vert foncé que `info` et que `success`. Le jaune du drapeau est
+       autorisé par la charte (il EST le drapeau) et se lit à 4,58:1 sur son
+       fond doux — c'est l'écart sémantique qui manquait, sans réintroduire
+       l'or décoratif. */
+    warning: v2.yellowInk,
+    warningSoft: v2.yellowSoft,
     danger: v2.red,
     dangerSoft: v2.redSoft,
     info: v2.greenDark,
@@ -115,28 +126,26 @@ export const colors = {
     primaryMuted: v2.greenSoft,
     primaryGlow: 'rgba(0,135,81,0.20)',
     teal: v2.greenDark,
-    /* ═══ Anciens tokens « or » : neutralisés en VERT (plus d'or dans l'UI) ═══ */
-    gold: v2.green,
-    goldLight: '#1FA36A',
-    goldDark: v2.greenDark,
-    goldSoft: v2.greenSoft,
-    goldMuted: 'rgba(0,135,81,0.12)',
-    goldShimmer: 'rgba(0,135,81,0.06)',
+    /* ═══ Les alias « or » ONT ÉTÉ SUPPRIMÉS (2026-08-24) ═══
+       Neutralisés en vert en 2026-08-14, ils mentaient : `gold` valait
+       #008751. Les composants écrits à l'époque dorée posaient donc du vert
+       sur du vert sans que personne le voie — badge « Coup de cœur » à
+       1,59:1, titre d'en-tête à 1,59:1. Ne pas les recréer : un composant qui
+       veut du vert demande `primary`, un fond doux demande `primarySoft`.
+       Le jaune du drapeau reste accessible via `flagYellow` / `premium`. */
     surfaceWarm: v2.neutral,
     surfaceElevated: v2.white,
     headerBg: v2.white,
     textPrimary: v2.ink,
     textSecondary: v2.inkMuted,
-    textGold: v2.greenDark,
     textOnDark: v2.white,
-    textOnGold: v2.white,
     navy: v2.ink,
     navyLight: v2.inkMuted,
     navyMuted: 'rgba(60,60,60,0.08)',
     successLight: 'rgba(0,135,81,0.20)',
     successBg: v2.greenSoft,
-    warningLight: 'rgba(0,135,81,0.20)',
-    warningBg: v2.greenSoft,
+    warningLight: 'rgba(252,209,22,0.22)',
+    warningBg: v2.yellowSoft,
     dangerLight: 'rgba(232,17,45,0.20)',
     dangerBg: v2.redSoft,
     infoLight: 'rgba(0,100,60,0.20)',
@@ -177,6 +186,13 @@ export const fonts = {
     PlayfairDisplay_400Regular: 'PlayfairDisplay_400Regular',
 } as const
 
+/* ── Typographie ──────────────────────────────────────────────
+   PLANCHER : 11 px. En dessous, un texte n'est plus lisible sans zoom pour
+   une bonne partie de nos clients — la cible du service a majoritairement
+   plus de 45 ans. 109 tailles de 8 à 10,5 px ont été relevées à 11 px le
+   2026-08-24 ; ne pas en réintroduire, même pour un surtitre en capitales.
+   Ces huit rôles suffisent : un écran qui invente sa propre taille ajoute
+   du désordre, pas de la hiérarchie. */
 export const typography = {
     /** Titre d'écran (« Nos prestations », « Mon dossier ») */
     h1: { fontSize: 30, lineHeight: 36, fontFamily: fonts.extrabold, letterSpacing: -0.5 },
@@ -229,7 +245,7 @@ export const shadows = {
     /* Anciennes ombres colorées : ramenées sur la charte (le v2 n'utilise plus
        de halo doré ; l'accent d'action est le vert). */
     glow: { shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.30, shadowRadius: 20, elevation: 6 },
-    gold: { shadowColor: '#00643C', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 20, elevation: 6 },
+    accentDeep: { shadowColor: '#00643C', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 20, elevation: 6 },
     primary: { shadowColor: '#008751', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.40, shadowRadius: 20, elevation: 6 },
 } as const
 
@@ -257,7 +273,6 @@ export const skeletonColors = {
 export const gradients = {
     primary: [v2.green, v2.greenDark] as string[],
     primaryDark: [v2.greenDark, '#004E2E'] as string[],
-    gold: [v2.green, v2.greenDark] as string[],
     flag: [v2.green, v2.yellow, v2.red] as string[],
     flagBtn: [v2.green, v2.yellow] as string[],
     navy: [v2.ink, '#2A2A2A'] as string[],
@@ -270,11 +285,8 @@ export const royal = {
     bg: v2.white,
     bgWarm: v2.white,
     surface: v2.white,
-    gold: v2.green,
-    goldLight: '#1FA36A',
-    goldDark: v2.greenDark,
-    goldSoft: v2.greenSoft,
-    goldShimmer: 'rgba(0,135,81,0.06)',
+    /* Alias « or » retirés ici aussi : voir la note dans `colors`. */
+    surfaceSoft: v2.greenSoft,
     emerald: v2.green,
     lightEmerald: '#1FA36A',
     deepEmerald: v2.greenDark,
@@ -336,10 +348,6 @@ export const screenColors = {
     accentDark: v2.greenDark,
     accentLight: v2.greenSoft,
     accentSoft: v2.greenSoft,
-    gold: v2.green,
-    goldSoft: v2.greenSoft,
-    goldDeep: v2.greenDark,
-    goldGlow: 'rgba(0,135,81,0.18)',
 
     /* Sémantique. `info` était bleu #00643C : hors drapeau, ramené au vert
        foncé. `purple` idem. */
@@ -350,7 +358,10 @@ export const screenColors = {
     success: v2.green,
     successBg: v2.greenSoft,
     info: v2.greenDark,
-    warning: v2.greenDark,
+    /* Aligné sur `colors.warning` : jaune du drapeau, encre lisible. Rend
+       distinguables l'attente (jaune) du terminé (vert) sur les statuts de
+       dossier, et le niveau « moyen » de la jauge de mot de passe. */
+    warning: v2.yellowInk,
     purple: v2.greenDark,
 
     /* Textes */
@@ -377,12 +388,14 @@ export const screenColors = {
        vert portait un texte vert.
 
        Ces trois jetons rendent le jaune et le rouge du drapeau, et EUX SEULS.
-       `gold` reste volontairement vert : la decision client tient.
+       Les alias `gold*` ont ete SUPPRIMES le 2026-08-24 (ils valaient du vert
+       et masquaient des textes verts sur fond vert) : demander `primary`.
 
        Ratios calcules (WCAG), a respecter :
          · texte `ink` (#3C3C3C) sur `premium`     → 7,4:1  ✓
-         · texte `premiumInk` sur `premiumSoft`    → 4,6:1  ✓
-         · texte `premiumInk` sur `premium`        → 3,4:1  ✗ trop faible
+         · texte `premiumInk` sur `premiumSoft`    → 4,9:1  ✓
+         · texte `premiumInk` sur `surfaceSoft`    → 4,6:1  ✓
+         · texte `premiumInk` sur `premium`        → 3,6:1  ✗ trop faible
          · texte blanc sur `premium`               → 1,5:1  ✗ illisible */
     premium: v2.yellow,        // fond de badge « phare » : ecrire en `ink`
     premiumSoft: v2.yellowSoft, // fond doux : ecrire en `premiumInk`

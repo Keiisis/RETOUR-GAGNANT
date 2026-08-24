@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     tierMembers: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 12 },
     memberCard: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center', minWidth: 130, maxWidth: 150, ...shadows.xs },
     memberCardGold: { borderColor: C.borderGold, backgroundColor: C.surfaceWarm },
-    memberRole: { fontFamily: fonts.bodyBold, fontSize: 9.5, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 },
+    memberRole: { fontFamily: fonts.bodyBold, fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 },
     memberName: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: C.textPrimary, textAlign: 'center' },
 
     /* ── CTA compléter ── */

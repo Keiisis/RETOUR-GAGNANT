@@ -32,7 +32,9 @@ import {
 const TONES: Record<ToastTone, { icon: typeof Info; fg: string; bg: string }> = {
     success: { icon: CheckCircle2, fg: colors.primary, bg: colors.primarySoft },
     danger: { icon: XCircle, fg: colors.danger, bg: colors.dangerSoft },
-    warning: { icon: AlertTriangle, fg: colors.accentInk, bg: colors.accentSoft },
+    /* `accentInk` sur `accentSoft` donnait un avertissement vert, identique au
+       succès à la couleur près de l'icône. Jetons sémantiques : 4,58:1. */
+    warning: { icon: AlertTriangle, fg: colors.warning, bg: colors.warningSoft },
     neutral: { icon: Info, fg: colors.textMuted, bg: colors.surfaceMuted },
 }
 
@@ -276,7 +278,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg,
     },
     btn: {
-        flex: 1, height: 52, borderRadius: radius.pill,
+        flex: 1, minHeight: 52, paddingVertical: 10, borderRadius: radius.pill,
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: 'transparent',
     },
@@ -286,7 +288,7 @@ const styles = StyleSheet.create({
     btnDanger: { backgroundColor: colors.danger },
     btnPrimaryText: { ...typography.button, color: colors.textOnPrimary },
     choice: {
-        height: 54, borderRadius: radius.lg,
+        minHeight: 54, paddingVertical: 10, borderRadius: radius.lg,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.surface,
         borderWidth: 1, borderColor: colors.border,

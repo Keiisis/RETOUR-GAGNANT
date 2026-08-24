@@ -321,12 +321,12 @@ const styles = StyleSheet.create({
     poignee: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.borderStrong },
 
     entete: { flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 12 },
-    overline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    overline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
     titre: { fontFamily: fonts.extrabold, fontSize: 16, color: C.text, marginTop: 2 },
     croix: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
 
     recap: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14 },
-    recapLabel: { fontFamily: fonts.bold, fontSize: 9.5, color: C.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
+    recapLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
     recapObjet: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.text, marginTop: 3 },
     recapMontant: { fontFamily: fonts.extrabold, fontSize: 17, color: VERT_PROFOND },
 
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     moyenTitre: { fontFamily: fonts.extrabold, fontSize: 13, color: C.text },
     moyenSous: { fontFamily: fonts.body, fontSize: 11.5, color: C.textSec, marginTop: 3 },
     badge: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
-    badgeText: { fontFamily: fonts.bold, fontSize: 8.5, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    badgeText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
     radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: C.borderStrong, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
     radioActif: { borderColor: C.primary, backgroundColor: C.primary },
     radioPoint: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#FFFFFF' },
@@ -349,5 +349,5 @@ const styles = StyleSheet.create({
 
     cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: radius.pill, paddingVertical: 16 },
     ctaText: { fontFamily: fonts.bold, fontSize: 14, color: '#FFFFFF' },
-    mention: { fontFamily: fonts.body, fontSize: 10, color: C.textMuted, textAlign: 'center' },
+    mention: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, textAlign: 'center' },
 })

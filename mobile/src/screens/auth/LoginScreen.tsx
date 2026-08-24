@@ -119,6 +119,8 @@ export default function LoginScreen({ navigation }: any) {
                                 placeholder="nom@exemple.com"
                                 placeholderTextColor={C.placeholder}
                                 keyboardType="email-address"
+                                autoComplete="email"
+                                textContentType="emailAddress"
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 style={styles.input}
@@ -139,13 +141,16 @@ export default function LoginScreen({ navigation }: any) {
                                 placeholderTextColor={C.placeholder}
                                 secureTextEntry={!showPassword}
                                 autoCapitalize="none"
+                                autoComplete="current-password"
+                                textContentType="password"
                                 style={styles.input}
                             />
                             <Pressable onPress={() => setShowPassword(s => !s)} hitSlop={8} accessibilityLabel={t('Afficher le mot de passe')}>
                                 {showPassword ? <EyeOff size={20} color={C.textMuted} /> : <Eye size={20} color={C.textMuted} />}
                             </Pressable>
                         </View>
-                        <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} hitSlop={6}>
+                        <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} hitSlop={6}
+                            accessibilityRole="link" accessibilityLabel={t('Mot de passe oublié ?')}>
                             <Text style={styles.forgotText}>{t('Mot de passe oublié ?')}</Text>
                         </Pressable>
                     </View>
@@ -164,7 +169,8 @@ export default function LoginScreen({ navigation }: any) {
 
                     <View style={styles.registerRow}>
                         <Text style={styles.registerMuted}>{t('Pas encore de compte ?')}</Text>
-                        <Pressable onPress={() => navigation.navigate('Register')} hitSlop={6}>
+                        <Pressable onPress={() => navigation.navigate('Register')} hitSlop={6}
+                            accessibilityRole="link" accessibilityLabel={t('Créer un compte')}>
                             <Text style={styles.registerLink}>{t("S'inscrire")}</Text>
                         </Pressable>
                     </View>
@@ -186,7 +192,7 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: C.textSec },
 
     form: { paddingHorizontal: spacing.lg, gap: spacing.md },
-    label: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
+    label: { fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 1, textTransform: 'uppercase', color: C.textMuted, marginBottom: 8, marginLeft: 4 },
     field: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border,

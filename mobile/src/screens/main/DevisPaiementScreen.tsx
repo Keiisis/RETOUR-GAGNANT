@@ -825,7 +825,8 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
             {/* ══ MOYENS DE PAIEMENT ══ */}
             <Modal visible={feuille} transparent animationType="slide" onRequestClose={() => setFeuille(false)}>
-                <Pressable style={styles.voile} onPress={() => setFeuille(false)} />
+                <Pressable style={styles.voile} onPress={() => setFeuille(false)}
+                    accessibilityRole="button" accessibilityLabel={t('Fermer les moyens de paiement')} />
                 <View style={[styles.feuille, { paddingBottom: insets.bottom + 16 }]}>
                     <View style={styles.poignee} />
 
@@ -964,8 +965,8 @@ const styles = StyleSheet.create({
     rond: { width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: C.borderStrong, alignItems: 'center', justifyContent: 'center' },
     rondPetit: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
 
-    overline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
-    overlineGris: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    overline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    overlineGris: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
     overlineVert: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 20 },
     overlineRouge: { fontFamily: fonts.bold, fontSize: 11, color: ROUGE, letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 20 },
     titreSection: { marginBottom: 12, paddingHorizontal: 4 },
@@ -1002,7 +1003,7 @@ const styles = StyleSheet.create({
 
     /* Champs */
     champBloc: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 8, marginBottom: 10 },
-    champLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase' },
+    champLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase' },
     champLigne: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
     champInput: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 13, color: C.text, paddingVertical: 6 },
 
@@ -1026,14 +1027,14 @@ const styles = StyleSheet.create({
     moyenTitreLigne: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
     moyenTitre: { fontFamily: fonts.extrabold, fontSize: 13, color: C.text },
     moyenBadge: { backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
-    moyenBadgeText: { fontFamily: fonts.bold, fontSize: 9, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    moyenBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
     moyenSous: { fontFamily: fonts.body, fontSize: 11.5, color: C.textSec, marginTop: 3 },
     radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: C.borderStrong, alignItems: 'center', justifyContent: 'center' },
     radioOn: { backgroundColor: C.primary, borderColor: C.primary },
     radioPoint: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#FFFFFF' },
     rassurance: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
     rassuranceText: { flex: 1, fontFamily: fonts.body, fontSize: 11, color: C.textSec },
-    mentionCgv: { fontFamily: fonts.body, fontSize: 10, color: C.textMuted, textAlign: 'center' },
+    mentionCgv: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, textAlign: 'center' },
 
     /* États pleine page */
     centreHaut: { alignItems: 'center', paddingTop: 20, gap: 3 },
@@ -1058,15 +1059,15 @@ const styles = StyleSheet.create({
     etapePastilleOn: { backgroundColor: C.primary, borderColor: C.primary },
     etapePastilleActive: { borderWidth: 4, borderColor: C.primarySoft },
     etapePoint: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#FFFFFF' },
-    etapeNum: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted },
+    etapeNum: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted },
     etapeTitre: { fontFamily: fonts.bold, fontSize: 12.5, color: C.text },
-    etapeSous: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted, marginTop: 2 },
+    etapeSous: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, marginTop: 2 },
     etapeTrait: { width: 2, height: 12, backgroundColor: C.borderStrong, marginLeft: 12, marginVertical: 2 },
     etapeTraitOn: { backgroundColor: C.primary },
 
     avertissement: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.borderStrong, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8 },
     avertissementText: { fontFamily: fonts.bodySemibold, fontSize: 11.5, color: C.textSec },
-    petitGris: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted },
+    petitGris: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted },
 
     /* Succès */
     succesCercle: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center', marginTop: 12 },

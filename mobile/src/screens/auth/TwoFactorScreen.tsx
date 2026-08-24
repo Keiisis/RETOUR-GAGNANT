@@ -42,6 +42,8 @@ export default function TwoFactorScreen() {
                     keyboardType="number-pad"
                     placeholder="123456"
                     placeholderTextColor={C.textSec}
+                    textContentType="oneTimeCode"
+                    accessibilityLabel={t('Code à 6 chiffres')}
                     style={styles.input}
                     maxLength={6}
                     autoFocus

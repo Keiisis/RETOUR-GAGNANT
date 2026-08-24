@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1, borderTopColor: C.border,
         shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 24, elevation: 16,
     },
-    stickyBarLabel: { fontSize: 10, fontFamily: 'Inter_700Bold', letterSpacing: 0.8, textTransform: 'uppercase', color: C.textMuted },
+    stickyBarLabel: { fontSize: 11, fontFamily: 'Inter_700Bold', letterSpacing: 0.8, textTransform: 'uppercase', color: C.textMuted },
     stickyBarPrice: { fontSize: 19, fontFamily: 'Inter_700Bold', color: C.primaryDark, marginTop: 1 },
     stickyBarBtn: {
         backgroundColor: C.primary, paddingHorizontal: spacing.xl, paddingVertical: 14, borderRadius: radius.pill,
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     },
     infoIconWrap: {
         width: 38, height: 38, borderRadius: radius.xl,
-        backgroundColor: C.goldGlow,
+        backgroundColor: C.primaryGlow,
         alignItems: 'center', justifyContent: 'center',
         marginBottom: spacing.sm,
     },
@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
     },
     sectionIcon: {
         width: 30, height: 30, borderRadius: radius.xs,
-        backgroundColor: C.goldGlow,
+        backgroundColor: C.primaryGlow,
         alignItems: 'center', justifyContent: 'center',
     },
     sectionTitle: {
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
     },
     pricingAccent: {
         position: 'absolute', left: 0, top: 0, bottom: 0,
-        width: 4, backgroundColor: C.gold,
+        width: 4, backgroundColor: C.primary,
     },
     pricingLabel: {
         fontSize: 13, fontFamily: 'Inter_600SemiBold',
@@ -1200,7 +1200,7 @@ const styles = StyleSheet.create({
     },
     payBtnGradient: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: spacing.sm, height: 54, borderRadius: radius.pill,
+        gap: spacing.sm, minHeight: 54, paddingVertical: 10, borderRadius: radius.pill,
         backgroundColor: C.primary,
     },
     payBtnText: {

@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', backgroundColor: C.surfaceAlt,
         borderRadius: radius.pill, padding: spacing.xs, marginBottom: spacing.lg,
     },
-    tab: { flex: 1, height: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+    tab: { flex: 1, minHeight: 42, paddingVertical: 8, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
     tabActive: { backgroundColor: C.surface, ...shadows.card },
     tabText: { ...typography.label, color: C.textMuted },
     tabTextActive: { color: C.primary },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     noticeText: { ...typography.caption, color: C.textMuted, marginTop: 2 },
     helpBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: spacing.sm, height: 52, borderRadius: radius.pill,
+        gap: spacing.sm, minHeight: 52, paddingVertical: 10, borderRadius: radius.pill,
         backgroundColor: C.primary, marginTop: spacing.lg,
     },
     helpBtnText: { ...typography.button, color: C.primaryText },

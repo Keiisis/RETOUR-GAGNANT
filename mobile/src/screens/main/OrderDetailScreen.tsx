@@ -789,7 +789,8 @@ const styles = StyleSheet.create({
     errorBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 50,
+        minHeight: 50,
+        paddingVertical: 10,
         paddingHorizontal: 30,
         backgroundColor: C.primary,
         borderRadius: 14,

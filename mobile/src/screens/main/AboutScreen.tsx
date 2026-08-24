@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     /* ── Libellé de section centré ── */
     blockLabelCenter: {
         ...typography.caption,
-        fontSize: 10,
+        fontSize: 11,
         color: C.textMuted,
         textTransform: 'uppercase',
         letterSpacing: 2,

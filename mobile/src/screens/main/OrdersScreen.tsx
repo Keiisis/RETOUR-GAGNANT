@@ -27,6 +27,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
+import { useMouvementReduit } from '../../lib/motion'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -120,10 +121,19 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
     /* expo-av a été RETIRÉ du SDK 56 ; expo-video est son remplaçant.
        Lecture en boucle et muette, portée par le lecteur au lieu des
        anciennes propriétés du composant. */
+    const mouvementReduit = useMouvementReduit()
     const player = useVideoPlayer(
         require('../../../assets/images/delivery_video.mp4'),
-        (p) => { p.loop = true; p.muted = true; p.play() },
+        (p) => { p.loop = !mouvementReduit; p.muted = true; if (!mouvementReduit) p.play() },
     )
+
+    /* « Réduire les animations » : Reanimated couvre ses propres animations,
+       pas la lecture vidéo. On fige la bannière sur sa première image. */
+    useEffect(() => {
+        player.loop = !mouvementReduit
+        if (mouvementReduit) player.pause()
+        else player.play()
+    }, [mouvementReduit, player])
 
     return (
         <View style={styles.hero}>
@@ -981,10 +991,10 @@ const styles = StyleSheet.create({
     },
     summaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
     summaryIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
-    summaryLabel: { ...typography.caption, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+    summaryLabel: { ...typography.caption, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
     summaryValue: { ...typography.button, fontSize: 14, color: C.text },
     summaryBadge: { backgroundColor: C.primary, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
-    summaryBadgeText: { ...typography.caption, fontSize: 10, color: C.primaryText, letterSpacing: 0.5 },
+    summaryBadgeText: { ...typography.caption, fontSize: 11, color: C.primaryText, letterSpacing: 0.5 },
 
     /* ── Order Card (Sleek) ── */
     orderCard: {
@@ -999,15 +1009,15 @@ const styles = StyleSheet.create({
     ocBody: { padding: spacing.lg },
     ocHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: spacing.md },
     ocRef: { ...typography.button, fontSize: 13, color: C.text, marginBottom: 2 },
-    ocDate: { ...typography.caption, fontSize: 10.5, color: C.textMuted },
+    ocDate: { ...typography.caption, fontSize: 11, color: C.textMuted },
     ocBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
-    ocBadgeText: { ...typography.caption, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.2 },
+    ocBadgeText: { ...typography.caption, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.2 },
     ocItems: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingVertical: spacing.md, gap: 6 },
     ocItemText: { ...typography.bodySmall, fontSize: 12.5, color: C.textSec },
     ocItemQty: { color: C.text, fontFamily: fonts.bold },
     ocItemMore: { ...typography.caption, fontSize: 11, color: C.textMuted, marginTop: 2 },
     ocFooter: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: spacing.md },
-    ocTotalLabel: { ...typography.caption, fontSize: 10, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
+    ocTotalLabel: { ...typography.caption, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
     ocTotal: { ...typography.h2, fontSize: 20, color: C.primaryDark },
     ocFooterRight: { alignItems: 'flex-end', gap: 8 },
     ocPayRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -1019,7 +1029,7 @@ const styles = StyleSheet.create({
     ocTrackLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
     ocTrackText: { ...typography.caption, fontSize: 11, color: C.textMuted, flex: 1 },
     ocTrackCode: { color: C.text, fontFamily: fonts.bold },
-    ocTrackBtn: { ...typography.caption, fontSize: 10.5, color: C.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
+    ocTrackBtn: { ...typography.caption, fontSize: 11, color: C.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
     orderCardBar: {
         width: 4,
     },
@@ -1236,7 +1246,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 52,
+        minHeight: 52,
+        paddingVertical: 10,
         paddingHorizontal: spacing.gutter,
         backgroundColor: C.primary,
         borderRadius: radius.md,

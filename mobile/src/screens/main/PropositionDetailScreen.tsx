@@ -228,7 +228,10 @@ function Slide({
                     {photos.length > 1 && (
                         <View style={styles.vignettes}>
                             {photos.slice(0, 3).map((u, i) => (
-                                <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}>
+                                <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: i === photo }}
+                                    accessibilityLabel={t('Photo {n}', { n: i + 1 })}>
                                     <View style={[styles.vignette, i === photo && styles.vignetteOn]}>
                                         <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
                                     </View>
@@ -746,7 +749,10 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                             {photosIntro.length > 1 && (
                                 <View style={styles.vignettes}>
                                     {photosIntro.slice(0, 4).map((u, i) => (
-                                        <Pressable key={u + i} onPress={() => setCouverture(i)} hitSlop={6}>
+                                        <Pressable key={u + i} onPress={() => setCouverture(i)} hitSlop={6}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ selected: i === couverture }}
+                                            accessibilityLabel={t('Photo de couverture {n}', { n: i + 1 })}>
                                             <View style={[styles.vignette, i === couverture && styles.vignetteOn]}>
                                                 <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
                                             </View>
@@ -1147,16 +1153,16 @@ const styles = StyleSheet.create({
 
     /* En-têtes */
     entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
-    enteteDiscret: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    enteteDiscret: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
     rond: { width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
     rondPetit: { width: 36, height: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
     piluleEntete: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
-    piluleEnteteText: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    piluleEnteteText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
     pointVert: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.primary },
 
     enteteDeck: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.border, gap: 12 },
     enteteDeckHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    deckOverline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    deckOverline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
     deckFamille: { fontFamily: fonts.extrabold, fontSize: 12, color: C.text, marginTop: 2 },
     rythme: { flexDirection: 'row', gap: 6 },
     segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: C.border },
@@ -1188,7 +1194,7 @@ const styles = StyleSheet.create({
     lienConseillerText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: C.primary },
     motAvatar: { width: 44, height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: VERT_LISERE },
     motPastille: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.primarySoft, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
-    motPastilleText: { fontFamily: fonts.bold, fontSize: 9.5, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    motPastilleText: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 0.8, textTransform: 'uppercase' },
     motAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, borderRadius: radius.pill, paddingVertical: 12 },
     motActionText: { fontFamily: fonts.bold, fontSize: 12.5, color: C.primary },
 
@@ -1211,13 +1217,13 @@ const styles = StyleSheet.create({
     reperes: { flexDirection: 'row', gap: 10, marginTop: 20 },
     repere: { flex: 1, backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
     repereChiffre: { fontFamily: fonts.extrabold, fontSize: 18, color: VERT_PROFOND },
-    repereLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 2 },
+    repereLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 0.8, textTransform: 'uppercase', marginTop: 2 },
 
     /* Slide */
     slideScroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
     cadrePhoto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: C.border, backgroundColor: C.surfaceAlt },
     pastilleFamille: { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 6, ...shadows.card },
-    pastilleText: { fontFamily: fonts.bold, fontSize: 10, color: C.text, letterSpacing: 1.4, textTransform: 'uppercase' },
+    pastilleText: { fontFamily: fonts.bold, fontSize: 11, color: C.text, letterSpacing: 1.4, textTransform: 'uppercase' },
     garder: { position: 'absolute', top: 14, right: 14, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, ...shadows.card },
     garderOn: { backgroundColor: C.primary, borderColor: C.primary },
     garderOff: { backgroundColor: '#FFFFFF', borderColor: C.border },
@@ -1227,20 +1233,20 @@ const styles = StyleSheet.create({
     vignetteOn: { borderColor: C.primary },
     vignetteImg: { width: '100%', height: '100%' },
     vignettePlus: { width: 32, height: 32, borderRadius: 8, backgroundColor: C.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-    vignettePlusText: { fontFamily: fonts.bold, fontSize: 10, color: C.textSec },
+    vignettePlusText: { fontFamily: fonts.bold, fontSize: 11, color: C.textSec },
     badgeRemise: { position: 'absolute', bottom: 14, right: 14, backgroundColor: '#FFFFFF', borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 4, ...shadows.card },
     badgeRemiseText: { fontFamily: fonts.bold, fontSize: 11, color: VERT_PROFOND },
 
     corps: { paddingTop: 16, gap: 10 },
     ligneTitre: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    overline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    overline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
     titre: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 26, color: C.text, marginTop: 2 },
     lieu: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
     lieuText: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 12, color: C.textSec },
     blocPrix: { alignItems: 'flex-end' },
     prix: { fontFamily: fonts.extrabold, fontSize: 18, color: VERT_PROFOND },
     prixOff: { color: C.textMuted, textDecorationLine: 'line-through' },
-    prixBarre: { fontFamily: fonts.body, fontSize: 10.5, color: C.textMuted, textDecorationLine: 'line-through', marginTop: 2 },
+    prixBarre: { fontFamily: fonts.body, fontSize: 11, color: C.textMuted, textDecorationLine: 'line-through', marginTop: 2 },
     sousTitre: { fontFamily: fonts.bodySemibold, fontSize: 13, color: C.textSec },
     desc: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: C.textSec },
     puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
@@ -1280,7 +1286,7 @@ const styles = StyleSheet.create({
     /* Vide */
     vide: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 8 },
     videTuile: { width: 80, height: 80, borderRadius: radius.pill, backgroundColor: C.primarySoft, borderWidth: 1, borderColor: VERT_LISERE, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    videOverline: { fontFamily: fonts.bold, fontSize: 10, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
+    videOverline: { fontFamily: fonts.bold, fontSize: 11, color: C.primary, letterSpacing: 1.4, textTransform: 'uppercase' },
     videTitre: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 28, color: C.text, textAlign: 'center', marginTop: 4 },
     videTexte: { fontFamily: fonts.body, fontSize: 13, lineHeight: 21, color: C.textSec, textAlign: 'center', maxWidth: 300, marginTop: 4 },
     videCarte: { width: '100%', backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, gap: 12, marginTop: 20 },
@@ -1296,7 +1302,7 @@ const styles = StyleSheet.create({
     barre: { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 20, paddingTop: 14, gap: 12, shadowColor: '#3C3C3C', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.06, shadowRadius: 30, elevation: 14 },
     barreHaut: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
     barreLigne: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    barreLabel: { fontFamily: fonts.bold, fontSize: 10, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+    barreLabel: { fontFamily: fonts.bold, fontSize: 11, color: C.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
     barreCompte: { fontFamily: fonts.bold, fontSize: 11, color: C.primary },
     barreTotal: { fontFamily: fonts.extrabold, fontSize: 22, color: VERT_PROFOND, marginTop: 4 },
     barreTotalPetit: { fontFamily: fonts.extrabold, fontSize: 20, color: VERT_PROFOND, marginTop: 2 },

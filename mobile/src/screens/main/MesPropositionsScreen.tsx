@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     meta: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
     metaText: { fontFamily: fonts.body, fontSize: 11.5, color: C.textMuted },
     etat: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
-    etatText: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.4 },
+    etatText: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.4 },
 
     carteBas: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: C.border },
     prix: { fontFamily: fonts.extrabold, fontSize: 16, color: '#00643C' },
