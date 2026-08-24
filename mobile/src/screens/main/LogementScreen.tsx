@@ -151,7 +151,10 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
     /* Frais de constitution de dossier : la rémunération de RGB. Montant piloté
        depuis l'admin (page_sections → /api/logements/dossier-fee), jamais codé
        en dur. RGB ne vend pas le bien : les prix affichés sont ceux du partenaire. */
-    const [feeAmount, setFeeAmount] = useState(memorise.amount ?? 250)
+    /* `null` = tarif pas encore arrêté. Surtout pas 250 par défaut : c'est
+       ce nombre de complaisance qui s'affichait au client alors qu'aucun
+       prix n'avait été décidé. */
+    const [feeAmount, setFeeAmount] = useState<number | null>(memorise.amount ?? null)
     /* Le forfait peut etre peint depuis la memoire locale pour que l'ecran
        s'ouvre plein. Mais c'est CE montant qui est presente a la passerelle :
        tant que le serveur ne l'a pas confirme, on n'ouvre pas le paiement.
@@ -159,7 +162,9 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
     const [feeConfirme, setFeeConfirme] = useState(false)
     const [feeCurrency, setFeeCurrency] = useState('EUR')
     const feeSymbol = CURRENCY_SYMBOL[feeCurrency.toUpperCase()] || feeCurrency
-    const feeXof = toXof(feeAmount, feeCurrency)
+    const feeXof = feeAmount != null ? toXof(feeAmount, feeCurrency) : null
+    /** Le tarif est-il connu ? Toute la mise en page en découle. */
+    const tarifConnu = feeAmount != null && feeAmount > 0
     const [showPay, setShowPay] = useState(false)
     const [pendingLeadId, setPendingLeadId] = useState<string | null>(null)
 
@@ -502,7 +507,9 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.stickyLabel}>{t('Frais de dossier')}</Text>
-                    <Text style={styles.stickyValue}>{feeAmount} {feeSymbol}</Text>
+                    <Text style={styles.stickyValue}>
+                        {tarifConnu ? `${feeAmount} ${feeSymbol}` : t('Sur devis')}
+                    </Text>
                 </View>
                 <Pressable
                     onPress={() => openForm(null)}
@@ -623,7 +630,9 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                 )}
                             </Pressable>
                             <Text style={styles.secureCenter}>
-                                {t('Frais de constitution de dossier : {a} {s}. Le prix du logement se règle auprès de notre partenaire, jamais ici.', { a: feeAmount, s: feeSymbol })}
+                                {tarifConnu
+                                    ? t('Frais de constitution de dossier : {a} {s}. Le prix du logement se règle auprès de notre partenaire, jamais ici.', { a: String(feeAmount), s: feeSymbol })
+                                    : t('Les frais de constitution de dossier vous seront communiqués par notre équipe. Le prix du logement se règle auprès de notre partenaire, jamais ici.')}
                             </Text>
                         </ScrollView>
                     </View>
@@ -767,8 +776,12 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                     {/* Ce que RGB facture réellement */}
                                     <View style={styles.feeCard}>
                                         <Text style={styles.feeLabel}>{t('Frais de constitution de dossier')}</Text>
-                                        <Text style={styles.feeAmount}>{feeAmount} {feeSymbol}</Text>
-                                        <Text style={styles.feeXof}>{t('Soit environ')} {feeXof.toLocaleString(localeActuelle())} FCFA</Text>
+                                        <Text style={styles.feeAmount}>
+                                            {tarifConnu ? `${feeAmount} ${feeSymbol}` : t('Sur devis')}
+                                        </Text>
+                                        {tarifConnu && feeXof != null && (
+                                            <Text style={styles.feeXof}>{t('Soit environ')} {feeXof.toLocaleString(localeActuelle())} FCFA</Text>
+                                        )}
                                         <Text style={styles.feeDesc}>
                                             {t('Nous constituons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement se règle ensuite directement auprès de lui.')}
                                         </Text>
