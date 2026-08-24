@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  Facture d'un client — en PDF, pour l'application.
+//  Document d'un client — en PDF, pour l'application.
 //
 //  L'application ouvrait `/api/invoices/[id]`, qui renvoie une page HTML : le
 //  téléphone quittait l'app pour le navigateur, et le client se retrouvait
@@ -10,12 +10,21 @@
 //  du panel, celui des devis et factures de l'agence. Un seul document, une
 //  seule identité visuelle.
 //
-//  La facture n'est servie qu'à son propriétaire : le client est déduit du
-//  jeton, jamais d'un paramètre (anti-IDOR).
+//  ⚠️ La source a changé : cette route lisait la table `invoices`, VIDE en
+//  production. Elle lit désormais `documents_financiers`, comme la liste
+//  (`/api/mobile/invoices`) et le panel — sinon toute facture affichée était
+//  intéléchargeable (404 systématique). Elle sert les DEUX natures : facture
+//  et devis, le générateur sachant produire les deux.
+//
+//  Le document n'est servi qu'à son propriétaire : le client est déduit du
+//  jeton, jamais d'un paramètre (anti-IDOR). Comme les documents nés d'un
+//  formulaire web ne portent pas toujours le compte, l'email DU PROFIL sert
+//  de second verrou — jamais un email transmis par l'appelant.
 // ══════════════════════════════════════════════════════════════
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { parapheDuClient } from '@/lib/mobile-facture'
 import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
 import { TVA_RATE } from '@/lib/tax'
 
@@ -39,19 +48,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params
 
     const { data: f, error } = await supabase
-        .from('invoices')
+        .from('documents_financiers')
         .select('*')
         .eq('id', id)
-        .eq('client_id', clientId)   // la facture d'un autre reste inaccessible
         .maybeSingle()
 
-    if (error || !f) return NextResponse.json({ error: 'Facture introuvable.' }, { status: 404 })
+    if (error || !f) return NextResponse.json({ error: 'Document introuvable.' }, { status: 404 })
+
+    // ── Appartenance : le compte, sinon l'email du profil ──
+    let aLui = f.client_id === clientId
+    if (!aLui) {
+        const { data: profil } = await supabase
+            .from('client_profiles').select('email').eq('id', clientId).maybeSingle()
+        const emailProfil = String(profil?.email || '').trim().toLowerCase()
+        const emailDoc = String(f.client_email || '').trim().toLowerCase()
+        aLui = !!emailProfil && emailProfil === emailDoc
+    }
+    // Le document d'un autre répond comme s'il n'existait pas.
+    if (!aLui) return NextResponse.json({ error: 'Document introuvable.' }, { status: 404 })
 
     const devise = String(f.currency || 'XOF').toUpperCase()
+    const estDevis = String(f.type || 'facture') === 'devis'
 
     /* `items` est du jsonb libre : selon l'origine (boutique, dossier, ERP) les
        clés diffèrent. On accepte les formes rencontrées, et à défaut on émet
-       une ligne unique — une facture sans ligne serait illisible. */
+       une ligne unique — un document sans ligne serait illisible. */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const brut: any[] = Array.isArray(f.items) ? f.items : []
     const lignes: InvoicePdfItem[] = brut.length
@@ -62,34 +83,57 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             tva: Number(l.tva ?? TVA_RATE) || 0,
         }))
         : [{
-            description: String(f.description || 'Prestation Retour Gagnant Bénin'),
+            description: String(f.notes || '').split('\n')[0] || 'Prestation Retour Gagnant Bénin',
             quantity: 1,
-            unit_price: Number(f.amount) || 0,
+            unit_price: Number(f.total) || 0,
             tva: TVA_RATE,
         }]
 
-    const sousTotal = lignes.reduce((s, l) => s + l.unit_price * l.quantity, 0)
-    const totalTva = lignes.reduce((s, l) => s + (l.unit_price * l.quantity * (l.tva || 0)) / 100, 0)
-    // Le total facturé fait foi : il a servi à l'encaissement.
-    const total = Number(f.amount) > 0 ? Number(f.amount) : sousTotal + totalTva
+    /* Les totaux stockés font foi : ce sont eux qui ont servi à l'encaissement
+       et qui sont en comptabilité. Le recalcul ne sert que de repli. */
+    const calcSousTotal = lignes.reduce((s, l) => s + l.unit_price * l.quantity, 0)
+    const calcTva = lignes.reduce((s, l) => s + (l.unit_price * l.quantity * (l.tva || 0)) / 100, 0)
+    const sousTotal = Number.isFinite(Number(f.sous_total)) && f.sous_total !== null
+        ? Number(f.sous_total) : calcSousTotal
+    const totalTva = Number.isFinite(Number(f.total_tva)) && f.total_tva !== null
+        ? Number(f.total_tva) : calcTva
+    const remise = Number(f.remise) || 0
+    const total = Number(f.total) > 0 ? Number(f.total) : sousTotal + totalTva - remise
+
+    /* Paraphe du client sur le document.
+       Il était absent : le client qui avait pris la peine d'enregistrer sa
+       signature dans l'application recevait un « Bon pour accord » vide.
+         · le document déjà signé porte SA signature (`signature_url`) ;
+         · sinon, pour une FACTURE, le paraphe enregistré au profil, si la
+           préférence l'autorise (`auto_sign` ≠ never) ;
+         · un DEVIS non signé reste vierge — y apposer un paraphe
+           reviendrait à faire signer un client qui n'a rien accepté. */
+    const paraphe = f.signature_url
+        || (estDevis ? undefined : await parapheDuClient(clientId))
 
     const base64 = generateInvoicePdf({
-        invoiceRef: String(f.invoice_ref || f.id),
-        date: dateFr(f.issued_at || f.created_at),
+        invoiceRef: String(f.numero || f.id),
+        date: dateFr(f.created_at),
         paidAt: f.paid_at ? dateFr(f.paid_at) : undefined,
-        isPaid: f.status === 'payee' || f.status === 'paid' || !!f.paid_at,
-        clientName: String(f.customer_name || ''),
-        clientEmail: f.sent_to_email || undefined,
+        isPaid: !!f.paid_at || String(f.status) === 'paye' || String(f.status) === 'payee',
+        clientName: [f.client_prenom, f.client_nom].filter(Boolean).join(' ').trim(),
+        clientEmail: f.client_email || undefined,
+        clientPhone: f.client_phone || undefined,
+        clientAddress: f.client_adresse || undefined,
         items: lignes,
         currency: devise,
         sous_total: sousTotal,
         total_tva: totalTva,
-        remise: 0,
+        remise,
         total,
-        docType: 'facture',
+        notes: f.notes || undefined,
+        conditions: f.conditions || undefined,
+        validite: f.validite || undefined,
+        docType: estDevis ? 'devis' : 'facture',
+        clientSignatureDataUrl: paraphe || undefined,
     })
 
-    const nom = `FACTURE-${String(f.invoice_ref || f.id).replace(/[^\w-]/g, '-')}.pdf`
+    const nom = `${estDevis ? 'DEVIS' : 'FACTURE'}-${String(f.numero || f.id).replace(/[^\w-]/g, '-')}.pdf`
 
     return new NextResponse(new Uint8Array(Buffer.from(base64, 'base64')), {
         headers: {

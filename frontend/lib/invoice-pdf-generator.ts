@@ -37,10 +37,19 @@ export interface InvoicePdfData {
     clientSignatureDataUrl?: string
 }
 
-// Convert price to string format
+/* Montant formaté pour le PDF.
+   ⚠️ `Intl.NumberFormat('fr-FR')` sépare les milliers par une ESPACE FINE
+   INSÉCABLE (U+202F, parfois U+00A0). Ce caractère n'existe pas dans
+   l'encodage WinAnsi des polices standard de jsPDF : le lecteur affichait
+   donc « 10/000 XOF » au lieu de « 10 000 XOF » — sur la facture ET sur le
+   devis, montant en toutes lettres compris. On repasse en espace ordinaire.
+   La classe ci-dessous contient U+202F, U+00A0 et U+2009 ecrits
+   litteralement : ne pas les remplacer par des espaces normales. */
+const ESPACES_FINES = /[   ]/g
+
 const fmt = (val: number, cur: string) => {
     const rounded = (cur === 'XOF' || cur === 'FCFA') ? Math.round(val) : Math.round(val * 100) / 100
-    return new Intl.NumberFormat('fr-FR').format(rounded) + ' ' + cur
+    return new Intl.NumberFormat('fr-FR').format(rounded).replace(ESPACES_FINES, ' ') + ' ' + cur
 }
 
 // Convert amount in numbers to French words
@@ -84,7 +93,13 @@ function toWordsFr(n: number): string {
     for (const unit of units) {
         const quotient = Math.floor(remaining / unit.val)
         if (quotient > 0) {
-            const word = quotient === 1 ? unit.sing : below1000(quotient) + ' ' + unit.plur
+            /* « MILLE » se dit seul, mais « UN MILLION » et « UN MILLIARD »
+               gardent leur unité : la somme en toutes lettres annonçait
+               « MILLION TROIS CENT HUIT MILLE… » sur les devis à sept
+               chiffres — un montant légal amputé de son premier mot. */
+            const word = quotient === 1
+                ? (unit.val === 1e3 ? unit.sing : 'UN ' + unit.sing)
+                : below1000(quotient) + ' ' + unit.plur
             res += (res ? ' ' : '') + word
             remaining %= unit.val
         }
@@ -211,7 +226,8 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(7)
     pdf.setTextColor(100, 100, 100)
-    pdf.text('FACTURE À / CLIENT', ML + boxW + 12, y + 4.5)
+    // Un devis n'est adressé à personne « en facture » : le libellé suit la nature.
+    pdf.text(isDevis ? 'DEVIS POUR / CLIENT' : 'FACTURE À / CLIENT', ML + boxW + 12, y + 4.5)
     pdf.line(ML + boxW + 12, y + 6, ML + CW - 4, y + 6)
 
     pdf.setFont('helvetica', 'bold')
@@ -310,8 +326,15 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
         y += 6.5
     }
 
+    /* Le taux affiché est celui des LIGNES, plus un « 18% » écrit en dur :
+       le document annonçait « TVA 18% » face à « 0 XOF », ce qui donne un
+       document qui se contredit lui-même sous les yeux du client. */
+    const tauxTva = Math.max(0, ...data.items.map(i => Number(i.tva) || 0))
     drawTotRow('Sous-total HT :', fmt(data.sous_total, data.currency))
-    drawTotRow('TVA 18% :', fmt(data.total_tva, data.currency))
+    drawTotRow(
+        tauxTva > 0 ? `TVA ${tauxTva} % :` : 'TVA (exonéré) :',
+        fmt(data.total_tva, data.currency),
+    )
     if (data.remise > 0) {
         drawTotRow('Remise :', '-' + fmt(data.remise, data.currency))
     }
@@ -350,7 +373,26 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
 
     // ── SIGNATURES ─────────────────────────────────────────────────────
     const sigW = CW / 2 - 4
-    const sigH = 34
+    const sigH = 46
+
+    /* Le bloc de signatures ne doit jamais passer sous le pied de page :
+       une facture à beaucoup de lignes le poussait hors de la feuille, et
+       le cachet finissait coupé. */
+    if (y + sigH + 12 > PH - 30) {
+        pdf.addPage()
+        y = 20
+    }
+
+    /** Réduit la taille jusqu'à ce que le texte tienne dans la largeur donnée. */
+    const tailleQuiTient = (txt: string, largeurMax: number, depart: number) => {
+        let t = depart
+        pdf.setFontSize(t)
+        while (pdf.getTextWidth(txt) > largeurMax && t > 5) {
+            t -= 0.25
+            pdf.setFontSize(t)
+        }
+        return t
+    }
 
     /* Bloc « Bon pour accord » du client.
        Il était masqué sur toute facture acquittée (`isManual`) : le client qui
@@ -364,13 +406,17 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     if (!data.isManual || paraphe) {
         pdf.setFillColor(250, 253, 251)
         pdf.setDrawColor(C.primary[0], C.primary[1], C.primary[2])
-        pdf.roundedRect(ML, y, sigW, sigH, 1.5, 1.5, 'FD')
+        pdf.setLineWidth(0.4)
+        pdf.roundedRect(ML, y, sigW, sigH, 2, 2, 'FD')
+        pdf.setLineWidth(0.2)
         pdf.setFont('helvetica', 'bold')
         pdf.setFontSize(7)
-        pdf.setTextColor(0, 100, 60)
-        pdf.text('BON POUR ACCORD : CLIENT', ML + 4, y + 4.5)
+        pdf.setTextColor(0, 107, 64)
+        pdf.setCharSpace(0.5)
+        pdf.text('BON POUR ACCORD : CLIENT', ML + 5, y + 7)
+        pdf.setCharSpace(0)
         pdf.setDrawColor(200, 230, 215)
-        pdf.line(ML + 4, y + 6, ML + sigW - 4, y + 6)
+        pdf.line(ML + 5, y + 9, ML + sigW - 5, y + 9)
 
         let paraphePose = false
         if (paraphe) {
@@ -382,9 +428,9 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
                on retombe alors sur la mention textuelle. */
             try {
                 const zoneX = ML + 5
-                const zoneY = y + 7.5
+                const zoneY = y + 11
                 const zoneW = sigW - 10
-                const zoneH = sigH - 15
+                const zoneH = sigH - 22
                 const props = pdf.getImageProperties(paraphe)
                 const ratio = props.width > 0 && props.height > 0 ? props.width / props.height : zoneW / zoneH
                 let w = zoneW
@@ -405,62 +451,106 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
         pdf.setFontSize(6.5)
         pdf.setTextColor(120, 120, 120)
         if (paraphePose) {
-            pdf.text('Signé électroniquement le ' + (data.paidAt || data.date), ML + 4, y + sigH - 3)
+            pdf.text('Signé électroniquement le ' + (data.paidAt || data.date), ML + 5, y + sigH - 4)
         } else {
             pdf.setFontSize(7)
-            pdf.text('Signature apposée électroniquement', ML + 4, y + 12)
-            pdf.text('le ' + data.date, ML + 4, y + 16)
+            pdf.text('Signature apposée électroniquement', ML + 5, y + 20)
+            pdf.text('le ' + data.date, ML + 5, y + 25)
         }
     } else {
         // Manual invoice status indicator instead of signature
         pdf.setFillColor(242, 248, 244)
         pdf.setDrawColor(C.primary[0], C.primary[1], C.primary[2])
-        pdf.roundedRect(ML, y, sigW, sigH, 1.5, 1.5, 'FD')
+        pdf.setLineWidth(0.4)
+        pdf.roundedRect(ML, y, sigW, sigH, 2, 2, 'FD')
+        pdf.setLineWidth(0.2)
         pdf.setFont('helvetica', 'bold')
         pdf.setFontSize(7)
-        pdf.setTextColor(0, 100, 60)
-        pdf.text('CONFIRMATION DE PAIEMENT', ML + 4, y + 4.5)
+        pdf.setTextColor(0, 107, 64)
+        pdf.setCharSpace(0.5)
+        pdf.text('CONFIRMATION DE PAIEMENT', ML + 5, y + 7)
+        pdf.setCharSpace(0)
         pdf.setDrawColor(200, 230, 215)
-        pdf.line(ML + 4, y + 6, ML + sigW - 4, y + 6)
+        pdf.line(ML + 5, y + 9, ML + sigW - 5, y + 9)
         pdf.setFont('helvetica', 'bold')
-        pdf.setFontSize(8)
+        pdf.setFontSize(8.5)
         pdf.setTextColor(C.primary[0], C.primary[1], C.primary[2])
-        pdf.text('PAIEMENT ENREGISTRÉ', ML + 4, y + 14)
+        pdf.text('PAIEMENT ENREGISTRÉ', ML + 5, y + 18)
         pdf.setFont('helvetica', 'normal')
         pdf.setFontSize(7)
         pdf.setTextColor(80, 80, 80)
         pdf.text([
             `Moyen : ${data.notes?.includes(' Zeyow') ? 'Zeyow' : data.notes?.includes('Stripe') ? 'Stripe' : data.notes?.includes('PayPal') ? 'PayPal' : 'Mobile Money'}`,
             `Date de règlement : ${data.paidAt || data.date}`
-        ], ML + 4, y + 20)
+        ], ML + 5, y + 25)
     }
 
-    // Right Signature block (RG Direction)
-    pdf.setFillColor(250, 251, 254)
-    pdf.setDrawColor(60, 90, 150)
-    pdf.roundedRect(ML + sigW + 8, y, sigW, sigH, 1.5, 1.5, 'FD')
-    pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(7)
-    pdf.setTextColor(30, 50, 110)
-    pdf.text('LA DIRECTION GÉNÉRALE', ML + sigW + 12, y + 4.5)
-    pdf.setDrawColor(210, 220, 240)
-    pdf.line(ML + sigW + 12, y + 6, ML + CW - 4, y + 6)
+    /* ── CADRE « DIRECTION GÉNÉRALE » ──────────────────────────────────
+       Repris trait pour trait de la GRILLE TARIFAIRE officielle
+       (`/api/grille-tarifaire/print`) : mêmes lignes, même ordre, mêmes
+       couleurs, cachet à droite. Le cadre bleu à deux lignes qui figurait
+       ici ne ressemblait à aucun autre document de l'agence — deux
+       identités visuelles pour un même émetteur, c'est une signature
+       qu'on ne reconnaît pas. */
+    const dgX = ML + sigW + 8
+    const dgTexteX = dgX + 5
+    const cachetTaille = 30
+    // Le cachet occupe la droite du cadre : le texte s'arrête avant lui.
+    const dgTexteW = sigW - cachetTaille - 12
 
-    pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(8.5)
-    pdf.setTextColor(20, 30, 80)
-    pdf.text('Nathalie RIFFERT GERMANY', ML + sigW + 12, y + 12)
-    pdf.setFont('helvetica', 'normal')
-    pdf.setFontSize(7)
-    pdf.setTextColor(100, 100, 100)
-    pdf.text('Présidente Retour Gagnant', ML + sigW + 12, y + 16)
+    pdf.setFillColor(240, 255, 246)
+    pdf.setDrawColor(C.primary[0], C.primary[1], C.primary[2])
+    pdf.setLineWidth(0.4)
+    pdf.roundedRect(dgX, y, sigW, sigH, 2, 2, 'FD')
 
-    // Direction Stamp cachet
+    // Le cachet d'abord : le texte se pose par-dessus, jamais l'inverse.
     try {
-        pdf.addImage(STAMP_BASE64, 'PNG', ML + CW - 26, y + 10, 24, 24)
+        pdf.addImage(
+            STAMP_BASE64, 'PNG',
+            dgX + sigW - cachetTaille - 3, y + (sigH - cachetTaille) / 2,
+            cachetTaille, cachetTaille,
+            undefined, 'FAST',
+        )
     } catch (e) {
         console.warn('Failed to add stamp to invoice PDF:', e)
     }
+
+    // DIRECTION GÉNÉRALE (interlettrage, comme la grille)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(7)
+    pdf.setTextColor(0, 107, 64)
+    pdf.setCharSpace(0.5)
+    pdf.text('DIRECTION GÉNÉRALE', dgTexteX, y + 7)
+    pdf.setCharSpace(0)
+
+    pdf.setFontSize(6.5)
+    pdf.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+    pdf.text('RETOUR GAGNANT BÉNIN', dgTexteX, y + 12)
+
+    pdf.setTextColor(0, 0, 0)
+    pdf.text('La Présidente Directrice Générale :', dgTexteX, y + 18)
+
+    // Le nom : réduit s'il le faut, jamais tronqué ni posé sur le cachet.
+    pdf.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+    const taillleNom = tailleQuiTient('Nathalie RIFFERT GERMANY', dgTexteW, 9.5)
+    pdf.setFontSize(taillleNom)
+    pdf.text('Nathalie RIFFERT GERMANY', dgTexteX, y + 24.5)
+
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(6.5)
+    pdf.setTextColor(102, 102, 119)
+    pdf.text('Signature et Cachet officiel', dgTexteX, y + 30)
+
+    pdf.setTextColor(136, 136, 136)
+    pdf.text(`Fait à Cotonou, le ${data.date}`, dgTexteX, y + 35)
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(6)
+    pdf.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+    pdf.setCharSpace(0.3)
+    pdf.text('VALIDITÉ OFFICIELLE GARANTIE', dgTexteX, y + 40.5)
+    pdf.setCharSpace(0)
+    pdf.setLineWidth(0.2)
 
     y += sigH + 10
 
@@ -475,7 +565,12 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     pdf.setTextColor(120, 150, 180)
     pdf.text('RETOUR GAGNANT BÉNIN : RCCM : RB/COT/26 B 42001 : IFU : 3202644573981', PW / 2, footerY + 6, { align: 'center' })
     pdf.text('Siège : Haie-Vive Cocotiers, Cotonou. Email : contact@retourgagnantbenin.bj', PW / 2, footerY + 11, { align: 'center' })
-    pdf.text('TVA 18% applicable : En cas de litige, seules les juridictions béninoises sont compétentes.', PW / 2, footerY + 16, { align: 'center' })
+    pdf.text(
+        tauxTva > 0
+            ? `TVA ${tauxTva} % applicable : En cas de litige, seules les juridictions béninoises sont compétentes.`
+            : 'En cas de litige, seules les juridictions béninoises sont compétentes.',
+        PW / 2, footerY + 16, { align: 'center' },
+    )
 
     const pdfData = pdf.output('arraybuffer')
     return Buffer.from(pdfData).toString('base64')

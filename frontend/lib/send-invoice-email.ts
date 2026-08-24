@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
+import { TVA_RATE } from './tax'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Send invoice email to a client.
@@ -30,6 +31,34 @@ interface SendInvoiceEmailResult {
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
+
+/**
+ * Paraphe enregistré par le payeur, retrouvé par son adresse email.
+ * `orders` ne porte pas de compte : c'est l'email qui fait le lien. Rien de
+ * bloquant — une facture part même sans signature.
+ */
+async function parapheDuPayeur(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    supabase: any,
+    email?: string | null,
+): Promise<string | undefined> {
+    const adresse = String(email || '').trim().toLowerCase()
+    if (!adresse) return undefined
+    try {
+        const { data: profil } = await supabase
+            .from('client_profiles').select('id').eq('email', adresse).maybeSingle()
+        if (!profil?.id) return undefined
+        const { data: sig } = await supabase
+            .from('client_signatures')
+            .select('signature_data, auto_sign')
+            .eq('client_id', profil.id)
+            .maybeSingle()
+        if (!sig?.signature_data || sig.auto_sign === 'never') return undefined
+        return String(sig.signature_data)
+    } catch {
+        return undefined
+    }
+}
 
 export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<SendInvoiceEmailResult> {
     const { orderId, skipIfAlreadySent = true } = opts
@@ -125,15 +154,20 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
             const resolveItemTitle = (item: CartItem): string =>
                 item.title || item.product_title || item.name || order.product_title || 'Produit'
 
+            /* Le taux vient de `lib/tax`, plus d'un 18 écrit en dur : le PDF
+               annonçait « TVA 18 % » alors que le HT était déduit du même 18 %
+               et que la politique de l'agence est aujourd'hui l'exonération —
+               le client lisait donc un taux qui ne correspondait à rien. */
+            const diviseur = 1 + TVA_RATE / 100
             const pdfItems: InvoicePdfItem[] = cartItems.map(item => {
                 const price = resolveItemPrice(item)
                 const qty = item.quantity || 1
-                const unitHT = isXof ? Math.round(price / 1.18) : Math.round((price / 1.18) * 100) / 100
+                const unitHT = isXof ? Math.round(price / diviseur) : Math.round((price / diviseur) * 100) / 100
                 return {
                     description: resolveItemTitle(item),
                     quantity: qty,
                     unit_price: unitHT,
-                    tva: 18
+                    tva: TVA_RATE,
                 }
             })
 
@@ -160,7 +194,10 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
                 total: finalTotal,
                 notes: `Facture boutique via ${order.payment_method || 'En ligne'}\nTransaction: ${order.transaction_id || ''}`,
                 conditions: 'Paiement effectué en ligne.',
-                isManual: false
+                isManual: false,
+                // Le paraphe enregistré par le client, comme sur la facture du
+                // site : sans lui le « Bon pour accord » partait vide.
+                clientSignatureDataUrl: await parapheDuPayeur(supabase, order.customer_email),
             })
         } catch (pdfErr) {
             console.error('[sendInvoiceEmail] PDF Generation failed (will send email without attachment):', pdfErr)
