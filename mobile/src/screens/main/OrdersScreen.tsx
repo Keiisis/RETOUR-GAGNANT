@@ -27,6 +27,7 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
+import { useMouvementReduit } from '../../lib/motion'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -120,10 +121,19 @@ function DeliveryHero({ ordersCount, activeCount }: { ordersCount: number; activ
     /* expo-av a été RETIRÉ du SDK 56 ; expo-video est son remplaçant.
        Lecture en boucle et muette, portée par le lecteur au lieu des
        anciennes propriétés du composant. */
+    const mouvementReduit = useMouvementReduit()
     const player = useVideoPlayer(
         require('../../../assets/images/delivery_video.mp4'),
-        (p) => { p.loop = true; p.muted = true; p.play() },
+        (p) => { p.loop = !mouvementReduit; p.muted = true; if (!mouvementReduit) p.play() },
     )
+
+    /* « Réduire les animations » : Reanimated couvre ses propres animations,
+       pas la lecture vidéo. On fige la bannière sur sa première image. */
+    useEffect(() => {
+        player.loop = !mouvementReduit
+        if (mouvementReduit) player.pause()
+        else player.play()
+    }, [mouvementReduit, player])
 
     return (
         <View style={styles.hero}>
@@ -1236,7 +1246,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 52,
+        minHeight: 52,
+        paddingVertical: 10,
         paddingHorizontal: spacing.gutter,
         backgroundColor: C.primary,
         borderRadius: radius.md,

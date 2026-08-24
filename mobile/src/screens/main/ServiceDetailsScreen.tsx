@@ -1200,7 +1200,7 @@ const styles = StyleSheet.create({
     },
     payBtnGradient: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: spacing.sm, height: 54, borderRadius: radius.pill,
+        gap: spacing.sm, minHeight: 54, paddingVertical: 10, borderRadius: radius.pill,
         backgroundColor: C.primary,
     },
     payBtnText: {

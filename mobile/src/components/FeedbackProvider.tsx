@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg,
     },
     btn: {
-        flex: 1, height: 52, borderRadius: radius.pill,
+        flex: 1, minHeight: 52, paddingVertical: 10, borderRadius: radius.pill,
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 1, borderColor: 'transparent',
     },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     btnDanger: { backgroundColor: colors.danger },
     btnPrimaryText: { ...typography.button, color: colors.textOnPrimary },
     choice: {
-        height: 54, borderRadius: radius.lg,
+        minHeight: 54, paddingVertical: 10, borderRadius: radius.lg,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.surface,
         borderWidth: 1, borderColor: colors.border,

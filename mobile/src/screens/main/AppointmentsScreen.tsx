@@ -1103,7 +1103,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: C.primary,
-        height: 50,
+        minHeight: 50,
+        paddingVertical: 10,
         borderRadius: radius.md,
         paddingHorizontal: spacing.lg,
         ...shadows.card,
@@ -1386,7 +1387,8 @@ const styles = StyleSheet.create({
 
     /* Submit button */
     submitBtn: {
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: radius.lg,
         flexDirection: 'row',

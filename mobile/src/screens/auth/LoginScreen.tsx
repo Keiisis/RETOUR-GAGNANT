@@ -145,7 +145,8 @@ export default function LoginScreen({ navigation }: any) {
                                 {showPassword ? <EyeOff size={20} color={C.textMuted} /> : <Eye size={20} color={C.textMuted} />}
                             </Pressable>
                         </View>
-                        <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} hitSlop={6}>
+                        <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} hitSlop={6}
+                            accessibilityRole="link" accessibilityLabel={t('Mot de passe oublié ?')}>
                             <Text style={styles.forgotText}>{t('Mot de passe oublié ?')}</Text>
                         </Pressable>
                     </View>
@@ -164,7 +165,8 @@ export default function LoginScreen({ navigation }: any) {
 
                     <View style={styles.registerRow}>
                         <Text style={styles.registerMuted}>{t('Pas encore de compte ?')}</Text>
-                        <Pressable onPress={() => navigation.navigate('Register')} hitSlop={6}>
+                        <Pressable onPress={() => navigation.navigate('Register')} hitSlop={6}
+                            accessibilityRole="link" accessibilityLabel={t('Créer un compte')}>
                             <Text style={styles.registerLink}>{t("S'inscrire")}</Text>
                         </Pressable>
                     </View>

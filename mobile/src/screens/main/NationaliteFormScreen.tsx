@@ -325,10 +325,15 @@ function SelectField({
             </Pressable>
 
             <Modal visible={ouvert} transparent animationType="slide" onRequestClose={() => setOuvert(false)}>
-                <Pressable style={styles.selectOverlay} onPress={() => setOuvert(false)}>
+                <Pressable style={styles.selectOverlay} onPress={() => setOuvert(false)}
+                    accessibilityRole="button" accessibilityLabel={t('Fermer la liste')}>
                     <Pressable
                         style={[styles.selectSheet, { paddingBottom: insets.bottom + spacing.md }]}
                         onPress={e => e.stopPropagation()}
+                        /* Ce n'est pas un bouton : la zone empêche seulement la
+                           fermeture. `accessible={false}` évite de l'annoncer
+                           comme un contrôle, sans masquer ses enfants. */
+                        accessible={false}
                     >
                         <View style={styles.selectHandle} />
                         <Text style={styles.selectTitle}>{label}</Text>
@@ -1592,7 +1597,8 @@ const styles = StyleSheet.create({
     fieldContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         borderWidth: 1,
         borderColor: C.border,
         backgroundColor: C.surface,
@@ -2009,7 +2015,8 @@ const styles = StyleSheet.create({
         ...shadows.card,
     },
     primaryBtn: {
-        height: 58,
+        minHeight: 58,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: radius.lg,
         flexDirection: 'row',

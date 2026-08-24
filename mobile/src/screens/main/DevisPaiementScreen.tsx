@@ -825,7 +825,8 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
             {/* ══ MOYENS DE PAIEMENT ══ */}
             <Modal visible={feuille} transparent animationType="slide" onRequestClose={() => setFeuille(false)}>
-                <Pressable style={styles.voile} onPress={() => setFeuille(false)} />
+                <Pressable style={styles.voile} onPress={() => setFeuille(false)}
+                    accessibilityRole="button" accessibilityLabel={t('Fermer les moyens de paiement')} />
                 <View style={[styles.feuille, { paddingBottom: insets.bottom + 16 }]}>
                     <View style={styles.poignee} />
 

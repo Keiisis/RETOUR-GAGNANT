@@ -177,7 +177,12 @@ export default function ConfirmEmailScreen({ navigation, route }: any) {
                 </Animated.View>
 
                 {/* Cellules du code. Un seul champ invisible les pilote. */}
-                <Pressable onPress={() => input.current?.focus()} style={styles.codeRow}>
+                <Pressable
+                    onPress={() => input.current?.focus()}
+                    style={styles.codeRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Saisir le code reçu par e-mail')}
+                >
                     <Animated.View style={[styles.codeRowInner, styleSecousse]}>
                         {cellules.map((_, i) => {
                             const rempli = i < code.length

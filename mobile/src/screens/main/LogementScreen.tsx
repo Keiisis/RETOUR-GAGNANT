@@ -517,7 +517,8 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             {/* ── Formulaire de mise en relation ── */}
             <Modal visible={showForm} transparent animationType="slide" onRequestClose={() => setShowForm(false)}>
                 <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowForm(false)} />
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowForm(false)}
+                        accessibilityRole="button" accessibilityLabel={t('Fermer le formulaire')} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
                         <View style={styles.sheetHandle} />
                         <View style={styles.sheetHeader}>
@@ -527,7 +528,8 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                                     {target ? target.nom : t('Mon projet de logement')}
                                 </Text>
                             </View>
-                            <Pressable onPress={() => setShowForm(false)} style={styles.closeBtn} hitSlop={8}>
+                            <Pressable onPress={() => setShowForm(false)} style={styles.closeBtn} hitSlop={8}
+                                accessibilityRole="button" accessibilityLabel={t('Fermer')}>
                                 <X size={20} color={C.text} />
                             </Pressable>
                         </View>
@@ -566,13 +568,19 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                             <Text style={styles.miniLabel}>{t('Formule souhaitée')}</Text>
                             <View style={styles.chipsRow}>
                                 {FORMULES.map(f => (
-                                    <Pressable key={f} onPress={() => setFormule(f)} style={[styles.chip, formule === f && styles.chipActive]}>
+                                    <Pressable key={f} onPress={() => setFormule(f)} style={[styles.chip, formule === f && styles.chipActive]}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ selected: formule === f }}
+                                        accessibilityLabel={t(f)}>
                                         <Text style={[styles.chipText, formule === f && styles.chipTextActive]}>{t(f)}</Text>
                                     </Pressable>
                                 ))}
                             </View>
 
-                            <Pressable onPress={() => setDiaspora(d => !d)} style={styles.checkRow} hitSlop={6}>
+                            <Pressable onPress={() => setDiaspora(d => !d)} style={styles.checkRow} hitSlop={6}
+                                accessibilityRole="checkbox"
+                                accessibilityState={{ checked: diaspora }}
+                                accessibilityLabel={t('Je fais partie de la diaspora')}>
                                 <View style={[styles.checkbox, diaspora && styles.checkboxOn]}>
                                     {diaspora && <Check size={14} color={C.primaryText} strokeWidth={3} />}
                                 </View>
@@ -604,7 +612,8 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             {/* ── Fiche détaillée : TOUTES les photos et informations du bien ── */}
             <Modal visible={!!detail} transparent animationType="slide" onRequestClose={() => setDetail(null)}>
                 <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setDetail(null)} />
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setDetail(null)}
+                        accessibilityRole="button" accessibilityLabel={t('Fermer le détail')} />
                     <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
                         <View style={styles.sheetHandle} />
                         {!!detail && (

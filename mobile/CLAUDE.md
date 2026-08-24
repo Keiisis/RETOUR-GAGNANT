@@ -129,6 +129,20 @@ Aucun fond sombre nulle part — règle absolue.
 
 ---
 
+## ♿ ACCESSIBILITÉ — CE QUI EST DÉJÀ COUVERT (ne pas re-coder)
+
+| Réglage système | Qui s'en charge | Ce qu'il reste à faire |
+|---|---|---|
+| **Réduire les animations** | **Reanimated 4, tout seul** : chaque animation reçoit `reduceMotion: ReduceMotion.System` par défaut et `withRepeat` s'arrête à la 1ʳᵉ répétition. Les 26 boucles décoratives sont couvertes sans une ligne de code. | Seulement le mouvement hors Reanimated : vidéos en lecture auto (`BoutiqueScreen`, `OrdersScreen`), GIF, carrousels autonomes → `useMouvementReduit()` de `src/lib/motion.ts` |
+| **Agrandissement du texte** | `allowFontScaling` n'est désactivé nulle part ✓ | Les conteneurs de texte utilisent `minHeight` + `paddingVertical`, jamais `height` fixe (27 boutons corrigés le 2026-08-24). Les tuiles carrées/rondes gardent `height` = `width` : c'est leur forme |
+| **Lecteur d'écran** | 333 `accessibilityRole`, 137 `accessibilityLabel` | Tout contrôle tactile porte un rôle ET un libellé. Une zone qui ne fait qu'absorber un appui (voile, anti-propagation) prend `accessible={false}` — pas un rôle de bouton |
+
+> ⚠️ Ne PAS ajouter de garde-fou `reduceMotion` sur les animations Reanimated :
+> c'est déjà fait en interne, et le code ajouté serait mort. Vérifié dans
+> `node_modules/react-native-reanimated/lib/module/animation/repeat.js`.
+
+---
+
 ## 🧭 NAVIGATION
 
 ```text

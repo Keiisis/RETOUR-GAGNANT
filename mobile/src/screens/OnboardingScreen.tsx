@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     body: { fontSize: 16, lineHeight: 25, fontFamily: fonts.regular, color: C.textMuted, letterSpacing: -0.2 },
 
     cta: {
-        height: 58, borderRadius: 16, backgroundColor: C.primary,
+        minHeight: 58, paddingVertical: 10, borderRadius: 16, backgroundColor: C.primary,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
         shadowColor: '#008751', shadowOpacity: 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8,
     },

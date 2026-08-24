@@ -791,7 +791,8 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     primaryBtn: {
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: 16,
         flexDirection: 'row',
@@ -811,7 +812,8 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     secondaryBtn: {
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         backgroundColor: C.surfaceSolid,
         borderRadius: 16,
         flexDirection: 'row',

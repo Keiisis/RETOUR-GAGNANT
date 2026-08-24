@@ -209,7 +209,10 @@ export default function RegisterScreen({ navigation }: any) {
                     </View>
 
                     {/* CGU */}
-                    <Pressable onPress={() => setAccepted(a => !a)} style={styles.cguRow} hitSlop={6}>
+                    <Pressable onPress={() => setAccepted(a => !a)} style={styles.cguRow} hitSlop={6}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: accepted }}
+                        accessibilityLabel={t("J'accepte les Conditions Générales d'Utilisation")}>
                         <View style={[styles.checkbox, accepted && styles.checkboxOn]}>
                             {accepted && <Check size={14} color={C.primaryText} strokeWidth={3} />}
                         </View>
@@ -232,7 +235,8 @@ export default function RegisterScreen({ navigation }: any) {
 
                     <View style={styles.loginRow}>
                         <Text style={styles.loginMuted}>{t('Déjà membre ?')}</Text>
-                        <Pressable onPress={() => navigation.navigate('Login')} hitSlop={6}>
+                        <Pressable onPress={() => navigation.navigate('Login')} hitSlop={6}
+                            accessibilityRole="link" accessibilityLabel={t('Se connecter')}>
                             <Text style={styles.loginLink}>{t('Se connecter')}</Text>
                         </Pressable>
                     </View>

@@ -228,7 +228,10 @@ function Slide({
                     {photos.length > 1 && (
                         <View style={styles.vignettes}>
                             {photos.slice(0, 3).map((u, i) => (
-                                <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}>
+                                <Pressable key={u + i} onPress={() => setPhoto(i)} hitSlop={6}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: i === photo }}
+                                    accessibilityLabel={t('Photo {n}', { n: i + 1 })}>
                                     <View style={[styles.vignette, i === photo && styles.vignetteOn]}>
                                         <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
                                     </View>
@@ -746,7 +749,10 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                             {photosIntro.length > 1 && (
                                 <View style={styles.vignettes}>
                                     {photosIntro.slice(0, 4).map((u, i) => (
-                                        <Pressable key={u + i} onPress={() => setCouverture(i)} hitSlop={6}>
+                                        <Pressable key={u + i} onPress={() => setCouverture(i)} hitSlop={6}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ selected: i === couverture }}
+                                            accessibilityLabel={t('Photo de couverture {n}', { n: i + 1 })}>
                                             <View style={[styles.vignette, i === couverture && styles.vignetteOn]}>
                                                 <Image source={{ uri: u }} style={styles.vignetteImg} resizeMode="cover" />
                                             </View>

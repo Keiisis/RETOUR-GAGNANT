@@ -28,6 +28,7 @@ import { useLang } from '../../contexts/LangContext'
 import { useCart } from '../../contexts/CartContext'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
+import { useMouvementReduit } from '../../lib/motion'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
@@ -87,10 +88,21 @@ const StorefrontVideo = () => {
        visait le SDK 54. expo-video est son remplaçant officiel.
        Le lecteur remplace les anciennes propriétés `shouldPlay`, `isLooping`
        et `isMuted`, qui sont désormais des attributs du lecteur lui-même. */
+    const mouvementReduit = useMouvementReduit()
     const player = useVideoPlayer(
         require('../../../assets/images/boutique_video.mp4'),
-        (p) => { p.loop = true; p.muted = true; p.play() },
+        (p) => { p.loop = !mouvementReduit; p.muted = true; if (!mouvementReduit) p.play() },
     )
+
+    /* « Réduire les animations » : une vidéo en boucle est le seul mouvement
+       de l'écran que Reanimated ne gouverne pas. On la fige sur sa première
+       image plutôt que de la laisser tourner indéfiniment. Le réglage peut
+       changer pendant la session : on suit. */
+    useEffect(() => {
+        player.loop = !mouvementReduit
+        if (mouvementReduit) player.pause()
+        else player.play()
+    }, [mouvementReduit, player])
 
     return (
         <Animated.View
@@ -249,6 +261,11 @@ const ProductCard = ({
                     product: item,
                     onAddToCart: (qty: number) => addToCart(item, qty)
                 })}
+                accessibilityRole="button"
+                accessibilityLabel={
+                    `${t(item.title)}, ${displayPrice.toLocaleString(localeActuelle())} FCFA`
+                    + (outOfStock ? `, ${t('rupture de stock')}` : '')
+                }
             >
                 <View style={cardStyles.card}>
                     {/* Image / placeholder */}
@@ -1183,7 +1200,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: C.primary,
-        height: 62,
+        minHeight: 62,
+        paddingVertical: 10,
         borderRadius: 16,
         paddingHorizontal: 18,
         gap: 14,
@@ -1421,7 +1439,8 @@ const styles = StyleSheet.create({
     },
     checkoutBtn: {
         flexDirection: 'row',
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: 16,
         alignItems: 'center',

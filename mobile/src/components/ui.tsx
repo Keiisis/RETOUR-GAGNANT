@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
 
     button: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: spacing.sm, height: 52, paddingHorizontal: spacing.lg,
+        gap: spacing.sm, minHeight: 52, paddingVertical: 10, paddingHorizontal: spacing.lg,
         borderRadius: radius.pill, borderWidth: 1,
     },
     buttonLabel: { ...typography.button },

@@ -1348,7 +1348,8 @@ const styles = StyleSheet.create({
     btn: {
         flex: 1.15,
         flexDirection: 'row',
-        height: 56,
+        minHeight: 56,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: 14,
         alignItems: 'center',
@@ -1376,7 +1377,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: 'rgba(0, 135, 81, 0.10)',
         borderRadius: 14,
         paddingHorizontal: 18,
@@ -1543,7 +1545,8 @@ const styles = StyleSheet.create({
 
     /* ── Confirm button ── */
     confirmBtn: {
-        height: 60,
+        minHeight: 60,
+        paddingVertical: 10,
         backgroundColor: C.primary,
         borderRadius: 16,
         flexDirection: 'row',
@@ -1562,7 +1565,8 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     cancelBtn: {
-        height: 50,
+        minHeight: 50,
+        paddingVertical: 10,
         backgroundColor: C.surface,
         borderRadius: 14,
         borderWidth: 1,
