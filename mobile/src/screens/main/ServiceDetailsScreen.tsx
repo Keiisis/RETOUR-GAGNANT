@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     },
     infoIconWrap: {
         width: 38, height: 38, borderRadius: radius.xl,
-        backgroundColor: C.goldGlow,
+        backgroundColor: C.primaryGlow,
         alignItems: 'center', justifyContent: 'center',
         marginBottom: spacing.sm,
     },
@@ -940,7 +940,7 @@ const styles = StyleSheet.create({
     },
     sectionIcon: {
         width: 30, height: 30, borderRadius: radius.xs,
-        backgroundColor: C.goldGlow,
+        backgroundColor: C.primaryGlow,
         alignItems: 'center', justifyContent: 'center',
     },
     sectionTitle: {
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
     },
     pricingAccent: {
         position: 'absolute', left: 0, top: 0, bottom: 0,
-        width: 4, backgroundColor: C.gold,
+        width: 4, backgroundColor: C.primary,
     },
     pricingLabel: {
         fontSize: 13, fontFamily: 'Inter_600SemiBold',

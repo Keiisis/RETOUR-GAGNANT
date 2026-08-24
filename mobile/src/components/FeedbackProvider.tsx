@@ -32,7 +32,9 @@ import {
 const TONES: Record<ToastTone, { icon: typeof Info; fg: string; bg: string }> = {
     success: { icon: CheckCircle2, fg: colors.primary, bg: colors.primarySoft },
     danger: { icon: XCircle, fg: colors.danger, bg: colors.dangerSoft },
-    warning: { icon: AlertTriangle, fg: colors.accentInk, bg: colors.accentSoft },
+    /* `accentInk` sur `accentSoft` donnait un avertissement vert, identique au
+       succès à la couleur près de l'icône. Jetons sémantiques : 4,58:1. */
+    warning: { icon: AlertTriangle, fg: colors.warning, bg: colors.warningSoft },
     neutral: { icon: Info, fg: colors.textMuted, bg: colors.surfaceMuted },
 }
 

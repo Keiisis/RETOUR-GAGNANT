@@ -279,10 +279,14 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                             </InteractiveButton>
                             <InteractiveButton onPress={toggleFav} style={styles.iconBtn}>
                                 <Animated.View style={heartStyle}>
+                                    {/* Favori : rouge du drapeau (4,62:1 sur blanc),
+                                        lisible sur une photo comme sur un fond clair.
+                                        Le vert de `C.gold` se confondait avec le vert
+                                        de l'en-tête et ne disait pas « favori ». */}
                                     <Heart
                                         size={18}
-                                        color={favorite ? C.gold : C.surface}
-                                        fill={favorite ? C.gold : 'transparent'}
+                                        color={favorite ? C.danger : C.surface}
+                                        fill={favorite ? C.danger : 'transparent'}
                                         strokeWidth={2}
                                     />
                                 </Animated.View>
@@ -294,12 +298,12 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     <View style={styles.badgesRow}>
                         {product.is_featured && (
                             <LinearGradient
-                                colors={[C.gold, C.goldDeep]}
+                                colors={[C.primary, C.primaryDark]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                                 style={styles.featuredBadge}
                             >
-                                <BadgeCheck size={11} color={C.primaryDeep} strokeWidth={2.2} />
+                                <BadgeCheck size={11} color={C.primaryText} strokeWidth={2.2} />
                                 <Text style={styles.featuredText}>{t('Coup de cœur')}</Text>
                             </LinearGradient>
                         )}
@@ -336,7 +340,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                         <View style={styles.ratingRow}>
                             <View style={styles.starsRow}>
                                 {[0, 1, 2, 3, 4].map((i) => (
-                                    <Star key={i} size={13} color={C.primary} fill={i < 4 ? C.gold : 'transparent'} strokeWidth={1.5} />
+                                    <Star key={i} size={13} color={C.primary} fill={i < 4 ? C.primary : 'transparent'} strokeWidth={1.5} />
                                 ))}
                             </View>
                             <Text style={styles.ratingText}>4.8 · 124 {t('avis')}</Text>
@@ -383,7 +387,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                     </View>
                     <View style={styles.trustItem}>
                         <View style={[styles.trustIcon, { backgroundColor: 'rgba(0, 135, 81,0.14)' }]}>
-                            <ShieldCheck size={16} color={C.goldDeep} strokeWidth={1.8} />
+                            <ShieldCheck size={16} color={C.primaryDark} strokeWidth={1.8} />
                         </View>
                         <Text style={styles.trustLabel}>{t('Garantie')}</Text>
                         <Text style={styles.trustValue}>{t('Authentique')}</Text>
@@ -589,7 +593,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 11,
         paddingVertical: 6,
         borderRadius: 999,
-        shadowColor: C.gold,
+        shadowColor: C.primary,
         shadowOpacity: 0.45,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
@@ -597,7 +601,9 @@ const styles = StyleSheet.create({
     },
     featuredText: {
         fontSize: 12,
-        color: C.primaryDeep,
+        /* Le badge est un dégradé vert : son texte était vert foncé, soit
+           1,59:1 — illisible. Blanc sur vert : 4,58:1. */
+        color: C.primaryText,
         fontFamily: 'Outfit_700Bold',
         letterSpacing: 0.6,
         textTransform: 'uppercase',
@@ -635,7 +641,9 @@ const styles = StyleSheet.create({
         borderRadius: 3,
         backgroundColor: 'rgba(255,255,255,0.45)',
     },
-    dotActive: { backgroundColor: C.gold, width: 24 },
+    /* Puce active du carrousel : posée sur la photo, elle doit trancher avec
+       les puces inactives (blanc à 45 %). Le vert s'y perdait. */
+    dotActive: { backgroundColor: C.primaryText, width: 24 },
 
     /* Info card */
     infoCard: {
@@ -670,7 +678,7 @@ const styles = StyleSheet.create({
         width: 5,
         height: 5,
         borderRadius: 3,
-        backgroundColor: C.gold,
+        backgroundColor: C.primary,
     },
     category: {
         fontSize: 12,

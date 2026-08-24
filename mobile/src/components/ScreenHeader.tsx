@@ -81,21 +81,25 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.2)',
         alignItems: 'center', justifyContent: 'center',
     },
+    /* En-tête = dégradé vert foncé. Le titre y était écrit en vert #008751,
+       soit 1,59:1 — invisible ; et la puce comme le fond de pastille gardaient
+       un lavis doré (220,165,64) contraire à la charte. Tout passe en blanc :
+       titre 7,27:1, sous-titre vert doux 6,37:1. */
     stickyTitleWrapper: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: 'rgba(220,165,64,0.15)',
+        backgroundColor: 'rgba(255,255,255,0.14)',
         paddingHorizontal: 20, paddingVertical: 8,
-        borderRadius: 24, borderWidth: 1, borderColor: 'rgba(220,165,64,0.3)',
+        borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
         flexShrink: 1,
     },
     stickyTitle: {
         fontFamily: fonts.extrabold, fontSize: 14,
-        color: royal.gold, letterSpacing: 2, textTransform: 'uppercase',
+        color: royal.textLight, letterSpacing: 2, textTransform: 'uppercase',
     },
-    titleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: royal.gold, opacity: 0.8 },
+    titleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: royal.textLight, opacity: 0.8 },
     headerSub: {
         fontFamily: fonts.bodyMedium, fontSize: 14,
-        color: royal.goldSoft, textAlign: 'center', fontStyle: 'italic',
+        color: royal.surfaceSoft, textAlign: 'center', fontStyle: 'italic',
         marginTop: 4,
     },
 })

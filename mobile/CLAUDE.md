@@ -62,12 +62,12 @@ Aucun fond sombre nulle part — règle absolue.
 | Vert foncé | `#00643C` | Titres sur vert, états pressés secondaires |
 | Vert doux | `#E6F3ED` | Fonds de badge / tuiles d'icône |
 | Jaune Bénin | `#FCD116` | Accent secondaire, barre drapeau |
-| Jaune doux / encre | `#FEF7DC` / `#8A6D08` | Fond de badge / texte lisible dessus |
+| Jaune doux / encre | `#FEF7DC` / `#856809` | Fond d'avertissement / texte lisible dessus (4,9:1) |
 | Rouge Bénin | `#E8112D` | Alertes, barre drapeau |
 | Rouge doux | `#FDECEA` | Fond d'alerte |
 | Blanc / neutre | `#FFFFFF` / `#F5F5F5` | Fond d'écran / surface alternée |
-| Encre | `#3C3C3C` / `#505050` / `#8A8A8A` | Texte principal / secondaire / discret |
-| Lignes | `#F0F0F0` / `#E4E4E4` | Séparateurs / bordures marquées |
+| Encre | `#3C3C3C` / `#505050` / `#6E6E6E` | Texte principal / secondaire / discret (11,0 / 8,1 / 5,1:1) |
+| Lignes | `#E4E4E4` / `#D6D6D6` | Séparateurs / bordures marquées |
 | Flottant | `#3C3C3C` | Pilule de tab bar uniquement |
 
 - Fichier de référence unique : `mobile/src/config/theme.ts` — les tokens `v2` sont la vérité,
@@ -78,7 +78,11 @@ Aucun fond sombre nulle part — règle absolue.
 - Rayons : 8 / 12 / 14 / 16 / 20 / 24 / pill. Ombres teintées (`shadows.card`, `cardRaised`, `floating`).
 - Primitives partagées : `mobile/src/components/ui.tsx` — `FlagBar`, `ScreenHeader`, `Card`,
   `Button`, `Badge`, `IconTile`, `EmptyState`, `SectionTitle`.
-- Tab bar : pilule flottante anthracite, icônes seules + point vert d'état actif.
+- Tab bar : pilule flottante anthracite, icônes seules. **État actif = pastille
+  blanche derrière l'icône, icône en vert Bénin** (2026-08-24). L'ancien point
+  vert de 4 px sur la barre sombre valait 2,41:1, soit MOINS que le gris des
+  onglets inactifs (3,92:1) : l'onglet courant était le plus difficile à voir.
+  Pastille blanche = 11,03:1 sur la barre, icône verte = 4,58:1 sur la pastille.
 
 > Exceptions tolérées (couleurs de marque tierces, pas de la charte) : `#EB001B` (logo Mastercard),
 > `#2C3E50` (couleur d'avatar). Ne pas les étendre.
@@ -305,12 +309,18 @@ soumis → verifie → traitement → validation → termine
 | Status | Label | Couleur (token thème) |
 |--------|-------|---------|
 | `soumis` | Dossier soumis | `info` (#00643C) |
-| `verifie` | En cours de vérification | Violet (#7C5CCA) |
-| `traitement` | En traitement | `gold` / jaune Bénin (#FCD116) |
-| `validation` | En validation | Orange (#E07B54) |
+| `en_attente` | En attente | `warning` / encre jaune (#856809) |
+| `verifie` | En cours de vérification | `purple` (#00643C) |
+| `traitement` | En traitement | `primary` / vert Bénin (#008751) |
+| `validation` | En validation | `accent` (#008751) |
 | `termine` | Terminé | `success` / vert Bénin (#008751) |
-| `annule` | Annulé | `danger` / rouge Bénin (#E8112D) |
+| `annule` | Annulé | `error` / rouge Bénin (#E8112D) |
 
+> Table corrigée le 2026-08-24 : elle annonçait un violet, un orange et un jaune
+> qui n'existaient plus depuis le retrait de l'or (tous aliasés sur le vert).
+> Quatre statuts partagent aujourd'hui le même vert — à trancher côté produit,
+> la couleur ne les distingue plus, seul le libellé le fait.
+>
 > Toujours lire ces couleurs via `screenColors` / `colors` du thème, jamais en dur dans l'écran.
 
 ---

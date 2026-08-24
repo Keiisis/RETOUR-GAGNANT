@@ -621,7 +621,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
     return (
         <View style={{ flexDirection: 'row', gap: 1 }}>
             {[1, 2, 3, 4, 5].map(i => (
-                <Star key={i} size={size} color={C.primary} fill={i <= Math.round(value) ? C.gold : 'transparent'} />
+                <Star key={i} size={size} color={C.primary} fill={i <= Math.round(value) ? C.primary : 'transparent'} />
             ))}
         </View>
     )
@@ -677,7 +677,7 @@ const PriestCard = React.memo(function PriestCard(
                 </View>
                 <View style={{ flex: 1 }}>
                     <View style={styles.cardRatingRow}>
-                        <Star size={14} color={C.gold} fill={C.gold} />
+                        <Star size={14} color={C.primary} fill={C.primary} />
                         <Text style={styles.cardRatingVal}>{priest.rating_count ? priest.rating_avg.toFixed(1) : t('Nouveau')}</Text>
                         {priest.rating_count ? <Text style={styles.cardRatingCount}>({priest.rating_count} {t('avis')})</Text> : null}
                     </View>
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     /* Trust strip */
     trustStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: spacing.lg, paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border, marginBottom: spacing.xl, flexWrap: 'wrap' },
     trustText: { fontFamily: fonts.bodyBold, fontSize: 10, color: C.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
-    trustDot: { color: C.gold, fontSize: 12 },
+    trustDot: { color: C.primary, fontSize: 12 },
 
     /* Bande verte */
     pilierBand: { backgroundColor: C.primary, borderRadius: radius.xxl, marginHorizontal: spacing.md, paddingVertical: 28, paddingHorizontal: spacing.lg, marginBottom: spacing.xl, flexDirection: 'row', flexWrap: 'wrap', ...shadows.md },
