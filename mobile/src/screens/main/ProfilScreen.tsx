@@ -457,6 +457,12 @@ export default function ProfilScreen() {
                     onPress: () => navigation.navigate('Tickets'),
                 },
                 {
+                    icon: 'folder-open-outline' as const,
+                    label: t('Mes documents'),
+                    sub: t('Factures, devis, recaps et pieces deposees'),
+                    onPress: () => navigation.navigate('Documents'),
+                },
+                {
                     icon: 'create-outline' as const,
                     label: t('Ma signature'),
                     sub: t('Signer factures et devis'),

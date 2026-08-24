@@ -186,7 +186,8 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
     const SHORTCUTS = useMemo(() => ([
         { icon: FolderOpen, label: t('Dossiers'), tone: 'primary' as const, dest: 'Dossier' },
         { icon: MessageSquare, label: t('Messages'), tone: 'accent' as const, badge: unreadMessages, dest: 'Messages' },
-        { icon: FileText, label: t('Documents'), tone: 'neutral' as const, dest: 'Signature' },
+        // Menait a l ecran de SIGNATURE : deux notions derriere un meme mot.
+        { icon: FileText, label: t('Documents'), tone: 'neutral' as const, dest: 'Documents' },
     ]), [unreadMessages, t])
 
     const HIGHLIGHTS = useMemo(() => ([

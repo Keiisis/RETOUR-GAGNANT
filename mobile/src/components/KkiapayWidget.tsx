@@ -24,8 +24,8 @@
    exactement ce que fait ce fichier — vérifié dans
    node_modules/@kkiapay-org/react-native-sdk/src/kkiapay.tsx.
 ═══════════════════════════════════════════════════════════ */
-import React, { useCallback, useRef } from 'react'
-import { Modal, View, StyleSheet, ActivityIndicator, Linking, Platform, KeyboardAvoidingView } from 'react-native'
+import React, { useCallback, useRef, useState } from 'react'
+import { Modal, View, Text, StyleSheet, ActivityIndicator, Linking, Platform, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import { screenColors as C } from '../config/theme'
@@ -85,9 +85,51 @@ interface Props {
     onEchec: (motif?: string) => void
     /** Fermé sans payer. Rien n'a été débité. */
     onAnnule: () => void
+    /**
+     * Précharge les ressources du widget pendant que le client lit le
+     * récapitulatif, au lieu d'attendre qu'il appuie sur « Payer ».
+     * Voir la note sur le préchauffage plus bas.
+     */
+    prechauffer?: boolean
 }
 
-export default function KkiapayWidget({ visible, config, onSucces, onEchec, onAnnule }: Props) {
+/* ═══════════════════════════════════════════════════════════
+   PRÉCHAUFFAGE — pourquoi le premier paiement était si long.
+
+   Mesuré sur la page de Kkiapay le 2026-08-24 :
+
+     · widget-v3.kkiapay.me                1,3 Ko
+     · /assets/index.df8cadf8.js       1 331 902 o   ← 1,33 Mo
+     · /assets/index.b8737d7c.css         41 Ko
+
+   Le paquet JavaScript est servi SANS COMPRESSION (aucun Content-Encoding)
+   et SANS `Cache-Control` — seulement un `ETag` et un `Last-Modified`, ce
+   qui laisse le navigateur appliquer une fraîcheur heuristique. Sur une
+   connexion mobile, 1,33 Mo se téléchargent en 15 à 30 secondes, et c'est
+   ce que le client attendait, écran figé, après avoir appuyé sur « Payer ».
+
+   Ces en-têtes sont chez Kkiapay : nous ne pouvons pas les corriger. Ce que
+   nous pouvons faire, c'est déplacer l'attente là où elle ne coûte rien.
+   Une WebView invisible charge l'origine du widget dès que le récapitulatif
+   de paiement s'affiche — pendant que le client lit le montant et appuie.
+   Les ressources atterrissent dans le cache HTTP de la WebView ; à
+   l'ouverture réelle, la page se monte depuis ce cache.
+
+   Trois précautions :
+     · l'URL de préchauffage ne porte AUCUNE configuration, donc aucune
+       transaction n'est initiée — on ne télécharge que la coquille ;
+     · la WebView invisible ne vit que le temps du récapitulatif : elle est
+       démontée avec lui, la mémoire est rendue ;
+     · `javaScriptEnabled` reste actif, sans quoi le HTML seul serait
+       chargé et les assets — le vrai poids — ne seraient jamais demandés.
+   ═══════════════════════════════════════════════════════════ */
+const ORIGINE_WIDGET = 'https://widget-v3.kkiapay.me/'
+
+export default function KkiapayWidget({ visible, config, onSucces, onEchec, onAnnule, prechauffer = true }: Props) {
+    /* Progression réelle du chargement. Un rond qui tourne pendant vingt
+       secondes se lit comme une panne ; une barre qui avance se lit comme
+       un travail en cours. */
+    const [progression, setProgression] = useState(0)
     // Une ouverture = une issue. Sans ce verrou, la page émet parfois
     // `CLOSE_WIDGET` juste après un succès et l'on annoncerait une annulation
     // sur un paiement abouti.
@@ -136,10 +178,34 @@ export default function KkiapayWidget({ visible, config, onSucces, onEchec, onAn
         }
     }, [conclure, onSucces, onEchec, onAnnule])
 
+    /* ORDRE IMPORTANT : le préchauffage est testé AVANT `config`.
+       `config` reste nul tant que le client n'a pas appuyé sur « Payer » —
+       placer ce bloc après le garde ci-dessous reviendrait à ne jamais
+       précharger, c'est-à-dire à ne rien corriger du tout.
+
+       Rendue hors de l'écran plutôt que masquée par `display: none`, qui
+       empêche certaines WebView Android de charger leur page. */
+    if (!visible) {
+        if (!prechauffer) return null
+        return (
+            <View style={styles.prechauffage} pointerEvents="none" accessible={false}>
+                <WebView
+                    source={{ uri: ORIGINE_WIDGET }}
+                    javaScriptEnabled
+                    domStorageEnabled
+                    cacheEnabled
+                    incognito={false}
+                    androidLayerType="software"
+                    style={styles.prechauffageVue}
+                />
+            </View>
+        )
+    }
+
     if (!config) return null
 
-    // À chaque ouverture, on repart d'une ardoise propre.
-    if (visible && conclu.current) conclu.current = false
+    // A chaque ouverture, on repart d une ardoise propre.
+    if (conclu.current) conclu.current = false
 
     const uri = WIDGET_URI + base64(JSON.stringify(config))
 
@@ -168,9 +234,21 @@ export default function KkiapayWidget({ visible, config, onSucces, onEchec, onAn
                         originWhitelist={['*']}
                         mixedContentMode="compatibility"
                         androidLayerType="hardware"
+                        cacheEnabled
+                        onLoadProgress={({ nativeEvent }) => setProgression(nativeEvent.progress)}
+                        onLoadEnd={() => setProgression(1)}
                         renderLoading={() => (
                             <View style={styles.attente}>
                                 <ActivityIndicator size="large" color={C.primary} />
+                                {/* Barre de progression réelle : le paquet de
+                                    Kkiapay pèse 1,33 Mo non compressé, l'attente
+                                    doit se voir avancer. */}
+                                <View style={styles.barre}>
+                                    <View style={[styles.barreRemplie, { width: `${Math.round(progression * 100)}%` }]} />
+                                </View>
+                                <Text style={styles.attenteTexte}>
+                                    {progression < 0.9 ? 'Connexion sécurisée à Kkiapay…' : 'Presque prêt…'}
+                                </Text>
                             </View>
                         )}
                     />
@@ -182,5 +260,12 @@ export default function KkiapayWidget({ visible, config, onSucces, onEchec, onAn
 
 const styles = StyleSheet.create({
     plein: { flex: 1, backgroundColor: '#FFFFFF' },
-    attente: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
+    attente: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', gap: 14, paddingHorizontal: 40 },
+    barre: { width: '100%', maxWidth: 260, height: 4, borderRadius: 2, backgroundColor: C.surfaceAlt, overflow: 'hidden' },
+    barreRemplie: { height: '100%', backgroundColor: C.primary, borderRadius: 2 },
+    attenteTexte: { fontSize: 13, color: C.textSec, textAlign: 'center' },
+    /* Hors champ plutot que masquee : une WebView en display:none ne charge
+       pas sa page sur certaines versions d Android. */
+    prechauffage: { position: 'absolute', width: 1, height: 1, left: -9999, top: -9999, opacity: 0 },
+    prechauffageVue: { width: 1, height: 1 },
 })
