@@ -9,6 +9,7 @@ import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
 import { TVA_RATE } from '@/lib/tax'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
+import { formatPrice, formatMontant } from '@/lib/currency'
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     AreaChart, Area
@@ -384,12 +385,20 @@ export default function AgentComptabilitePage() {
         displayedPaiements.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
         [displayedPaiements, currentPage])
 
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('fr-BJ', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val)
-    }
+    /* ═══ DEUX FORMATAGES, A NE JAMAIS CONFONDRE ═══
+       Ce fichier n'en avait qu'un, qui forcait `currency: 'XOF'` : une facture
+       de 306 $ s'affichait donc « 306 F CFA », dans la liste comme dans les
+       relances WhatsApp. Une erreur de devise en comptabilite n'est pas un
+       defaut d'affichage — c'est un chiffre faux.
+
+       · formatCurrency  → AGREGATS. Les totaux sont sommes apres conversion
+         (`toXOF`, voir plus haut) : ils sont donc reellement en XOF, et le
+         rester est CORRECT. Ne pas y toucher.
+       · formatMontant   → UN DOCUMENT. Suit la devise de CE document. */
+    const formatCurrency = (val: number) => formatPrice(Math.round(val), 'XOF')
 
     const handleWhatsAppReminder = (doc: DocumentFinancier) => {
-        const message = `Bonjour ${doc.client_nom},\n\nC'est l'agence Retour Gagnant Bénin. Nous vous relançons concernant le document ${doc.numero} d'un montant de ${formatCurrency(doc.total)}.\n\nVous pouvez le consulter et le régler ici : ${window.location.origin}/portail/${doc.id}\n\nCordialement.`
+        const message = `Bonjour ${doc.client_nom},\n\nC'est l'agence Retour Gagnant Bénin. Nous vous relançons concernant le document ${doc.numero} d'un montant de ${formatMontant(doc.total, doc.currency)}.\n\nVous pouvez le consulter et le régler ici : ${window.location.origin}/portail/${doc.id}\n\nCordialement.`
         const encoded = encodeURIComponent(message)
         const phone = doc.client_phone?.replace(/\s+/g, '')
         window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank')
@@ -969,14 +978,14 @@ export default function AgentComptabilitePage() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 text-sm text-gray-300">{tx.client_nom} {tx.client_prenom}</td>
-                                            <td className="py-4 px-6 text-right font-mono text-sm font-bold text-white">{formatCurrency(tx.total)}</td>
+                                            <td className="py-4 px-6 text-right font-mono text-sm font-bold text-white">{formatMontant(tx.total, tx.currency)}</td>
                                             <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400">
-                                                {montantPaye > 0 ? formatCurrency(montantPaye) : <span className="text-gray-600">-</span>}
+                                                {montantPaye > 0 ? formatMontant(montantPaye, tx.currency) : <span className="text-gray-600">-</span>}
                                             </td>
                                             <td className="py-4 px-6 text-right font-mono text-sm">
                                                 {tx.type === 'facture' ? (
                                                     <span className={solde > 0 ? 'text-amber-400 font-bold' : 'text-gray-600'}>
-                                                        {solde > 0 ? formatCurrency(solde) : ' Soldé'}
+                                                        {solde > 0 ? formatMontant(solde, tx.currency) : ' Soldé'}
                                                     </span>
                                                 ) : <span className="text-gray-600">-</span>}
                                             </td>
@@ -1112,7 +1121,7 @@ export default function AgentComptabilitePage() {
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-6 text-right font-mono text-sm text-emerald-400 font-bold">
-                                                    {formatCurrency(p.montant)}
+                                                    {formatMontant(p.montant, linkedDoc?.currency)}
                                                 </td>
                                                 <td className="py-4 px-6 text-right font-mono text-xs text-gray-500">
                                                     {new Date(p.date_paiement).toLocaleDateString('fr-FR')}
@@ -1384,7 +1393,7 @@ export default function AgentComptabilitePage() {
                                                 {selectableDocs.length === 0 && <option value="" disabled>Aucune facture disponible</option>}
                                                 {selectableDocs.map(d => (
                                                     <option key={d.id} value={d.id} className="bg-[#0c1420]">
-                                                        {d.numero} : {d.client_nom} {d.client_prenom} : {formatCurrency(Math.max(0, d.total - (paiements[d.id] || 0)))} restant
+                                                        {d.numero} : {d.client_nom} {d.client_prenom} : {formatMontant(Math.max(0, d.total - (paiements[d.id] || 0)), d.currency)} restant
                                                     </option>
                                                 ))}
                                             </select>
@@ -1420,7 +1429,7 @@ export default function AgentComptabilitePage() {
                                 <div className="px-6 pt-4 pb-0">
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/10">
                                         <span className="text-xs text-gray-500">Solde restant</span>
-                                        <span className="text-base font-black text-amber-400">{formatCurrency(solde)}</span>
+                                        <span className="text-base font-black text-amber-400">{formatMontant(solde, selectedDoc.currency)}</span>
                                     </div>
                                 </div>
                             )}

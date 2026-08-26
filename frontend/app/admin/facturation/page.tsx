@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 
 import { FinancialAnalytics } from '@/components/dashboard/FinancialAnalytics'
+import { CURRENCIES, asCurrency } from '@/lib/currency'
 
 interface DevisItem {
     description: string
@@ -236,7 +237,13 @@ export default function AdminFacturationPage() {
 
     const fmtN = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
     // Libellé de devise du DOCUMENT (jamais forcer XOF sur une facture EUR/USD)
-    const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'FCFA' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c
+    /* Delegue a la table UNIQUE des devises (`lib/currency.ts`).
+   Il existait DEUX copies de ce helper, et elles divergeaient : celle de
+   l'admin rendait « FCFA » pour XOF et ignorait GBP (qui s'affichait « GBP »),
+   celle de l'agent rendait « XOF » et connaissait GBP. Une meme facture
+   changeait donc d'apparence selon le panel — et aucune des deux ne
+   connaissait HTG. */
+    const curLabel = (c?: string) => CURRENCIES[asCurrency(c)].symbol
     const formatDate = (val: string | null | undefined) => {
         if (!val) return '-'
         const d = new Date(val)
