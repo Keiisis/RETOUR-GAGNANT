@@ -31,6 +31,18 @@ interface SplashScreenProps {
     onContinue?: () => void;
 }
 
+/* Android applique l interlettrage APRES le dernier caractere sans le
+   compter dans la largeur mesuree du texte : la derniere lettre depassait la
+   zone de dessin et se faisait couper — « RETOU GAGNAN BENI ».
+
+   Le remplissage a droite ne corrige RIEN : en React Native il elargit la
+   vue mais le texte reste cale sur le bord de la zone de contenu, donc
+   l espace fantome deborde au meme endroit. Ce qu il faut, c est un
+   CARACTERE qui l absorbe. Une espace fine (U+2009) de chaque cote : la
+   derniere lettre tient, et le mot reste centre.  */
+const ESPACE_FINE = String.fromCharCode(0x2009)
+const ENTOURE = (mot: string) => ESPACE_FINE + mot + ESPACE_FINE
+
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
 
@@ -90,11 +102,11 @@ function SplashView() {
 
             <Animated.View style={[styles.brandText, aText]}>
                 <View style={styles.brandRow}>
-                    <Text style={[styles.brandWord, styles.brandGreen]}>RETOUR</Text>
+                    <Text style={[styles.brandWord, styles.brandGreen]}>{ENTOURE('RETOUR')}</Text>
                     <Text style={styles.brandSpace}> </Text>
-                    <Text style={[styles.brandWord, styles.brandYellow]}>GAGNANT</Text>
+                    <Text style={[styles.brandWord, styles.brandYellow]}>{ENTOURE('GAGNANT')}</Text>
                 </View>
-                <Text style={[styles.brandWord, styles.brandRed]}>BÉNIN</Text>
+                <Text style={[styles.brandWord, styles.brandRed]}>{ENTOURE('BÉNIN')}</Text>
             </Animated.View>
         </View>
     );
@@ -219,11 +231,6 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontFamily: fonts.extrabold,
         letterSpacing: 3,
-        /* Android ajoute l interlettrage APRES le dernier caractere mais ne
-           le compte pas dans la largeur mesuree du texte : la derniere lettre
-           se faisait donc rogner, d ou « RETOU GAGNAN BENI ». Le remplissage
-           a droite compense exactement cet espace fantome. */
-        paddingRight: 4,
         includeFontPadding: false,
     },
     brandSpace: {
@@ -239,8 +246,6 @@ const styles = StyleSheet.create({
         color: '#E8112D',  // Rouge Bénin
         marginTop: 2,
         letterSpacing: 8,
-        // Interlettrage plus large ici : la compensation suit.
-        paddingRight: 10,
     },
 
     /* ── Langue ── */

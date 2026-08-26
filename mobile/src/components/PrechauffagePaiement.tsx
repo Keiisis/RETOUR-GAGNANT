@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { View, StyleSheet, InteractionManager, AppState } from 'react-native'
 import { WebView } from 'react-native-webview'
 import NetInfo from '@react-native-community/netinfo'
-import { lire, ecrire } from '../lib/stockage'
 
 /* ═══════════════════════════════════════════════════════════
    PRÉCHAUFFAGE DU PAIEMENT, AU LANCEMENT DE L'APPLICATION
@@ -27,14 +26,18 @@ import { lire, ecrire } from '../lib/stockage'
         six secondes : l'ouverture de l'application ne doit pas rivaliser
         avec un téléchargement d'un mégaoctet.
 
-     2. PAS PLUS D'UNE FOIS TOUS LES DEUX JOURS. Chrome garde ces fichiers
-        environ deux jours et demi par heuristique (ils ont un `ETag` et un
-        `Last-Modified`, pas de `Cache-Control`). Recharger plus souvent ne
-        servirait à rien.
+     2. À CHAQUE OUVERTURE, DONNÉES MOBILES COMPRISES. Décision du
+        propriétaire du projet, prise en connaissance du coût : ouvrir vite
+        la page de paiement prime sur l'économie de forfait.
 
-     3. JAMAIS SUR UNE CONNEXION FACTURÉE. `isConnectionExpensive` reste la
-        seule mesure honnête : sur données mobiles, on s'abstient, le
-        préchauffage à l'ouverture du récapitulatif prendra le relais.
+        Le coût réel est d'ailleurs modeste. Ces fichiers portent un `ETag`
+        et un `Last-Modified` sans `Cache-Control` : la WebView les considère
+        frais environ deux jours et demi par heuristique, puis revalide et
+        reçoit un 304 de quelques centaines d'octets. Le mégaoctet complet ne
+        repart que lorsque le cache a expiré ou a été vidé.
+
+     3. UNE SEULE FOIS PAR LANCEMENT. Le composant est monté une fois dans
+        l'arbre de l'application : il ne peut pas se déclencher en boucle.
 
      4. LA WEBVIEW MEURT APRÈS COUP. Quarante-cinq secondes suffisent pour
         télécharger ; ensuite le composant se démonte et rend la mémoire.
@@ -45,8 +48,6 @@ import { lire, ecrire } from '../lib/stockage'
    ═══════════════════════════════════════════════════════════ */
 
 const ORIGINE = 'https://widget-v3.kkiapay.me/'
-const CLE_DERNIER = 'paiement-prechauffe-le'
-const INTERVALLE_MS = 48 * 60 * 60 * 1000
 const ATTENTE_AVANT_MS = 6000
 const DUREE_VIE_MS = 45000
 
@@ -58,24 +59,17 @@ export default function PrechauffagePaiement() {
         let minuteurFin: ReturnType<typeof setTimeout> | undefined
 
         const decider = async () => {
-            // 2. Déjà fait récemment ?
-            const dernier = Number(lire(CLE_DERNIER) || 0)
-            if (dernier && Date.now() - dernier < INTERVALLE_MS) return
-
-            // 3. Connexion facturée ?
+            /* Seule condition : être en ligne. Le type de connexion n'entre
+               plus en compte — on précharge aussi en données mobiles. */
             try {
                 const etat = await NetInfo.fetch()
                 if (!etat.isConnected) return
-                if (etat.details && 'isConnectionExpensive' in etat.details
-                    && etat.details.isConnectionExpensive) return
             } catch {
-                // Impossible de savoir : on s'abstient plutôt que de dépenser.
-                return
+                // État inconnu : on tente. Une WebView qui échoue ne coûte rien.
             }
 
             if (!vivant) return
             setActif(true)
-            ecrire(CLE_DERNIER, String(Date.now()))
 
             // 4. Durée de vie bornée.
             minuteurFin = setTimeout(() => { if (vivant) setActif(false) }, DUREE_VIE_MS)
