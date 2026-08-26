@@ -41,7 +41,6 @@ interface SplashScreenProps {
    CARACTERE qui l absorbe. Une espace fine (U+2009) de chaque cote : la
    derniere lettre tient, et le mot reste centre.  */
 const ESPACE_FINE = String.fromCharCode(0x2009)
-const ENTOURE = (mot: string) => ESPACE_FINE + mot + ESPACE_FINE
 
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
@@ -100,13 +99,23 @@ function SplashView() {
                 />
             </Animated.View>
 
+            {/* UN SEUL Text par ligne, couleurs portées par des fragments
+                imbriqués. La version précédente mettait RETOUR et GAGNANT dans
+                une rangée flex : à 30 px avec interlettrage, la ligne mesurait
+                environ 365 dp pour 363 disponibles sur un écran de 411 dp, et
+                Android l'a effacée entière plutôt que de la rogner.
+
+                Des fragments imbriqués se composent comme du texte courant :
+                ils ne peuvent pas déborder d'une rangée qui n'existe plus. */}
             <Animated.View style={[styles.brandText, aText]}>
-                <View style={styles.brandRow}>
-                    <Text style={[styles.brandWord, styles.brandGreen]}>{ENTOURE('RETOUR')}</Text>
-                    <Text style={styles.brandSpace}> </Text>
-                    <Text style={[styles.brandWord, styles.brandYellow]}>{ENTOURE('GAGNANT')}</Text>
-                </View>
-                <Text style={[styles.brandWord, styles.brandRed]}>{ENTOURE('BÉNIN')}</Text>
+                <Text style={styles.brandLine} numberOfLines={1}>
+                    <Text style={styles.brandGreen}>RETOUR</Text>
+                    <Text>{' '}</Text>
+                    <Text style={styles.brandYellow}>{'GAGNANT' + ESPACE_FINE}</Text>
+                </Text>
+                <Text style={[styles.brandLine, styles.brandRed]} numberOfLines={1}>
+                    {'BÉNIN' + ESPACE_FINE}
+                </Text>
             </Animated.View>
         </View>
     );
@@ -223,18 +232,15 @@ const styles = StyleSheet.create({
     brandText: {
         alignItems: 'center',
     },
-    brandRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    brandWord: {
-        fontSize: 30,
+    /* 26 px et interlettrage 2 : « RETOUR GAGNANT » mesure alors environ
+       300 dp, contre 363 disponibles sur le plus étroit des écrans courants.
+       La marge absorbe les polices plus larges et les écrans de 360 dp. */
+    brandLine: {
+        fontSize: 26,
         fontFamily: fonts.extrabold,
-        letterSpacing: 3,
+        letterSpacing: 2,
         includeFontPadding: false,
-    },
-    brandSpace: {
-        fontSize: 30,
+        textAlign: 'center',
     },
     brandGreen: {
         color: '#008751',  // Vert Bénin
