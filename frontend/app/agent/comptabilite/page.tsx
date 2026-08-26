@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Wallet, TrendUp as TrendingUp, ArrowUpRight, ArrowDownRight, Download, Pulse as Activity, CheckCircle as CheckCircle2, ChartBar as BarChart3, Bank as Landmark, ArrowRight, FileText, X, TrendDown as TrendingDown, Lightning as Zap, ChatCircle as MessageCircle, ArrowClockwise as RefreshCw, Plus, Warning as AlertTriangle, Money as Banknote, CreditCard, Bell, CaretLeft as ChevronLeft, CaretRight as ChevronRight, Receipt, ShoppingBag, Users, Pencil, Trash as Trash2 } from '@phosphor-icons/react';
@@ -9,7 +9,7 @@ import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
 import { TVA_RATE } from '@/lib/tax'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
-import { formatPrice, formatMontant } from '@/lib/currency'
+import { formatPrice, formatMontant, asCurrency } from '@/lib/currency'
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     AreaChart, Area
@@ -282,11 +282,36 @@ export default function AgentComptabilitePage() {
             return date >= prevStart && date <= prevEnd
         }), [paiementsList, prevStart, prevEnd])
 
+    /* ═══ CONVENTION DE DEVISE DES PAIEMENTS ═══════════════════
+       `paiements_manuels` n'a PAS de colonne `currency`. La regle, posee ici
+       une fois pour toutes :
+
+         UN PAIEMENT EST EXPRIME DANS LA DEVISE DE SON DOCUMENT.
+         Un paiement externe (sans document) est en XOF.
+
+       Verifie avant de trancher : les 28 paiements existants portent tous sur
+       des documents en XOF (ou aucun document). AUCUNE donnee historique n'est
+       donc reinterpretee par cette regle — elle formalise ce qui etait deja
+       vrai, au lieu de le laisser implicite.
+
+       Consequence directe : toute SOMME de paiements doit passer par `toXOF`,
+       exactement comme les totaux de documents. Sans cela, un encaissement de
+       306 $ ajouterait 306 aux recettes au lieu de ~183 600 — l'erreur que
+       cette page commettait. */
+    const deviseDuPaiement = useCallback((documentId?: string | null): string => {
+        if (!documentId) return 'XOF'
+        return allDocs.find(d => d.id === documentId)?.currency || 'XOF'
+    }, [allDocs])
+
     const stats = useMemo(() => {
         const getStats = (list: DocumentFinancier[], expList: Depense[], pList: typeof paiementsList) => {
             const invoices = list.filter(d => d.type === 'facture')
             // Somme des paiements réels reçus
-            const encaissePaiements = pList.reduce((acc, p) => acc + Number(p.montant), 0)
+            /* CONVERTI : un paiement est dans la devise de son document
+               (voir `deviseDuPaiement`). Sommer les montants bruts melangeait
+               des dollars et des francs dans un meme total. */
+            const encaissePaiements = pList.reduce(
+                (acc, p) => acc + toXOF(Number(p.montant), deviseDuPaiement(p.document_id)), 0)
             // Plus factures passées payées sans paiement manuel lié (ventes web)
             const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
             const invoicesPayeesSansP = invoices
@@ -343,7 +368,7 @@ export default function AgentComptabilitePage() {
         periodPaiements.forEach(p => {
             if (p.date_paiement) {
                 const day = new Date(p.date_paiement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-                days[day] = (days[day] || 0) + Number(p.montant)
+                days[day] = (days[day] || 0) + toXOF(Number(p.montant), deviseDuPaiement(p.document_id))
             }
         })
         return Object.entries(days).map(([name, total]) => ({ name, total })).reverse()
@@ -621,7 +646,9 @@ export default function AgentComptabilitePage() {
                     client: `${d.client_nom} ${d.client_prenom}`.trim(),
                     categorie: 'Accompagnement diaspora',
                     refDossier: p.reference || '',
-                    montantHT: Number(p.montant || 0),
+                    /* CONVERTI EN XOF : l'export comptable est tenu en francs.
+                       Un encaissement de 306 $ y entrait pour 306 francs. */
+                    montantHT: toXOF(Number(p.montant || 0), d.currency),
                     statut: 'Encaissé',
                 })
             } else {
@@ -1335,6 +1362,9 @@ export default function AgentComptabilitePage() {
                 {showPaymentModal && (() => {
                     const selectedDoc = paymentDoc || (paymentDocId ? allDocs.find(d => d.id === paymentDocId) || null : null)
                     const solde = selectedDoc ? Math.max(0, selectedDoc.total - (paiements[selectedDoc.id] || 0)) : 0
+                    /* Le paiement se saisit dans la devise du DOCUMENT — c'est
+                       celle de la dette. Un paiement externe est en XOF. */
+                    const deviseEncaissement = selectedDoc?.currency || 'XOF'
                     const selectableDocs = allDocs
                         .filter(d => d.type === 'facture')
                         .filter(d => (d.total - (paiements[d.id] || 0)) > 0 || d.status !== 'paye')
@@ -1455,9 +1485,25 @@ export default function AgentComptabilitePage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Montant (XOF)</label>
-                                        <input required type="number" min="1" value={newPayment.montant} onChange={e => setNewPayment(p => ({ ...p, montant: e.target.value }))}
+                                        {/* LE LIBELLE DIT LA VRAIE DEVISE.
+                                            Il affichait « Montant (XOF) » en dur : sur une
+                                            facture de 306 $, il proposait donc « 306 » sous
+                                            une etiquette XOF. Encaisser aurait credite
+                                            306 FCFA contre une dette de 306 $ — la facture
+                                            passait « soldee » pour 1/600e de sa valeur. */}
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                                            Montant ({asCurrency(deviseEncaissement)})
+                                        </label>
+                                        <input required type="number" min="1" step="any" value={newPayment.montant} onChange={e => setNewPayment(p => ({ ...p, montant: e.target.value }))}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none text-sm font-mono" placeholder="0" />
+                                        {/* L'equivalent en francs : ce qui entrera dans les
+                                            livres, et ce qu'on encaisse au comptoir. */}
+                                        {asCurrency(deviseEncaissement) !== 'XOF' && Number(newPayment.montant) > 0 && (
+                                            <p className="mt-1.5 text-[11px] text-amber-400/90 font-mono">
+                                                ≈ {formatPrice(toXOF(Number(newPayment.montant), deviseEncaissement), 'XOF')}
+                                                <span className="text-gray-500"> en comptabilité</span>
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Date</label>
