@@ -6,11 +6,17 @@ import { supabase } from '@/lib/supabase'
 import { FileText, Plus, Trash as Trash2, X, CircleNotch as Loader2, MagnifyingGlass as Search, Download, Eye, Calculator, Receipt, PaperPlaneTilt as Send, Phone, Envelope as Mail, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Link as LinkIcon, Warning as AlertTriangle, Bell, Clock, CurrencyCircleDollar as BadgeDollarSign, ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
-import { convertCurrency, refreshRates, type CurrencyCode } from '@/lib/currency'
+import { convertCurrency, refreshRates, CURRENCIES, asCurrency, type CurrencyCode } from '@/lib/currency'
 import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
-const curLabel = (c?: string) => (!c || c === 'XOF' || c === 'FCFA') ? 'XOF' : c === 'EUR' ? '€' : c === 'USD' ? '$' : c === 'GBP' ? '£' : c
+/* Delegue a la table UNIQUE des devises (`lib/currency.ts`).
+   Il existait DEUX copies de ce helper, et elles divergeaient : celle de
+   l'admin rendait « FCFA » pour XOF et ignorait GBP (qui s'affichait « GBP »),
+   celle de l'agent rendait « XOF » et connaissait GBP. Une meme facture
+   changeait donc d'apparence selon le panel — et aucune des deux ne
+   connaissait HTG. */
+const curLabel = (c?: string) => CURRENCIES[asCurrency(c)].symbol
 // Total converti en XOF pour agréger des documents multi-devises (KPIs)
 const toXof = (amount: number, c?: string) => convertCurrency(amount, ((c || 'XOF').toUpperCase()) as CurrencyCode, 'XOF')
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { formatMontant } from '@/lib/currency-format'
 import { escapeHtml } from '@/lib/security'
 import QRCode from 'qrcode'
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
@@ -142,7 +143,13 @@ export async function GET(
       return process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
     })()
 
-    const fmtPrice = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n)) + ' FCFA'
+    /* La facture d'une commande suit LA DEVISE DE CETTE COMMANDE.
+       Ce formateur ajoutait « FCFA » a tout, y compris a une commande reglee
+       en euros ou en dollars : le document remis au client annoncait alors une
+       devise qui n'etait pas celle du paiement. `order` vient d'un
+       `select('*')` — la colonne est disponible, elle n'etait simplement pas
+       lue. */
+    const fmtPrice = (n: number) => formatMontant(n, order.currency)
 
     const invoiceRef = `RG-${orderId.slice(0, 8).toUpperCase()}`
     const date = new Date(order.created_at).toLocaleDateString('fr-FR', {

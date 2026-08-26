@@ -1,4 +1,12 @@
 import { supabase } from '@/lib/supabase'
+/* Le formatage vit dans un module PUR (aucune dependance) : une route serveur
+   ou un generateur de PDF peut l'importer sans embarquer le client Supabase.
+   Re-exporte ici pour que tous les appels existants continuent de fonctionner. */
+export {
+    CURRENCIES, asCurrency, formatPrice, formatMontant,
+    type CurrencyCode, type CurrencyInfo,
+} from './currency-format'
+import { CURRENCIES, formatPrice, type CurrencyCode } from './currency-format'
 import type { LangCode } from '@/lib/translation/constants'
 
 // ═══════════════════════════════════════════════════════════
@@ -7,7 +15,6 @@ import type { LangCode } from '@/lib/translation/constants'
 // Devise affichée = f(langue active) : mapping ci-dessous
 // ═══════════════════════════════════════════════════════════
 
-export type CurrencyCode = 'XOF' | 'EUR' | 'USD' | 'GBP' | 'HTG'
 
 // ── Mapping Langue → Devises ──────────────────────────────
 // fr, es, cr → XOF (FCFA) par défaut, EUR disponible
@@ -35,21 +42,7 @@ export function getAllowedCurrencies(lang: LangCode): CurrencyCode[] {
     return LANG_CURRENCY_CONFIG[lang]?.allowed || ['XOF', 'EUR']
 }
 
-export interface CurrencyInfo {
-    code: CurrencyCode
-    symbol: string
-    name: string
-    locale: string
-    decimals: number
-}
 
-export const CURRENCIES: Record<CurrencyCode, CurrencyInfo> = {
-    XOF: { code: 'XOF', symbol: 'FCFA', name: 'Franc CFA', locale: 'fr-FR', decimals: 0 },
-    EUR: { code: 'EUR', symbol: '€', name: 'Euro', locale: 'fr-FR', decimals: 2 },
-    USD: { code: 'USD', symbol: '$', name: 'Dollar US', locale: 'en-US', decimals: 2 },
-    GBP: { code: 'GBP', symbol: '£', name: 'Livre Sterling', locale: 'en-GB', decimals: 2 },
-    HTG: { code: 'HTG', symbol: 'HTG', name: 'Gourde Haïtienne', locale: 'fr-HT', decimals: 2 },
-}
 
 // Taux de conversion de base (1 XOF = ... XOF, 1 EUR = 655.957 XOF) 
 // Ces taux sont des fallbacks si la BD est indisponible.
@@ -117,23 +110,8 @@ export const convertCurrency = (amount: number, from: CurrencyCode, to: Currency
     return CURRENCIES[to].decimals === 0 ? Math.ceil(result) : Number(Math.ceil(Number(result + 'e2')) + 'e-2')
 }
 
-/**
- * Formate un prix avec le symbole de sa devise locale.
- */
-export const formatPrice = (amount: number, currency: CurrencyCode = 'XOF'): string => {
-    const info = CURRENCIES[currency]
-    const formatted = new Intl.NumberFormat(info.locale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: info.decimals,
-    }).format(amount)
 
-    if (currency === 'XOF') return `${formatted} FCFA`
-    if (currency === 'EUR') return `${formatted} €`
-    if (currency === 'USD') return `$${formatted}`
-    if (currency === 'GBP') return `£${formatted}`
-    if (currency === 'HTG') return `HTG ${formatted}`
-    return `${formatted} ${currency}`
-}
+
 
 /**
  * Formate un prix avec conversion + affichage multi-devises
