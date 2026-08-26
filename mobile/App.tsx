@@ -38,6 +38,7 @@ import { PaymentSettingsProvider } from './src/contexts/PaymentSettingsContext'
 import { CartProvider } from './src/contexts/CartContext'
 import AppNavigator from './src/navigation/AppNavigator'
 import SplashScreen from './src/screens/SplashScreen'
+import PrechauffagePaiement from './src/components/PrechauffagePaiement'
 import OfflineBanner from './src/components/OfflineBanner'
 
 /* ── Notification handler global (doit être défini avant tout rendu) ── */
@@ -177,6 +178,11 @@ export default function App() {
                                         <StatusBar style="dark" />
                                         <AppNavigator />
                                         <OfflineBanner />
+                                        {/* Telecharge en silence les ressources du widget de
+                                            paiement (1,33 Mo non compresses chez Kkiapay) pendant
+                                            que le client consulte ses dossiers. Voir les quatre
+                                            garde-fous dans le composant. */}
+                                        <PrechauffagePaiement />
                                     </NavigationContainer>
                                 </FeedbackProvider>
                             </CartProvider>

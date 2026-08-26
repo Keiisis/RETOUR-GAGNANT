@@ -219,6 +219,12 @@ const styles = StyleSheet.create({
         fontSize: 30,
         fontFamily: fonts.extrabold,
         letterSpacing: 3,
+        /* Android ajoute l interlettrage APRES le dernier caractere mais ne
+           le compte pas dans la largeur mesuree du texte : la derniere lettre
+           se faisait donc rogner, d ou « RETOU GAGNAN BENI ». Le remplissage
+           a droite compense exactement cet espace fantome. */
+        paddingRight: 4,
+        includeFontPadding: false,
     },
     brandSpace: {
         fontSize: 30,
@@ -233,6 +239,8 @@ const styles = StyleSheet.create({
         color: '#E8112D',  // Rouge Bénin
         marginTop: 2,
         letterSpacing: 8,
+        // Interlettrage plus large ici : la compensation suit.
+        paddingRight: 10,
     },
 
     /* ── Langue ── */
