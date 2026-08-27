@@ -27,6 +27,7 @@ import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -246,16 +247,18 @@ export default function FaScreen({ navigation }: { navigation: any }) {
                 const priestNote = booking
                     ? `Prêtre demandé : ${booking.prenom} ${booking.nom}${booking.localisation ? ` (${booking.localisation})` : ''}.`
                     : 'Aucun prêtre présélectionné : à orienter par l’équipe.'
-                await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                    timeoutMs: 20000,
-                    body: JSON.stringify({
+                /* Par la file de reprise : une coupure réseau ici ne fait plus
+                   disparaître le dossier, l'envoi est rejoué tout seul. */
+                await envoyerOuMettreEnFile({
+                    chemin: '/api/mobile/dossiers',
+                    service: 'Consultation Fa',
+                    reference: txId,
+                    corps: {
                         service_type: 'Consultation Fa',
                         payment_tx_id: txId,
                         notes: `Consultation ${mode === 'presentiel' ? 'en présentiel' : 'en visio'}. ${priestNote}`,
-                    }),
-                }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
+                    },
+                })
 
                 navigation.navigate('ResultatPaiement', {
                     etat: 'succes',

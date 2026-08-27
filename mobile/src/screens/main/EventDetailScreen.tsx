@@ -28,6 +28,7 @@ import { ttcFromHt } from '../../lib/tax'
 import type { AppEvent } from './EventsScreen'
 import { screenColors, typography } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 /* ═══════════════════════════════════════════════════════════
    EventDetailScreen : THEME "CORPORATE PREMIUM 2026"
@@ -540,7 +541,24 @@ export default function EventDetailScreen({ route, navigation }: any) {
                 'success',
             )
         } catch (e: unknown) {
-            toast(t('Erreur'), t('Paiement reçu (réf : {tx}) mais confirmation impossible. Contactez le support.').replace('{tx}', txId))
+            /* Réseau coupé après encaissement : la confirmation du billet est
+               conservée et rejouée. L'inscription, elle, existe déjà en base —
+               c'est le rattachement du paiement qui manquait. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/mobile/events',
+                methode: 'PATCH',
+                besoinJeton: false,
+                service: 'Billet — ' + event.title,
+                reference: txId,
+                corps: {
+                    registration_id: pendingRegistration.id,
+                    transaction_id: txId,
+                },
+            })
+            toast(
+                t('Billet en cours de confirmation'),
+                t('Votre paiement est enregistré (réf : {tx}). La confirmation partira dès le retour du réseau.').replace('{tx}', txId),
+            )
         } finally {
             setLoading(false)
         }

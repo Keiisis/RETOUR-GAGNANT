@@ -26,7 +26,7 @@ import * as SQLite from 'expo-sqlite'
 const NOM_BASE = 'rgb.db'
 
 /** Version du schéma. À incrémenter en AJOUTANT une migration ci-dessous. */
-const VERSION_SCHEMA = 2
+const VERSION_SCHEMA = 3
 
 let instance: SQLite.SQLiteDatabase | null = null
 let ouverture: Promise<SQLite.SQLiteDatabase> | null = null
@@ -158,6 +158,41 @@ async function migrer(db: SQLite.SQLiteDatabase): Promise<void> {
             );
 
             CREATE INDEX IF NOT EXISTS idx_traductions_langue ON traductions(langue);
+        `)
+    }
+
+    if (version < 3) {
+        /* ── ENVOIS EN ATTENTE ────────────────────────────────────
+           Jusqu'ici, un envoi qui échouait juste après un paiement était perdu.
+           Les écrans écrivaient `.catch(() => {})` avec la mention « non
+           bloquant : le paiement est déjà encaissé » : l'argent partait, le
+           dossier ne se créait pas, et personne n'était averti — ni le client,
+           qui voyait un écran de succès, ni l'équipe.
+
+           Un envoi qui rate est donc désormais CONSERVÉ ICI, sur le téléphone,
+           et rejoué : au retour du réseau, au retour de l'application au
+           premier plan, et à chaque lancement. Il n'est effacé qu'une fois
+           accepté par le serveur.
+
+           Les routes visées dédoublonnent déjà côté serveur — /api/mobile/dossiers
+           par `transaction_id`, /api/nationality par `payment_ref` — donc
+           rejouer ne peut pas créer de doublon. C'est la condition qui rend
+           cette file sûre ; ne pas y ajouter une route qui ne dédoublonne pas. */
+        await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS envois_en_attente (
+                id             TEXT PRIMARY KEY NOT NULL,
+                chemin         TEXT NOT NULL,   -- chemin d'API, sans le domaine
+                methode        TEXT DEFAULT 'POST',
+                corps          TEXT NOT NULL,   -- charge utile JSON telle quelle
+                besoin_jeton   INTEGER DEFAULT 1,
+                service        TEXT,            -- libellé lisible, pour les messages
+                reference      TEXT,            -- transaction ou référence de dossier
+                cree_le        INTEGER NOT NULL,
+                tentatives     INTEGER DEFAULT 0,
+                prochaine_le   INTEGER NOT NULL,
+                derniere_err   TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_envois_prochaine ON envois_en_attente (prochaine_le);
         `)
     }
 

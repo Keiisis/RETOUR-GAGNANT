@@ -30,6 +30,7 @@ import {
 import * as Notifications from 'expo-notifications'
 
 import { reprendreDonneesAsyncStorage, rejouerOnboardingEnDev } from './src/lib/stockage'
+import { surveillerFile } from './src/lib/file-envois'
 import { ouvrirBase } from './src/lib/db/base'
 import { AuthProvider } from './src/contexts/AuthContext'
 import { LangProvider } from './src/contexts/LangContext'
@@ -91,7 +92,14 @@ export default function App() {
             })
         // La base s'ouvre en arriere-plan : les depots l'attendront d'eux-memes.
         ouvrirBase().catch(e => { if (__DEV__) console.warn('[db] ouverture impossible :', e) })
-        return () => { vivant = false }
+
+        /* Envois restes en souffrance apres un paiement : on les rejoue des
+           maintenant, puis a chaque retour du reseau et du premier plan.
+           Sans cela, une coupure d'une seconde au mauvais moment faisait
+           disparaitre un dossier deja paye. */
+        const arreterFile = surveillerFile()
+
+        return () => { vivant = false; arreterFile() }
     }, [])
 
     const [fontsLoaded] = useFonts({

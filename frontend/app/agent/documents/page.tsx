@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/lib/translation'
+import RecapMyafroSection from '@/components/admin/RecapMyafroSection'
 import { FolderOpen, Upload, MagnifyingGlass as Search, Trash as Trash2, Download, X, CircleNotch as Loader2, FileText, Image, File, Plus, Eye, Funnel as Filter } from '@phosphor-icons/react';
 
 interface Document {
@@ -274,6 +275,20 @@ export default function AgentDocumentsPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ── Récaps MyAfroOrigins ─────────────────────────────────
+                Ces demandes n'étaient visibles QUE dans l'espace admin. Les
+                agents, à qui revient l'analyse, ne les voyaient nulle part :
+                une prestation payée pouvait attendre sans que personne chargé
+                de la traiter n'en sache rien.
+
+                La route /api/admin/myafro-recap admet déjà le rôle « agent »
+                en lecture et pour la livraison du récap ; seul l'effacement
+                reste réservé à la direction. Le composant est donc monté tel
+                quel, sans copie ni variante. */}
+            <div className="mt-10">
+                <RecapMyafroSection />
+            </div>
         </div>
     )
 }
