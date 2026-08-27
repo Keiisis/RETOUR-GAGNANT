@@ -9,12 +9,11 @@ import Animated, {
     withSpring,
     withTiming,
     withDelay,
+    withRepeat,
     Easing,
 } from 'react-native-reanimated';
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext';
 import { screenColors, fonts } from '../config/theme'
-
-const { width } = Dimensions.get('window');
 
 /* ═══════════════════════════════════════
    Couleurs : Silent Luxury
@@ -31,46 +30,42 @@ interface SplashScreenProps {
     onContinue?: () => void;
 }
 
-/* Android applique l interlettrage APRES le dernier caractere sans le
-   compter dans la largeur mesuree du texte : la derniere lettre se faisait
-   couper. Le remplissage a droite n y change rien — en React Native il
-   elargit la vue mais le texte reste cale sur le bord de la zone de contenu.
-   Il faut un CARACTERE qui absorbe l espace fantome : une espace fine
-   (U+2009) en fin de mot. */
-const ESPACE_FINE = String.fromCharCode(0x2009)
-
 /* ─────────────────────────────────────────────────────────────
-   POURQUOI CE BLOC EST ECRIT COMME CA — a lire avant d y toucher.
+   LE MOT-SYMBOLE — six corrections avant celle-ci. Lire avant d y toucher.
 
-   Cinq corrections successives ont echoue ici, toutes fondees sur la meme
-   hypothese jamais verifiee : « le texte deborde de l ecran ». Les metriques
-   du fichier de police disent le contraire.
+   Les cinq premieres poursuivaient une hypothese jamais verifiee : « le
+   texte deborde de l ecran ». Les metriques de la police disent l inverse.
+   Mesure des tables du fichier (scripts/mesure-mot-symbole.js, lecture de
+   head/cmap/hhea/hmtx de Plus Jakarta Sans ExtraBold) :
 
-   Mesure de Plus Jakarta Sans ExtraBold (tables head/cmap/hmtx, script
-   scripts/mesure-mot-symbole.js), interlettrage de 2 compris :
-
-       « RETOUR GAGNANT »  26 px = 271 dp     « GAGNANT »  26 px = 147 dp
+       « RETOUR GAGNANT »  26 px, sans interlettrage = 243 dp
        ecran le plus etroit vise (320 dp) = 272 dp utiles
 
-   Le texte a TOUJOURS tenu. Le debordement n a jamais existe.
+   Il tenait depuis le debut.
 
-   Le vrai defaut etait visible sur la capture du 2026-08-27 : « BÉNIN »
-   s affichait parfaitement, « RETOUR GAGNANT » perdait son second mot.
-   Difference entre les deux : BÉNIN est un <Text> SIMPLE, l autre etait un
-   <Text> parent portant `letterSpacing` avec des fragments <Text> imbriques
-   pour les couleurs. Android compose alors un SpannableString et ne rend que
-   le premier fragment.
+   DEUX CAUSES REELLES, toutes deux supprimees ici :
 
-   D ou la regle : UN MOT = UN <Text> AUTONOME, jamais d imbrication.
-   C est le motif qui fonctionne deja sur cet ecran, applique aux trois mots.
+   1. `letterSpacing` POSITIF. Android ajoute l interlettrage apres CHAQUE
+      caractere, dernier compris, mais ne le compte pas dans la largeur
+      mesuree du texte. La vue est donc trop etroite de la valeur d un
+      interlettrage et la derniere lettre se fait rogner — « RETOU »,
+      « GAGNAN ». Une espace fine en fin de mot n y change rien : Android
+      supprime les blancs de fin de ligne au moment du calcul.
 
-   Second defaut, independant : le jaune du drapeau (#FCD116) sur fond blanc
-   vaut 1,2:1 de contraste. Meme rendu, il reste illisible. Le theme prevoit
-   `yellowInk` (#856809, 4,9:1) exactement pour ce cas.
+      La maquette de reference demande `tracking-tight`, donc un
+      interlettrage serre. Il est desormais nul ou negatif partout dans la
+      marque : plus de largeur fantome, plus de rognage.
 
-   26 px est fixe, pas calcule : la mesure ci-dessus donne 1,85x de marge sur
-   l appareil le plus etroit. Un calcul dynamique n ajouterait qu une variable
-   de plus a se tromper.
+   2. FRAGMENTS <Text> IMBRIQUES. Un <Text> parent contenant des <Text>
+      enfants colores devient un SpannableString, dont Android ne rendait
+      que le premier fragment — « GAGNANT » disparaissait entierement.
+      Les deux mots de la premiere ligne sont maintenant deux <Text> FRERES
+      dans une rangee, jamais imbriques.
+
+   Regle de securite conservee : tout texte portant un interlettrage positif
+   (ici la seule accroche) est etire sur toute la largeur avec
+   `textAlign: 'center'`. Sa zone de dessin depasse alors largement le texte,
+   donc rien ne peut etre rogne.
    ───────────────────────────────────────────────────────────── */
 const TAILLE_MARQUE = 26
 
@@ -112,6 +107,18 @@ function SplashView() {
         textY.value = withDelay(250, withSpring(0, { damping: 22, stiffness: 100 }));
     }, []);
 
+    /* Rotation continue du témoin de chargement. Reanimated coupe de
+       lui-même les répétitions quand « Réduire les animations » est actif :
+       aucun garde-fou à ajouter. */
+    const rotation = useSharedValue(0);
+    useEffect(() => {
+        rotation.value = withRepeat(
+            withTiming(360, { duration: 900, easing: Easing.linear }),
+            -1,
+            false,
+        );
+    }, []);
+
     const aLogo = useAnimatedStyle(() => ({
         opacity: opacity.value,
         transform: [{ scale: scale.value }],
@@ -120,31 +127,45 @@ function SplashView() {
         opacity: textOpacity.value,
         transform: [{ translateY: textY.value }],
     }));
+    const aSpinner = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+    }));
 
     return (
         <View style={styles.splashContent}>
-            <Animated.View style={[styles.logoWrap, aLogo]}>
-                <Image
-                    source={require('../../assets/splash-icon.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-            </Animated.View>
+            {/* Bande tricolore en tête d'écran, comme sur la maquette. */}
+            <View style={styles.flagBar}>
+                <View style={styles.flagGreen} />
+                <View style={styles.flagYellow} />
+                <View style={styles.flagRed} />
+            </View>
 
-            {/* Trois mots, trois <Text> autonomes empilés. Aucun fragment
-                imbriqué, aucune rangée flex : voir la note en tête de fichier
-                — c'est l'imbrication qui effaçait « GAGNANT ». */}
-            <Animated.View style={[styles.brandText, aText]}>
-                <Text style={[styles.brandLine, styles.brandGreen]}>
-                    {'RETOUR' + ESPACE_FINE}
-                </Text>
-                <Text style={[styles.brandLine, styles.brandYellow]}>
-                    {'GAGNANT' + ESPACE_FINE}
-                </Text>
-                <Text style={[styles.brandLine, styles.brandRed]}>
-                    {'BÉNIN' + ESPACE_FINE}
-                </Text>
-            </Animated.View>
+            <View style={styles.centre}>
+                <Animated.View style={[styles.logoTile, aLogo]}>
+                    <Image
+                        source={require('../../assets/splash-icon.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+                </Animated.View>
+
+                <Animated.View style={[styles.brandText, aText]}>
+                    {/* Deux <Text> FRÈRES dans une rangée — jamais imbriqués,
+                        c'est l'imbrication qui effaçait « GAGNANT ». La rangée
+                        mesure 243 dp à 26 px, contre 272 dp utiles sur le plus
+                        étroit des écrans visés. */}
+                    <View style={styles.brandRow}>
+                        <Text style={[styles.brandWord, styles.brandGreen]}>RETOUR</Text>
+                        <Text style={[styles.brandWord, styles.brandSpace]}> </Text>
+                        <Text style={[styles.brandWord, styles.brandYellow]}>GAGNANT</Text>
+                    </View>
+                    <Text style={[styles.brandWord, styles.brandRed]}>BÉNIN</Text>
+
+                    <Text style={styles.tagline}>L'ACCOMPAGNEMENT PREMIUM</Text>
+                </Animated.View>
+            </View>
+
+            <Animated.View style={[styles.spinner, aSpinner]} />
         </View>
     );
 }
@@ -250,39 +271,93 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 24,
     },
-    logoWrap: {
+    /* Bande tricolore, 6 dp, trois parts égales. */
+    flagBar: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: 6,
+        flexDirection: 'row',
+    },
+    flagGreen: { flex: 1, backgroundColor: '#008751' },
+    flagYellow: { flex: 1, backgroundColor: '#FCD116' },
+    flagRed: { flex: 1, backgroundColor: '#E8112D' },
+
+    centre: {
+        alignItems: 'center',
+    },
+    /* Tuile du logo : vert Bénin à 5 % sur blanc, angles très arrondis. */
+    logoTile: {
+        width: 148,
+        height: 148,
+        borderRadius: 44,
+        backgroundColor: '#F2F8F5',
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 28,
     },
     logo: {
-        width: 200,
-        height: 200,
+        width: 108,
+        height: 108,
     },
     brandText: {
         alignItems: 'center',
     },
-    /* 26 px et interlettrage 2 : « RETOUR GAGNANT » mesure alors environ
-       300 dp, contre 363 disponibles sur le plus étroit des écrans courants.
-       La marge absorbe les polices plus larges et les écrans de 360 dp. */
-    brandLine: {
+    brandRow: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+    },
+    /* AUCUN interlettrage positif : c'est lui qui rognait la dernière lettre
+       (« RETOU », « GAGNAN »). La maquette demande `tracking-tight`, donc une
+       valeur négative — qui, en prime, ne peut pas créer de largeur fantôme. */
+    brandWord: {
         fontSize: TAILLE_MARQUE,
         fontFamily: fonts.extrabold,
-        letterSpacing: 2,
+        letterSpacing: -0.4,
         includeFontPadding: false,
         textAlign: 'center',
+    },
+    brandSpace: {
+        /* L'espace entre les deux mots : une vue de texte à part entière, pour
+           ne pas ré-imbriquer de fragment dans un même <Text>. */
+        color: 'transparent',
     },
     brandGreen: {
         color: '#008751',  // Vert Bénin
     },
     brandYellow: {
-        /* PAS le jaune du drapeau (#FCD116) : 1,2:1 sur blanc, illisible.
-           `yellowInk` est l'or foncé du thème, prévu pour du texte jaune sur
-           fond clair (4,9:1). */
-        color: C.premiumInk,
+        /* Jaune du drapeau, choix du propriétaire du projet (2026-08-27) après
+           avoir vu la variante or foncé. À savoir : sur fond blanc il ne vaut
+           que 1,2:1 de contraste — c'est un parti pris d'identité, pas un
+           réglage de lisibilité. */
+        color: '#FCD116',
     },
     brandRed: {
         color: '#E8112D',  // Rouge Bénin
         marginTop: 2,
-        letterSpacing: 8,
+    },
+    /* Accroche : seul texte à interlettrage large de l'écran. Étirée sur toute
+       la largeur pour que sa zone de dessin dépasse le texte — sans quoi la
+       dernière lettre serait rognée comme l'était le mot-symbole. */
+    tagline: {
+        alignSelf: 'stretch',
+        textAlign: 'center',
+        marginTop: 16,
+        fontSize: 12,
+        fontFamily: fonts.medium,
+        color: C.inkSoft,
+        letterSpacing: 2.5,
+        includeFontPadding: false,
+    },
+    /* Témoin de chargement : anneau ouvert, un seul côté teinté. */
+    spinner: {
+        position: 'absolute',
+        bottom: 56,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#CCE7DC',   // vert Bénin à 20 % sur blanc
+        borderTopColor: '#008751',
     },
 
     /* ── Langue ── */
