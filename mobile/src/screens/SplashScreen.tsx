@@ -31,43 +31,36 @@ interface SplashScreenProps {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   LE MOT-SYMBOLE — six corrections avant celle-ci. Lire avant d y toucher.
+   LE MOT-SYMBOLE EST UNE IMAGE, PAS DU TEXTE. Ne pas revenir en arriere.
 
-   Les cinq premieres poursuivaient une hypothese jamais verifiee : « le
-   texte deborde de l ecran ». Les metriques de la police disent l inverse.
-   Mesure des tables du fichier (scripts/mesure-mot-symbole.js, lecture de
-   head/cmap/hhea/hmtx de Plus Jakarta Sans ExtraBold) :
+   Sept corrections successives ont echoue a l afficher en entier sur
+   Android, chacune sur une hypothese differente : interlettrage qui deborde,
+   rangee flex trop large, fragments <Text> imbriques, taille de police.
+   Le symptome revenait sous une forme voisine a chaque fois — « RETOU »,
+   « GAGNAN », « BÉNI », et jusqu au dernier mot entier de l accroche qui
+   disparaissait. Le point commun : la vue de texte etait mesuree plus
+   etroite que ce que le moteur y dessinait, et le surplus etait coupe net.
 
-       « RETOUR GAGNANT »  26 px, sans interlettrage = 243 dp
-       ecran le plus etroit vise (320 dp) = 272 dp utiles
+   La mesure des metriques de la police (scripts/mesure-mot-symbole.js)
+   ecarte le debordement : « RETOUR GAGNANT » fait 243 dp a 26 px pour
+   272 dp utiles sur l ecran le plus etroit vise. La cause exacte n a pas pu
+   etre isolee a distance, faute d appareil de deverminage.
 
-   Il tenait depuis le debut.
+   D ou ce choix, qui est de toute facon celui de la plupart des
+   applications pour leur logotype : le nom est un ASSET. Une image ne se
+   mesure pas, ne se recompose pas, ne se rogne pas. Elle s affiche au pixel
+   pres, quels que soient l appareil, la version du systeme et les polices
+   disponibles. Toute cette classe de defauts disparait avec elle.
 
-   DEUX CAUSES REELLES, toutes deux supprimees ici :
+   L image est produite par scripts/generer-mot-symbole.js, qui lit les
+   contours des glyphes dans Plus Jakarta Sans ExtraBold et les ecrit en
+   chemins vectoriels. Modifier le libelle ou les couleurs = editer ce
+   script et le relancer, jamais retoucher l image a la main.
 
-   1. `letterSpacing` POSITIF. Android ajoute l interlettrage apres CHAQUE
-      caractere, dernier compris, mais ne le compte pas dans la largeur
-      mesuree du texte. La vue est donc trop etroite de la valeur d un
-      interlettrage et la derniere lettre se fait rogner — « RETOU »,
-      « GAGNAN ». Une espace fine en fin de mot n y change rien : Android
-      supprime les blancs de fin de ligne au moment du calcul.
-
-      La maquette de reference demande `tracking-tight`, donc un
-      interlettrage serre. Il est desormais nul ou negatif partout dans la
-      marque : plus de largeur fantome, plus de rognage.
-
-   2. FRAGMENTS <Text> IMBRIQUES. Un <Text> parent contenant des <Text>
-      enfants colores devient un SpannableString, dont Android ne rendait
-      que le premier fragment — « GAGNANT » disparaissait entierement.
-      Les deux mots de la premiere ligne sont maintenant deux <Text> FRERES
-      dans une rangee, jamais imbriques.
-
-   Regle de securite conservee : tout texte portant un interlettrage positif
-   (ici la seule accroche) est etire sur toute la largeur avec
-   `textAlign: 'center'`. Sa zone de dessin depasse alors largement le texte,
-   donc rien ne peut etre rogne.
+   Contrepartie assumee : le nom ne suit plus l agrandissement systeme des
+   polices. L ecran ne dure que 1,8 s et tout le reste de l application
+   reste du vrai texte.
    ───────────────────────────────────────────────────────────── */
-const TAILLE_MARQUE = 26
 
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
@@ -141,7 +134,7 @@ function SplashView() {
             </View>
 
             <View style={styles.centre}>
-                <Animated.View style={[styles.logoTile, aLogo]}>
+                <Animated.View style={aLogo}>
                     <Image
                         source={require('../../assets/splash-icon.png')}
                         style={styles.logo}
@@ -149,20 +142,16 @@ function SplashView() {
                     />
                 </Animated.View>
 
-                <Animated.View style={[styles.brandText, aText]}>
-                    {/* Deux <Text> FRÈRES dans une rangée — jamais imbriqués,
-                        c'est l'imbrication qui effaçait « GAGNANT ». La rangée
-                        mesure 243 dp à 26 px, contre 272 dp utiles sur le plus
-                        étroit des écrans visés. */}
-                    <View style={styles.brandRow}>
-                        <Text style={[styles.brandWord, styles.brandGreen]}>RETOUR</Text>
-                        <Text style={[styles.brandWord, styles.brandSpace]}> </Text>
-                        <Text style={[styles.brandWord, styles.brandYellow]}>GAGNANT</Text>
-                    </View>
-                    <Text style={[styles.brandWord, styles.brandRed]}>BÉNIN</Text>
-
-                    <Text style={styles.tagline}>L'ACCOMPAGNEMENT PREMIUM</Text>
-                </Animated.View>
+                {/* Le mot-symbole est une IMAGE, pas du texte — voir la note en
+                    tête de fichier. `accessibilityLabel` rend le nom au lecteur
+                    d'écran, que l'image ne peut évidemment pas énoncer. */}
+                <Animated.Image
+                    source={require('../../assets/mot-symbole.png')}
+                    style={[styles.motSymbole, aText]}
+                    resizeMode="contain"
+                    accessibilityRole="image"
+                    accessibilityLabel="Retour Gagnant Bénin — l'accompagnement premium"
+                />
             </View>
 
             <Animated.View style={[styles.spinner, aSpinner]} />
@@ -283,70 +272,24 @@ const styles = StyleSheet.create({
     flagRed: { flex: 1, backgroundColor: '#E8112D' },
 
     centre: {
-        alignItems: 'center',
-    },
-    /* Tuile du logo : vert Bénin à 5 % sur blanc, angles très arrondis. */
-    logoTile: {
-        width: 148,
-        height: 148,
-        borderRadius: 44,
-        backgroundColor: '#F2F8F5',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 28,
-    },
-    logo: {
-        width: 108,
-        height: 108,
-    },
-    brandText: {
-        alignItems: 'center',
-    },
-    brandRow: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-    },
-    /* AUCUN interlettrage positif : c'est lui qui rognait la dernière lettre
-       (« RETOU », « GAGNAN »). La maquette demande `tracking-tight`, donc une
-       valeur négative — qui, en prime, ne peut pas créer de largeur fantôme. */
-    brandWord: {
-        fontSize: TAILLE_MARQUE,
-        fontFamily: fonts.extrabold,
-        letterSpacing: -0.4,
-        includeFontPadding: false,
-        textAlign: 'center',
-    },
-    brandSpace: {
-        /* L'espace entre les deux mots : une vue de texte à part entière, pour
-           ne pas ré-imbriquer de fragment dans un même <Text>. */
-        color: 'transparent',
-    },
-    brandGreen: {
-        color: '#008751',  // Vert Bénin
-    },
-    brandYellow: {
-        /* Jaune du drapeau, choix du propriétaire du projet (2026-08-27) après
-           avoir vu la variante or foncé. À savoir : sur fond blanc il ne vaut
-           que 1,2:1 de contraste — c'est un parti pris d'identité, pas un
-           réglage de lisibilité. */
-        color: '#FCD116',
-    },
-    brandRed: {
-        color: '#E8112D',  // Rouge Bénin
-        marginTop: 2,
-    },
-    /* Accroche : seul texte à interlettrage large de l'écran. Étirée sur toute
-       la largeur pour que sa zone de dessin dépasse le texte — sans quoi la
-       dernière lettre serait rognée comme l'était le mot-symbole. */
-    tagline: {
         alignSelf: 'stretch',
-        textAlign: 'center',
-        marginTop: 16,
-        fontSize: 12,
-        fontFamily: fonts.medium,
-        color: C.inkSoft,
-        letterSpacing: 2.5,
-        includeFontPadding: false,
+        alignItems: 'center',
+    },
+    /* Plus de tuile autour du logo : le logo porte déjà son propre cercle,
+       un second cadre faisait doublon et le rapetissait. */
+    logo: {
+        width: 260,
+        height: 260,
+        marginBottom: 24,
+    },
+    /* Proportions de l'image produite par scripts/generer-mot-symbole.js
+       (908 x 303 px, soit 303 x 101 dp). La largeur suit celle de l'écran et
+       plafonne à sa taille native : sur un téléphone étroit elle rétrécit
+       proportionnellement au lieu de déborder. */
+    motSymbole: {
+        width: '100%',
+        maxWidth: 303,
+        aspectRatio: 908 / 303,
     },
     /* Témoin de chargement : anneau ouvert, un seul côté teinté. */
     spinner: {
