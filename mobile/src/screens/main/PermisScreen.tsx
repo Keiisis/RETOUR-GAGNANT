@@ -28,6 +28,7 @@ import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const PLAYFAIR = fonts.extrabold
@@ -198,11 +199,13 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                 // pour que l'agent et l'admin voient l'inscription dans leur panel
                 // (onglet Service Mobile), avec catégorie et auto-école demandées.
                 const school = schools.find(s => s.id === schoolId) || null
-                await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                    timeoutMs: 20000,
-                    body: JSON.stringify({
+                /* Par la file de reprise : une coupure réseau ici ne fait plus
+                   disparaître le dossier, l'envoi est rejoué tout seul. */
+                await envoyerOuMettreEnFile({
+                    chemin: '/api/mobile/dossiers',
+                    service: 'Permis de Conduire',
+                    reference: txId,
+                    corps: {
                         service_type: 'Permis de Conduire',
                         payment_tx_id: txId,
                         notes: [
@@ -210,8 +213,8 @@ export default function PermisScreen({ navigation }: { navigation: any }) {
                             selected?.duration ? `Durée prévue : ${selected.duration}.` : null,
                             school ? `Auto-école choisie : ${school.nom}${school.ville ? ` (${school.ville})` : ''}.` : 'Aucune auto-école choisie : à orienter par l’équipe.',
                         ].filter(Boolean).join(' '),
-                    }),
-                }).catch(() => { /* non bloquant : le paiement est déjà confirmé */ })
+                    },
+                })
 
                 navigation.navigate('ResultatPaiement', {
                     etat: 'succes',

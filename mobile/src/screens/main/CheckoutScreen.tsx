@@ -34,6 +34,7 @@ import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 /* ═══════════════════════════════════════════════════════════
    CheckoutScreen : THEME "CORPORATE PREMIUM 2026"
@@ -285,15 +286,18 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
         }
 
         setSubmitting(true)
-        try {
-            const cartItemsPayload = cart.map(c => ({
-                product_id: c.product.id,
-                title: c.product.title,
-                quantity: c.quantity,
-                unit_price: c.product.sale_price && c.product.sale_price < c.product.price
-                    ? c.product.sale_price : c.product.price,
-            }))
 
+        /* Déclaré hors du `try` : le rattrapage en fin de bloc doit pouvoir
+           remettre le panier en file si le réseau lâche après l'encaissement. */
+        const cartItemsPayload = cart.map(c => ({
+            product_id: c.product.id,
+            title: c.product.title,
+            quantity: c.quantity,
+            unit_price: c.product.sale_price && c.product.sale_price < c.product.price
+                ? c.product.sale_price : c.product.price,
+        }))
+
+        try {
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
@@ -330,7 +334,35 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             })
         } catch (e) {
             console.error('[Checkout] Submit failed:', e)
-            toast(t('Erreur'), t('Impossible de finaliser votre commande. Référence : ') + txId)
+            /* Réseau coupé après encaissement : la commande est conservée sur le
+               téléphone et renvoyée seule. La route dédoublonne par
+               `transaction_id`, rejouer ne crée pas de seconde commande. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/mobile/orders',
+                service: 'Boutique',
+                reference: txId,
+                corps: {
+                    client_id: profile.id,
+                    customer_name: form.name.trim(),
+                    customer_phone: form.phone.trim(),
+                    customer_email: form.email.trim() || profile.email || null,
+                    cart_items: cartItemsPayload,
+                    amount: totalTtc,
+                    currency: 'XOF',
+                    transaction_id: txId,
+                    shipping: {
+                        address: form.address.trim(),
+                        city: form.city.trim(),
+                        postal: form.postal.trim() || null,
+                        country: form.country.trim(),
+                        notes: form.notes.trim() || null,
+                    },
+                },
+            })
+            toast(
+                t('Commande en cours d’envoi'),
+                t('Votre paiement est enregistré (réf : {tx}). La connexion étant instable, votre commande partira dès le retour du réseau.', { tx: txId }),
+            )
         } finally {
             setSubmitting(false)
         }

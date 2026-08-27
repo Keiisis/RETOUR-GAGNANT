@@ -38,6 +38,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const { width: SCREEN_W } = Dimensions.get('window')
@@ -398,6 +399,36 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                 actionParams: { screen: 'Dossier' },
             })
         } catch (e: any) {
+            /* Réseau coupé après un paiement : l'envoi est conservé et rejoué
+               tout seul, au lieu de disparaître avec un simple message.
+               Sans transaction, il n'y a rien à sauver — le client peut
+               simplement recommencer. */
+            if (transactionId) {
+                await envoyerOuMettreEnFile({
+                    chemin: '/api/mobile/dossiers',
+                    service: title,
+                    reference: transactionId,
+                    corps: {
+                        client_id: profile.id,
+                        service_type: serviceId || title,
+                        service_id: serviceId || null,
+                        payment_tx_id: transactionId,
+                        payment_amount: isNaN(numericPrice) ? 0 : numericPrice,
+                        payment_currency: 'XOF',
+                        notes: `Commande initiée via l'application mobile le ${new Date().toLocaleDateString(localeActuelle())}\nTransaction: ${transactionId}`,
+                    },
+                })
+                navigation.navigate('ResultatPaiement', {
+                    etat: 'succes',
+                    objet: title,
+                    message: t('Votre paiement est enregistré. La connexion étant instable, l’ouverture du dossier se terminera dès le retour du réseau — vous n’avez rien à refaire.'),
+                    reference: transactionId,
+                    actionLabel: t('Voir mon dossier'),
+                    actionRoute: 'Main',
+                    actionParams: { screen: 'Dossier' },
+                })
+                return
+            }
             const msg = e.message || t('Erreur lors de la création du dossier')
             toast(t('Erreur'), msg)
         } finally {

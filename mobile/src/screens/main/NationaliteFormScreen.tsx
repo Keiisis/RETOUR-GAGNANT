@@ -32,6 +32,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import KkiapayModal from '../../components/KkiapayModal'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -584,12 +585,17 @@ export default function NationaliteFormScreen({ navigation }: any) {
         setShowKkiapay(false)
         setLoading(true)
 
+        /* Déclarés HORS du `try` : en cas d'échec, le bloc de rattrapage doit
+           pouvoir remettre en file le dossier ET les chemins des pièces déjà
+           déposées. Enfermés dans le `try`, ils seraient hors de portée. */
+        const uploadedUrls: string[] = []
+        let cleanedForm: Record<string, unknown> = { ...formData }
+
         try {
             // Dépôt en 2 voies : 1) SERVEUR (service role, ≤ 4,4 Mo) : fiable, ne
             // dépend ni des policies RLS ni du réseau direct vers Storage ;
             // 2) repli anon direct (gros fichiers / échec serveur). Le motif
             // d'échec est joint au marqueur (visible côté admin).
-            const uploadedUrls: string[] = []
             const folder = `nat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
             for (let i = 0; i < rawDocs.length; i++) {
                 const doc = rawDocs[i]
@@ -634,7 +640,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                 }
             }
 
-            const cleanedForm: Record<string, unknown> = { ...formData }
+            cleanedForm = { ...formData }
             const dateFields = [
                 'date_naissance', 'ancestor1_date_naissance', 'ancestor2_date_naissance',
                 'pere_date_naissance', 'mere_date_naissance', 'date_expiration_document',
@@ -688,10 +694,44 @@ export default function NationaliteFormScreen({ navigation }: any) {
             }
         } catch (e: any) {
             console.error('[Nationalité] Submit failed:', e)
-            toast(t('Erreur enregistrement'), t('Le paiement a été reçu (réf : {tx}) mais la soumission du dossier a échoué : {err}. Contactez le support.', {
+
+            /* LE CAS LE PLUS COÛTEUX DE L'APPLICATION.
+
+               Les pièces sont déjà déposées dans le stockage à cet instant :
+               si la fiche ne part pas, leurs chemins ne sont enregistrés nulle
+               part et les fichiers deviennent introuvables, alors même que le
+               filet du webhook recrée un dossier pour le paiement. C'est ce
+               qui rendait un dossier payé inexploitable.
+
+               Le dossier complet — champs ET chemins des pièces — est donc
+               conservé sur le téléphone et rejoué jusqu'à ce que le serveur
+               l'accepte. La route reconnaît `payment_ref` et complète la fiche
+               existante au lieu d'en créer une seconde. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/nationality',
+                besoinJeton: false,
+                service: 'Reconnaissance de nationalité',
+                reference: transactionId,
+                corps: {
+                    ...cleanedForm,
+                    documents: uploadedUrls,
+                    documents_uploaded: uploadedUrls,
+                    payment_method: 'kkiapay',
+                    payment_ref: transactionId,
+                    payment_status: 'payé',
+                    amount: formAmount,
+                    currency: formCurrency,
+                    last_step_completed: 6,
+                    source: 'mobile',
+                },
+            })
+
+            toast(
+                t('Dossier en cours d’envoi'),
+                t('Votre paiement est enregistré (réf : {tx}). La connexion étant instable, l’envoi de votre dossier se terminera automatiquement dès le retour du réseau — vous n’avez rien à refaire.', {
                     tx: transactionId,
-                    err: e?.message || 'inconnue',
-                }))
+                }),
+            )
         } finally {
             setLoading(false)
         }

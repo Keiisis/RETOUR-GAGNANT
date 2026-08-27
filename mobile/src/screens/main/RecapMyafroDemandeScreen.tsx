@@ -37,6 +37,7 @@ import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const VERT_PROFOND = '#00643C'
@@ -221,15 +222,30 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                 actionRoute: 'RecapMyafro',
             })
         } catch (e) {
-            // L'argent est parti : on ne laisse pas le client sans référence.
+            /* L'argent est parti : la demande est conservée sur le téléphone et
+               renvoyée toute seule au retour du réseau. La route dédoublonne
+               par `payment_ref`, rejouer ne peut pas créer deux demandes. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/services/recap-myafroorigins',
+                besoinJeton: false,
+                service: 'Récap MyAfroOrigins',
+                reference: transactionId,
+                corps: {
+                    ...form,
+                    consentement,
+                    payment_provider: 'kkiapay',
+                    payment_ref: transactionId,
+                    source: 'mobile',
+                },
+            })
             navigation.navigate('ResultatPaiement', {
-                etat: 'echec',
+                etat: 'succes',
                 objet: t('Récap de dossier MyAfroOrigins'),
-                message: t('Votre paiement a été reçu mais l’enregistrement a échoué. Conservez la référence ci-dessous et contactez-nous : nous régularisons.'),
+                message: t('Votre paiement est enregistré. La connexion étant instable, votre demande partira automatiquement dès le retour du réseau — vous n’avez rien à refaire.'),
                 reference: transactionId,
                 montant: montantXof,
                 devise: 'XOF',
-                motif: e instanceof Error ? e.message : t('Enregistrement interrompu'),
+                motif: e instanceof Error ? e.message : undefined,
             })
         } finally { setEnvoi(false) }
     }

@@ -544,7 +544,10 @@ export async function POST(request: NextRequest) {
             statut: 'reception',
             etapes: nationalitySteps,
             progression: Math.round((1 / nationalitySteps.length) * 100),
-            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant: ${body.amount || 250} ${body.currency || 'USD'}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
+            /* Aucun montant de repli : « 250 » écrit ici quand la requête n'en
+               portait pas donnait une note interne qui affirmait un tarif
+               jamais encaissé. Quand le montant est absent, on le dit. */
+            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
         }).then(({ error: trackError }) => {
             if (trackError) console.error('[TRACKER] Erreur création dossier_tracking:', trackError.message)
             else console.log(`[TRACKER] Dossier ${ref} créé dans le Nexus Tracker`)
@@ -556,7 +559,7 @@ export async function POST(request: NextRequest) {
             email,
             telephone: body.telephone || null,
             sujet: `Demande de nationalité #${ref}`,
-            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant: ${body.amount || 250} ${body.currency || 'USD'}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
+            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
             type: 'nationality',
             lu: false,
         }])

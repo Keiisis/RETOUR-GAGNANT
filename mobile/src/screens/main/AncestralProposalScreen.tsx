@@ -30,6 +30,7 @@ import { FlagBar } from '../../components/ui'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import KkiapayModal from '../../components/KkiapayModal'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -75,28 +76,32 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
         setShowKkiapay(false)
         setLoading(true)
         try {
+            /* Les deux envois passent par la file de reprise : ce qui échoue
+               maintenant repartira seul au retour du réseau. */
+
             // 1) Marquer la demande de nationalité + notifier le staff.
             if (ref) {
-                await fetchWithTimeout(`${API_BASE}/api/nationality/recherche-ancestrale`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    timeoutMs: 20000,
-                    body: JSON.stringify({
+                await envoyerOuMettreEnFile({
+                    chemin: '/api/nationality/recherche-ancestrale',
+                    besoinJeton: false,
+                    service: 'Recherche Ancestrale',
+                    reference: transactionId,
+                    corps: {
                         ref,
                         payment_provider: 'kkiapay',
                         payment_tx_id: transactionId,
                         amount: amountEur,
                         amount_xof: amountXof,
-                    }),
-                }).catch(() => { /* non bloquant : le dossier suit */ })
+                    },
+                })
             }
 
             // 2) Ouvrir un dossier « Recherche Ancestrale » (dossier_tracking).
-            await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                timeoutMs: 20000,
-                body: JSON.stringify({
+            await envoyerOuMettreEnFile({
+                chemin: '/api/mobile/dossiers',
+                service: 'Recherche Ancestrale',
+                reference: transactionId,
+                corps: {
                     service_type: 'Recherche Ancestrale',
                     payment_tx_id: transactionId,
                     payment_amount: amountXof,
@@ -104,8 +109,8 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                     notes: ref
                         ? `Recherche ancestrale souscrite depuis l'app (complément de la demande de nationalité ${ref}).`
                         : "Recherche ancestrale souscrite depuis l'app.",
-                }),
-            }).catch(() => { /* non bloquant */ })
+                },
+            })
 
             navigation.navigate('ResultatPaiement', {
                 etat: 'succes',
