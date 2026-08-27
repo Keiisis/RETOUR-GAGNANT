@@ -42,6 +42,23 @@ interface SplashScreenProps {
    derniere lettre tient, et le mot reste centre.  */
 const ESPACE_FINE = String.fromCharCode(0x2009)
 
+/* TAILLE DU MOT-SYMBOLE — calculee, plus estimee.
+
+   Trois tentatives ont echoue sur ce texte : lettre rognee par
+   l interlettrage, puis ligne effacee par un debordement de rangee flex,
+   puis ligne ellipsee (« RETOUR GAGNA… ») a 26 px. Chaque fois une valeur
+   fixe choisie a vue, jamais mesuree.
+
+   La ligne longue compte 14 signes (« RETOUR GAGNANT »). L echec a 26 px
+   prouve qu un signe occupe plus que 363/14 = 26 dp dans cette graisse.
+   15 dp par signe couvre le cas avec marge, et la taille suit desormais la
+   largeur REELLE de l appareil : 24 px sur 411 dp, 20 px sur 360 dp.
+   Plafond 26 pour ne pas grossir sur tablette, plancher 18 pour rester
+   lisible. */
+const SIGNES_LIGNE_LONGUE = 14
+const LARGEUR_UTILE = width - 48
+const TAILLE_MARQUE = Math.max(18, Math.min(26, Math.floor(LARGEUR_UTILE / SIGNES_LIGNE_LONGUE)))
+
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
 
@@ -108,12 +125,16 @@ function SplashView() {
                 Des fragments imbriqués se composent comme du texte courant :
                 ils ne peuvent pas déborder d'une rangée qui n'existe plus. */}
             <Animated.View style={[styles.brandText, aText]}>
-                <Text style={styles.brandLine} numberOfLines={1}>
+                {/* PAS de numberOfLines : il ellipsait la ligne (« GAGNA… »)
+                    des qu'elle depassait d'un pixel. Sans lui, un debordement
+                    se voit — le mot passe a la ligne — au lieu d'etre coupe en
+                    silence. La taille calculee rend ce cas improbable. */}
+                <Text style={styles.brandLine}>
                     <Text style={styles.brandGreen}>RETOUR</Text>
                     <Text>{' '}</Text>
                     <Text style={styles.brandYellow}>{'GAGNANT' + ESPACE_FINE}</Text>
                 </Text>
-                <Text style={[styles.brandLine, styles.brandRed]} numberOfLines={1}>
+                <Text style={[styles.brandLine, styles.brandRed]}>
                     {'BÉNIN' + ESPACE_FINE}
                 </Text>
             </Animated.View>
@@ -236,7 +257,7 @@ const styles = StyleSheet.create({
        300 dp, contre 363 disponibles sur le plus étroit des écrans courants.
        La marge absorbe les polices plus larges et les écrans de 360 dp. */
     brandLine: {
-        fontSize: 26,
+        fontSize: TAILLE_MARQUE,
         fontFamily: fonts.extrabold,
         letterSpacing: 2,
         includeFontPadding: false,
