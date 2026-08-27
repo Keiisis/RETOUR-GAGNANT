@@ -12,6 +12,7 @@ import Animated, {
     withRepeat,
     Easing,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext';
 import { screenColors, fonts } from '../config/theme'
 
@@ -165,6 +166,10 @@ function SplashView() {
 function LanguageView({ onContinue }: { onContinue?: () => void }) {
     const { lang, setLang } = useLang();
     const [selected, setSelected] = useState<LangCode>(lang);
+    /* Le bas de l'écran appartient au système : barre de navigation à trois
+       boutons ou barre de geste. Un remplissage fixe de 24 dp passait dessous
+       et « Continuer » se retrouvait derrière les touches du téléphone. */
+    const marges = useSafeAreaInsets();
     const opacity = useSharedValue(0);
     const slide = useSharedValue(12);
 
@@ -185,7 +190,13 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
     };
 
     return (
-        <Animated.View style={[styles.langContent, aContent]}>
+        <Animated.View
+            style={[
+                styles.langContent,
+                { paddingBottom: Math.max(marges.bottom, 12) + 24 },
+                aContent,
+            ]}
+        >
             {/* Header */}
             <View style={styles.langHeader}>
                 <Text style={styles.langTitle}>Bienvenue</Text>
@@ -308,7 +319,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: Platform.OS === 'ios' ? 100 : 80,
         paddingHorizontal: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     },
     langHeader: {
         marginBottom: 40,
