@@ -32,32 +32,47 @@ interface SplashScreenProps {
 }
 
 /* Android applique l interlettrage APRES le dernier caractere sans le
-   compter dans la largeur mesuree du texte : la derniere lettre depassait la
-   zone de dessin et se faisait couper — « RETOU GAGNAN BENI ».
-
-   Le remplissage a droite ne corrige RIEN : en React Native il elargit la
-   vue mais le texte reste cale sur le bord de la zone de contenu, donc
-   l espace fantome deborde au meme endroit. Ce qu il faut, c est un
-   CARACTERE qui l absorbe. Une espace fine (U+2009) de chaque cote : la
-   derniere lettre tient, et le mot reste centre.  */
+   compter dans la largeur mesuree du texte : la derniere lettre se faisait
+   couper. Le remplissage a droite n y change rien — en React Native il
+   elargit la vue mais le texte reste cale sur le bord de la zone de contenu.
+   Il faut un CARACTERE qui absorbe l espace fantome : une espace fine
+   (U+2009) en fin de mot. */
 const ESPACE_FINE = String.fromCharCode(0x2009)
 
-/* TAILLE DU MOT-SYMBOLE — calculee, plus estimee.
+/* ─────────────────────────────────────────────────────────────
+   POURQUOI CE BLOC EST ECRIT COMME CA — a lire avant d y toucher.
 
-   Trois tentatives ont echoue sur ce texte : lettre rognee par
-   l interlettrage, puis ligne effacee par un debordement de rangee flex,
-   puis ligne ellipsee (« RETOUR GAGNA… ») a 26 px. Chaque fois une valeur
-   fixe choisie a vue, jamais mesuree.
+   Cinq corrections successives ont echoue ici, toutes fondees sur la meme
+   hypothese jamais verifiee : « le texte deborde de l ecran ». Les metriques
+   du fichier de police disent le contraire.
 
-   La ligne longue compte 14 signes (« RETOUR GAGNANT »). L echec a 26 px
-   prouve qu un signe occupe plus que 363/14 = 26 dp dans cette graisse.
-   15 dp par signe couvre le cas avec marge, et la taille suit desormais la
-   largeur REELLE de l appareil : 24 px sur 411 dp, 20 px sur 360 dp.
-   Plafond 26 pour ne pas grossir sur tablette, plancher 18 pour rester
-   lisible. */
-const SIGNES_LIGNE_LONGUE = 14
-const LARGEUR_UTILE = width - 48
-const TAILLE_MARQUE = Math.max(18, Math.min(26, Math.floor(LARGEUR_UTILE / SIGNES_LIGNE_LONGUE)))
+   Mesure de Plus Jakarta Sans ExtraBold (tables head/cmap/hmtx, script
+   scripts/mesure-mot-symbole.js), interlettrage de 2 compris :
+
+       « RETOUR GAGNANT »  26 px = 271 dp     « GAGNANT »  26 px = 147 dp
+       ecran le plus etroit vise (320 dp) = 272 dp utiles
+
+   Le texte a TOUJOURS tenu. Le debordement n a jamais existe.
+
+   Le vrai defaut etait visible sur la capture du 2026-08-27 : « BÉNIN »
+   s affichait parfaitement, « RETOUR GAGNANT » perdait son second mot.
+   Difference entre les deux : BÉNIN est un <Text> SIMPLE, l autre etait un
+   <Text> parent portant `letterSpacing` avec des fragments <Text> imbriques
+   pour les couleurs. Android compose alors un SpannableString et ne rend que
+   le premier fragment.
+
+   D ou la regle : UN MOT = UN <Text> AUTONOME, jamais d imbrication.
+   C est le motif qui fonctionne deja sur cet ecran, applique aux trois mots.
+
+   Second defaut, independant : le jaune du drapeau (#FCD116) sur fond blanc
+   vaut 1,2:1 de contraste. Meme rendu, il reste illisible. Le theme prevoit
+   `yellowInk` (#856809, 4,9:1) exactement pour ce cas.
+
+   26 px est fixe, pas calcule : la mesure ci-dessus donne 1,85x de marge sur
+   l appareil le plus etroit. Un calcul dynamique n ajouterait qu une variable
+   de plus a se tromper.
+   ───────────────────────────────────────────────────────────── */
+const TAILLE_MARQUE = 26
 
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
@@ -116,23 +131,15 @@ function SplashView() {
                 />
             </Animated.View>
 
-            {/* UN SEUL Text par ligne, couleurs portées par des fragments
-                imbriqués. La version précédente mettait RETOUR et GAGNANT dans
-                une rangée flex : à 30 px avec interlettrage, la ligne mesurait
-                environ 365 dp pour 363 disponibles sur un écran de 411 dp, et
-                Android l'a effacée entière plutôt que de la rogner.
-
-                Des fragments imbriqués se composent comme du texte courant :
-                ils ne peuvent pas déborder d'une rangée qui n'existe plus. */}
+            {/* Trois mots, trois <Text> autonomes empilés. Aucun fragment
+                imbriqué, aucune rangée flex : voir la note en tête de fichier
+                — c'est l'imbrication qui effaçait « GAGNANT ». */}
             <Animated.View style={[styles.brandText, aText]}>
-                {/* PAS de numberOfLines : il ellipsait la ligne (« GAGNA… »)
-                    des qu'elle depassait d'un pixel. Sans lui, un debordement
-                    se voit — le mot passe a la ligne — au lieu d'etre coupe en
-                    silence. La taille calculee rend ce cas improbable. */}
-                <Text style={styles.brandLine}>
-                    <Text style={styles.brandGreen}>RETOUR</Text>
-                    <Text>{' '}</Text>
-                    <Text style={styles.brandYellow}>{'GAGNANT' + ESPACE_FINE}</Text>
+                <Text style={[styles.brandLine, styles.brandGreen]}>
+                    {'RETOUR' + ESPACE_FINE}
+                </Text>
+                <Text style={[styles.brandLine, styles.brandYellow]}>
+                    {'GAGNANT' + ESPACE_FINE}
                 </Text>
                 <Text style={[styles.brandLine, styles.brandRed]}>
                     {'BÉNIN' + ESPACE_FINE}
@@ -267,7 +274,10 @@ const styles = StyleSheet.create({
         color: '#008751',  // Vert Bénin
     },
     brandYellow: {
-        color: '#FCD116',  // Jaune Bénin
+        /* PAS le jaune du drapeau (#FCD116) : 1,2:1 sur blanc, illisible.
+           `yellowInk` est l'or foncé du thème, prévu pour du texte jaune sur
+           fond clair (4,9:1). */
+        color: C.premiumInk,
     },
     brandRed: {
         color: '#E8112D',  // Rouge Bénin
