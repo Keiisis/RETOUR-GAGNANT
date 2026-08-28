@@ -58,6 +58,16 @@ const date = (v: unknown): string | null => {
     const s = String(v ?? '').trim()
     return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null
 }
+/**
+ * Booléen à TROIS états. « Non renseigné » ne vaut pas « non » : ignorer la
+ * différence reviendrait à déclarer mort un ascendant dont on ignore le sort.
+ */
+const oui = (v: unknown): boolean | null => {
+    const s = String(v ?? '').trim().toLowerCase()
+    if (['oui', 'true', '1', 'yes'].includes(s)) return true
+    if (['non', 'false', '0', 'no'].includes(s)) return false
+    return null
+}
 
 /** Étapes du suivi, identiques à celles du flux public. */
 function etapesNationalite() {
@@ -150,7 +160,7 @@ export async function POST(request: NextRequest) {
         pays_residence: texte(body.pays_residence, 80),
         adresse_residence: texte(body.adresse_residence, 300),
         profession: texte(body.profession, 120),
-        demande_depuis_benin: body.demande_depuis_benin === true,
+        demande_depuis_benin: oui(body.demande_depuis_benin) === true,
 
         knows_about_law: true,
         is_afro_descendant: body.is_afro_descendant === false ? false : true,
@@ -162,6 +172,8 @@ export async function POST(request: NextRequest) {
         ancestor1_lien_parente: texte(body.ancestor1_lien_parente, 60),
         ancestor1_nationalite: texte(body.ancestor1_nationalite, 80),
         ancestor1_pays_residence: texte(body.ancestor1_pays_residence, 80),
+        ancestor1_vivant: oui(body.ancestor1_vivant),
+        ancestor1_autres_infos: texte(body.ancestor1_autres_infos, 500),
 
         ancestor2_nom: texte(body.ancestor2_nom, 80),
         ancestor2_prenom: texte(body.ancestor2_prenom, 80),
@@ -169,6 +181,8 @@ export async function POST(request: NextRequest) {
         ancestor2_lien_parente: texte(body.ancestor2_lien_parente, 60),
         ancestor2_nationalite: texte(body.ancestor2_nationalite, 80),
         ancestor2_pays_residence: texte(body.ancestor2_pays_residence, 80),
+        ancestor2_vivant: oui(body.ancestor2_vivant),
+        ancestor2_autres_infos: texte(body.ancestor2_autres_infos, 500),
 
         type_document_identite: texte(body.type_document_identite, 60),
         numero_document: texte(body.numero_document, 80),
