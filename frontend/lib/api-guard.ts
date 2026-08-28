@@ -74,8 +74,24 @@ export const TELEMETRY_LIMIT: RateLimitConfig = {
  * formulaire classique bloquerait un client légitime au milieu de son
  * envoi. On plafonne haut, mais on plafonne.
  */
+/**
+ * Dépôt de pièces justificatives.
+ *
+ * 40 par quart d'heure était calibré sur UN dossier déposé UNE fois. La
+ * réalité : le formulaire de nationalité réclame 17 pièces sur le web et
+ * jusqu'à 25 emplacements en mobile, dont plusieurs acceptent plusieurs
+ * fichiers. Un client qui reprend son dépôt après un paiement refusé —
+ * exactement ce que fait quelqu'un dont la carte étrangère passe mal —
+ * franchissait le plafond et se voyait refuser ses propres pièces.
+ *
+ * 120 couvre trois dépôts complets. Le garde-fou reste réel : au-delà, le
+ * blocage tient un quart d'heure et double à chaque récidive, plafonné à
+ * deux heures. Et le compteur suit le DOSSIER (en-tête `x-rgb-flow`), pas
+ * l'adresse : deux personnes derrière la même IP d'opérateur ne se
+ * pénalisent plus l'une l'autre.
+ */
 export const UPLOAD_LIMIT: RateLimitConfig = {
-    limit: 40,
+    limit: 120,
     window: 15 * 60_000,
     blockDuration: 15 * 60_000,
     blockMultiplier: 2,

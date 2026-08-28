@@ -611,7 +611,16 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     fd.append('file', { uri: doc.file.uri, name: doc.name, type: doc.file.mimeType || 'application/octet-stream' } as any)
                     fd.append('key', doc.key)
                     fd.append('ext', ext)
-                    const r = await fetch(`${API_BASE}/api/nationality/upload-file`, { method: 'POST', body: fd })
+                    /* `x-rgb-flow` : le débit de dépôt se compte PAR DOSSIER et
+                       non par adresse IP. Sans cet en-tête, le serveur retombait
+                       sur l'IP — et deux clients derrière la même adresse
+                       d'opérateur, ou un seul qui reprend son dépôt, épuisaient
+                       le même quota. Le dossier fait une clé naturelle. */
+                    const r = await fetch(`${API_BASE}/api/nationality/upload-file`, {
+                        method: 'POST',
+                        headers: { 'x-rgb-flow': folder },
+                        body: fd,
+                    })
                     const j = await r.json().catch(() => ({}))
                     if (r.ok && j.path) { uploadedUrls.push(`${doc.key}: ${j.path}`); done = true }
                     else reason = j?.error || `serveur ${r.status}`
