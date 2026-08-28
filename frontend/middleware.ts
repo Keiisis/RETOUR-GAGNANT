@@ -883,7 +883,37 @@ export async function middleware(request: NextRequest) {
         }
 
         // 5c. Rate Limiting
-        if (!isIpWhitelisted) {
+        //
+        // ── DEUX CORRECTIONS, MÊME CAUSE ────────────────────────────────
+        //
+        // 1. LES CHEMINS EXEMPTÉS ÉTAIENT QUAND MÊME COMPTÉS. Le bloc 5a
+        //    exclut `isInternalPanelPath`, celui-ci ne le faisait pas : il ne
+        //    testait que la liste blanche d'IP. Or l'exemption `isTokenAuthedPublic`
+        //    sort ces chemins du RPC Sentinel — donc `rpcHandled` reste faux et
+        //    l'exécution arrive ICI. Le flux nationalité, censé être protégé,
+        //    retombait dans le seul garde-fou dont personne ne l'avait sorti.
+        //
+        //    Le chemin contient « upload » : catégorie `upload`, 20 requêtes
+        //    par minute. Un dossier de nationalité réclame 17 pièces sur le web
+        //    et jusqu'à 25 emplacements en mobile, dont plusieurs acceptent
+        //    plusieurs fichiers. Un client méthodique dépasse le plafond ; un
+        //    client qui recommence après un paiement refusé le dépasse à coup sûr.
+        //
+        //    Chaque route publique garde SA propre limite applicative
+        //    (`guardPublic` + `UPLOAD_LIMIT` dans lib/api-guard), comptée par
+        //    DOSSIER et non par IP. C'est la bonne granularité : deux personnes
+        //    derrière la même adresse d'opérateur ne se pénalisent plus.
+        //
+        // 2. UN DÉPASSEMENT DEVENAIT UNE VIOLATION PERMANENTE. `trackViolation`
+        //    dégrade la réputation de l'IP en base. Cinq violations et
+        //    `auto_block_dangerous_ips` inscrit un blocage SANS date
+        //    d'expiration. Déposer trop vite ses pièces justificatives pouvait
+        //    donc valoir un bannissement à vie du site entier — alors qu'un
+        //    dépassement de débit n'est pas une attaque, seulement de la hâte.
+        //
+        //    La réputation ne se dégrade plus que sur les chemins ORDINAIRES.
+        //    Sur un flux exempté, on ralentit (429) et on n'inscrit rien.
+        if (!isIpWhitelisted && !isInternalPanelPath) {
             const rlCategory = getRateLimitCategory(pathname)
             if (checkRateLimit(ip, rlCategory)) {
                 if (SUPA_URL && SUPA_KEY) {
