@@ -422,6 +422,113 @@ export default function AdminNationalitePage() {
     const setF = (patch: Partial<FData>) => setFicheData(d => d ? { ...d, ...patch } : d)
 
     // ── Édition d'une demande ──
+    /* ═══════════════════════════════════════════════════════════
+       CRÉATION MANUELLE D'UN DOSSIER
+
+       Tous les dossiers naissaient du formulaire public, donc d'un paiement
+       Kkiapay. Un client dont la carte étrangère est refusée règle autrement
+       — Mobile Money, virement, TapTap Send, espèces — et son dossier
+       n'existait alors nulle part : ni suivi, ni pièces, ni facture.
+
+       La saisie est volontairement courte : nom, prénom, email et moyen de
+       règlement suffisent à ouvrir le dossier. Tout le reste se complète
+       ensuite par la fiche d'édition, qui existe déjà.
+       ═══════════════════════════════════════════════════════════ */
+    const MOYENS_PAIEMENT: Record<string, string> = {
+        momo: 'Mobile Money',
+        rib: 'Virement bancaire (RIB)',
+        kkiapay: 'Kkiapay',
+        taptap: 'TapTap Send',
+        especes: 'Espèces',
+        autre: 'Autre',
+    }
+    const CREATION_VIDE = {
+        nom: '', prenom: '', email: '', telephone: '',
+        pays_residence: '', nationalite: '', date_naissance: '', ville_naissance: '', pays_naissance: '',
+        payment_method: 'momo', payment_ref: '', payment_status: 'paye',
+        amount: '', currency: '',
+        ancestor1_nom: '', ancestor1_prenom: '', ancestor1_lien_parente: '',
+        afro_descendant_description: '', agent_notes: '',
+    }
+    const [creationOuverte, setCreationOuverte] = useState(false)
+    const [creationForm, setCreationForm] = useState({ ...CREATION_VIDE })
+    const [creationFichiers, setCreationFichiers] = useState<{ id: string; label: string; file: File | null }[]>([])
+    const [creationBusy, setCreationBusy] = useState(false)
+    const [creationErreur, setCreationErreur] = useState('')
+    const [creationBilan, setCreationBilan] = useState<{ reference: string; pieces: number; avertissement: string | null } | null>(null)
+
+    const majCreation = (champ: string, valeur: string) =>
+        setCreationForm(f => ({ ...f, [champ]: valeur }))
+
+    const fermerCreation = () => {
+        setCreationOuverte(false)
+        setCreationForm({ ...CREATION_VIDE })
+        setCreationFichiers([])
+        setCreationErreur('')
+        setCreationBilan(null)
+    }
+
+    const creerDossier = async () => {
+        setCreationErreur('')
+        if (!creationForm.nom.trim() || !creationForm.prenom.trim() || !creationForm.email.trim()) {
+            setCreationErreur('Nom, prénom et email sont indispensables.')
+            return
+        }
+        setCreationBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...creationForm,
+                    amount: creationForm.amount === '' ? undefined : Number(creationForm.amount),
+                    currency: creationForm.currency || undefined,
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) throw new Error(json.error || `Erreur serveur (${res.status})`)
+
+            /* Les pièces passent par la chaîne existante : dépôt dans le
+               bucket, puis rattachement au dossier. Un échec de pièce ne
+               remet pas le dossier en cause — il est déjà créé. */
+            let deposees = 0
+            const aDeposer = creationFichiers.filter(r => r.file)
+            if (aDeposer.length) {
+                const lignes: { label: string; path: string }[] = []
+                for (const r of aDeposer) {
+                    const fd = new FormData()
+                    fd.append('file', r.file as File)
+                    fd.append('key', 'piece')
+                    fd.append('ext', (r.file as File).name.split('.').pop() || 'bin')
+                    const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+                    const uj = await up.json().catch(() => ({}))
+                    if (up.ok && uj.path) lignes.push({ label: r.label || (r.file as File).name, path: uj.path })
+                }
+                if (lignes.length) {
+                    const add = await fetch(`/api/admin/nationalite/${json.id}/add-documents`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ docs: lignes }),
+                    })
+                    if (add.ok) deposees = lignes.length
+                }
+            }
+
+            setCreationBilan({
+                reference: json.reference,
+                pieces: deposees,
+                avertissement: json.avertissement || (deposees < aDeposer.length
+                    ? `${aDeposer.length - deposees} pièce(s) n'ont pas pu être déposées. Ajoutez-les depuis la fiche du dossier.`
+                    : null),
+            })
+            await fetchApps()
+        } catch (e) {
+            setCreationErreur(e instanceof Error ? e.message : 'Création impossible.')
+        } finally {
+            setCreationBusy(false)
+        }
+    }
+
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
     const [savingEdit, setSavingEdit] = useState(false)
@@ -520,6 +627,16 @@ export default function AdminNationalitePage() {
                         <h1 className="text-2xl font-black text-white flex items-center gap-2"><Globe2 size={22} className="text-emerald-400" /> <T>Demandes de Nationalité</T></h1>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        {/* Ouvre la saisie d'un dossier réglé hors passerelle :
+                            Mobile Money, virement, TapTap Send, espèces. Ces
+                            clients existaient jusqu'ici dans une boîte mail et
+                            nulle part ailleurs. */}
+                        <button
+                            onClick={() => setCreationOuverte(true)}
+                            className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center gap-2 transition-all"
+                        >
+                            <Plus size={14} /> <T>Nouveau dossier</T>
+                        </button>
                         <Link href="/admin/nationalite/settings" className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 flex items-center gap-2 hover:bg-emerald-500/20 transition-all">
                             <Globe2 size={14} /> <T>Paramètres formulaire</T> <ExternalLink size={12} />
                         </Link>
@@ -1034,6 +1151,277 @@ export default function AdminNationalitePage() {
                                     <button onClick={sendFiche} disabled={ficheBusy || !ficheApp.email} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.65)]">
                                         {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer au client
                                     </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════
+                NOUVEAU DOSSIER — saisie d'un règlement hors passerelle
+                ═══════════════════════════════════════════════════════ */}
+            {creationOuverte && (
+                <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl overflow-hidden">
+
+                        <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <FilePlus size={18} className="text-[#008751]" /> Nouveau dossier de nationalité
+                                </h3>
+                                <p className="text-[12px] text-slate-500 mt-0.5">
+                                    Pour un client qui a réglé hors du site : Mobile Money, virement, TapTap Send, espèces.
+                                </p>
+                            </div>
+                            <button onClick={fermerCreation} className="text-slate-400 hover:text-slate-700 transition-colors" aria-label="Fermer">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {creationBilan ? (
+                            /* ── Bilan : ce qui a réellement été créé ── */
+                            <div className="px-7 py-8 text-center">
+                                <CheckCircle2 size={44} className="mx-auto text-[#008751] mb-3" />
+                                <p className="text-slate-900 font-black text-lg">Dossier créé</p>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Référence <span className="font-mono font-bold text-slate-900">{creationBilan.reference}</span>
+                                </p>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    {creationBilan.pieces > 0
+                                        ? `${creationBilan.pieces} pièce(s) jointe(s) déposée(s).`
+                                        : 'Aucune pièce jointe pour l’instant — elles s’ajoutent depuis la fiche du dossier.'}
+                                </p>
+                                {creationBilan.avertissement && (
+                                    <p className="mt-4 text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left">
+                                        {creationBilan.avertissement}
+                                    </p>
+                                )}
+                                <div className="mt-7 flex justify-center gap-3">
+                                    <button
+                                        onClick={() => { setCreationBilan(null); setCreationForm({ ...CREATION_VIDE }); setCreationFichiers([]) }}
+                                        className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+                                    >
+                                        Saisir un autre dossier
+                                    </button>
+                                    <button onClick={fermerCreation} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold transition-colors">
+                                        Terminer
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="px-7 py-6 space-y-7 max-h-[65vh] overflow-y-auto">
+
+                                    {/* ── Identité ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Identité du demandeur</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {[
+                                                { c: 'prenom', l: 'Prénom', requis: true },
+                                                { c: 'nom', l: 'Nom', requis: true },
+                                                { c: 'email', l: 'Email', requis: true, type: 'email' },
+                                                { c: 'telephone', l: 'Téléphone' },
+                                                { c: 'date_naissance', l: 'Date de naissance', type: 'date' },
+                                                { c: 'ville_naissance', l: 'Ville de naissance' },
+                                                { c: 'pays_naissance', l: 'Pays de naissance' },
+                                                { c: 'nationalite', l: 'Nationalité actuelle' },
+                                                { c: 'pays_residence', l: 'Pays de résidence' },
+                                            ].map(f => (
+                                                <label key={f.c} className="block">
+                                                    <span className="text-[11px] font-bold text-slate-500">
+                                                        {f.l}{f.requis && <span className="text-red-500"> *</span>}
+                                                    </span>
+                                                    <input
+                                                        type={f.type || 'text'}
+                                                        value={(creationForm as Record<string, string>)[f.c]}
+                                                        onChange={e => majCreation(f.c, e.target.value)}
+                                                        className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    {/* ── Règlement ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Règlement</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                                            {Object.entries(MOYENS_PAIEMENT).map(([cle, libelle]) => (
+                                                <button
+                                                    key={cle}
+                                                    type="button"
+                                                    onClick={() => majCreation('payment_method', cle)}
+                                                    className={`px-3 py-2.5 rounded-xl text-[12px] font-bold border transition-all ${creationForm.payment_method === cle
+                                                        ? 'bg-[#008751] text-white border-[#008751]'
+                                                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
+                                                >
+                                                    {libelle}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <label className="block sm:col-span-2">
+                                                <span className="text-[11px] font-bold text-slate-500">
+                                                    Référence du règlement
+                                                    {creationForm.payment_method === 'autre' && <span className="text-red-500"> *</span>}
+                                                </span>
+                                                <input
+                                                    value={creationForm.payment_ref}
+                                                    onChange={e => majCreation('payment_ref', e.target.value)}
+                                                    placeholder="N° de transaction, de virement, ou nature du règlement"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">État</span>
+                                                <select
+                                                    value={creationForm.payment_status}
+                                                    onChange={e => majCreation('payment_status', e.target.value)}
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                >
+                                                    <option value="paye">Payé</option>
+                                                    <option value="en_attente">En attente</option>
+                                                </select>
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">Montant</span>
+                                                <input
+                                                    type="number" min="0" step="0.01"
+                                                    value={creationForm.amount}
+                                                    onChange={e => majCreation('amount', e.target.value)}
+                                                    placeholder="tarif en vigueur"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">Devise</span>
+                                                <input
+                                                    value={creationForm.currency}
+                                                    onChange={e => majCreation('currency', e.target.value.toUpperCase())}
+                                                    placeholder="EUR"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 mt-2">
+                                            Montant et devise laissés vides : le tarif configuré s’applique.
+                                        </p>
+                                    </section>
+
+                                    {/* ── Ascendance ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Ascendance béninoise</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {[
+                                                { c: 'ancestor1_prenom', l: 'Prénom de l’ascendant' },
+                                                { c: 'ancestor1_nom', l: 'Nom de l’ascendant' },
+                                                { c: 'ancestor1_lien_parente', l: 'Lien de parenté' },
+                                            ].map(f => (
+                                                <label key={f.c} className="block">
+                                                    <span className="text-[11px] font-bold text-slate-500">{f.l}</span>
+                                                    <input
+                                                        value={(creationForm as Record<string, string>)[f.c]}
+                                                        onChange={e => majCreation(f.c, e.target.value)}
+                                                        className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <label className="block mt-3">
+                                            <span className="text-[11px] font-bold text-slate-500">Preuve d’afro-descendance déclarée</span>
+                                            <textarea
+                                                rows={2}
+                                                value={creationForm.afro_descendant_description}
+                                                onChange={e => majCreation('afro_descendant_description', e.target.value)}
+                                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors resize-none"
+                                            />
+                                        </label>
+                                    </section>
+
+                                    {/* ── Pièces ── */}
+                                    <section>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                                                Pièces reçues par email
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCreationFichiers(r => [...r, { id: `${Date.now()}-${r.length}`, label: '', file: null }])}
+                                                className="text-[12px] font-bold text-[#008751] hover:text-[#00643C] flex items-center gap-1.5 transition-colors"
+                                            >
+                                                <Plus size={14} /> Ajouter une pièce
+                                            </button>
+                                        </div>
+                                        {creationFichiers.length === 0 ? (
+                                            <p className="text-[12px] text-slate-400">
+                                                Facultatif. Les pièces peuvent aussi être ajoutées plus tard depuis la fiche du dossier.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {creationFichiers.map((r, i) => (
+                                                    <div key={r.id} className="flex items-center gap-2">
+                                                        <input
+                                                            value={r.label}
+                                                            onChange={e => setCreationFichiers(rows => rows.map((x, j) => j === i ? { ...x, label: e.target.value } : x))}
+                                                            placeholder="Libellé — ex. Acte de naissance du grand-père"
+                                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                        />
+                                                        <input
+                                                            type="file"
+                                                            onChange={e => setCreationFichiers(rows => rows.map((x, j) => j === i ? { ...x, file: e.target.files?.[0] || null } : x))}
+                                                            className="text-[11px] text-slate-500 w-52 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-slate-100 file:text-slate-700"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCreationFichiers(rows => rows.filter((_, j) => j !== i))}
+                                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                                            aria-label="Retirer cette pièce"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </section>
+
+                                    {/* ── Note interne ── */}
+                                    <label className="block">
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Note interne</span>
+                                        <textarea
+                                            rows={2}
+                                            value={creationForm.agent_notes}
+                                            onChange={e => majCreation('agent_notes', e.target.value)}
+                                            placeholder="Contexte du règlement, interlocuteur, ce qui reste à obtenir…"
+                                            className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors resize-none"
+                                        />
+                                    </label>
+
+                                    {creationErreur && (
+                                        <p className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                                            {creationErreur}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="px-7 py-4 border-t border-slate-100 flex justify-between items-center gap-3">
+                                    <p className="text-[11px] text-slate-400">
+                                        Le dossier entre aussitôt dans le suivi, côté équipe comme côté client.
+                                    </p>
+                                    <div className="flex gap-3">
+                                        <button onClick={fermerCreation} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors">
+                                            Annuler
+                                        </button>
+                                        <button
+                                            onClick={creerDossier}
+                                            disabled={creationBusy}
+                                            className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.65)]"
+                                        >
+                                            {creationBusy ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                                            Créer le dossier
+                                        </button>
+                                    </div>
                                 </div>
                             </>
                         )}
