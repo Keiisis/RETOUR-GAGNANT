@@ -104,6 +104,48 @@ export default function NationaliteFormPage() {
     const [paymentTxId, setPaymentTxId] = useState('')
     const [paymentProcessing, setPaymentProcessing] = useState(false)
     const [paymentError, setPaymentError] = useState('')
+
+    /* ── Code d'invitation ──────────────────────────────────────────
+       Une carte émise hors zone UEMOA est fréquemment refusée par la banque
+       émettrice, avant même toute authentification. Le client se retrouvait
+       alors sans solution : soit il abandonnait, soit l'agence saisissait le
+       dossier à sa place, ce qui lui retirait la maîtrise de ses pièces.
+
+       Le code lui rend le formulaire. Ce que vérifie cet écran est un
+       CONFORT — savoir tout de suite si le code sera accepté. La gratuité,
+       elle, est accordée par le serveur au moment de la soumission : rien de
+       ce que dit ce composant ne l'engage. */
+    const [codeInvitationOuvert, setCodeInvitationOuvert] = useState(false)
+    const [codeInvitation, setCodeInvitation] = useState('')
+    const [codeInvitationBusy, setCodeInvitationBusy] = useState(false)
+    const [codeInvitationErreur, setCodeInvitationErreur] = useState('')
+    const [codeInvitationValide, setCodeInvitationValide] = useState<{ couvre_ancestrale: boolean } | null>(null)
+
+    const verifierInvitation = async () => {
+        setCodeInvitationBusy(true)
+        setCodeInvitationErreur('')
+        try {
+            const res = await natFetch('/api/nationality/invitation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: codeInvitation, email: form.email }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (res.status === 429) {
+                setCodeInvitationErreur(t('Trop d’essais. Patientez quelques minutes avant de réessayer.'))
+                return
+            }
+            if (!json.valide) {
+                setCodeInvitationErreur(json.motif || t('Code refusé.'))
+                return
+            }
+            setCodeInvitationValide({ couvre_ancestrale: !!json.couvre_ancestrale })
+        } catch {
+            setCodeInvitationErreur(t('Vérification impossible. Vérifiez votre connexion.'))
+        } finally {
+            setCodeInvitationBusy(false)
+        }
+    }
     // Garde : les listeners Kkiapay ne doivent être enregistrés qu'UNE fois
     // (sinon empilement de callbacks à chaque clic : piège connu du SDK k.js)
     const kkiapayBound = useRef(false)
@@ -659,6 +701,10 @@ export default function NationaliteFormPage() {
                         last_step_completed: 6,
                         // Mode MyAfroOrigins : le serveur vérifie le jeton et impose le tarif 50 €
                         myafro_token: myafroMode ? myafroTokenRef.current : undefined,
+                        /* Le code n'est qu'une chaîne de caractères tant que le
+                           serveur ne l'a pas validé lui-même : c'est lui qui
+                           décide de la gratuité, et lui qui consomme le code. */
+                        invitation_code: codeInvitationValide ? codeInvitation : undefined,
                     })
                 })
 
@@ -1272,6 +1318,84 @@ export default function NationaliteFormPage() {
                                             </button>
                                         ))}
                                         {paymentError && <p className="text-xs text-red-700 flex items-center gap-2"><AlertCircle size={12} /> {paymentError}</p>}
+
+                                        {/* ── CODE D'INVITATION ──────────────────────────────
+                                            Pour qui ne peut pas payer en ligne : une carte émise
+                                            hors zone UEMOA est souvent refusée par la banque
+                                            émettrice avant même l'authentification. L'agence remet
+                                            alors un code, et le client garde son formulaire au lieu
+                                            qu'on le remplisse à sa place.
+
+                                            Ce que valide cet écran n'engage rien : la gratuité est
+                                            accordée par le serveur à la soumission. */}
+                                        <div className="pt-2 border-t border-slate-200">
+                                            {!codeInvitationOuvert && !codeInvitationValide ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCodeInvitationOuvert(true)}
+                                                    className="text-xs font-bold text-slate-500 hover:text-[#008751] underline transition-colors"
+                                                >
+                                                    <T>Votre banque refuse le paiement ? Utiliser un code d&apos;invitation</T>
+                                                </button>
+                                            ) : (
+                                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                    <p className="text-xs font-bold text-slate-700 mb-1">
+                                                        <T>Code d&apos;invitation</T>
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 mb-3">
+                                                        <T>Remis par notre équipe. Il remplace le règlement des frais de dossier.</T>
+                                                    </p>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            value={codeInvitation}
+                                                            onChange={e => { setCodeInvitation(e.target.value.toUpperCase()); setCodeInvitationErreur(''); setCodeInvitationValide(null) }}
+                                                            placeholder="RGB-XXXX-XXXX-XXXX"
+                                                            disabled={!!codeInvitationValide}
+                                                            className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono tracking-wider text-slate-900 focus:outline-none focus:border-[#008751] transition-colors disabled:opacity-60"
+                                                        />
+                                                        {!codeInvitationValide && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={verifierInvitation}
+                                                                disabled={codeInvitationBusy || codeInvitation.trim().length < 8}
+                                                                className="px-4 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold disabled:opacity-40 transition-colors flex items-center gap-2"
+                                                            >
+                                                                {codeInvitationBusy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                                                <T>Vérifier</T>
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {codeInvitationErreur && (
+                                                        <p className="text-xs text-red-700 flex items-center gap-2 mt-2">
+                                                            <AlertCircle size={12} /> {codeInvitationErreur}
+                                                        </p>
+                                                    )}
+
+                                                    {codeInvitationValide && (
+                                                        <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                                                            <p className="text-xs font-bold text-emerald-800 flex items-center gap-2">
+                                                                <CheckCircle2 size={14} /> <T>Code accepté</T>
+                                                            </p>
+                                                            <p className="text-[11px] text-emerald-700 mt-1">
+                                                                <T>Les frais de dossier sont couverts.</T>
+                                                                {codeInvitationValide.couvre_ancestrale
+                                                                    ? <> <T>La recherche ancestrale l&apos;est également, si elle vous est proposée.</T></>
+                                                                    : null}
+                                                            </p>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { setPaymentDone(true); setPaymentError('') }}
+                                                                className="mt-3 w-full py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold transition-colors"
+                                                            >
+                                                                <T>Continuer avec ce code</T>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <PaymentPrivacyNotice />
                                         <div className="flex items-center gap-2 text-gray-400 justify-center mt-2"><Shield size={14} /><span className="text-[10px] font-bold uppercase tracking-widest"><T>Transaction 100% sécurisée</T></span></div>
                                     </div>

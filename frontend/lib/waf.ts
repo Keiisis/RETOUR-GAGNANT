@@ -32,6 +32,12 @@ export type { CanaryCheckResult, CanaryToken, CanaryTokenType } from './waf/cana
 export { identifierRobot, robotRevendique, ipDansCidr, recupererPlagesOfficielles, SOURCES_PLAGES } from './waf/crawlers'
 export type { VerdictRobot } from './waf/crawlers'
 
+// ── Identité IP : le point UNIQUE de découpage d'adresse ──────
+// Rien ici ne doit redécouper une IP à la main : `clefIp` pour compter,
+// noter et bannir ; `sousReseauIp` pour regrouper une attaque coordonnée.
+import { clefIp, sousReseauIp, normaliserIp, IP_INCONNUE } from './net/ip-identity'
+export { clefIp, sousReseauIp, normaliserIp, estIpv6, etiquetteIp, IP_INCONNUE } from './net/ip-identity'
+
 // ── CORE PORTABLE (extractible : zéro dépendance framework) ──
 // Ces modules forment le cœur du WAF-SDK vendable. Ils ne dépendent
 // NI de Next.js NI de Supabase. Voir lib/waf/core/README.md.
@@ -208,10 +214,54 @@ const VALID_IP_RE = /^(?:(?:25[0-5]|2[0-4]\d|\d{1,3})\.){3}(?:25[0-5]|2[0-4]\d|\
 // Vercel, 'cf-connecting-ip' derrière Cloudflare). Si défini, on ne fait
 // confiance QU'À ce header. Sinon, ordre de repli prudent.
 export function extractIp(headers: Headers): string {
+    /* Renvoie la CLEF de l'abonné (`lib/net/ip-identity`), pas l'adresse
+       observée : en IPv6 les 64 derniers bits changent chaque jour, donc un
+       ban, un score ou un quota posé sur l'adresse entière ne retrouvait
+       jamais le même visiteur. Pour journaliser, utiliser
+       `extractIpObservee()`. */
+    const vue = extractIpObservee(headers)
+    const clef = clefIp(vue)
+    noterAdresseObservee(clef, vue)
+    return clef
+}
+
+/* ── Mémoire courte « clef → adresse réellement vue » ─────────────────
+   Le WAF ne manipule plus que des clefs, mais un signalement à un FAI ou
+   une enquête a besoin de l'adresse EXACTE : sans elle, un /64 ne dit pas
+   quelle machine a attaqué. On la retient donc le temps de la requête, et
+   `logWafEvent` la joint au journal. Bornée : ni fuite, ni croissance. */
+const adressesVues = new Map<string, { ip: string; ts: number }>()
+const VUE_TTL = 10 * 60_000
+const VUE_MAX = 10_000
+
+function noterAdresseObservee(clef: string, vue: string): void {
+    if (clef === vue || clef === IP_INCONNUE) return
+    if (adressesVues.size >= VUE_MAX) {
+        const limite = Date.now() - VUE_TTL
+        for (const [k, v] of adressesVues) if (v.ts < limite) adressesVues.delete(k)
+        // Toujours plein après purge : la plus ancienne cède la place.
+        if (adressesVues.size >= VUE_MAX) {
+            const premiere = adressesVues.keys().next().value
+            if (premiere) adressesVues.delete(premiere)
+        }
+    }
+    adressesVues.set(clef, { ip: vue, ts: Date.now() })
+}
+
+/** Dernière adresse complète observée pour cette clef, si elle est connue. */
+export function adresseObservee(clef: string): string | null {
+    const e = adressesVues.get(clef)
+    if (!e) return null
+    if (Date.now() - e.ts > VUE_TTL) { adressesVues.delete(clef); return null }
+    return e.ip
+}
+
+/** L'adresse réellement vue, normalisée. Journaux et enquête uniquement. */
+export function extractIpObservee(headers: Headers): string {
     const pinned = process.env.WAF_TRUE_IP_HEADER?.trim().toLowerCase()
     if (pinned) {
         const v = headers.get(pinned)?.split(',')[0]?.trim()
-        if (v && VALID_IP_RE.test(v)) return v
+        if (v && VALID_IP_RE.test(v)) return normaliserIp(v)
         // Header autoritaire absent/invalide → on NE retombe PAS sur des
         // headers spoofables : 'unknown' (le WAF traitera prudemment).
         return 'unknown'
@@ -219,16 +269,16 @@ export function extractIp(headers: Headers): string {
 
     // Pas de header épinglé : ordre de repli (plateforme d'abord).
     const vercelIp = headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()
-    if (vercelIp && VALID_IP_RE.test(vercelIp)) return vercelIp
+    if (vercelIp && VALID_IP_RE.test(vercelIp)) return normaliserIp(vercelIp)
 
     const cfIp = headers.get('cf-connecting-ip')?.trim()
-    if (cfIp && VALID_IP_RE.test(cfIp)) return cfIp
+    if (cfIp && VALID_IP_RE.test(cfIp)) return normaliserIp(cfIp)
 
     const realIp = headers.get('x-real-ip')?.trim()
-    if (realIp && VALID_IP_RE.test(realIp)) return realIp
+    if (realIp && VALID_IP_RE.test(realIp)) return normaliserIp(realIp)
 
     const xff = headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    if (xff && VALID_IP_RE.test(xff)) return xff
+    if (xff && VALID_IP_RE.test(xff)) return normaliserIp(xff)
 
     return 'unknown'
 }
@@ -425,10 +475,16 @@ export function updateIpMemory(opts: {
 const subnetAttackers = new Map<string, Set<string>>()
 const SUBNET_BAN_THRESHOLD = 3
 
+/**
+ * Sous-réseau d'une adresse, pour le regroupement d'attaques coordonnées.
+ *
+ * ⚠️ Nom historique : ce n'est plus « /24 » seulement. L'implémentation
+ * `ip.split('.')` renvoyait `null` sur toute adresse IPv6 — donc AUCUN
+ * regroupement, AUCUNE détection coordonnée pour ces visiteurs. Le découpage
+ * vit désormais dans `lib/net/ip-identity` : /24 en IPv4, /48 en IPv6.
+ */
 export function getSubnet24(ip: string): string | null {
-    const parts = ip.split('.')
-    if (parts.length !== 4) return null
-    return `${parts[0]}.${parts[1]}.${parts[2]}`
+    return sousReseauIp(ip)
 }
 
 const bannedSubnets = new Set<string>()
@@ -628,7 +684,15 @@ function autoBlockIp(ip: string, reason: string, supabaseUrl: string, serviceKey
             Authorization: `Bearer ${serviceKey}`,
             Prefer: 'resolution=merge-duplicates,return=minimal',
         },
-        body: JSON.stringify({ ip, reason, blocked_by: 'auto', violation_count: AUTO_BLOCK_THRESHOLD }),
+        body: JSON.stringify({
+            ip,
+            // Motif + adresse exacte vue au moment du ban : sans elle, un
+            // déblocage à l'aveugle ne sait pas QUI était derrière le /64.
+            reason: [reason, adresseObservee(ip) && `(vue : ${adresseObservee(ip)})`]
+                .filter(Boolean).join(' ').slice(0, 500),
+            blocked_by: 'auto',
+            violation_count: AUTO_BLOCK_THRESHOLD,
+        }),
     }).catch(() => {})
 }
 
@@ -660,7 +724,15 @@ export function logWafEvent(opts: {
             path:             payload.path.slice(0, 500),
             user_agent:       payload.userAgent.slice(0, 500),
             threat_type:      payload.threatType,
-            threat_detail:    (payload.detail || `score=${payload.score ?? '?'}`).slice(0, 500),
+            /* L'adresse EXACTE est jointe au détail quand elle diffère de la
+               clef : le journal garde de quoi signaler un abus à un FAI, que
+               la colonne `ip` regroupe désormais au /64. Pas de colonne neuve
+               ici : une insertion vers une colonne absente échouerait en
+               silence (fire-and-forget) et on perdrait TOUT le journal. */
+            threat_detail:    [
+                payload.detail || `score=${payload.score ?? '?'}`,
+                adresseObservee(payload.ip) ? `ip_vue=${adresseObservee(payload.ip)}` : '',
+            ].filter(Boolean).join(' | ').slice(0, 500),
             is_blocked:       payload.action === 'block' || (!payload.action),
             score:            payload.score ?? 0,
             // ── Colonnes Défense Active ──

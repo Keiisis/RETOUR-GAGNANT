@@ -601,6 +601,92 @@ export default function AdminNationalitePage() {
         }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       CODES D'INVITATION
+
+       Un code tient lieu de règlement : il vaut le prix d'une prestation.
+       D'où la portée explicite (frais de dossier, et/ou recherche
+       ancestrale), l'échéance obligatoire, et la révocation possible tant
+       qu'il n'a pas servi.
+       ═══════════════════════════════════════════════════════════ */
+    interface Invitation {
+        id: string; code: string
+        couvre_dossier: boolean; couvre_ancestrale: boolean
+        montant_dossier: number | null; montant_ancestrale: number | null
+        devise: string; statut: 'actif' | 'utilise' | 'revoque'
+        email_cible: string | null; note: string | null
+        expire_le: string | null; cree_le: string
+        utilise_le: string | null; utilise_par_ref: string | null; utilise_par_email: string | null
+    }
+    const [invitationsOuvert, setInvitationsOuvert] = useState(false)
+    const [invitations, setInvitations] = useState<Invitation[]>([])
+    const [invitationsBusy, setInvitationsBusy] = useState(false)
+    const [invitationErreur, setInvitationErreur] = useState('')
+    const [invitCopie, setInvitCopie] = useState<string | null>(null)
+    const [nouvelleInvit, setNouvelleInvit] = useState({
+        couvre_dossier: true,
+        couvre_ancestrale: false,
+        email_cible: '',
+        note: '',
+        jours_validite: '30',
+    })
+
+    const chargerInvitations = async () => {
+        setInvitationsBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations')
+            const json = await res.json().catch(() => ({}))
+            setInvitations(Array.isArray(json.codes) ? json.codes : [])
+        } catch {
+            setInvitationErreur('Chargement des codes impossible.')
+        } finally {
+            setInvitationsBusy(false)
+        }
+    }
+
+    const genererInvitation = async () => {
+        setInvitationErreur('')
+        if (!nouvelleInvit.couvre_dossier && !nouvelleInvit.couvre_ancestrale) {
+            setInvitationErreur('Un code doit couvrir au moins une prestation.')
+            return
+        }
+        setInvitationsBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...nouvelleInvit,
+                    jours_validite: Number(nouvelleInvit.jours_validite) || 30,
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) throw new Error(json.error || `Erreur ${res.status}`)
+            setInvitations(list => [json.code as Invitation, ...list])
+            setNouvelleInvit(n => ({ ...n, email_cible: '', note: '' }))
+        } catch (e) {
+            setInvitationErreur(e instanceof Error ? e.message : 'Génération impossible.')
+        } finally {
+            setInvitationsBusy(false)
+        }
+    }
+
+    const revoquerInvitation = async (code: string) => {
+        setInvitationErreur('')
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`)
+            setInvitations(list => list.map(i => i.code === code ? { ...i, statut: 'revoque' } : i))
+        } catch (e) {
+            setInvitationErreur(e instanceof Error ? e.message : 'Révocation impossible.')
+        }
+    }
+
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
     const [savingEdit, setSavingEdit] = useState(false)
@@ -708,6 +794,15 @@ export default function AdminNationalitePage() {
                             className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center gap-2 transition-all"
                         >
                             <Plus size={14} /> <T>Nouveau dossier</T>
+                        </button>
+                        {/* Pour le client dont la banque refuse le paiement en
+                            ligne : un code lui rend le formulaire au lieu qu'on
+                            le remplisse à sa place. */}
+                        <button
+                            onClick={() => { setInvitationsOuvert(true); chargerInvitations() }}
+                            className="text-xs font-bold text-amber-300 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/25 flex items-center gap-2 hover:bg-amber-500/20 transition-all"
+                        >
+                            <Copy size={14} /> <T>Code d&apos;invitation</T>
                         </button>
                         <Link href="/admin/nationalite/settings" className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 flex items-center gap-2 hover:bg-emerald-500/20 transition-all">
                             <Globe2 size={14} /> <T>Paramètres formulaire</T> <ExternalLink size={12} />
@@ -1226,6 +1321,179 @@ export default function AdminNationalitePage() {
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════
+                CODES D'INVITATION
+                ═══════════════════════════════════════════════════════ */}
+            {invitationsOuvert && (
+                <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl overflow-hidden">
+
+                        <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <Copy size={18} className="text-amber-600" /> Codes d’invitation
+                                </h3>
+                                <p className="text-[12px] text-slate-500 mt-0.5">
+                                    Le client remplit lui-même le formulaire ; le code remplace le règlement.
+                                </p>
+                            </div>
+                            <button onClick={() => setInvitationsOuvert(false)} className="text-slate-400 hover:text-slate-700 transition-colors" aria-label="Fermer">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="px-7 py-6 max-h-[70vh] overflow-y-auto space-y-6">
+
+                            {/* ── Génération ── */}
+                            <section className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Générer un code</p>
+
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {([
+                                        { c: 'couvre_dossier', l: 'Frais de dossier' },
+                                        { c: 'couvre_ancestrale', l: 'Recherche ancestrale' },
+                                    ] as const).map(o => {
+                                        const actif = nouvelleInvit[o.c]
+                                        return (
+                                            <button
+                                                key={o.c}
+                                                type="button"
+                                                onClick={() => setNouvelleInvit(n => ({ ...n, [o.c]: !n[o.c] }))}
+                                                className={`px-4 py-2.5 rounded-xl text-[12px] font-bold border transition-all flex items-center gap-2 ${actif
+                                                    ? 'bg-[#008751] text-white border-[#008751]'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}
+                                            >
+                                                {actif ? <Check size={13} /> : <X size={13} />} {o.l}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mb-3">
+                                    Cochez « Recherche ancestrale » pour que le même code couvre aussi ce forfait
+                                    s’il est proposé au client après sa demande.
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <label className="block sm:col-span-2">
+                                        <span className="text-[11px] font-bold text-slate-500">Réserver à un email (facultatif)</span>
+                                        <input
+                                            value={nouvelleInvit.email_cible}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, email_cible: e.target.value }))}
+                                            placeholder="Le code n’acceptera que cette adresse"
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="text-[11px] font-bold text-slate-500">Validité (jours)</span>
+                                        <input
+                                            type="number" min="1" max="365"
+                                            value={nouvelleInvit.jours_validite}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, jours_validite: e.target.value }))}
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                    <label className="block sm:col-span-3">
+                                        <span className="text-[11px] font-bold text-slate-500">Motif</span>
+                                        <input
+                                            value={nouvelleInvit.note}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, note: e.target.value }))}
+                                            placeholder="Ex. carte refusée par sa banque, réglé par virement le 29/08"
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                </div>
+
+                                <button
+                                    onClick={genererInvitation}
+                                    disabled={invitationsBusy}
+                                    className="mt-3 px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
+                                >
+                                    {invitationsBusy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                                    Générer le code
+                                </button>
+
+                                {invitationErreur && (
+                                    <p className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-3">
+                                        {invitationErreur}
+                                    </p>
+                                )}
+                            </section>
+
+                            {/* ── Liste ── */}
+                            <section>
+                                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">
+                                    Codes émis
+                                </p>
+                                {invitations.length === 0 ? (
+                                    <p className="text-[12px] text-slate-400">Aucun code pour l’instant.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {invitations.map(inv => {
+                                            const perime = !!inv.expire_le && new Date(inv.expire_le).getTime() < Date.now()
+                                            const etat = inv.statut === 'utilise' ? { l: 'Utilisé', c: 'bg-slate-100 text-slate-500' }
+                                                : inv.statut === 'revoque' ? { l: 'Révoqué', c: 'bg-red-50 text-red-600' }
+                                                    : perime ? { l: 'Expiré', c: 'bg-amber-50 text-amber-700' }
+                                                        : { l: 'Actif', c: 'bg-emerald-50 text-emerald-700' }
+                                            return (
+                                                <div key={inv.id} className="border border-slate-200 rounded-xl px-4 py-3">
+                                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="font-mono font-bold text-[13px] text-slate-900 tracking-wider">{inv.code}</span>
+                                                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${etat.c}`}>{etat.l}</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-500 mt-1">
+                                                                {inv.couvre_dossier && 'Frais de dossier'}
+                                                                {inv.couvre_dossier && inv.couvre_ancestrale && ' + '}
+                                                                {inv.couvre_ancestrale && 'Recherche ancestrale'}
+                                                                {inv.email_cible && ` · réservé à ${inv.email_cible}`}
+                                                                {inv.expire_le && ` · expire le ${new Date(inv.expire_le).toLocaleDateString('fr-FR')}`}
+                                                            </p>
+                                                            {inv.note && <p className="text-[11px] text-slate-400 mt-0.5 italic">{inv.note}</p>}
+                                                            {inv.statut === 'utilise' && (
+                                                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                                                    Consommé par {inv.utilise_par_ref || '—'}
+                                                                    {inv.utilise_par_email && ` (${inv.utilise_par_email})`}
+                                                                    {inv.utilise_le && ` le ${new Date(inv.utilise_le).toLocaleDateString('fr-FR')}`}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <button
+                                                                onClick={() => { navigator.clipboard.writeText(inv.code); setInvitCopie(inv.code); setTimeout(() => setInvitCopie(null), 1800) }}
+                                                                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-[12px] font-bold hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                                                            >
+                                                                {invitCopie === inv.code ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                                                {invitCopie === inv.code ? 'Copié' : 'Copier'}
+                                                            </button>
+                                                            {inv.statut === 'actif' && (
+                                                                <button
+                                                                    onClick={() => revoquerInvitation(inv.code)}
+                                                                    className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-[12px] font-bold hover:bg-red-50 transition-colors"
+                                                                >
+                                                                    Révoquer
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </section>
+
+                            <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-4">
+                                Un dossier ouvert par code d’invitation ne génère <strong>aucune facture</strong> :
+                                rien n’est encaissé, et inscrire 260 € au compte de résultat créerait une recette
+                                que la banque ne verra jamais. Le dossier reste tracé par son moyen de paiement
+                                et par le code inscrit dans sa référence.
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}
