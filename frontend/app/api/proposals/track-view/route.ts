@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublic, TELEMETRY_LIMIT } from '@/lib/api-guard'
+import { normaliserIp, IP_INCONNUE } from '@/lib/net/ip-identity'
 
 export async function POST(req: NextRequest) {
     const trop = guardPublic(req, 'proposals/track-view', TELEMETRY_LIMIT)
@@ -25,7 +26,11 @@ export async function POST(req: NextRequest) {
       viewed_at: viewedAt || new Date().toISOString(),
       user_agent: userAgent?.slice(0, 500) || null,
       referrer: referrer?.slice(0, 500) || null,
-      ip_hint: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+      // Indice affiché à l'agent : l'adresse vue, normalisée (pas une clef).
+      ip_hint: (() => {
+          const v = normaliserIp(req.headers.get('x-forwarded-for')?.split(',')[0])
+          return v === IP_INCONNUE ? null : v
+      })(),
     })
 
     // 2. Update the proposal with last_viewed_at and view_count

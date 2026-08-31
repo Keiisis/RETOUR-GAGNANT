@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
+import { recordNationalityIncome } from '@/lib/nationality-income'
 
 /* ═══════════════════════════════════════════════════════════════
    CRÉATION MANUELLE D'UN DOSSIER DE NATIONALITÉ
@@ -45,6 +46,9 @@ export const MOYENS_PAIEMENT = {
     taptap: 'TapTap Send',
     especes: 'Espèces',
     autre: 'Autre',
+    /* Dossier offert : aucune somme n est encaissee, donc aucune facture.
+       Present dans la liste pour que le moyen soit NOMME plutot que devine. */
+    invitation: "Code d'invitation (offert)",
 } as const
 
 type MoyenPaiement = keyof typeof MOYENS_PAIEMENT
@@ -247,13 +251,63 @@ export async function POST(request: NextRequest) {
         notes_internes: noteEquipe,
     })
 
+    /* ── COMPTABILITÉ ────────────────────────────────────────────────
+       Le flux public facture déjà (recordNationalityIncome, appelé par
+       /api/nationality et le webhook Kkiapay). Un dossier saisi à la main
+       doit produire la MÊME facture, sur la même série de numéros, avec la
+       TVA en sus — sinon l'encaissement n'existe pour personne : ni le
+       client, qui n'a aucun justificatif, ni la comptabilité.
+
+       DEUX CAS À NE PAS CONFONDRE :
+
+       · un règlement réel (Mobile Money, virement, TapTap Send, espèces)
+         → facture au statut payé, avec le moyen employé ;
+
+       · un dossier OFFERT par code d'invitation, ou encore en attente
+         → aucune facture. Facturer 260 € qui n'ont jamais été encaissés
+         inventerait une recette : la comptabilité afficherait un revenu
+         que la banque ne verra jamais. Le dossier reste tracé par sa note
+         interne et son moyen de paiement.
+
+       La facturation est idempotente (source_ref « nationality:REF ») et
+       ne doit jamais faire échouer la création : le dossier existe, le
+       retour dit ce qui a réellement eu lieu. */
+    let facture = false
+    let erreurFacture: string | null = null
+    const montantEncaisse = typeof montant === 'number' ? montant : 0
+
+    if (paye && moyen !== 'invitation' && montantEncaisse > 0) {
+        try {
+            await recordNationalityIncome(supabase, {
+                ref: cree.application_ref,
+                nom, prenom, email,
+                phone: texte(body.telephone, 40),
+                amount: montantEncaisse,
+                currency: devise,
+                paymentMethod: MOYENS_PAIEMENT[moyen],
+                txId: referencePaiement,
+            })
+            facture = true
+        } catch (e) {
+            erreurFacture = e instanceof Error ? e.message : 'facturation interrompue'
+        }
+    }
+
+    const avertissements = [
+        erreurSuivi
+            ? `Le suivi n'a pas pu être créé (${erreurSuivi.message}) : le dossier n'apparaîtra pas dans « Mon Dossier » tant qu'il n'est pas rétabli.`
+            : null,
+        erreurFacture
+            ? `La facture n'a pas pu être émise (${erreurFacture}). L'encaissement n'apparaît donc pas encore en comptabilité.`
+            : null,
+    ].filter(Boolean)
+
     return NextResponse.json({
         success: true,
         id: cree.id,
         reference: cree.application_ref,
         suivi: !erreurSuivi,
-        avertissement: erreurSuivi
-            ? `Dossier créé, mais son entrée de suivi a échoué (${erreurSuivi.message}). Il n'apparaîtra pas dans « Mon Dossier » tant qu'elle n'est pas rétablie.`
-            : null,
+        facture,
+        avertissement: avertissements.length ? avertissements.join(' ') : null,
     })
 }

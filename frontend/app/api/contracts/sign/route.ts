@@ -13,6 +13,7 @@ import crypto from 'crypto'
 import { auditEntry, type AuditEntry } from '@/lib/contracts'
 import { sendEmail, getEmailConfig } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
+import { normaliserIp, IP_INCONNUE } from '@/lib/net/ip-identity'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -73,7 +74,11 @@ export async function POST(req: NextRequest) {
         const id = String(contract.id)
         const now = new Date().toISOString()
         const name = String(signedName || contract.client_nom).trim().slice(0, 120)
-        const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'inconnue'
+        /* Preuve de signature : on garde l'adresse EXACTE (jamais un préfixe),
+           simplement normalisée — port, crochets et zone en moins. Elle entre
+           dans le condensat : la changer invaliderait les signatures passées. */
+        const ipVue = normaliserIp(req.headers.get('x-forwarded-for')?.split(',')[0])
+        const ip = ipVue === IP_INCONNUE ? 'inconnue' : ipVue
         const signatureHash = crypto.createHash('sha256')
             .update(`${id}-${contract.client_email}-${name}-${ip}-${now}`)
             .digest('hex')
