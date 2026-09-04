@@ -9,12 +9,12 @@ import Animated, {
     withSpring,
     withTiming,
     withDelay,
+    withRepeat,
     Easing,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLang, SUPPORTED_LANGUAGES, type LangCode } from '../contexts/LangContext';
 import { screenColors, fonts } from '../config/theme'
-
-const { width } = Dimensions.get('window');
 
 /* ═══════════════════════════════════════
    Couleurs : Silent Luxury
@@ -31,16 +31,37 @@ interface SplashScreenProps {
     onContinue?: () => void;
 }
 
-/* Android applique l interlettrage APRES le dernier caractere sans le
-   compter dans la largeur mesuree du texte : la derniere lettre depassait la
-   zone de dessin et se faisait couper — « RETOU GAGNAN BENI ».
+/* ─────────────────────────────────────────────────────────────
+   LE MOT-SYMBOLE EST UNE IMAGE, PAS DU TEXTE. Ne pas revenir en arriere.
 
-   Le remplissage a droite ne corrige RIEN : en React Native il elargit la
-   vue mais le texte reste cale sur le bord de la zone de contenu, donc
-   l espace fantome deborde au meme endroit. Ce qu il faut, c est un
-   CARACTERE qui l absorbe. Une espace fine (U+2009) de chaque cote : la
-   derniere lettre tient, et le mot reste centre.  */
-const ESPACE_FINE = String.fromCharCode(0x2009)
+   Sept corrections successives ont echoue a l afficher en entier sur
+   Android, chacune sur une hypothese differente : interlettrage qui deborde,
+   rangee flex trop large, fragments <Text> imbriques, taille de police.
+   Le symptome revenait sous une forme voisine a chaque fois — « RETOU »,
+   « GAGNAN », « BÉNI », et jusqu au dernier mot entier de l accroche qui
+   disparaissait. Le point commun : la vue de texte etait mesuree plus
+   etroite que ce que le moteur y dessinait, et le surplus etait coupe net.
+
+   La mesure des metriques de la police (scripts/mesure-mot-symbole.js)
+   ecarte le debordement : « RETOUR GAGNANT » fait 243 dp a 26 px pour
+   272 dp utiles sur l ecran le plus etroit vise. La cause exacte n a pas pu
+   etre isolee a distance, faute d appareil de deverminage.
+
+   D ou ce choix, qui est de toute facon celui de la plupart des
+   applications pour leur logotype : le nom est un ASSET. Une image ne se
+   mesure pas, ne se recompose pas, ne se rogne pas. Elle s affiche au pixel
+   pres, quels que soient l appareil, la version du systeme et les polices
+   disponibles. Toute cette classe de defauts disparait avec elle.
+
+   L image est produite par scripts/generer-mot-symbole.js, qui lit les
+   contours des glyphes dans Plus Jakarta Sans ExtraBold et les ecrit en
+   chemins vectoriels. Modifier le libelle ou les couleurs = editer ce
+   script et le relancer, jamais retoucher l image a la main.
+
+   Contrepartie assumee : le nom ne suit plus l agrandissement systeme des
+   polices. L ecran ne dure que 1,8 s et tout le reste de l application
+   reste du vrai texte.
+   ───────────────────────────────────────────────────────────── */
 
 export default function SplashScreen({ isLoading = false, onContinue }: SplashScreenProps) {
     const [screen, setScreen] = useState<'splash' | 'language'>('splash');
@@ -80,6 +101,18 @@ function SplashView() {
         textY.value = withDelay(250, withSpring(0, { damping: 22, stiffness: 100 }));
     }, []);
 
+    /* Rotation continue du témoin de chargement. Reanimated coupe de
+       lui-même les répétitions quand « Réduire les animations » est actif :
+       aucun garde-fou à ajouter. */
+    const rotation = useSharedValue(0);
+    useEffect(() => {
+        rotation.value = withRepeat(
+            withTiming(360, { duration: 900, easing: Easing.linear }),
+            -1,
+            false,
+        );
+    }, []);
+
     const aLogo = useAnimatedStyle(() => ({
         opacity: opacity.value,
         transform: [{ scale: scale.value }],
@@ -88,35 +121,41 @@ function SplashView() {
         opacity: textOpacity.value,
         transform: [{ translateY: textY.value }],
     }));
+    const aSpinner = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+    }));
 
     return (
         <View style={styles.splashContent}>
-            <Animated.View style={[styles.logoWrap, aLogo]}>
-                <Image
-                    source={require('../../assets/splash-icon.png')}
-                    style={styles.logo}
+            {/* Bande tricolore en tête d'écran, comme sur la maquette. */}
+            <View style={styles.flagBar}>
+                <View style={styles.flagGreen} />
+                <View style={styles.flagYellow} />
+                <View style={styles.flagRed} />
+            </View>
+
+            <View style={styles.centre}>
+                <Animated.View style={aLogo}>
+                    <Image
+                        source={require('../../assets/splash-icon.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+                </Animated.View>
+
+                {/* Le mot-symbole est une IMAGE, pas du texte — voir la note en
+                    tête de fichier. `accessibilityLabel` rend le nom au lecteur
+                    d'écran, que l'image ne peut évidemment pas énoncer. */}
+                <Animated.Image
+                    source={require('../../assets/mot-symbole.png')}
+                    style={[styles.motSymbole, aText]}
                     resizeMode="contain"
+                    accessibilityRole="image"
+                    accessibilityLabel="Retour Gagnant Bénin — l'accompagnement premium"
                 />
-            </Animated.View>
+            </View>
 
-            {/* UN SEUL Text par ligne, couleurs portées par des fragments
-                imbriqués. La version précédente mettait RETOUR et GAGNANT dans
-                une rangée flex : à 30 px avec interlettrage, la ligne mesurait
-                environ 365 dp pour 363 disponibles sur un écran de 411 dp, et
-                Android l'a effacée entière plutôt que de la rogner.
-
-                Des fragments imbriqués se composent comme du texte courant :
-                ils ne peuvent pas déborder d'une rangée qui n'existe plus. */}
-            <Animated.View style={[styles.brandText, aText]}>
-                <Text style={styles.brandLine} numberOfLines={1}>
-                    <Text style={styles.brandGreen}>RETOUR</Text>
-                    <Text>{' '}</Text>
-                    <Text style={styles.brandYellow}>{'GAGNANT' + ESPACE_FINE}</Text>
-                </Text>
-                <Text style={[styles.brandLine, styles.brandRed]} numberOfLines={1}>
-                    {'BÉNIN' + ESPACE_FINE}
-                </Text>
-            </Animated.View>
+            <Animated.View style={[styles.spinner, aSpinner]} />
         </View>
     );
 }
@@ -127,6 +166,10 @@ function SplashView() {
 function LanguageView({ onContinue }: { onContinue?: () => void }) {
     const { lang, setLang } = useLang();
     const [selected, setSelected] = useState<LangCode>(lang);
+    /* Le bas de l'écran appartient au système : barre de navigation à trois
+       boutons ou barre de geste. Un remplissage fixe de 24 dp passait dessous
+       et « Continuer » se retrouvait derrière les touches du téléphone. */
+    const marges = useSafeAreaInsets();
     const opacity = useSharedValue(0);
     const slide = useSharedValue(12);
 
@@ -147,7 +190,13 @@ function LanguageView({ onContinue }: { onContinue?: () => void }) {
     };
 
     return (
-        <Animated.View style={[styles.langContent, aContent]}>
+        <Animated.View
+            style={[
+                styles.langContent,
+                { paddingBottom: Math.max(marges.bottom, 12) + 24 },
+                aContent,
+            ]}
+        >
             {/* Header */}
             <View style={styles.langHeader}>
                 <Text style={styles.langTitle}>Bienvenue</Text>
@@ -222,36 +271,47 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 24,
     },
-    logoWrap: {
-        marginBottom: 28,
+    /* Bande tricolore, 6 dp, trois parts égales. */
+    flagBar: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: 6,
+        flexDirection: 'row',
     },
-    logo: {
-        width: 200,
-        height: 200,
-    },
-    brandText: {
+    flagGreen: { flex: 1, backgroundColor: '#008751' },
+    flagYellow: { flex: 1, backgroundColor: '#FCD116' },
+    flagRed: { flex: 1, backgroundColor: '#E8112D' },
+
+    centre: {
+        alignSelf: 'stretch',
         alignItems: 'center',
     },
-    /* 26 px et interlettrage 2 : « RETOUR GAGNANT » mesure alors environ
-       300 dp, contre 363 disponibles sur le plus étroit des écrans courants.
-       La marge absorbe les polices plus larges et les écrans de 360 dp. */
-    brandLine: {
-        fontSize: 26,
-        fontFamily: fonts.extrabold,
-        letterSpacing: 2,
-        includeFontPadding: false,
-        textAlign: 'center',
+    /* Plus de tuile autour du logo : le logo porte déjà son propre cercle,
+       un second cadre faisait doublon et le rapetissait. */
+    logo: {
+        width: 260,
+        height: 260,
+        marginBottom: 24,
     },
-    brandGreen: {
-        color: '#008751',  // Vert Bénin
+    /* Proportions de l'image produite par scripts/generer-mot-symbole.js
+       (908 x 303 px, soit 303 x 101 dp). La largeur suit celle de l'écran et
+       plafonne à sa taille native : sur un téléphone étroit elle rétrécit
+       proportionnellement au lieu de déborder. */
+    motSymbole: {
+        width: '100%',
+        maxWidth: 303,
+        aspectRatio: 908 / 303,
     },
-    brandYellow: {
-        color: '#FCD116',  // Jaune Bénin
-    },
-    brandRed: {
-        color: '#E8112D',  // Rouge Bénin
-        marginTop: 2,
-        letterSpacing: 8,
+    /* Témoin de chargement : anneau ouvert, un seul côté teinté. */
+    spinner: {
+        position: 'absolute',
+        bottom: 56,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#CCE7DC',   // vert Bénin à 20 % sur blanc
+        borderTopColor: '#008751',
     },
 
     /* ── Langue ── */
@@ -259,7 +319,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: Platform.OS === 'ios' ? 100 : 80,
         paddingHorizontal: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     },
     langHeader: {
         marginBottom: 40,

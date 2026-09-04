@@ -15,7 +15,9 @@ import { motion } from 'framer-motion'
 import {
     FileMagnifyingGlass, Clock, CheckCircle, Archive, User, Envelope,
     Phone, CircleNotch, WarningCircle, FloppyDisk, Trash, X, Paperclip, DeviceMobile, Globe,
+    Plus, Sparkle,
 } from '@phosphor-icons/react'
+import RecapMyafroAjout from './RecapMyafroAjout'
 
 interface Recap {
     id: string
@@ -82,6 +84,11 @@ export default function RecapMyafroSection() {
     // depuis l'application. Elles vivent dans la fiche, pas dans une liste à part.
     const [pieces, setPieces] = useState<Piece[]>([])
     const [piecesChargees, setPiecesChargees] = useState(false)
+    // Saisie manuelle d'un client recu hors du site.
+    const [ajoutOuvert, setAjoutOuvert] = useState(false)
+    // Generation de la fiche d'analyse a la demande.
+    const [generation, setGeneration] = useState(false)
+    const [erreurGen, setErreurGen] = useState('')
 
     const charger = useCallback(async () => {
         setChargement(true); setErreur(''); setMigration(false)
@@ -100,9 +107,32 @@ export default function RecapMyafroSection() {
 
     useEffect(() => { charger() }, [charger])
 
+    /* (Re)génère la fiche d'analyse depuis la situation décrite.
+       Le texte revient dans le BROUILLON, donc modifiable : la machine
+       propose, l'analyste dispose. Un échec ne vide rien — la fiche déjà
+       en place, ou rédigée à la main, reste intacte. */
+    const genererFiche = async (id: string) => {
+        setGeneration(true); setErreurGen('')
+        try {
+            const res = await fetch('/api/admin/myafro-recap', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(json.error || 'Génération impossible.')
+            setBrouillon(String(json.recap_ia || ''))
+            setDemandes(l => l.map(d => (d.id === id
+                ? { ...d, recap_ia: String(json.recap_ia || ''), statut: 'en_analyse' }
+                : d)))
+        } catch (e) {
+            setErreurGen(e instanceof Error ? e.message : 'Génération impossible.')
+        } finally { setGeneration(false) }
+    }
+
     const ouvrir = async (d: Recap) => {
         setOuverte(d)
-        setBrouillon(d.recap_ia || '')
+        setBrouillon(d.recap_ia || ''); setErreurGen('')
         setNotes(d.notes_agent || '')
         setPieces([]); setPiecesChargees(false)
         try {
@@ -159,6 +189,11 @@ export default function RecapMyafroSection() {
 
     return (
         <section className="mb-12">
+            <RecapMyafroAjout
+                ouvert={ajoutOuvert}
+                onFermer={() => setAjoutOuvert(false)}
+                onCree={(d) => setDemandes(l => [d as unknown as Recap, ...l])}
+            />
             <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
                 <div>
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">Service en ligne</span>
@@ -170,7 +205,17 @@ export default function RecapMyafroSection() {
                         Demandes déposées et réglées directement depuis la page du service — aucun lien à envoyer.
                     </p>
                 </div>
-                <button onClick={charger} className="text-xs font-bold text-emerald-400 hover:text-emerald-300">Actualiser</button>
+                <div className="flex items-center gap-3">
+                    <button onClick={charger} className="text-xs font-bold text-emerald-400 hover:text-emerald-300">Actualiser</button>
+                    {/* La file ne se remplissait QUE par le formulaire public : un
+                        client recu au telephone ou en agence n'existait nulle part. */}
+                    <button
+                        onClick={() => setAjoutOuvert(true)}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 text-black text-xs font-black hover:bg-emerald-400"
+                    >
+                        <Plus size={13} weight="bold" /> Ajouter un client
+                    </button>
+                </div>
             </div>
 
             {migration && (
@@ -329,9 +374,29 @@ export default function RecapMyafroSection() {
 
                             {/* La fiche, modifiable avant remise */}
                             <div>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                    Fiche d’analyse — relisez avant de la remettre
-                                </p>
+                                <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        Fiche d’analyse — relisez avant de la remettre
+                                    </p>
+                                    {/* La fiche n'etait produite qu'UNE FOIS, a la seconde du
+                                        depot public : une demande saisie a la main n'en avait
+                                        aucune, et l'equipe pouvait seulement la reecrire
+                                        entierement a la main. */}
+                                    <button
+                                        type="button"
+                                        onClick={() => genererFiche(ouverte.id)}
+                                        disabled={generation}
+                                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-black hover:bg-emerald-500/25 disabled:opacity-50"
+                                    >
+                                        {generation
+                                            ? <CircleNotch size={12} className="animate-spin" />
+                                            : <Sparkle size={12} weight="fill" />}
+                                        {brouillon.trim() ? 'Regénérer la fiche' : 'Générer la fiche'}
+                                    </button>
+                                </div>
+                                {erreurGen && (
+                                    <p className="mb-2 text-[11px] text-amber-400">{erreurGen}</p>
+                                )}
                                 <textarea
                                     value={brouillon}
                                     onChange={e => setBrouillon(e.target.value)}

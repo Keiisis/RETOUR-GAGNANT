@@ -32,6 +32,7 @@ import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -415,25 +416,29 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             //     Sans service (RDV générique via l'accueil), on n'ouvre pas de dossier.
             //     L'API dédoublonne par service_type : pas de dossier en double.
             if (serviceLabel) {
-                try {
-                    await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                        timeoutMs: 15000,
-                        body: JSON.stringify({
-                            service_type: serviceLabel,
-                            notes: `Dossier ouvert suite à une prise de rendez-vous le ${new Date().toLocaleDateString(localeActuelle())} (${formDate} à ${formHeure}).\n${formNotes.trim()}`,
-                        }),
-                    })
-                } catch { /* non bloquant : le RDV reste enregistré même si l'ouverture du dossier échoue */ }
+                /* Par la file de reprise : le rendez-vous est déjà enregistré,
+                   mais le dossier de suivi ne doit pas manquer pour autant.
+                   L'API dédoublonne par service_type. */
+                await envoyerOuMettreEnFile({
+                    chemin: '/api/mobile/dossiers',
+                    service: serviceLabel,
+                    reference: inserted?.id ? String(inserted.id) : undefined,
+                    corps: {
+                        service_type: serviceLabel,
+                        notes: `Dossier ouvert suite à une prise de rendez-vous le ${new Date().toLocaleDateString(localeActuelle())} (${formDate} à ${formHeure}).\n${formNotes.trim()}`,
+                    },
+                })
             }
 
             // 2. Notification staff (email admin/agent) : même chemin que le panel web
-            fetchWithTimeout(`${API_BASE}/api/rdv/confirm-client`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                timeoutMs: 12000,
-                body: JSON.stringify({
+            //    Mise en file également : un rendez-vous que l'équipe ignore
+            //    vaut à peine mieux qu'un rendez-vous non pris.
+            void envoyerOuMettreEnFile({
+                chemin: '/api/rdv/confirm-client',
+                besoinJeton: false,
+                service: 'Rendez-vous',
+                reference: inserted?.id ? String(inserted.id) : undefined,
+                corps: {
                     rdvId: inserted?.id,
                     clientName,
                     clientEmail: profile!.email,
@@ -441,8 +446,8 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     date: formDate,
                     heure: formHeure,
                     type: rdvType,
-                }),
-            }).catch(() => { /* non bloquant */ })
+                },
+            })
 
             // 3. Notification locale au client (informative)
             await supabase.from('notifications').insert({

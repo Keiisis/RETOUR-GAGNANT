@@ -36,6 +36,7 @@ import { FlagBar } from '../../components/ui'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import KkiapayModal from '../../components/KkiapayModal'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -125,18 +126,20 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
         setShowKkiapay(false)
         setLoading(true)
         try {
-            await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                timeoutMs: 20000,
-                body: JSON.stringify({
+            /* Par la file de reprise : réseau coupé = envoi conservé et rejoué,
+               plus de dossier payé qui n'arrive jamais. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/mobile/dossiers',
+                service: 'Recherche Ancestrale',
+                reference: transactionId,
+                corps: {
                     service_type: 'Recherche Ancestrale',
                     payment_tx_id: transactionId,
                     payment_amount: amountXof,
                     payment_currency: 'XOF',
                     notes: "Recherche ancestrale souscrite depuis l'onglet Services.",
-                }),
-            }).catch(() => { /* non bloquant */ })
+                },
+            })
 
             navigation.navigate('ResultatPaiement', {
                 etat: 'succes',

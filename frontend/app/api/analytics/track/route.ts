@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublic, TELEMETRY_LIMIT } from '@/lib/api-guard'
+import { normaliserIp, IP_INCONNUE } from '@/lib/net/ip-identity'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -136,12 +137,15 @@ function parseUserAgent(ua: string): { browser: string; browser_version: string;
 }
 
 function getRealIP(req: NextRequest): string {
-    return (
-        req.headers.get('cf-connecting-ip')
+    /* Ici on veut l'adresse OBSERVÉE, pas la clef d'abonné : elle part en
+       géolocalisation (ipwho.is / ip-api), qui n'accepte pas un préfixe.
+       `normaliserIp` retire seulement port, crochets et zone — sans quoi
+       « 88.170.12.4:52344 » partait tel quel au fournisseur de géo. */
+    const brut = req.headers.get('cf-connecting-ip')
         || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         || req.headers.get('x-real-ip')
-        || '127.0.0.1'
-    )
+    const ip = normaliserIp(brut)
+    return ip === IP_INCONNUE ? '127.0.0.1' : ip
 }
 
 // ═══════════════════════════════════════════════════════

@@ -6,6 +6,7 @@ import { getGroqApiKey } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
+import { verifierCodeInvitation, consommerCodeInvitation } from '@/lib/nationality-invitation'
 import { markClientConverted } from '@/lib/classement/track'
 import { verifyMyafroToken, decodeMyafroToken } from '@/lib/nationality-token'
 import { toXOFStrict } from '@/lib/server-rates'
@@ -261,6 +262,41 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        /* ── CODE D'INVITATION ───────────────────────────────────────
+           Le client n'a pas pu payer en ligne — carte étrangère refusée par
+           sa banque, cas devenu courant — et l'agence lui a remis un code
+           qui tient lieu de règlement.
+
+           La validité est établie ICI, par le serveur, contre la base. Le
+           navigateur ne fait que proposer une chaîne de caractères : ce
+           qu'il affirme par ailleurs (« paiement effectué », un montant, un
+           faux identifiant de transaction) n'entre pas en ligne de compte.
+
+           Le code n'est pas encore CONSOMMÉ à cet instant : il le sera une
+           fois le dossier réellement enregistré, plus bas. Consommer trop
+           tôt le perdrait pour le client si l'enregistrement échouait. */
+        let invitation: { code: string; couvreDossier: boolean; couvreAncestrale: boolean } | null = null
+        if (body.invitation_code) {
+            const verdict = await verifierCodeInvitation(supabase, body.invitation_code, email)
+            if (!verdict.valide || !verdict.code) {
+                return NextResponse.json(
+                    { error: verdict.motif || 'Code d’invitation refusé.' },
+                    { status: 402 },
+                )
+            }
+            if (!verdict.code.couvre_dossier) {
+                return NextResponse.json(
+                    { error: 'Ce code ne couvre pas les frais de dossier.' },
+                    { status: 402 },
+                )
+            }
+            invitation = {
+                code: verdict.code.code,
+                couvreDossier: true,
+                couvreAncestrale: verdict.code.couvre_ancestrale,
+            }
+        }
+
         // ── Anti-fraude : vérification Kkiapay côté serveur si payment_ref fourni ──
         // Évite qu'un client envoie un faux transaction_id et obtienne un dossier
         // nationalité (150 000 FCFA) sans avoir vraiment payé.
@@ -368,9 +404,15 @@ export async function POST(request: NextRequest) {
         const isPrepaid = myafroPayload?.paid ?? false
         const invoiceRef = myafroPayload?.invoice_id ? `facture_${myafroPayload.invoice_id}` : null
 
-        const paymentStatus = isPrepaid ? 'payé' : (body.payment_ref ? 'payé' : 'en_attente')
-        const paymentRef = isPrepaid ? (invoiceRef || 'manuel_prepaid') : (body.payment_ref || null)
-        const paymentMethod = isPrepaid ? 'manuel' : (body.payment_method || null)
+        /* Un code d'invitation vaut règlement : le dossier est « payé » et
+           entre dans la file normale. Mais le MOYEN reste nommé pour ce qu'il
+           est — `invitation` — et la référence porte le code. Deux raisons :
+           la comptabilité ne doit jamais compter 260 € jamais encaissés
+           (voir plus bas, la facturation est écartée pour ce cas), et « qui a
+           obtenu un dossier gratuit, avec quel code » doit rester lisible. */
+        const paymentStatus = invitation ? 'payé' : (isPrepaid ? 'payé' : (body.payment_ref ? 'payé' : 'en_attente'))
+        const paymentRef = invitation ? `invitation:${invitation.code}` : (isPrepaid ? (invoiceRef || 'manuel_prepaid') : (body.payment_ref || null))
+        const paymentMethod = invitation ? 'invitation' : (isPrepaid ? 'manuel' : (body.payment_method || null))
 
         const insertData: Record<string, unknown> = {
             application_ref: ref,
@@ -544,7 +586,10 @@ export async function POST(request: NextRequest) {
             statut: 'reception',
             etapes: nationalitySteps,
             progression: Math.round((1 / nationalitySteps.length) * 100),
-            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant: ${body.amount || 250} ${body.currency || 'USD'}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
+            /* Aucun montant de repli : « 250 » écrit ici quand la requête n'en
+               portait pas donnait une note interne qui affirmait un tarif
+               jamais encaissé. Quand le montant est absent, on le dit. */
+            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
         }).then(({ error: trackError }) => {
             if (trackError) console.error('[TRACKER] Erreur création dossier_tracking:', trackError.message)
             else console.log(`[TRACKER] Dossier ${ref} créé dans le Nexus Tracker`)
@@ -556,10 +601,33 @@ export async function POST(request: NextRequest) {
             email,
             telephone: body.telephone || null,
             sujet: `Demande de nationalité #${ref}`,
-            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant: ${body.amount || 250} ${body.currency || 'USD'}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
+            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
             type: 'nationality',
             lu: false,
         }])
+
+        /* ── CONSOMMATION DU CODE D'INVITATION ────────────────────────
+           Ici, et pas avant : le dossier est enregistré, son suivi créé.
+           Consommer plus tôt aurait brûlé le code d'un client dont
+           l'enregistrement échoue ensuite — il se serait retrouvé sans
+           dossier ET sans code.
+
+           L'opération est atomique côté base (mise à jour conditionnée sur
+           l'état `actif`). Si elle échoue, c'est qu'un autre envoi a pris le
+           code entre-temps : le dossier existe déjà, on le laisse vivre et
+           on inscrit l'anomalie dans les notes plutôt que de le détruire.
+           Un dossier réel vaut mieux qu'un code parfaitement compté. */
+        if (invitation) {
+            const conso = await consommerCodeInvitation(supabase, invitation.code, { ref, email })
+            if (!conso.ok) {
+                console.warn(`[nationality] code ${invitation.code} non consommé pour ${ref} : ${conso.motif}`)
+                await supabase.from('nationality_applications')
+                    .update({
+                        admin_notes: `⚠️ Code d'invitation ${invitation.code} : ${conso.motif || 'consommation refusée'}. À vérifier avant traitement.`,
+                    })
+                    .eq('application_ref', ref)
+            }
+        }
 
         // 3b. Paiement confirmé → alerte équipe + reçu client + statut « Payé »
         //     au Classement. Fire-and-forget : ne bloque jamais la réponse.
@@ -605,10 +673,18 @@ export async function POST(request: NextRequest) {
             } catch (e) {
                 console.warn('[nationality] notification in-app non créée :', e)
             }
-            // Traçabilité comptable : facture (payée) dans facturation + comptabilité.
-            // Le cas « facture manuelle sélectionnée » (isPrepaid) possède déjà sa
-            // propre facture réelle → on ne double pas.
-            if (!isPrepaid) {
+            /* Traçabilité comptable : facture (payée) dans facturation +
+               comptabilité. Deux cas en sont écartés, pour des raisons
+               opposées mais également impérieuses :
+
+               · `isPrepaid` — une facture réelle existe déjà, la doubler
+                 gonflerait le chiffre d'affaires ;
+               · `invitation` — RIEN n'a été encaissé. Émettre une facture
+                 payée de 260 € inscrirait au compte de résultat une recette
+                 que la banque ne verra jamais. Le dossier reste tracé par
+                 son moyen de paiement (`invitation`) et par le code inscrit
+                 dans sa référence. */
+            if (!isPrepaid && !invitation) {
                 void recordNationalityIncome(supabase, {
                     ref, nom, prenom, email, phone: body.telephone || null,
                     amount: secureAmount, currency: secureCurrency,

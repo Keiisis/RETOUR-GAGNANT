@@ -2,6 +2,8 @@
 // 🛡️ Security Utilities : Fonctions de sécurité partagées
 // ═══════════════════════════════════════════════════════
 
+import { clefIp, IP_INCONNUE } from './net/ip-identity'
+
 /**
  * Échappe les caractères HTML pour prévenir les attaques XSS.
  * À utiliser dans tout HTML généré côté serveur.
@@ -83,7 +85,13 @@ export const isApiRateLimited = (
  * Extrait l'adresse IP d'une requête (supporte les proxys/CDN).
  */
 export const getClientIp = (request: Request): string => {
-    return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-        request.headers.get('x-real-ip') ||
-        'unknown'
+    /* Renvoie la CLEF de l'abonné (`lib/net/ip-identity`) : en IPv6, l'adresse
+       complète change chaque jour, donc tout compteur posé dessus repartait de
+       zéro. Ce module sert au rate-limit interne : c'est bien la clef qu'il
+       lui faut, pas l'adresse d'affichage. */
+    return clefIp(
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || request.headers.get('x-real-ip')
+        || IP_INCONNUE,
+    )
 }

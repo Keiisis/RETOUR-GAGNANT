@@ -39,6 +39,7 @@ import { aEnMemoire, avecMemoire, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import KkiapayModal from '../../components/KkiapayModal'
 import { localeActuelle } from '../../lib/dates'
+import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -232,11 +233,14 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
         setShowPay(false)
         const bien = target
         try {
-            await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
-                timeoutMs: 20000,
-                body: JSON.stringify({
+            /* Par la file de reprise : si le réseau tombe à cet instant, l'envoi
+               est conservé sur le téléphone et rejoué tout seul. La route
+               dédoublonne par `payment_tx_id`, rejouer ne crée pas de doublon. */
+            await envoyerOuMettreEnFile({
+                chemin: '/api/mobile/dossiers',
+                service: 'Logement',
+                reference: transactionId,
+                corps: {
                     service_type: 'Logement',
                     payment_tx_id: transactionId,
                     payment_amount: feeXof,
@@ -247,8 +251,8 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                         `Formule souhaitée : ${formule}.`,
                         pendingLeadId ? `Prospect : ${pendingLeadId}.` : null,
                     ].filter(Boolean).join(' '),
-                }),
-            }).catch(() => { /* non bloquant : le paiement est déjà encaissé */ })
+                },
+            })
 
             navigation.navigate('ResultatPaiement', {
                 etat: 'succes',

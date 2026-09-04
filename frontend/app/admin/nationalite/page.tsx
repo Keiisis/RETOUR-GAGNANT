@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace } from '@phosphor-icons/react';
 import Link from 'next/link'
+import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 
 interface Application {
     id: string; application_ref: string; status: string
@@ -27,6 +28,38 @@ interface Application {
     recherche_ancestrale_payee?: boolean
     recherche_ancestrale_montant?: number
     recherche_ancestrale_devise?: string
+}
+
+/* Champ du formulaire de création. Extrait pour que les cinquante champs du
+   dossier officiel restent lisibles : sans lui, chaque champ pesait sept
+   lignes de classes utilitaires et la structure disparaissait. */
+function ChampCreation({
+    c, l, type = 'text', requis, options, form, maj,
+}: {
+    c: string
+    l: string
+    type?: string
+    requis?: boolean
+    /** Rendu en liste déroulante quand des valeurs sont imposées. */
+    options?: string[]
+    form: Record<string, string>
+    maj: (champ: string, valeur: string) => void
+}) {
+    const classe = 'mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors'
+    return (
+        <label className="block">
+            <span className="text-[11px] font-bold text-slate-500">
+                {l}{requis && <span className="text-red-500"> *</span>}
+            </span>
+            {options ? (
+                <select value={form[c] ?? ''} onChange={e => maj(c, e.target.value)} className={classe}>
+                    {options.map(o => <option key={o} value={o}>{o === '' ? '—' : o}</option>)}
+                </select>
+            ) : (
+                <input type={type} value={form[c] ?? ''} onChange={e => maj(c, e.target.value)} className={classe} />
+            )}
+        </label>
+    )
 }
 
 // `color` = pastille de statut (badge). `solid` = bouton d'action plein, à fort
@@ -422,6 +455,238 @@ export default function AdminNationalitePage() {
     const setF = (patch: Partial<FData>) => setFicheData(d => d ? { ...d, ...patch } : d)
 
     // ── Édition d'une demande ──
+    /* ═══════════════════════════════════════════════════════════
+       CRÉATION MANUELLE D'UN DOSSIER
+
+       Tous les dossiers naissaient du formulaire public, donc d'un paiement
+       Kkiapay. Un client dont la carte étrangère est refusée règle autrement
+       — Mobile Money, virement, TapTap Send, espèces — et son dossier
+       n'existait alors nulle part : ni suivi, ni pièces, ni facture.
+
+       La saisie est volontairement courte : nom, prénom, email et moyen de
+       règlement suffisent à ouvrir le dossier. Tout le reste se complète
+       ensuite par la fiche d'édition, qui existe déjà.
+       ═══════════════════════════════════════════════════════════ */
+    const MOYENS_PAIEMENT: Record<string, string> = {
+        momo: 'Mobile Money',
+        rib: 'Virement bancaire (RIB)',
+        kkiapay: 'Kkiapay',
+        taptap: 'TapTap Send',
+        especes: 'Espèces',
+        autre: 'Autre',
+    }
+    /* Tous les champs du formulaire officiel, dans le même ordre. Un dossier
+       saisi ici doit être indiscernable d'un dossier déposé par le client :
+       si un champ manque, il manquera pour toujours — personne ne repasse
+       derrière pour le réclamer. */
+    const CREATION_VIDE = {
+        // Identité
+        prenom: '', nom: '', genre: '', date_naissance: '',
+        pays_naissance: '', ville_naissance: '', nationalite: '',
+        email: '', telephone: '', profession: '',
+        pays_residence: '', adresse_residence: '', demande_depuis_benin: 'non',
+        situation_matrimoniale: '', nombre_enfants: '',
+        // Pièce d'identité
+        type_document_identite: '', numero_document: '', autorite_delivrance: '',
+        pays_delivrance: '', lieu_delivrance: '', date_expiration_document: '',
+        // Parents
+        pere_nom: '', pere_prenom: '', pere_date_naissance: '',
+        mere_nom: '', mere_prenom: '', mere_date_naissance: '',
+        // Ascendance béninoise
+        afro_descendant_description: '',
+        ancestor1_prenom: '', ancestor1_nom: '', ancestor1_lien_parente: '', ancestor1_date_naissance: '',
+        ancestor1_nationalite: '', ancestor1_pays_residence: '', ancestor1_vivant: '', ancestor1_autres_infos: '',
+        ancestor2_prenom: '', ancestor2_nom: '', ancestor2_lien_parente: '', ancestor2_date_naissance: '',
+        ancestor2_nationalite: '', ancestor2_pays_residence: '', ancestor2_vivant: '', ancestor2_autres_infos: '',
+        // Motivation
+        motivation_lettre: '',
+        // Règlement + interne
+        payment_method: 'momo', payment_ref: '', payment_status: 'paye',
+        amount: '', currency: '', agent_notes: '',
+    }
+    const [creationOuverte, setCreationOuverte] = useState(false)
+    const [creationForm, setCreationForm] = useState({ ...CREATION_VIDE })
+    /* Une entrée PAR EMPLACEMENT officiel — « Extrait de naissance du père »,
+       « Justificatif de domicile »… — et non un champ libre. C'est ce qui
+       garantit qu'une pièce déposée par l'équipe porte le même intitulé que
+       la même pièce déposée par le client. */
+    const [docSlots, setDocSlots] = useState<DocSlot[]>(DOC_SLOTS_DEFAUT)
+    const [creationFichiers, setCreationFichiers] = useState<Record<string, File[]>>({})
+    const [creationBusy, setCreationBusy] = useState(false)
+    const [creationErreur, setCreationErreur] = useState('')
+    const [creationBilan, setCreationBilan] = useState<{ reference: string; pieces: number; avertissement: string | null } | null>(null)
+
+    const majCreation = (champ: string, valeur: string) =>
+        setCreationForm(f => ({ ...f, [champ]: valeur }))
+
+    /* Les emplacements suivent la configuration de l'admin, exactement comme
+       le formulaire public : une pièce ajoutée là-bas apparaît ici. */
+    useEffect(() => {
+        if (!creationOuverte) return
+        chargerDocSlots(supabase).then(setDocSlots).catch(() => undefined)
+    }, [creationOuverte])
+
+    const fermerCreation = () => {
+        setCreationOuverte(false)
+        setCreationForm({ ...CREATION_VIDE })
+        setCreationFichiers({})
+        setCreationErreur('')
+        setCreationBilan(null)
+    }
+
+    const creerDossier = async () => {
+        setCreationErreur('')
+        if (!creationForm.nom.trim() || !creationForm.prenom.trim() || !creationForm.email.trim()) {
+            setCreationErreur('Nom, prénom et email sont indispensables.')
+            return
+        }
+        setCreationBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...creationForm,
+                    amount: creationForm.amount === '' ? undefined : Number(creationForm.amount),
+                    currency: creationForm.currency || undefined,
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) throw new Error(json.error || `Erreur serveur (${res.status})`)
+
+            /* Les pièces passent par la chaîne existante : dépôt dans le
+               bucket, puis rattachement au dossier. Chacune porte le libellé
+               de SON emplacement officiel, jamais un nom de fichier — c'est
+               ce libellé que liront l'aperçu, le ZIP et l'agent instructeur.
+               Un échec de pièce ne remet pas le dossier en cause : il est
+               déjà créé. */
+            let deposees = 0
+            const aDeposer: { slot: DocSlot; file: File }[] = []
+            for (const slot of docSlots) {
+                for (const f of creationFichiers[slot.key] || []) aDeposer.push({ slot, file: f })
+            }
+            if (aDeposer.length) {
+                const lignes: { label: string; path: string }[] = []
+                for (const { slot, file } of aDeposer) {
+                    const fd = new FormData()
+                    fd.append('file', file)
+                    fd.append('key', slot.key)
+                    fd.append('ext', file.name.split('.').pop() || 'bin')
+                    const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
+                    const uj = await up.json().catch(() => ({}))
+                    if (up.ok && uj.path) lignes.push({ label: slot.label, path: uj.path })
+                }
+                if (lignes.length) {
+                    const add = await fetch(`/api/admin/nationalite/${json.id}/add-documents`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ docs: lignes }),
+                    })
+                    if (add.ok) deposees = lignes.length
+                }
+            }
+
+            setCreationBilan({
+                reference: json.reference,
+                pieces: deposees,
+                avertissement: json.avertissement || (deposees < aDeposer.length
+                    ? `${aDeposer.length - deposees} pièce(s) n'ont pas pu être déposées. Ajoutez-les depuis la fiche du dossier.`
+                    : null),
+            })
+            await fetchApps()
+        } catch (e) {
+            setCreationErreur(e instanceof Error ? e.message : 'Création impossible.')
+        } finally {
+            setCreationBusy(false)
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       CODES D'INVITATION
+
+       Un code tient lieu de règlement : il vaut le prix d'une prestation.
+       D'où la portée explicite (frais de dossier, et/ou recherche
+       ancestrale), l'échéance obligatoire, et la révocation possible tant
+       qu'il n'a pas servi.
+       ═══════════════════════════════════════════════════════════ */
+    interface Invitation {
+        id: string; code: string
+        couvre_dossier: boolean; couvre_ancestrale: boolean
+        montant_dossier: number | null; montant_ancestrale: number | null
+        devise: string; statut: 'actif' | 'utilise' | 'revoque'
+        email_cible: string | null; note: string | null
+        expire_le: string | null; cree_le: string
+        utilise_le: string | null; utilise_par_ref: string | null; utilise_par_email: string | null
+    }
+    const [invitationsOuvert, setInvitationsOuvert] = useState(false)
+    const [invitations, setInvitations] = useState<Invitation[]>([])
+    const [invitationsBusy, setInvitationsBusy] = useState(false)
+    const [invitationErreur, setInvitationErreur] = useState('')
+    const [invitCopie, setInvitCopie] = useState<string | null>(null)
+    const [nouvelleInvit, setNouvelleInvit] = useState({
+        couvre_dossier: true,
+        couvre_ancestrale: false,
+        email_cible: '',
+        note: '',
+        jours_validite: '30',
+    })
+
+    const chargerInvitations = async () => {
+        setInvitationsBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations')
+            const json = await res.json().catch(() => ({}))
+            setInvitations(Array.isArray(json.codes) ? json.codes : [])
+        } catch {
+            setInvitationErreur('Chargement des codes impossible.')
+        } finally {
+            setInvitationsBusy(false)
+        }
+    }
+
+    const genererInvitation = async () => {
+        setInvitationErreur('')
+        if (!nouvelleInvit.couvre_dossier && !nouvelleInvit.couvre_ancestrale) {
+            setInvitationErreur('Un code doit couvrir au moins une prestation.')
+            return
+        }
+        setInvitationsBusy(true)
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...nouvelleInvit,
+                    jours_validite: Number(nouvelleInvit.jours_validite) || 30,
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !json.success) throw new Error(json.error || `Erreur ${res.status}`)
+            setInvitations(list => [json.code as Invitation, ...list])
+            setNouvelleInvit(n => ({ ...n, email_cible: '', note: '' }))
+        } catch (e) {
+            setInvitationErreur(e instanceof Error ? e.message : 'Génération impossible.')
+        } finally {
+            setInvitationsBusy(false)
+        }
+    }
+
+    const revoquerInvitation = async (code: string) => {
+        setInvitationErreur('')
+        try {
+            const res = await fetch('/api/admin/nationalite/invitations', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`)
+            setInvitations(list => list.map(i => i.code === code ? { ...i, statut: 'revoque' } : i))
+        } catch (e) {
+            setInvitationErreur(e instanceof Error ? e.message : 'Révocation impossible.')
+        }
+    }
+
     const [editApp, setEditApp] = useState<Application | null>(null)
     const [editForm, setEditForm] = useState<Partial<Application>>({})
     const [savingEdit, setSavingEdit] = useState(false)
@@ -520,6 +785,25 @@ export default function AdminNationalitePage() {
                         <h1 className="text-2xl font-black text-white flex items-center gap-2"><Globe2 size={22} className="text-emerald-400" /> <T>Demandes de Nationalité</T></h1>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        {/* Ouvre la saisie d'un dossier réglé hors passerelle :
+                            Mobile Money, virement, TapTap Send, espèces. Ces
+                            clients existaient jusqu'ici dans une boîte mail et
+                            nulle part ailleurs. */}
+                        <button
+                            onClick={() => setCreationOuverte(true)}
+                            className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center gap-2 transition-all"
+                        >
+                            <Plus size={14} /> <T>Nouveau dossier</T>
+                        </button>
+                        {/* Pour le client dont la banque refuse le paiement en
+                            ligne : un code lui rend le formulaire au lieu qu'on
+                            le remplisse à sa place. */}
+                        <button
+                            onClick={() => { setInvitationsOuvert(true); chargerInvitations() }}
+                            className="text-xs font-bold text-amber-300 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/25 flex items-center gap-2 hover:bg-amber-500/20 transition-all"
+                        >
+                            <Copy size={14} /> <T>Code d&apos;invitation</T>
+                        </button>
                         <Link href="/admin/nationalite/settings" className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 flex items-center gap-2 hover:bg-emerald-500/20 transition-all">
                             <Globe2 size={14} /> <T>Paramètres formulaire</T> <ExternalLink size={12} />
                         </Link>
@@ -1034,6 +1318,499 @@ export default function AdminNationalitePage() {
                                     <button onClick={sendFiche} disabled={ficheBusy || !ficheApp.email} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.65)]">
                                         {ficheBusy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer au client
                                     </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════
+                CODES D'INVITATION
+                ═══════════════════════════════════════════════════════ */}
+            {invitationsOuvert && (
+                <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl overflow-hidden">
+
+                        <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <Copy size={18} className="text-amber-600" /> Codes d’invitation
+                                </h3>
+                                <p className="text-[12px] text-slate-500 mt-0.5">
+                                    Le client remplit lui-même le formulaire ; le code remplace le règlement.
+                                </p>
+                            </div>
+                            <button onClick={() => setInvitationsOuvert(false)} className="text-slate-400 hover:text-slate-700 transition-colors" aria-label="Fermer">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="px-7 py-6 max-h-[70vh] overflow-y-auto space-y-6">
+
+                            {/* ── Génération ── */}
+                            <section className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Générer un code</p>
+
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {([
+                                        { c: 'couvre_dossier', l: 'Frais de dossier' },
+                                        { c: 'couvre_ancestrale', l: 'Recherche ancestrale' },
+                                    ] as const).map(o => {
+                                        const actif = nouvelleInvit[o.c]
+                                        return (
+                                            <button
+                                                key={o.c}
+                                                type="button"
+                                                onClick={() => setNouvelleInvit(n => ({ ...n, [o.c]: !n[o.c] }))}
+                                                className={`px-4 py-2.5 rounded-xl text-[12px] font-bold border transition-all flex items-center gap-2 ${actif
+                                                    ? 'bg-[#008751] text-white border-[#008751]'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}
+                                            >
+                                                {actif ? <Check size={13} /> : <X size={13} />} {o.l}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mb-3">
+                                    Cochez « Recherche ancestrale » pour que le même code couvre aussi ce forfait
+                                    s’il est proposé au client après sa demande.
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <label className="block sm:col-span-2">
+                                        <span className="text-[11px] font-bold text-slate-500">Réserver à un email (facultatif)</span>
+                                        <input
+                                            value={nouvelleInvit.email_cible}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, email_cible: e.target.value }))}
+                                            placeholder="Le code n’acceptera que cette adresse"
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="text-[11px] font-bold text-slate-500">Validité (jours)</span>
+                                        <input
+                                            type="number" min="1" max="365"
+                                            value={nouvelleInvit.jours_validite}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, jours_validite: e.target.value }))}
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                    <label className="block sm:col-span-3">
+                                        <span className="text-[11px] font-bold text-slate-500">Motif</span>
+                                        <input
+                                            value={nouvelleInvit.note}
+                                            onChange={e => setNouvelleInvit(n => ({ ...n, note: e.target.value }))}
+                                            placeholder="Ex. carte refusée par sa banque, réglé par virement le 29/08"
+                                            className="mt-1 w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                        />
+                                    </label>
+                                </div>
+
+                                <button
+                                    onClick={genererInvitation}
+                                    disabled={invitationsBusy}
+                                    className="mt-3 px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors"
+                                >
+                                    {invitationsBusy ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                                    Générer le code
+                                </button>
+
+                                {invitationErreur && (
+                                    <p className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-3">
+                                        {invitationErreur}
+                                    </p>
+                                )}
+                            </section>
+
+                            {/* ── Liste ── */}
+                            <section>
+                                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">
+                                    Codes émis
+                                </p>
+                                {invitations.length === 0 ? (
+                                    <p className="text-[12px] text-slate-400">Aucun code pour l’instant.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {invitations.map(inv => {
+                                            const perime = !!inv.expire_le && new Date(inv.expire_le).getTime() < Date.now()
+                                            const etat = inv.statut === 'utilise' ? { l: 'Utilisé', c: 'bg-slate-100 text-slate-500' }
+                                                : inv.statut === 'revoque' ? { l: 'Révoqué', c: 'bg-red-50 text-red-600' }
+                                                    : perime ? { l: 'Expiré', c: 'bg-amber-50 text-amber-700' }
+                                                        : { l: 'Actif', c: 'bg-emerald-50 text-emerald-700' }
+                                            return (
+                                                <div key={inv.id} className="border border-slate-200 rounded-xl px-4 py-3">
+                                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="font-mono font-bold text-[13px] text-slate-900 tracking-wider">{inv.code}</span>
+                                                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${etat.c}`}>{etat.l}</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-500 mt-1">
+                                                                {inv.couvre_dossier && 'Frais de dossier'}
+                                                                {inv.couvre_dossier && inv.couvre_ancestrale && ' + '}
+                                                                {inv.couvre_ancestrale && 'Recherche ancestrale'}
+                                                                {inv.email_cible && ` · réservé à ${inv.email_cible}`}
+                                                                {inv.expire_le && ` · expire le ${new Date(inv.expire_le).toLocaleDateString('fr-FR')}`}
+                                                            </p>
+                                                            {inv.note && <p className="text-[11px] text-slate-400 mt-0.5 italic">{inv.note}</p>}
+                                                            {inv.statut === 'utilise' && (
+                                                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                                                    Consommé par {inv.utilise_par_ref || '—'}
+                                                                    {inv.utilise_par_email && ` (${inv.utilise_par_email})`}
+                                                                    {inv.utilise_le && ` le ${new Date(inv.utilise_le).toLocaleDateString('fr-FR')}`}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <button
+                                                                onClick={() => { navigator.clipboard.writeText(inv.code); setInvitCopie(inv.code); setTimeout(() => setInvitCopie(null), 1800) }}
+                                                                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-[12px] font-bold hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                                                            >
+                                                                {invitCopie === inv.code ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                                                {invitCopie === inv.code ? 'Copié' : 'Copier'}
+                                                            </button>
+                                                            {inv.statut === 'actif' && (
+                                                                <button
+                                                                    onClick={() => revoquerInvitation(inv.code)}
+                                                                    className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-[12px] font-bold hover:bg-red-50 transition-colors"
+                                                                >
+                                                                    Révoquer
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </section>
+
+                            <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-4">
+                                Un dossier ouvert par code d’invitation ne génère <strong>aucune facture</strong> :
+                                rien n’est encaissé, et inscrire 260 € au compte de résultat créerait une recette
+                                que la banque ne verra jamais. Le dossier reste tracé par son moyen de paiement
+                                et par le code inscrit dans sa référence.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════
+                NOUVEAU DOSSIER — saisie d'un règlement hors passerelle
+                ═══════════════════════════════════════════════════════ */}
+            {creationOuverte && (
+                <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl overflow-hidden">
+
+                        <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <FilePlus size={18} className="text-[#008751]" /> Nouveau dossier de nationalité
+                                </h3>
+                                <p className="text-[12px] text-slate-500 mt-0.5">
+                                    Pour un client qui a réglé hors du site : Mobile Money, virement, TapTap Send, espèces.
+                                </p>
+                            </div>
+                            <button onClick={fermerCreation} className="text-slate-400 hover:text-slate-700 transition-colors" aria-label="Fermer">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {creationBilan ? (
+                            /* ── Bilan : ce qui a réellement été créé ── */
+                            <div className="px-7 py-8 text-center">
+                                <CheckCircle2 size={44} className="mx-auto text-[#008751] mb-3" />
+                                <p className="text-slate-900 font-black text-lg">Dossier créé</p>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    Référence <span className="font-mono font-bold text-slate-900">{creationBilan.reference}</span>
+                                </p>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    {creationBilan.pieces > 0
+                                        ? `${creationBilan.pieces} pièce(s) jointe(s) déposée(s).`
+                                        : 'Aucune pièce jointe pour l’instant — elles s’ajoutent depuis la fiche du dossier.'}
+                                </p>
+                                {creationBilan.avertissement && (
+                                    <p className="mt-4 text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left">
+                                        {creationBilan.avertissement}
+                                    </p>
+                                )}
+                                <div className="mt-7 flex justify-center gap-3">
+                                    <button
+                                        onClick={() => { setCreationBilan(null); setCreationForm({ ...CREATION_VIDE }); setCreationFichiers({}) }}
+                                        className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+                                    >
+                                        Saisir un autre dossier
+                                    </button>
+                                    <button onClick={fermerCreation} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold transition-colors">
+                                        Terminer
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="px-7 py-6 space-y-7 max-h-[65vh] overflow-y-auto">
+
+                                    {/* ── Identité ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Identité du demandeur</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <ChampCreation c="prenom" l="Prénom" requis form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="nom" l="Nom" requis form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="genre" l="Genre" options={['', 'Masculin', 'Féminin', 'Autre']} form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="date_naissance" l="Date de naissance" type="date" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="ville_naissance" l="Ville de naissance" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="pays_naissance" l="Pays de naissance" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="nationalite" l="Nationalité actuelle" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="email" l="Email" requis type="email" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="telephone" l="Téléphone" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="profession" l="Profession" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="pays_residence" l="Pays de résidence" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="adresse_residence" l="Adresse de résidence" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="situation_matrimoniale" l="Situation matrimoniale" options={['', 'Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf/Veuve']} form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="nombre_enfants" l="Nombre d'enfants" type="number" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="demande_depuis_benin" l="Demande faite depuis le Bénin" options={['non', 'oui']} form={creationForm} maj={majCreation} />
+                                        </div>
+                                    </section>
+
+                                    {/* ── Pièce d'identité ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Pièce d’identité présentée</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <ChampCreation c="type_document_identite" l="Type de document" options={['', 'Passeport', "Carte nationale d'identité", 'Titre de séjour', 'Autre']} form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="numero_document" l="Numéro du document" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="date_expiration_document" l="Date d’expiration" type="date" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="autorite_delivrance" l="Autorité de délivrance" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="pays_delivrance" l="Pays de délivrance" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="lieu_delivrance" l="Lieu de délivrance" form={creationForm} maj={majCreation} />
+                                        </div>
+                                    </section>
+
+                                    {/* ── Parents ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Parents</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <ChampCreation c="pere_prenom" l="Prénom du père" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="pere_nom" l="Nom du père" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="pere_date_naissance" l="Naissance du père" type="date" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="mere_prenom" l="Prénom de la mère" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="mere_nom" l="Nom de la mère" form={creationForm} maj={majCreation} />
+                                            <ChampCreation c="mere_date_naissance" l="Naissance de la mère" type="date" form={creationForm} maj={majCreation} />
+                                        </div>
+                                    </section>
+
+                                    {/* ── Règlement ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Règlement</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                                            {Object.entries(MOYENS_PAIEMENT).map(([cle, libelle]) => (
+                                                <button
+                                                    key={cle}
+                                                    type="button"
+                                                    onClick={() => majCreation('payment_method', cle)}
+                                                    className={`px-3 py-2.5 rounded-xl text-[12px] font-bold border transition-all ${creationForm.payment_method === cle
+                                                        ? 'bg-[#008751] text-white border-[#008751]'
+                                                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
+                                                >
+                                                    {libelle}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <label className="block sm:col-span-2">
+                                                <span className="text-[11px] font-bold text-slate-500">
+                                                    Référence du règlement
+                                                    {creationForm.payment_method === 'autre' && <span className="text-red-500"> *</span>}
+                                                </span>
+                                                <input
+                                                    value={creationForm.payment_ref}
+                                                    onChange={e => majCreation('payment_ref', e.target.value)}
+                                                    placeholder="N° de transaction, de virement, ou nature du règlement"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">État</span>
+                                                <select
+                                                    value={creationForm.payment_status}
+                                                    onChange={e => majCreation('payment_status', e.target.value)}
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                >
+                                                    <option value="paye">Payé</option>
+                                                    <option value="en_attente">En attente</option>
+                                                </select>
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">Montant</span>
+                                                <input
+                                                    type="number" min="0" step="0.01"
+                                                    value={creationForm.amount}
+                                                    onChange={e => majCreation('amount', e.target.value)}
+                                                    placeholder="tarif en vigueur"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                            <label className="block">
+                                                <span className="text-[11px] font-bold text-slate-500">Devise</span>
+                                                <input
+                                                    value={creationForm.currency}
+                                                    onChange={e => majCreation('currency', e.target.value.toUpperCase())}
+                                                    placeholder="EUR"
+                                                    className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors"
+                                                />
+                                            </label>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 mt-2">
+                                            Montant et devise laissés vides : le tarif configuré s’applique.
+                                        </p>
+                                    </section>
+
+                                    {/* ── Ascendance ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Ascendance béninoise</p>
+                                        <label className="block mb-4">
+                                            <span className="text-[11px] font-bold text-slate-500">Preuve d’afro-descendance déclarée</span>
+                                            <textarea
+                                                rows={2}
+                                                value={creationForm.afro_descendant_description}
+                                                onChange={e => majCreation('afro_descendant_description', e.target.value)}
+                                                className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors resize-none"
+                                            />
+                                        </label>
+
+                                        {[1, 2].map(n => (
+                                            <div key={n} className="mb-4 last:mb-0">
+                                                <p className="text-[12px] font-bold text-slate-600 mb-2">
+                                                    Ascendant {n}{n === 2 && <span className="font-normal text-slate-400"> — facultatif</span>}
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                    <ChampCreation c={`ancestor${n}_prenom`} l="Prénom" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_nom`} l="Nom" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_lien_parente`} l="Lien de parenté" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_date_naissance`} l="Date de naissance" type="date" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_nationalite`} l="Nationalité" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_pays_residence`} l="Pays de résidence" form={creationForm} maj={majCreation} />
+                                                    <ChampCreation c={`ancestor${n}_vivant`} l="Encore en vie" options={['', 'oui', 'non']} form={creationForm} maj={majCreation} />
+                                                    <div className="sm:col-span-2">
+                                                        <ChampCreation c={`ancestor${n}_autres_infos`} l="Autres informations" form={creationForm} maj={majCreation} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </section>
+
+                                    {/* ── Motivation ── */}
+                                    <label className="block">
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Lettre de motivation</span>
+                                        <textarea
+                                            rows={3}
+                                            value={creationForm.motivation_lettre}
+                                            onChange={e => majCreation('motivation_lettre', e.target.value)}
+                                            placeholder="Texte transmis par le client, ou résumé de ses motivations."
+                                            className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors resize-none"
+                                        />
+                                    </label>
+
+                                    {/* ── Pièces : un emplacement par document officiel ── */}
+                                    <section>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                            Pièces du dossier
+                                        </p>
+                                        <p className="text-[12px] text-slate-400 mb-3">
+                                            Les mêmes emplacements que le formulaire du site. Facultatif à la création :
+                                            chaque pièce peut être ajoutée plus tard, à sa place, depuis la fiche du dossier.
+                                        </p>
+                                        <div className="space-y-2">
+                                            {docSlots.map(slot => {
+                                                const fichiers = creationFichiers[slot.key] || []
+                                                return (
+                                                    <div key={slot.key} className="border border-slate-150 bg-slate-50/60 rounded-xl px-3.5 py-3">
+                                                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-[13px] font-bold text-slate-700">
+                                                                    {slot.label}
+                                                                    {slot.required
+                                                                        ? <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-red-500">obligatoire</span>
+                                                                        : <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">facultatif</span>}
+                                                                    {slot.multi && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">plusieurs fichiers</span>}
+                                                                </p>
+                                                                {slot.hint && <p className="text-[11px] text-slate-400 mt-0.5">{slot.hint}</p>}
+                                                            </div>
+                                                            <input
+                                                                type="file"
+                                                                multiple={slot.multi}
+                                                                onChange={e => {
+                                                                    const choisis = Array.from(e.target.files || [])
+                                                                    setCreationFichiers(m => ({
+                                                                        ...m,
+                                                                        [slot.key]: slot.multi ? [...(m[slot.key] || []), ...choisis] : choisis.slice(0, 1),
+                                                                    }))
+                                                                }}
+                                                                className="text-[11px] text-slate-500 w-52 shrink-0 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-white file:border file:border-slate-200 file:text-slate-700"
+                                                            />
+                                                        </div>
+                                                        {fichiers.length > 0 && (
+                                                            <div className="mt-2 flex flex-wrap gap-1.5">
+                                                                {fichiers.map((f, i) => (
+                                                                    <span key={`${slot.key}-${i}`} className="inline-flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg pl-2.5 pr-1.5 py-1 text-[11px] text-slate-600">
+                                                                        <FileText size={11} className="text-[#008751]" />
+                                                                        <span className="max-w-[180px] truncate">{f.name}</span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setCreationFichiers(m => ({ ...m, [slot.key]: (m[slot.key] || []).filter((_, j) => j !== i) }))}
+                                                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                                                            aria-label={`Retirer ${f.name}`}
+                                                                        >
+                                                                            <X size={12} />
+                                                                        </button>
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </section>
+
+                                    {/* ── Note interne ── */}
+                                    <label className="block">
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Note interne</span>
+                                        <textarea
+                                            rows={2}
+                                            value={creationForm.agent_notes}
+                                            onChange={e => majCreation('agent_notes', e.target.value)}
+                                            placeholder="Contexte du règlement, interlocuteur, ce qui reste à obtenir…"
+                                            className="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] transition-colors resize-none"
+                                        />
+                                    </label>
+
+                                    {creationErreur && (
+                                        <p className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                                            {creationErreur}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="px-7 py-4 border-t border-slate-100 flex justify-between items-center gap-3">
+                                    <p className="text-[11px] text-slate-400">
+                                        Le dossier entre aussitôt dans le suivi, côté équipe comme côté client.
+                                    </p>
+                                    <div className="flex gap-3">
+                                        <button onClick={fermerCreation} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors">
+                                            Annuler
+                                        </button>
+                                        <button
+                                            onClick={creerDossier}
+                                            disabled={creationBusy}
+                                            className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-colors shadow-[0_10px_24px_-10px_rgba(0,135,81,0.65)]"
+                                        >
+                                            {creationBusy ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                                            Créer le dossier
+                                        </button>
+                                    </div>
                                 </div>
                             </>
                         )}

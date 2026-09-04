@@ -70,6 +70,8 @@ export interface RateLimitResult {
     retryAfter?: number
 }
 
+import { clefIp, normaliserIp, IP_INCONNUE } from './net/ip-identity'
+
 // ─── Store en mémoire ─────────────────────────────────────────────────────────
 
 const store = new Map<string, Entry>()
@@ -198,16 +200,27 @@ export function rateLimit(key: string, config: RateLimitConfig): RateLimitResult
  * n'est pas derrière un reverse proxy de confiance.
  */
 export function getClientIp(request: Request): string {
+    // La CLEF de l'abonné, pas l'adresse affichée : en IPv6 l'adresse change
+    // chaque jour (RFC 4941) et un quota par adresse repartirait de zéro à
+    // chaque rotation. Voir `lib/net/ip-identity.ts`.
+    return clefIp(getClientIpObservee(request))
+}
+
+/**
+ * L'adresse RÉELLEMENT observée, normalisée mais non regroupée.
+ * Pour les journaux, les alertes et l'affichage — jamais comme clef de quota.
+ */
+export function getClientIpObservee(request: Request): string {
     const realIp = request.headers.get('x-real-ip')?.trim()
-    if (realIp) return realIp
+    if (realIp) return normaliserIp(realIp)
 
     const forwarded = request.headers.get('x-forwarded-for')
     if (forwarded) {
         const first = forwarded.split(',')[0].trim()
-        if (first) return first
+        if (first) return normaliserIp(first)
     }
 
-    return 'unknown'
+    return IP_INCONNUE
 }
 
 /**

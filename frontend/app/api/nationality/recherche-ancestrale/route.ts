@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import { notifyStaffNationalityPayment } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
+import { codeCouvreAncestrale } from '@/lib/nationality-invitation'
 import { markClientConverted } from '@/lib/classement/track'
 import { guardPublic, PUBLIC_FORM_LIMIT, flowKey } from '@/lib/api-guard'
 import { toXOFStrict } from '@/lib/server-rates'
@@ -121,11 +122,32 @@ export async function POST(request: NextRequest) {
 
         if (!ref) return NextResponse.json({ error: 'Référence manquante' }, { status: 400 })
 
+        /* ── CODE D'INVITATION ÉTENDU À LA RECHERCHE ─────────────────
+           Quand le code utilisé pour le dossier couvrait AUSSI ce forfait,
+           il n'y a pas de transaction à vérifier : la prestation est offerte.
+
+           Deux conditions, toutes deux indispensables : le code doit porter
+           `couvre_ancestrale`, ET avoir été consommé POUR CE DOSSIER. Sans
+           la seconde, n'importe quel code couvrant l'ancestrale offrirait la
+           recherche à n'importe quel dossier. */
+        const parInvitation = body.invitation_code
+            ? await codeCouvreAncestrale(supabase, body.invitation_code, String(ref))
+            : false
+
+        if (body.invitation_code && !parInvitation) {
+            return NextResponse.json(
+                { error: 'Ce code ne couvre pas la recherche ancestrale pour ce dossier.' },
+                { status: 402 },
+            )
+        }
+
         // ── Preuve de paiement AVANT toute écriture ──────────────────
-        const refus = await refusPaiementAncestral(String(payment_provider || ''), String(payment_tx_id || ''))
-        if (refus) {
-            console.warn(`[recherche-ancestrale] REFUS (${ref}) : ${refus}`)
-            return NextResponse.json({ error: refus }, { status: 402 })
+        if (!parInvitation) {
+            const refus = await refusPaiementAncestral(String(payment_provider || ''), String(payment_tx_id || ''))
+            if (refus) {
+                console.warn(`[recherche-ancestrale] REFUS (${ref}) : ${refus}`)
+                return NextResponse.json({ error: refus }, { status: 402 })
+            }
         }
 
         // Générer une référence pour ce service de recherche
@@ -180,7 +202,7 @@ export async function POST(request: NextRequest) {
                 { id: 6, label: 'Transmission au dossier nationalité', status: 'pending', date: null, note: '' },
             ],
             progression: Math.round((1 / 6) * 100),
-            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${payment_provider} : TX: ${payment_tx_id}`,
+            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${parInvitation ? `offert par code d invitation ${body.invitation_code}` : `${payment_provider} : TX: ${payment_tx_id}`}`,
         })
 
         // Alerte email équipe + statut « Payé » au Classement (fire-and-forget)
@@ -196,17 +218,21 @@ export async function POST(request: NextRequest) {
             paymentRef: payment_tx_id ? String(payment_tx_id) : null,
             service: 'Recherche Ancestrale',
         })
-        // Traçabilité comptable + FACTURE (PDF) envoyée au client
-        void recordNationalityIncome(supabase, {
-            ref: searchRef,
-            nom: app.nom, prenom: app.prenom, email: app.email,
-            phone: app.telephone || null,
-            amount: Number(amount) || 250,
-            currency: 'EUR',
-            paymentMethod: String(payment_provider || 'en ligne'),
-            txId: payment_tx_id ? String(payment_tx_id) : null,
-            label: 'Recherche Ancestrale & Généalogique',
-        })
+        /* Traçabilité comptable + FACTURE (PDF) envoyée au client.
+           Écartée quand la prestation est offerte par code : rien n'a été
+           encaissé, et facturer 250 € inscrirait une recette imaginaire. */
+        if (!parInvitation) {
+            void recordNationalityIncome(supabase, {
+                ref: searchRef,
+                nom: app.nom, prenom: app.prenom, email: app.email,
+                phone: app.telephone || null,
+                amount: Number(amount) || 250,
+                currency: 'EUR',
+                paymentMethod: String(payment_provider || 'en ligne'),
+                txId: payment_tx_id ? String(payment_tx_id) : null,
+                label: 'Recherche Ancestrale & Généalogique',
+            })
+        }
         void markClientConverted({
             email: app.email,
             full_name: `${app.prenom || ''} ${app.nom || ''}`.trim() || null,
