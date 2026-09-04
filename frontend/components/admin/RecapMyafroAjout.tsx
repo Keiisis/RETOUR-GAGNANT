@@ -137,47 +137,62 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className={etiquette} style={styleEtiquette}>Situation décrite par le client *</label>
-                                <textarea required rows={5} value={f.situation} onChange={e => maj('situation', e.target.value)}
-                                    className={champ + ' resize-y leading-relaxed'} style={styleChamp}
-                                    placeholder="Ce que le client raconte : depuis quand son dossier est bloqué, ce qu'il a déjà tenté, ce qu'on lui a répondu…" />
-                                <p className="mt-1 text-[11px]" style={{ color: 'var(--panel-text-muted)' }}>
-                                    C’est la matière de la fiche d’analyse : plus le récit est fidèle, plus la fiche est juste.
-                                    <span className={f.situation.trim().length < 40 ? ' text-amber-400' : ' text-emerald-400'}>
-                                        {' '}{f.situation.trim().length} / 40 caractères minimum
-                                    </span>
-                                </p>
+                            {/* ── LES MÊMES CHAMPS QUE LE FORMULAIRE PUBLIC ──
+                                Ces trois-là étaient repliés sous « Informations
+                                complémentaires », alors que le client les remplit
+                                d'emblée sur /services/recap-myafroorigins. L'agent qui
+                                saisit au téléphone recueillait donc MOINS d'informations
+                                que le formulaire en libre-service — et la fiche d'analyse,
+                                qui s'appuie dessus, en pâtissait. */}
+                            <div className="grid sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className={etiquette} style={styleEtiquette}>Pays de résidence</label>
+                                    <input value={f.pays_residence} onChange={e => maj('pays_residence', e.target.value)} className={champ} style={styleChamp} placeholder="France, Martinique…" />
+                                </div>
+                                <div>
+                                    <label className={etiquette} style={styleEtiquette}>Réf. MyAfroOrigins</label>
+                                    <input value={f.myafro_reference} onChange={e => maj('myafro_reference', e.target.value)} className={champ} style={styleChamp} placeholder="s’il l’a" />
+                                </div>
+                                <div>
+                                    <label className={etiquette} style={styleEtiquette}>Sans nouvelle depuis</label>
+                                    <input value={f.depuis_quand} onChange={e => maj('depuis_quand', e.target.value)} className={champ} style={styleChamp} placeholder="8 mois…" />
+                                </div>
                             </div>
 
-                            {/* ── Le reste, replié : on ne l'a pas toujours au téléphone ── */}
+                            <div>
+                                <label className={etiquette} style={styleEtiquette}>Situation décrite par le client *</label>
+                                <textarea required rows={5} maxLength={4000} value={f.situation} onChange={e => maj('situation', e.target.value)}
+                                    className={champ + ' resize-y leading-relaxed'} style={styleChamp}
+                                    placeholder="Quand a-t-il déposé sa demande ? Qu’a-t-il fourni ? Qu’est-ce qu’on lui a répondu, s’il y a eu une réponse ? Qu’est-ce qui semble bloquer ?" />
+                                <div className="mt-1 flex items-baseline justify-between gap-3 text-[11px]">
+                                    <span style={{ color: 'var(--panel-text-muted)' }}>
+                                        {f.situation.trim().length < 40
+                                            ? `Encore ${40 - f.situation.trim().length} caractères pour une analyse exploitable.`
+                                            : 'C’est la matière de la fiche d’analyse : plus le récit est fidèle, plus la fiche est juste.'}
+                                    </span>
+                                    <span className={f.situation.trim().length < 40 ? 'text-amber-500 shrink-0' : 'text-emerald-500 shrink-0'}>
+                                        {f.situation.length}/4000
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className={etiquette} style={styleEtiquette}>Ce qu’il attend de nous</label>
+                                <textarea rows={3} maxLength={2000} value={f.attentes} onChange={e => maj('attentes', e.target.value)}
+                                    className={champ + ' resize-y leading-relaxed'} style={styleChamp}
+                                    placeholder="Ce que le client espère : comprendre le blocage, relancer la démarche, être accompagné jusqu’au bout…" />
+                            </div>
+
+                            {/* ── Ce qui n'existe QUE côté panel : règlement et notes ── */}
                             <button type="button" onClick={() => setPlus(p => !p)}
-                                className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300">
+                                className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-400">
                                 {plus ? <CaretDown size={12} /> : <CaretRight size={12} />}
-                                Informations complémentaires
+                                Règlement et notes internes
                             </button>
 
                             {plus && (
                                 <div className="space-y-4 rounded-2xl border p-4"
                                     style={{ background: 'var(--panel-surface-alt)', borderColor: 'var(--panel-border)' }}>
-                                    <div className="grid sm:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Pays de résidence</label>
-                                            <input value={f.pays_residence} onChange={e => maj('pays_residence', e.target.value)} className={champ} style={styleChamp} placeholder="France" />
-                                        </div>
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Réf. MyAfroOrigins</label>
-                                            <input value={f.myafro_reference} onChange={e => maj('myafro_reference', e.target.value)} className={champ} style={styleChamp} placeholder="si connue" />
-                                        </div>
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Bloqué depuis</label>
-                                            <input value={f.depuis_quand} onChange={e => maj('depuis_quand', e.target.value)} className={champ} style={styleChamp} placeholder="8 mois" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className={etiquette} style={styleEtiquette}>Attentes du client</label>
-                                        <textarea rows={2} value={f.attentes} onChange={e => maj('attentes', e.target.value)} className={champ + ' resize-y'} style={styleChamp} placeholder="Ce qu’il espère de nous." />
-                                    </div>
                                     <div>
                                         <label className={etiquette} style={styleEtiquette}>Notes internes</label>
                                         <textarea rows={2} value={f.notes_agent} onChange={e => maj('notes_agent', e.target.value)} className={champ + ' resize-y'} style={styleChamp} placeholder="Pour l’équipe, jamais transmis au client." />
