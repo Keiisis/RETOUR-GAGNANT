@@ -590,7 +590,7 @@ export default function AdminDocumentsPage() {
 
                 {/* Demandes déposées depuis la page publique du service : elles
                     arrivent déjà payées, sans qu'un agent ait eu à envoyer un lien. */}
-                <RecapMyafroSection />
+                <div id="myafro" className="scroll-mt-24"><RecapMyafroSection /></div>
 
                 {/* La liste générique des pièces client a été retirée d'ici : à cet
                     endroit, une pièce n'a de sens que rattachée à une demande de récap.

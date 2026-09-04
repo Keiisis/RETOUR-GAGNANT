@@ -286,7 +286,9 @@ export default function AgentDocumentsPage() {
                 en lecture et pour la livraison du récap ; seul l'effacement
                 reste réservé à la direction. Le composant est donc monté tel
                 quel, sans copie ni variante. */}
-            <div className="mt-10">
+            {/* `scroll-mt` : sans marge de defilement, l'ancre colle le titre
+               sous l'en-tete fixe du panel et on croit avoir rate la section. */}
+            <div id="myafro" className="mt-10 scroll-mt-24">
                 <RecapMyafroSection />
             </div>
         </div>
