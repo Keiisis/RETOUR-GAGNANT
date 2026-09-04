@@ -18,6 +18,7 @@ import {
     Plus, Sparkle,
 } from '@phosphor-icons/react'
 import RecapMyafroAjout from './RecapMyafroAjout'
+import RattacherFacture from './RattacherFacture'
 
 interface Recap {
     id: string
@@ -38,6 +39,7 @@ interface Recap {
     statut: string
     recap_ia: string | null
     notes_agent: string | null
+    facture_id: string | null
     consentement_le: string | null
     purge_apres: string | null
     created_at: string
@@ -89,6 +91,18 @@ export default function RecapMyafroSection() {
     // Generation de la fiche d'analyse a la demande.
     const [generation, setGeneration] = useState(false)
     const [erreurGen, setErreurGen] = useState('')
+    // Rattachement d'une facture emise : la preuve de l'encaissement.
+    const [rattachement, setRattachement] = useState<Recap | null>(null)
+
+    /* Detache la facture : le dossier redevient « non prouve », donc hors
+       recettes. On ne supprime rien d'autre — se tromper de piece doit pouvoir
+       se corriger sans perdre le dossier. */
+    const detacherFacture = async (id: string) => {
+        const res = await fetch(`/api/admin/rattacher-facture?nature=recap&id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+        if (!res.ok) return
+        setDemandes(l => l.map(d => (d.id === id ? { ...d, facture_id: null } : d)))
+        setOuverte(o => (o && o.id === id ? { ...o, facture_id: null } : o))
+    }
 
     const charger = useCallback(async () => {
         setChargement(true); setErreur(''); setMigration(false)
@@ -189,6 +203,19 @@ export default function RecapMyafroSection() {
 
     return (
         <section className="mb-12">
+            <RattacherFacture
+                ouvert={!!rattachement}
+                nature="recap"
+                dossierId={rattachement?.id || ''}
+                email={rattachement?.email}
+                onFermer={() => setRattachement(null)}
+                onRattache={(f) => {
+                    const id = rattachement?.id
+                    if (!id) return
+                    setDemandes(l => l.map(d => (d.id === id ? { ...d, facture_id: f.id } : d)))
+                    setOuverte(o => (o && o.id === id ? { ...o, facture_id: f.id } : o))
+                }}
+            />
             <RecapMyafroAjout
                 ouvert={ajoutOuvert}
                 onFermer={() => setAjoutOuvert(false)}
@@ -337,6 +364,43 @@ export default function RecapMyafroSection() {
                                         <span className="text-gray-300 font-semibold break-words">{v}</span>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* ═══ LA PREUVE DE L'ENCAISSEMENT ═══
+                                Un récap saisi a la main portait un montant et un statut
+                                DECLARES : cocher « paye » suffisait a faire entrer la somme
+                                dans les recettes, sans qu'aucune piece n'existe. Tant qu'une
+                                facture emise n'est pas rattachee, le dossier reste hors
+                                comptabilite — et cela se voit. */}
+                            <div className="rounded-xl border p-3.5 flex items-center gap-3 flex-wrap"
+                                style={{
+                                    background: ouverte.facture_id ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
+                                    borderColor: ouverte.facture_id ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)',
+                                }}>
+                                {ouverte.facture_id ? (
+                                    <>
+                                        <CheckCircle size={16} className="text-emerald-500 shrink-0" />
+                                        <p className="text-xs flex-1 min-w-[12rem]" style={{ color: 'var(--panel-text)' }}>
+                                            Paiement confirmé — rattaché à une facture émise.
+                                        </p>
+                                        <button type="button" onClick={() => detacherFacture(ouverte.id)}
+                                            className="text-[11px] font-bold text-gray-400 hover:text-red-400 underline">
+                                            Détacher
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <WarningCircle size={16} className="text-amber-400 shrink-0" />
+                                        <p className="text-xs flex-1 min-w-[12rem]" style={{ color: 'var(--panel-text)' }}>
+                                            Aucune facture rattachée : ce dossier <strong>n’entre pas</strong> dans les
+                                            recettes, quel que soit le montant déclaré.
+                                        </p>
+                                        <button type="button" onClick={() => setRattachement(ouverte)}
+                                            className="px-3.5 py-2 rounded-lg bg-emerald-500 text-black text-[11px] font-black hover:bg-emerald-400">
+                                            Confirmer le paiement
+                                        </button>
+                                    </>
+                                )}
                             </div>
 
                             {/* Pièces déposées par le client */}
