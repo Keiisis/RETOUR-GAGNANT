@@ -64,15 +64,33 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
         } finally { setEnvoi(false) }
     }
 
-    const champ = 'w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/50 outline-none'
-    const etiquette = 'block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5'
+    /* Les champs suivent le THÈME DU PANEL (clair ⇄ sombre). Ils étaient écrits
+       en dur pour le sombre : en mode clair, la fenêtre restait noire et le
+       texte devenait presque illisible. Le panel expose ses couleurs en
+       variables CSS — les lire coûte moins qu'un second jeu de classes. */
+    const champ = 'w-full rounded-xl px-3.5 py-2.5 text-sm outline-none border focus:border-emerald-500/60'
+    const styleChamp = {
+        background: 'var(--panel-surface-alt)',
+        borderColor: 'var(--panel-border)',
+        color: 'var(--panel-text)',
+    } as React.CSSProperties
+    const etiquette = 'block text-[10px] font-bold uppercase tracking-widest mb-1.5'
+    const styleEtiquette = { color: 'var(--panel-text-muted)' } as React.CSSProperties
 
     return (
         <AnimatePresence>
             {ouvert && (
                 <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+                    /* CENTRÉ, et JAMAIS plus haut que l'écran.
+                       La fenêtre était collée en haut (`items-start`) et sa
+                       hauteur n'était pas bornée : sur un formulaire long, le
+                       bas — donc le bouton d'enregistrement — sortait de
+                       l'écran. Ici elle se centre, se limite à 92 % de la
+                       hauteur, et c'est SON CORPS qui défile : l'en-tête et le
+                       bouton restent visibles en permanence. */
+                    className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+                    style={{ background: 'color-mix(in srgb, var(--panel-bg) 78%, transparent)' }}
                     onClick={onFermer}
                 >
                     <motion.div
@@ -80,47 +98,51 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 24, scale: 0.98 }}
                         onClick={e => e.stopPropagation()}
-                        className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#0e1512] shadow-2xl"
+                        className="w-full max-w-2xl rounded-3xl border shadow-2xl flex flex-col max-h-[92vh]"
+                        style={{ background: 'var(--panel-surface)', borderColor: 'var(--panel-border)' }}
                     >
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+                        <div className="flex items-center justify-between px-6 py-5 border-b shrink-0"
+                            style={{ borderColor: 'var(--panel-border)' }}>
                             <div>
-                                <h3 className="text-lg font-black text-white">Ajouter un client</h3>
-                                <p className="text-[11px] text-gray-500 mt-0.5">
+                                <h3 className="text-lg font-black" style={{ color: 'var(--panel-text-heading)' }}>Ajouter un client</h3>
+                                <p className="text-[11px] mt-0.5" style={{ color: 'var(--panel-text-muted)' }}>
                                     Demande reçue hors du site : téléphone, WhatsApp, agence.
                                 </p>
                             </div>
                             <button type="button" onClick={onFermer} title="Fermer"
-                                className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-gray-400 hover:text-white">
+                                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                style={{ background: 'var(--panel-surface-hover)', color: 'var(--panel-text-muted)' }}>
                                 <X size={16} />
                             </button>
                         </div>
 
-                        <form onSubmit={soumettre} className="p-6 space-y-4">
+                        <form onSubmit={soumettre} className="flex flex-col min-h-0 flex-1">
+                            <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className={etiquette}>Prénom *</label>
-                                    <input required value={f.prenom} onChange={e => maj('prenom', e.target.value)} className={champ} placeholder="Awa" />
+                                    <label className={etiquette} style={styleEtiquette}>Prénom *</label>
+                                    <input required value={f.prenom} onChange={e => maj('prenom', e.target.value)} className={champ} style={styleChamp} placeholder="Awa" />
                                 </div>
                                 <div>
-                                    <label className={etiquette}>Nom *</label>
-                                    <input required value={f.nom} onChange={e => maj('nom', e.target.value)} className={champ} placeholder="DIALLO" />
+                                    <label className={etiquette} style={styleEtiquette}>Nom *</label>
+                                    <input required value={f.nom} onChange={e => maj('nom', e.target.value)} className={champ} style={styleChamp} placeholder="DIALLO" />
                                 </div>
                                 <div>
-                                    <label className={etiquette}>E-mail *</label>
-                                    <input required type="email" value={f.email} onChange={e => maj('email', e.target.value)} className={champ} placeholder="awa.diallo@exemple.com" />
+                                    <label className={etiquette} style={styleEtiquette}>E-mail *</label>
+                                    <input required type="email" value={f.email} onChange={e => maj('email', e.target.value)} className={champ} style={styleChamp} placeholder="awa.diallo@exemple.com" />
                                 </div>
                                 <div>
-                                    <label className={etiquette}>Téléphone *</label>
-                                    <input required value={f.telephone} onChange={e => maj('telephone', e.target.value)} className={champ} placeholder="+33 6 12 34 56 78" />
+                                    <label className={etiquette} style={styleEtiquette}>Téléphone *</label>
+                                    <input required value={f.telephone} onChange={e => maj('telephone', e.target.value)} className={champ} style={styleChamp} placeholder="+33 6 12 34 56 78" />
                                 </div>
                             </div>
 
                             <div>
-                                <label className={etiquette}>Situation décrite par le client *</label>
+                                <label className={etiquette} style={styleEtiquette}>Situation décrite par le client *</label>
                                 <textarea required rows={5} value={f.situation} onChange={e => maj('situation', e.target.value)}
-                                    className={champ + ' resize-y leading-relaxed'}
+                                    className={champ + ' resize-y leading-relaxed'} style={styleChamp}
                                     placeholder="Ce que le client raconte : depuis quand son dossier est bloqué, ce qu'il a déjà tenté, ce qu'on lui a répondu…" />
-                                <p className="mt-1 text-[11px] text-gray-600">
+                                <p className="mt-1 text-[11px]" style={{ color: 'var(--panel-text-muted)' }}>
                                     C’est la matière de la fiche d’analyse : plus le récit est fidèle, plus la fiche est juste.
                                     <span className={f.situation.trim().length < 40 ? ' text-amber-400' : ' text-emerald-400'}>
                                         {' '}{f.situation.trim().length} / 40 caractères minimum
@@ -136,45 +158,46 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                             </button>
 
                             {plus && (
-                                <div className="space-y-4 rounded-2xl bg-white/[0.02] border border-white/5 p-4">
+                                <div className="space-y-4 rounded-2xl border p-4"
+                                    style={{ background: 'var(--panel-surface-alt)', borderColor: 'var(--panel-border)' }}>
                                     <div className="grid sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label className={etiquette}>Pays de résidence</label>
-                                            <input value={f.pays_residence} onChange={e => maj('pays_residence', e.target.value)} className={champ} placeholder="France" />
+                                            <label className={etiquette} style={styleEtiquette}>Pays de résidence</label>
+                                            <input value={f.pays_residence} onChange={e => maj('pays_residence', e.target.value)} className={champ} style={styleChamp} placeholder="France" />
                                         </div>
                                         <div>
-                                            <label className={etiquette}>Réf. MyAfroOrigins</label>
-                                            <input value={f.myafro_reference} onChange={e => maj('myafro_reference', e.target.value)} className={champ} placeholder="si connue" />
+                                            <label className={etiquette} style={styleEtiquette}>Réf. MyAfroOrigins</label>
+                                            <input value={f.myafro_reference} onChange={e => maj('myafro_reference', e.target.value)} className={champ} style={styleChamp} placeholder="si connue" />
                                         </div>
                                         <div>
-                                            <label className={etiquette}>Bloqué depuis</label>
-                                            <input value={f.depuis_quand} onChange={e => maj('depuis_quand', e.target.value)} className={champ} placeholder="8 mois" />
+                                            <label className={etiquette} style={styleEtiquette}>Bloqué depuis</label>
+                                            <input value={f.depuis_quand} onChange={e => maj('depuis_quand', e.target.value)} className={champ} style={styleChamp} placeholder="8 mois" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className={etiquette}>Attentes du client</label>
-                                        <textarea rows={2} value={f.attentes} onChange={e => maj('attentes', e.target.value)} className={champ + ' resize-y'} placeholder="Ce qu’il espère de nous." />
+                                        <label className={etiquette} style={styleEtiquette}>Attentes du client</label>
+                                        <textarea rows={2} value={f.attentes} onChange={e => maj('attentes', e.target.value)} className={champ + ' resize-y'} style={styleChamp} placeholder="Ce qu’il espère de nous." />
                                     </div>
                                     <div>
-                                        <label className={etiquette}>Notes internes</label>
-                                        <textarea rows={2} value={f.notes_agent} onChange={e => maj('notes_agent', e.target.value)} className={champ + ' resize-y'} placeholder="Pour l’équipe, jamais transmis au client." />
+                                        <label className={etiquette} style={styleEtiquette}>Notes internes</label>
+                                        <textarea rows={2} value={f.notes_agent} onChange={e => maj('notes_agent', e.target.value)} className={champ + ' resize-y'} style={styleChamp} placeholder="Pour l’équipe, jamais transmis au client." />
                                     </div>
 
                                     <div className="grid sm:grid-cols-4 gap-4">
                                         <div>
-                                            <label className={etiquette}>Règlement</label>
-                                            <select value={f.paiement_statut} onChange={e => maj('paiement_statut', e.target.value)} className={champ} title="Statut du règlement">
+                                            <label className={etiquette} style={styleEtiquette}>Règlement</label>
+                                            <select value={f.paiement_statut} onChange={e => maj('paiement_statut', e.target.value)} className={champ} style={styleChamp} title="Statut du règlement">
                                                 <option value="en_attente">En attente</option>
                                                 <option value="paye">Payé</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className={etiquette}>Montant</label>
-                                            <input type="number" min="0" step="any" value={f.montant} onChange={e => maj('montant', e.target.value)} className={champ} title="Montant" />
+                                            <label className={etiquette} style={styleEtiquette}>Montant</label>
+                                            <input type="number" min="0" step="any" value={f.montant} onChange={e => maj('montant', e.target.value)} className={champ} style={styleChamp} title="Montant" />
                                         </div>
                                         <div>
-                                            <label className={etiquette}>Devise</label>
-                                            <select value={f.devise} onChange={e => maj('devise', e.target.value)} className={champ} title="Devise">
+                                            <label className={etiquette} style={styleEtiquette}>Devise</label>
+                                            <select value={f.devise} onChange={e => maj('devise', e.target.value)} className={champ} style={styleChamp} title="Devise">
                                                 <option value="EUR">EUR</option>
                                                 <option value="XOF">XOF</option>
                                                 <option value="USD">USD</option>
@@ -182,11 +205,11 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className={etiquette}>Référence</label>
-                                            <input value={f.paiement_ref} onChange={e => maj('paiement_ref', e.target.value)} className={champ} placeholder="N° reçu" />
+                                            <label className={etiquette} style={styleEtiquette}>Référence</label>
+                                            <input value={f.paiement_ref} onChange={e => maj('paiement_ref', e.target.value)} className={champ} style={styleChamp} placeholder="N° reçu" />
                                         </div>
                                     </div>
-                                    <p className="text-[11px] text-gray-600">
+                                    <p className="text-[11px]" style={{ color: 'var(--panel-text-muted)' }}>
                                         Un dossier saisi à la main n’est pas réputé payé : laissez « en attente » tant que
                                         l’encaissement n’est pas fait, pour ne pas gonfler les recettes.
                                     </p>
@@ -199,8 +222,8 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                     <input type="checkbox" checked={f.consentement}
                                         onChange={e => maj('consentement', e.target.checked)}
                                         className="mt-0.5 w-4 h-4 accent-emerald-500 shrink-0" />
-                                    <span className="text-xs text-gray-300 leading-relaxed">
-                                        <strong className="text-white">J’atteste avoir recueilli le consentement du client</strong> pour
+                                    <span className="text-xs leading-relaxed" style={{ color: 'var(--panel-text)' }}>
+                                        <strong style={{ color: 'var(--panel-text-heading)' }}>J’atteste avoir recueilli le consentement du client</strong> pour
                                         l’enregistrement et le traitement de ces données (Code du numérique béninois).
                                         Personne ne peut cocher à sa place : cette attestation vous engage, et elle est
                                         tracée avec votre nom et la date.
@@ -208,9 +231,9 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                 </label>
                                 {f.consentement && (
                                     <div className="mt-3 pl-7">
-                                        <label className={etiquette}>Recueilli par</label>
+                                        <label className={etiquette} style={styleEtiquette}>Recueilli par</label>
                                         <select value={f.consentement_canal} onChange={e => maj('consentement_canal', e.target.value)}
-                                            className={champ + ' max-w-xs'} title="Canal du consentement">
+                                            className={champ + ' max-w-xs'} style={styleChamp} title="Canal du consentement">
                                             {CANAUX.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                     </div>
@@ -224,9 +247,14 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                 </div>
                             )}
 
-                            <div className="flex gap-3 pt-1">
+                            </div>
+
+                            {/* Barre d'action : hors du defilement, toujours atteignable. */}
+                            <div className="flex gap-3 px-6 py-4 border-t shrink-0"
+                                style={{ borderColor: 'var(--panel-border)' }}>
                                 <button type="button" onClick={onFermer}
-                                    className="px-5 py-3 rounded-xl bg-white/5 text-gray-300 text-xs font-black hover:bg-white/10">
+                                    className="px-5 py-3 rounded-xl text-xs font-black"
+                                    style={{ background: 'var(--panel-surface-hover)', color: 'var(--panel-text)' }}>
                                     Annuler
                                 </button>
                                 <button type="submit" disabled={envoi || !f.consentement}
