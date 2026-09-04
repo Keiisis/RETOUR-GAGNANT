@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { isLogementAgent } from '@/lib/logement-access'
 import { AgentCallCenter } from '@/components/agent/AgentCallCenter'
-import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail, Buildings as Building2 } from '@phosphor-icons/react';
+import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail, Buildings as Building2, FileMagnifyingGlass } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
@@ -409,6 +409,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                 { title: t('Agenda'), icon: CalendarDays, href: '/agent/agenda' },
                 { title: t('Événements'), icon: CalendarDays, href: '/agent/evenements' },
                 { title: t('Documents'), icon: FolderOpen, href: '/agent/documents' },
+                /* Les recaps MyAfroOrigins vivent EN BAS de la page Documents.
+                   L'admin a depuis toujours une entree de menu qui les nomme ;
+                   l'agent n'en avait aucune. La section etait donc bien
+                   affichee chez lui, mais rien ne disait qu'elle existait — et
+                   personne ne descend au bas d'une page pour verifier. L'ancre
+                   y mene directement. */
+                { title: t('Dossiers MyAfroOrigins'), icon: FileMagnifyingGlass, href: '/agent/documents#myafro' },
                 { title: t('Clients'), icon: UsersIcon, href: '/agent/clients' },
                 { title: t('Classement Client'), icon: TrendingUp, href: '/agent/classement-client', badge: relancesDue },
                 { title: t('Partenaires'), icon: Handshake, href: '/agent/partenaires', badge: unreadPartenaires },
