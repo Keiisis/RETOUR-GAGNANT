@@ -1023,9 +1023,36 @@ export async function middleware(request: NextRequest) {
             // aussi ouverte à l'agent nommément autorisé (Justamielle), en plus
             // des admins. Aucune autre route /api/admin n'est concernée.
             const isLogementMgrPath = isAdminApi && pathname.startsWith('/api/admin/logements')
+
+            /* ── Routes /api/admin ouvertes À TOUS LES AGENTS ──────────
+               Ce garde refuse `/api/admin/*` à quiconque n'est pas admin, et
+               il s'exécute AVANT la route : le `requireStaff(…, 'agent')` que
+               la route déclare n'était donc jamais atteint. Un agent recevait
+               « Accès non autorisé » sur des routes qui l'acceptaient
+               pourtant — constaté sur les récaps MyAfroOrigins, où la liste ne
+               chargeait pas et l'enregistrement échouait.
+
+               Ces chemins vivent sous /api/admin pour des raisons historiques,
+               mais l'analyse des récaps est le MÉTIER de l'agent. On les nomme
+               ici, un par un : ouvrir /api/admin en bloc reviendrait à donner
+               aux agents la sécurité, les réglages et la comptabilité.
+
+               Le préfixe couvre les sous-routes (…/myafro-recap/pieces). Les
+               opérations réservées à la direction restent protégées PAR LA
+               ROUTE elle-même : l'effacement d'un récap exige toujours
+               `requireStaff(request, 'admin')` et répondra 403 à un agent. */
+            const ADMIN_API_OUVERTES_AGENT = [
+                '/api/admin/myafro-recap',
+                '/api/admin/rattacher-facture',
+            ]
+            const ouverteAgent = isAdminApi
+                && ADMIN_API_OUVERTES_AGENT.some(prefixe => pathname.startsWith(prefixe))
+
             const apiOk = isAgentApi
                 ? (apiRole === 'agent' || ADMIN_ROLES.includes(apiRole))
-                : ADMIN_ROLES.includes(apiRole) || (isLogementMgrPath && isLogementAgent(apiUser.id))
+                : ADMIN_ROLES.includes(apiRole)
+                    || (isLogementMgrPath && isLogementAgent(apiUser.id))
+                    || (ouverteAgent && apiRole === 'agent')
             if (!apiOk) {
                 return new NextResponse(JSON.stringify({ error: 'Accès non autorisé' }), {
                     status: 403, headers: { 'Content-Type': 'application/json' },
