@@ -416,6 +416,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                    personne ne descend au bas d'une page pour verifier. L'ancre
                    y mene directement. */
                 { title: t('Dossiers MyAfroOrigins'), icon: FileMagnifyingGlass, href: '/agent/documents#myafro' },
+                /* Le rapport hebdomadaire de chacun. L'ecran est partage avec
+                   l'admin ; le serveur cloisonne : un agent ne voit que les
+                   siens. */
+                { title: t('Rapport Hebdo'), icon: FileText, href: '/agent/rapport-hebdo' },
                 { title: t('Clients'), icon: UsersIcon, href: '/agent/clients' },
                 { title: t('Classement Client'), icon: TrendingUp, href: '/agent/classement-client', badge: relancesDue },
                 { title: t('Partenaires'), icon: Handshake, href: '/agent/partenaires', badge: unreadPartenaires },

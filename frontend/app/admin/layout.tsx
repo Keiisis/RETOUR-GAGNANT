@@ -152,6 +152,7 @@ function AdminLayoutContent({
         { title: 'Classement Client', icon: BarChart3, href: '/admin/classement-client', badge: relancesDue },
         { title: 'Sauvegarde', icon: Archive, href: '/admin/sauvegarde' },
         { title: 'Dossiers MyAfroOrigins', icon: FolderOpen, href: '/admin/documents#myafro' },
+        { title: 'Rapport Hebdo', icon: FileText, href: '/admin/rapport-hebdo' },
         { title: 'Contrats', icon: FileSignature, href: '/admin/contrats' },
         { title: 'Demandes Nat.', icon: Globe, href: '/admin/nationalite' },
         { title: 'Plan de composition de Famille', icon: GitFork, href: '/admin/genealogie' },
