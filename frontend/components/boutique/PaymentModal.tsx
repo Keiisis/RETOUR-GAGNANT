@@ -76,7 +76,7 @@ interface PaymentModalProps {
     onClose: () => void
 }
 
-type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal'
+type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal' | 'revolut'
 type Step = 'info' | 'payment' | 'stripe-form' | 'paypal-form' | 'processing' | 'success' | 'error'
 
 // ─── Livraison : pays du monde + zones ─────────────────────────────────────────
@@ -853,6 +853,63 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         setStep('paypal-form')
     }
 
+
+    /* ── REVOLUT PAY ──────────────────────────────────────────────
+       Le flux est plus court que Stripe : pas de champ de carte chez nous.
+       Le serveur cree la commande, renvoie un JETON, et le widget Revolut
+       ouvre sa propre fenetre — les donnees de carte ne transitent jamais par
+       notre page, ce qui nous garde hors du perimetre PCI-DSS.
+
+       Le SDK est charge A LA DEMANDE, pas au chargement de la boutique :
+       personne ne doit telecharger le widget d'un moyen de paiement qu'il ne
+       choisira pas. */
+    const handleRevolut = async () => {
+        setProvider('revolut')
+        setStep('processing')
+        const oid = await createOrder('revolut')
+        if (!oid) return
+
+        try {
+            const res = await fetch('/api/checkout/revolut', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: oid }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.token) {
+                cancelOrder(oid)
+                setErrorMessage(data.error || "Revolut n'a pas pu ouvrir le paiement.")
+                setStep('error')
+                return
+            }
+
+            const { default: RevolutCheckout } = await import('@revolut/checkout')
+            const instance = await RevolutCheckout(data.token, data.sandbox ? 'sandbox' : 'prod')
+
+            instance.payWithPopup({
+                /* On ne conclut JAMAIS sur le seul retour du widget : il dit ce
+                   que le navigateur a vu, pas ce que Revolut a encaisse. La
+                   verification serveur relit la commande chez eux. */
+                /* `verifyPayment` gere deja l'issue : succes, annulation de la
+                   commande et message d'erreur. On ne double pas sa logique. */
+                onSuccess: () => { void verifyPayment(oid, data.order_ref) },
+                onError: (e: unknown) => {
+                    cancelOrder(oid)
+                    setErrorMessage(e instanceof Error ? e.message : 'Paiement Revolut echoue.')
+                    setStep('error')
+                },
+                onCancel: () => {
+                    cancelOrder(oid)
+                    setStep('payment')
+                },
+            })
+        } catch (e) {
+            cancelOrder(oid)
+            setErrorMessage(e instanceof Error ? e.message : 'Revolut indisponible.')
+            setStep('error')
+        }
+    }
+
     // Liste des providers disponibles (selon settings admin)
     const allProviders = [
         {
@@ -904,6 +961,19 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             logo: '/assets/icones moyens de paiement/paypal.png',
             handler: handlePayPal,
             isReady: settings.paypal_enabled === 'true' && !!settings.paypal_client_id,
+        },
+        {
+            id: 'revolut' as PaymentProvider,
+            name: 'Revolut Pay',
+            subtitle: 'Compte Revolut, carte, Apple/Google Pay',
+            color: '#0666EB',
+            classes: 'bg-[#0666EB]/10 border-[#0666EB]/30',
+            logo: '/assets/icones moyens de paiement/revolut.png',
+            handler: handleRevolut,
+            /* Revolut n'expose AUCUNE cle publique au navigateur : le jeton est
+               produit par le serveur a chaque commande. La disponibilite ne
+               depend donc que de l'interrupteur admin. */
+            isReady: settings.revolut_enabled === 'true',
         },
     ]
 

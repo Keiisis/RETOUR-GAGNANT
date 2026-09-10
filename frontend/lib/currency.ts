@@ -191,7 +191,11 @@ export function convertFromBaseSync(amountBase: number, targetCurrency: Currency
 // Marge 3% pour couvrir les frais de conversion et de traitement
 // ═══════════════════════════════════════════════════════════
 
-export const CONVERSION_MARGIN = 0.06
+/* La marge vit dans `currency-convert`, module PUR importable par une route
+   serveur. Elle n'est plus redefinie ici : deux constantes a 6 % auraient fini
+   par diverger, et la moitie des paiements aurait ete calculee avec l'ancienne. */
+export { MARGE_CONVERSION as CONVERSION_MARGIN } from './currency-convert'
+import { MARGE_CONVERSION as CONVERSION_MARGIN } from './currency-convert'
 
 /**
  * Calcule le montant à envoyer à la passerelle avec la marge de 6%.

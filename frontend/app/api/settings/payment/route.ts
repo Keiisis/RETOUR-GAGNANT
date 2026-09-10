@@ -21,7 +21,11 @@ export async function GET() {
                 item.key.includes('secret') ||
                 item.key === 'paypal_client_secret' ||
                 item.key === 'stripe_webhook_secret' ||
-                item.key === 'paypal_webhook_id'
+                item.key === 'paypal_webhook_id' ||
+                /* Revolut : la cle `sk_…` et le secret de webhook `wsk_…` ne
+                   sortent JAMAIS. Le widget n'a besoin que du jeton de
+                   commande, produit par le serveur a chaque paiement. */
+                item.key === 'revolut_webhook_secret'
             ) continue
             settings[item.key] = item.value || ''
         }
