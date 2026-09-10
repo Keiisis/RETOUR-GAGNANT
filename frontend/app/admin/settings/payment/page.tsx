@@ -97,7 +97,21 @@ const GATEWAYS: GatewayConfig[] = [
             { key: 'paypal_webhook_id', label: 'Webhook ID (optionnel)', placeholder: 'WH-xxx...', type: 'password', required: false, isSecret: true, helpText: 'ID du webhook PayPal pour vérification de signature. Configurer /api/webhooks/paypal dans le Developer Dashboard.' },
         ],
     },
+    {
+        id: 'revolut',
+        name: 'Revolut Pay',
+        description: 'Compte Revolut Business. Paiement par compte Revolut, carte, Apple Pay et Google Pay. Ne tient PAS le XOF : les prix sont convertis vers la devise du compte.',
+        classes: 'bg-[#0666EB]/15 border-[#0666EB]/30 text-[#0666EB]',
+        icon: 'R',
+        docsUrl: 'https://business.revolut.com/merchant/api',
+        fields: [
+            { key: 'revolut_secret_key', label: 'Clé Secrète Marchand (Secret Key)', placeholder: 'sk_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Revolut Business → Merchant API → clé SECRÈTE (commence par sk_). Prenez la clé Sandbox si le mode test est actif : les deux environnements sont séparés et une clé de production ne fonctionne pas en sandbox.' },
+            { key: 'revolut_webhook_secret', label: 'Secret de signature du webhook', placeholder: 'wsk_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Renvoyé UNE SEULE FOIS à la création du webhook (commence par wsk_). Déclarez le webhook vers /api/webhooks/revolut avec les événements ORDER_COMPLETED et ORDER_AUTHORISED. Sans ce secret, les notifications sont refusées — un paiement abouti hors du navigateur resterait en attente.' },
+            { key: 'revolut_currency', label: 'Devise du compte', placeholder: 'EUR', type: 'text', required: false, isSecret: false, helpText: 'Devise réellement encaissée : EUR, GBP, USD, CHF, PLN, RON, SEK, NOK ou DKK. Revolut ne tient pas le franc CFA — un prix en XOF est converti automatiquement, marge de service comprise, et le montant débité est affiché au client avant paiement.' },
+        ],
+    },
 ]
+
 
 function PaymentSettingsContent() {
     const { t } = useTranslation();
