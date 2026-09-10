@@ -76,8 +76,8 @@ interface PaymentModalProps {
     onClose: () => void
 }
 
-type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal' | 'revolut'
-type Step = 'info' | 'payment' | 'stripe-form' | 'paypal-form' | 'processing' | 'success' | 'error'
+type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow' | 'stripe' | 'paypal' | 'revolut' | 'paystack' | 'flutterwave'
+type Step = 'info' | 'payment' | 'stripe-form' | 'paypal-form' | 'revolut-form' | 'processing' | 'success' | 'error'
 
 // ─── Livraison : pays du monde + zones ─────────────────────────────────────────
 const COUNTRY_TO_ZONE: Record<string, string> = {
@@ -177,6 +177,10 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
     // Stripe
     const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
     const [stripeReady, setStripeReady] = useState(false)
+    /* Ce que Revolut va reellement debiter : la devise du compte n'est pas
+       celle de la commande (Revolut ne tient pas le XOF). L'ecran doit
+       annoncer le montant converti, pas le prix d'affichage. */
+    const [revolutInfo, setRevolutInfo] = useState<{ ref: string; montant: number; devise: string } | null>(null)
     const stripeInstanceRef = useRef<StripeInstance | null>(null)
     const cardElementRef = useRef<StripeElement | null>(null)
     const cardMountedRef = useRef(false)
@@ -855,14 +859,19 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
 
     /* ── REVOLUT PAY ──────────────────────────────────────────────
-       Le flux est plus court que Stripe : pas de champ de carte chez nous.
-       Le serveur cree la commande, renvoie un JETON, et le widget Revolut
-       ouvre sa propre fenetre — les donnees de carte ne transitent jamais par
-       notre page, ce qui nous garde hors du perimetre PCI-DSS.
+       On monte le BOUTON REVOLUT PAY, et non le formulaire carte.
 
-       Le SDK est charge A LA DEMANDE, pas au chargement de la boutique :
-       personne ne doit telecharger le widget d'un moyen de paiement qu'il ne
-       choisira pas. */
+       Le SDK distingue deux choses que le nom ne sépare pas :
+         · `payWithPopup()` ouvre un formulaire CARTE plein écran ;
+         · `revolutPay({ target })` monte le bouton REVOLUT PAY — compte
+           Revolut, Apple Pay, Google Pay.
+       C'est le second qui porte le produit demandé. Il exige un élément du
+       DOM : d'où l'étape dédiée, comme pour Stripe.
+
+       Le serveur crée la commande et renvoie un JETON : aucune clé publique
+       n'est nécessaire côté navigateur, contrairement à Stripe et PayPal. Le
+       SDK est chargé À LA DEMANDE — personne ne télécharge le widget d'un
+       moyen de paiement qu'il ne choisira pas. */
     const handleRevolut = async () => {
         setProvider('revolut')
         setStep('processing')
@@ -883,25 +892,32 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 return
             }
 
+            setRevolutInfo({ ref: data.order_ref, montant: data.montant, devise: data.devise })
+            setStep('revolut-form')
+
             const { default: RevolutCheckout } = await import('@revolut/checkout')
             const instance = await RevolutCheckout(data.token, data.sandbox ? 'sandbox' : 'prod')
 
-            instance.payWithPopup({
+            /* L'élément n'existe qu'APRÈS le rendu de l'étape : sans cette
+               attente, `target` serait nul et le bouton ne se monterait nulle
+               part. */
+            await new Promise(r => requestAnimationFrame(() => r(null)))
+            const cible = document.getElementById('revolut-pay-button')
+            if (!cible) throw new Error('Zone de paiement indisponible.')
+
+            instance.revolutPay({
+                target: cible,
                 /* On ne conclut JAMAIS sur le seul retour du widget : il dit ce
-                   que le navigateur a vu, pas ce que Revolut a encaisse. La
-                   verification serveur relit la commande chez eux. */
-                /* `verifyPayment` gere deja l'issue : succes, annulation de la
-                   commande et message d'erreur. On ne double pas sa logique. */
-                onSuccess: () => { void verifyPayment(oid, data.order_ref) },
+                   que le navigateur a vu, pas ce que Revolut a encaissé.
+                   `verifyPayment` relit la commande côté serveur et gère déjà
+                   l'issue — succès, annulation, message d'erreur. */
+                onSuccess: () => { setStep('processing'); void verifyPayment(oid, data.order_ref) },
                 onError: (e: unknown) => {
                     cancelOrder(oid)
-                    setErrorMessage(e instanceof Error ? e.message : 'Paiement Revolut echoue.')
+                    setErrorMessage(e instanceof Error ? e.message : 'Paiement Revolut échoué.')
                     setStep('error')
                 },
-                onCancel: () => {
-                    cancelOrder(oid)
-                    setStep('payment')
-                },
+                onCancel: () => { cancelOrder(oid); setStep('payment') },
             })
         } catch (e) {
             cancelOrder(oid)
@@ -909,6 +925,71 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             setStep('error')
         }
     }
+
+    /* ── PAYSTACK ─────────────────────────────────────────────────
+       Paystack héberge sa page de paiement : on redirige. Pas de widget à
+       charger, donc rien à télécharger tant que le client n'a pas choisi.
+
+       La commande reste « en attente » jusqu'à la vérification serveur, faite
+       au retour sur /boutique/payment/return — et le webhook rattrape le cas
+       où le client ferme l'onglet avant de revenir. */
+    const handlePaystack = async () => {
+        setProvider('paystack')
+        setStep('processing')
+        const oid = await createOrder('paystack')
+        if (!oid) return
+
+        try {
+            const res = await fetch('/api/checkout/paystack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: oid }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.authorization_url) {
+                cancelOrder(oid)
+                setErrorMessage(data.error || "Paystack n'a pas pu ouvrir le paiement.")
+                setStep('error')
+                return
+            }
+            window.location.href = data.authorization_url
+        } catch (e) {
+            cancelOrder(oid)
+            setErrorMessage(e instanceof Error ? e.message : 'Paystack indisponible.')
+            setStep('error')
+        }
+    }
+
+    /* ── FLUTTERWAVE ──────────────────────────────────────────────
+       Même principe : page hébergée, redirection. Flutterwave renvoie ensuite
+       `status`, `tx_ref` et `transaction_id` sur notre URL de retour. */
+    const handleFlutterwave = async () => {
+        setProvider('flutterwave')
+        setStep('processing')
+        const oid = await createOrder('flutterwave')
+        if (!oid) return
+
+        try {
+            const res = await fetch('/api/checkout/flutterwave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: oid }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.link) {
+                cancelOrder(oid)
+                setErrorMessage(data.error || "Flutterwave n'a pas pu ouvrir le paiement.")
+                setStep('error')
+                return
+            }
+            window.location.href = data.link
+        } catch (e) {
+            cancelOrder(oid)
+            setErrorMessage(e instanceof Error ? e.message : 'Flutterwave indisponible.')
+            setStep('error')
+        }
+    }
+
 
     // Liste des providers disponibles (selon settings admin)
     const allProviders = [
@@ -975,7 +1056,30 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                depend donc que de l'interrupteur admin. */
             isReady: settings.revolut_enabled === 'true',
         },
+        {
+            id: 'paystack' as PaymentProvider,
+            name: 'Paystack',
+            subtitle: 'Carte, Mobile Money, virement — encaisse en FCFA',
+            color: '#0BA4DB',
+            classes: 'bg-[#0BA4DB]/10 border-[#0BA4DB]/30',
+            logo: '/assets/icones moyens de paiement/paystack.png',
+            handler: handlePaystack,
+            /* Page hébergée : aucune clé publique côté navigateur. La
+               disponibilité ne dépend donc que de l'interrupteur admin. */
+            isReady: settings.paystack_enabled === 'true',
+        },
+        {
+            id: 'flutterwave' as PaymentProvider,
+            name: 'Flutterwave',
+            subtitle: 'Carte, Mobile Money, banque — encaisse en FCFA',
+            color: '#F5A623',
+            classes: 'bg-[#F5A623]/10 border-[#F5A623]/30',
+            logo: '/assets/icones moyens de paiement/flutterwave.png',
+            handler: handleFlutterwave,
+            isReady: settings.flutterwave_enabled === 'true',
+        },
     ]
+
 
     const providers = allProviders.filter(p => p.isReady)
 
@@ -1212,6 +1316,41 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                         )}
 
                         {/* STEP: Formulaire Stripe */}
+                        {step === 'revolut-form' && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-8 h-8 rounded-lg bg-[#0666EB]/20 border border-[#0666EB]/30 flex items-center justify-center">
+                                        <Lock size={14} className="text-[#0666EB]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-white"><T>Payer avec Revolut Pay</T></p>
+                                        <p className="text-[10px] text-gray-500"><T>Compte Revolut, Apple Pay ou Google Pay</T></p>
+                                    </div>
+                                </div>
+
+                                {revolutInfo && (
+                                    <div className="rounded-xl bg-[#0666EB]/10 border border-[#0666EB]/25 p-3">
+                                        <p className="text-xs text-gray-300">
+                                            <T>Montant débité</T> :{' '}
+                                            <strong className="text-white font-mono">
+                                                {revolutInfo.montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} {revolutInfo.devise}
+                                            </strong>
+                                        </p>
+                                        <p className="text-[10px] text-gray-500 mt-1">
+                                            <T>Revolut n’encaisse pas en francs CFA : le montant a été converti, frais de service compris.</T>
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Le bouton Revolut Pay se monte ICI. */}
+                                <div id="revolut-pay-button" className="min-h-[52px]" />
+
+                                <div className="text-xs text-gray-500 flex items-center gap-1.5">
+                                    <Shield size={12} className="text-[#008751]" />
+                                    <T>Vos données de paiement ne transitent jamais par nos serveurs.</T>
+                                </div>
+                            </motion.div>
+                        )}
                         {step === 'stripe-form' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                                 <div className="flex items-center gap-2 mb-2">

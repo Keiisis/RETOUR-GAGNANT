@@ -25,7 +25,12 @@ export async function GET() {
                 /* Revolut : la cle `sk_…` et le secret de webhook `wsk_…` ne
                    sortent JAMAIS. Le widget n'a besoin que du jeton de
                    commande, produit par le serveur a chaque paiement. */
-                item.key === 'revolut_webhook_secret'
+                item.key === 'revolut_webhook_secret' ||
+                /* Paystack signe ses webhooks avec sa CLE SECRETE elle-meme :
+                   l'exposer donnerait a la fois le droit d'encaisser et celui
+                   de forger des notifications. Flutterwave : meme logique pour
+                   son secret de webhook. */
+                item.key === 'flutterwave_secret_hash'
             ) continue
             settings[item.key] = item.value || ''
         }

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { lireCommandeRevolut, depuisUnitesMineures, ETATS_PAYES } from '@/lib/revolut'
 import { convertWithMargin } from '@/lib/currency-convert'
+import { verifierPaystack, depuisSousUnitesPaystack, orderIdDepuisMetadata } from '@/lib/paystack'
+import { verifierFlutterwaveParRef, verifierFlutterwaveParId, ETAT_PAYE_FLW } from '@/lib/flutterwave'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, VERIFY_LIMIT } from '@/lib/rate-limit'
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
@@ -128,6 +130,8 @@ export async function POST(request: Request) {
                 'stripe_secret_key',
                 'paypal_client_id', 'paypal_client_secret', 'paypal_sandbox',
                 'revolut_secret_key', 'revolut_sandbox', 'revolut_currency',
+                'paystack_secret_key', 'paystack_currency',
+                'flutterwave_secret_key', 'flutterwave_currency',
             ])
 
         const sm: Record<string, string> = {}
@@ -534,6 +538,131 @@ export async function POST(request: Request) {
             }
         }
 
+
+        // ─── PAYSTACK ────────────────────────────────────────────────────────
+        //  La transaction lue chez Paystack est la seule source de vérité.
+        else if (method === 'paystack') {
+            try {
+                if (!sm.paystack_secret_key) {
+                    return NextResponse.json({ success: false, error: 'Paystack non configuré' }, { status: 503 })
+                }
+
+                const res = await verifierPaystack({ secretKey: sm.paystack_secret_key }, transaction_id)
+                if (!res.ok || !res.data) {
+                    return NextResponse.json(
+                        { success: false, error: res.erreur || 'Transaction Paystack introuvable' },
+                        { status: 502 },
+                    )
+                }
+                const tr = res.data
+
+                if (tr.status !== 'success') {
+                    return NextResponse.json(
+                        { success: false, error: `Paiement Paystack non abouti : ${tr.status}` },
+                        { status: 400 },
+                    )
+                }
+
+                /* RATTACHEMENT. La référence EST notre identifiant de commande,
+                   et `metadata.order_id` le double. Sans ce contrôle, n'importe
+                   quelle transaction Paystack réussie — y compris celle d'un
+                   autre client — validerait cette commande-ci. */
+                const parMeta = orderIdDepuisMetadata(tr.metadata)
+                if (tr.reference !== order_id && parMeta !== order_id) {
+                    console.error('[Verify/Paystack] reference etrangere :', { ref: tr.reference, parMeta, attendu: order_id })
+                    return NextResponse.json(
+                        { success: false, error: 'Transaction Paystack non associée à cette commande' },
+                        { status: 400 },
+                    )
+                }
+
+                /* MONTANT. Paystack renvoie des sous-unités — et il exige ×100
+                   MÊME pour le XOF, qui n'a pourtant pas de centimes. Diviser
+                   par 100 est donc correct pour TOUTES ses devises : appliquer
+                   ici la règle « zéro décimale » de Stripe ferait accepter un
+                   paiement cent fois trop faible. */
+                const devisePayee = String(tr.currency || '').toUpperCase()
+                const paye = depuisSousUnitesPaystack(Number(tr.amount) || 0)
+                const deviseCommande = (existingOrder.currency || 'XOF').toUpperCase()
+                const attendu = deviseCommande === devisePayee
+                    ? Number(existingOrder.amount)
+                    : convertWithMargin(Number(existingOrder.amount), deviseCommande, devisePayee)
+
+                if (paye < attendu * 0.99) {
+                    console.error('[Verify/Paystack] Montant insuffisant :', { paye, attendu, devisePayee })
+                    return NextResponse.json({ success: false, error: 'Montant Paystack insuffisant' }, { status: 400 })
+                }
+
+                isVerified = true
+            } catch (e) {
+                console.error('[Verify/Paystack] erreur :', e)
+                return NextResponse.json({ success: false, error: 'Erreur de connexion à Paystack' }, { status: 502 })
+            }
+        }
+
+        // ─── FLUTTERWAVE ─────────────────────────────────────────────────────
+        else if (method === 'flutterwave') {
+            try {
+                if (!sm.flutterwave_secret_key) {
+                    return NextResponse.json({ success: false, error: 'Flutterwave non configuré' }, { status: 503 })
+                }
+                const cfg = { secretKey: sm.flutterwave_secret_key }
+
+                /* Deux chemins de lecture, et c'est délibéré : le retour
+                   navigateur donne un `transaction_id` numérique, tandis qu'un
+                   client revenu plus tard n'a que NOTRE référence. On tente
+                   l'identifiant s'il en est un, sinon la référence. */
+                const estId = /^\d+$/.test(String(transaction_id))
+                const res = estId
+                    ? await verifierFlutterwaveParId(cfg, transaction_id)
+                    : await verifierFlutterwaveParRef(cfg, order_id)
+
+                if (!res.ok || !res.data) {
+                    return NextResponse.json(
+                        { success: false, error: res.erreur || 'Transaction Flutterwave introuvable' },
+                        { status: 502 },
+                    )
+                }
+                const tr = res.data
+
+                if (String(tr.status).toLowerCase() !== ETAT_PAYE_FLW) {
+                    return NextResponse.json(
+                        { success: false, error: `Paiement Flutterwave non abouti : ${tr.status}` },
+                        { status: 400 },
+                    )
+                }
+
+                // RATTACHEMENT : `tx_ref` porte notre identifiant de commande.
+                if (String(tr.tx_ref) !== String(order_id)) {
+                    console.error('[Verify/Flutterwave] tx_ref etranger :', { tx_ref: tr.tx_ref, attendu: order_id })
+                    return NextResponse.json(
+                        { success: false, error: 'Transaction Flutterwave non associée à cette commande' },
+                        { status: 400 },
+                    )
+                }
+
+                /* MONTANT. Flutterwave renvoie l'unité PRINCIPALE (pas de
+                   sous-unités) : 1000 XOF vaut 1000. On compare donc
+                   directement, sans division — le piège serait ici d'appliquer
+                   par réflexe le ÷100 de Paystack. */
+                const devisePayee = String(tr.currency || '').toUpperCase()
+                const paye = Number(tr.amount) || 0
+                const deviseCommande = (existingOrder.currency || 'XOF').toUpperCase()
+                const attendu = deviseCommande === devisePayee
+                    ? Number(existingOrder.amount)
+                    : convertWithMargin(Number(existingOrder.amount), deviseCommande, devisePayee)
+
+                if (paye < attendu * 0.99) {
+                    console.error('[Verify/Flutterwave] Montant insuffisant :', { paye, attendu, devisePayee })
+                    return NextResponse.json({ success: false, error: 'Montant Flutterwave insuffisant' }, { status: 400 })
+                }
+
+                isVerified = true
+            } catch (e) {
+                console.error('[Verify/Flutterwave] erreur :', e)
+                return NextResponse.json({ success: false, error: 'Erreur de connexion à Flutterwave' }, { status: 502 })
+            }
+        }
         if (!isVerified) {
             return NextResponse.json(
                 { success: false, error: 'Payment verification failed' },
