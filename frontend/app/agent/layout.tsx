@@ -420,6 +420,9 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                    l'admin ; le serveur cloisonne : un agent ne voit que les
                    siens. */
                 { title: t('Rapport Hebdo'), icon: FileText, href: '/agent/rapport-hebdo' },
+                /* Meme ecran que l'admin, meme droits : les RLS de `blog_posts`
+                   autorisent deja le role agent (verifie). */
+                { title: t('Blog'), icon: BookOpen, href: '/agent/blog' },
                 { title: t('Clients'), icon: UsersIcon, href: '/agent/clients' },
                 { title: t('Classement Client'), icon: TrendingUp, href: '/agent/classement-client', badge: relancesDue },
                 { title: t('Partenaires'), icon: Handshake, href: '/agent/partenaires', badge: unreadPartenaires },

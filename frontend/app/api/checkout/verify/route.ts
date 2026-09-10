@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { lireCommandeRevolut, depuisUnitesMineures, ETATS_PAYES } from '@/lib/revolut'
+import { convertWithMargin } from '@/lib/currency-convert'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, VERIFY_LIMIT } from '@/lib/rate-limit'
 import { sendInvoiceEmail } from '@/lib/send-invoice-email'
@@ -125,6 +127,7 @@ export async function POST(request: Request) {
                 'fedapay_secret_key', 'fedapay_sandbox',
                 'stripe_secret_key',
                 'paypal_client_id', 'paypal_client_secret', 'paypal_sandbox',
+                'revolut_secret_key', 'revolut_sandbox', 'revolut_currency',
             ])
 
         const sm: Record<string, string> = {}
@@ -450,6 +453,83 @@ export async function POST(request: Request) {
                 return NextResponse.json(
                     { success: false, error: 'Zeyow: paiement non encore confirmé. Utilisez la page de retour Zeyow.' },
                     { status: 400 }
+                )
+            }
+        }
+
+        // ─── REVOLUT PAY ─────────────────────────────────────────────────────
+        //  La commande Revolut est la SEULE source de vérité sur son état : on la
+        //  relit chez eux, on ne croit pas le navigateur.
+        else if (method === 'revolut') {
+            try {
+                if (!sm.revolut_secret_key) {
+                    return NextResponse.json({ success: false, error: 'Revolut non configuré' }, { status: 503 })
+                }
+
+                const cfg = {
+                    secretKey: sm.revolut_secret_key,
+                    sandbox: sm.revolut_sandbox === 'true',
+                    devise: (sm.revolut_currency || 'EUR').toUpperCase(),
+                }
+                const res = await lireCommandeRevolut(cfg, transaction_id)
+                if (!res.ok || !res.data) {
+                    return NextResponse.json(
+                        { success: false, error: res.erreur || 'Commande Revolut introuvable' },
+                        { status: 502 },
+                    )
+                }
+                const cmd = res.data
+
+                if (!ETATS_PAYES.has(String(cmd.state))) {
+                    return NextResponse.json(
+                        { success: false, error: `Paiement Revolut non abouti : ${cmd.state}` },
+                        { status: 400 },
+                    )
+                }
+
+                /* RATTACHEMENT. `merchant_order_data.reference` porte NOTRE
+                   identifiant de commande, posé à la création. Sans ce contrôle,
+                   n'importe quelle transaction Revolut valide — y compris celle
+                   d'un autre client — validerait cette commande-ci. C'est
+                   exactement le contrôle fait sur `metadata.order_id` chez Stripe. */
+                const reference = cmd.merchant_order_data?.reference
+                if (!reference || reference !== order_id) {
+                    console.error('[Verify/Revolut] reference absente ou differente :', {
+                        reference, attendu: order_id,
+                    })
+                    return NextResponse.json(
+                        { success: false, error: 'Transaction Revolut non associée à cette commande' },
+                        { status: 400 },
+                    )
+                }
+
+                /* MONTANT. Revolut renvoie des unités mineures dans la devise
+                   d'ENCAISSEMENT, qui n'est pas celle de la commande (le compte
+                   ne tient pas le XOF). On recalcule donc l'attendu par la même
+                   conversion qu'à la création, et on tolère 1 % d'écart : les
+                   taux de change bougent entre la création et le paiement, et
+                   refuser au centime près rejetterait des paiements légitimes. */
+                const devisePayee = String(cmd.currency || cfg.devise).toUpperCase()
+                const paye = depuisUnitesMineures(Number(cmd.amount) || 0, devisePayee)
+                const deviseCommande = (existingOrder.currency || 'XOF').toUpperCase()
+                const attendu = deviseCommande === devisePayee
+                    ? Number(existingOrder.amount)
+                    : convertWithMargin(Number(existingOrder.amount), deviseCommande, devisePayee)
+
+                if (paye < attendu * 0.99) {
+                    console.error('[Verify/Revolut] Montant insuffisant :', { paye, attendu, devisePayee })
+                    return NextResponse.json(
+                        { success: false, error: 'Montant Revolut insuffisant' },
+                        { status: 400 },
+                    )
+                }
+
+                isVerified = true
+            } catch (e) {
+                console.error('[Verify/Revolut] erreur :', e)
+                return NextResponse.json(
+                    { success: false, error: 'Erreur de connexion à Revolut' },
+                    { status: 502 },
                 )
             }
         }

@@ -85,3 +85,38 @@ export async function loadExchangeRates(): Promise<void> {
         /* taux par défaut conservés */
     }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  CONVERSION AVEC MARGE — pour les passerelles qui n'encaissent pas en XOF.
+//
+//  Revolut Business, comme d'autres, ne tient pas le franc CFA : une commande
+//  en XOF y serait refusée. On convertit donc vers la devise du compte, en
+//  appliquant la marge qui couvre les frais de change et de traitement.
+//
+//  La marge vit ICI et non dans `lib/currency.ts` : ce module-ci est PUR (pas
+//  de client Supabase), donc importable par une route serveur. `lib/currency`
+//  la ré-exporte, de sorte qu'il n'existe qu'UNE valeur — deux constantes à
+//  6 % auraient fini par diverger, et la moitié des paiements aurait été
+//  calculée avec l'ancienne.
+// ═══════════════════════════════════════════════════════════════
+
+/** Frais de service appliqués à toute conversion de règlement. */
+export const MARGE_CONVERSION = 0.06
+
+/** Devises sans sous-unité : on arrondit à l'entier. */
+const SANS_CENTIMES = new Set(['XOF', 'XAF', 'JPY', 'KMF', 'GNF', 'RWF', 'UGX', 'VND', 'BIF', 'DJF'])
+
+/**
+ * Convertit `montant` de `de` vers `vers`, marge comprise.
+ *
+ * Arrondi AU-DESSUS : la reconversion doit toujours couvrir le montant
+ * d'origine. Arrondir au plus proche laisserait, sur certains montants, un
+ * encaissement inférieur d'un centime à ce qui est dû.
+ */
+export function convertWithMargin(montant: number, de: string, vers: string): number {
+    const source = (de || 'XOF').toUpperCase()
+    const cible = (vers || 'XOF').toUpperCase()
+    const enXof = toXOF(montant, source)
+    const brut = (enXof / rateOf(cible)) * (1 + MARGE_CONVERSION)
+    return SANS_CENTIMES.has(cible) ? Math.ceil(brut) : Math.ceil(brut * 100) / 100
+}

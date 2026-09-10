@@ -29,6 +29,7 @@
     "@refinedev/nextjs-router": "^7.0.4",
     "@refinedev/simple-rest": "^6.0.1",
     "@refinedev/supabase": "^6.0.1",
+    "@revolut/checkout": "^1.1.25",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.0",
     "@types/leaflet": "^1.9.21",
