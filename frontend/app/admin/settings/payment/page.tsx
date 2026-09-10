@@ -110,7 +110,34 @@ const GATEWAYS: GatewayConfig[] = [
             { key: 'revolut_currency', label: 'Devise du compte', placeholder: 'EUR', type: 'text', required: false, isSecret: false, helpText: 'Devise réellement encaissée : EUR, GBP, USD, CHF, PLN, RON, SEK, NOK ou DKK. Revolut ne tient pas le franc CFA — un prix en XOF est converti automatiquement, marge de service comprise, et le montant débité est affiché au client avant paiement.' },
         ],
     },
+    {
+        id: 'paystack',
+        name: 'Paystack',
+        description: 'Carte, Mobile Money et virement. Encaisse DIRECTEMENT en FCFA (XOF) : aucune conversion, contrairement à Revolut et PayPal.',
+        classes: 'bg-[#0BA4DB]/15 border-[#0BA4DB]/30 text-[#0BA4DB]',
+        icon: 'P',
+        docsUrl: 'https://dashboard.paystack.com/#/settings/developers',
+        fields: [
+            { key: 'paystack_secret_key', label: 'Clé Secrète (Secret Key)', placeholder: 'sk_test_xxx... ou sk_live_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Paystack → Settings → API Keys & Webhooks. Le mode test dépend de la CLÉ (sk_test_ ou sk_live_), pas d’une URL : il n’y a pas de sandbox séparée. Cette même clé sert à signer les webhooks — ne jamais l’exposer.' },
+            { key: 'paystack_public_key', label: 'Clé Publique (optionnelle)', placeholder: 'pk_test_xxx...', type: 'text', required: false, isSecret: false, helpText: 'Non utilisée par notre intégration : le paiement passe par la page hébergée Paystack. Renseignez-la seulement si vous ajoutez un jour le widget embarqué.' },
+            { key: 'paystack_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: false, isSecret: false, helpText: 'Utilisée uniquement si la devise de la commande n’est pas tenue par Paystack. Devises acceptées : XOF, NGN, GHS, ZAR, KES, USD. Le franc CFA passe donc en direct.' },
+        ],
+    },
+    {
+        id: 'flutterwave',
+        name: 'Flutterwave',
+        description: 'Carte, Mobile Money et virement bancaire africain. Encaisse DIRECTEMENT en FCFA (XOF).',
+        classes: 'bg-[#F5A623]/15 border-[#F5A623]/30 text-[#F5A623]',
+        icon: 'F',
+        docsUrl: 'https://app.flutterwave.com/dashboard/settings/apis',
+        fields: [
+            { key: 'flutterwave_secret_key', label: 'Clé Secrète (Secret Key)', placeholder: 'FLWSECK_TEST-xxx... ou FLWSECK-xxx...', type: 'password', required: true, isSecret: true, helpText: 'Flutterwave → Settings → API. Le mode test dépend de la CLÉ (FLWSECK_TEST-) : il n’y a pas d’URL séparée. Ne jamais l’exposer.' },
+            { key: 'flutterwave_secret_hash', label: 'Secret Hash (webhook)', placeholder: 'votre chaîne secrète', type: 'password', required: false, isSecret: true, helpText: 'Chaîne que VOUS choisissez dans Settings → Webhooks, puis recopiez ici. Déclarez le webhook vers /api/webhooks/flutterwave. Sans elle, les notifications sont refusées — un paiement abouti après fermeture de l’onglet resterait en attente.' },
+            { key: 'flutterwave_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: false, isSecret: false, helpText: 'Utilisée seulement si la devise de la commande n’est pas tenue. Acceptées : XOF, XAF, NGN, GHS, KES, UGX, TZS, ZAR, USD, EUR, GBP.' },
+        ],
+    },
 ]
+
 
 
 function PaymentSettingsContent() {
