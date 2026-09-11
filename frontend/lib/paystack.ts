@@ -144,3 +144,18 @@ export function orderIdDepuisMetadata(meta: DonneesVerif['metadata']): string | 
     }
     return meta.order_id || null
 }
+
+/**
+ * La devise de repli, VALIDÉE.
+ *
+ * Le réglage est désormais une liste fermée dans l'interface, mais la valeur
+ * en base peut être vide (ligne créée avant ce champ) ou avoir été modifiée
+ * par une autre voie. On ne transmet donc JAMAIS ce texte tel quel à l'API :
+ * un code inconnu ferait échouer le paiement avec un message incompréhensible
+ * pour le client. Une valeur invalide retombe sur le XOF, qui est la devise de
+ * l'agence — jamais sur rien.
+ */
+export function deviseDeRepliPaystack(configuree?: string | null): string {
+    const c = String(configuree || '').trim().toUpperCase()
+    return (DEVISES_PAYSTACK as readonly string[]).includes(c) ? c : 'XOF'
+}

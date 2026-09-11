@@ -153,3 +153,13 @@ export function verifierSignatureFlutterwave(
 
     return { ok: false, motif: 'Signature non concordante' }
 }
+
+/**
+ * La devise de repli, VALIDÉE. Même raison que chez Paystack : la valeur en
+ * base peut être vide ou altérée, et un code inconnu ferait échouer le
+ * paiement sans cause lisible. Repli sur le XOF, devise de l'agence.
+ */
+export function deviseDeRepliFlutterwave(configuree?: string | null): string {
+    const c = String(configuree || '').trim().toUpperCase()
+    return (DEVISES_FLUTTERWAVE as readonly string[]).includes(c) ? c : 'XOF'
+}

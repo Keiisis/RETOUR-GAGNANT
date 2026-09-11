@@ -29,6 +29,8 @@ interface GatewayField {
     required: boolean
     isSecret: boolean
     helpText?: string
+    /** Liste fermee : rend le champ non saisissable a la main (devises). */
+    options?: string[]
 }
 
 const GATEWAYS: GatewayConfig[] = [
@@ -107,7 +109,7 @@ const GATEWAYS: GatewayConfig[] = [
         fields: [
             { key: 'revolut_secret_key', label: 'Clé Secrète Marchand (Secret Key)', placeholder: 'sk_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Revolut Business → Merchant API → clé SECRÈTE (commence par sk_). Prenez la clé Sandbox si le mode test est actif : les deux environnements sont séparés et une clé de production ne fonctionne pas en sandbox.' },
             { key: 'revolut_webhook_secret', label: 'Secret de signature du webhook', placeholder: 'wsk_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Renvoyé UNE SEULE FOIS à la création du webhook (commence par wsk_). Déclarez le webhook vers /api/webhooks/revolut avec les événements ORDER_COMPLETED et ORDER_AUTHORISED. Sans ce secret, les notifications sont refusées — un paiement abouti hors du navigateur resterait en attente.' },
-            { key: 'revolut_currency', label: 'Devise du compte', placeholder: 'EUR', type: 'text', required: false, isSecret: false, helpText: 'Devise réellement encaissée : EUR, GBP, USD, CHF, PLN, RON, SEK, NOK ou DKK. Revolut ne tient pas le franc CFA — un prix en XOF est converti automatiquement, marge de service comprise, et le montant débité est affiché au client avant paiement.' },
+            { key: 'revolut_currency', label: 'Devise encaissée', placeholder: 'EUR', type: 'text', required: true, isSecret: false, options: ['EUR', 'GBP', 'USD', 'CHF', 'PLN', 'RON', 'SEK', 'NOK', 'DKK'], helpText: 'Devise de votre compte Revolut Business. ⚠️ Revolut N’ENCAISSE PAS le franc CFA : une commande en XOF est convertie vers cette devise, frais de service compris, et le montant débité est affiché au client AVANT qu’il paie. Pour encaisser réellement du XOF, utilisez Paystack, Flutterwave, Kkiapay ou FedaPay.' },
         ],
     },
     {
@@ -120,7 +122,7 @@ const GATEWAYS: GatewayConfig[] = [
         fields: [
             { key: 'paystack_secret_key', label: 'Clé Secrète (Secret Key)', placeholder: 'sk_test_xxx... ou sk_live_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Paystack → Settings → API Keys & Webhooks. Le mode test dépend de la CLÉ (sk_test_ ou sk_live_), pas d’une URL : il n’y a pas de sandbox séparée. Cette même clé sert à signer les webhooks — ne jamais l’exposer.' },
             { key: 'paystack_public_key', label: 'Clé Publique (optionnelle)', placeholder: 'pk_test_xxx...', type: 'text', required: false, isSecret: false, helpText: 'Non utilisée par notre intégration : le paiement passe par la page hébergée Paystack. Renseignez-la seulement si vous ajoutez un jour le widget embarqué.' },
-            { key: 'paystack_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: false, isSecret: false, helpText: 'Utilisée uniquement si la devise de la commande n’est pas tenue par Paystack. Devises acceptées : XOF, NGN, GHS, ZAR, KES, USD. Le franc CFA passe donc en direct.' },
+            { key: 'paystack_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: true, isSecret: false, options: ['XOF', 'USD', 'NGN', 'GHS', 'ZAR', 'KES'], helpText: 'Paystack encaisse EN DIRECT : XOF, USD, NGN, GHS, ZAR, KES — franc CFA et dollar compris. ⚠️ Ni EUR ni GBP : une commande dans ces devises sera CONVERTIE vers celle choisie ici. Pour encaisser vraiment en euros ou en livres, passez par Flutterwave, Stripe ou Revolut.' },
         ],
     },
     {
@@ -133,7 +135,7 @@ const GATEWAYS: GatewayConfig[] = [
         fields: [
             { key: 'flutterwave_secret_key', label: 'Clé Secrète (Secret Key)', placeholder: 'FLWSECK_TEST-xxx... ou FLWSECK-xxx...', type: 'password', required: true, isSecret: true, helpText: 'Flutterwave → Settings → API. Le mode test dépend de la CLÉ (FLWSECK_TEST-) : il n’y a pas d’URL séparée. Ne jamais l’exposer.' },
             { key: 'flutterwave_secret_hash', label: 'Secret Hash (webhook)', placeholder: 'votre chaîne secrète', type: 'password', required: false, isSecret: true, helpText: 'Chaîne que VOUS choisissez dans Settings → Webhooks, puis recopiez ici. Déclarez le webhook vers /api/webhooks/flutterwave. Sans elle, les notifications sont refusées — un paiement abouti après fermeture de l’onglet resterait en attente.' },
-            { key: 'flutterwave_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: false, isSecret: false, helpText: 'Utilisée seulement si la devise de la commande n’est pas tenue. Acceptées : XOF, XAF, NGN, GHS, KES, UGX, TZS, ZAR, USD, EUR, GBP.' },
+            { key: 'flutterwave_currency', label: 'Devise de repli', placeholder: 'XOF', type: 'text', required: true, isSecret: false, options: ['XOF', 'EUR', 'USD', 'GBP', 'XAF', 'NGN', 'GHS', 'KES', 'UGX', 'TZS', 'ZAR'], helpText: 'Flutterwave est la passerelle la plus couvrante : elle encaisse EN DIRECT le XOF, l’EUR, l’USD et le GBP — vos quatre devises — sans aucune conversion. Ce réglage ne sert que si une commande arrive dans une devise absente de la liste.' },
         ],
     },
 ]
@@ -504,6 +506,31 @@ function PaymentSettingsContent() {
                                                             </button>
                                                         )}
                                                     </div>
+                                                    {/* UNE DEVISE NE SE TAPE PAS À LA MAIN.
+                                                        En saisie libre, le champ pouvait être VIDÉ ou
+                                                        recevoir « Euro », « xof » ou une faute de frappe :
+                                                        la passerelle recevait alors un code qu'elle ne
+                                                        connaît pas, et le paiement échouait sans cause
+                                                        lisible. Une liste fermée rend l'erreur impossible
+                                                        à commettre, et n'expose que les devises que CETTE
+                                                        passerelle encaisse réellement. */}
+                                                    {field.options ? (
+                                                        <select
+                                                            id={field.key}
+                                                            value={settings[field.key] || field.options[0]}
+                                                            onChange={e => updateSetting(field.key, e.target.value)}
+                                                            className={cn(
+                                                                'w-full bg-white/5 border rounded-xl py-3.5 px-4 text-white text-sm font-mono focus:outline-none transition-all',
+                                                                settings[field.key] && settings[field.key].trim()
+                                                                    ? 'border-[#008751]/20 focus:border-[#008751]/40'
+                                                                    : 'border-white/5 focus:border-[#FCD116]/30'
+                                                            )}
+                                                        >
+                                                            {field.options.map(opt => (
+                                                                <option key={opt} value={opt} className="bg-[#0d1520]">{opt}</option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
                                                     <input
                                                         id={field.key}
                                                         type={field.isSecret && !visibleSecrets[field.key] ? 'password' : 'text'}
@@ -519,6 +546,7 @@ function PaymentSettingsContent() {
                                                                     : 'border-white/5 focus:border-[#FCD116]/30'
                                                         )}
                                                     />
+                                                    )}
                                                     {field.helpText && (
                                                         <p className="text-[9px] text-gray-600 mt-1.5">{field.helpText}</p>
                                                     )}

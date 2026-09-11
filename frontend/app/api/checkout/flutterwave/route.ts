@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
-import { initierFlutterwave, DEVISES_FLUTTERWAVE } from '@/lib/flutterwave'
+import { initierFlutterwave, DEVISES_FLUTTERWAVE, deviseDeRepliFlutterwave } from '@/lib/flutterwave'
 import { convertWithMargin } from '@/lib/currency-convert'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
         const deviseCommande = (order.currency || 'XOF').toUpperCase()
         const tenue = (DEVISES_FLUTTERWAVE as readonly string[]).includes(deviseCommande)
-        const devise = tenue ? deviseCommande : (r.flutterwave_currency || 'XOF').toUpperCase()
+        const devise = tenue ? deviseCommande : deviseDeRepliFlutterwave(r.flutterwave_currency)
         const montant = tenue ? Number(order.amount) : convertWithMargin(Number(order.amount), deviseCommande, devise)
 
         if (!(montant > 0)) return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
