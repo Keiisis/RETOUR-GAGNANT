@@ -9,7 +9,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
-import { creerCommandeRevolut, DEVISES_REVOLUT } from '@/lib/revolut'
+import { creerCommandeRevolut, deviseDeRepliRevolut } from '@/lib/revolut'
 import { convertWithMargin } from '@/lib/currency-convert'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -69,13 +69,10 @@ export async function POST(request: Request) {
            l'API. On convertit avec la marge appliquée aux autres passerelles,
            et on RENVOIE le montant réellement présenté : l'écran doit annoncer
            ce qui sera débité, pas le prix d'affichage. */
-        const deviseCompte = (r.revolut_currency || 'EUR').toUpperCase()
-        if (!(DEVISES_REVOLUT as readonly string[]).includes(deviseCompte)) {
-            return NextResponse.json(
-                { error: `Devise d'encaissement « ${deviseCompte} » non tenue par Revolut.` },
-                { status: 503 },
-            )
-        }
+        /* Devise VALIDÉE, jamais transmise telle quelle : un réglage vide ou
+           altéré retombe sur l'EUR plutôt que de faire échouer le paiement
+           avec un message que le client ne peut pas comprendre. */
+        const deviseCompte = deviseDeRepliRevolut(r.revolut_currency)
 
         const deviseCommande = (order.currency || 'XOF').toUpperCase()
         const montant = deviseCommande === deviseCompte

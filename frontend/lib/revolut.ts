@@ -206,3 +206,16 @@ export function verifierSignatureRevolut(
     }
     return { ok: false, motif: 'Signature non concordante' }
 }
+
+/**
+ * La devise d'encaissement, VALIDÉE.
+ *
+ * Revolut ne tient PAS le franc CFA : le repli ne peut donc pas être le XOF
+ * comme ailleurs. Une valeur invalide retombe sur l'EUR, qui est en parité
+ * fixe avec le franc CFA — c'est la conversion la moins surprenante pour
+ * l'agence, et la seule qui soit exacte au centime.
+ */
+export function deviseDeRepliRevolut(configuree?: string | null): string {
+    const c = String(configuree || '').trim().toUpperCase()
+    return (DEVISES_REVOLUT as readonly string[]).includes(c) ? c : 'EUR'
+}

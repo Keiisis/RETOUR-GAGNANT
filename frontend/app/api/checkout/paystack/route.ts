@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
-import { initierPaystack, DEVISES_PAYSTACK } from '@/lib/paystack'
+import { initierPaystack, DEVISES_PAYSTACK, deviseDeRepliPaystack } from '@/lib/paystack'
 import { convertWithMargin } from '@/lib/currency-convert'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
            XOF), sinon celle configurée, avec conversion et marge. */
         const deviseCommande = (order.currency || 'XOF').toUpperCase()
         const tenue = (DEVISES_PAYSTACK as readonly string[]).includes(deviseCommande)
-        const devise = tenue ? deviseCommande : (r.paystack_currency || 'XOF').toUpperCase()
+        const devise = tenue ? deviseCommande : deviseDeRepliPaystack(r.paystack_currency)
         const montant = tenue ? Number(order.amount) : convertWithMargin(Number(order.amount), deviseCommande, devise)
 
         if (!(montant > 0)) return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
