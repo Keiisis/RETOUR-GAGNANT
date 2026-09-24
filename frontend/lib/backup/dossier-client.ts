@@ -10,7 +10,6 @@
      • Documents/               → les VRAIS fichiers (pièces, pièces de
                                   dossiers, généalogie, signature…)
      • Contrats/ Récaps/        → textes signés et fiches d'analyse
-     • donnees-completes.json   → toutes les lignes brutes, pour restauration
 
    Construit ici, et non dans la route d'export, pour que la collecte
    nocturne fabrique EXACTEMENT le même dossier que le bouton « Exporter ».
@@ -304,10 +303,11 @@ const long = (v: unknown, max = 600) => { const t = s(v); return t.length > max 
 /** Affichage d'une valeur quelconque dans l'annexe. */
 function valeurAnnexe(v: unknown): string {
     if (v === null || v === undefined || v === '') return '<span class="empty">—</span>'
-    if (typeof v === 'object') return esc(JSON.stringify(v, null, 1).slice(0, 4000))
+    if (typeof v === 'object') return esc(JSON.stringify(v, null, 1).slice(0, 20000))
     const t = s(v)
     if (/^data:[a-z]+\/[a-z0-9.+-]+;base64,/i.test(t)) return '<span class="empty">(fichier intégré — voir Documents/)</span>'
-    return esc(t.length > 4000 ? t.slice(0, 4000) + '… (texte complet dans donnees-completes.json)' : t)
+    // Texte intégral : l'annexe est la version complète, rien n'y est coupé.
+    return esc(t)
 }
 
 const LIBELLES: Record<string, string> = Object.fromEntries(SOURCES.map(x => [x.section, x.libelle]))
@@ -576,7 +576,7 @@ function addInvoicePdfs(dir: JSZip, folder: string, rows: Row[], echecs: string[
             used.add(name.toLowerCase())
             f.file(name, Buffer.from(b64, 'base64'))
         } catch (e) {
-            // Le PDF manque : on le dit, et la ligne reste dans l'annexe et le JSON.
+            // Le PDF manque : on le dit, et la ligne reste entière dans l'annexe de la fiche.
             echecs.push(`${folder}/${ref}.pdf — ${e instanceof Error ? e.message : 'génération impossible'}`)
         }
     }
@@ -623,15 +623,10 @@ export async function fillClientFolder(sb: SupabaseClient, dir: JSZip, rec: Clie
 
     // 5) Fiche lisible + données complètes.
     dir.file('FICHE CLIENT.html', renderClientHtml(rec, fichiers))
-    dir.file('donnees-completes.json', JSON.stringify(masquer({
-        identite: { id: rec.id, email: rec.email, nom: rec.nom, prenom: rec.prenom, telephone: rec.phone, ville: rec.ville, pays: rec.pays, compte: rec.hasAccount, cree_le: rec.created_at },
-        profil: rec.profile,
-        donnees: rec.data,
-        discussions: rec.discussions,
-        fichiers_manquants: fichiers.manquants,
-        pdf_non_generes: pdfEchoues,
-        exporte_le: new Date().toISOString(),
-    }), null, 2))
+    /* Pas de JSON dans le dossier : la sauvegarde est lue par des personnes
+       non techniques (décision du 2026-08-13). L'annexe de la fiche affiche
+       chaque donnée ; la version brute, pour restauration, vit dans
+       l'instantané quotidien du stockage (onglet Sauvegarde). */
 
     return { fichiers, pdfEchoues }
 }
@@ -708,7 +703,7 @@ ${manquants.length ? `<h2>Fichiers introuvables</h2><table><thead><tr><th>Client
 <div class="foot">Retour Gagnant Bénin · Sauvegarde confidentielle</div></div></body></html>`
 }
 
-/** Les lignes qu'aucun client ne réclame : une page lisible + le JSON, par table. */
+/** Les lignes qu'aucun client ne réclame : une page lisible par table. */
 export function ajouterNonRattachees(zip: JSZip, nonRattachees: Record<string, Row[]>) {
     const entrees = Object.entries(nonRattachees).filter(([, rows]) => rows.length)
     if (!entrees.length) return
@@ -717,7 +712,6 @@ export function ajouterNonRattachees(zip: JSZip, nonRattachees: Record<string, R
     for (const [table, rows] of entrees) {
         const propres = masquer(rows)
         const nom = readableName(libelles[table] || table)
-        dir.file(`${nom}.json`, JSON.stringify(propres, null, 2))
         dir.file(`${nom}.html`, `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(nom)}</title><style>${CSS}</style></head><body><div class="wrap"><h1>${esc(nom)}</h1><p class="sub">${rows.length} ligne(s) sans client identifiable · table ${esc(table)}</p>${propres.map(r => `<div class="rec"><dl>${Object.entries(r).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${valeurAnnexe(v)}</dd>`).join('')}</dl></div>`).join('')}</div></body></html>`)
     }
 }
@@ -738,7 +732,6 @@ export function lisezMoi(nbClients: number, genere: string): string {
         '     • Factures/ Devis/ Avoirs/ → ses documents financiers en PDF',
         '     • Documents/              → les vrais fichiers téléversés',
         '     • Contrats/ Récaps/       → contrats et fiches d’analyse',
-        '     • donnees-completes.json  → toutes ses données brutes (restauration)',
         '3. « RAPPORT DE COLLECTE.html » prouve, table par table, que rien n’a été',
         '   perdu. « _NON RATTACHÉES » contient ce qu’aucun client n’a pu réclamer.',
         '4. « Liste_clients.csv » s’ouvre dans Excel pour une vue tableau.',
