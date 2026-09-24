@@ -7,14 +7,15 @@
 //  n'entre pas dans les recettes. Ce n'est pas une formalité : c'est la pièce
 //  qui prouve l'encaissement.
 //
-//  Réutilisable pour les deux natures : `recap` et `dossier`.
+//  Réutilisable pour les trois natures : `recap`, `dossier`, `nationalite`.
 // ══════════════════════════════════════════════════════════════
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CircleNotch, Receipt, MagnifyingGlass, CheckCircle, WarningCircle } from '@phosphor-icons/react'
 import { formatMontant } from '@/lib/currency-format'
+import { toXOF } from '@/lib/currency-convert'
 
-interface Facture {
+export interface FactureRattachable {
     id: string
     numero: string
     client_nom: string | null
@@ -22,24 +23,45 @@ interface Facture {
     client_email: string | null
     total: number
     currency: string | null
-    statut: string | null
+    status: string | null
+    /** Non vide : la facture justifie déjà autre chose. */
+    source_ref?: string | null
     created_at: string
     suggeree?: boolean
 }
+type Facture = FactureRattachable
 
 interface Props {
     ouvert: boolean
-    nature: 'recap' | 'dossier'
+    nature: 'recap' | 'dossier' | 'nationalite'
     dossierId: string
     /** Adresse du client : sert à faire remonter les factures probables. */
     email?: string | null
+    /** Ce que le client devait régler : comparé au total de chaque facture. */
+    attendu?: { montant: number; devise?: string | null } | null
     onFermer: () => void
     onRattache: (facture: Facture) => void
 }
 
+/** Libellé lisible de ce qu'une facture justifie déjà. */
+const dejaLiee = (ref?: string | null) => {
+    const r = String(ref || '')
+    if (!r) return null
+    return r.startsWith('nationality:') ? `Justifie ${r.slice(12)}` : 'Déjà liée'
+}
+
 export default function RattacherFacture({
-    ouvert, nature, dossierId, email, onFermer, onRattache,
+    ouvert, nature, dossierId, email, attendu, onFermer, onRattache,
 }: Props) {
+    /* Écart toléré entre le montant attendu et la facture, une fois les deux
+       ramenés en francs CFA : 2 % absorbent les arrondis de change, pas un
+       paiement partiel. */
+    const attenduXof = attendu && attendu.montant > 0 ? toXOF(attendu.montant, attendu.devise || 'XOF') : 0
+    const conforme = (f: Facture) => {
+        if (!attenduXof) return null
+        const x = toXOF(Number(f.total) || 0, f.currency || 'XOF')
+        return Math.abs(x - attenduXof) / attenduXof <= 0.02
+    }
     const [factures, setFactures] = useState<Facture[]>([])
     const [chargement, setChargement] = useState(false)
     const [recherche, setRecherche] = useState('')
@@ -108,6 +130,14 @@ export default function RattacherFacture({
                                     Choisissez la facture émise qui correspond à ce client. Sans elle, le
                                     dossier n’entre pas dans les recettes.
                                 </p>
+                                {attenduXof > 0 && (
+                                    <p className="text-[11px] mt-1.5 font-bold" style={{ color: 'var(--panel-text)' }}>
+                                        Montant attendu : {formatMontant(attendu!.montant, attendu!.devise)}
+                                        {(attendu!.devise || 'XOF').toUpperCase() !== 'XOF' && (
+                                            <span style={{ color: 'var(--panel-text-muted)' }}> · ≈ {formatMontant(Math.round(attenduXof), 'XOF')}</span>
+                                        )}
+                                    </p>
+                                )}
                             </div>
                             <button type="button" onClick={onFermer} title="Fermer"
                                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -143,16 +173,20 @@ export default function RattacherFacture({
                                 <p className="text-center py-10 text-sm" style={{ color: 'var(--panel-text-muted)' }}>
                                     Aucune facture émise ne correspond.
                                 </p>
-                            ) : factures.map(f => (
+                            ) : factures.map(f => {
+                                const liee = dejaLiee(f.source_ref)
+                                const ok = conforme(f)
+                                return (
                                 <button
                                     key={f.id}
                                     type="button"
                                     onClick={() => rattacher(f)}
-                                    disabled={!!enCours}
-                                    className="w-full text-left rounded-xl border p-3.5 flex items-center gap-3 transition-colors disabled:opacity-50"
+                                    disabled={!!enCours || !!liee}
+                                    title={liee ? 'Cette facture justifie déjà une autre opération.' : undefined}
+                                    className="w-full text-left rounded-xl border p-3.5 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{
-                                        background: f.suggeree ? 'rgba(16,185,129,0.08)' : 'var(--panel-surface-alt)',
-                                        borderColor: f.suggeree ? 'rgba(16,185,129,0.35)' : 'var(--panel-border)',
+                                        background: f.suggeree && !liee ? 'rgba(16,185,129,0.08)' : 'var(--panel-surface-alt)',
+                                        borderColor: f.suggeree && !liee ? 'rgba(16,185,129,0.35)' : 'var(--panel-border)',
                                     }}
                                 >
                                     <Receipt size={16} className="shrink-0 text-emerald-500" />
@@ -166,6 +200,16 @@ export default function RattacherFacture({
                                                     Même e-mail
                                                 </span>
                                             )}
+                                            {liee && (
+                                                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-500/15" style={{ color: 'var(--panel-text-muted)' }}>
+                                                    {liee}
+                                                </span>
+                                            )}
+                                            {!liee && ok !== null && (
+                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${ok ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'}`}>
+                                                    {ok ? 'Montant conforme' : 'Montant différent'}
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-[11px] truncate" style={{ color: 'var(--panel-text-muted)' }}>
                                             {[f.client_prenom, f.client_nom].filter(Boolean).join(' ') || '—'}
@@ -176,13 +220,17 @@ export default function RattacherFacture({
                                         <p className="text-sm font-black font-mono" style={{ color: 'var(--panel-text-heading)' }}>
                                             {formatMontant(Number(f.total) || 0, f.currency)}
                                         </p>
-                                        <p className="text-[10px]" style={{ color: 'var(--panel-text-faint)' }}>{f.statut || '—'}</p>
+                                        <p className="text-[10px]" style={{ color: 'var(--panel-text-faint)' }}>
+                                            {f.status === 'paye' ? 'payée' : (f.status || '—')}
+                                            {' · '}{new Date(f.created_at).toLocaleDateString('fr-FR')}
+                                        </p>
                                     </div>
                                     {enCours === f.id
                                         ? <CircleNotch size={16} className="animate-spin text-emerald-500 shrink-0" />
                                         : <CheckCircle size={16} className="shrink-0" style={{ color: 'var(--panel-text-faint)' }} />}
                                 </button>
-                            ))}
+                                )
+                            })}
                         </div>
 
                         {erreur && (
