@@ -6,6 +6,7 @@ import {
     Archive, DownloadSimple, MagnifyingGlass, X, User, Envelope, Phone, MapPin,
     FolderOpen, Globe, Receipt, FileText, CreditCard, ChatText, Calendar,
     CheckCircle, WarningCircle, Buildings, Ticket, Sparkle, Spinner,
+    ArrowsClockwise, ClockCounterClockwise, Database, ShieldCheck,
 } from '@phosphor-icons/react'
 import { supabase } from '@/lib/supabase'
 import { T } from '@/lib/translation'
@@ -14,6 +15,11 @@ import { T } from '@/lib/translation'
    ADMIN · SAUVEGARDE
    Vue complète de tous les clients reçus depuis le début +
    export ZIP (un dossier par client, tout dedans).
+
+   Une collecte automatique tourne chaque nuit (01h00 UTC) : elle relit
+   toute la base, range le dossier de chaque client nouveau ou modifié, et
+   garde un instantané quotidien 30 jours. Le panneau « Collecte
+   automatique » en rend compte ; « Exporter » en profite.
 ═══════════════════════════════════════════════════════════ */
 
 interface Counts {
@@ -25,6 +31,18 @@ interface ClientSummary {
     key: string; id: string | null; email: string; nom: string; prenom: string
     phone: string; ville: string; pays: string; created_at: string | null
     hasAccount: boolean; counts: Counts; services: string[]
+    archive?: { a_jour: boolean; construit_le: string } | null
+}
+interface LigneRapport { table: string; libelle: string; lues: number; rattachees: number; non_rattachees: number; erreur?: string }
+interface EtatCollecte {
+    derniere_collecte: string; duree_ms: number; origine: 'nuit' | 'manuel'
+    clients: number; en_attente: number; rapport: LigneRapport[]
+    non_couvertes: { table: string; colonnes: string[] }[]
+    non_rattachees: Record<string, number>; erreurs: string[]; fichiers_manquants: number
+}
+interface ExportPret {
+    liens: { nom: string; url: string; taille: number }[]
+    clients: number; repris: number; reconstruits: number; non_inclus: string[]; deja_pret: boolean
 }
 interface Totals { clients: number; comptes: number; dossiers: number; nationalite: number; commandes: number; factures: number; paiements: number }
 
@@ -42,6 +60,7 @@ export default function SauvegardePage() {
     const [exporting, setExporting] = useState(false)
     const [exportingKey, setExportingKey] = useState<string | null>(null)
     const [selected, setSelected] = useState<string | null>(null)
+    const [pret, setPret] = useState<ExportPret | null>(null)
 
     const load = useCallback(async () => {
         setLoading(true); setError('')
@@ -60,25 +79,23 @@ export default function SauvegardePage() {
 
     useEffect(() => { load() }, [load])
 
-    const download = async (url: string, fallbackName: string, keyBusy?: string) => {
+    /* L'export répond par des LIENS signés (1 h) vers les parties déposées
+       dans le stockage privé : une réponse de fonction est plafonnée à
+       ~4,5 Mo, l'archive complète en pèse des dizaines. */
+    const download = async (url: string, _fallbackName: string, keyBusy?: string) => {
         if (keyBusy) setExportingKey(keyBusy); else setExporting(true)
-        setError('')
+        setError(''); setPret(null)
         try {
             const res = await fetch(url, { headers: await authHeaders(), cache: 'no-store' })
-            if (!res.ok) {
-                let msg = 'Échec de l\'export'
-                try { msg = (await res.json()).error || msg } catch { /* binaire */ }
-                throw new Error(msg)
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || !Array.isArray(json.liens)) throw new Error(json.error || 'Échec de l’export')
+            setPret(json as ExportPret)
+            // Une seule partie : le téléchargement part tout de suite.
+            if (json.liens.length === 1) {
+                const a = document.createElement('a')
+                a.href = json.liens[0].url; a.rel = 'noopener'
+                document.body.appendChild(a); a.click(); a.remove()
             }
-            const blob = await res.blob()
-            const cd = res.headers.get('Content-Disposition') || ''
-            const m = cd.match(/filename="?([^"]+)"?/)
-            const name = m ? m[1] : fallbackName
-            const objUrl = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = objUrl; a.download = name
-            document.body.appendChild(a); a.click(); a.remove()
-            URL.revokeObjectURL(objUrl)
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Erreur inconnue')
         } finally {
@@ -138,6 +155,48 @@ export default function SauvegardePage() {
                 </div>
             )}
 
+            {/* ═══ Export prêt : liens de téléchargement ═══ */}
+            {pret && (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <p className="text-sm font-black text-[var(--panel-text)]">
+                                <T>Votre sauvegarde est prête</T>
+                                {pret.liens.length > 1 && <> — {pret.liens.length} <T>parties</T></>}
+                            </p>
+                            <p className="mt-0.5 text-xs text-[var(--panel-text-muted)]">
+                                {pret.clients} <T>client(s)</T> · {pret.deja_pret
+                                    ? <T>archive préparée par la collecte automatique, servie instantanément</T>
+                                    : <>{pret.repris} <T>dossier(s) repris</T>, {pret.reconstruits} <T>reconstruit(s)</T></>}
+                                {' · '}<T>liens valables 1 heure</T>
+                            </p>
+                            {pret.liens.length > 1 && (
+                                <p className="mt-1 text-xs text-[var(--panel-text-muted)]">
+                                    <T>Téléchargez chaque partie et décompressez-les dans le même dossier : le sommaire indique où se trouve chaque client.</T>
+                                </p>
+                            )}
+                        </div>
+                        <button onClick={() => setPret(null)} className="rounded-lg p-1.5 text-[var(--panel-text-muted)] hover:bg-white/5" title="Fermer"><X size={16} /></button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {pret.liens.map(l => (
+                            <a key={l.url} href={l.url} rel="noopener"
+                                className="inline-flex items-center gap-2 rounded-xl bg-[#FCD116] px-4 py-2 text-xs font-black text-[#0a0f18] hover:brightness-105">
+                                <DownloadSimple size={15} weight="bold" /> {l.nom.replace(/^sauvegarde-/, '').replace(/\.zip$/, '')} · {(l.taille / 1048576).toFixed(1)} Mo
+                            </a>
+                        ))}
+                    </div>
+                    {pret.non_inclus.length > 0 && (
+                        <p className="mt-3 text-xs font-bold text-amber-400">
+                            {pret.non_inclus.length} <T>client(s) non inclus faute de temps</T> : {pret.non_inclus.slice(0, 5).join(', ')}{pret.non_inclus.length > 5 ? '…' : ''} — <T>cliquez sur « Actualiser maintenant », puis relancez l’export.</T>
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* ═══ Collecte automatique ═══ */}
+            <CollectePanel onActualise={load} />
+
             {/* ═══ Recherche ═══ */}
             <div className="relative max-w-md">
                 <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--panel-text-muted)]" />
@@ -188,6 +247,9 @@ export default function SauvegardePage() {
                                     {c.hasAccount
                                         ? <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[9px] font-bold uppercase text-green-400">Compte</span>
                                         : <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase text-[var(--panel-text-muted)]">Hors-compte</span>}
+                                    {c.archive?.a_jour
+                                        ? <span title={`Dossier rangé le ${new Date(c.archive.construit_le).toLocaleString('fr-FR')}`} className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400">Archivé</span>
+                                        : <span title="Nouveau ou modifié depuis la dernière collecte : son dossier sera construit à l'export ou à la prochaine collecte" className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-400">À ranger</span>}
                                 </div>
                                 <div className="truncate text-xs text-[var(--panel-text-muted)]">{c.email || c.phone || '—'}</div>
                                 {c.services.length > 0 && (
@@ -372,7 +434,7 @@ function ClientDetail({ clientKey, onClose, onExport, exporting }: {
                             {/* Nationalité */}
                             <ListSection title="Demandes de nationalité" icon={<Globe size={15} />} rows={d.nationalite}
                                 render={r => ({
-                                    title: String(r.reference || 'Demande'),
+                                    title: String(r.application_ref || r.reference || 'Demande'),
                                     sub: `${String(r.status || '—')} · ${String(r.payment_status || '')} · ${fdate(r.created_at)}`,
                                 })} />
 
@@ -402,7 +464,7 @@ function ClientDetail({ clientKey, onClose, onExport, exporting }: {
                                 rows={[...(d.paiements || []), ...(d.paiements_manuels || [])]}
                                 render={r => ({
                                     title: `${new Intl.NumberFormat('fr-FR').format(Number(r.montant || r.amount) || 0)} ${String(r.currency || 'XOF')}`,
-                                    sub: `${String(r.provider || r.methode || r.type || '')} · ${String(r.status || r.statut || '')} · ${fdate(r.created_at)}`,
+                                    sub: `${String(r.gateway || r.provider || r.type || '')} · ${String(r.reference || r.transaction_id || '')} · ${String(r.status || r.statut || 'enregistré')} · ${fdate(r.date_paiement || r.created_at)}`,
                                 })} />
 
                             {/* Rendez-vous */}
@@ -426,7 +488,10 @@ function ClientDetail({ clientKey, onClose, onExport, exporting }: {
 
                             {/* Documents téléversés */}
                             <ListSection title="Documents téléversés" icon={<FolderOpen size={15} />} rows={d.documents}
-                                render={r => ({ title: String(r.nom_fichier || r.name || 'Document'), sub: `${String(r.type_fichier || '')} · ${fdate(r.created_at)}` })} />
+                                render={r => ({ title: String(r.titre || r.file_name || 'Document'), sub: `${String(r.file_type || '')} · ${fdate(r.created_at)}` })} />
+
+                            {/* Tout ce que les rubriques ci-dessus ne montrent pas */}
+                            <AutresDonnees data={d} dejaVues={['dossiers', 'nationalite', 'commandes', 'documents_financiers', 'paiements', 'paiements_manuels', 'rendez_vous', 'logements', 'evenements', 'contrats', 'documents', 'messages']} />
 
                             {/* Discussions */}
                             <Section title={`Discussions (${c.discussions.length})`} icon={<ChatText size={15} />}>
@@ -501,6 +566,207 @@ function Bubble({ who, text }: { who: 'client' | 'rgb'; text: string }) {
                 <span className="mb-0.5 block text-[8px] font-bold uppercase opacity-60">{mine ? 'Équipe RGB' : 'Client'}</span>
                 {text}
             </div>
+        </div>
+    )
+}
+
+/* ─────────────────────────────────────────────────────────
+   Toutes les autres sections collectées (récaps, généalogie,
+   séjours, e-mails envoyés…) : rubrique générique, dépliable.
+   Aucune donnée collectée ne reste invisible dans le panel.
+───────────────────────────────────────────────────────── */
+const LIBELLES_SECTIONS: Record<string, string> = {
+    nationalite_contacts: 'Prises de contact nationalité', recaps_myafro: 'Récaps MyAfroOrigins',
+    itineraires: 'Itinéraires de séjour', propositions_sejour: 'Propositions de séjour',
+    eligibilite: 'Tests d’éligibilité', classement: 'Classement commercial',
+    genealogie_arbres: 'Arbres généalogiques', genealogie_dossiers: 'Dossiers généalogie',
+    genealogie_personnes: 'Personnes de l’arbre', genealogie_unions: 'Unions', genealogie_filiations: 'Filiations',
+    genealogie_faits: 'Faits établis', genealogie_documents: 'Documents généalogiques',
+    genealogie_commentaires: 'Commentaires sur l’arbre', genealogie_collaborateurs: 'Collaborateurs de l’arbre',
+    invoices: 'Factures (ancienne table)', devis_smart: 'Devis intelligents', devis_smart_lignes: 'Lignes des devis',
+    devis_smart_vues: 'Consultations des devis', devis_smart_assistant: 'Échanges avec l’assistant',
+    devis_agent: 'Devis d’agent', liens_paiement: 'Liens de paiement', signatures: 'Signatures',
+    rendez_vous_agenda: 'Rendez-vous planifiés', evenements_billets: 'Billets', commandes_suivi: 'Suivi des commandes',
+    messages_vocaux: 'Messages vocaux', appels: 'Appels', support: 'Assistance',
+    notifications_client: 'Notifications (e-mail)', notifications: 'Notifications (application)',
+    emails_envoyes: 'E-mails envoyés', newsletter: 'Newsletter', codes_invitation: 'Codes d’invitation',
+    avis_produits: 'Avis produits', avis_fa: 'Avis prêtres Fa',
+    dossiers_pieces: 'Pièces des dossiers', dossiers_pieces_anciennes: 'Pièces des dossiers (ancien)',
+}
+
+function AutresDonnees({ data, dejaVues }: { data: Record<string, Record<string, unknown>[]>; dejaVues: string[] }) {
+    const sections = Object.entries(data).filter(([k, rows]) => !dejaVues.includes(k) && rows?.length)
+    if (!sections.length) return null
+    const val = (v: unknown) => {
+        if (v === null || v === undefined || v === '') return '—'
+        const t = typeof v === 'object' ? JSON.stringify(v) : String(v)
+        return t.length > 240 ? t.slice(0, 240) + '…' : t
+    }
+    return (
+        <Section title="Toutes les autres données" icon={<Database size={15} />}>
+            {sections.map(([cle, rows]) => (
+                <details key={cle} className="rounded-lg border px-3 py-2" style={{ borderColor: 'var(--panel-border)' }}>
+                    <summary className="cursor-pointer text-xs font-bold text-[var(--panel-text)]">
+                        {LIBELLES_SECTIONS[cle] || cle} <span className="text-[var(--panel-text-muted)]">({rows.length})</span>
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                        {rows.map((r, i) => (
+                            <dl key={i} className="grid grid-cols-[minmax(90px,150px)_1fr] gap-x-3 gap-y-0.5 border-t pt-2 text-[11px]" style={{ borderColor: 'var(--panel-border)' }}>
+                                {Object.entries(r).filter(([k]) => !/(token|secret|password|signature_hash|qr_data)$/i.test(k)).map(([k, v]) => (
+                                    <div key={k} className="contents">
+                                        <dt className="font-mono text-[var(--panel-text-muted)] truncate">{k}</dt>
+                                        <dd className="break-words text-[var(--panel-text)]">{val(v)}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        ))}
+                    </div>
+                </details>
+            ))}
+        </Section>
+    )
+}
+
+/* ─────────────────────────────────────────────────────────
+   Collecte automatique : état, rapport, historique, relance.
+───────────────────────────────────────────────────────── */
+function CollectePanel({ onActualise }: { onActualise: () => void }) {
+    const [etat, setEtat] = useState<EtatCollecte | null>(null)
+    const [historique, setHistorique] = useState<{ nom: string; taille: number }[]>([])
+    const [charge, setCharge] = useState(true)
+    const [enCours, setEnCours] = useState(false)
+    const [message, setMessage] = useState('')
+    const [ouvert, setOuvert] = useState(false)
+
+    const lire = useCallback(async () => {
+        try {
+            const res = await fetch('/api/admin/backup/collecte', { headers: await authHeaders(), cache: 'no-store' })
+            const json = await res.json()
+            if (res.ok) { setEtat(json.manifeste); setHistorique(json.historique || []) }
+        } finally { setCharge(false) }
+    }, [])
+    useEffect(() => { lire() }, [lire])
+
+    const actualiser = async () => {
+        setEnCours(true); setMessage('')
+        try {
+            const res = await fetch('/api/admin/backup/collecte', { method: 'POST', headers: await authHeaders() })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(json.error || 'Collecte impossible')
+            setMessage(`${json.reconstruits} dossier(s) rangé(s), ${json.inchanges} déjà à jour${json.en_attente ? `, ${json.en_attente} en attente (relancez)` : ''}${json.erreurs?.length ? ` — ${json.erreurs.length} erreur(s)` : ''}.`)
+            await lire(); onActualise()
+        } catch (e) {
+            setMessage(e instanceof Error ? e.message : 'Collecte impossible')
+        } finally { setEnCours(false) }
+    }
+
+    const telecharger = async (nom: string) => {
+        const jour = nom.slice(0, 10)
+        const res = await fetch(`/api/admin/backup/collecte?historique=${jour}`, { headers: await authHeaders() })
+        const json = await res.json().catch(() => ({}))
+        if (res.ok && json.url) window.location.href = json.url
+        else setMessage(json.error || 'Téléchargement impossible')
+    }
+
+    const erreurs = etat?.rapport.filter(r => r.erreur) || []
+    const nonRatt = Object.values(etat?.non_rattachees || {}).reduce((n, v) => n + v, 0)
+    const depuis = etat ? (Date.now() - new Date(etat.derniere_collecte).getTime()) / 3_600_000 : null
+    const perime = depuis !== null && depuis > 30
+
+    return (
+        <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--panel-border)', background: 'var(--panel-surface)' }}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                        <ShieldCheck size={18} weight="fill" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-[var(--panel-text)]"><T>Collecte automatique</T></p>
+                        {charge ? (
+                            <p className="text-xs text-[var(--panel-text-muted)]">…</p>
+                        ) : etat ? (
+                            <p className="text-xs text-[var(--panel-text-muted)]">
+                                <T>Chaque nuit à 02h00 (heure du Bénin).</T>{' '}
+                                <T>Dernière :</T> <span className={perime ? 'font-bold text-amber-400' : 'font-bold text-[var(--panel-text)]'}>{new Date(etat.derniere_collecte).toLocaleString('fr-FR')}</span>
+                                {' · '}{etat.origine === 'nuit' ? 'automatique' : 'manuelle'} · {etat.clients} <T>dossiers rangés</T> · {Math.round(etat.duree_ms / 1000)} s
+                            </p>
+                        ) : (
+                            <p className="text-xs text-amber-400"><T>Aucune collecte encore effectuée. Lancez la première maintenant.</T></p>
+                        )}
+                    </div>
+                </div>
+                <button onClick={actualiser} disabled={enCours}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-black text-[var(--panel-text)] transition-colors hover:bg-white/5 disabled:opacity-50"
+                    style={{ borderColor: 'var(--panel-border)' }}>
+                    {enCours ? <Spinner size={15} className="animate-spin" /> : <ArrowsClockwise size={15} weight="bold" />}
+                    {enCours ? <T>Collecte en cours (jusqu’à 4 min)…</T> : <T>Actualiser maintenant</T>}
+                </button>
+            </div>
+
+            {message && <p className="mt-3 text-xs font-semibold text-[var(--panel-text)]">{message}</p>}
+
+            {etat && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
+                    {erreurs.length === 0
+                        ? <span className="rounded-lg bg-emerald-500/10 px-2 py-1 text-emerald-400">{etat.rapport.length} <T>sources lues sans erreur</T></span>
+                        : <span className="rounded-lg bg-red-500/10 px-2 py-1 text-red-400">{erreurs.length} <T>source(s) illisible(s)</T> : {erreurs.map(e => e.table).join(', ')}</span>}
+                    {etat.non_couvertes.length > 0 && (
+                        <span className="rounded-lg bg-red-500/10 px-2 py-1 text-red-400"><T>Tables non couvertes</T> : {etat.non_couvertes.map(t => t.table).join(', ')}</span>
+                    )}
+                    {etat.en_attente > 0 && <span className="rounded-lg bg-amber-500/10 px-2 py-1 text-amber-400">{etat.en_attente} <T>dossier(s) en attente</T></span>}
+                    {etat.fichiers_manquants > 0 && <span className="rounded-lg bg-amber-500/10 px-2 py-1 text-amber-400">{etat.fichiers_manquants} <T>fichier(s) introuvable(s) dans le stockage</T></span>}
+                    {nonRatt > 0 && <span className="rounded-lg bg-white/5 px-2 py-1 text-[var(--panel-text-muted)]">{nonRatt} <T>ligne(s) sans client, conservées à part</T></span>}
+                    {etat.erreurs.length > 0 && <span className="rounded-lg bg-red-500/10 px-2 py-1 text-red-400">{etat.erreurs.length} <T>erreur(s) de rangement</T></span>}
+                    <button onClick={() => setOuvert(o => !o)} className="rounded-lg px-2 py-1 text-[var(--panel-accent)] hover:underline">
+                        {ouvert ? <T>Masquer le détail</T> : <T>Voir le détail</T>}
+                    </button>
+                </div>
+            )}
+
+            {etat && ouvert && (
+                <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_260px]">
+                    <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--panel-border)' }}>
+                        <table className="w-full text-[11px]">
+                            <thead>
+                                <tr className="text-left text-[var(--panel-text-muted)]">
+                                    <th className="px-3 py-2"><T>Donnée</T></th><th className="px-2 py-2"><T>Lues</T></th>
+                                    <th className="px-2 py-2"><T>Rattachées</T></th><th className="px-2 py-2"><T>Sans client</T></th><th className="px-2 py-2"><T>État</T></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {etat.rapport.map(r => (
+                                    <tr key={r.table} className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                                        <td className="px-3 py-1.5 text-[var(--panel-text)]">{r.libelle}<span className="block font-mono text-[9px] text-[var(--panel-text-muted)]">{r.table}</span></td>
+                                        <td className="px-2 py-1.5 text-[var(--panel-text)]">{r.lues}</td>
+                                        <td className="px-2 py-1.5 text-[var(--panel-text)]">{r.rattachees}</td>
+                                        <td className="px-2 py-1.5 text-[var(--panel-text-muted)]">{r.non_rattachees || '—'}</td>
+                                        <td className="px-2 py-1.5">{r.erreur
+                                            ? <span className="text-red-400">{r.erreur}</span>
+                                            : r.lues === r.rattachees + r.non_rattachees ? <span className="text-emerald-400">complet</span> : <span className="text-red-400">écart</span>}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-[var(--panel-text)]">
+                            <ClockCounterClockwise size={14} /> <T>Instantanés quotidiens</T>
+                        </p>
+                        <p className="mb-2 text-[11px] text-[var(--panel-text-muted)]"><T>Toutes les données, telles qu’elles étaient ce jour-là. Conservés 30 jours.</T></p>
+                        <div className="max-h-64 space-y-1 overflow-y-auto">
+                            {historique.length === 0 && <p className="text-[11px] text-[var(--panel-text-muted)]">—</p>}
+                            {historique.map(h => (
+                                <button key={h.nom} onClick={() => telecharger(h.nom)}
+                                    className="flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-[11px] hover:bg-white/5"
+                                    style={{ borderColor: 'var(--panel-border)' }}>
+                                    <span className="font-mono text-[var(--panel-text)]">{h.nom.slice(0, 10)}</span>
+                                    <span className="flex items-center gap-1 text-[var(--panel-text-muted)]">{Math.max(1, Math.round(h.taille / 1024))} Ko <DownloadSimple size={12} /></span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

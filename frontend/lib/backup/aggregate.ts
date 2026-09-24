@@ -1,20 +1,26 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SAUVEGARDE CLIENT — Agrégation robuste multi-tables
+   SAUVEGARDE CLIENT — Agrégation multi-tables, sans perte silencieuse
 
    Objectif : rassembler, pour CHAQUE client reçu depuis le début (qu'il ait
    un compte ou non), ABSOLUMENT tout ce qui le concerne, réparti dans une
    base hétérogène où la liaison se fait tantôt par `client_id`, tantôt par
-   e-mail (`client_email`, `email`, `customer_email`…).
+   e-mail, tantôt par une table parente (un billet appartient à une
+   inscription, une ligne de proposition à une proposition…).
 
-   Principe : on charge chaque table UNE fois (best-effort, tolérant aux
-   colonnes/tables absentes), puis on répartit chaque ligne vers le bon client
-   via une identité résolue (id de compte prioritaire, sinon e-mail normalisé).
-   Les clients sans compte sont créés comme « orphelins » à partir des lignes
-   qui portent leur e-mail (dossiers, demandes de nationalité, commandes…).
+   Trois garanties, vérifiables dans le rapport de collecte :
 
-   Aucune donnée n'est omise : chaque ligne brute est conservée telle quelle.
+   1. AUCUNE TRONCATURE. PostgREST plafonne une réponse à 1000 lignes quel
+      que soit le `limit` demandé : chaque table est lue PAR PAGES jusqu'au
+      bout.
+   2. AUCUNE ERREUR AVALÉE. Une table illisible (renommée, droits, colonne
+      absente) apparaît dans le rapport avec son message, au lieu de
+      disparaître de la sauvegarde sans que personne le sache.
+   3. CONSERVATION DES LIGNES. Pour chaque table : lues = rattachées + non
+      rattachées. Les lignes qu'aucun client ne réclame ne sont pas jetées :
+      elles sont exportées à part (« _NON RATTACHÉES »).
 ═══════════════════════════════════════════════════════════════════════ */
 
 export function getAdminClient(): SupabaseClient {
@@ -25,14 +31,32 @@ export function getAdminClient(): SupabaseClient {
 
 const norm = (e?: unknown): string => (typeof e === 'string' ? e : '').trim().toLowerCase()
 
+/**
+ * Téléphone ramené à ses 9 derniers chiffres : « +229 97 20 00 09 »,
+ * « 0022997200009 » et « 97200009 » désignent la même ligne. En dessous de
+ * 8 chiffres, ce n'est pas un numéro exploitable (saisie tronquée) : ignoré.
+ */
+const telCle = (v?: unknown): string => {
+    const chiffres = String(v ?? '').replace(/\D/g, '')
+    return chiffres.length >= 8 ? chiffres.slice(-9) : ''
+}
+
+/** Mots d'un nom, sans accents ni casse, pour comparer « MONPIERRE Aymeric ». */
+const mots = (v?: unknown): string[] => String(v ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .split(/[^a-z0-9]+/).filter(m => m.length >= 2)
+
 /** Champs candidats pour résoudre l'identité d'une ligne. */
 const ID_FIELDS = ['client_id', 'user_id', 'profile_id', 'owner_id']
 const EMAIL_FIELDS = ['client_email', 'email', 'customer_email', 'contact_email', 'user_email']
-const NOM_FIELDS = ['client_nom', 'nom', 'customer_name', 'name', 'full_name', 'lastname']
-const PRENOM_FIELDS = ['client_prenom', 'prenom', 'firstname']
-const PHONE_FIELDS = ['client_phone', 'phone', 'client_whatsapp', 'whatsapp', 'telephone', 'tel']
+const NOM_FIELDS = ['client_nom', 'nom', 'customer_name', 'client_name', 'name', 'full_name', 'lastname', 'client_last_name']
+const PRENOM_FIELDS = ['client_prenom', 'prenom', 'firstname', 'client_first_name']
+const PHONE_FIELDS = ['client_phone', 'phone', 'client_whatsapp', 'whatsapp', 'telephone', 'tel', 'customer_phone']
 
-type Row = Record<string, unknown>
+/** Rôles internes : un compte d'équipe n'est pas un client. */
+const ROLES_EQUIPE = ['admin', 'super_admin', 'superadmin', 'agent', 'staff']
+
+export type Row = Record<string, unknown>
 
 function pick(row: Row, fields: string[]): string {
     for (const f of fields) {
@@ -43,29 +67,120 @@ function pick(row: Row, fields: string[]): string {
     return ''
 }
 
-/** Tables agrégées, avec la clé de section retournée au client. */
-const CLIENT_TABLES: { table: string; key: string }[] = [
-    { table: 'dossier_tracking', key: 'dossiers' },
-    { table: 'nationality_applications', key: 'nationalite' },
-    { table: 'nationality_documents', key: 'nationalite_documents' },
-    { table: 'orders', key: 'commandes' },
-    { table: 'order_tracking_events', key: 'commandes_suivi' },
-    { table: 'documents_financiers', key: 'documents_financiers' }, // factures + devis + avoirs (type)
-    { table: 'invoices', key: 'invoices' },
-    { table: 'paiements', key: 'paiements' },
-    { table: 'paiements_manuels', key: 'paiements_manuels' },
-    { table: 'messages', key: 'messages' },
-    { table: 'rdv_requests', key: 'rendez_vous' },
-    { table: 'client_documents', key: 'documents' },
-    { table: 'logement_leads', key: 'logements' },
-    { table: 'event_registrations', key: 'evenements' },
-    { table: 'event_tickets', key: 'evenements_billets' },
-    { table: 'contracts', key: 'contrats' },
-    { table: 'ai_client_proposals', key: 'devis_smart' },
-    { table: 'client_signatures', key: 'signatures' },
-    { table: 'client_classement', key: 'classement' },
-    { table: 'eligibility_results', key: 'eligibilite' },
-    { table: 'recherche_ancestrale', key: 'recherche_ancestrale' },
+/**
+ * Une source de données client.
+ *
+ * · directe : la ligne porte l'identité (id de compte ou e-mail) ;
+ * · enfant  : la ligne n'a pas d'identité propre, elle suit son parent
+ *   (`parent.section` déjà réparti, relié par `parent.fk` → `id`) ;
+ * · `orphelins: false` : la source rattache aux clients CONNUS sans en créer
+ *   (un e-mail de journal d'envoi ou d'abonné newsletter ne fait pas, à lui
+ *   seul, un client).
+ */
+export interface Source {
+    table: string
+    section: string
+    libelle: string
+    emailFields?: string[]
+    parent?: { section: string; fk: string }
+    orphelins?: boolean
+    /**
+     * Dernier recours : colonne contenant le NOM du client (ex. « Plan de
+     * famille MONPIERRE Aymeric »). Rattache seulement si UN SEUL client a son
+     * nom ET son prénom dedans — sinon la ligne reste non rattachée plutôt que
+     * d'être attribuée au hasard.
+     */
+    nomDans?: string
+}
+
+/** L'ordre compte : un parent est toujours lu avant ses enfants. */
+export const SOURCES: Source[] = [
+    // ── Démarches et services ─────────────────────────────────────
+    { table: 'dossier_tracking', section: 'dossiers', libelle: 'Dossiers de suivi' },
+    { table: 'nationality_applications', section: 'nationalite', libelle: 'Demandes de nationalité' },
+    { table: 'nationality_requests', section: 'nationalite_contacts', libelle: 'Prises de contact nationalité' },
+    { table: 'myafro_recap_requests', section: 'recaps_myafro', libelle: 'Récaps MyAfroOrigins' },
+    { table: 'logement_leads', section: 'logements', libelle: 'Demandes de logement' },
+    { table: 'tourism_itineraries', section: 'itineraires', libelle: 'Itinéraires de séjour' },
+    { table: 'slide_proposals', section: 'propositions_sejour', libelle: 'Propositions de séjour' },
+    { table: 'eligibility_results', section: 'eligibilite', libelle: 'Tests d’éligibilité' },
+    { table: 'client_classement', section: 'classement', libelle: 'Classement / suivi commercial' },
+    { table: 'trees', section: 'genealogie_arbres', libelle: 'Arbres généalogiques', nomDans: 'name' },
+    { table: 'dossiers', section: 'genealogie_dossiers', libelle: 'Dossiers généalogie', orphelins: false },
+
+    // ── Argent : devis, factures, paiements, commandes ───────────
+    { table: 'documents_financiers', section: 'documents_financiers', libelle: 'Factures, devis et avoirs' },
+    { table: 'invoices', section: 'invoices', libelle: 'Factures (ancienne table)', emailFields: ['sent_to_email'] },
+    { table: 'ai_client_proposals', section: 'devis_smart', libelle: 'Devis intelligents' },
+    { table: 'agent_devis', section: 'devis_agent', libelle: 'Devis d’agent' },
+    { table: 'payment_links', section: 'liens_paiement', libelle: 'Liens de paiement' },
+    { table: 'paiements', section: 'paiements', libelle: 'Paiements en ligne' },
+    { table: 'orders', section: 'commandes', libelle: 'Commandes boutique' },
+    { table: 'contracts', section: 'contrats', libelle: 'Contrats' },
+    { table: 'client_signatures', section: 'signatures', libelle: 'Signatures enregistrées', orphelins: false },
+
+    // ── Rendez-vous, événements ──────────────────────────────────
+    { table: 'rdv_requests', section: 'rendez_vous', libelle: 'Demandes de rendez-vous' },
+    { table: 'appointments', section: 'rendez_vous_agenda', libelle: 'Rendez-vous planifiés' },
+    { table: 'event_registrations', section: 'evenements', libelle: 'Inscriptions aux événements' },
+
+    // ── Échanges ─────────────────────────────────────────────────
+    { table: 'messages', section: 'messages', libelle: 'Conversations' },
+    { table: 'voice_messages', section: 'messages_vocaux', libelle: 'Messages vocaux' },
+    { table: 'calls', section: 'appels', libelle: 'Appels' },
+    { table: 'support_sessions', section: 'support', libelle: 'Sessions d’assistance' },
+    { table: 'client_notifications', section: 'notifications_client', libelle: 'Notifications (e-mail)', orphelins: false },
+    { table: 'notifications', section: 'notifications', libelle: 'Notifications (application)', orphelins: false },
+    { table: 'email_logs', section: 'emails_envoyes', libelle: 'E-mails envoyés', emailFields: ['to_email'], orphelins: false },
+    { table: 'newsletter_subscribers', section: 'newsletter', libelle: 'Newsletter', orphelins: false },
+    { table: 'nationality_invitation_codes', section: 'codes_invitation', libelle: 'Codes d’invitation utilisés', emailFields: ['utilise_par_email'], orphelins: false },
+    { table: 'product_reviews', section: 'avis_produits', libelle: 'Avis produits', emailFields: ['reviewer_email'], orphelins: false },
+    { table: 'fa_priest_reviews', section: 'avis_fa', libelle: 'Avis prêtres Fa', emailFields: ['author_email'], orphelins: false },
+
+    // ── Pièces ───────────────────────────────────────────────────
+    { table: 'client_documents', section: 'documents', libelle: 'Pièces déposées' },
+
+    // ── Enfants : suivent leur parent ────────────────────────────
+    { table: 'order_tracking_events', section: 'commandes_suivi', libelle: 'Suivi des commandes', parent: { section: 'commandes', fk: 'order_id' } },
+    { table: 'event_tickets', section: 'evenements_billets', libelle: 'Billets', parent: { section: 'evenements', fk: 'registration_id' } },
+    { table: 'ai_proposal_items', section: 'devis_smart_lignes', libelle: 'Lignes des devis intelligents', parent: { section: 'devis_smart', fk: 'proposal_id' } },
+    { table: 'proposal_views', section: 'devis_smart_vues', libelle: 'Consultations des devis', parent: { section: 'devis_smart', fk: 'proposal_id' } },
+    { table: 'proposal_assistant_messages', section: 'devis_smart_assistant', libelle: 'Échanges avec l’assistant du devis', parent: { section: 'devis_smart', fk: 'proposal_id' } },
+    { table: 'paiements_manuels', section: 'paiements_manuels', libelle: 'Encaissements enregistrés', parent: { section: 'documents_financiers', fk: 'document_id' } },
+    { table: 'dossier_documents', section: 'dossiers_pieces', libelle: 'Pièces des dossiers', parent: { section: 'dossiers', fk: 'dossier_id' } },
+    { table: 'documents', section: 'dossiers_pieces_anciennes', libelle: 'Pièces des dossiers (ancienne table)', parent: { section: 'dossiers', fk: 'dossier_id' } },
+    { table: 'persons', section: 'genealogie_personnes', libelle: 'Personnes de l’arbre', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'unions', section: 'genealogie_unions', libelle: 'Unions', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'parent_child', section: 'genealogie_filiations', libelle: 'Filiations', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'person_facts', section: 'genealogie_faits', libelle: 'Faits établis', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'genealogy_documents', section: 'genealogie_documents', libelle: 'Documents généalogiques', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'person_comments', section: 'genealogie_commentaires', libelle: 'Commentaires sur l’arbre', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+    { table: 'tree_collaborators', section: 'genealogie_collaborateurs', libelle: 'Collaborateurs de l’arbre', parent: { section: 'genealogie_arbres', fk: 'tree_id' } },
+]
+
+/**
+ * Tables écartées VOLONTAIREMENT, avec la raison. Elles figurent dans le
+ * rapport : « absent de la sauvegarde » doit toujours être une décision
+ * écrite, jamais un oubli.
+ */
+export const EXCLUSIONS: { table: string; raison: string }[] = [
+    { table: 'account_deletion_codes', raison: 'Codes de sécurité à usage unique' },
+    { table: 'totp_secrets', raison: 'Secrets d’authentification — ne doivent jamais sortir de la base' },
+    { table: 'waf_trusted_ips', raison: 'Données de sécurité du pare-feu' },
+    { table: 'user_profiles', raison: 'Comptes de l’équipe, pas des clients' },
+    { table: 'audit_compta', raison: 'Journal interne de la comptabilité' },
+    { table: 'genealogy_audit_log', raison: 'Journal interne de la généalogie' },
+    { table: 'ai_prospection_leads', raison: 'Prospects jamais devenus clients' },
+    { table: 'business_cards', raison: 'Cartes de visite de l’équipe' },
+    { table: 'partners', raison: 'Partenaires, pas des clients' },
+    { table: 'partner_applications', raison: 'Candidatures de partenaires' },
+    { table: 'driving_schools', raison: 'Auto-écoles partenaires' },
+    { table: 'fa_priests', raison: 'Prêtres Fa partenaires' },
+    { table: 'social_analyses', raison: 'Analyses de réseaux sociaux (prospection)' },
+    { table: 'v_dossiers_payes_sans_facture', raison: 'Vue de contrôle, recalculée depuis les tables sauvegardées' },
+    { table: 'chat_messages', raison: 'Lu séparément : rattaché aux conversations (section Discussions)' },
+    { table: 'client_profiles', raison: 'Lu séparément : source de l’identité des clients' },
+    { table: 'profiles', raison: 'Lu séparément : source de l’identité des clients' },
 ]
 
 export interface ClientRecord {
@@ -79,11 +194,10 @@ export interface ClientRecord {
     pays: string
     created_at: string | null
     hasAccount: boolean
-    /** e-mails supplémentaires rattachés à ce client. */
     profile: Row | null
     /** Toutes les sections de données brutes, par clé. */
     data: Record<string, Row[]>
-    /** Fil de discussion (chat_messages) par thread. */
+    /** Fil de discussion (chat_messages) par conversation. */
     discussions: { thread: Row; messages: Row[] }[]
 }
 
@@ -115,23 +229,100 @@ export interface ClientSummary {
     services: string[]
 }
 
-async function safeSelectAll(sb: SupabaseClient, table: string): Promise<Row[]> {
+/** Une ligne du rapport de collecte. */
+export interface LigneRapport {
+    table: string
+    libelle: string
+    lues: number
+    rattachees: number
+    non_rattachees: number
+    erreur?: string
+}
+
+export interface Collecte {
+    clients: ClientRecord[]
+    rapport: LigneRapport[]
+    /** Lignes lues qu'aucun client ne réclame, par table : conservées, pas jetées. */
+    nonRattachees: Record<string, Row[]>
+    exclusions: typeof EXCLUSIONS
+    /** Tables porteuses d'une identité client ni collectées ni exclues : un oubli à corriger. */
+    nonCouvertes: { table: string; colonnes: string[] }[]
+    duree_ms: number
+    genere_le: string
+}
+
+const PAGE = 1000
+
+/**
+ * Tables de la base qui portent une identité client (e-mail, id de compte,
+ * téléphone) sans être ni collectées ni écartées par décision écrite.
+ *
+ * C'est le garde-fou contre l'oubli FUTUR : une table ajoutée demain pour un
+ * nouveau service apparaîtra ici — et dans le panel — tant qu'elle n'aura
+ * pas été déclarée dans SOURCES ou EXCLUSIONS.
+ */
+export async function tablesNonCouvertes(): Promise<{ table: string; colonnes: string[] }[]> {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) return []
     try {
-        const { data, error } = await sb.from(table).select('*').limit(20000)
-        if (error) return []
-        return (data as Row[]) || []
+        const res = await fetch(`${url}/rest/v1/`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: 'no-store' })
+        if (!res.ok) return []
+        const spec = await res.json() as { definitions?: Record<string, { properties?: Record<string, unknown> }> }
+        const connues = new Set([...SOURCES.map(x => x.table), ...EXCLUSIONS.map(x => x.table)])
+        const identite = /(^|_)(email|mail|client_id|user_id|profile_id|customer_id|phone|telephone|whatsapp)$/i
+        const out: { table: string; colonnes: string[] }[] = []
+        for (const [table, def] of Object.entries(spec.definitions || {})) {
+            if (connues.has(table)) continue
+            const colonnes = Object.keys(def.properties || {}).filter(c => identite.test(c))
+            if (colonnes.length) out.push({ table, colonnes })
+        }
+        return out.sort((a, b) => a.table.localeCompare(b.table))
     } catch {
         return []
     }
 }
 
+/**
+ * Lit une table ENTIÈRE, page par page.
+ *
+ * Tri par `id` pour que la pagination soit stable (sans tri, deux pages
+ * peuvent se chevaucher ou sauter des lignes). Une table sans `id` est relue
+ * sans tri, en le signalant.
+ */
+export async function lireTable(sb: SupabaseClient, table: string): Promise<{ rows: Row[]; erreur?: string }> {
+    const rows: Row[] = []
+    let avecTri = true
+    for (let from = 0; ; from += PAGE) {
+        let q = sb.from(table).select('*')
+        if (avecTri) q = q.order('id', { ascending: true })
+        const { data, error } = await q.range(from, from + PAGE - 1)
+        if (error) {
+            if (avecTri && from === 0 && /id/.test(error.message)) { avecTri = false; from -= PAGE; continue }
+            return { rows, erreur: error.message }
+        }
+        const page = (data as Row[]) || []
+        rows.push(...page)
+        if (page.length < PAGE) break
+        // Garde-fou : une table cliente à plus de 200 000 lignes est anormale.
+        if (rows.length >= 200_000) return { rows, erreur: 'Lecture interrompue à 200 000 lignes' }
+    }
+    return { rows }
+}
+
 /** Charge tous les clients (comptes + orphelins) avec toutes leurs données. */
-export async function loadAllClients(sb: SupabaseClient): Promise<ClientRecord[]> {
-    // 1) Comptes clients (source canonique)
-    const profiles = await safeSelectAll(sb, 'client_profiles')
+export async function collecter(sb: SupabaseClient): Promise<Collecte> {
+    const debut = Date.now()
+    const rapport: LigneRapport[] = []
+    const nonRattachees: Record<string, Row[]> = {}
 
     const byId = new Map<string, ClientRecord>()
     const byEmail = new Map<string, ClientRecord>()
+    const byTel = new Map<string, ClientRecord>()
+    const indexerTel = (rec: ClientRecord, tel?: unknown) => {
+        const k = telCle(tel)
+        if (k && !byTel.has(k)) byTel.set(k, rec)
+    }
 
     const makeRecord = (base: Partial<ClientRecord>): ClientRecord => ({
         id: base.id ?? null,
@@ -148,34 +339,61 @@ export async function loadAllClients(sb: SupabaseClient): Promise<ClientRecord[]
         discussions: [],
     })
 
-    for (const p of profiles) {
-        const email = norm(p.email)
-        const rec = makeRecord({
-            id: (p.id as string) || null,
-            email,
-            nom: pick(p, NOM_FIELDS),
-            prenom: pick(p, PRENOM_FIELDS),
-            phone: pick(p, PHONE_FIELDS),
-            ville: (p.ville as string) || (p.city as string) || '',
-            pays: (p.pays as string) || (p.country as string) || '',
-            created_at: (p.created_at as string) || null,
-            hasAccount: true,
-            profile: p,
+    // 1) Comptes clients. `client_profiles` d'abord (source canonique), puis
+    //    `profiles` pour les comptes qui n'y figurent pas — l'équipe exclue.
+    for (const [table, estEquipe] of [
+        ['client_profiles', () => false],
+        ['profiles', (p: Row) => ROLES_EQUIPE.includes(norm(p.role))],
+    ] as const) {
+        const { rows, erreur } = await lireTable(sb, table)
+        let pris = 0
+        for (const p of rows) {
+            if (estEquipe(p)) continue
+            const email = norm(p.email)
+            const id = (p.id as string) || null
+            const existant = (id && byId.get(id)) || (email && byEmail.get(email))
+            if (existant) {
+                // Même personne vue dans les deux tables : on complète.
+                if (!existant.phone) existant.phone = pick(p, PHONE_FIELDS)
+                if (!existant.ville) existant.ville = (p.ville as string) || ''
+                if (id && !byId.has(id)) byId.set(id, existant)
+                pris++
+                continue
+            }
+            const rec = makeRecord({
+                id,
+                email,
+                nom: pick(p, NOM_FIELDS),
+                prenom: pick(p, PRENOM_FIELDS),
+                phone: pick(p, PHONE_FIELDS),
+                ville: (p.ville as string) || (p.city as string) || '',
+                pays: (p.pays as string) || (p.country as string) || '',
+                created_at: (p.created_at as string) || null,
+                hasAccount: true,
+                profile: p,
+            })
+            if (id) byId.set(id, rec)
+            if (email) byEmail.set(email, rec)
+            indexerTel(rec, rec.phone)
+            pris++
+        }
+        rapport.push({
+            table, libelle: table === 'client_profiles' ? 'Comptes clients' : 'Profils (comptes)',
+            lues: rows.length, rattachees: pris, non_rattachees: rows.length - pris, erreur,
         })
-        if (rec.id) byId.set(rec.id, rec)
-        if (email) byEmail.set(email, rec)
     }
 
     // Trouve (ou crée) le client d'une ligne selon son identité.
-    const resolve = (row: Row): ClientRecord | null => {
+    const resolve = (row: Row, src: Source): ClientRecord | null => {
         for (const f of ID_FIELDS) {
             const v = row[f]
             if (typeof v === 'string' && byId.has(v)) return byId.get(v)!
         }
-        for (const f of EMAIL_FIELDS) {
+        for (const f of src.emailFields || EMAIL_FIELDS) {
             const e = norm(row[f])
-            if (!e) continue
+            if (!e || !e.includes('@')) continue
             if (byEmail.has(e)) return byEmail.get(e)!
+            if (src.orphelins === false) continue
             // Orphelin : client sans compte, reconstruit depuis la ligne.
             const rec = makeRecord({
                 id: null,
@@ -187,31 +405,86 @@ export async function loadAllClients(sb: SupabaseClient): Promise<ClientRecord[]
                 hasAccount: false,
             })
             byEmail.set(e, rec)
+            indexerTel(rec, rec.phone)
             return rec
+        }
+        /* Pas d'e-mail exploitable (effacé au titre du RGPD, jamais saisi) :
+           le téléphone identifie encore la personne. */
+        for (const f of PHONE_FIELDS) {
+            const k = telCle(row[f])
+            if (!k) continue
+            if (byTel.has(k)) return byTel.get(k)!
+            if (src.orphelins === false) continue
+            const rec = makeRecord({
+                id: null,
+                email: '',
+                nom: pick(row, NOM_FIELDS),
+                prenom: pick(row, PRENOM_FIELDS),
+                phone: pick(row, PHONE_FIELDS),
+                created_at: (row.created_at as string) || null,
+                hasAccount: false,
+            })
+            byTel.set(k, rec)
+            return rec
+        }
+        if (src.nomDans) {
+            const dans = new Set(mots(row[src.nomDans]))
+            if (dans.size) {
+                const candidats = new Set<ClientRecord>()
+                for (const rec of [...byId.values(), ...byEmail.values(), ...byTel.values()]) {
+                    const n = mots(rec.nom), p = mots(rec.prenom)
+                    if (n.length && p.length && [...n, ...p].every(m => dans.has(m))) candidats.add(rec)
+                }
+                if (candidats.size === 1) return [...candidats][0]
+            }
         }
         return null
     }
 
-    // 2) Répartition de chaque table vers son client.
-    for (const { table, key } of CLIENT_TABLES) {
-        const rows = await safeSelectAll(sb, table)
+    /* Index des lignes parentes déjà réparties : section → id → client. Un
+       enfant (billet, ligne de devis, personne d'un arbre) suit son parent. */
+    const parents = new Map<string, Map<string, ClientRecord>>()
+
+    // 2) Répartition de chaque source vers son client.
+    for (const src of SOURCES) {
+        const { rows, erreur } = await lireTable(sb, src.table)
+        let pris = 0
+        const index = new Map<string, ClientRecord>()
         for (const row of rows) {
-            const rec = resolve(row)
-            if (!rec) continue
-            if (!rec.data[key]) rec.data[key] = []
-            rec.data[key].push(row)
+            let rec: ClientRecord | null = null
+            if (src.parent) {
+                const fk = row[src.parent.fk]
+                if (fk !== null && fk !== undefined) rec = parents.get(src.parent.section)?.get(String(fk)) || null
+                // Repli : l'enfant porte parfois aussi l'identité (client_id…).
+                if (!rec) rec = resolve(row, { ...src, orphelins: false })
+            } else {
+                rec = resolve(row, src)
+            }
+            if (!rec) {
+                (nonRattachees[src.table] ||= []).push(row)
+                continue
+            }
+            pris++
+            ;(rec.data[src.section] ||= []).push(row)
+            if (row.id !== undefined && row.id !== null) index.set(String(row.id), rec)
             // Complète les infos d'un orphelin si vides.
             if (!rec.hasAccount) {
                 if (!rec.nom) rec.nom = pick(row, NOM_FIELDS)
                 if (!rec.prenom) rec.prenom = pick(row, PRENOM_FIELDS)
                 if (!rec.phone) rec.phone = pick(row, PHONE_FIELDS)
             }
+            indexerTel(rec, pick(row, PHONE_FIELDS))
         }
+        parents.set(src.section, index)
+        rapport.push({
+            table: src.table, libelle: src.libelle,
+            lues: rows.length, rattachees: pris, non_rattachees: rows.length - pris, erreur,
+        })
     }
 
-    // 3) Fils de discussion : chat_messages rattachés aux threads `messages`.
-    const chat = await safeSelectAll(sb, 'chat_messages')
-    if (chat.length) {
+    // 3) Fils de discussion : chat_messages rattachés aux conversations `messages`.
+    {
+        const { rows: chat, erreur } = await lireTable(sb, 'chat_messages')
         const byConversation = new Map<string, Row[]>()
         for (const m of chat) {
             const cid = (m.conversation_id as string) || ''
@@ -219,81 +492,102 @@ export async function loadAllClients(sb: SupabaseClient): Promise<ClientRecord[]
             if (!byConversation.has(cid)) byConversation.set(cid, [])
             byConversation.get(cid)!.push(m)
         }
-        const all = [...byId.values(), ...byEmail.values()]
-        const seen = new Set<ClientRecord>()
-        for (const rec of all) {
-            if (seen.has(rec)) continue
-            seen.add(rec)
-            const threads = rec.data['messages'] || []
-            for (const thread of threads) {
+        let pris = 0
+        const vus = new Set<ClientRecord>()
+        for (const rec of [...byId.values(), ...byEmail.values(), ...byTel.values()]) {
+            if (vus.has(rec)) continue
+            vus.add(rec)
+            for (const thread of rec.data['messages'] || []) {
                 const tid = (thread.id as string) || ''
                 const msgs = (byConversation.get(tid) || []).sort(
-                    (a, b) => String(a.created_at).localeCompare(String(b.created_at))
+                    (a, b) => String(a.created_at).localeCompare(String(b.created_at)),
                 )
+                pris += msgs.length
+                byConversation.delete(tid)
                 rec.discussions.push({ thread, messages: msgs })
             }
         }
+        const restants = [...byConversation.values()].flat()
+        if (restants.length) nonRattachees['chat_messages'] = restants
+        rapport.push({
+            table: 'chat_messages', libelle: 'Messages des conversations',
+            lues: chat.length, rattachees: pris, non_rattachees: restants.length, erreur,
+        })
     }
 
     // Déduplique (un compte peut être indexé par id ET email).
-    const unique = new Map<ClientRecord, true>()
-    const out: ClientRecord[] = []
-    for (const rec of [...byId.values(), ...byEmail.values()]) {
+    const unique = new Set<ClientRecord>()
+    const clients: ClientRecord[] = []
+    for (const rec of [...byId.values(), ...byEmail.values(), ...byTel.values()]) {
         if (unique.has(rec)) continue
-        unique.set(rec, true)
-        out.push(rec)
+        unique.add(rec)
+        clients.push(rec)
     }
 
     // Tri : comptes d'abord, puis par date de création décroissante.
-    out.sort((a, b) => {
+    clients.sort((a, b) => {
         if (a.hasAccount !== b.hasAccount) return a.hasAccount ? -1 : 1
         return String(b.created_at || '').localeCompare(String(a.created_at || ''))
     })
 
-    return out
+    return {
+        clients, rapport, nonRattachees, exclusions: EXCLUSIONS,
+        nonCouvertes: await tablesNonCouvertes(),
+        duree_ms: Date.now() - debut, genere_le: new Date().toISOString(),
+    }
+}
+
+/** Compatibilité : les appelants qui ne veulent que la liste des clients. */
+export async function loadAllClients(sb: SupabaseClient): Promise<ClientRecord[]> {
+    return (await collecter(sb)).clients
 }
 
 const countType = (rows: Row[] | undefined, type: string): number =>
     (rows || []).filter(r => String(r.type || '').toLowerCase() === type).length
 
+const len = (rows: Row[] | undefined) => rows?.length || 0
+
 /** Résumé léger pour la liste admin. */
 export function toSummary(rec: ClientRecord): ClientSummary {
     const d = rec.data
-    const factures = countType(d.documents_financiers, 'facture') + (d.invoices?.length || 0)
-    const devis = countType(d.documents_financiers, 'devis') + (d.devis_smart?.length || 0)
-    const paiements = (d.paiements?.length || 0) + (d.paiements_manuels?.length || 0)
+    const factures = countType(d.documents_financiers, 'facture') + len(d.invoices)
+    const devis = countType(d.documents_financiers, 'devis') + len(d.devis_smart) + len(d.devis_agent) + len(d.propositions_sejour)
+    const paiements = len(d.paiements) + len(d.paiements_manuels)
 
     const services: string[] = []
-    if ((d.dossiers?.length || 0) > 0) services.push('Dossiers')
-    if ((d.nationalite?.length || 0) > 0) services.push('Nationalité')
-    if ((d.logements?.length || 0) > 0) services.push('Logement')
-    if ((d.evenements?.length || 0) > 0) services.push('Événements')
-    if ((d.commandes?.length || 0) > 0) services.push('Boutique')
-    if ((d.recherche_ancestrale?.length || 0) > 0) services.push('Recherche ancestrale')
-    // Détection Fa / permis / auto-école via le libellé des dossiers & commandes.
+    if (len(d.dossiers)) services.push('Dossiers')
+    if (len(d.nationalite) || len(d.nationalite_contacts)) services.push('Nationalité')
+    if (len(d.recaps_myafro)) services.push('Récap MyAfroOrigins')
+    if (len(d.logements)) services.push('Logement')
+    if (len(d.evenements)) services.push('Événements')
+    if (len(d.commandes)) services.push('Boutique')
+    if (len(d.genealogie_arbres)) services.push('Généalogie')
+    if (len(d.itineraires) || len(d.propositions_sejour)) services.push('Séjour')
+    if (len(d.devis_smart)) services.push('Devis intelligent')
+    // Services identifiés par le libellé des dossiers & commandes.
     const blob = JSON.stringify([...(d.dossiers || []), ...(d.commandes || [])]).toLowerCase()
     if (blob.includes('fa') && (blob.includes('pretre') || blob.includes('prêtre') || blob.includes('consultation'))) services.push('Prêtres Fa')
     if (blob.includes('permis') || blob.includes('auto-ecole') || blob.includes('auto-école') || blob.includes('conduire')) services.push('Permis / Auto-école')
+    if (blob.includes('recherche ancestrale') || blob.includes('ancestral')) services.push('Recherche ancestrale')
 
     const counts = {
-        dossiers: d.dossiers?.length || 0,
-        nationalite: d.nationalite?.length || 0,
-        commandes: d.commandes?.length || 0,
+        dossiers: len(d.dossiers),
+        nationalite: len(d.nationalite),
+        commandes: len(d.commandes),
         factures,
         devis,
         paiements,
-        messages: rec.discussions.reduce((n, t) => n + t.messages.length, 0) + (d.messages?.length || 0),
-        rendez_vous: d.rendez_vous?.length || 0,
-        documents: d.documents?.length || 0,
-        logements: d.logements?.length || 0,
-        evenements: d.evenements?.length || 0,
-        contrats: d.contrats?.length || 0,
+        messages: rec.discussions.reduce((n, t) => n + t.messages.length, 0) + len(d.messages) + len(d.messages_vocaux),
+        rendez_vous: len(d.rendez_vous) + len(d.rendez_vous_agenda),
+        documents: len(d.documents) + len(d.dossiers_pieces) + len(d.dossiers_pieces_anciennes) + len(d.genealogie_documents),
+        logements: len(d.logements),
+        evenements: len(d.evenements),
+        contrats: len(d.contrats),
         total: 0,
     }
-    counts.total =
-        counts.dossiers + counts.nationalite + counts.commandes + counts.factures +
-        counts.devis + counts.paiements + counts.messages + counts.rendez_vous +
-        counts.documents + counts.logements + counts.evenements + counts.contrats
+    // Total = toutes les lignes rattachées, toutes sections confondues.
+    counts.total = Object.values(d).reduce((n, rows) => n + rows.length, 0)
+        + rec.discussions.reduce((n, t) => n + t.messages.length, 0)
 
     return {
         id: rec.id,
@@ -310,13 +604,49 @@ export function toSummary(rec: ClientRecord): ClientSummary {
     }
 }
 
+/**
+ * Empreinte d'un client : change dès qu'une seule de ses lignes change. Sert
+ * à ne reconstruire, la nuit, que les dossiers qui ont bougé.
+ */
+/**
+ * Version du FORMAT des dossiers. À incrémenter chaque fois que la manière de
+ * construire un dossier change (nouvelle section, correctif de lecture des
+ * pièces…) : toutes les empreintes changent, et la collecte suivante
+ * reconstruit chaque dossier au nouveau format — sans quoi un client dont
+ * les données n'ont pas bougé garderait une archive fabriquée par l'ancien
+ * code.
+ *   2 — pièces dont le libellé contient « : » (actes des ascendants) incluses.
+ */
+export const VERSION_FORMAT = 2
+
+export function empreinte(rec: ClientRecord): string {
+    const stable = (v: unknown): unknown => {
+        if (Array.isArray(v)) return v.map(stable)
+        if (v && typeof v === 'object') {
+            return Object.fromEntries(Object.keys(v as Row).sort().map(k => [k, stable((v as Row)[k])]))
+        }
+        return v
+    }
+    return createHash('sha256')
+        .update(JSON.stringify(stable({ v: VERSION_FORMAT, i: [rec.id, rec.email, rec.nom, rec.prenom, rec.phone], p: rec.profile, d: rec.data, c: rec.discussions })))
+        .digest('hex')
+}
+
 /** Clé stable pour identifier un client dans une URL (id de compte ou e-mail). */
 export function clientKey(rec: ClientRecord | ClientSummary): string {
-    return rec.id ? `id:${rec.id}` : `email:${rec.email}`
+    if (rec.id) return `id:${rec.id}`
+    if (rec.email) return `email:${rec.email}`
+    return `tel:${telCle(rec.phone)}`
+}
+
+/** Nom de fichier de stockage d'un client : ne porte pas son e-mail en clair. */
+export function cleStockage(rec: ClientRecord | ClientSummary): string {
+    return createHash('sha256').update(clientKey(rec)).digest('hex').slice(0, 32)
 }
 
 export function matchesKey(rec: ClientRecord, key: string): boolean {
     if (key.startsWith('id:')) return rec.id === key.slice(3)
-    if (key.startsWith('email:')) return norm(rec.email) === norm(key.slice(6))
+    if (key.startsWith('email:')) return !!rec.email && norm(rec.email) === norm(key.slice(6))
+    if (key.startsWith('tel:')) return !rec.id && !rec.email && telCle(rec.phone) === key.slice(4)
     return false
 }

@@ -74,3 +74,27 @@ export async function chargerDocSlots(
     }
     return DOC_SLOTS_DEFAUT
 }
+
+/**
+ * Lit une ligne de `nationality_applications.documents_uploaded`.
+ *
+ * Format : « clé:Libellé: nat-…/fichier.ext » (ou « Libellé: chemin » pour
+ * les anciennes lignes). ⚠️ Le LIBELLÉ peut lui-même contenir « : » —
+ * « Extrait de naissance : arrière-grand-père (côté paternel) ». Couper sur
+ * le PREMIER « : » donnait un faux chemin, et ces pièces disparaissaient du
+ * ZIP, de l'aperçu, de la sauvegarde et du nettoyage. On coupe donc sur le
+ * DERNIER « : nat- » (le chemin de stockage), et l'on ne retombe sur le
+ * premier « : » que pour les lignes d'échec (« Libellé: [Erreur…] »).
+ *
+ * `ok` : la ligne désigne un vrai fichier en stockage.
+ */
+export function lireLigneDocument(ligne: unknown): { cle: string; label: string; path: string; ok: boolean } | null {
+    const s = String(ligne ?? '')
+    let idx = s.lastIndexOf(': nat-')
+    const ok = idx !== -1
+    if (!ok) idx = s.indexOf(': ')
+    if (idx === -1) return null
+    const brut = s.slice(0, idx).trim()
+    const m = /^([a-z0-9_]+):(.+)$/.exec(brut)
+    return { cle: m ? m[1] : '', label: (m ? m[2] : brut).trim(), path: s.slice(idx + 2).trim(), ok }
+}

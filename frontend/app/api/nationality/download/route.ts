@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import JSZip from 'jszip';
+import { lireLigneDocument } from '@/lib/nationality-docs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -205,11 +206,11 @@ Généré par Retour Gagnant Bénin le ${new Date().toLocaleString('fr-FR')}
         let docsIncluded = 0;
         if (Array.isArray(app.documents_uploaded) && docsFolder) {
             for (const docLine of app.documents_uploaded) {
-                // Format: "Label du document: chemin/dans/storage.pdf"
-                const colonIdx = docLine.indexOf(': ');
-                if (colonIdx === -1) continue;
-                const label = docLine.substring(0, colonIdx).trim();
-                const storagePath = docLine.substring(colonIdx + 2).trim();
+                // Format: "clé:Libellé: chemin/dans/storage.pdf" — le libellé peut contenir « : ».
+                const lu = lireLigneDocument(docLine);
+                if (!lu) continue;
+                const label = lu.label;
+                const storagePath = lu.path;
                 if (!storagePath || storagePath.startsWith('[Erreur') || storagePath.includes('upload échoué')) continue;
 
                 try {

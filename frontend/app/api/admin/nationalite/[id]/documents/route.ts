@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import JSZip from 'jszip'
 import { requireStaff } from '@/lib/api-guard'
+import { lireLigneDocument } from '@/lib/nationality-docs'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -39,13 +40,9 @@ const typeOf = (ext: string) =>
                     : 'file'
 
 function parseLine(line: string): { label: string; path: string } | null {
-    const idx = line.indexOf(': ')
-    if (idx === -1) return null
-    const raw = line.slice(0, idx).trim()
-    const label = raw.includes(':') ? raw.split(':').slice(1).join(':').trim() : raw
-    const path = line.slice(idx + 2).trim()
-    if (!path.startsWith('nat-')) return null
-    return { label, path }
+    const lu = lireLigneDocument(line)
+    if (!lu?.ok) return null
+    return { label: lu.label, path: lu.path }
 }
 
 // GET : liste les pièces + RÉPARE les « .bin » (rename storage + DB) et renvoie
