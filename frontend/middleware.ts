@@ -1044,6 +1044,9 @@ export async function middleware(request: NextRequest) {
             const ADMIN_API_OUVERTES_AGENT = [
                 '/api/admin/myafro-recap',
                 '/api/admin/rattacher-facture',
+                // Onglet « Dossiers MyAfroOrigins » : identique admin / agent.
+                '/api/admin/documents',
+                '/api/admin/nationalite/preview',
             ]
             const ouverteAgent = isAdminApi
                 && ADMIN_API_OUVERTES_AGENT.some(prefixe => pathname.startsWith(prefixe))

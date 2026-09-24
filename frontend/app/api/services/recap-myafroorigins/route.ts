@@ -24,6 +24,7 @@ import { sendEmail, EMAIL_WRAPPER, emailInfoCard } from '@/lib/email'
 import { ouvrirDossier } from '@/lib/dossier-service'
 import { facturerPaiementService } from '@/lib/service-invoice'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { decodeMyafroToken } from '@/lib/nationality-token'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,6 +52,45 @@ async function tarifRecapXof(): Promise<{ xof: number | null; montant: number; d
     const devise = String(c.currency || 'EUR').toUpperCase()
     const brut = await toXOFStrict(montant, devise)
     return { xof: brut === null ? null : ttcFromHt(brut, 'XOF'), montant, devise }
+}
+
+/**
+ * Facture qui prouve le règlement préalable d'une reprise sur invitation.
+ *
+ * Le lien signé porte l'identifiant de la facture choisie par l'équipe ; on
+ * ne le croit pas sur parole pour autant. Au moment du dépôt, la facture doit
+ * toujours exister, être une facture payée, et ne justifier AUCUN autre
+ * dossier — sans quoi un même encaissement compterait deux fois.
+ *
+ * Renvoie la facture, ou le motif du refus (avec la référence existante
+ * quand le même client renvoie simplement sa demande).
+ */
+async function factureDeReprise(
+    invoiceId: string | null,
+    email: string,
+): Promise<{ id: string; numero: string } | { refus: string; reference?: string }> {
+    if (!invoiceId) return { refus: 'Ce lien ne mentionne aucune facture. Demandez un nouveau lien à votre conseiller.' }
+
+    const { data: f } = await supabase
+        .from('documents_financiers')
+        .select('id, numero, type, status, source_ref')
+        .eq('id', invoiceId)
+        .maybeSingle()
+    if (!f || f.type !== 'facture' || f.status !== 'paye') {
+        return { refus: 'Le règlement associé à ce lien est introuvable. Contactez votre conseiller.' }
+    }
+    if (f.source_ref) {
+        return { refus: 'Le règlement associé à ce lien justifie déjà un autre dossier. Contactez votre conseiller.' }
+    }
+
+    const { data: deja } = await supabase
+        .from('myafro_recap_requests').select('reference, email').eq('facture_id', f.id).limit(1)
+    if (deja && deja.length) {
+        // Même client qui renvoie : c'est un rejeu, pas une fraude.
+        if (String(deja[0].email || '').toLowerCase() === email) return { refus: '', reference: deja[0].reference }
+        return { refus: 'Ce lien a déjà servi. Demandez un nouveau lien à votre conseiller.' }
+    }
+    return { id: f.id, numero: f.numero }
 }
 
 /** Confronte la transaction à la passerelle PUIS au tarif. `null` = conforme. */
@@ -149,24 +189,50 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    // ── Preuve de paiement AVANT toute écriture ────────────────────
-    const tarif = await tarifRecapXof()
-    const refus = await refusPaiement(
-        String(body.payment_provider || ''),
-        String(body.payment_ref || ''),
-        tarif.xof,
-    )
-    if (refus) {
-        console.warn(`[recap-myafro] REFUS (${email}) : ${refus}`)
-        return NextResponse.json({ error: refus }, { status: 402 })
+    // ── Reprise sur invitation : lien signé depuis l'onglet MyAfroOrigins ──
+    //  Le jeton est vérifié (signature + expiration) côté serveur. S'il
+    //  annonce un règlement déjà fait, c'est la FACTURE qui en fait foi, pas
+    //  la case cochée par l'équipe.
+    const jetonBrut = body.reprise_token ? String(body.reprise_token) : ''
+    const reprise = jetonBrut ? decodeMyafroToken(jetonBrut) : null
+    if (jetonBrut && !reprise) {
+        return NextResponse.json(
+            { error: 'Ce lien de reprise a expiré ou n’est pas valide. Demandez-en un nouveau à votre conseiller.' },
+            { status: 400 },
+        )
     }
 
-    // Idempotence : le navigateur peut rejouer l'envoi (réseau, double clic).
-    const { data: deja } = await supabase
-        .from('myafro_recap_requests').select('reference')
-        .eq('paiement_ref', String(body.payment_ref)).maybeSingle()
-    if (deja?.reference) {
-        return NextResponse.json({ success: true, reference: deja.reference, deja_enregistre: true })
+    const tarif = await tarifRecapXof()
+    let facturePrepayee: { id: string; numero: string } | null = null
+
+    if (reprise?.paid) {
+        const verdict = await factureDeReprise(reprise.invoice_id, email)
+        if ('refus' in verdict) {
+            if (verdict.reference) {
+                return NextResponse.json({ success: true, reference: verdict.reference, deja_enregistre: true })
+            }
+            return NextResponse.json({ error: verdict.refus }, { status: 409 })
+        }
+        facturePrepayee = verdict
+    } else {
+        // ── Preuve de paiement AVANT toute écriture ────────────────
+        const refus = await refusPaiement(
+            String(body.payment_provider || ''),
+            String(body.payment_ref || ''),
+            tarif.xof,
+        )
+        if (refus) {
+            console.warn(`[recap-myafro] REFUS (${email}) : ${refus}`)
+            return NextResponse.json({ error: refus }, { status: 402 })
+        }
+
+        // Idempotence : le navigateur peut rejouer l'envoi (réseau, double clic).
+        const { data: deja } = await supabase
+            .from('myafro_recap_requests').select('reference')
+            .eq('paiement_ref', String(body.payment_ref)).maybeSingle()
+        if (deja?.reference) {
+            return NextResponse.json({ success: true, reference: deja.reference, deja_enregistre: true })
+        }
     }
 
     const maintenant = new Date()
@@ -186,8 +252,18 @@ export async function POST(request: NextRequest) {
         montant: tarif.montant,
         devise: tarif.devise,
         paiement_statut: 'paye',
-        paiement_ref: txt(body.payment_ref, LIMITES.moyen),
-        paiement_moyen: txt(body.payment_provider, 40),
+        ...(facturePrepayee
+            ? {
+                // Réglé avant l'invitation : la facture émise en est la preuve.
+                paiement_ref: `facture:${facturePrepayee.numero}`,
+                paiement_moyen: 'facture',
+                facture_id: facturePrepayee.id,
+                paiement_confirme_le: maintenant.toISOString(),
+            }
+            : {
+                paiement_ref: txt(body.payment_ref, LIMITES.moyen),
+                paiement_moyen: txt(body.payment_provider, 40),
+            }),
         statut: 'nouveau',
         consentement: true,
         consentement_le: maintenant.toISOString(),
@@ -211,6 +287,19 @@ export async function POST(request: NextRequest) {
             },
             { status: 500 },
         )
+    }
+
+    /* Deux dépôts simultanés avec le même lien prépayé passeraient tous deux
+       le contrôle ci-dessus. Le second à s'écrire s'efface au profit du
+       premier : une facture, un récap. */
+    if (facturePrepayee) {
+        const { data: jumeaux } = await supabase
+            .from('myafro_recap_requests').select('id, reference, created_at')
+            .eq('facture_id', facturePrepayee.id).order('created_at', { ascending: true })
+        if (jumeaux && jumeaux.length > 1 && jumeaux[0].id !== cree.id) {
+            await supabase.from('myafro_recap_requests').delete().eq('id', cree.id)
+            return NextResponse.json({ success: true, reference: jumeaux[0].reference, deja_enregistre: true })
+        }
     }
 
     // ── Le récap devient un DOSSIER, comme les autres services ─────
@@ -245,7 +334,9 @@ export async function POST(request: NextRequest) {
        Le compte client, quand la demande vient de l'application, permet
        d'apposer le paraphe enregistré sur le « Bon pour accord ». */
     const compteClient = await getMobileUserId(request).catch(() => null)
-    void facturerPaiementService({
+    // Reprise prépayée : la facture existe déjà — en émettre une seconde
+    // doublerait la recette.
+    if (!facturePrepayee) void facturerPaiementService({
         transactionId: String(donnees.paiement_ref),
         montantXof: Number(tarif.xof) || 0,
         libelle: 'Récap de dossier MyAfroOrigins',
@@ -309,7 +400,10 @@ export async function POST(request: NextRequest) {
                 ['Téléphone', telephone],
                 ['Depuis', donnees.depuis_quand || 'non précisé'],
                 ['Réf. MyAfroOrigins', donnees.myafro_reference || 'non communiquée'],
-                ['Montant', `${tarif.montant} ${tarif.devise}`],
+                ['Montant', facturePrepayee
+                    ? `réglé avant l’invitation — facture ${facturePrepayee.numero}`
+                    : `${tarif.montant} ${tarif.devise}`],
+                ['Origine', reprise ? 'Lien de reprise envoyé par l’équipe' : 'Page publique du service'],
             ])}
              <p style="margin:16px 0 8px"><strong>Situation décrite :</strong></p>
              <p style="margin:0;white-space:pre-wrap">${situation.replace(/</g, '&lt;')}</p>`,

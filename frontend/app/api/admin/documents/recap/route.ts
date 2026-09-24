@@ -55,7 +55,7 @@ function urgencyLabel(months: number | null): string {
 }
 
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     try {

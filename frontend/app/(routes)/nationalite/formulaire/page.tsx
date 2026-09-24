@@ -165,6 +165,11 @@ export default function NationaliteFormPage() {
     // Mode MyAfroOrigins : reprise d'un dossier bloqué, tarif réduit 50 €,
     // dépôt libre de documents nommés. Le jeton (dans l'URL) autorise le tarif.
     const [myafroMode, setMyafroMode] = useState(false)
+    /* Lien MyAfroOrigins « déjà payé » : le règlement existe AVANT que le
+       client ait rempli quoi que ce soit. Ce n'est pas un paiement qui vient
+       d'aboutir — il ne doit ni déclencher la soumission automatique (qui
+       partait à l'ouverture, formulaire vide), ni afficher un montant à payer. */
+    const [prepayeMyafro, setPrepayeMyafro] = useState(false)
     const myafroTokenRef = useRef('')
     const [customDocs, setCustomDocs] = useState<{ name: string; file: File }[]>([])
 
@@ -303,6 +308,7 @@ export default function NationaliteFormPage() {
                 }
                 const payload = JSON.parse(decodedStr)
                 if (payload && payload.paid) {
+                    setPrepayeMyafro(true)
                     setPaymentDone(true)
                     setPaymentProvider('facture' as any)
                     setPaymentTxId(payload.invoice_id ? `facture_${payload.invoice_id}` : 'manuel')
@@ -749,7 +755,7 @@ export default function NationaliteFormPage() {
     useEffect(() => {
         // En mode reprise, paymentDone est vrai dès le chargement : NE PAS
         // auto-soumettre (le client doit d'abord re-déposer ses documents).
-        if (paymentDone && !resumeMode && !autoSubmitRef.current && !submitting && !showWelcome) {
+        if (paymentDone && !resumeMode && !prepayeMyafro && !autoSubmitRef.current && !submitting && !showWelcome) {
             autoSubmitRef.current = true
             submit()
         }
@@ -1272,8 +1278,8 @@ export default function NationaliteFormPage() {
                             })()}
 
                             {step === 6 && <div className="space-y-5">
-                                <h2 className="text-lg font-black text-slate-900">{resumeMode ? <T>Finalisation de votre dossier</T> : <T>Paiement des frais de traitement</T>}</h2>
-                                {!resumeMode && (
+                                <h2 className="text-lg font-black text-slate-900">{resumeMode || prepayeMyafro ? <T>Finalisation de votre dossier</T> : <T>Paiement des frais de traitement</T>}</h2>
+                                {!resumeMode && !prepayeMyafro && (
                                     <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
                                         <p className="text-3xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
                                         <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T>{TVA_ENABLED && <> · {`TVA ${TVA_RATE}% incluse`}</>}</p>
@@ -1285,6 +1291,12 @@ export default function NationaliteFormPage() {
                                         <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
                                         <p className="text-sm font-bold text-emerald-700"><T>Vos frais de traitement sont déjà réglés.</T></p>
                                         <p className="text-xs text-gray-500 mt-1"><T>Il ne vous reste plus qu&apos;à confirmer l&apos;envoi de vos pièces justificatives.</T></p>
+                                    </div>
+                                ) : prepayeMyafro ? (
+                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
+                                        <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
+                                        <p className="text-sm font-bold text-emerald-700"><T>Vos frais de reprise sont déjà réglés.</T></p>
+                                        <p className="text-xs text-gray-500 mt-1"><T>Aucun paiement ne vous est demandé : confirmez simplement l&apos;envoi de votre dossier.</T></p>
                                     </div>
                                 ) : paymentDone ? (
                                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">

@@ -11,7 +11,7 @@ const supabase = createClient(
 // Retourne des URLs signées (1h) vers les documents déposés par le client,
 // pour prévisualisation directe dans le panel admin (bucket privé).
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({}))
