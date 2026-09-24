@@ -616,8 +616,9 @@ export function toSummary(rec: ClientRecord): ClientSummary {
  * les données n'ont pas bougé garderait une archive fabriquée par l'ancien
  * code.
  *   2 — pièces dont le libellé contient « : » (actes des ascendants) incluses.
+ *   3 — plus de JSON dans l'export (lisible uniquement) ; annexe non tronquée.
  */
-export const VERSION_FORMAT = 2
+export const VERSION_FORMAT = 3
 
 export function empreinte(rec: ClientRecord): string {
     const stable = (v: unknown): unknown => {
