@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
+import RattacherFacture from '@/components/admin/RattacherFacture'
+import { formatMontant } from '@/lib/currency-format'
 
 interface Application {
     id: string; application_ref: string; status: string
@@ -80,6 +82,18 @@ const isPaidStatus = (s?: string | null) => {
     return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok'].includes(v)
 }
 
+/* Un dossier ouvert par code d'invitation (ou réglé « manuel » sans pièce) est
+   marqué payé pour que le client avance — mais AUCUNE facture n'a été émise.
+   Tant qu'une facture réelle ne lui est pas rattachée, il n'est pas prouvé :
+   ni « payé » à l'écran, ni dans le total encaissé. */
+const MOYENS_A_JUSTIFIER = ['invitation', 'manuel']
+const doitEtreJustifie = (a: { payment_method?: string | null; payment_ref?: string | null }) =>
+    MOYENS_A_JUSTIFIER.includes(String(a.payment_method || '').toLowerCase())
+    // Récap MyAfro prépayé : la référence porte déjà sa facture.
+    && !String(a.payment_ref || '').startsWith('facture_')
+
+interface Justificatif { id: string; numero: string; total: number; currency: string | null; status: string | null }
+
 export default function AdminNationalitePage() {
     const { t } = useTranslation();
     const [apps, setApps] = useState<Application[]>([])
@@ -96,8 +110,43 @@ export default function AdminNationalitePage() {
         else q = q.neq('status', 'revue_myafro')
         if (search) q = q.or(`nom.ilike.%${search}%,prenom.ilike.%${search}%,email.ilike.%${search}%,application_ref.ilike.%${search}%`)
         const { data } = await q
-        setApps((data || []) as Application[])
+        const liste = (data || []) as Application[]
+        setApps(liste)
         setLoading(false)
+        chargerJustificatifs(liste)
+    }
+
+    // ── Justificatifs de paiement (dossiers par invitation / manuels) ──
+    const [justifs, setJustifs] = useState<Record<string, Justificatif>>({})
+    const [justifsCharges, setJustifsCharges] = useState(false)
+    const [justifApp, setJustifApp] = useState<Application | null>(null)
+    const [detachEnCours, setDetachEnCours] = useState<string | null>(null)
+    const [seulementAJustifier, setSeulementAJustifier] = useState(false)
+
+    const chargerJustificatifs = async (liste: Application[]) => {
+        const refs = liste.filter(doitEtreJustifie).map(a => a.application_ref).filter(Boolean)
+        if (!refs.length) { setJustifs({}); setJustifsCharges(true); return }
+        try {
+            const res = await fetch(`/api/admin/rattacher-facture?nature=nationalite&refs=${encodeURIComponent(refs.join(','))}`)
+            const json = await res.json().catch(() => ({}))
+            if (res.ok) setJustifs(json.liens || {})
+        } finally { setJustifsCharges(true) }
+    }
+
+    /** null = rien à justifier (paiement en ligne) ; sinon la facture, ou false. */
+    const justificatif = (a: Application): Justificatif | false | null =>
+        doitEtreJustifie(a) && isPaidStatus(a.payment_status) ? (justifs[a.application_ref] || false) : null
+
+    const detacherJustificatif = async (a: Application) => {
+        const j = justifs[a.application_ref]
+        if (!j || !confirm(`Détacher la facture ${j.numero} du dossier ${a.application_ref} ? Le paiement redeviendra « à justifier ».`)) return
+        setDetachEnCours(a.id)
+        try {
+            const res = await fetch(`/api/admin/rattacher-facture?nature=nationalite&id=${encodeURIComponent(a.id)}`, { method: 'DELETE' })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) { alert(json.error || 'Détachement impossible.'); return }
+            setJustifs(prev => { const n = { ...prev }; delete n[a.application_ref]; return n })
+        } finally { setDetachEnCours(null) }
     }
 
     useEffect(() => { fetchApps() }, [filter, search])
@@ -830,16 +879,49 @@ export default function AdminNationalitePage() {
                     ))}
                 </div>
 
+                {/* Dossiers « payés » sans pièce : invitation ou saisie manuelle
+                    sans facture. Visibles d'un coup d'œil, pas enfouis dans
+                    chaque fiche. */}
+                {(() => {
+                    const n = apps.filter(a => justificatif(a) === false).length
+                    if (!justifsCharges || (n === 0 && !seulementAJustifier)) return null
+                    return (
+                        <div className="mb-6 flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                            <p className="text-xs text-amber-300">
+                                <strong className="font-black">{n}</strong>{' '}
+                                {n > 1 ? <T>dossiers ouverts par code d’invitation (ou saisis sans pièce) n’ont aucune facture : leur paiement reste à justifier et n’est pas compté comme encaissé.</T>
+                                    : <T>dossier ouvert par code d’invitation (ou saisi sans pièce) n’a aucune facture : son paiement reste à justifier et n’est pas compté comme encaissé.</T>}
+                            </p>
+                            <button
+                                onClick={() => setSeulementAJustifier(v => !v)}
+                                className="text-[11px] font-black px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                            >
+                                {seulementAJustifier ? <T>Voir tous les dossiers</T> : <T>Afficher uniquement ceux-là</T>}
+                            </button>
+                        </div>
+                    )
+                })()}
+
                 {loading ? <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div> : apps.length === 0 ? <div className="text-center py-20 text-gray-500"><Globe2 className="mx-auto mb-3 text-gray-700" size={40} /><p className="text-sm"><T>Aucune demande</T></p></div> : (
-                    <div className="space-y-3">{apps.map((a, i) => {
+                    <div className="space-y-3">{apps.filter(a => !seulementAJustifier || justificatif(a) === false).map((a, i) => {
                         const st = statusMap[a.status] || statusMap.soumis
                         const isOpen = expanded === a.id
+                        const justif = justificatif(a)
                         return (
                             <motion.div key={a.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="bg-white/[0.03] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all">
                                 <div className="p-5 cursor-pointer" onClick={() => setExpanded(isOpen ? null : a.id)}>
                                     <div className="flex items-center justify-between flex-wrap gap-3">
                                         <div>
-                                            <div className="flex items-center gap-3 mb-1"><span className="text-xs font-mono font-bold text-[#FCD116]">{a.application_ref}</span><span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${st.color}`}>{st.label}</span></div>
+                                            <div className="flex items-center gap-3 mb-1 flex-wrap"><span className="text-xs font-mono font-bold text-[#FCD116]">{a.application_ref}</span><span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${st.color}`}>{st.label}</span>
+                                                {justif === false && (
+                                                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-white">{a.payment_method === 'invitation' ? <T>Invitation · paiement à justifier</T> : <T>Paiement à justifier</T>}</span>
+                                                )}
+                                                {justif && (
+                                                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white">
+                                                        <T>Payé</T> · {justif.numero}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-sm font-bold text-white">{a.prenom} {a.nom}</p>
                                             <div className="flex items-center gap-4 mt-1 text-[10px] text-gray-500 flex-wrap">
                                                 <span className="flex items-center gap-1"><Mail size={10} /> {a.email}</span>
@@ -894,7 +976,9 @@ export default function AdminNationalitePage() {
                                         <div>
                                             <h4 className="text-[9px] font-black text-[#FCD116] uppercase tracking-[0.2em] mb-2"><T>Paiement</T></h4>
                                             {(() => {
-                                                const natPaid = isPaidStatus(a.payment_status)
+                                                /* « Encaissé » exige une pièce : un dossier par invitation
+                                                   sans facture rattachée n'entre pas dans le total. */
+                                                const natPaid = isPaidStatus(a.payment_status) && justif !== false
                                                 const natCur = a.currency || 'EUR'
                                                 const natAmt = Number(a.amount) || 0
                                                 const ancPaid = !!a.recherche_ancestrale_payee
@@ -911,10 +995,32 @@ export default function AdminNationalitePage() {
                                                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
                                                                 <div className="flex items-center justify-between mb-1.5">
                                                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><T>Demande de nationalité</T></span>
-                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
+                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{justif === false ? 'À JUSTIFIER' : natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
                                                                 </div>
                                                                 <p className="text-lg font-black text-white">{natAmt} {natCur}</p>
                                                                 <p className="text-[10px] text-gray-500">{[a.payment_method, a.payment_ref].filter(Boolean).join(' · ') || '-'}</p>
+                                                                {justif === false && (
+                                                                    <div className="mt-2.5 pt-2.5 border-t border-white/10">
+                                                                        <p className="text-[10px] text-amber-400 mb-2">
+                                                                            <T>Aucune facture ne prouve encore ce règlement. Dès que le client a payé, rattachez la facture émise.</T>
+                                                                        </p>
+                                                                        <button onClick={() => setJustifApp(a)}
+                                                                            className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                                                            <FileText size={13} /> <T>Justifier le paiement</T>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                                {justif && (
+                                                                    <div className="mt-2.5 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 flex-wrap">
+                                                                        <p className="text-[10px] text-emerald-400">
+                                                                            <T>Justifié par la facture</T> <strong className="font-mono">{justif.numero}</strong> · {formatMontant(Number(justif.total) || 0, justif.currency)}
+                                                                        </p>
+                                                                        <button onClick={() => detacherJustificatif(a)} disabled={detachEnCours === a.id}
+                                                                            className="text-[10px] font-bold text-gray-400 hover:text-red-400 underline underline-offset-2 disabled:opacity-50">
+                                                                            {detachEnCours === a.id ? <T>Détachement…</T> : <T>Détacher</T>}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             {/* Recherche ancestrale */}
                                                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
@@ -1491,7 +1597,8 @@ export default function AdminNationalitePage() {
                                 Un dossier ouvert par code d’invitation ne génère <strong>aucune facture</strong> :
                                 rien n’est encaissé, et inscrire 260 € au compte de résultat créerait une recette
                                 que la banque ne verra jamais. Le dossier reste tracé par son moyen de paiement
-                                et par le code inscrit dans sa référence.
+                                et par le code inscrit dans sa référence. Il apparaît <strong>« paiement à justifier »</strong>
+                                jusqu’à ce que vous lui rattachiez la facture émise quand le client règle.
                             </p>
                         </div>
                     </div>
@@ -1817,6 +1924,20 @@ export default function AdminNationalitePage() {
                     </div>
                 </div>
             )}
+
+            {/* Justification du paiement d'un dossier par invitation / manuel */}
+            <RattacherFacture
+                ouvert={!!justifApp}
+                nature="nationalite"
+                dossierId={justifApp?.id || ''}
+                email={justifApp?.email}
+                attendu={justifApp ? { montant: Number(justifApp.amount) || 0, devise: justifApp.currency } : null}
+                onFermer={() => setJustifApp(null)}
+                onRattache={f => {
+                    const ref = justifApp?.application_ref
+                    if (ref) setJustifs(prev => ({ ...prev, [ref]: { id: f.id, numero: f.numero, total: f.total, currency: f.currency, status: f.status } }))
+                }}
+            />
 
         </div>
     )
