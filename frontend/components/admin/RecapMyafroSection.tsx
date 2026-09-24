@@ -59,6 +59,8 @@ interface Piece {
     file_size: number | null
     status: string
     source: string | null
+    /** Intitulé choisi à l'envoi (« Extrait de naissance du père »). */
+    titre?: string | null
     created_at: string
 }
 
@@ -427,7 +429,10 @@ export default function RecapMyafroSection() {
                                                 {p.source === 'mobile'
                                                     ? <DeviceMobile size={15} className="text-emerald-400 shrink-0" />
                                                     : <Globe size={15} className="text-blue-400 shrink-0" />}
-                                                <span className="flex-1 min-w-0 text-xs font-semibold text-white truncate">{p.file_name}</span>
+                                                <span className="flex-1 min-w-0 truncate">
+                                                    <span className="block text-xs font-semibold text-white truncate">{p.titre || p.file_name}</span>
+                                                    {p.titre && <span className="block text-[10px] text-gray-500 truncate">{p.file_name}</span>}
+                                                </span>
                                                 <span className="text-[10px] text-gray-500 shrink-0">{poids(p.file_size)}</span>
                                                 <span className="text-[10px] text-gray-600 shrink-0">{dateFr(p.created_at)}</span>
                                             </button>

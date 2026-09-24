@@ -32,12 +32,20 @@ export function signResumeToken(applicationId: string, ttlDays = 30): string {
  * MyAfroOrigins. Le jeton (généré côté admin) est la preuve d'autorisation du
  * tarif réduit : sans lui, le formulaire applique le tarif plein.
  */
-export function signMyafroToken(ttlDays = 60, paid = false, invoiceId?: string): string {
-    const payload = { 
-        myafro: true, 
-        paid: !!paid, 
-        invoice_id: invoiceId || null, 
-        exp: Date.now() + ttlDays * 24 * 60 * 60 * 1000 
+export function signMyafroToken(
+    ttlDays = 60,
+    paid = false,
+    invoiceId?: string,
+    /** Pré-remplissage : l'invitation par email connaît déjà le client. */
+    client?: { email?: string | null; nom?: string | null },
+): string {
+    const payload = {
+        myafro: true,
+        paid: !!paid,
+        invoice_id: invoiceId || null,
+        email: client?.email || null,
+        nom: client?.nom || null,
+        exp: Date.now() + ttlDays * 24 * 60 * 60 * 1000,
     }
     const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('hex')
     const sig = crypto.createHmac('sha256', SECRET).update(body).digest('hex')
@@ -59,7 +67,13 @@ export function verifyMyafroToken(token: string): boolean {
     }
 }
 
-export function decodeMyafroToken(token: string): { myafro: boolean, paid: boolean, invoice_id: string | null } | null {
+export function decodeMyafroToken(token: string): {
+    myafro: boolean
+    paid: boolean
+    invoice_id: string | null
+    email: string | null
+    nom: string | null
+} | null {
     try {
         if (!token || typeof token !== 'string' || !token.includes('.')) return null
         const [body, sig] = token.split('.')
@@ -72,7 +86,9 @@ export function decodeMyafroToken(token: string): { myafro: boolean, paid: boole
             return {
                 myafro: true,
                 paid: !!payload.paid,
-                invoice_id: payload.invoice_id || null
+                invoice_id: payload.invoice_id || null,
+                email: payload.email || null,
+                nom: payload.nom || null,
             }
         }
         return null

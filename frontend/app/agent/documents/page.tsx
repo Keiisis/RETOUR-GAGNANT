@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/lib/translation'
 import RecapMyafroSection from '@/components/admin/RecapMyafroSection'
+import MyafroRepriseSection from '@/components/admin/MyafroRepriseSection'
 import { FolderOpen, Upload, MagnifyingGlass as Search, Trash as Trash2, Download, X, CircleNotch as Loader2, FileText, Image, File, Plus, Eye, Funnel as Filter } from '@phosphor-icons/react';
 
 interface Document {
@@ -288,7 +289,11 @@ export default function AgentDocumentsPage() {
                 quel, sans copie ni variante. */}
             {/* `scroll-mt` : sans marge de defilement, l'ancre colle le titre
                sous l'en-tete fixe du panel et on croit avoir rate la section. */}
-            <div id="myafro" className="mt-10 scroll-mt-24">
+            {/* Même onglet que /admin/documents, monté tel quel : invitation,
+                lien (avec ou sans règlement préalable), suivi, récaps. Il
+                manquait tout le haut de l'onglet côté agent. */}
+            <div id="myafro" className="mt-10 scroll-mt-24 space-y-10">
+                <MyafroRepriseSection />
                 <RecapMyafroSection />
             </div>
         </div>

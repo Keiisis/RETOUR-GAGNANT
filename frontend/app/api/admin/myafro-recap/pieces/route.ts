@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
         .from('client_documents')
-        .select('id, file_name, file_type, file_size, status, source, created_at')
+        .select('id, file_name, file_type, file_size, status, source, titre, created_at')
         .eq('recap_id', recapId)
         .order('created_at', { ascending: false })
 

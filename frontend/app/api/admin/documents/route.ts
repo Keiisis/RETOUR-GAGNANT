@@ -10,9 +10,15 @@ const supabase = createClient(
 )
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
+/* Page de reprise : le formulaire du RÉCAP MyAfroOrigins, pas celui de la
+   demande de nationalité. Ces clients ont déjà leur dossier chez
+   MyAfroOrigins ; on vérifie ce dossier, on ne le refait pas. */
+const lienReprise = (token: string) => `${SITE}/services/recap-myafroorigins/reprise?t=${encodeURIComponent(token)}`
+
 // GET /api/admin/documents : liste des dossiers MyAfroOrigins en attente de revue.
+// Agents ET admins : l'onglet est le même des deux côtés.
 export async function GET(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     const { data, error } = await supabase
@@ -29,7 +35,7 @@ export async function GET(request: NextRequest) {
 //   { action: 'link', paid: boolean, invoice_id?: string }                    → génère juste le lien (copier/coller)
 //   { action: 'approve', id }             → bascule le dossier vers la file Nationalité
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({}))
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'link') {
         const token = signMyafroToken(60, paid, invoiceId)
-        return NextResponse.json({ success: true, link: `${SITE}/nationalite/formulaire?myafro=${encodeURIComponent(token)}` })
+        return NextResponse.json({ success: true, link: lienReprise(token) })
     }
 
     if (action === 'invite') {
@@ -76,8 +82,8 @@ export async function POST(request: NextRequest) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return NextResponse.json({ error: 'Email invalide' }, { status: 400 })
         }
-        const token = signMyafroToken(60, paid, invoiceId)
-        const link = `${SITE}/nationalite/formulaire?myafro=${encodeURIComponent(token)}`
+        const token = signMyafroToken(60, paid, invoiceId, { email, nom: name })
+        const link = lienReprise(token)
         const civil = name || 'Cher(e) client(e)'
         const html = `
         <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
@@ -89,10 +95,14 @@ export async function POST(request: NextRequest) {
             <div style="padding:36px 40px;color:#1f2937;font-size:15px;line-height:1.85;">
                 <p>${civil},</p>
                 <p>Votre dossier de reconnaissance de la nationalité béninoise est resté sans suite sur la plateforme où vous l'aviez initié. Nous pouvons le reprendre et le mener à son terme.</p>
-                <p>Pour cela, nous vous invitons à renseigner notre formulaire sécurisé et à y déposer l'ensemble des informations et pièces que vous aviez fournies. Vous pourrez ajouter autant de documents que nécessaire, et nommer librement chaque pièce.</p>
-                <p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
-                    <strong>Frais de reprise : 50 €</strong> (au lieu du tarif habituel). Ce montant couvre l'instruction complète de votre dossier par notre service juridique.
-                </p>
+                <p>Pour cela, décrivez-nous où en est votre dossier et joignez les pièces que vous avez en votre possession. Aucune n'est obligatoire : envoyez ce que vous avez, nous vérifions le reste.</p>
+                ${paid
+                    ? `<p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
+                    <strong>Vos frais de reprise sont déjà réglés.</strong> Aucun paiement ne vous sera demandé.
+                </p>`
+                    : `<p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
+                    <strong>Frais de reprise : 50 €</strong>. Ce montant couvre la vérification complète de votre dossier par notre service juridique.
+                </p>`}
                 <div style="text-align:center;margin:32px 0;">
                     <a href="${link}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:15px 42px;border-radius:10px;font-weight:700;font-size:15px;">Reprendre mon dossier</a>
                     <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">Lien personnel et confidentiel : à n'utiliser que par vos soins.</p>

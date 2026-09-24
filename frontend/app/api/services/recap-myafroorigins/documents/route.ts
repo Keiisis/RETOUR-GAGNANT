@@ -26,7 +26,10 @@ const supabase = createClient(
 const BUCKET = 'client-documents'
 const TYPES_AUTORISES = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx']
 const TAILLE_MAX = 10 * 1024 * 1024 // 10 Mo
-const MAX_PIECES = 15
+/* Relevé sur la liste des pièces du dossier de nationalité (seize
+   emplacements, dont deux à plusieurs fichiers) : 15 empêchait un client de
+   tout joindre. */
+const MAX_PIECES = 40
 
 const nettoyerNom = (nom: string) => nom
     .replace(/\.\./g, '').replace(/[/\\]/g, '').replace(/[^\w\-. ]/g, '_').slice(0, 200)
@@ -75,6 +78,10 @@ export async function POST(request: NextRequest) {
     const reference = String(form.get('reference') || '')
     const email = String(form.get('email') || '')
     const source = String(form.get('source') || 'web')
+    // Intitulé de la pièce (« Extrait de naissance du père ») : sans lui,
+    // l'équipe ne voit qu'un nom de fichier choisi par le téléphone du client.
+    const titre = String(form.get('titre') || '').trim().slice(0, 160) || null
+    const categorie = String(form.get('categorie') || '').replace(/[^a-z0-9_]/gi, '').slice(0, 40) || null
 
     if (!(fichier instanceof File)) {
         return NextResponse.json({ error: 'Aucun fichier reçu.' }, { status: 400 })
@@ -142,6 +149,8 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dossier_id: (recap as any).dossier_id || null,
         source: source === 'mobile' ? 'mobile' : 'web',
+        titre,
+        categorie,
     })
 
     if (error) {
