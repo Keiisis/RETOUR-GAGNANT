@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
+import { lireLigneDocument } from '@/lib/nationality-docs'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -31,10 +32,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Chemins storage réels (lignes succès : « …: nat-…/fichier.ext »).
     const paths: string[] = []
     for (const line of (app.documents_uploaded || []) as string[]) {
-        const idx = line.indexOf(': ')
-        if (idx === -1) continue
-        const p = line.slice(idx + 2).trim()
-        if (p.startsWith('nat-')) paths.push(p)
+        const lu = lireLigneDocument(line)
+        if (lu?.ok) paths.push(lu.path)
     }
     if (paths.length) {
         await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})

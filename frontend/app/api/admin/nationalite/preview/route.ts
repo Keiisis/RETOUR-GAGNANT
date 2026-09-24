@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
+import { lireLigneDocument } from '@/lib/nationality-docs'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -27,13 +28,9 @@ export async function POST(request: NextRequest) {
 
     const docs: Array<{ label: string; url: string | null; path: string; type: string }> = []
     for (const line of (app.documents_uploaded || []) as string[]) {
-        const idx = line.indexOf(': ')
-        if (idx === -1) continue
-        const rawLabel = line.slice(0, idx).trim()
-        // Format "key:label" → ne garder que le libellé lisible
-        const label = rawLabel.includes(':') ? rawLabel.split(':').slice(1).join(':').trim() : rawLabel
-        const path = line.slice(idx + 2).trim()
-        if (!path.startsWith('nat-')) continue // ligne d'échec d'upload
+        const lu = lireLigneDocument(line)
+        if (!lu?.ok) continue // ligne d'échec d'upload
+        const { label, path } = lu
         const ext = (path.split('.').pop() || '').toLowerCase()
         const type = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? 'image'
             : ext === 'pdf' ? 'pdf' : 'file'

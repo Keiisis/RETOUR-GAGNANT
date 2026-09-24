@@ -6,6 +6,7 @@ import Groq from 'groq-sdk'
 import { requireStaff } from '@/lib/api-guard'
 import { deposerLivrable } from '@/lib/livrables'
 import { generateFicheAnalysePdf, type FicheAnalyseData, type FichePiece } from '@/lib/fiche-analyse-pdf'
+import { lireLigneDocument } from '@/lib/nationality-docs'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -40,10 +41,11 @@ interface AppRow {
 // détecte les formats « photo » (non conformes). Renvoie une FicheAnalyseData.
 function buildAutoFiche(app: AppRow, ancestralPaid = false): FicheAnalyseData {
     const uploaded = (app.documents_uploaded || []).map(line => {
-        const idx = line.indexOf(': ')
-        if (idx === -1) return null
-        const label = line.slice(0, idx).trim()
-        const path = line.slice(idx + 2).trim()
+        const lu = lireLigneDocument(line)
+        if (!lu) return null
+        // Libellé complet « clé:Libellé » conservé : la fiche s'en sert pour reconnaître la pièce.
+        const label = lu.cle ? `${lu.cle}:${lu.label}` : lu.label
+        const path = lu.path
         const ext = (path.split('.').pop() || '').toLowerCase()
         return { label, ext, isImage: IMG_EXT.has(ext) }
     }).filter((x): x is { label: string; ext: string; isImage: boolean } => !!x && x.label.length > 0)
