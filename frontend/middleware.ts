@@ -1047,6 +1047,14 @@ export async function middleware(request: NextRequest) {
                 // Onglet « Dossiers MyAfroOrigins » : identique admin / agent.
                 '/api/admin/documents',
                 '/api/admin/nationalite/preview',
+                // Audit du 25/09/2026 : routes appelées par le panel agent, qui
+                // acceptent les agents mais que ce filtre refusait (403).
+                '/api/admin/dossiers/assign',     // « Prendre en charge »
+                '/api/admin/rgpd/document',       // documents RGPD
+                '/api/admin/ping',                // liste blanche IP de l'agent (WAF)
+                '/api/admin/contracts',           // onglet Contrats
+                '/api/admin/partner-applications',// candidatures partenaires
+                '/api/admin/dossiers/sync',       // bouton « Synchroniser »
             ]
             const ouverteAgent = isAdminApi
                 && ADMIN_API_OUVERTES_AGENT.some(prefixe => pathname.startsWith(prefixe))

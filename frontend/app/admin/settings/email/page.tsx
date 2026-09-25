@@ -1,13 +1,32 @@
 'use client';
 
 import { useTranslation, T } from '@/lib/translation';
-import { useList, useUpdate } from "@refinedev/core";
+import { useList } from "@refinedev/core";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, FloppyDisk as Save, Envelope as Mail, HardDrives as Server, Fingerprint, PaperPlaneTilt as Send, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle } from '@phosphor-icons/react';
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+/* Enregistre un réglage par sa CLÉ (la table `settings` n'a pas de colonne
+   `id`) : la page envoyait des mises à jour par identifiant qui ne visaient
+   aucune ligne, puis affichait « succès ». Chaque échec est remonté. */
+async function enregistrerReglage(key: string, value: string, category: string): Promise<string | null> {
+    try {
+        const res = await fetch('/api/admin/settings', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value, category }),
+        })
+        if (res.ok) return null
+        const j = await res.json().catch(() => ({}))
+        return `${key} : ${j.error || `HTTP ${res.status}`}`
+    } catch (e) {
+        return `${key} : ${e instanceof Error ? e.message : 'réseau'}`
+    }
+}
+
 
 interface SettingItem {
     id: string;
@@ -25,7 +44,6 @@ export default function EmailSettingsPage() {
     const settingsData = queryResult.query?.data;
     const isLoading = queryResult.query?.isLoading;
 
-    const { mutate: updateSetting } = useUpdate();
     const [isSaving, setIsSaving] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [testResult, setTestResult] = useState<{ success?: boolean, message?: string } | null>(null);
@@ -66,25 +84,11 @@ export default function EmailSettingsPage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const updates = Object.entries(form).map(([key, value]) => {
-                const id = settingIds[key];
-                if (id) {
-                    return new Promise((resolve) => {
-                        updateSetting({
-                            resource: "settings",
-                            id,
-                            values: { value }
-                        }, { onSuccess: resolve, onError: resolve });
-                    });
-                }
-                return Promise.resolve();
-            });
-
-            await Promise.all(updates);
-            alert("Paramètres sauvegardés avec succès !");
-        } catch (error) {
-            console.error("Save error", error);
-            alert("Erreur lors de la sauvegarde.");
+            const erreurs = (await Promise.all(
+                Object.entries(form).map(([key, value]) => enregistrerReglage(key, String(value ?? ''), 'email')),
+            )).filter((e): e is string => !!e);
+            if (erreurs.length) alert(`Certains réglages n'ont pas été enregistrés :\n${erreurs.join('\n')}`);
+            else alert("Paramètres sauvegardés avec succès !");
         } finally {
             setIsSaving(false);
         }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
 import { verifyApiAuth } from '@/lib/api-auth';
 import nodemailer from 'nodemailer';
 

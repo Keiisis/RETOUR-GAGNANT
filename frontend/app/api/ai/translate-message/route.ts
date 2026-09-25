@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
+import { requireStaff } from '@/lib/api-guard'
 
 // Modèle puissant pour détection de langue précise
 const DETECT_MODEL = GROQ_MODEL;
@@ -32,6 +33,9 @@ Format de réponse : JSON avec une liste "suggestions" de 3 chaînes de texte co
 Exemple : {"suggestions": ["Bonjour, je reviens vers vous rapidement.", "Merci pour votre message, je traite votre demande.", "Je vous contacte dans les 24h pour confirmer."]}`;
 
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json();
         const { text, mode, targetLanguage, language, history } = body;

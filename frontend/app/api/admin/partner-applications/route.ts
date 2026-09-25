@@ -14,7 +14,7 @@ function getSupabase() {
 
 // GET /api/admin/partner-applications : liste toutes les candidatures
 export async function GET(request: NextRequest) {
-    const auth = await verifyApiAuth(request, 'admin')
+    const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
     try {
         const supabase = getSupabase()

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
 
 // GET: Check if boutique is in maintenance mode
 export async function GET() {

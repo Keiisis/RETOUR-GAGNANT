@@ -63,6 +63,15 @@ interface NationalityApplication {
     agent_notes?: string
 }
 
+/* Statuts d'un dossier : les MÊMES que /admin/nationalite (statusMap). */
+const STATUTS_DOSSIER = [
+    { v: 'soumis', l: 'Soumis' },
+    { v: 'en_traitement', l: 'En traitement' },
+    { v: 'verification', l: 'Vérification' },
+    { v: 'approuve', l: 'Approuvé' },
+    { v: 'rejete', l: 'Rejeté' },
+]
+
 export default function AgentNationalitePage() {
     const [apps, setApps] = useState<NationalityApplication[]>([])
     const [loading, setLoading] = useState(true)
@@ -119,9 +128,11 @@ export default function AgentNationalitePage() {
 
     const updateStatus = async (id: string, newStatus: string) => {
         setIsUpdating(true)
+        // Mêmes valeurs que le panel admin, date de décision comprise : un dossier
+        // « approuvé » par un agent sortait des filtres et compteurs de l'admin.
         const { error } = await supabase
             .from('nationality_applications')
-            .update({ status: newStatus })
+            .update({ status: newStatus, decision_date: newStatus === 'approuve' || newStatus === 'rejete' ? new Date().toISOString() : null })
             .eq('id', id)
 
         if (!error) {
@@ -148,9 +159,10 @@ export default function AgentNationalitePage() {
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'soumis': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-            case 'en_examen': return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-            case 'approuvé': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-            case 'rejeté': return 'bg-red-500/10 text-red-400 border-red-500/20'
+            case 'en_traitement': return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+            case 'verification': return 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+            case 'approuve': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            case 'rejete': return 'bg-red-500/10 text-red-400 border-red-500/20'
             default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
         }
     }
@@ -189,10 +201,7 @@ export default function AgentNationalitePage() {
                         className="bg-white/5 border border-white/10 rounded-xl py-2 px-4 text-sm text-white focus:outline-none focus:border-emerald-500/50"
                     >
                         <option value="all">Tous les statuts</option>
-                        <option value="soumis">Soumis</option>
-                        <option value="en_examen">En examen</option>
-                        <option value="approuvé">Approuvé</option>
-                        <option value="rejeté">Rejeté</option>
+                        {STATUTS_DOSSIER.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                     </select>
                 </div>
                 <Button onClick={fetchApps} variant="outline" className="border-white/10 text-gray-500">
@@ -247,7 +256,7 @@ export default function AgentNationalitePage() {
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-1.5">
-                                            <span className={`w-2 h-2 rounded-full ${app.payment_status === 'completed' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 opacity-50'}`} />
+                                            <span className={`w-2 h-2 rounded-full ${['payé', 'paye', 'paid', 'completed', 'success'].includes(String(app.payment_status || '').toLowerCase()) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 opacity-50'}`} />
                                             <span className="text-xs font-bold uppercase tracking-widest text-white/80">{app.amount} {app.currency}</span>
                                         </div>
                                     </td>
@@ -470,14 +479,14 @@ export default function AgentNationalitePage() {
                                         <p className="text-xs text-gray-400 italic">Mettez à jour le statut pour notifier le client</p>
                                     </div>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto">
-                                        {['soumis', 'en_examen', 'approuvé', 'rejeté'].map(s => (
+                                        {STATUTS_DOSSIER.map(x => x.v).map(s => (
                                             <button
                                                 key={s}
                                                 disabled={isUpdating}
                                                 onClick={() => updateStatus(showDetail.id, s)}
                                                 className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${showDetail.status === s ? getStatusStyle(s) + ' shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/20'}`}
                                             >
-                                                {isUpdating && showDetail.status === s ? <Loader2 size={12} className="animate-spin mx-auto" /> : s}
+                                                {isUpdating && showDetail.status === s ? <Loader2 size={12} className="animate-spin mx-auto" /> : (STATUTS_DOSSIER.find(x => x.v === s)?.l || s)}
                                             </button>
                                         ))}
                                     </div>

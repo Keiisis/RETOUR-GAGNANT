@@ -6,7 +6,7 @@
  * et que la vérification côté serveur fonctionnera correctement.
  */
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublic } from '@/lib/api-guard'
 import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'

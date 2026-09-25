@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ywvsfhqdtkgzavxsumnk.supabase.co'
 

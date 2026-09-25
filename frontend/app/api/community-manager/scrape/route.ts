@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
+import { requireStaff } from '@/lib/api-guard'
 
 // ── Pool de clés Apify (rotation dynamique) ─────────────
 const APIFY_KEYS: string[] = [
@@ -418,6 +419,9 @@ async function serperFallback(profileUrl: string, platform: string): Promise<Nor
 // POST /api/community-manager/scrape
 // ═════════════════════════════════════════════════════════
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json()
         const { profile_url, platform } = body
@@ -477,7 +481,10 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/community-manager/scrape : Status
-export async function GET() {
+export async function GET(request: Request) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     return NextResponse.json({
         supported_platforms: VALID_PLATFORMS,
         apify_keys_count: APIFY_KEYS.length,

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Users, MagnifyingGlass as Search, Envelope as Mail, Phone, PencilLine as Edit3, Trash as Trash2, X, FloppyDisk as Save, CircleNotch as Loader2, Calendar, FileText, CaretRight as ChevronRight, Star, Globe, ChatText as MessageSquare, FolderOpen, MagicWand as Wand2, Translate as Languages, PaperPlaneTilt as Send, Flame, TrendUp as TrendingUp, Wallet, Briefcase, Pulse as Activity } from '@phosphor-icons/react';
+import { toXOF } from '@/lib/currency-convert'
 
 type ClientSource = 'dossier' | 'message' | 'eligibilite' | 'nationalite'
 
@@ -31,7 +32,7 @@ interface Client {
 
 interface ClientDetailData {
     dossiers: Array<{ id: string; service: string; statut: string; created_at: string }>
-    factures: Array<{ id: string; numero: string; type: string; total: number; status: string; created_at: string }>
+    factures: Array<{ id: string; numero: string; type: string; total: number; currency?: string | null; status: string; created_at: string }>
     paiements: Array<{ id: string; montant: number; methode: string; created_at: string; description?: string }>
     appointments: Array<{ id: string; date: string; type: string; status: string }>
     totalPaid: number
@@ -193,8 +194,9 @@ export default function AgentClientsPage() {
         // ── Agrégats d'activité par email (membres actifs) ──
         const allDossiers = (dossierRes.data || []) as Record<string, unknown>[]
         const [financRes, paymentsRes, apptsRes] = await Promise.all([
-            supabase.from('documents_financiers').select('client_email, total, type, status'),
-            supabase.from('paiements_manuels').select('client_email, montant'),
+            supabase.from('documents_financiers').select('id, client_email, total, currency, type, status'),
+            // `paiements_manuels` n'a pas d'e-mail : il se rattache par sa facture.
+            supabase.from('paiements_manuels').select('document_id, montant'),
             supabase.from('appointments').select('client_email, date'),
         ])
 
@@ -217,13 +219,21 @@ export default function AgentClientsPage() {
             const ts = d.created_at && !isNaN(new Date(d.created_at as string).getTime()) ? new Date(d.created_at as string).getTime() : 0
             bump(email, { dossiers: 1, lastActivity: ts })
         })
+        /* Encaissé = facture payée à son total, sinon ses encaissements
+           partiels — jamais les deux (le même argent était compté deux fois),
+           et toujours ramené en XOF. */
+        const partiels = new Map<string, number>()
+        ;(paymentsRes.data || []).forEach((p: Record<string, unknown>) => {
+            const doc = String(p.document_id || '')
+            if (doc) partiels.set(doc, (partiels.get(doc) || 0) + (Number(p.montant) || 0))
+        })
         ;(financRes.data || []).forEach((f: Record<string, unknown>) => {
             const email = ((f.client_email as string) || '').toLowerCase()
             const isInvoice = (f.type as string) === 'facture' && (f.status as string) !== 'annule'
-            bump(email, { factures: isInvoice ? 1 : 0, paid: (f.status === 'paye' ? (f.total as number) : 0) })
-        })
-        ;(paymentsRes.data || []).forEach((p: Record<string, unknown>) => {
-            bump((p.client_email as string) || '', { paid: (p.montant as number) || 0 })
+            const encaisse = f.status === 'paye'
+                ? toXOF(Number(f.total) || 0, f.currency as string)
+                : toXOF(partiels.get(String(f.id)) || 0, f.currency as string)
+            bump(email, { factures: isInvoice ? 1 : 0, paid: encaisse })
         })
         ;(apptsRes.data || []).forEach((a: Record<string, unknown>) => {
             bump((a.client_email as string) || '', { appts: 1 })
@@ -266,15 +276,24 @@ export default function AgentClientsPage() {
         const email = client.email
         const [dossiersRes, financRes, paiementsRes, apptsRes] = await Promise.all([
             supabase.from('dossier_tracking').select('id, service, statut, created_at').eq('email', email).order('created_at', { ascending: false }),
-            supabase.from('documents_financiers').select('id, numero, type, total, status, created_at').eq('client_email', email).order('created_at', { ascending: false }),
-            supabase.from('paiements_manuels').select('id, montant, methode, created_at, description').eq('client_email', email).order('created_at', { ascending: false }),
+            supabase.from('documents_financiers').select('id, numero, type, total, currency, status, created_at').eq('client_email', email).order('created_at', { ascending: false }),
+            // Colonnes réelles (type, reference, notes) ; rattachement par la facture ci-dessous.
+            supabase.from('paiements_manuels').select('id, document_id, montant, type, reference, notes, created_at').order('created_at', { ascending: false }),
             supabase.from('appointments').select('id, date, type, status').eq('client_email', email).order('date', { ascending: false }),
         ])
         const factures = (financRes.data || []) as ClientDetailData['factures']
-        const paiements = (paiementsRes.data || []) as ClientDetailData['paiements']
-        const totalInvoiced = factures.filter(f => f.type === 'facture' && f.status !== 'annule').reduce((s, f) => s + (f.total || 0), 0)
-        const totalPaid = factures.filter(f => f.status === 'paye').reduce((s, f) => s + (f.total || 0), 0)
-            + paiements.reduce((s, p) => s + (p.montant || 0), 0)
+        const idsFactures = new Set(factures.map(f => f.id))
+        type LignePaiement = { id: string; document_id: string | null; montant: number; type: string | null; reference: string | null; notes: string | null; created_at: string }
+        const paiements = ((paiementsRes.data || []) as LignePaiement[])
+            .filter(p => p.document_id && idsFactures.has(p.document_id))
+            .map(p => ({ id: p.id, montant: p.montant, methode: p.type || 'manuel', created_at: p.created_at, description: p.reference || p.notes || undefined, document_id: p.document_id }))
+        const devise = (id: string | null) => factures.find(f => f.id === id)?.currency
+        const actives = factures.filter(f => f.type === 'facture' && f.status !== 'annule')
+        const totalInvoiced = actives.reduce((s, f) => s + toXOF(f.total || 0, f.currency), 0)
+        // Payée : son total ; sinon ses encaissements partiels. Jamais les deux.
+        const totalPaid = actives.reduce((s, f) => s + (f.status === 'paye'
+            ? toXOF(f.total || 0, f.currency)
+            : paiements.filter(p => p.document_id === f.id).reduce((n, p) => n + toXOF(p.montant || 0, devise(p.document_id)), 0)), 0)
         setDetailData({
             dossiers: (dossiersRes.data || []) as ClientDetailData['dossiers'],
             factures,
@@ -307,12 +326,19 @@ export default function AgentClientsPage() {
         }
 
         // Route update to correct table
+        let resultat: { error: { message: string } | null } = { error: null }
         if (selectedClient.source === 'dossier') {
-            await supabase.from('dossier_tracking').update({ ...updateData, statut: editStatus }).eq('id', selectedClient.id)
+            resultat = await supabase.from('dossier_tracking').update({ ...updateData, statut: editStatus }).eq('id', selectedClient.id)
         } else if (selectedClient.source === 'message') {
-            await supabase.from('messages').update({ nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone }).eq('id', selectedClient.id)
+            resultat = await supabase.from('messages').update({ nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone }).eq('id', selectedClient.id)
         } else if (selectedClient.source === 'nationalite') {
-            await supabase.from('nationality_applications').update({ nom: editNom, prenom: editPrenom, email: editEmail, phone: editTelephone, status: editStatus }).eq('id', selectedClient.id)
+            // `telephone` : la colonne `phone` n'existe pas, et TOUTE la mise à jour échouait.
+            resultat = await supabase.from('nationality_applications').update({ nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone, status: editStatus }).eq('id', selectedClient.id)
+        }
+        if (resultat.error) {
+            setSaving(false)
+            alert(`Enregistrement impossible : ${resultat.error.message}`)
+            return
         }
         // eligibility_results is read-only (Oracle scoring)
 

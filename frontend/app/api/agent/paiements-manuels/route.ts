@@ -10,6 +10,20 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { logAudit } from '@/lib/audit-compta'
 import { isPeriodLocked } from '@/lib/comptaLock'
+import { agentHasComptaAccess } from '@/lib/constants/compta'
+
+/* Comptabilité côté agent : réservée à Ornel (décision du 16/07/2026). La
+   règle n'était appliquée que dans le navigateur : n'importe quel agent
+   pouvait écrire ici par un appel direct. */
+async function accesCompta(auth: { userId?: string; role?: string }): Promise<NextResponse | null> {
+    if (['admin', 'super_admin', 'superadmin', 'ceo'].includes(String(auth.role || ''))) return null
+    const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const { data } = await sb.from('user_profiles').select('email').eq('id', auth.userId || '').maybeSingle()
+    return agentHasComptaAccess(data?.email)
+        ? null
+        : NextResponse.json({ error: 'Comptabilité réservée à l’administration.' }, { status: 403 })
+}
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -36,6 +50,7 @@ async function assertOwnership(
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
+    { const refus = await accesCompta(auth); if (refus) return refus }
 
     const body = await request.json()
     const id = String(body.id || '')
@@ -75,6 +90,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
+    { const refus = await accesCompta(auth); if (refus) return refus }
 
     const id = request.nextUrl.searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })

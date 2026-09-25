@@ -4,9 +4,15 @@
  * Retourne la réponse brute de l'API FedaPay pour diagnostiquer les problèmes de vérification.
  */
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
+import { requireStaff } from '@/lib/api-guard'
 
 export async function GET(request: Request) {
+    /* « Usage interne uniquement » n'était écrit que dans le commentaire : la
+       route était ouverte à tous, et renvoyait le début de la clé secrète
+       FedaPay ainsi que le détail de n'importe quelle transaction. */
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
     try {
         const { searchParams } = new URL(request.url)
         const transaction_id = searchParams.get('transaction_id')

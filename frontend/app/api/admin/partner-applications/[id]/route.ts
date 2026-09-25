@@ -17,7 +17,7 @@ export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const auth = await verifyApiAuth(request, 'admin')
+    const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
 
     try {

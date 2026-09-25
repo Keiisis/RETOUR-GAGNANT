@@ -503,7 +503,7 @@ export default function AdminComptabilitePage() {
             const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
             const invoicesPayeesSansP = invoices
                 .filter(d => d.status === 'paye' && !docsWithP.has(d.id))
-                .reduce((a, d) => a + toXOF(d.total - (Number(d.remise) || 0), d.currency), 0)
+                .reduce((a, d) => a + toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */, 0)
 
             const encaisseFactu = encaissePaiements + invoicesPayeesSansP
             const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
@@ -560,7 +560,7 @@ export default function AdminComptabilitePage() {
         const buckets = { b0: 0, b30: 0, b60: 0, b90: 0, total: 0 }
         const byClient = new Map<string, { client: string; b0: number; b30: number; b60: number; b90: number; total: number; oldest: number }>()
         docs.filter(d => d.type === 'facture' && !CLOSED.includes((d.status || '').toLowerCase())).forEach(d => {
-            const gross = toXOF(d.total - (Number(d.remise) || 0), d.currency)
+            const gross = toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */
             const due = Math.max(0, gross - (paiements[d.id] || 0))
             if (due <= 0) return
             const ageDays = Math.floor((now - new Date(d.created_at).getTime()) / 864e5)
@@ -608,7 +608,7 @@ export default function AdminComptabilitePage() {
         const now = new Date()
         const retard = pDocs.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (retard.length > 0)
-            list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j : ${fmt(retard.reduce((a, d) => a + d.total, 0))} à relancer`, action: 'retard' })
+            list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j : ${fmt(retard.reduce((a, d) => a + toXOF(d.total, d.currency), 0))} à relancer`, action: 'retard' })
         if (kpis.benefice < 0)
             list.push({ type: 'danger', msg: `Bénéfice net négatif (${fmt(kpis.benefice)}) : dépenses supérieures aux encaissements` })
         const agentsInactifs = agents.filter(a => a.role === 'agent' && !pDocs.some(d => d.agent_id === a.id && d.type === 'facture' && d.status === 'paye'))
@@ -683,7 +683,7 @@ export default function AdminComptabilitePage() {
             if (d.type === 'facture' && d.status === 'paye' && d.agent_id && !docsWithP.has(d.id)) {
                 if (map.has(d.agent_id)) {
                     const s = map.get(d.agent_id)!
-                    s.encaisse += toXOF(d.total - (Number(d.remise) || 0), d.currency)
+                    s.encaisse += toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */
                     s.nbPayees++
                     // (TVA collectée déjà comptée sur toutes les factures émises ci-dessus)
                 }

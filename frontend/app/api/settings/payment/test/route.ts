@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import axios from 'axios'
 import Stripe from 'stripe'
+import { requireStaff } from '@/lib/api-guard'
 
 export async function POST(request: Request) {
+    // Ouvert à tous : le serveur servait de banc d'essai à des clés volées.
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json()
         const { gateway, settings } = body

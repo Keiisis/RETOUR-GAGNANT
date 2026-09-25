@@ -160,12 +160,13 @@ export default function AdminDossiersPage() {
         setSyncing(true)
         setSyncResult(null)
         try {
-            const res = await fetch('/api/cron/sync-dossiers', { method: 'POST' })
-            const data = await res.json()
-            setSyncResult(` ${data.synced} dossier(s) synchronisé(s) sur ${data.total}`)
+            const res = await fetch('/api/admin/dossiers/sync', { method: 'POST' })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+            setSyncResult(data.total === undefined ? ` ${data.message || 'Rien à synchroniser'}` : ` ${data.synced} dossier(s) synchronisé(s) sur ${data.total}`)
             refetch()
-        } catch {
-            setSyncResult('Erreur de synchronisation')
+        } catch (e) {
+            setSyncResult(`Erreur de synchronisation : ${e instanceof Error ? e.message : 'inconnue'}`)
         } finally {
             setSyncing(false)
             setTimeout(() => setSyncResult(null), 5000)
@@ -323,7 +324,7 @@ export default function AdminDossiersPage() {
 
     // Synchroniser automatiquement au chargement de la page
     useEffect(() => {
-        fetch('/api/cron/sync-dossiers', { method: 'POST' })
+        fetch('/api/admin/dossiers/sync', { method: 'POST' })
             .then(r => r.json())
             .then(d => { if (d.synced > 0) refetch() })
             .catch(() => {})

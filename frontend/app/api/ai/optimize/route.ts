@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithGroqRotation, GROQ_MODEL } from "@/lib/groq";
+import { requireStaff } from '@/lib/api-guard'
 
 const SYSTEM_PROMPTS: Record<string, string> = {
     patrimoine: `Tu es un curateur d'art et historien spécialiste du Bénin.
@@ -20,6 +21,9 @@ Améliore le style sans trahir le sens original.`
 };
 
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const { text, type, instructions } = await request.json();
 

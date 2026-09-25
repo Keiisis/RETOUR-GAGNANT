@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { requireStaff } from '@/lib/api-guard'
 
 const SYSTEM_PROMPT = `Tu es un assistant polyglotte et traducteur assermenté pour Retour Gagnant Bénin.
 Ton seul rôle est d'analyser le contexte du client (nationalité possible, anciennes notes, numéro de téléphone) et de traduire LE TEXTE que je te fournis.
@@ -9,6 +10,9 @@ Ton seul rôle est d'analyser le contexte du client (nationalité possible, anci
 3. Ne mets RIEN d'autre que ce JSON (pas de bloc "\`\`\`json" ni de commentaires).`;
 
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const { text, clientContext } = await request.json();
         if (GROQ_KEYS.length === 0) {

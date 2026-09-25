@@ -7,6 +7,7 @@ import { Users, QrCode, CheckCircle as CheckCircle2, Ticket, MagnifyingGlass as 
 
 // Le scanner de l'agent, reutilise tel quel : meme caméra, meme anti-fraude.
 import TicketScanner from '@/components/agent/TicketScanner'
+import { toXOF } from '@/lib/currency-convert'
 
 interface TicketData {
     id: string
@@ -97,7 +98,12 @@ export default function EventRegistrationsPage() {
 
     const totalVIP = regs.filter(r => r.ticket_type === 'vip').length
     const totalStandard = regs.filter(r => r.ticket_type === 'standard').length
-    const totalRevenue = regs.reduce((sum, r) => sum + (r.amount_paid || 0), 0)
+    /* Revenu RÉEL : inscriptions payées seulement, ramenées en XOF. On
+       additionnait aussi les inscriptions en attente ou échouées, et des
+       devises différentes, sous l'étiquette « FCFA ». */
+    const totalRevenue = regs
+        .filter(r => r.payment_status === 'completed')
+        .reduce((sum, r) => sum + toXOF(r.amount_paid || 0, r.currency || 'XOF'), 0)
 
     return (
         <div className="space-y-6">

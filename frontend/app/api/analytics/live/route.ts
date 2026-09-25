@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,10 @@ const supabase = createClient(
 // ═══════════════════════════════════════════════════════
 // GET /api/analytics/live : Données live + stats 24h enrichies
 // ═══════════════════════════════════════════════════════
-export async function GET() {
+export async function GET(request: NextRequest) {
+    // Public jusqu'ici : IP, ville et coordonnées de chaque visiteur des 30 dernières minutes.
+    const garde = await requireStaff(request, 'admin')
+    if (!garde.ok) return garde.response!
     try {
         const now = Date.now()
         const since5min  = new Date(now -  5 * 60 * 1000).toISOString()
