@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createTransporter, getEmailConfig } from '@/lib/email'
 import { executerCron } from '@/lib/cron-journal'
+import { purgerBrouillons } from '@/lib/nationality-brouillon'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,7 +38,20 @@ async function runPurge() {
         dossiersDeleted: 0,
         filesDeleted: 0,
         emailsSent: 0,
+        brouillonsPurges: 0,
         errors: [] as string[],
+    }
+
+    /* ── 0. Brouillons du formulaire de nationalité abandonnés (> 30 j) ──
+       Les pièces sont désormais déposées AVANT le paiement : un visiteur qui
+       n'a jamais payé ne doit pas laisser son passeport dans le stockage.
+       Placé en tête : la suite s'arrête tôt quand aucun dossier n'expire. */
+    try {
+        const p = await purgerBrouillons(supabase)
+        results.brouillonsPurges = p.brouillons
+        results.filesDeleted += p.pieces
+    } catch (e) {
+        results.errors.push(`Purge des brouillons : ${e instanceof Error ? e.message : String(e)}`)
     }
 
     // ── 1. Récupérer les dossiers expirés ────────────────────

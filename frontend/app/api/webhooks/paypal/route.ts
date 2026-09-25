@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+// Client SERVEUR (service role) : un webhook ne doit pas dépendre des règles
+// d'accès de la clé publique du navigateur.
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 async function getPayPalAccessToken(
     clientId: string,

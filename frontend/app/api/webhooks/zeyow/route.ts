@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
+
+// Client SERVEUR (service role) : un webhook ne doit pas dépendre des règles
+// d'accès de la clé publique du navigateur.
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 // Webhook Zeyow : notification asynchrone de paiement (appel serveur-à-serveur uniquement)
 export async function POST(request: Request) {

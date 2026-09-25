@@ -44,7 +44,8 @@ const GATEWAYS: GatewayConfig[] = [
         fields: [
             { key: 'kkiapay_public_key', label: ' Clé Publique (LIVE)', placeholder: 'pk_xxx...', type: 'text', required: true, isSecret: false, helpText: 'Clé publique PRODUCTION : depuis le dashboard Kkiapay (mode Live)' },
             { key: 'kkiapay_private_key', label: ' Clé Privée (LIVE)', placeholder: 'prk_xxx...', type: 'password', required: true, isSecret: true, helpText: 'Clé privée PRODUCTION : pour vérifier les transactions' },
-            { key: 'kkiapay_secret_key', label: ' Clé Secrète (LIVE)', placeholder: 'sk_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Optionnel : utilisée pour les webhooks en production' },
+            { key: 'kkiapay_secret_key', label: ' Clé Secrète (LIVE)', placeholder: 'sk_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Clé secrète PRODUCTION : vérification serveur des transactions' },
+            { key: 'kkiapay_webhook_secret', label: ' Secret du webhook', placeholder: 'celui saisi dans Kkiapay → Webhook', type: 'password', required: false, isSecret: true, helpText: 'Recopiez ici le secret défini dans le tableau de bord Kkiapay (Paramètres → Webhook). Adresse du webhook à déclarer chez Kkiapay : https://www.retourgagnantbenin.bj/api/webhooks/kkiapay. Renseigné, il fait refuser tout appel qui ne le porte pas.' },
             { key: 'kkiapay_sandbox_public_key', label: ' Clé Publique (SANDBOX)', placeholder: 'pk_test_xxx...', type: 'text', required: false, isSecret: false, helpText: 'Clé publique TEST : depuis le dashboard Kkiapay (mode Sandbox)' },
             { key: 'kkiapay_sandbox_private_key', label: ' Clé Privée (SANDBOX)', placeholder: 'prk_test_xxx...', type: 'password', required: false, isSecret: true, helpText: 'Clé privée TEST : pour vérifier les transactions en sandbox' },
         ],
