@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
     Compass, CircleNotch as Loader2, MapPin, CalendarBlank as Calendar, Users,
@@ -57,6 +57,12 @@ const dateFr = (iso: string | null) => {
 
 export default function DemandesSejourPage() {
     const router = useRouter()
+    /* Écran partagé avec l'espace agent (app/agent/demandes-sejour le réutilise).
+       Un agent n'a pas accès à /admin/* (middleware) : ses liens doivent viser
+       l'équivalent agent — /agent/presentations — sinon il était renvoyé hors
+       de son espace en cliquant « Créer la proposition ». */
+    const pathname = usePathname()
+    const propositionsHref = pathname?.startsWith('/agent') ? '/agent/presentations' : '/admin/proposals'
     const [demandes, setDemandes] = useState<Demande[]>([])
     const [chargement, setChargement] = useState(true)
     const [erreur, setErreur] = useState('')
@@ -284,14 +290,14 @@ export default function DemandesSejourPage() {
                                                 end_date: d.date_fin || '',
                                                 budget: d.budget ? String(d.budget) : '',
                                             })
-                                            router.push(`/admin/proposals?${p.toString()}`)
+                                            router.push(`${propositionsHref}?${p.toString()}`)
                                         }}
                                         className="inline-flex items-center gap-2 rounded-xl bg-[#008751] px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-[#00643C]"
                                     >
                                         <Sparkles size={15} /> Créer la proposition
                                     </button>
                                     <a
-                                        href="/admin/proposals"
+                                        href={propositionsHref}
                                         className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2.5 text-sm font-bold text-gray-300 hover:bg-white/10"
                                     >
                                         <Send size={14} /> Envoyer un slide existant

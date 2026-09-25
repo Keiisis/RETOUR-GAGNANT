@@ -635,16 +635,19 @@ export default function PersonForm({
         if (error) throw error;
         
         // If we just added a father or mother via context, update the context person's father_id/mother_id
+        let lienErr: { message: string } | null = null;
         if (addAction && contextPersonId && insertedData && insertedData[0]) {
           const newPersonId = insertedData[0].id;
           if (addAction === 'add_father') {
-            await supabase.from('persons').update({ father_id: newPersonId }).eq('id', contextPersonId);
+            ({ error: lienErr } = await supabase.from('persons').update({ father_id: newPersonId }).eq('id', contextPersonId));
           } else if (addAction === 'add_mother') {
-            await supabase.from('persons').update({ mother_id: newPersonId }).eq('id', contextPersonId);
+            ({ error: lienErr } = await supabase.from('persons').update({ mother_id: newPersonId }).eq('id', contextPersonId));
           }
         }
-        
-        flash('Membre ajouté à votre arbre', true);
+
+        // Membre créé mais lien parent refusé : on le dit au lieu d'afficher un succès.
+        if (lienErr) flash('Membre ajouté, mais lien de parenté non enregistré : ' + lienErr.message, false);
+        else flash('Membre ajouté à votre arbre', true);
       }
 
       await syncTreeRelations(treeId);

@@ -73,18 +73,16 @@ function ComplementAncestralContent() {
 
         if (!ref) { setLoading(false); return }
 
-        supabase
-            .from('nationality_applications')
-            .select('prenom, nom, missing_docs, needs_recherche_ancestrale')
-            .eq('application_ref', ref)
-            .single()
-            .then(({ data, error: err }) => {
-                if (err || !data) { setError('Dossier introuvable'); setLoading(false); return }
-                setApplicantName(`${data.prenom} ${data.nom}`)
-                const docs: MissingDoc[] = (data.missing_docs || []).filter((d: MissingDoc) => d.ancestral)
-                setMissingDocs(docs)
+        // Lecture serveur (audit 25/09/2026) : plus de clé publique sur nationality_applications.
+        fetch(`/api/nationality/complement?ref=${encodeURIComponent(ref)}`, { cache: 'no-store' })
+            .then(async r => ({ ok: r.ok, d: await r.json().catch(() => ({})) }))
+            .then(({ ok, d }) => {
+                if (!ok) { setError('Dossier introuvable'); setLoading(false); return }
+                setApplicantName(String(d.prenom || ''))
+                setMissingDocs((d.missing_docs || []) as MissingDoc[])
                 setLoading(false)
             })
+            .catch(() => { setError('Dossier introuvable'); setLoading(false) })
     }, [ref])
 
     const providers = [

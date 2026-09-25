@@ -2,14 +2,17 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// L'identifiant de conversation (UUID aléatoire) est la clé d'accès : on refuse tout autre format.
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const session_id = searchParams.get('session_id');
 
-        if (!session_id) {
+        if (!session_id || !UUID.test(session_id)) {
             return NextResponse.json({ error: 'Missing session_id' }, { status: 400 });
         }
 

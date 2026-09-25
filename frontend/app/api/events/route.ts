@@ -45,9 +45,9 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/events : create event
+// POST /api/events : create event — agents autorisés (décision du 25/09/2026)
 export async function POST(req: NextRequest) {
-    const auth = await verifyApiAuth(req, 'admin')
+    const auth = await verifyApiAuth(req, 'agent')
     if (!auth.authenticated) return auth.error!
     try {
         const supabase = getSupabase()
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
                 status: status || 'draft',
                 cover_image_url, category: category || 'conference',
                 is_featured: is_featured || false,
-                created_by,
+                created_by: auth.userId || created_by || null,
             })
             .select()
             .single()

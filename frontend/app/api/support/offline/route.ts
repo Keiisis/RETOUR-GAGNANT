@@ -16,7 +16,8 @@ import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Clé serveur : `messages` n'accepte plus d'écriture anonyme (verrou RLS 25/09/2026).
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(request: Request) {
   try {

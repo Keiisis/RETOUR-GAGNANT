@@ -98,11 +98,11 @@ export default function AgentWikiPage() {
             tags: tagsArray,
         }
 
-        if (editingArticle) {
-            await supabase.from('wiki_articles').update({ ...articleData, updated_at: new Date().toISOString() }).eq('id', editingArticle.id)
-        } else {
-            await supabase.from('wiki_articles').insert(articleData)
-        }
+        const { error } = editingArticle
+            ? await supabase.from('wiki_articles').update({ ...articleData, updated_at: new Date().toISOString() }).eq('id', editingArticle.id)
+            : await supabase.from('wiki_articles').insert(articleData)
+        // Formulaire conservé si l'article n'a pas été enregistré.
+        if (error) { setSaving(false); alert(`Enregistrement impossible : ${error.message}`); return }
 
         await fetchArticles()
         setShowForm(false)
@@ -110,7 +110,8 @@ export default function AgentWikiPage() {
     }
 
     const handleDeleteArticle = async (id: string) => {
-        await supabase.from('wiki_articles').delete().eq('id', id)
+        const { error } = await supabase.from('wiki_articles').delete().eq('id', id)
+        if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setArticles(prev => prev.filter(a => a.id !== id))
         setSelectedArticle(null)
     }

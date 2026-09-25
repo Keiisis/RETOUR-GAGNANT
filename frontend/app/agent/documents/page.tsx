@@ -97,10 +97,14 @@ export default function AgentDocumentsPage() {
                 .getPublicUrl(filename)
             fileUrl = publicUrl.publicUrl
         } else {
-            fileUrl = `https://storage.placeholder/${filename}`
+            // Fichier non stocké : on arrête ici. Avant, une fiche pointant vers une
+            // URL factice (storage.placeholder) était créée et affichée comme envoyée.
+            setUploading(false)
+            alert(`Envoi du fichier impossible : ${storageError?.message || 'stockage indisponible'}`)
+            return
         }
 
-        await supabase.from('agent_documents').insert({
+        const { error: insertError } = await supabase.from('agent_documents').insert({
             agent_id: user.id,
             filename,
             original_name: uploadFile.name,
@@ -112,6 +116,11 @@ export default function AgentDocumentsPage() {
             file_size: uploadFile.size,
             file_type: uploadFile.type,
         })
+        if (insertError) {
+            setUploading(false)
+            alert(`Enregistrement du document impossible : ${insertError.message}`)
+            return
+        }
 
         await fetchDocs()
         setShowUpload(false)
@@ -127,7 +136,8 @@ export default function AgentDocumentsPage() {
         try {
             await supabase.storage.from('agent-documents').remove([doc.filename])
         } catch { /* ignore storage errors */ }
-        await supabase.from('agent_documents').delete().eq('id', doc.id)
+        const { error } = await supabase.from('agent_documents').delete().eq('id', doc.id)
+        if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setDocs(prev => prev.filter(d => d.id !== doc.id))
     }
 

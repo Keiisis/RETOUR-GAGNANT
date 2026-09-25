@@ -4,7 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatCircle as MessageCircle, X, PaperPlaneTilt as Send, Robot as Bot, Headphones, CircleNotch as Loader2, CheckCircle, ArrowLeft, Microphone as Mic, MicrophoneSlash as MicOff } from '@phosphor-icons/react';
-import { supabase } from "@/lib/supabase";
+import { visibleInterval } from "@/lib/visible-interval";
 
 interface Message {
     role: "user" | "assistant";
@@ -34,15 +34,16 @@ export default function ChatAssistant() {
     }, []);
 
     const fetchLiveMessages = useCallback(async (id: string) => {
-        const { data } = await supabase
-            .from('chat_messages')
-            .select('*')
-            .eq('conversation_id', id)
-            .order('created_at', { ascending: true });
-        if (data) {
-            setLiveMessages(data as DBMessage[]);
+        // Lecture serveur (audit 25/09/2026) : plus de clé publique sur chat_messages.
+        const res = await fetch(`/api/support/get_messages?session_id=${encodeURIComponent(id)}`, { cache: 'no-store' }).catch(() => null);
+        if (!res?.ok) return;
+        const d = await res.json().catch(() => ({}));
+        const data = (d.messages || []) as DBMessage[];
+        setLiveMessages(prev => {
+            if (prev.length === data.length) return prev;
             setTimeout(scrollToBottom, 100);
-        }
+            return data;
+        });
     }, [scrollToBottom]);
 
     // Initialize messages once or when language changes if no messages yet
@@ -87,27 +88,12 @@ export default function ChatAssistant() {
     }, [fetchLiveMessages]);
 
     useEffect(() => {
+        // Réponses de l'agent : sondage toutes les 4 s (onglet visible) à la place
+        // de l'abonnement temps réel en clé publique.
         if (mode === "live_chat" && sessionId) {
-            const channel = supabase.channel(`client_chat_${sessionId}`)
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'chat_messages',
-                    filter: `conversation_id=eq.${sessionId}`
-                }, (payload) => {
-                    const newMsg = payload.new as DBMessage;
-                    setLiveMessages(prev => {
-                        if (prev.find(m => m.id === newMsg.id || (m.role === newMsg.role && m.content === newMsg.content))) {
-                            return prev;
-                        }
-                        return [...prev, newMsg];
-                    });
-                    setTimeout(scrollToBottom, 100);
-                })
-                .subscribe();
-            return () => { supabase.removeChannel(channel); };
+            return visibleInterval(() => { fetchLiveMessages(sessionId); }, 4000, { runImmediately: false });
         }
-    }, [mode, sessionId, scrollToBottom]);
+    }, [mode, sessionId, fetchLiveMessages]);
 
     const sendVoiceMessage = useCallback(async (transcript: string, duration: number) => {
         if (!transcript.trim()) return;
@@ -322,11 +308,16 @@ export default function ChatAssistant() {
         const msg = input.trim();
         setInput("");
 
-        await supabase.from('chat_messages').insert({
-            conversation_id: sessionId,
-            role: 'client',
-            content: msg
-        });
+        const res = await fetch('/api/support/send_message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, content: msg, role: 'client' }),
+        }).catch(() => null);
+        if (!res?.ok) {
+            setInput(msg); // le message n'est pas perdu : il revient dans le champ
+            return;
+        }
+        fetchLiveMessages(sessionId);
     };
 
     const handleSupportSubmit = async (e: React.FormEvent) => {

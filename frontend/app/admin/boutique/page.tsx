@@ -49,14 +49,17 @@ export default function AdminBoutiquePage() {
 
     const updateProduct = async (id: string, values: Partial<ProductItem>) => {
         setUpdatingId(id)
-        await supabase.from('products').update(values).eq('id', id)
-        setItems(prev => prev.map(p => p.id === id ? { ...p, ...values } : p))
+        const { error } = await supabase.from('products').update(values).eq('id', id)
         setUpdatingId(null)
+        // L'écran ne reflète la modification que si la base l'a acceptée.
+        if (error) { alert(`Mise à jour impossible : ${error.message}`); return }
+        setItems(prev => prev.map(p => p.id === id ? { ...p, ...values } : p))
     }
 
     const deleteProduct = async (id: string) => {
         if (!confirm('Supprimer ce produit ?')) return
-        await supabase.from('products').delete().eq('id', id)
+        const { error } = await supabase.from('products').delete().eq('id', id)
+        if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setItems(prev => prev.filter(p => p.id !== id))
     }
 

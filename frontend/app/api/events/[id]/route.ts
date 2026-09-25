@@ -30,13 +30,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 // PUT update event
+// Agents autorisés à modifier (décision du 25/09/2026) ; suppression = admin.
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const auth = await verifyApiAuth(req, 'admin')
+    const auth = await verifyApiAuth(req, 'agent')
     if (!auth.authenticated) return auth.error!
     try {
         const { id } = await params
         const supabase = getSupabase()
-        const body = await req.json()
+        // Champs d'identité et de traçabilité jamais modifiables par le client.
+        const { id: _i, created_at: _c, created_by: _b, ...body } = await req.json()
 
         const { data, error } = await supabase
             .from('events')

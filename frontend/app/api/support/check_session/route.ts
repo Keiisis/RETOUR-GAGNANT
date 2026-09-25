@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { emailProuve } from '@/lib/espace-email';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export async function GET(request: Request) {
+// Audit du 25/09/2026 : l'email venait de l'URL → n'importe qui obtenait
+// l'identifiant (donc la lecture) de la conversation d'autrui. On ne croit
+// plus que l'email PROUVÉ (cookie de l'espace client / session Supabase).
+export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const email = searchParams.get('email');
+        const email = await emailProuve(request);
 
         if (!email) {
             return NextResponse.json({ sessionId: null });

@@ -227,16 +227,16 @@ export default function AiRadarView() {
                 >
                     <Radar className="w-8 h-8 text-[#008751]" />
                 </motion.div>
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight mb-1">
+                <h1 className="text-2xl md:text-3xl font-black text-[var(--panel-text-heading)] tracking-tight mb-1">
                     Radar <span className="text-[#008751]">IA</span> Prospect
                 </h1>
-                <p className="text-gray-500 text-sm max-w-lg mx-auto">
+                <p className="text-[var(--panel-text-muted)] text-sm max-w-lg mx-auto">
                     Moteur de prospection intelligent avec IA, scoring automatique et gestion CRM intégrée.
                 </p>
             </div>
 
             {/* ── TABS ── */}
-            <div className="flex items-center justify-center gap-1 mb-8 bg-gray-100 p-1 rounded-2xl max-w-lg mx-auto">
+            <div className="flex items-center justify-center gap-1 mb-8 bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] p-1 rounded-2xl max-w-lg mx-auto">
                 {([
                     { id: 'search', icon: Search, label: 'Recherche' },
                     { id: 'results', icon: Radar, label: `Résultats (${leads.length})` },
@@ -248,8 +248,8 @@ export default function AiRadarView() {
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex-1 justify-center ${
                             activeTab === tab.id
-                                ? 'bg-white text-gray-900 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-[var(--panel-surface)] text-[var(--panel-text-heading)] shadow-sm'
+                                : 'text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)]'
                         }`}
                     >
                         <tab.icon className="w-3.5 h-3.5" />
@@ -262,31 +262,31 @@ export default function AiRadarView() {
             {activeTab === 'search' && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <form onSubmit={handleScan} className="mb-8">
-                        <div className="flex flex-col gap-4 bg-white p-5 rounded-3xl shadow-lg border border-gray-100 max-w-2xl mx-auto">
+                        <div className="flex flex-col gap-4 bg-[var(--panel-surface)] p-5 rounded-3xl shadow-lg border border-[var(--panel-border)] max-w-2xl mx-auto">
                             <div className="flex items-center gap-3 px-2">
-                                <Search className="w-5 h-5 text-gray-400 shrink-0" />
+                                <Search className="w-5 h-5 text-[var(--panel-text-faint)] shrink-0" />
                                 <input
                                     type="text" placeholder="Ex: Hôtel, Coiffeur, Restaurant..."
                                     value={keyword} onChange={e => setKeyword(e.target.value)}
                                     disabled={isScanning}
-                                    className="w-full bg-transparent outline-none text-gray-800 font-medium placeholder-gray-400"
+                                    className="w-full bg-transparent outline-none text-[var(--panel-text)] font-medium placeholder:text-[var(--panel-text-faint)]"
                                 />
                             </div>
-                            <div className="h-px bg-gray-100" />
+                            <div className="h-px bg-[var(--panel-divider)]" />
                             <div className="flex items-center gap-3 px-2">
-                                <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
+                                <MapPin className="w-5 h-5 text-[var(--panel-text-faint)] shrink-0" />
                                 <input
                                     type="text" placeholder="Ex: Cotonou, Natitingou..."
                                     value={city} onChange={e => setCity(e.target.value)}
                                     disabled={isScanning}
-                                    className="w-full bg-transparent outline-none text-gray-800 font-medium placeholder-gray-400"
+                                    className="w-full bg-transparent outline-none text-[var(--panel-text)] font-medium placeholder:text-[var(--panel-text-faint)]"
                                 />
                             </div>
 
                             {/* Filtres avancés */}
-                            <div className="h-px bg-gray-100" />
+                            <div className="h-px bg-[var(--panel-divider)]" />
                             <button type="button" onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center justify-between text-xs font-bold text-gray-500 px-2 hover:text-gray-700 transition-colors">
+                                className="flex items-center justify-between text-xs font-bold text-[var(--panel-text-muted)] px-2 hover:text-[var(--panel-text)] transition-colors">
                                 <span className="flex items-center gap-2"><Filter className="w-3.5 h-3.5" /> Filtres avancés</span>
                                 <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                             </button>
@@ -297,9 +297,9 @@ export default function AiRadarView() {
                                         className="overflow-hidden">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2 pb-2">
                                             <div>
-                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Note minimum</label>
+                                                <label className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-1 block">Note minimum</label>
                                                 <select title="Note minimum" value={minRating} onChange={e => setMinRating(Number(e.target.value))}
-                                                    className="w-full bg-gray-50 rounded-xl px-3 py-2 text-sm border border-gray-200">
+                                                    className="w-full bg-[var(--panel-surface-alt)] rounded-xl px-3 py-2 text-sm text-[var(--panel-text)] border border-[var(--panel-border-strong)]">
                                                     <option value={0}>Toutes les notes</option>
                                                     <option value={3}>≥ 3 étoiles</option>
                                                     <option value={3.5}>≥ 3.5 étoiles</option>
@@ -308,10 +308,10 @@ export default function AiRadarView() {
                                                 </select>
                                             </div>
                                             <div className="flex items-end">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-gray-50 rounded-xl px-3 py-2 border border-gray-200 w-full">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-[var(--panel-surface-alt)] rounded-xl px-3 py-2 border border-[var(--panel-border-strong)] w-full">
                                                     <input type="checkbox" checked={requirePhone} onChange={e => setRequirePhone(e.target.checked)}
                                                         className="w-4 h-4 accent-[#008751]" />
-                                                    <span className="text-xs font-medium text-gray-700">Avec tél. uniquement</span>
+                                                    <span className="text-xs font-medium text-[var(--panel-text)]">Avec tél. uniquement</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -320,7 +320,7 @@ export default function AiRadarView() {
                             </AnimatePresence>
 
                             <button type="submit" disabled={isScanning || !keyword || !city}
-                                className="h-12 rounded-2xl bg-[#008751] hover:bg-[#00a664] text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#008751]/20">
+                                className="h-12 rounded-2xl bg-[#008751] hover:bg-[#00a664] text-[#fff] font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#008751]/20">
                                 {isScanning ? (
                                     <span className="flex items-center gap-2">
                                         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -345,7 +345,7 @@ export default function AiRadarView() {
                                 <div className="absolute inset-4 bg-[#FCD116]/10 rounded-full animate-ping" />
                                 <Image src="/logo.jpg" alt="RGB" width={50} height={50} className="rounded-full shadow-lg relative z-10 animate-pulse" />
                             </div>
-                            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] animate-pulse">
+                            <p className="text-[var(--panel-text-muted)] font-bold uppercase tracking-widest text-[10px] animate-pulse">
                                 Extraction & Scoring par Llama-3...
                             </p>
                         </div>
@@ -360,10 +360,10 @@ export default function AiRadarView() {
                     {leads.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 mb-6">
                             {/* Tri */}
-                            <div className="flex items-center gap-1 bg-white rounded-xl border border-gray-200 px-2 py-1.5">
-                                <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
+                            <div className="flex items-center gap-1 bg-[var(--panel-surface)] rounded-xl border border-[var(--panel-border-strong)] px-2 py-1.5">
+                                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--panel-text-faint)]" />
                                 <select title="Trier par" value={sortBy} onChange={e => setSortBy(e.target.value)}
-                                    className="text-xs font-medium bg-transparent outline-none text-gray-700">
+                                    className="text-xs font-medium bg-transparent outline-none text-[var(--panel-text)]">
                                     <option value="relevance_score">Score IA</option>
                                     <option value="rating">Note Google</option>
                                     <option value="reviews">Nb. avis</option>
@@ -372,9 +372,9 @@ export default function AiRadarView() {
                             </div>
 
                             {/* Statut */}
-                            <div className="flex items-center gap-1 bg-white rounded-xl border border-gray-200 px-2 py-1.5">
+                            <div className="flex items-center gap-1 bg-[var(--panel-surface)] rounded-xl border border-[var(--panel-border-strong)] px-2 py-1.5">
                                 <select title="Filtrer par statut" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                                    className="text-xs font-medium bg-transparent outline-none text-gray-700">
+                                    className="text-xs font-medium bg-transparent outline-none text-[var(--panel-text)]">
                                     <option value="all">Tous statuts</option>
                                     {Object.entries(STATUS_CONFIG).map(([key, val]) => (
                                         <option key={key} value={key}>{val.label}</option>
@@ -385,7 +385,7 @@ export default function AiRadarView() {
                             {/* Favoris */}
                             <button onClick={() => setOnlyFavorites(!onlyFavorites)}
                                 className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-                                    onlyFavorites ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-gray-200 text-gray-500'
+                                    onlyFavorites ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'bg-[var(--panel-surface)] border-[var(--panel-border-strong)] text-[var(--panel-text-muted)]'
                                 }`}>
                                 <Heart className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-current' : ''}`} /> Favoris
                             </button>
@@ -400,14 +400,14 @@ export default function AiRadarView() {
 
                     {/* Message cache */}
                     {cachedMsg && (
-                        <div className="flex items-center gap-2 bg-blue-50 text-blue-700 p-3 rounded-xl text-xs font-medium mb-4 border border-blue-100">
+                        <div className="flex items-center gap-2 bg-blue-500/10 text-blue-500 p-3 rounded-xl text-xs font-medium mb-4 border border-blue-500/20">
                             <Clock className="w-4 h-4 shrink-0" /> {cachedMsg}
                         </div>
                     )}
 
                     {/* Erreur */}
                     {error && (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-center text-sm font-medium mb-6">
+                        <div className="p-4 bg-red-500/10 text-red-500 rounded-2xl border border-red-500/20 text-center text-sm font-medium mb-6">
                             {error}
                         </div>
                     )}
@@ -420,14 +420,14 @@ export default function AiRadarView() {
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     key={lead.id || idx}
-                                    className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all group flex flex-col relative"
+                                    className="bg-[var(--panel-surface)] rounded-2xl overflow-hidden border border-[var(--panel-border)] shadow-sm hover:shadow-lg transition-all group flex flex-col relative"
                                 >
                                     {/* Score badge */}
                                     {lead.relevance_score !== undefined && lead.relevance_score > 0 && (
-                                        <div className={`absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-[10px] font-black text-white shadow-lg ${
-                                            lead.relevance_score >= 80 ? 'bg-[#008751]' :
-                                            lead.relevance_score >= 60 ? 'bg-[#FCD116] text-gray-900' :
-                                            lead.relevance_score >= 40 ? 'bg-orange-500' : 'bg-gray-500'
+                                        <div className={`absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-[10px] font-black shadow-lg ${
+                                            lead.relevance_score >= 80 ? 'bg-[#008751] text-[#fff]' :
+                                            lead.relevance_score >= 60 ? 'bg-[#FCD116] text-[#111827]' :
+                                            lead.relevance_score >= 40 ? 'bg-orange-500 text-[#fff]' : 'bg-gray-500 text-[#fff]'
                                         }`}>
                                             <Sparkles className="w-3 h-3 inline mr-1" />{lead.relevance_score}/100
                                         </div>
@@ -436,26 +436,26 @@ export default function AiRadarView() {
                                     {/* Favori */}
                                     <button onClick={() => toggleFavorite(lead)}
                                         className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
-                                        <Heart className={`w-4 h-4 ${lead.is_favorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
+                                        <Heart className={`w-4 h-4 ${lead.is_favorite ? 'text-red-500 fill-current' : 'text-[#6B7280]'}`} />
                                     </button>
 
                                     {/* Image */}
-                                    <div className="relative h-40 bg-gray-100 overflow-hidden">
+                                    <div className="relative h-40 bg-[var(--panel-surface-alt)] overflow-hidden">
                                         {lead.photo_url ? (
                                             <Image src={lead.photo_url} alt={lead.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                                         ) : (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
-                                                <Building2 className="w-10 h-10 text-gray-300" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-[var(--panel-surface-alt)]">
+                                                <Building2 className="w-10 h-10 text-[var(--panel-text-faint)]" />
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-transparent" />
                                         <div className="absolute bottom-3 left-3 right-3">
-                                            <h3 className="text-white font-extrabold text-sm leading-tight truncate">{lead.title}</h3>
+                                            <h3 className="text-[#fff] font-extrabold text-sm leading-tight truncate">{lead.title}</h3>
                                             {lead.rating && (
                                                 <div className="flex items-center gap-1 mt-1">
                                                     <Star className="w-3 h-3 text-[#FCD116] fill-current" />
-                                                    <span className="text-white font-bold text-xs">{lead.rating}</span>
-                                                    <span className="text-white/60 text-[10px]">({lead.reviews_count} avis)</span>
+                                                    <span className="text-[#fff] font-bold text-xs">{lead.rating}</span>
+                                                    <span className="text-[rgba(255,255,255,0.6)] text-[10px]">({lead.reviews_count} avis)</span>
                                                 </div>
                                             )}
                                         </div>
@@ -470,7 +470,7 @@ export default function AiRadarView() {
                                                     className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all border ${
                                                         lead.status === key
                                                             ? `${val.bg} border-current`
-                                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:text-gray-600'
+                                                            : 'bg-[var(--panel-surface-alt)] border-[var(--panel-border)] text-[var(--panel-text-faint)] hover:text-[var(--panel-text-muted)]'
                                                     }`}
                                                     style={lead.status === key ? { color: val.color, borderColor: val.color + '40' } : {}}
                                                 >
@@ -479,11 +479,11 @@ export default function AiRadarView() {
                                             ))}
                                         </div>
 
-                                        <p className="text-gray-600 text-xs italic line-clamp-2 flex-1">&ldquo;{lead.description}&rdquo;</p>
+                                        <p className="text-[var(--panel-text-muted)] text-xs italic line-clamp-2 flex-1">&ldquo;{lead.description}&rdquo;</p>
 
-                                        <div className="flex items-start gap-2 bg-gray-50 p-2.5 rounded-xl">
+                                        <div className="flex items-start gap-2 bg-[var(--panel-surface-alt)] p-2.5 rounded-xl">
                                             <MapPin className="w-3.5 h-3.5 text-[#E8112D] shrink-0 mt-0.5" />
-                                            <p className="text-[10px] font-semibold text-gray-700 leading-snug">{lead.address}</p>
+                                            <p className="text-[10px] font-semibold text-[var(--panel-text)] leading-snug">{lead.address}</p>
                                         </div>
 
                                         {/* Actions */}
@@ -496,9 +496,9 @@ export default function AiRadarView() {
                                                     <ExternalLink className="w-3 h-3 text-[#008751] opacity-60" />
                                                 </a>
                                             ) : (
-                                                <div className="flex-1 flex items-center justify-center gap-1.5 bg-gray-50 p-2.5 rounded-xl opacity-50">
-                                                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                                                    <span className="text-[10px] text-gray-500">Aucun tél.</span>
+                                                <div className="flex-1 flex items-center justify-center gap-1.5 bg-[var(--panel-surface-alt)] p-2.5 rounded-xl opacity-50">
+                                                    <Phone className="w-3.5 h-3.5 text-[var(--panel-text-faint)]" />
+                                                    <span className="text-[10px] text-[var(--panel-text-muted)]">Aucun tél.</span>
                                                 </div>
                                             )}
 
@@ -512,8 +512,8 @@ export default function AiRadarView() {
 
                                             {/* Détails */}
                                             <button onClick={() => { setSelectedLead(lead); setNoteText(lead.notes || '') }}
-                                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
-                                                <MessageSquare className="w-3.5 h-3.5 text-gray-600" />
+                                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] transition-colors">
+                                                <MessageSquare className="w-3.5 h-3.5 text-[var(--panel-text-muted)]" />
                                             </button>
                                         </div>
                                     </div>
@@ -522,7 +522,7 @@ export default function AiRadarView() {
                         </div>
                     ) : (
                         !isScanning && !error && (
-                            <div className="text-center text-gray-400 py-16">
+                            <div className="text-center text-[var(--panel-text-faint)] py-16">
                                 <Radar className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">Lancez une recherche pour voir les résultats ici.</p>
                             </div>
@@ -535,39 +535,39 @@ export default function AiRadarView() {
             {activeTab === 'history' && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-black text-gray-900">Historique des recherches</h2>
-                        <button onClick={loadHistory} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
-                            <RefreshCw className="w-4 h-4 text-gray-500" />
+                        <h2 className="text-lg font-black text-[var(--panel-text-heading)]">Historique des recherches</h2>
+                        <button onClick={loadHistory} className="p-2 rounded-xl bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] transition-colors">
+                            <RefreshCw className="w-4 h-4 text-[var(--panel-text-muted)]" />
                         </button>
                     </div>
                     {searchHistory.length > 0 ? (
                         <div className="space-y-2">
                             {searchHistory.map(search => (
                                 <div key={search.id}
-                                    className="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200 transition-all">
+                                    className="flex items-center justify-between bg-[var(--panel-surface)] rounded-xl p-4 border border-[var(--panel-border)] hover:border-[var(--panel-border-strong)] transition-all">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-[#008751]/10 flex items-center justify-center">
                                             <Search className="w-5 h-5 text-[#008751]" />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-gray-900">
-                                                {search.keyword} <span className="text-gray-400">à</span> {search.city}
+                                            <p className="font-bold text-sm text-[var(--panel-text-heading)]">
+                                                {search.keyword} <span className="text-[var(--panel-text-faint)]">à</span> {search.city}
                                             </p>
-                                            <p className="text-[10px] text-gray-500">
+                                            <p className="text-[10px] text-[var(--panel-text-muted)]">
                                                 {new Date(search.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 {' · '}{search.results_count} résultats
                                             </p>
                                         </div>
                                     </div>
                                     <button onClick={() => relaunchSearch(search)}
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-[#008751]/10 text-gray-600 hover:text-[#008751] text-xs font-bold transition-all">
+                                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--panel-surface-alt)] hover:bg-[#008751]/10 text-[var(--panel-text-muted)] hover:text-[#008751] text-xs font-bold transition-all">
                                         <RefreshCw className="w-3.5 h-3.5" /> Relancer
                                     </button>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center text-gray-400 py-16">
+                        <div className="text-center text-[var(--panel-text-faint)] py-16">
                             <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="text-sm">Aucune recherche enregistrée.</p>
                         </div>
@@ -579,9 +579,9 @@ export default function AiRadarView() {
             {activeTab === 'stats' && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-black text-gray-900">Tableau de bord</h2>
-                        <button onClick={loadStats} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
-                            <RefreshCw className="w-4 h-4 text-gray-500" />
+                        <h2 className="text-lg font-black text-[var(--panel-text-heading)]">Tableau de bord</h2>
+                        <button onClick={loadStats} className="p-2 rounded-xl bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] transition-colors">
+                            <RefreshCw className="w-4 h-4 text-[var(--panel-text-muted)]" />
                         </button>
                     </div>
 
@@ -594,51 +594,51 @@ export default function AiRadarView() {
                                     { label: 'Favoris', value: stats.totalFavorites, icon: Heart, color: '#ef4444' },
                                     { label: 'Avec Téléphone', value: stats.totalWithPhone, icon: Phone, color: '#3b82f6' },
                                 ].map(kpi => (
-                                    <div key={kpi.label} className="bg-white rounded-2xl p-5 border border-gray-100 text-center">
+                                    <div key={kpi.label} className="bg-[var(--panel-surface)] rounded-2xl p-5 border border-[var(--panel-border)] text-center">
                                         <kpi.icon className="w-6 h-6 mx-auto mb-2 opacity-60" style={{ color: kpi.color }} />
-                                        <p className="text-2xl font-black text-gray-900">{kpi.value}</p>
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">{kpi.label}</p>
+                                        <p className="text-2xl font-black text-[var(--panel-text-heading)]">{kpi.value}</p>
+                                        <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mt-1">{kpi.label}</p>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Top Keywords & Cities */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white rounded-2xl p-5 border border-gray-100">
+                                <div className="bg-[var(--panel-surface)] rounded-2xl p-5 border border-[var(--panel-border)]">
                                     <div className="flex items-center gap-2 mb-4">
                                         <TrendingUp className="w-4 h-4 text-[#008751]" />
-                                        <p className="text-xs font-black text-gray-900 uppercase tracking-wider">Top Mots-clés</p>
+                                        <p className="text-xs font-black text-[var(--panel-text-heading)] uppercase tracking-wider">Top Mots-clés</p>
                                     </div>
                                     {stats.topKeywords.length > 0 ? stats.topKeywords.map(([kw, count], i) => (
-                                        <div key={kw} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                                        <div key={kw} className="flex items-center justify-between py-2 border-b border-[var(--panel-divider)] last:border-0">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black text-gray-400 w-5">{i + 1}.</span>
-                                                <span className="text-sm font-bold text-gray-800 capitalize">{kw}</span>
+                                                <span className="text-[10px] font-black text-[var(--panel-text-faint)] w-5">{i + 1}.</span>
+                                                <span className="text-sm font-bold text-[var(--panel-text)] capitalize">{kw}</span>
                                             </div>
                                             <span className="text-xs font-black text-[#008751] bg-[#008751]/10 px-2 py-0.5 rounded-md">{count}</span>
                                         </div>
-                                    )) : <p className="text-xs text-gray-400">Aucune donnée</p>}
+                                    )) : <p className="text-xs text-[var(--panel-text-faint)]">Aucune donnée</p>}
                                 </div>
 
-                                <div className="bg-white rounded-2xl p-5 border border-gray-100">
+                                <div className="bg-[var(--panel-surface)] rounded-2xl p-5 border border-[var(--panel-border)]">
                                     <div className="flex items-center gap-2 mb-4">
                                         <MapPin className="w-4 h-4 text-[#E8112D]" />
-                                        <p className="text-xs font-black text-gray-900 uppercase tracking-wider">Top Villes</p>
+                                        <p className="text-xs font-black text-[var(--panel-text-heading)] uppercase tracking-wider">Top Villes</p>
                                     </div>
                                     {stats.topCities.length > 0 ? stats.topCities.map(([ct, count], i) => (
-                                        <div key={ct} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                                        <div key={ct} className="flex items-center justify-between py-2 border-b border-[var(--panel-divider)] last:border-0">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black text-gray-400 w-5">{i + 1}.</span>
-                                                <span className="text-sm font-bold text-gray-800 capitalize">{ct}</span>
+                                                <span className="text-[10px] font-black text-[var(--panel-text-faint)] w-5">{i + 1}.</span>
+                                                <span className="text-sm font-bold text-[var(--panel-text)] capitalize">{ct}</span>
                                             </div>
                                             <span className="text-xs font-black text-[#E8112D] bg-[#E8112D]/10 px-2 py-0.5 rounded-md">{count}</span>
                                         </div>
-                                    )) : <p className="text-xs text-gray-400">Aucune donnée</p>}
+                                    )) : <p className="text-xs text-[var(--panel-text-faint)]">Aucune donnée</p>}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center text-gray-400 py-16">
+                        <div className="text-center text-[var(--panel-text-faint)] py-16">
                             <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="text-sm">Chargement des statistiques...</p>
                         </div>
@@ -657,36 +657,36 @@ export default function AiRadarView() {
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+                            className="bg-[var(--panel-surface)] rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
                         >
                             <div className="p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-black text-gray-900">{selectedLead.title}</h3>
-                                    <button onClick={() => setSelectedLead(null)} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200">
+                                    <h3 className="text-lg font-black text-[var(--panel-text-heading)]">{selectedLead.title}</h3>
+                                    <button onClick={() => setSelectedLead(null)} className="p-2 rounded-xl bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)]">
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
 
                                 {/* Details extra grid */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                                    <div className="bg-gray-50 p-3 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Mot clé / Secteur</p>
-                                        <p className="text-sm font-semibold text-gray-900 capitalize w-full truncate">{selectedLead.keyword || 'Inconnu'}</p>
+                                    <div className="bg-[var(--panel-surface-alt)] p-3 rounded-xl">
+                                        <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-1">Mot clé / Secteur</p>
+                                        <p className="text-sm font-semibold text-[var(--panel-text-heading)] capitalize w-full truncate">{selectedLead.keyword || 'Inconnu'}</p>
                                     </div>
-                                    <div className="bg-gray-50 p-3 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Localité</p>
-                                        <p className="text-sm font-semibold text-gray-900 capitalize w-full truncate">{selectedLead.city || 'Inconnu'}</p>
+                                    <div className="bg-[var(--panel-surface-alt)] p-3 rounded-xl">
+                                        <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-1">Localité</p>
+                                        <p className="text-sm font-semibold text-[var(--panel-text-heading)] capitalize w-full truncate">{selectedLead.city || 'Inconnu'}</p>
                                     </div>
-                                    <div className="bg-gray-50 p-3 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Avis Google</p>
+                                    <div className="bg-[var(--panel-surface-alt)] p-3 rounded-xl">
+                                        <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-1">Avis Google</p>
                                         <div className="flex items-center gap-1.5 mt-0.5">
                                             <Star className="w-4 h-4 text-[#FCD116] fill-current" />
-                                            <span className="text-sm font-bold text-gray-900">{selectedLead.rating || 'N/A'}</span>
-                                            <span className="text-[10px] text-gray-500">({selectedLead.reviews_count || 0} avis)</span>
+                                            <span className="text-sm font-bold text-[var(--panel-text-heading)]">{selectedLead.rating || 'N/A'}</span>
+                                            <span className="text-[10px] text-[var(--panel-text-muted)]">({selectedLead.reviews_count || 0} avis)</span>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-50 p-3 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Statut CRM</p>
+                                    <div className="bg-[var(--panel-surface-alt)] p-3 rounded-xl">
+                                        <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-1">Statut CRM</p>
                                         {selectedLead.status && STATUS_CONFIG[selectedLead.status as StatusType] && (
                                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold inline-block"
                                                 style={{
@@ -701,17 +701,17 @@ export default function AiRadarView() {
 
                                 {/* Score */}
                                 {selectedLead.relevance_score !== undefined && (
-                                    <div className="flex items-center justify-between mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                    <div className="flex items-center justify-between mb-4 bg-[var(--panel-surface-alt)] p-3 rounded-xl border border-[var(--panel-border)]">
                                         <div className="flex items-center gap-3">
                                             <Sparkles className="w-5 h-5 text-[#008751]" />
                                             <div>
-                                                <p className="text-xs font-bold text-gray-500">Score de pertinence IA</p>
-                                                <p className="text-xl font-black text-gray-900">{selectedLead.relevance_score}/100</p>
+                                                <p className="text-xs font-bold text-[var(--panel-text-muted)]">Score de pertinence IA</p>
+                                                <p className="text-xl font-black text-[var(--panel-text-heading)]">{selectedLead.relevance_score}/100</p>
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <p className="text-[10px] text-gray-400 font-medium">Création</p>
-                                            <p className="text-xs text-gray-600 font-semibold">
+                                            <p className="text-[10px] text-[var(--panel-text-faint)] font-medium">Création</p>
+                                            <p className="text-xs text-[var(--panel-text-muted)] font-semibold">
                                                 {selectedLead.created_at ? new Date(selectedLead.created_at).toLocaleDateString('fr-FR') : 'Date inconnue'}
                                             </p>
                                         </div>
@@ -719,18 +719,18 @@ export default function AiRadarView() {
                                 )}
 
                                 <div className="space-y-3 mb-4">
-                                    <div className="flex items-start gap-2 bg-gray-50 p-3 rounded-xl">
+                                    <div className="flex items-start gap-2 bg-[var(--panel-surface-alt)] p-3 rounded-xl">
                                         <MapPin className="w-4 h-4 text-[#E8112D] shrink-0 mt-0.5" />
                                         <div className="flex flex-col">
-                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Adresse</p>
-                                            <p className="text-sm font-medium text-gray-800 leading-snug">{selectedLead.address}</p>
+                                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-0.5">Adresse</p>
+                                            <p className="text-sm font-medium text-[var(--panel-text)] leading-snug">{selectedLead.address}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-start gap-2 bg-gray-50 p-3 rounded-xl">
+                                    <div className="flex items-start gap-2 bg-[var(--panel-surface-alt)] p-3 rounded-xl">
                                         <Building2 className="w-4 h-4 text-[#008751] shrink-0 mt-0.5" />
                                         <div className="flex flex-col">
-                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Description Marketing</p>
-                                            <p className="text-sm font-medium text-gray-800 leading-snug">{selectedLead.description}</p>
+                                            <p className="text-[10px] font-bold text-[var(--panel-text-muted)] uppercase tracking-wider mb-0.5">Description Marketing</p>
+                                            <p className="text-sm font-medium text-[var(--panel-text)] leading-snug">{selectedLead.description}</p>
                                         </div>
                                     </div>
                                     {selectedLead.phone && (
@@ -746,10 +746,10 @@ export default function AiRadarView() {
                                 {/* Template WhatsApp */}
                                 {selectedLead.whatsapp_template && (
                                     <div className="mb-4">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        <p className="text-[10px] font-black text-[var(--panel-text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1">
                                             <Send className="w-3 h-3" /> Message WhatsApp pré-rédigé
                                         </p>
-                                        <div className="bg-[#dcf8c6] border border-[#bce5a1] rounded-xl p-3 text-xs text-gray-800 leading-relaxed whitespace-pre-line">
+                                        <div className="bg-[#dcf8c6] border border-[#bce5a1] rounded-xl p-3 text-xs text-[#1f2937] leading-relaxed whitespace-pre-line">
                                             {selectedLead.whatsapp_template}
                                         </div>
                                         <button onClick={() => copyWhatsApp(selectedLead)}
@@ -761,7 +761,7 @@ export default function AiRadarView() {
 
                                 {/* Notes */}
                                 <div className="mb-4">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <p className="text-[10px] font-black text-[var(--panel-text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1">
                                         <MessageSquare className="w-3 h-3" /> Notes personnelles
                                     </p>
                                     <textarea
@@ -769,20 +769,20 @@ export default function AiRadarView() {
                                         onChange={e => setNoteText(e.target.value)}
                                         placeholder="Ajouter des notes sur ce prospect..."
                                         rows={3}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#008751]/40 transition-colors resize-none"
+                                        className="w-full bg-[var(--panel-surface-alt)] border border-[var(--panel-border-strong)] rounded-xl px-3 py-2 text-sm text-[var(--panel-text)] placeholder:text-[var(--panel-text-faint)] outline-none focus:border-[#008751]/40 transition-colors resize-none"
                                     />
                                     <button onClick={() => saveNote(selectedLead)}
-                                        className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#008751] text-white text-xs font-bold hover:bg-[#00a664] transition-colors">
+                                        className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#008751] text-[#fff] text-xs font-bold hover:bg-[#00a664] transition-colors">
                                         <Check className="w-3.5 h-3.5" /> Sauvegarder
                                     </button>
                                 </div>
 
                                 {/* Attribution agent */}
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <p className="text-[10px] font-black text-[var(--panel-text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1">
                                         <UserPlus className="w-3 h-3" /> Attribution
                                     </p>
-                                    <p className="text-xs text-gray-400 italic">
+                                    <p className="text-xs text-[var(--panel-text-faint)] italic">
                                         {selectedLead.assigned_agent_id ? `Assigné à l'agent ${selectedLead.assigned_agent_id}` : 'Non assigné : fonctionnalité CRM avancée'}
                                     </p>
                                 </div>

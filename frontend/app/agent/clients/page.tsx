@@ -356,7 +356,9 @@ export default function AgentClientsPage() {
             : selectedClient.source === 'nationalite' ? 'nationality_applications'
             : null
         if (table) {
-            await supabase.from(table).delete().eq('id', selectedClient.id)
+            const { error } = await supabase.from(table).delete().eq('id', selectedClient.id)
+            // Le client reste affiché si la suppression a été refusée.
+            if (error) { alert(`Suppression impossible : ${error.message}`); return }
         }
         setClients(prev => prev.filter(c => c.id !== selectedClient.id))
         setSelectedClient(null)

@@ -70,7 +70,7 @@ export default function CouponsPage() {
     const createCoupon = async () => {
         if (!newCode.trim()) return
         setSaving(true)
-        await supabase.from('coupons').insert({
+        const { error } = await supabase.from('coupons').insert({
             code: newCode.toUpperCase(),
             discount_type: discountType,
             discount_value: discountValue,
@@ -81,6 +81,8 @@ export default function CouponsPage() {
             expires_at: expiresAt || null,
         })
         setSaving(false)
+        // Formulaire conservé si la création a échoué (sinon la saisie est perdue).
+        if (error) { alert(`Création du coupon impossible : ${error.message}`); return }
         setShowForm(false)
         setNewCode('')
         loadCoupons()

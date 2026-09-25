@@ -157,7 +157,9 @@ export default function AdminNationalitePage() {
     }
 
     const updateNotes = async (id: string, notes: string) => {
-        await supabase.from('nationality_applications').update({ agent_notes: notes }).eq('id', id)
+        // Sauvegarde au blur : sans ce contrôle, la note restait affichée comme enregistrée.
+        const { error } = await supabase.from('nationality_applications').update({ agent_notes: notes }).eq('id', id)
+        if (error) alert(`Note non enregistrée : ${error.message}`)
     }
 
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})

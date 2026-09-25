@@ -315,16 +315,19 @@ export default function PretresFaPage() {
     }
 
     const togglePublish = async (r: Review) => {
-        await fetch('/api/admin/fa-priests/reviews', {
+        const res = await fetch('/api/admin/fa-priests/reviews', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: r.id, is_published: !r.is_published }),
         })
+        // Alerte (et non setError) : le bandeau d'erreur est masqué par la modale des avis.
+        if (!res.ok) { alert((await res.json().catch(() => ({}))).error || 'Mise à jour impossible'); return }
         setReviews(rs => rs.map(x => x.id === r.id ? { ...x, is_published: !x.is_published } : x))
         fetchPriests()
     }
 
     const deleteReview = async (r: Review) => {
-        await fetch(`/api/admin/fa-priests/reviews?id=${r.id}`, { method: 'DELETE' })
+        const res = await fetch(`/api/admin/fa-priests/reviews?id=${r.id}`, { method: 'DELETE' })
+        if (!res.ok) { alert((await res.json().catch(() => ({}))).error || 'Suppression impossible'); return }
         setReviews(rs => rs.filter(x => x.id !== r.id)); fetchPriests()
     }
 

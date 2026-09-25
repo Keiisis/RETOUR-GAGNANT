@@ -95,20 +95,25 @@ export default function AIConfigPage() {
     const handleSave = async () => {
         if (!currentConfig?.id) return
         setSaving(true)
-        try {
-            updateConfig({
-                resource: 'ai_config',
-                id: currentConfig.id,
-                values: {
-                    ...form,
-                    updated_at: new Date().toISOString(),
-                },
-            })
-            setSaved(true)
-            setTimeout(() => setSaved(false), 3000)
-        } finally {
-            setSaving(false)
-        }
+        setTestResult(null)
+        // « SAUVEGARDÉ » seulement après confirmation de la base (mutate n'est pas awaitable).
+        updateConfig({
+            resource: 'ai_config',
+            id: currentConfig.id,
+            values: {
+                ...form,
+                updated_at: new Date().toISOString(),
+            },
+        }, {
+            onSuccess: () => {
+                setSaved(true)
+                setTimeout(() => setSaved(false), 3000)
+            },
+            onError: (err) => {
+                setTestResult({ ok: false, message: `Sauvegarde impossible : ${err?.message || 'erreur inconnue'}` })
+            },
+            onSettled: () => setSaving(false),
+        })
     }
 
     const handleTest = async () => {

@@ -16,6 +16,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { guardPublic, UPLOAD_LIMIT } from '@/lib/api-guard'
 import { dossierCourantDe, ouvrirDossier } from '@/lib/dossier-service'
+import { verifyApiAuth } from '@/lib/api-auth'
+import { emailProuve } from '@/lib/espace-email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -46,7 +48,16 @@ export async function POST(req: NextRequest) {
         }
 
         const fichier = formData.get('file');
-        const client_email = String(formData.get('client_email') || '').trim();
+        // Audit du 25/09/2026 : l'email venait du formulaire → n'importe qui
+        // déposait des pièces dans le dossier d'autrui. Équipe (admin/agent) :
+        // email du formulaire ; client : email PROUVÉ de sa session uniquement.
+        const equipe = (await verifyApiAuth(req, 'agent')).authenticated;
+        const client_email = equipe
+            ? String(formData.get('client_email') || '').trim()
+            : (await emailProuve(req)) || '';
+        if (!equipe && !client_email) {
+            return NextResponse.json({ error: 'Session expirée : reconnectez-vous à votre espace.' }, { status: 401 });
+        }
         const client_nom = String(formData.get('client_nom') || '').trim();
         const file_type = String(formData.get('file_type') || 'autre').trim();
 

@@ -266,11 +266,26 @@ export default function AgentMessagesPage() {
         setTimeout(scrollToBottom, 100)
 
         // Insert into chat_messages via API (bypasses RLS for reliability)
-        await fetch('/api/support/agent_reply', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: selected.id, content }),
-        })
+        // Message refusé : on retire la bulle optimiste et on rend le texte à l'agent.
+        const annulerOptimiste = (raison: string) => {
+            setChatHistory(prev => prev.filter(m => m.id !== tempMsg.id))
+            setReplyText(content)
+            alert(`Message non envoyé : ${raison}`)
+        }
+        try {
+            const res = await fetch('/api/support/agent_reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: selected.id, content }),
+            })
+            if (!res.ok) {
+                annulerOptimiste((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`)
+                return
+            }
+        } catch {
+            annulerOptimiste('erreur réseau')
+            return
+        }
 
         // Also mark as read if it wasn't
         if (!selected.lu) {
@@ -280,7 +295,7 @@ export default function AgentMessagesPage() {
         // If email method, send the email
         if (method === 'email') {
             try {
-                await fetch('/api/email/send', {
+                const resEmail = await fetch('/api/email/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -293,8 +308,13 @@ export default function AgentMessagesPage() {
                         language: detectedClientLanguage
                     })
                 });
+                if (!resEmail.ok) {
+                    const j = await resEmail.json().catch(() => ({}))
+                    alert(`Réponse enregistrée dans le chat, mais email non envoyé : ${j.error || `HTTP ${resEmail.status}`}`)
+                }
             } catch (err) {
                 console.error("Erreur lors de l'envoi de l'email :", err);
+                alert("Réponse enregistrée dans le chat, mais email non envoyé (erreur réseau).")
             }
         }
     }

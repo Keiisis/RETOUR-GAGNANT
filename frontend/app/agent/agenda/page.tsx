@@ -87,10 +87,12 @@ export default function AgentAgendaPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        await supabase.from('agent_events').insert({
+        const { error } = await supabase.from('agent_events').insert({
             agent_id: user.id, title: newTitle, date: newDate, time: newTime,
             type: newType, client: newClient, location: newLocation,
         })
+        // Modale et saisie conservées si l'événement n'a pas été créé.
+        if (error) { setSaving(false); alert(`Création impossible : ${error.message}`); return }
 
         await fetchData()
         setShowModal(false)
@@ -100,7 +102,8 @@ export default function AgentAgendaPage() {
     }
 
     const handleDeleteEvent = async (id: string) => {
-        await supabase.from('agent_events').delete().eq('id', id)
+        const { error } = await supabase.from('agent_events').delete().eq('id', id)
+        if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setEvents(prev => prev.filter(e => e.id !== id))
     }
 
@@ -154,7 +157,8 @@ export default function AgentAgendaPage() {
     }
 
     const updateRdvStatus = async (rdvId: string, statut: RDV['statut']) => {
-        await supabase.from('rdv_requests').update({ statut }).eq('id', rdvId)
+        const { error } = await supabase.from('rdv_requests').update({ statut }).eq('id', rdvId)
+        if (error) { alert(`Mise à jour du statut impossible : ${error.message}`); return }
         const applyUpdate = (r: RDV): RDV => r.id === rdvId ? { ...r, statut } : r
         setRdvList(prev => prev.map(applyUpdate))
         setSelectedRDV(prev => prev ? applyUpdate(prev) : null)

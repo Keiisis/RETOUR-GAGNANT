@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
 import { Envelope as Mail, PaperPlaneTilt as Send, X, MagnifyingGlass as Search, User, Trash as Trash2, Eye, PencilLine as Edit3, Clock, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, TextB as Bold, TextItalic as Italic, TextUnderline as Underline, Link as Link2, List, ListNumbers as ListOrdered, TextAlignLeft as AlignLeft, TextAlignCenter as AlignCenter, Image, Sparkle as Sparkles, FileText, ArrowClockwise as RefreshCw, Tray as Inbox, Star, Paperclip, MagicWand as Wand2 } from '@phosphor-icons/react';
 
 // ═══════════════════════════════════════════
@@ -167,64 +166,31 @@ export default function AgentRedigerMailsPage() {
     const contactPickerRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    // Charger les contacts et emails envoyés
+    // Charger les contacts et emails envoyés.
+    // Passe par une route serveur gardée : lues depuis le navigateur avec la
+    // session agent, ces tables sont refusées par la RLS (email_logs = admin
+    // seulement, client_profiles = le client lui-même, logement_leads = aucune
+    // policy) — contacts et historique revenaient vides sans erreur.
+    // Contacts = client_profiles + logement_leads + expéditeurs de `messages`
+    // (la table `leads` n'existe pas ; ai_prospection_leads n'a pas d'email).
     useEffect(() => {
         const init = async () => {
             setLoading(true)
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) { setLoading(false); return }
-
-            const [messagesRes, clientsRes, leadsRes] = await Promise.all([
-                supabase.from('messages').select('nom, prenom, email').not('email', 'is', null),
-                // client_profiles expose `prenom` / `nom`, pas first_name / last_name :
-                // sous ces noms, la requête échouait et la liste restait vide.
-                supabase.from('client_profiles').select('id, prenom, nom, email, phone'),
-                // La table `leads` n'existe pas. Vérifié avant de la créer :
-                // `ai_prospection_leads` existe mais ne porte AUCUN email (c'est
-                // de la prospection d'annuaire : titre, adresse, téléphone) —
-                // inutilisable pour écrire un courriel. La seule table de
-                // prospects réellement joignables par email est logement_leads.
-                supabase.from('logement_leads').select('id, nom, prenom, email, telephone'),
-            ])
-
-            const contactMap = new Map<string, Contact>()
-
-            ;(clientsRes.data || []).forEach(c => {
-                if (c.email) {
-                    contactMap.set(c.email.toLowerCase(), {
-                        id: c.id, email: c.email, nom: c.nom || '', prenom: c.prenom || '',
-                        phone: c.phone || undefined, type: 'client',
-                    })
+            try {
+                const res = await fetch('/api/agent/rediger-mails', { cache: 'no-store' })
+                const j = await res.json().catch(() => ({}))
+                if (!res.ok) throw new Error(j.error || 'Chargement impossible.')
+                setContacts(Array.isArray(j.contacts) ? j.contacts : [])
+                setSentEmails(Array.isArray(j.envoyes) ? j.envoyes : [])
+                if (j.partiel) {
+                    setSendResult({ ok: false, msg: 'Carnet de contacts partiellement chargé.' })
                 }
-            })
-
-            ;(leadsRes.data || []).forEach(l => {
-                if (l.email && !contactMap.has(l.email.toLowerCase())) {
-                    contactMap.set(l.email.toLowerCase(), {
-                        id: l.id, email: l.email, nom: l.nom || '', prenom: l.prenom || '',
-                        phone: l.telephone || undefined, type: 'lead',
-                    })
-                }
-            })
-
-            ;(messagesRes.data || []).forEach(m => {
-                if (m.email && !contactMap.has(m.email.toLowerCase())) {
-                    contactMap.set(m.email.toLowerCase(), {
-                        id: m.email, email: m.email, nom: m.nom || '', prenom: m.prenom || '', type: 'client',
-                    })
-                }
-            })
-
-            setContacts(Array.from(contactMap.values()).sort((a, b) => a.nom.localeCompare(b.nom)))
-
-            const { data: logs } = await supabase
-                .from('email_logs')
-                .select('*')
-                .eq('context', 'agent_compose')
-                .order('created_at', { ascending: false })
-                .limit(50)
-
-            if (logs) setSentEmails(logs)
+            } catch (err) {
+                setSendResult({
+                    ok: false,
+                    msg: err instanceof Error ? err.message : 'Chargement des contacts impossible.',
+                })
+            }
             setLoading(false)
         }
         init()

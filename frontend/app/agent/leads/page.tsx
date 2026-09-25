@@ -66,10 +66,11 @@ export default function AgentLeadsPage() {
 
     const toggleContacted = async (lead: Lead) => {
         const newVal = !lead.is_contacted
-        await supabase
+        const { error } = await supabase
             .from('eligibility_results')
             .update({ is_contacted: newVal })
             .eq('id', lead.id)
+        if (error) { alert(`Mise à jour impossible : ${error.message}`); return }
 
         setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, is_contacted: newVal } : l))
     }
