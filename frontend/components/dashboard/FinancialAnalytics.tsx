@@ -267,7 +267,7 @@ export const FinancialAnalytics = () => {
                             background: downloadingReport
                                 ? 'var(--panel-surface-active)'
                                 : 'linear-gradient(135deg, #008751, #00a664)',
-                            color: 'var(--panel-text-heading)',
+                            color: downloadingReport ? 'var(--panel-text-heading)' : '#ffffff',
                             border: 'none',
                             borderRadius: '10px',
                             padding: '8px 16px',
