@@ -10,8 +10,9 @@ export async function POST(request: NextRequest) {
     if (!garde.ok) return garde.response!
 
     try {
-        const body = await request.json()
-        const { userId } = body
+        // L'identité vient de la SESSION, jamais du corps : sinon un agent
+        // pouvait marquer n'importe quel compte « en ligne ».
+        const userId = garde.userId
 
         if (!userId) {
             return NextResponse.json({ error: 'userId requis' }, { status: 400 })

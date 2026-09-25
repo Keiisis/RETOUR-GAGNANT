@@ -1,13 +1,32 @@
 'use client';
 
 import { useTranslation, T } from '@/lib/translation';
-import { useList, useUpdate, useCreate } from "@refinedev/core";
+import { useList } from "@refinedev/core";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, FloppyDisk as Save, MonitorPlay, FilmStrip as Film, TextT as Type, CircleNotch as Loader2, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, Link as LinkIcon, Plus, Trash as Trash2, Palette, GridFour as LayoutGrid, Info } from '@phosphor-icons/react';
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+/* Enregistre un réglage par sa CLÉ (la table `settings` n'a pas de colonne
+   `id`) : la page envoyait des mises à jour par identifiant qui ne visaient
+   aucune ligne, puis affichait « succès ». Chaque échec est remonté. */
+async function enregistrerReglage(key: string, value: string, category: string): Promise<string | null> {
+    try {
+        const res = await fetch('/api/admin/settings', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value, category }),
+        })
+        if (res.ok) return null
+        const j = await res.json().catch(() => ({}))
+        return `${key} : ${j.error || `HTTP ${res.status}`}`
+    } catch (e) {
+        return `${key} : ${e instanceof Error ? e.message : 'réseau'}`
+    }
+}
+
 
 interface SettingItem {
     id: string;
@@ -26,8 +45,6 @@ export default function FrontendSettingsPage() {
     const settingsData = queryResult.query?.data;
     const isLoading = queryResult.query?.isLoading;
 
-    const { mutate: updateSetting } = useUpdate();
-    const { mutate: createSetting } = useCreate();
     const [isSaving, setIsSaving] = useState(false);
 
     const [form, setForm] = useState({
@@ -99,44 +116,12 @@ export default function FrontendSettingsPage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // Text & media updates
-            const updates = Object.entries(form).map(([key, value]) => {
-                const id = settingIds[key];
-                if (id) {
-                    return new Promise((resolve) => {
-                        updateSetting({
-                            resource: "settings",
-                            id,
-                            values: { value }
-                        }, { onSuccess: resolve, onError: resolve });
-                    });
-                }
-                // Clé absente en base → on la crée (ex. nouveau réglage déployé)
-                return new Promise((resolve) => {
-                    createSetting({
-                        resource: "settings",
-                        values: { key, value, category: "frontend" }
-                    }, { onSuccess: resolve, onError: resolve });
-                });
-            });
-
-            // Navbar links update
-            const navId = settingIds['frontend_navbar_json'];
-            if (navId) {
-                updates.push(new Promise((resolve) => {
-                    updateSetting({
-                        resource: "settings",
-                        id: navId,
-                        values: { value: JSON.stringify(navbarLinks) }
-                    }, { onSuccess: resolve, onError: resolve });
-                }));
-            }
-
-            await Promise.all(updates);
-            alert("Paramètres publics sauvegardés avec succès !");
-        } catch (error) {
-            console.error("Save error", error);
-            alert("Erreçur lors de la sauvegarde.");
+            const erreurs = (await Promise.all([
+                ...Object.entries(form).map(([key, value]) => enregistrerReglage(key, String(value ?? ''), key.startsWith('about_us') ? 'general' : 'frontend')), // catégorie d'origine conservée
+                enregistrerReglage('frontend_navbar_json', JSON.stringify(navbarLinks), 'frontend'),
+            ])).filter((e): e is string => !!e);
+            if (erreurs.length) alert(`Certains réglages n'ont pas été enregistrés :\n${erreurs.join('\n')}`);
+            else alert("Paramètres publics sauvegardés avec succès !");
         } finally {
             setIsSaving(false);
         }

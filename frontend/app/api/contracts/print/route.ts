@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { contractDocumentHtml, type ContractRow } from '@/lib/contracts'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -16,6 +17,11 @@ export async function GET(request: NextRequest) {
         const id = request.nextUrl.searchParams.get('id')
         const token = request.nextUrl.searchParams.get('token')
         if (!id && !token) return NextResponse.json({ error: 'Paramètre manquant' }, { status: 400 })
+        // Par identifiant : équipe seulement (le commentaire le disait, le code ne le faisait pas).
+        if (id) {
+            const garde = await requireStaff(request, 'agent')
+            if (!garde.ok) return garde.response!
+        }
 
         const supabase = createClient(supabaseUrl, serviceKey)
         const query = supabase.from('contracts').select('*')

@@ -239,7 +239,7 @@ export default function DevenirPartenairePage() {
     const handleSubmit = async () => {
         setSubmitting(true); setError('')
         try {
-            const res = await fetch('/api/admin/partner-applications', {
+            const res = await fetch('/api/partner-applications', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(form),

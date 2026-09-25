@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { ttcFromHt } from '@/lib/tax'
 import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -164,8 +165,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 }
 
-// GET /api/events/[id]/register : list registrations (admin)
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// GET /api/events/[id]/register : list registrations (équipe)
+// Était public : l'id d'un événement l'est aussi, et la réponse donnait nom,
+// e-mail, téléphone, montant payé et codes des billets de chaque inscrit.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const { id: eventId } = await params
         const supabase = getSupabase()

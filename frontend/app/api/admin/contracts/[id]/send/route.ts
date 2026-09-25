@@ -84,7 +84,7 @@ function buildNoAccountEmail(c: ContractRow, signUrl: string): string {
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     try {

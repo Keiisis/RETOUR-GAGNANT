@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslation, T } from '@/lib/translation';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { GearSix as Settings2, FloppyDisk as Save, CircleNotch as Loader2, Plus, Trash as Trash2, CurrencyDollar as DollarSign, FileText, Globe as Globe2, CheckCircle as CheckCircle2, ArrowLeft, CreditCard, Info } from '@phosphor-icons/react';
 import Link from 'next/link'
@@ -38,6 +38,10 @@ export default function NationaliteSettingsPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [erreurSauvegarde, setErreurSauvegarde] = useState('')
+    // Contenu complet chargé : les clés que cette page n'édite pas (ex. `doc_slots`,
+    // lu par le formulaire) doivent survivre à l'enregistrement.
+    const contenuInitialRef = useRef<Record<string, unknown>>({})
     const [sectionId, setSectionId] = useState<string | null>(null)
 
     const [amount, setAmount] = useState(250)
@@ -65,6 +69,7 @@ export default function NationaliteSettingsPage() {
             if (data) {
                 setSectionId(data.id)
                 const c = data.content as FormSettings
+                contenuInitialRef.current = (data.content || {}) as Record<string, unknown>
                 setAmount(c.amount || 250)
                 setCurrency(c.currency || 'USD')
                 setRechercheAmount(c.recherche_ancestrale_amount || 250)
@@ -78,10 +83,16 @@ export default function NationaliteSettingsPage() {
     }, [])
 
     const handleSave = async () => {
+        setErreurSauvegarde('')
+        /* Garde-fou : un champ vidé donnait Number('') = 0, accepté — le
+           formulaire public aurait encaissé 0. */
+        if (!(Number(amount) > 0)) { setErreurSauvegarde('Le tarif de la demande doit être supérieur à 0.'); return }
+        if (!(Number(rechercheAmount) > 0)) { setErreurSauvegarde('Le tarif de la recherche ancestrale doit être supérieur à 0.'); return }
         setSaving(true)
         setSaved(false)
 
-        const content: FormSettings = {
+        const content = {
+            ...contenuInitialRef.current,
             amount,
             currency,
             recherche_ancestrale_amount: rechercheAmount,
@@ -90,16 +101,20 @@ export default function NationaliteSettingsPage() {
             required_documents: requiredDocs,
         }
 
+        let erreur: string | null = null
         if (sectionId) {
-            await supabase
+            const { data: maj, error } = await supabase
                 .from('page_sections')
                 .update({
                     content,
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', sectionId)
+                .select('id')
+            // 0 ligne sans erreur = refus silencieux des règles d'accès.
+            erreur = error?.message || (!maj?.length ? 'Enregistrement refusé (droits insuffisants).' : null)
         } else {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('page_sections')
                 .insert({
                     page: 'nationalite',
@@ -112,9 +127,12 @@ export default function NationaliteSettingsPage() {
                 .select()
                 .single()
             if (data) setSectionId(data.id)
+            erreur = error?.message || null
         }
 
         setSaving(false)
+        if (erreur) { setErreurSauvegarde(erreur); return }
+        contenuInitialRef.current = content as Record<string, unknown>
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
     }
@@ -181,6 +199,12 @@ export default function NationaliteSettingsPage() {
                         {saving ? 'Enregistrement...' : saved ? 'Enregistré !' : 'Enregistrer'}
                     </button>
                 </div>
+
+                {erreurSauvegarde && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                        <p className="text-sm text-red-500 font-bold">{erreurSauvegarde}</p>
+                    </div>
+                )}
 
                 {saved && (
                     <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">

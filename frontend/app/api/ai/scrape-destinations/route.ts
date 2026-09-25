@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import axios from 'axios'
+import { requireStaff } from '@/lib/api-guard'
 
 const serperApiKeys = [
     process.env.SERPER_API_KEY_1,
@@ -28,6 +29,9 @@ async function callSerperWithRetry(keys: string[], query: string, type: 'search'
 }
 
 export async function POST(req: Request) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await req.json()
         const { destination, activities } = body

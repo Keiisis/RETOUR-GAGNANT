@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { toXOF, loadExchangeRates } from "@/lib/currency-convert";
 
 interface TopProduct {
     product_title: string;
@@ -73,13 +74,16 @@ export default function AdminDashboard() {
 
                 // Commerce stats
                 const [ordersRes, productsRes, pendingRes] = await Promise.all([
-                    supabase.from('orders').select('amount').eq('payment_status', 'completed'),
+                    supabase.from('orders').select('amount, currency').eq('payment_status', 'completed'),
                     supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
                     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('payment_status', 'pending'),
                 ]);
 
                 const completedOrders = ordersRes.data || [];
-                const totalRevenue = completedOrders.reduce((sum: number, o) => sum + (o.amount || 0), 0);
+                // Montants ramenés en XOF : additionner des euros et des francs CFA
+                // donnait un « revenu total » sans signification.
+                await loadExchangeRates().catch(() => undefined);
+                const totalRevenue = completedOrders.reduce((sum: number, o) => sum + toXOF(o.amount || 0, o.currency), 0);
 
                 setCommerceStats({
                     totalRevenue,
@@ -88,14 +92,21 @@ export default function AdminDashboard() {
                     pendingOrders: pendingRes.count || 0,
                 });
 
-                // Top products (most ordered)
-                const { data: recentOrders } = await supabase
+                // Produits les plus vendus : agrégés par produit (on affichait les
+                // 5 DERNIÈRES commandes, pas les meilleures ventes).
+                const { data: ventes } = await supabase
                     .from('orders')
-                    .select('product_title, amount, quantity')
-                    .eq('payment_status', 'completed')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                setTopProducts(recentOrders || []);
+                    .select('product_title, amount, currency, quantity')
+                    .eq('payment_status', 'completed');
+                const parProduit = new globalThis.Map<string, { product_title: string; amount: number; quantity: number }>();
+                for (const v of ventes || []) {
+                    const cle = String(v.product_title || 'Produit');
+                    const e = parProduit.get(cle) || { product_title: cle, amount: 0, quantity: 0 };
+                    e.amount += toXOF(v.amount || 0, v.currency);
+                    e.quantity += Number(v.quantity) || 1;
+                    parProduit.set(cle, e);
+                }
+                setTopProducts([...parProduit.values()].sort((a, b) => b.quantity - a.quantity || b.amount - a.amount).slice(0, 5));
 
             } catch (error) {
                 console.error("Dashboard fetch error:", error);

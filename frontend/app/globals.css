@@ -756,7 +756,27 @@
 [data-theme="light"] .bg-\[\#13120F\],
 [data-theme="light"] .bg-\[\#1B1915\],
 [data-theme="light"] .bg-\[\#17130E\],
-[data-theme="light"] .bg-\[\#201A14\] {
+[data-theme="light"] .bg-\[\#201A14\],
+/* Audit du 25/09/2026 : surfaces sombres qui restaient noires en mode clair
+   (texte foncé sur fond foncé) — devis, dossiers Kanban, fiche nationalité,
+   récaps MyAfro, réglages, utilisateurs, facturation, comptabilité, sécurité,
+   double authentification, propositions, connexion. */
+[data-theme="light"] .bg-\[\#0c1420\],
+[data-theme="light"] .bg-\[\#0a1210\],
+[data-theme="light"] .bg-\[\#060c12\],
+[data-theme="light"] .bg-\[\#0d151c\],
+[data-theme="light"] .bg-\[\#0b0f14\],
+[data-theme="light"] .bg-\[\#131b2c\],
+[data-theme="light"] .bg-\[\#070c14\],
+[data-theme="light"] .bg-\[\#080e15\],
+[data-theme="light"] .bg-\[\#0d1421\],
+[data-theme="light"] .bg-\[\#060d14\],
+[data-theme="light"] .bg-\[\#162034\],
+[data-theme="light"] .bg-\[\#0d1424\],
+[data-theme="light"] .bg-gray-900,
+[data-theme="light"] .bg-gray-800,
+[data-theme="light"] .bg-slate-900\/80,
+[data-theme="light"] .bg-slate-900\/60 {
   background-color: var(--panel-surface) !important;
 }
 /* Fonds « page » plus profonds que les cartes → fond de panel */

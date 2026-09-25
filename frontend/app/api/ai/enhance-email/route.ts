@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { requireStaff } from '@/lib/api-guard'
 
 const SYSTEM_PROMPT = `Tu es un expert en communication et copywriting pour "Retour Gagnant Bénin" (une agence qui facilite les retours, investissements, nationalité béninoise, immobilier, etc.).
 Ton seul rôle est d'améliorer et rendre professionnel un brouillon d'email écrit par un agent.
@@ -12,6 +13,9 @@ Règles:
 5. Renvoyer UNIQUEMENT le texte final, sans commentaires additionnels de ta part.`;
 
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const { text } = await request.json();
         if (GROQ_KEYS.length === 0) {

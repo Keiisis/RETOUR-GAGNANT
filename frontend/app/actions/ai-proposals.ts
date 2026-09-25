@@ -1,6 +1,12 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { exigerEquipe } from '@/lib/action-auth'
+
+/* ⚠️ Une action serveur est appelable par n'importe qui. Ces fonctions
+   lisaient toutes les propositions (avec leur clé secrète), réécrivaient les
+   montants et supprimaient, SANS vérifier l'appelant. Seule
+   getProposalBySecret reste publique : c'est la page du client. */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -10,6 +16,7 @@ const PROPOSAL_FIELDS = 'id, secret_key, client_name, destination, status, total
 
 export async function getProposalsList() {
     try {
+        await exigerEquipe()
         // Source de vérité : la vue `slide_proposals`, qui exclut par
         // construction les liens de paiement (ils partagent la table mais
         // relèvent d'un autre domaine). Repli sur un filtre applicatif tant
@@ -38,6 +45,7 @@ export async function getProposalsList() {
 
 export async function getProposalById(id: string) {
     try {
+        await exigerEquipe()
         const { data: proposal, error: pError } = await supabaseAdmin
             .from('ai_client_proposals')
             .select('*')
@@ -100,6 +108,7 @@ export async function getProposalBySecret(secret: string) {
 
 export async function updateProposalAndItems(proposalId: string, newTotal: number, items: Record<string, unknown>[], currency?: string) {
     try {
+        await exigerEquipe()
         // 1. Update proposal global
         await supabaseAdmin.from('ai_client_proposals').update({
             total_amount: newTotal,
@@ -129,6 +138,7 @@ export async function updateProposalAndItems(proposalId: string, newTotal: numbe
 
 export async function deleteProposal(proposalId: string) {
     try {
+        await exigerEquipe()
         // Delete items first (foreign key)
         await supabaseAdmin.from('ai_proposal_items').delete().eq('proposal_id', proposalId)
         // Delete proposal

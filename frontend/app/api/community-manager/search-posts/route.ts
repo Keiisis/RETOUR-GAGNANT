@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
+import { requireStaff } from '@/lib/api-guard'
 
 const serperApiKeys = [
     process.env.SERPER_API_KEY_1,
@@ -49,6 +50,9 @@ function estimateEngagement(snippet: string): string {
 
 // POST /api/community-manager/search-posts
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json()
         const { keywords, platform = 'all', profile_url, num = 10 } = body

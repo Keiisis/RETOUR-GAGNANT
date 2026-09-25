@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     try {
         const supabase = getSupabase()
         const { searchParams } = new URL(req.url)
-        const admin = searchParams.get('admin') === 'true'
+        // `?admin=true` montrait aussi les brouillons à n'importe qui.
+        const admin = searchParams.get('admin') === 'true' && (await verifyApiAuth(req, 'agent')).authenticated
         const featured = searchParams.get('featured')
 
         let query = supabase

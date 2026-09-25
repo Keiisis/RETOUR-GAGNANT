@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { fetchWithGroqRotation, GROQ_MODEL } from '@/lib/groq'
+import { requireStaff } from '@/lib/api-guard'
 
 export async function POST(req: Request) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(req, 'agent')
+    if (!garde.ok) return garde.response!
     let lang = 'fr'
     try {
         const { query, context, lang: reqLang } = await req.json()

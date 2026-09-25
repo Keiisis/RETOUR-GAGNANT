@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
+import { requireStaff } from '@/lib/api-guard'
 
 const APIFY_KEYS: string[] = [
     process.env.APIFY_API_KEY_1,
@@ -72,6 +73,9 @@ const ACTORS: Record<string, { actor: string; buildInput: (url: string, username
 // GET /api/community-manager/test-apify?url=...&platform=...&key_index=1
 // Retourne le résultat brut Apify pour diagnostic
 export async function GET(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     const { searchParams } = new URL(request.url)
     const profileUrl = searchParams.get('url')
     const platform = searchParams.get('platform') || 'facebook'

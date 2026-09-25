@@ -1,6 +1,7 @@
 import { GROQ_MODEL } from '@/lib/groq'
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
+import { requireStaff } from '@/lib/api-guard'
 
 const groqApiKeys = [
     process.env.GROQ_API_KEY_1,
@@ -299,6 +300,9 @@ function sanitizePass2(raw: Record<string, unknown>) {
 // POST /api/community-manager/analyze-style
 // ═══════════════════════════════════════════════════════════════════
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json()
         const { samples, platform, profile_url } = body

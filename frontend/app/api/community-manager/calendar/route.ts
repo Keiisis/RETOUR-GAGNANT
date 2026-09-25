@@ -1,6 +1,7 @@
 import { GROQ_MODEL } from '@/lib/groq'
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
+import { requireStaff } from '@/lib/api-guard'
 
 const GROQ_KEYS = [
     process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2,
@@ -58,6 +59,9 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<strin
 
 // POST /api/community-manager/calendar
 export async function POST(request: NextRequest) {
+    // Réservé à l'équipe : chaque appel consomme des crédits d'IA payants.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
     try {
         const body = await request.json()
         const {

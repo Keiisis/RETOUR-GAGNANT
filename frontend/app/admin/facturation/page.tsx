@@ -211,9 +211,15 @@ export default function AdminFacturationPage() {
             headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
             body: JSON.stringify({ id, status }),
         })
+        const data = await res.json().catch(() => ({}))
         if (res.ok) {
-            setDocuments(prev => prev.map(d => d.id === id ? { ...d, status } : d))
-            if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
+            // La route renvoie le document réel (un « payé » y gagne sa date et son moyen).
+            const doc = data.document || { status }
+            setDocuments(prev => prev.map(d => d.id === id ? { ...d, ...doc } : d))
+            if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, ...doc } : null)
+        } else {
+            // Facture payée, normalisée DGI, statut inconnu… : le motif est dit, pas tu.
+            alert(data.error || 'Changement de statut impossible')
         }
     }
 

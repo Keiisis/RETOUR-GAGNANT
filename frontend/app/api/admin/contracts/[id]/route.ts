@@ -22,7 +22,7 @@ const FIELD_LABELS: Record<string, string> = {
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
 
     try {
