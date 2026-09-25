@@ -1098,10 +1098,11 @@
   --tw-gradient-from: rgba(184,150,10,0.10) !important;
 }
 
-/* --- SHADOW GLOW REDUCTION (light mode doesn't need colored glow) --- */
-[data-theme="light"] [style*="box-shadow"] {
-  filter: opacity(var(--panel-glow-opacity, 1));
-}
+/* --- SHADOW GLOW REDUCTION : SUPPRIMÉE (25/09/2026) ---
+   `filter: opacity()` ne réduisait pas l'ombre mais TOUT l'élément et ses
+   enfants (texte compris), et se cumulait sur les éléments imbriqués :
+   0,35 × 0,35 ≈ 12 % d'opacité → tableau analytics de /admin/facturation
+   illisible, « flou ». Ne jamais réintroduire un filter sur [style*=…]. */
 
 /* --- BACKGROUND BENIN GRADIENT — keep as is (always dark bg) --- */
 /* No override needed — gradient backgrounds keep white text */
