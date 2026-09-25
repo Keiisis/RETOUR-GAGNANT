@@ -185,6 +185,23 @@ export default function NationaliteFormPage() {
     }
 
     const [rawDocs, setRawDocs] = useState<{ key: string, label: string, name: string, file: File }[]>([])
+
+    /* ── Pièces DÉPOSÉES avant le paiement ─────────────────────────────
+       Incident du 15/09/2026 : paiement par carte depuis un iPhone,
+       validation 3-D Secure dans l'application bancaire, retour dans Safari…
+       et plus rien. Les pièces n'existaient que dans la mémoire de l'onglet
+       (`rawDocs`), le formulaire n'est jamais parti. Désormais les pièces
+       partent au stockage dès l'étape 4 : ce qui est déposé l'est pour de
+       bon, et un rechargement de page ne le fait pas perdre. */
+    type PieceDeposee = { key: string; label: string; name: string; empreinte: string; line: string }
+    const [piecesDeposees, setPiecesDeposees] = useState<PieceDeposee[]>([])
+    const [depotEnCours, setDepotEnCours] = useState<{ fait: number; total: number } | null>(null)
+    /* Jeton du brouillon serveur : 128 bits tirés au sort ici, jamais
+       recalculables. Transmis à Kkiapay avec le paiement, il permet au
+       webhook de reconstituer le dossier si ce navigateur ne revient pas. */
+    const jetonBrouillonRef = useRef('')
+    const brouillonRestaureRef = useRef(false)
+    const essaisSoumissionRef = useRef(0)
     const [uploadProgress, setUploadProgress] = useState(0)
     const [docWarnings, setDocWarnings] = useState<string[]>([])
 
@@ -370,18 +387,26 @@ export default function NationaliteFormPage() {
             localStorage.setItem('rgb_nat_pre_inscription', JSON.stringify(preInscription))
         } catch { /* quota ignoré */ }
 
-        // API non bloquante : on continue la démarche même si la requête échoue
-        natFetch('/api/nationality/lead', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...preInscription, lang: 'fr' }),
-        }).catch(err => console.log('[NAT-LEAD] fire-and-forget:', err))
-
-        // Laisser percevoir un micro-délai pour l'animation, sans attendre la réponse
-        setTimeout(() => {
-            setPreInscriptionSubmitting(false)
-            setPreInscriptionDone(true)
-        }, 400)
+        /* Le lead identifie le client si le paiement arrive sans formulaire.
+           Il était envoyé « sans attendre » : un échec réseau passait
+           inaperçu et la fiche de secours naissait sans nom. On l'attend,
+           avec deux nouvelles tentatives ; s'il échoue encore, on ne bloque
+           pas le client (le paiement transmet aussi son identité). */
+        for (let essai = 0; essai < 3; essai++) {
+            try {
+                const r = await natFetch('/api/nationality/lead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...preInscription, lang: 'fr' }),
+                })
+                if (r.ok || r.status < 500) break
+            } catch (err) {
+                console.log('[NAT-LEAD] essai', essai + 1, err)
+            }
+            await new Promise(res => setTimeout(res, 1200 * (essai + 1)))
+        }
+        setPreInscriptionSubmitting(false)
+        setPreInscriptionDone(true)
     }
 
     const u = useCallback((key: keyof NationaliteForm, val: unknown) => setForm(p => ({ ...p, [key]: val })), [])
@@ -429,6 +454,8 @@ export default function NationaliteFormPage() {
         }
 
         setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
+        // Dernier état du dossier enregistré côté serveur avant de quitter la page pour payer.
+        void enregistrerBrouillon(6)
         try {
             // Listeners enregistrés AVANT l'ouverture, une seule fois (pas d'empilement)
             // Configuration minimale et conforme : pas de `paymentmethod` (tableau
@@ -445,10 +472,23 @@ export default function NationaliteFormPage() {
                 phone: form.telephone || undefined,
                 email: form.email || undefined,
                 name: `${form.prenom || ''} ${form.nom || ''}`.trim() || undefined,
-                data: JSON.stringify({ context: 'nationality', email: form.email }),
+                /* Tout ce qu'il faut pour que le webhook reconstitue le dossier
+                   sans ce navigateur : identité, et jeton du brouillon (formulaire
+                   + pièces déjà déposées). */
+                data: JSON.stringify({
+                    context: 'nationality',
+                    email: form.email,
+                    nom: form.nom,
+                    prenom: form.prenom,
+                    telephone: form.telephone,
+                    draft: jetonBrouillonRef.current || undefined,
+                }),
             }, {
                 onSucces: (tx: string) => {
-            setPaymentTxId(tx); setPaymentDone(true); setPaymentProcessing(false)
+                    // Noté AVANT tout le reste : si l'onglet meurt dans la seconde,
+                    // le rechargement saura que le paiement est passé.
+                    memoriserPaiement('kkiapay', tx)
+                    setPaymentTxId(tx); setPaymentDone(true); setPaymentProcessing(false)
                 },
                 onEchec: () => {
             setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
@@ -476,6 +516,7 @@ export default function NationaliteFormPage() {
                 onComplete: (resp: Record<string, unknown>) => {
                     const tx = resp.transaction as Record<string, unknown> | undefined
                     if (resp.reason === 'APPROVED' || (tx && tx.status === 'approved')) {
+                        memoriserPaiement('fedapay', String(tx?.id || resp.id || ''))
                         setPaymentTxId(String(tx?.id || resp.id || '')); setPaymentDone(true)
                     } else { setPaymentError(t('Paiement FedaPay non approuvé.')) }
                     setPaymentProcessing(false)
@@ -515,7 +556,7 @@ export default function NationaliteFormPage() {
         if (step === 3 && !form.type_document_identite) e.push(t('Type de document requis'))
         if (step === 4) {
             // Validation SOFT : on ne bloque que les 6 obligatoires, les autres sont des avertissements
-            const uploadedKeys = rawDocs.map(d => d.key)
+            const uploadedKeys = [...rawDocs.map(d => d.key), ...piecesDeposees.map(d => d.key)]
             const hasChildren = form.nombre_enfants > 0
             const strictRequired = docSlots.filter(s => s.required)
             strictRequired.forEach(slot => {
@@ -544,37 +585,87 @@ export default function NationaliteFormPage() {
         return e
     }
 
-    const next = () => { const e = validate(); if (e.length > 0) { setErrors(e); return }; setErrors([]); setStep(s => Math.min(s + 1, 6)) }
+    const next = async () => {
+        const e = validate(); if (e.length > 0) { setErrors(e); return }
+        setErrors([])
+        // Les pièces partent AVANT le paiement (voir `piecesDeposees`). En mode
+        // reprise, le dépôt se fait à l'envoi final, comme avant.
+        if (step === 4 && !resumeMode) {
+            const { echecs } = await deposerPieces()
+            if (echecs.length) {
+                setErrors([`${t('Ces pièces n’ont pas pu être envoyées, nous réessaierons à la validation :')} ${echecs.join(', ')}`])
+            }
+            void enregistrerBrouillon(5)
+        } else if (!resumeMode) {
+            void enregistrerBrouillon(step + 1)
+        }
+        setStep(s => Math.min(s + 1, 6))
+    }
     const prev = () => { setErrors([]); setStep(s => Math.max(s - 1, 1)) }
 
-    const submit = async () => {
-        if (!paymentDone) {
-            setErrors([t('Veuillez effectuer le paiement avant de soumettre.')])
-            return
-        }
-        setSubmitting(true)
-        setErrors([])
-        setUploadProgress(10)
+    /* ═══ Dépôt des pièces, brouillon serveur, mémoire locale ═══════════ */
 
-        const finalUploadedUrls: string[] = []
-        let uploadFailCount = 0
+    const empreintePiece = (d: { key: string; file: File }) => `${d.key}|${d.file.name}|${d.file.size}|${d.file.lastModified}`
+    const CLE_BROUILLON_LOCAL = 'rgb_nat_brouillon_v1'
 
-        // Documents complémentaires nommés (mode MyAfroOrigins) fusionnés dans la
-        // file d'upload avec une clé unique et le nom saisi par le client.
+    const nouveauJeton = () => {
+        const octets = new Uint8Array(16)
+        crypto.getRandomValues(octets)
+        return Array.from(octets, b => b.toString(16).padStart(2, '0')).join('')
+    }
+
+    /** Le paiement est noté dans le navigateur à la seconde où il aboutit. */
+    const memoriserPaiement = (provider: PaymentProvider, tx: string) => {
+        try {
+            const brut = localStorage.getItem(CLE_BROUILLON_LOCAL)
+            const b = brut ? JSON.parse(brut) : {}
+            localStorage.setItem(CLE_BROUILLON_LOCAL, JSON.stringify({ ...b, jeton: jetonBrouillonRef.current, paiement: { provider, tx, le: Date.now() } }))
+        } catch { /* stockage indisponible : le brouillon serveur et le webhook prennent le relais */ }
+    }
+
+    const effacerBrouillonLocal = () => { try { localStorage.removeItem(CLE_BROUILLON_LOCAL) } catch { /* ignoré */ } }
+
+    /** Formulaire + pièces déposées, côté serveur (voir lib/nationality-brouillon.ts). */
+    const enregistrerBrouillon = async (etape: number) => {
+        if (resumeMode || myafroMode || !jetonBrouillonRef.current || !form.email) return
+        try {
+            await natFetch('/api/nationality/brouillon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jeton: jetonBrouillonRef.current, form, documents: piecesDeposeesRef.current.map(p => p.line), etape }),
+                keepalive: true,
+            })
+        } catch { /* réessayé à l'étape suivante */ }
+    }
+
+    // Copie synchrone : `enregistrerBrouillon` peut partir juste après un dépôt,
+    // avant que React n'ait rendu le nouvel état.
+    const piecesDeposeesRef = useRef<PieceDeposee[]>([])
+    useEffect(() => { piecesDeposeesRef.current = piecesDeposees }, [piecesDeposees])
+
+    /**
+     * Dépose au stockage les pièces pas encore déposées. Renvoie TOUTES les
+     * lignes (déjà déposées + nouvelles, + marqueurs d'échec si `marquerEchecs`).
+     */
+    const deposerPieces = async (marquerEchecs = false): Promise<{ lignes: string[]; echecs: string[] }> => {
+        const deja = new Set(piecesDeposeesRef.current.map(p => p.empreinte))
         const baseDocs = [
             ...rawDocs,
             ...customDocs.map((d, k) => ({ key: `custom_${k}`, label: d.name || `Document ${k + 1}`, name: d.name, file: d.file })),
-        ]
+        ].filter(d => d.file && !deja.has(empreintePiece(d)))
 
-        // Compression native des IMAGES avant envoi (photos de documents prises
-        // au téléphone : 5-15 Mo → < 1 Mo). PDF/scans laissés intacts. Le nom
-        // affiché reste l'original ; seul le fichier téléversé est allégé.
-        const allDocs = await Promise.all(
-            baseDocs.map(async d => ({ ...d, file: await compressImage(d.file) })),
-        )
+        const nouvelles: PieceDeposee[] = []
+        const echecs: string[] = []
+        const marqueurs: string[] = []
 
-        let lastUploadError = ''
-
+        if (baseDocs.length) {
+            setDepotEnCours({ fait: 0, total: baseDocs.length })
+            // Compression native des IMAGES avant envoi (photos de documents prises
+            // au téléphone : 5-15 Mo → < 1 Mo). PDF/scans laissés intacts.
+            const allDocs = await Promise.all(
+                baseDocs.map(async d => ({ ...d, original: d.file, file: await compressImage(d.file) })),
+            )
+            let lastUploadError = ''
         // Chemins d'upload SIGNÉS côté serveur (service role → bypass RLS). Avant,
         // l'upload navigateur utilisait la clé anon et dépendait des policies RLS
         // du bucket : dès qu'elles refusaient l'INSERT anon, TOUS les fichiers
@@ -630,7 +721,7 @@ export default function NationaliteFormPage() {
             // 1) Voie serveur (fichiers pas trop lourds) : la plus fiable.
             if (doc.file.size <= SERVER_MAX) {
                 const path = await uploadViaServer(doc)
-                if (path) { finalUploadedUrls.push(`${doc.key}:${doc.label}: ${path}`); uploaded = true }
+                if (path) { nouvelles.push({ key: doc.key, label: doc.label, name: doc.name, empreinte: empreintePiece({ key: doc.key, file: doc.original }), line: `${doc.key}:${doc.label}: ${path}` }); uploaded = true }
             }
 
             // 2) URL signée directe (gros fichiers ou repli).
@@ -638,7 +729,7 @@ export default function NationaliteFormPage() {
                 try {
                     const { data, error } = await supabase.storage.from('nationality_documents')
                         .uploadToSignedUrl(sig.path, sig.token, doc.file)
-                    if (data && !error) { finalUploadedUrls.push(`${doc.key}:${doc.label}: ${sig.path}`); uploaded = true }
+                    if (data && !error) { nouvelles.push({ key: doc.key, label: doc.label, name: doc.name, empreinte: empreintePiece({ key: doc.key, file: doc.original }), line: `${doc.key}:${doc.label}: ${sig.path}` }); uploaded = true }
                     else if (error) { lastUploadError = error.message; console.error(`[UPLOAD] signé "${t(doc.label)}":`, error.message) }
                 } catch (err) { lastUploadError = err instanceof Error ? err.message : String(err) }
             }
@@ -650,24 +741,118 @@ export default function NationaliteFormPage() {
                     const filename = `nat-${Date.now()}/${doc.key}_${i}.${ext}`
                     const { data, error } = await supabase.storage.from('nationality_documents')
                         .upload(filename, doc.file, { cacheControl: '3600', upsert: false })
-                    if (data && !error) { finalUploadedUrls.push(`${doc.key}:${doc.label}: ${filename}`); uploaded = true }
+                    if (data && !error) { nouvelles.push({ key: doc.key, label: doc.label, name: doc.name, empreinte: empreintePiece({ key: doc.key, file: doc.original }), line: `${doc.key}:${doc.label}: ${filename}` }); uploaded = true }
                     else if (error) { lastUploadError = error.message; console.error(`[UPLOAD] anon "${t(doc.label)}":`, error.message) }
                 } catch (err) { lastUploadError = err instanceof Error ? err.message : String(err) }
             }
 
             if (!uploaded) {
                 const reason = (lastUploadError || 'inconnu').slice(0, 120)
-                finalUploadedUrls.push(`${t(doc.label)}: ${doc.name} (upload échoué : ${reason})`)
-                uploadFailCount++
+                marqueurs.push(`${t(doc.label)}: ${doc.name} (upload échoué : ${reason})`)
+                echecs.push(t(doc.label))
             }
             setUploadProgress(10 + Math.floor((i + 1) / allDocs.length * 50))
+            setDepotEnCours({ fait: i + 1, total: allDocs.length })
         }
 
-        if (uploadFailCount > 0) {
-            console.warn(`[UPLOAD] ${uploadFailCount}/${allDocs.length} fichier(s) non envoyés. Dernier motif : ${lastUploadError || 'inconnu'}`)
+        if (echecs.length > 0) {
+            console.warn(`[UPLOAD] ${echecs.length}/${allDocs.length} fichier(s) non envoyés. Dernier motif : ${lastUploadError || 'inconnu'}`)
+        }
+        setDepotEnCours(null)
+
         }
 
+        const toutes = [...piecesDeposeesRef.current, ...nouvelles]
+        piecesDeposeesRef.current = toutes
+        setPiecesDeposees(toutes)
+        return { lignes: [...toutes.map(p => p.line), ...(marquerEchecs ? marqueurs : [])], echecs }
+    }
+
+    /* Mémoire locale du dossier : un rechargement de page (onglet évincé par
+       iOS pendant la validation bancaire, retour arrière, coupure) ne fait plus
+       repartir de zéro. Le texte du formulaire et les pièces DÉJÀ déposées
+       sont conservés ; seules les pièces non encore envoyées sont à rechoisir. */
+    useEffect(() => {
+        if (!brouillonRestaureRef.current || resumeMode || myafroMode || showWelcome) return
+        const id = setTimeout(() => {
+            try {
+                const brut = localStorage.getItem(CLE_BROUILLON_LOCAL)
+                const ancien = brut ? JSON.parse(brut) : {}
+                localStorage.setItem(CLE_BROUILLON_LOCAL, JSON.stringify({
+                    ...ancien, jeton: jetonBrouillonRef.current, form, pieces: piecesDeposees, step, maj: Date.now(),
+                }))
+            } catch { /* quota : ignoré */ }
+        }, 400)
+        return () => clearTimeout(id)
+    }, [form, piecesDeposees, step, resumeMode, myafroMode, showWelcome]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Restauration au chargement (parcours standard uniquement).
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('resume') || params.has('myafro')) { brouillonRestaureRef.current = true; return }
+        let b: { jeton?: string; form?: Partial<NationaliteForm>; pieces?: PieceDeposee[]; step?: number; maj?: number; paiement?: { provider: PaymentProvider; tx: string } } = {}
+        try { b = JSON.parse(localStorage.getItem(CLE_BROUILLON_LOCAL) || '{}') } catch { b = {} }
+        const frais = b.maj && Date.now() - b.maj < 30 * 86_400_000
+        jetonBrouillonRef.current = (b.jeton && /^[a-f0-9]{32}$/.test(b.jeton) && (frais || b.paiement)) ? b.jeton : nouveauJeton()
+        if ((frais || b.paiement) && b.form && b.form.email) {
+            // Seules les clés connues du formulaire sont reprises.
+            setForm(p => ({ ...p, ...Object.fromEntries(Object.entries(b.form || {}).filter(([k]) => k in p)) }))
+            const pieces = Array.isArray(b.pieces) ? b.pieces.filter(x => x && typeof x.line === 'string') : []
+            piecesDeposeesRef.current = pieces
+            setPiecesDeposees(pieces)
+            setPreInscriptionDone(true)
+            setLawAccepted(true)
+            if (b.step && b.step >= 1) setStep(Math.min(Number(b.step), 6))
+            if (b.paiement?.tx) {
+                /* Le paiement avait abouti avant que l'onglet ne meure : la
+                   soumission automatique repart avec les pièces déjà déposées. */
+                setPaymentProvider(b.paiement.provider)
+                setPaymentTxId(b.paiement.tx)
+                setPaymentDone(true)
+                setStep(6)
+            } else if (b.jeton) {
+                /* Pas de trace de paiement ici — mais le paiement a pu passer
+                   sans que la page le sache (3-D Secure, onglet évincé). Si le
+                   webhook a déjà reconstitué le dossier, on l'annonce. */
+                natFetch(`/api/nationality/brouillon?t=${b.jeton}`)
+                    .then(r => r.json())
+                    .then(j => {
+                        if (j?.dossier_ref) {
+                            setAppRef(j.dossier_ref)
+                            effacerBrouillonLocal()
+                            setShowWelcome(true)
+                        }
+                    })
+                    .catch(() => { /* hors ligne : rien à annoncer */ })
+            }
+        }
+        brouillonRestaureRef.current = true
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Quitter pendant un envoi ou juste après paiement = risque de perte : on prévient.
+    useEffect(() => {
+        const risque = !!depotEnCours || submitting || paymentProcessing || (paymentDone && !showWelcome && !resumeMode && !prepayeMyafro)
+        if (!risque) return
+        const avertir = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+        window.addEventListener('beforeunload', avertir)
+        return () => window.removeEventListener('beforeunload', avertir)
+    }, [depotEnCours, submitting, paymentProcessing, paymentDone, showWelcome, resumeMode, prepayeMyafro])
+
+    const submit = async () => {
+        if (!paymentDone) {
+            setErrors([t('Veuillez effectuer le paiement avant de soumettre.')])
+            return
+        }
+        setSubmitting(true)
+        setErrors([])
+        setUploadProgress(10)
+
+        // Pièces déjà déposées à l'étape 4 : leurs chemins suffisent. Seules les
+        // pièces restantes (ajoutées depuis, ou dont le dépôt avait échoué) partent.
+        const { lignes: finalUploadedUrls, echecs } = await deposerPieces(true)
+        const uploadFailCount = echecs.length
         setUploadProgress(70)
+        void uploadFailCount
 
         // Clean empty date strings to null for PostgreSQL
         const cleanedForm: Record<string, unknown> = { ...form }
@@ -722,7 +907,8 @@ export default function NationaliteFormPage() {
                 setUploadProgress(100)
                 trackEvent('nationalite_submit', { reference: result.reference || null })
                 // Déclencher l'analyse des documents manquants en arrière-plan
-                const uploadedKeys = rawDocs.map(d => d.key)
+                const uploadedKeys = [...new Set([...rawDocs.map(d => d.key), ...piecesDeposees.map(d => d.key)])]
+                effacerBrouillonLocal()
                 natFetch('/api/nationality/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -743,7 +929,17 @@ export default function NationaliteFormPage() {
             // Échec réseau APRÈS paiement : ne pas perdre le dossier en silence.
             // On réarme la soumission auto pour permettre un nouvel essai (bouton + effet).
             autoSubmitRef.current = false
-            setErrors([t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Ne fermez pas cette page : réessayez avec le bouton « Confirmer et Soumettre ». En cas de problème persistant, contactez-nous en gardant votre référence de paiement.')])
+            /* L'effet de soumission automatique ne se redéclenche pas tout seul
+               (paymentDone est déjà vrai) : on relance nous-mêmes, 3 fois, à
+               5, 15 puis 30 secondes. Le dossier est de toute façon sauvé par le
+               brouillon serveur et le webhook si le navigateur abandonne. */
+            const essai = ++essaisSoumissionRef.current
+            if (essai <= 3) {
+                setErrors([t('Le paiement a bien été reçu. L’enregistrement n’a pas encore abouti (réseau) : nouvel essai automatique dans quelques secondes. Ne fermez pas cette page.')])
+                setTimeout(() => { if (!autoSubmitRef.current) { autoSubmitRef.current = true; submit() } }, [5000, 15000, 30000][essai - 1])
+            } else {
+                setErrors([t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Ne fermez pas cette page : réessayez avec le bouton « Confirmer et Soumettre ». En cas de problème persistant, contactez-nous en gardant votre référence de paiement.')])
+            }
         }
         setSubmitting(false)
     }
@@ -1058,7 +1254,7 @@ export default function NationaliteFormPage() {
                                     <div><label className={LC}><T>Pays de résidence</T><span className={RQ}>*</span></label><select title={t("Pays de résidence")} value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">{t("Pays")}</option>{COUNTRIES.map(item => Object.assign(item, { translated: true })).map(c => <option key={c} value={c}>{t(c)}</option>)}</select></div>
                                     <div className="md:col-span-2"><label className={LC}><T>Adresse complète</T></label><input title={t("Adresse")} value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder={t('Adresse')} /></div>
                                     <div><label className={LC}><T>Téléphone</T></label><input title={t("Téléphone")} value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder={t("+229 XX XX XX XX")} /></div>
-                                    <div><label className={LC}><T>Email</T><span className={RQ}>*</span></label><input title={t("Email")} type="email" value={form.email} onChange={e => u('email', e.target.value)} className={IC} placeholder={t("email@exemple.com")} /></div>
+                                    <div><label className={LC}><T>Email</T><span className={RQ}>*</span></label><input title={t("Email")} type="email" value={form.email} onChange={e => u('email', e.target.value)} readOnly={preInscriptionDone && !resumeMode && !myafroMode} className={`${IC} ${preInscriptionDone && !resumeMode && !myafroMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder={t("email@exemple.com")} />{preInscriptionDone && !resumeMode && !myafroMode && <p className="text-[10px] text-gray-400 mt-1"><T>L’adresse de votre pré-inscription identifie votre dossier et votre paiement : elle ne se modifie plus ici.</T></p>}</div>
                                     <div><label className={LC}><T>Profession</T></label><select title={t("Profession")} value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">{t("Choisir")}</option>{PROFESSIONS.map(item => Object.assign(item, { translated: true })).map(p => <option key={t(p)} value={t(p)}>{t(p)}</option>)}</select></div>
                                 </div>
 
@@ -1128,7 +1324,7 @@ export default function NationaliteFormPage() {
                             </div>}
 
                             {step === 4 && (() => {
-                                const uploadedKeys = rawDocs.map(d => d.key)
+                                const uploadedKeys = [...rawDocs.map(d => d.key), ...piecesDeposees.map(d => d.key)]
                                 const hasChildren = form.nombre_enfants > 0
                                 const visibleSlots = docSlots.filter(s =>
                                     (s.conditional !== 'has_children' || hasChildren) &&
@@ -1155,6 +1351,9 @@ export default function NationaliteFormPage() {
                                                         {!doc.required && !isAncestral && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Optionnel</span>}
                                                     </span>
                                                     {doc.hint && <p className="text-[10px] text-gray-500 mt-0.5">{doc.hint}</p>}
+                                                    {piecesDeposees.filter(p => p.key === doc.key).map(p => (
+                                                        <p key={p.line} className="text-[10px] text-emerald-700 mt-0.5 truncate">✓ {t('Déposé')} : {p.name}</p>
+                                                    ))}
                                                 </div>
                                             </div>
                                             <label className="cursor-pointer shrink-0 ml-3">
@@ -1168,6 +1367,7 @@ export default function NationaliteFormPage() {
                                                         if (f) {
                                                             const newDocs = Array.from(f).map(fi => ({ key: doc.key, label: doc.label, name: fi.name, file: fi }))
                                                             setRawDocs(p => [...p.filter(x => doc.multi || x.key !== doc.key), ...newDocs])
+                                                            if (!doc.multi) setPiecesDeposees(p => { const n = p.filter(x => x.key !== doc.key); piecesDeposeesRef.current = n; return n })
                                                         }
                                                     }} />
                                             </label>
@@ -1471,7 +1671,7 @@ export default function NationaliteFormPage() {
                     ) : (<>
                         {step > 1 ? <button onClick={prev} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors font-bold"><ArrowLeft size={16} /> <T>Précédent</T></button> : <div />}
                         {step < 6 ? (
-                            <button onClick={next} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]"><T>Suivant</T> <ArrowRight size={16} /></button>
+                            <button onClick={next} disabled={!!depotEnCours} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)] disabled:opacity-70">{depotEnCours ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi sécurisé de vos pièces</T> {depotEnCours.fait}/{depotEnCours.total}</> : <><T>Suivant</T> <ArrowRight size={16} /></>}</button>
                         ) : (
                             <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                                 {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}

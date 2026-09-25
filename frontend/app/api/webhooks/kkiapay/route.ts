@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'crypto'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
 import { toXOFStrict } from '@/lib/server-rates'
@@ -8,6 +9,13 @@ import { logWebhookFailure } from '@/lib/payment-integrity'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import { markClientConverted } from '@/lib/classement/track'
 import { confirmDocumentPayment } from '@/lib/document-payment'
+import { lireBrouillon, ecrireBrouillon, colonnesDepuisBrouillon } from '@/lib/nationality-brouillon'
+
+/* Client SERVEUR (service role). Ce webhook importait le client du NAVIGATEUR
+   (clé anonyme) : il ne fonctionnait qu'aussi longtemps que les règles d'accès
+   laissaient la clé publique lire les clés privées de paiement — ce qui est
+   précisément une faille à fermer. */
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -26,7 +34,23 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin
    de complément aux fiches restées incomplètes 2h+.
    ══════════════════════════════════════════════════════════════ */
 
-async function verifyKkiapayTx(transactionId: string): Promise<{ ok: boolean; amount?: number; status: string }> {
+interface TxKkiapay {
+    ok: boolean
+    amount?: number
+    status: string
+    /** Données passées au widget (`data`), telles que Kkiapay les a conservées (champ `state`). */
+    etat: Record<string, unknown>
+    client?: { fullname?: string; email?: string; phone?: string }
+}
+
+/** `data` du widget : objet, chaîne JSON, ou absent. */
+function lireDonneesWidget(v: unknown): Record<string, unknown> {
+    if (!v) return {}
+    if (typeof v === 'object') return v as Record<string, unknown>
+    try { const o = JSON.parse(String(v)); return o && typeof o === 'object' ? o : {} } catch { return {} }
+}
+
+async function verifyKkiapayTx(transactionId: string): Promise<TxKkiapay> {
     const { data: settingsData } = await supabase
         .from('settings')
         .select('key, value')
@@ -52,9 +76,15 @@ async function verifyKkiapayTx(transactionId: string): Promise<{ ok: boolean; am
             body: JSON.stringify({ transactionId }),
         })
         const data = await res.json()
-        return { ok: data?.status === 'SUCCESS', amount: data?.amount, status: data?.status || 'unknown' }
+        return {
+            ok: data?.status === 'SUCCESS',
+            amount: data?.amount,
+            status: data?.status || 'unknown',
+            etat: lireDonneesWidget(data?.state ?? data?.stateData),
+            client: data?.client || undefined,
+        }
     } catch (e) {
-        return { ok: false, status: e instanceof Error ? e.message : 'verify_failed' }
+        return { ok: false, status: e instanceof Error ? e.message : 'verify_failed', etat: {} }
     }
 }
 
@@ -86,7 +116,7 @@ async function handleNationalityPayment(
         return NextResponse.json({ ok: true, message: 'Transaction non confirmée : ignorée' })
     }
 
-    const email = String(widgetData.email || '').toLowerCase().trim()
+    const email = String(widgetData.email || verify.client?.email || '').toLowerCase().trim()
     if (!email) {
         // Paiement réel mais non identifiable → alerte humaine, pas de fiche fantôme
         await supabase.from('messages').insert([{
@@ -110,9 +140,20 @@ async function handleNationalityPayment(
         .limit(1)
         .maybeSingle()
 
-    const nom = lead?.client_nom || ''
-    const prenom = lead?.client_prenom || ''
-    const telephone = lead?.client_whatsapp || null
+    /* Brouillon déposé AVANT le paiement (formulaire + pièces) : c'est la
+       source la plus complète. Il n'est pris que si son e-mail est celui du
+       paiement — un jeton seul ne suffit pas à rattacher un dossier. */
+    const brouillon = widgetData.draft ? await lireBrouillon(supabase, String(widgetData.draft)) : null
+    const brouillonValide = brouillon && String(brouillon.form.email || '').toLowerCase().trim() === email ? brouillon : null
+
+    /* Identité, de la plus sûre à la plus pauvre : brouillon, données du
+       widget, pré-inscription, puis nom du porteur de la carte chez Kkiapay.
+       La fiche du 15/09 aurait été créée « sans nom » : le lead n'était
+       interrogé que par e-mail et le widget ne transmettait pas le nom. */
+    const porteur = String(verify.client?.fullname || '').trim()
+    const nom = String(brouillonValide?.form.nom || widgetData.nom || lead?.client_nom || porteur.split(/\s+/).slice(1).join(' ') || '')
+    const prenom = String(brouillonValide?.form.prenom || widgetData.prenom || lead?.client_prenom || porteur.split(/\s+/)[0] || '')
+    const telephone = String(brouillonValide?.form.telephone || widgetData.telephone || lead?.client_whatsapp || verify.client?.phone || '') || null
 
     // Montant officiel du formulaire (admin) pour le reçu ; le XOF encaissé va en note
     let amount = 250
@@ -143,23 +184,31 @@ async function handleNationalityPayment(
         ? `⚠️ SOUS-PAIEMENT À RÉGULARISER : ${encaisseXof} XOF encaissés pour ${attenduXof} XOF attendus. `
         + `NE PAS TRAITER le dossier avant régularisation ou remboursement. `
         : '')
-        + `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement : le client n'a pas (encore) finalisé le formulaire. ` +
-        `Transaction ${transactionId} : encaissé ${verify.amount ?? '?'} XOF. ` +
-        `DOCUMENTS : si le formulaire n'aboutit pas, un lien de complément sera envoyé automatiquement au client (ou utilisez « Relancer (documents) »).`
+        + (brouillonValide
+            ? `[WEBHOOK-KKIAPAY] Dossier RECONSTITUÉ depuis le brouillon enregistré avant le paiement `
+            + `(${brouillonValide.documents.length} pièce(s), étape ${brouillonValide.etape}/6) : le navigateur du client n'a pas renvoyé le formulaire après paiement. `
+            + `Transaction ${transactionId} : encaissé ${verify.amount ?? '?'} XOF. Vérifier le dossier puis le traiter normalement.`
+            : `[WEBHOOK-KKIAPAY] Fiche créée automatiquement à la confirmation du paiement : le client n'a pas (encore) finalisé le formulaire. `
+            + `Transaction ${transactionId} : encaissé ${verify.amount ?? '?'} XOF. `
+            + `DOCUMENTS : si le formulaire n'aboutit pas, un lien de complément sera envoyé automatiquement au client (ou utilisez « Relancer (documents) »).`)
 
     const { error: insErr } = await supabase.from('nationality_applications').insert([{
+        ...(brouillonValide ? colonnesDepuisBrouillon(brouillonValide) : {}),
         application_ref: ref,
         status: 'soumis',
         submitted_at: new Date().toISOString(),
         nom, prenom, email,
         telephone,
-        nationalite: 'Non spécifiée',
-        documents_uploaded: [],
+        nationalite: String(brouillonValide?.form.nationalite || '') || 'Non spécifiée',
+        documents_uploaded: brouillonValide?.documents || [],
         amount, currency,
         payment_status: 'payé',
         payment_ref: transactionId,
         payment_method: 'kkiapay',
-        last_step_completed: 0, // ← marqueur « fiche webhook à compléter »
+        /* 0 = fiche vide à compléter (le cron envoie un lien de complément) ;
+           5 = reconstituée depuis le brouillon, pièces comprises : rien à
+           redemander au client. */
+        last_step_completed: brouillonValide ? 5 : 0,
         agent_notes: note,
     }])
     if (insErr) {
@@ -214,7 +263,10 @@ async function handleNationalityPayment(
     void sendNationalityPaymentReceipt(paymentInfo)
     void markClientConverted({ email, full_name: `${prenom} ${nom}`.trim() || null, phone: telephone, serviceLabel: 'nationalite-vip', source: 'nationalite' })
 
-    return NextResponse.json({ ok: true, message: 'Dossier nationalité créé (filet webhook)', reference: ref })
+    // Le navigateur du client, s'il revient, saura que son dossier existe.
+    if (brouillonValide) await ecrireBrouillon(supabase, { ...brouillonValide, dossier_ref: ref, maj_le: new Date().toISOString() })
+
+    return NextResponse.json({ ok: true, message: brouillonValide ? 'Dossier reconstitué depuis le brouillon (filet webhook)' : 'Dossier nationalité créé (filet webhook)', reference: ref })
 }
 
 // Kkiapay sends POST webhook notifications when payment status changes
@@ -222,22 +274,53 @@ export async function POST(request: Request) {
     try {
         const body = await request.json()
 
-        // Kkiapay webhook payload structure
-        const {
-            transactionId,
-            status,
-            data,
-        } = body
+        /* ── Signature ────────────────────────────────────────────────
+           Kkiapay signe ses appels par l'en-tête `x-kkiapay-secret` (valeur
+           définie dans son tableau de bord). Si le secret est renseigné dans
+           nos réglages, un appel qui ne le porte pas est refusé. Chaque
+           branche revérifie de toute façon la transaction auprès de Kkiapay :
+           un faux webhook ne peut rien marquer payé. */
+        const { data: secretRow } = await supabase.from('settings').select('value').eq('key', 'kkiapay_webhook_secret').maybeSingle()
+        const secretAttendu = String(secretRow?.value || '').trim()
+        if (secretAttendu) {
+            const recu = Buffer.from(String(request.headers.get('x-kkiapay-secret') || ''))
+            const attendu = Buffer.from(secretAttendu)
+            if (recu.length !== attendu.length || !timingSafeEqual(recu, attendu)) {
+                console.warn('[Kkiapay Webhook] signature absente ou invalide')
+                return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
+            }
+        }
 
-        // `data` peut arriver en objet ou en chaîne JSON selon le canal
-        let widgetData: Record<string, unknown> = {}
-        try {
-            widgetData = typeof data === 'string' ? JSON.parse(data) : (data && typeof data === 'object' ? data : {})
-        } catch { widgetData = {} }
+        /* ── Format RÉEL du webhook Kkiapay (docs.kkiapay.me, « Webhook ») ──
+             { transactionId, isPaymentSucces, event: 'transaction.success',
+               amount, method, stateData: <données du widget>, … }
+           Ce code lisait `status` et `data`, qui n'existent pas dans cet
+           envoi : le contexte était toujours vide, aucune branche ne
+           reconnaissait le paiement, et le filet de sécurité nationalité n'a
+           jamais tourné (cas du 15/09/2026, 170 549 FCFA encaissés, aucune
+           fiche). On lit désormais les deux formats. */
+        const transactionId = body.transactionId
+        const data = body.stateData ?? body.data ?? body.state
+        const status = body.isPaymentSucces === true || body.event === 'transaction.success'
+            ? 'SUCCESS'
+            : body.isPaymentSucces === false || body.event === 'transaction.failed'
+                ? 'FAILED'
+                : String(body.status || '')
+
+        let widgetData = lireDonneesWidget(data)
+
+        /* Données vides dans l'envoi : Kkiapay les conserve sur la
+           transaction (champ `state`). On les y relit — c'est la même source
+           que celle que la vérification anti-fraude interroge. */
+        if (transactionId && !widgetData.context && !widgetData.doc_id && !widgetData.order_id) {
+            const tx = await verifyKkiapayTx(String(transactionId))
+            widgetData = { ...tx.etat }
+            if (!widgetData.email && tx.client?.email) widgetData.email = tx.client.email
+        }
 
         // ── Branche NATIONALITÉ (widget du formulaire, pas de commande boutique) ──
         if (transactionId && widgetData.context === 'nationality') {
-            return handleNationalityPayment(String(transactionId), String(status || ''), widgetData)
+            return handleNationalityPayment(String(transactionId), status, widgetData)
         }
 
         // ── Branche DEVIS / FACTURES (portail /portail/[id] et panel client) ──
@@ -286,7 +369,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ ok: true, message: 'Recherche ancestrale enregistrée (filet webhook)' })
         }
 
-        const orderId = (widgetData as { order_id?: string }).order_id ?? data?.order_id
+        const orderId = (widgetData as { order_id?: string }).order_id
 
         if (!transactionId || !orderId) {
             return NextResponse.json({ error: 'Missing transactionId or order_id' }, { status: 400 })
