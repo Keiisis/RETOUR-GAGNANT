@@ -150,11 +150,16 @@ export default function MessageShow() {
         const msg = chatInput.trim();
         setChatInput("");
 
-        await supabase.from('chat_messages').insert({
+        const { error } = await supabase.from('chat_messages').insert({
             conversation_id: id,
             role: 'agent',
             content: msg
         });
+        if (error) {
+            // Message non enregistré : on rend le texte au lieu de le perdre.
+            setChatInput(msg);
+            alert(`Message non envoyé : ${error.message}`);
+        }
     };
 
     useEffect(() => {

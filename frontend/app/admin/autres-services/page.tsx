@@ -80,13 +80,16 @@ export default function AutresServicesAdminPage() {
     const handleSave = async () => {
         setSaving(true)
         setSaved(false)
+        // Pas de « Enregistré » si la base a refusé l'écriture.
+        let erreur: string | null = null
         if (sectionId) {
-            await supabase
+            const { error } = await supabase
                 .from('page_sections')
                 .update({ content, updated_at: new Date().toISOString() })
                 .eq('id', sectionId)
+            erreur = error?.message || null
         } else {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('page_sections')
                 .insert({
                     page: 'autres-services',
@@ -99,8 +102,10 @@ export default function AutresServicesAdminPage() {
                 .select()
                 .single()
             if (data) setSectionId(data.id)
+            erreur = error?.message || null
         }
         setSaving(false)
+        if (erreur) { alert(`Enregistrement impossible : ${erreur}`); return }
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
     }

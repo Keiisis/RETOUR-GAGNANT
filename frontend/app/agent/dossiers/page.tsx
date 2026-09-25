@@ -183,15 +183,19 @@ export default function AgentDossiersPage() {
                 }
             }
 
-            await Promise.all([
+            const suppressions = await Promise.all([
                 supabase.from('dossier_documents').delete().in('dossier_id', ids),
                 supabase.from('client_documents').delete().in('dossier_id', ids),
                 supabase.from('documents').delete().in('dossier_id', ids),
                 supabase.from('dossier_tracking').delete().eq('id', dossier.id),
             ]);
+            // Le dossier ne disparaît de l'écran que si la base a tout accepté.
+            const echec = suppressions.find(r => r.error)?.error
+            if (echec) throw new Error(`Suppression incomplète : ${echec.message}`)
 
             if (dossier.dossier_ref_id) {
-                await supabase.from('dossiers').delete().eq('id', dossier.dossier_ref_id);
+                const { error: refErr } = await supabase.from('dossiers').delete().eq('id', dossier.dossier_ref_id);
+                if (refErr) throw new Error(`Suppression incomplète : ${refErr.message}`)
             }
 
             setDossiers(prev => prev.filter(d => d.id !== dossier.id));
@@ -216,7 +220,7 @@ export default function AgentDossiersPage() {
         setChatSending(true)
         const content = chatInput.trim()
         setChatInput('')
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('chat_messages')
             .insert({ conversation_id: selectedDossier.message_thread_id, role: 'agent', content })
             .select('id, role, content, created_at')
@@ -224,6 +228,10 @@ export default function AgentDossiersPage() {
         if (data) {
             setChatMsgs(prev => [...prev, data as ChatMsg])
             setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        } else {
+            // Message non enregistré : on rend le texte à l'agent au lieu de le perdre.
+            setChatInput(content)
+            alert(`Message non envoyé : ${error?.message || 'enregistrement impossible'}`)
         }
         setChatSending(false)
     }
@@ -255,12 +263,22 @@ export default function AgentDossiersPage() {
     const addMissingDocument = async () => {
         if (!docRequest.trim() || !selectedDossier) return
         const newDocs = [...(selectedDossier.documents_manquants || []), docRequest.trim()]
+        const avant = selectedDossier
+        const saisie = docRequest
         
         setDossiers(prev => prev.map(d => d.id === selectedDossier.id ? { ...d, documents_manquants: newDocs } : d))
         setSelectedDossier({ ...selectedDossier, documents_manquants: newDocs })
         setDocRequest('')
         
-        await supabase.from('dossier_tracking').update({ documents_manquants: newDocs }).eq('id', selectedDossier.id)
+        const { error } = await supabase.from('dossier_tracking').update({ documents_manquants: newDocs }).eq('id', selectedDossier.id)
+        if (error) {
+            // Écriture refusée : on revient à l'état réel et on n'envoie pas d'email au client.
+            setDossiers(prev => prev.map(d => d.id === avant.id ? { ...d, documents_manquants: avant.documents_manquants } : d))
+            setSelectedDossier(avant)
+            setDocRequest(saisie)
+            alert(`Document manquant non enregistré : ${error.message}`)
+            return
+        }
 
         // Envoi Email
         try {
@@ -285,11 +303,17 @@ export default function AgentDossiersPage() {
     const removeMissingDocument = async (docToRemove: string) => {
         if (!selectedDossier) return
         const newDocs = (selectedDossier.documents_manquants || []).filter(d => d !== docToRemove)
+        const avant = selectedDossier
         
         setDossiers(prev => prev.map(d => d.id === selectedDossier.id ? { ...d, documents_manquants: newDocs } : d))
         setSelectedDossier({ ...selectedDossier, documents_manquants: newDocs })
         
-        await supabase.from('dossier_tracking').update({ documents_manquants: newDocs }).eq('id', selectedDossier.id)
+        const { error } = await supabase.from('dossier_tracking').update({ documents_manquants: newDocs }).eq('id', selectedDossier.id)
+        if (error) {
+            setDossiers(prev => prev.map(d => d.id === avant.id ? { ...d, documents_manquants: avant.documents_manquants } : d))
+            setSelectedDossier(avant)
+            alert(`Retrait non enregistré : ${error.message}`)
+        }
     }
 
     useEffect(() => {
@@ -332,16 +356,22 @@ export default function AgentDossiersPage() {
         const progression = statusProgressionMap[newStatus];
         const updated_at = new Date().toISOString();
 
+        const dossierEntry = dossiers.find(x => x.id === dossierId);
         setDossiers(prev => prev.map(d => d.id === dossierId ? { ...d, statut: newStatus, progression, updated_at } : d))
         
         // Update dossier_tracking (agent table)
-        await supabase
+        const { error: trackErr } = await supabase
             .from('dossier_tracking')
             .update({ statut: newStatus, progression, updated_at })
             .eq('id', dossierId)
+        if (trackErr) {
+            // Statut refusé : retour à l'état réel, pas de synchro mobile ni d'email « dossier avancé ».
+            if (dossierEntry) setDossiers(prev => prev.map(d => d.id === dossierId ? dossierEntry : d))
+            alert(`Changement de statut non enregistré : ${trackErr.message}`)
+            return
+        }
 
         // ── Sync to dossiers table (mobile table) via dossier_ref_id ──
-        const dossierEntry = dossiers.find(x => x.id === dossierId);
         const dossierRefId = dossierEntry?.dossier_ref_id;
         if (dossierRefId) {
             const mobileStatusMap: Record<DossierStatus, string> = {
@@ -352,7 +382,7 @@ export default function AgentDossiersPage() {
                 finalisation: 'validation',
                 termine: 'termine',
             }
-            await supabase
+            const { error: mobileErr } = await supabase
                 .from('dossiers')
                 .update({
                     status: mobileStatusMap[newStatus],
@@ -360,6 +390,7 @@ export default function AgentDossiersPage() {
                     updated_at,
                 })
                 .eq('id', dossierRefId)
+            if (mobileErr) alert(`Statut enregistré, mais non synchronisé avec l'application mobile : ${mobileErr.message}`)
         }
 
         const d = dossiers.find(x => x.id === dossierId);
@@ -921,10 +952,11 @@ export default function AgentDossiersPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        await supabase
+                                        const { error } = await supabase
                                             .from('dossier_tracking')
                                             .update({ notes: noteText })
                                             .eq('id', selectedDossier.id)
+                                        if (error) { alert(`Note non enregistrée : ${error.message}`); return }
                                         setDossiers(prev => prev.map(d => d.id === selectedDossier.id ? { ...d, notes: noteText } : d))
                                     }}
                                     className="mt-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 rounded-lg transition-all"

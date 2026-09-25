@@ -67,14 +67,17 @@ export default function ERPSettingsPage() {
     const handleSave = async () => {
         setSaving(true)
         try {
+            // Chaque écriture est vérifiée : sans cela, l'alerte de succès
+            // s'affichait même quand la base refusait la mise à jour.
             // Update Commission Rate
-            await supabase
+            const { error: errTaux } = await supabase
                 .from('system_settings')
                 .update({ value: { commission_rate: commissionRate / 100, default_currency: 'XOF' } })
                 .eq('id', 'comptabilite_erp')
+            if (errTaux) throw errTaux
 
             // Update Devis/Facture Template
-            await supabase
+            const { error: errDevis } = await supabase
                 .from('document_templates')
                 .update({ 
                     content: { 
@@ -85,9 +88,10 @@ export default function ERPSettingsPage() {
                     } 
                 })
                 .eq('id', 'official_devis_facture')
+            if (errDevis) throw errDevis
             
             // Update Email Template
-            await supabase
+            const { error: errEmail } = await supabase
                 .from('document_templates')
                 .update({ 
                     content: { 
@@ -96,11 +100,12 @@ export default function ERPSettingsPage() {
                     } 
                 })
                 .eq('id', 'official_email')
+            if (errEmail) throw errEmail
 
             alert('Paramètres enregistrés avec succès.')
         } catch (error) {
             console.error('Erreur lors de la sauvegarde', error)
-            alert('Erreur lors de la sauvegarde.')
+            alert(`Erreur lors de la sauvegarde : ${(error as { message?: string })?.message || 'inconnue'}`)
         } finally {
             setSaving(false)
         }

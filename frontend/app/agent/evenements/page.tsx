@@ -463,11 +463,15 @@ export default function AgentEventsPage() {
     useEffect(() => { fetchEvents() }, [fetchEvents])
 
     const handleStatusChange = async (id: string, status: string) => {
-        await fetch(`/api/events/${id}`, {
+        const res = await fetch(`/api/events/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status }),
         })
+        if (!res.ok) {
+            const d = await res.json().catch(() => ({}))
+            alert(`Statut non modifié : ${d.error || `HTTP ${res.status}`}`)
+        }
         fetchEvents()
     }
 

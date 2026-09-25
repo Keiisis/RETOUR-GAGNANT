@@ -33,7 +33,7 @@ export async function restoreStockForOrder(
             .from('inventory_movements')
             .select('id')
             .eq('reference_id', orderId)
-            .eq('type', 'return')
+            .eq('movement_type', 'in_return')
             .limit(1)
         if (deja && deja.length > 0) return { restored: 0 }
 
@@ -66,8 +66,9 @@ export async function restoreStockForOrder(
 
                 await supabase.from('inventory_movements').insert({
                     item_id: invItem.id,
-                    type: 'return',
-                    quantity_change: qty,
+                    movement_type: 'in_return',
+                    reference_type: 'orders',
+                    quantity_changed: qty,
                     stock_after: nouveau,
                     reference_id: orderId,
                     notes: `Retour en stock : ${raison} (Réf. ${orderId.slice(0, 8).toUpperCase()})`,

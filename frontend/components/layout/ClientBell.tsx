@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, CheckCircle, ShieldWarning, ArrowRight } from '@phosphor-icons/react'
-import { supabase } from '@/lib/supabase'
+import { visibleInterval } from '@/lib/visible-interval'
 import Link from 'next/link'
 import { useTranslation, T } from '@/lib/translation'
 
 interface Notification {
     id: string
-    client_email: string
     title: string
     message: string
     type: string
@@ -25,57 +24,42 @@ export default function ClientBell() {
     const [unreadCount, setUnreadCount] = useState(0)
     const [clientEmail, setClientEmail] = useState<string | null>(null)
 
-    const fetchNotifications = async (email: string) => {
-        const { data } = await supabase
-            .from('client_notifications')
-            .select('*')
-            .eq('client_email', email)
-            .order('created_at', { ascending: false })
-            .limit(20)
-
-        if (data) {
-            setNotifications(data as Notification[])
-            setUnreadCount(data.filter((n: Notification) => !n.is_read).length)
+    /* Audit du 25/09/2026 : la cloche lisait et modifiait la table en clé
+       publique avec l'email du localStorage (modifiable par n'importe qui).
+       Elle passe maintenant par /api/mon-compte/notifications, qui ne croit que
+       la session prouvée. `rg_espace_ouvert` n'est qu'un indicateur (pas une
+       preuve) pour éviter un appel serveur aux simples visiteurs. */
+    const fetchNotifications = async () => {
+        const res = await fetch('/api/mon-compte/notifications', { cache: 'no-store' }).catch(() => null)
+        if (!res) return
+        if (res.status === 401) {
+            try { localStorage.removeItem('rg_espace_ouvert') } catch { /* navigation privée */ }
+            setClientEmail(null)
+            return
         }
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !Array.isArray(d.notifications)) return
+        setClientEmail('session')
+        setNotifications(d.notifications as Notification[])
+        setUnreadCount(d.notifications.filter((n: Notification) => !n.is_read).length)
     }
 
     useEffect(() => {
-        // Read client email from local storage (set after login in Mon Compte)
-        const email = localStorage.getItem('rg_client_email')
-        if (email) {
-            setClientEmail(email)
-            fetchNotifications(email)
-        }
-
-        // Subscribe to real-time notifications
-        if (email) {
-            const channel = supabase
-                .channel(`public:client_notifications:client_email=eq.${email}`)
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'client_notifications',
-                    filter: `client_email=eq.${email}`
-                }, (payload) => {
-                    setNotifications(prev => [payload.new as Notification, ...prev])
-                    setUnreadCount(prev => prev + 1)
-                })
-                .subscribe()
-
-            return () => {
-                supabase.removeChannel(channel)
-            }
-        }
+        let ouvert = false
+        try { ouvert = localStorage.getItem('rg_espace_ouvert') === '1' } catch { /* navigation privée */ }
+        if (!ouvert) return
+        return visibleInterval(fetchNotifications, 60_000)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const markAsRead = async (id?: string) => {
         if (!clientEmail) return
-
-        let query = supabase.from('client_notifications').update({ is_read: true }).eq('client_email', clientEmail)
-        if (id) query = query.eq('id', id)
-
-        await query
+        const res = await fetch('/api/mon-compte/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(id ? { id } : {}),
+        }).catch(() => null)
+        if (!res?.ok) return
 
         setNotifications(notifications.map(n => id ? (n.id === id ? { ...n, is_read: true } : n) : { ...n, is_read: true }))
         setUnreadCount(id ? Math.max(0, unreadCount - 1) : 0)

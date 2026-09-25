@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
 import { TrendUp as TrendingUp, FileText, ChatText as MessageSquare, Clock, CheckCircle as CheckCircle2, ChartBar as BarChart3, Target, Medal as Award, Users, Compass, Briefcase, PencilLine as Edit3, X, FloppyDisk as Save, Star } from '@phosphor-icons/react';
 
 interface PerformanceData {
@@ -14,16 +13,17 @@ interface PerformanceData {
     messagesTotal: number
     messagesLus: number
     messagesRDV: number
-    leadsTotal: number
-    leadsContactes: number
-    leadsHot: number
+    // null = non attribuable à un agent (eligibility_results n'a pas de colonne d'agent)
+    leadsTotal: number | null
+    leadsContactes: number | null
+    leadsHot: number | null
     devisTotal: number
     devisEnvoyes: number
     eventsTotal: number
     clientsUniques: number
     thisMonthDossiers: number
     thisMonthMessages: number
-    thisMonthLeads: number
+    thisMonthLeads: number | null
 }
 
 interface Targets {
@@ -45,6 +45,8 @@ export default function AgentPerformancesPage() {
         clientsUniques: 0, thisMonthDossiers: 0, thisMonthMessages: 0, thisMonthLeads: 0,
     })
     const [loading, setLoading] = useState(true)
+    const [erreur, setErreur] = useState('')
+    const [portee, setPortee] = useState<'agent' | 'agence'>('agent')
     const [targets, setTargets] = useState<Targets>(DEFAULT_TARGETS)
     const [showEditTargets, setShowEditTargets] = useState(false)
     const [tempTargets, setTempTargets] = useState<Targets>(DEFAULT_TARGETS)
@@ -67,62 +69,23 @@ export default function AgentPerformancesPage() {
         setShowEditTargets(false)
     }
 
+    /* Chiffres calculés côté serveur (/api/agent/performances), filtrés sur la
+       session : un agent ne voit que SES dossiers (agent_assigne), SES devis
+       (documents_financiers.agent_id), SES messages (recipient_id) et SON
+       agenda. Avant, l'écran lisait les tables sans filtre depuis le
+       navigateur et affichait les totaux de toute l'agence. Un admin garde la
+       vue globale. Les leads n'ont pas de colonne d'agent : null pour un agent. */
     useEffect(() => {
         const fetchPerf = async () => {
-            const now = new Date()
-            const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-            const [dossiersRes, messagesRes, leadsRes, devisRes, eventsRes] = await Promise.all([
-                supabase.from('dossier_tracking').select('*'),
-                supabase.from('messages').select('*'),
-                supabase.from('eligibility_results').select('*'),
-                supabase.from('agent_devis').select('*'),
-                supabase.from('agent_events').select('*'),
-            ])
-
-            const dossiers = dossiersRes.data || []
-            const messages = messagesRes.data || []
-            const leads = leadsRes.data || []
-            const devis = devisRes.data || []
-            const events = eventsRes.data || []
-
-            const termines = dossiers.filter((d: Record<string, unknown>) => d.statut === 'termine')
-            const enCours = dossiers.filter((d: Record<string, unknown>) => ['traitement', 'validation', 'finalisation'].includes(d.statut as string))
-            const lus = messages.filter((m: Record<string, unknown>) => m.lu === true)
-            const rdvMessages = messages.filter((m: Record<string, unknown>) => m.type === 'rendez-vous')
-            const contactes = leads.filter((l: Record<string, unknown>) => l.contacted === true)
-            const hot = leads.filter((l: Record<string, unknown>) => (l.eligibility_score as number) >= 70)
-            const envoyes = devis.filter((d: Record<string, unknown>) => d.status !== 'brouillon')
-
-            const thisMonthDossiers = dossiers.filter((d: Record<string, unknown>) => (d.created_at as string) >= firstOfMonth).length
-            const thisMonthMessages = messages.filter((m: Record<string, unknown>) => (m.created_at as string) >= firstOfMonth).length
-            const thisMonthLeads = leads.filter((l: Record<string, unknown>) => (l.created_at as string) >= firstOfMonth).length
-
-            const uniqueEmails = new Set([
-                ...dossiers.map((d: Record<string, unknown>) => d.client_email || d.email),
-                ...messages.map((m: Record<string, unknown>) => m.email),
-            ].filter(Boolean))
-
-            setPerf({
-                totalDossiers: dossiers.length,
-                dossiersTermines: termines.length,
-                dossiersEnCours: enCours.length,
-                dossiersNouveaux: dossiers.filter((d: Record<string, unknown>) => d.statut === 'reception').length,
-                tauxResolution: dossiers.length > 0 ? Math.round((termines.length / dossiers.length) * 100) : 0,
-                messagesTotal: messages.length,
-                messagesLus: lus.length,
-                messagesRDV: rdvMessages.length,
-                leadsTotal: leads.length,
-                leadsContactes: contactes.length,
-                leadsHot: hot.length,
-                devisTotal: devis.length,
-                devisEnvoyes: envoyes.length,
-                eventsTotal: events.length,
-                clientsUniques: uniqueEmails.size,
-                thisMonthDossiers,
-                thisMonthMessages,
-                thisMonthLeads,
-            })
+            try {
+                const res = await fetch('/api/agent/performances', { cache: 'no-store' })
+                const j = await res.json().catch(() => ({}))
+                if (!res.ok || !j.perf) throw new Error(j.error || 'Chargement impossible.')
+                setPerf(j.perf as PerformanceData)
+                setPortee(j.portee === 'agence' ? 'agence' : 'agent')
+            } catch (e) {
+                setErreur(e instanceof Error ? e.message : 'Chargement impossible.')
+            }
             setLoading(false)
         }
         fetchPerf()
@@ -150,7 +113,10 @@ export default function AgentPerformancesPage() {
     const progressItems = [
         { key: 'dossiers' as keyof Targets, label: 'Dossiers finalisés', current: perf.dossiersTermines, color: 'bg-emerald-500', glowColor: 'shadow-emerald-500/30' },
         { key: 'messages' as keyof Targets, label: 'Messages traités', current: perf.messagesLus, color: 'bg-blue-500', glowColor: 'shadow-blue-500/30' },
-        { key: 'leads' as keyof Targets, label: 'Leads contactés', current: perf.leadsContactes, color: 'bg-amber-500', glowColor: 'shadow-amber-500/30' },
+        // Leads non attribuables à un agent : la barre n'est affichée qu'en vue agence.
+        ...(perf.leadsContactes !== null
+            ? [{ key: 'leads' as keyof Targets, label: 'Leads contactés', current: perf.leadsContactes, color: 'bg-amber-500', glowColor: 'shadow-amber-500/30' }]
+            : []),
         { key: 'devis' as keyof Targets, label: 'Devis envoyés', current: perf.devisEnvoyes, color: 'bg-purple-500', glowColor: 'shadow-purple-500/30' },
         { key: 'rdv' as keyof Targets, label: 'RDV planifiés', current: perf.messagesRDV, color: 'bg-cyan-500', glowColor: 'shadow-cyan-500/30' },
     ]
@@ -173,7 +139,12 @@ export default function AgentPerformancesPage() {
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">Analytics Temps Réel</span>
                     </div>
                     <h1 className="text-2xl font-black text-white">Mes Performances</h1>
-                    <p className="text-gray-500 text-sm mt-1">Données calculées en temps réel depuis la base de données</p>
+                    <p className="text-gray-500 text-sm mt-1">
+                        {portee === 'agence'
+                            ? "Vue administrateur : chiffres de toute l'agence"
+                            : 'Vos chiffres uniquement : dossiers qui vous sont assignés, vos devis, vos messages et votre agenda'}
+                    </p>
+                    {erreur && <p className="text-red-400 text-xs font-bold mt-2">{erreur}</p>}
                 </div>
                 <button
                     type="button"
@@ -195,7 +166,7 @@ export default function AgentPerformancesPage() {
                     ].map(item => (
                         <div key={item.label} className="text-center">
                             <item.icon size={18} className="text-emerald-400 mx-auto mb-1" />
-                            <p className="text-2xl font-black text-white">{item.value}</p>
+                            <p className="text-2xl font-black text-white">{item.value ?? '—'}</p>
                             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">{item.label}</p>
                         </div>
                     ))}
@@ -215,7 +186,7 @@ export default function AgentPerformancesPage() {
                         <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center mb-3`}>
                             <card.icon size={16} className={card.color} />
                         </div>
-                        <p className="text-2xl font-black text-white">{card.value}</p>
+                        <p className="text-2xl font-black text-white">{card.value ?? '—'}</p>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{card.label}</p>
                     </motion.div>
                 ))}
@@ -288,7 +259,7 @@ export default function AgentPerformancesPage() {
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                         Vous avez finalisé {perf.dossiersTermines} dossier(s) sur {perf.totalDossiers},
-                        contacté {perf.leadsContactes} lead(s), traité {perf.messagesLus} message(s),
+                        {perf.leadsContactes !== null ? `contacté ${perf.leadsContactes} lead(s), ` : ''}traité {perf.messagesLus} message(s),
                         et planifié {perf.eventsTotal} événement(s) dans l&apos;agenda.
                     </p>
                 </div>

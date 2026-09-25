@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useTranslation, T } from "@/lib/translation"
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
 import { Envelope as Mail, ArrowRight, CircleNotch as Loader2, Shield, Sparkle as Sparkles, FileText, ChatText as MessageSquare, CalendarCheck, CheckCircle as CheckCircle2, Receipt, Headphones as HeadphonesIcon, SignOut as LogOut } from '@phosphor-icons/react';
 import LiveSupportChat from '@/components/chat/LiveSupportChat'
 
@@ -12,14 +11,13 @@ type AnyRecord = any
 
 export default function MonComptePage() {
     const { t, lang } = useTranslation();
-    const [email, setEmail] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('rg_client_email') || ''
-        }
-        return ''
-    })
+    const [email, setEmail] = useState('')
+    const [code, setCode] = useState('')
+    // Défi signé renvoyé par le serveur après l'envoi du code (cf. lib/espace-email.ts).
+    const [defi, setDefi] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [info, setInfo] = useState('')
 
     const [dossiers, setDossiers] = useState<AnyRecord[]>([])
     const [oracleResults, setOracleResults] = useState<AnyRecord[]>([])
@@ -30,47 +28,84 @@ export default function MonComptePage() {
     const [clientName, setClientName] = useState('')
     const [activeTab, setActiveTab] = useState<'dossiers' | 'oracle' | 'documents' | 'contrats' | 'factures' | 'support'>('dossiers')
 
+    /* Audit du 25/09/2026 : la page lisait la base en clé publique avec l'email
+       TAPÉ — n'importe qui voyait le dossier de n'importe qui. Tout passe
+       désormais par /api/mon-compte, qui ne croit que l'email PROUVÉ par un
+       code reçu dans la boîte (cookie de session httpOnly). */
+    const chargerEspace = async (silencieux = false): Promise<boolean> => {
+        const res = await fetch('/api/mon-compte', { cache: 'no-store' })
+        if (res.status === 401) return false
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok) {
+            if (!silencieux) setError(d.error || t('Erreur de connexion. Réessayez.'))
+            return false
+        }
+        if ((d.dossiers || []).length === 0 && (d.oracle || []).length === 0) {
+            if (!silencieux) setError(t('Aucun dossier trouvé pour cet email. Contactez-nous si vous pensez que c\'est une erreur.'))
+            return false
+        }
+        setEmail(d.email || '')
+        setDossiers(d.dossiers || [])
+        setOracleResults(d.oracle || [])
+        setDocuments(d.documents || [])
+        setContracts(d.contrats || [])
+        setOrders(d.commandes || [])
+        setClientName(d.dossiers?.[0]?.client_prenom || d.oracle?.[0]?.client_prenom || d.commandes?.[0]?.customer_name || '')
+        try { localStorage.setItem('rg_espace_ouvert', '1') } catch { /* navigation privée */ }
+        setAuthenticated(true)
+        return true
+    }
 
+    // Session encore ouverte (cookie) : on rouvre l'espace sans redemander de code.
+    useEffect(() => { chargerEspace(true) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleLogin = async () => {
+    const demanderCode = async () => {
         if (!email.trim()) return
-        setLoading(true)
-        setError('')
-
+        setLoading(true); setError(''); setInfo('')
         try {
-            // Fetch client data directly by email (no auth needed : read access)
-            const [dossierRes, oracleRes, docRes, contractRes, orderRes] = await Promise.all([
-                supabase.from('dossier_tracking').select('*').eq('client_email', email).order('created_at', { ascending: false }),
-                supabase.from('eligibility_results').select('*').eq('client_email', email).order('created_at', { ascending: false }),
-                supabase.from('client_documents').select('*').eq('client_email', email).order('created_at', { ascending: false }),
-                supabase.from('contracts').select('*').eq('client_email', email).order('created_at', { ascending: false }),
-                supabase.from('orders').select('*').eq('customer_email', email).order('created_at', { ascending: false }),
-            ])
-
-            const allDossiers = (dossierRes.data || [])
-            const allOracle = (oracleRes.data || [])
-
-            if (allDossiers.length === 0 && allOracle.length === 0) {
-                setError(t('Aucun dossier trouvé pour cet email. Contactez-nous si vous pensez que c\'est une erreur.'))
-                setLoading(false)
-                return
-            }
-
-            setDossiers(allDossiers)
-            setOracleResults(allOracle)
-            setDocuments(docRes.data || [])
-            setContracts(contractRes.data || [])
-            setOrders(orderRes.data || [])
-            setClientName(allDossiers[0]?.client_prenom || allOracle[0]?.client_prenom || orderRes.data?.[0]?.customer_name || '')
-            localStorage.setItem('rg_client_email', email) //  Sauvegarde l'identité pour la Cloche
-            setAuthenticated(true)
-        } catch {
-            setError(t('Erreur de connexion. Réessayez.'))
+            const res = await fetch('/api/mon-compte/code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.trim() }),
+            })
+            const d = await res.json().catch(() => ({}))
+            if (!res.ok || !d.defi) throw new Error(d.error || t('Erreur de connexion. Réessayez.'))
+            setDefi(d.defi)
+            setInfo(t('Un code à 8 chiffres vient de vous être envoyé par email. Il est valable 10 minutes.'))
+        } catch (e) {
+            setError(e instanceof Error ? e.message : t('Erreur de connexion. Réessayez.'))
         }
         setLoading(false)
     }
 
-    // Upload document
+    const handleLogin = async () => {
+        if (!defi || !code.trim()) return
+        setLoading(true); setError('')
+        try {
+            const res = await fetch('/api/mon-compte/verifier', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ defi, code: code.trim() }),
+            })
+            const d = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(d.error || t('Code incorrect ou expiré.'))
+            setInfo('')
+            await chargerEspace()
+        } catch (e) {
+            setError(e instanceof Error ? e.message : t('Erreur de connexion. Réessayez.'))
+        }
+        setLoading(false)
+    }
+
+    const deconnecter = async () => {
+        await fetch('/api/mon-compte', { method: 'DELETE' }).catch(() => null)
+        try { localStorage.removeItem('rg_espace_ouvert') } catch { /* navigation privée */ }
+        setAuthenticated(false)
+        setDossiers([]); setOracleResults([]); setDocuments([]); setContracts([]); setOrders([])
+        setEmail(''); setCode(''); setDefi('')
+    }
+
+    // Upload document — l'email est celui de la session, fixé côté serveur.
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -80,7 +115,6 @@ export default function MonComptePage() {
         try {
             const fd = new FormData()
             fd.append('file', file)
-            fd.append('client_email', email)
             fd.append('client_nom', clientName)
             fd.append('file_type', 'autre')
             const res = await fetch('/api/documents/upload', { method: 'POST', body: fd })
@@ -89,28 +123,27 @@ export default function MonComptePage() {
                 alert(json.error || "Le dépôt a échoué. Réessayez dans un instant.")
                 return
             }
-
-            // Refresh documents
-            const { data } = await supabase.from('client_documents').select('*').eq('client_email', email).order('created_at', { ascending: false })
-            setDocuments(data || [])
+            await chargerEspace(true)
         } catch {
             alert(t('Erreur lors de l\'upload.'))
         }
     }
 
-    // Sign contract
+    // Sign contract — le serveur vérifie que le contrat appartient à l'email de la session.
     const handleSign = async (contractId: string) => {
         const confirm = window.confirm(t('En cliquant "OK", vous acceptez les termes de ce contrat et y apposez votre signature électronique.'))
         if (!confirm) return
 
-        await fetch('/api/contracts/sign', {
+        const res = await fetch('/api/contracts/sign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contractId, clientEmail: email })
+            body: JSON.stringify({ contractId, consent: true, signedName: clientName }),
         })
-
-        const { data } = await supabase.from('contracts').select('*').eq('client_email', email).order('created_at', { ascending: false })
-        setContracts(data || [])
+        if (!res.ok) {
+            const d = await res.json().catch(() => ({}))
+            alert(d.error || t('La signature a échoué.'))
+        }
+        await chargerEspace(true)
     }
 
     if (!authenticated) {
@@ -137,20 +170,51 @@ export default function MonComptePage() {
                                 <input
                                     type="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                                    onChange={(e) => { setEmail(e.target.value); setDefi(''); setCode('') }}
+                                    onKeyDown={(e) => e.key === 'Enter' && !defi && demanderCode()}
                                     placeholder={t("votre@email.com")}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500/50 text-sm"
                                 />
                             </div>
-                            <button
-                                onClick={handleLogin}
-                                disabled={loading || !email.trim()}
-                                className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold px-5 rounded-xl transition-all flex items-center gap-2 text-sm"
-                            >
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                            </button>
+                            {!defi && (
+                                <button
+                                    onClick={demanderCode}
+                                    disabled={loading || !email.trim()}
+                                    aria-label={t('Recevoir un code')}
+                                    className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold px-5 rounded-xl transition-all flex items-center gap-2 text-sm"
+                                >
+                                    {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                                </button>
+                            )}
                         </div>
+                        {defi && (
+                            <div className="mt-4">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block"><T>Code reçu par email</T></label>
+                                <div className="flex gap-2">
+                                    <input
+                                        inputMode="numeric"
+                                        autoComplete="one-time-code"
+                                        maxLength={8}
+                                        value={code}
+                                        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                                        placeholder="12345678"
+                                        className="flex-1 bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 tracking-[0.3em] font-mono placeholder:text-gray-300 focus:outline-none focus:border-emerald-500/50 text-sm"
+                                    />
+                                    <button
+                                        onClick={handleLogin}
+                                        disabled={loading || code.length !== 8}
+                                        className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold px-5 rounded-xl transition-all flex items-center gap-2 text-sm"
+                                    >
+                                        {loading ? <Loader2 size={16} className="animate-spin" /> : <T>Accéder</T>}
+                                    </button>
+                                </div>
+                                <button onClick={demanderCode} disabled={loading} className="text-[11px] text-emerald-600 hover:underline mt-2">
+                                    <T>Renvoyer un code</T>
+                                </button>
+                            </div>
+                        )}
+                        {info && <p className="text-emerald-600 text-xs mt-3">{info}</p>}
                         {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
                         <p className="text-[10px] text-gray-600 mt-4"><T>Utilisez l&apos;email que vous avez fourni lors de votre demande ou du test Oracle.</T></p>
                     </div>
@@ -207,12 +271,7 @@ export default function MonComptePage() {
                         <p className="text-sm text-gray-500 mt-1">{email}</p>
                     </div>
                     <button
-                        onClick={() => {
-                            localStorage.removeItem('rg_client_email')
-                            setAuthenticated(false)
-                            setDossiers([])
-                            setEmail('')
-                        }}
+                        onClick={deconnecter}
                         className="text-xs text-gray-500 hover:text-gray-900 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
                         <LogOut size={14} /> <T>Déconnexion</T>

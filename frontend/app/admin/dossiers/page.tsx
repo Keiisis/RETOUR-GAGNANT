@@ -119,7 +119,7 @@ export default function AdminDossiersPage() {
         if (!content) return
         setChatSending(prev => ({ ...prev, [threadId]: true }))
         setChatInput(prev => ({ ...prev, [threadId]: '' }))
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('chat_messages')
             .insert({ conversation_id: threadId, role: 'agent', content })
             .select('id, role, content, created_at')
@@ -127,6 +127,10 @@ export default function AdminDossiersPage() {
         if (data) {
             setChatMessages(prev => ({ ...prev, [threadId]: [...(prev[threadId] || []), data as { id: string; role: string; content: string; created_at: string }] }))
             setTimeout(() => chatBottomRefs.current[threadId]?.scrollIntoView({ behavior: 'smooth' }), 60)
+        } else {
+            // Message non enregistré : on rend le texte à l'agent au lieu de le perdre.
+            setChatInput(prev => ({ ...prev, [threadId]: content }))
+            alert(`Message non envoyé : ${error?.message || 'enregistrement impossible'}`)
         }
         setChatSending(prev => ({ ...prev, [threadId]: false }))
     }
@@ -427,16 +431,15 @@ export default function AdminDossiersPage() {
         if (!newDossier.num_dossier || !newDossier.client_nom || !newDossier.client_email) return
 
         try {
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-            const { createClient } = await import('@supabase/supabase-js')
-            const supabase = createClient(supabaseUrl, supabaseKey)
-
-            await supabase.from('dossier_tracking').insert({
+            // Client de la page (session admin) : un client anonyme sans session
+            // est refusé depuis le verrou RLS de dossier_tracking (26/09/2026).
+            const { error } = await supabase.from('dossier_tracking').insert({
                 ...newDossier,
                 num_dossier: newDossier.num_dossier.toUpperCase(),
                 client_email: newDossier.client_email.toLowerCase(),
             })
+            // Modale conservée si la création a échoué (sinon la saisie est perdue).
+            if (error) { alert(`Création du dossier impossible : ${error.message}`); return }
 
             setShowCreateModal(false)
             setNewDossier({ num_dossier: '', client_nom: '', client_prenom: '', client_email: '', client_whatsapp: '', service_type: 'general' })

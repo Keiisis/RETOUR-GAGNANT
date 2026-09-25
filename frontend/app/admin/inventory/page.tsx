@@ -2,8 +2,51 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Package as PackageSearch, Plus, MagnifyingGlass as Search, Funnel as Filter, Warning as AlertTriangle, ArrowUpRight, Pencil as Edit2, Cube as Box, CurrencyEur as Euro, ShoppingBag, CheckCircle, X } from '@phosphor-icons/react';
+import { Package as PackageSearch, Plus, MagnifyingGlass as Search, Funnel as Filter, Warning as AlertTriangle, ArrowUpRight, Pencil as Edit2, Cube as Box, CurrencyEur as Euro, ShoppingBag, CheckCircle, X, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { formatCurrencySync } from '@/lib/currency'
+
+async function authHeaders(): Promise<Record<string, string>> {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+}
+
+/** Lit la réponse JSON d'une route et lève une Error lisible si !res.ok. */
+async function lireReponse<T>(res: Response): Promise<T> {
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error((json as { error?: string }).error || `Erreur ${res.status}`)
+    return json as T
+}
+
+interface ArticleForm {
+    title: string
+    type: 'physical' | 'service' | 'digital'
+    sku: string
+    category: string
+    description: string
+    base_price: string
+    cost_price: string
+    tax_rate: string
+    track_inventory: boolean
+    current_stock: string
+    low_stock_threshold: string
+    is_published: boolean
+}
+
+const FORM_VIDE: ArticleForm = {
+    title: '', type: 'physical', sku: '', category: '', description: '',
+    base_price: '', cost_price: '', tax_rate: '18', track_inventory: true,
+    current_stock: '0', low_stock_threshold: '5', is_published: true,
+}
+
+const MOTIFS: { value: 'in_purchase' | 'in_return' | 'adj_loss' | 'adj_manual'; label: string; sens: 1 | -1 | 0 }[] = [
+    { value: 'in_purchase', label: 'Entrée : achat / réapprovisionnement', sens: 1 },
+    { value: 'in_return', label: 'Entrée : retour client', sens: 1 },
+    { value: 'adj_loss', label: 'Sortie : perte / casse', sens: -1 },
+    { value: 'adj_manual', label: 'Correction d\'inventaire (stock réel)', sens: 0 },
+]
+
+const champCls = 'w-full bg-[var(--panel-surface-alt)] border border-[var(--panel-border-strong)] rounded-xl px-3 py-2 text-sm text-[var(--panel-text-heading)] placeholder:text-[var(--panel-text-faint)] focus:outline-none focus:border-emerald-500/60'
+const labelCls = 'block text-[10px] font-bold uppercase tracking-widest text-[var(--panel-text-muted)] mb-1'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,6 +57,7 @@ interface InventoryItem {
     type: 'physical' | 'service' | 'digital'
     title: string
     category: string | null
+    description: string | null
     base_price: number
     cost_price: number
     tax_rate: number
@@ -56,6 +100,25 @@ export default function InventoryPage() {
     const [editStock, setEditStock] = useState<string>('')
     const [savingStock, setSavingStock] = useState(false)
 
+    // Retour utilisateur (succès réel uniquement après res.ok)
+    const [pageError, setPageError] = useState('')
+    const [flash, setFlash] = useState('')
+
+    // Modal article ERP (création / modification)
+    const [articleOpen, setArticleOpen] = useState(false)
+    const [articleId, setArticleId] = useState<string | null>(null)
+    const [form, setForm] = useState<ArticleForm>(FORM_VIDE)
+    const [savingArticle, setSavingArticle] = useState(false)
+    const [articleError, setArticleError] = useState('')
+
+    // Modal ajustement de stock ERP
+    const [stockItem, setStockItem] = useState<InventoryItem | null>(null)
+    const [motif, setMotif] = useState<typeof MOTIFS[number]['value']>('in_purchase')
+    const [quantite, setQuantite] = useState('')
+    const [stockNotes, setStockNotes] = useState('')
+    const [adjusting, setAdjusting] = useState(false)
+    const [stockError, setStockError] = useState('')
+
     useEffect(() => {
         fetchAll()
     }, [])
@@ -64,16 +127,17 @@ export default function InventoryPage() {
         setLoading(true)
         try {
             // 1. Charger inventory_items (ERP)
-            const { data: invData } = await supabase
+            const { data: invData, error: invErr } = await supabase
                 .from('inventory_items')
                 .select('*')
                 .order('created_at', { ascending: false })
 
             // 2. Charger produits boutique
-            const { data: prodData } = await supabase
+            const { data: prodData, error: prodErr } = await supabase
                 .from('products')
                 .select('*')
                 .order('created_at', { ascending: false })
+            if (invErr || prodErr) setPageError('Chargement partiel du catalogue : ' + (invErr?.message || prodErr?.message))
 
             // IDs déjà dans inventory_items (pour éviter les doublons si synchro)
             const invIds = new Set((invData || []).map((i: Record<string, unknown>) => String(i.id)))
@@ -85,6 +149,7 @@ export default function InventoryPage() {
                 type: (item.type as 'physical' | 'service' | 'digital') || 'physical',
                 title: String(item.title || ''),
                 category: (item.category as string) || null,
+                description: (item.description as string) || null,
                 base_price: Number(item.base_price) || 0,
                 cost_price: Number(item.cost_price) || 0,
                 tax_rate: Number(item.tax_rate) || 0,
@@ -123,21 +188,107 @@ export default function InventoryPage() {
     }
 
     // ─── Mise à jour du stock pour un produit boutique ────────────────────────
+    // Passe par la route serveur : l'écriture directe avec la clé anonyme
+    // échouait en silence (règles d'accès) et la valeur affichée mentait.
     const saveStock = async (id: string) => {
-        const newStock = parseInt(editStock)
-        if (isNaN(newStock) || newStock < 0) return
-        setSavingStock(true)
-        const { error } = await supabase
-            .from('products')
-            .update({ stock: newStock })
-            .eq('id', id)
-        if (!error) {
-            setItems(prev => prev.map(it =>
-                it.id === id ? { ...it, current_stock: newStock } : it
-            ))
+        const newStock = Number(editStock)
+        if (!Number.isInteger(newStock) || newStock < 0) { setPageError('Stock invalide : nombre entier positif attendu.'); return }
+        setSavingStock(true); setPageError(''); setFlash('')
+        try {
+            const res = await fetch('/api/admin/inventory/stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify({ source: 'boutique', id, value: newStock }),
+            })
+            const json = await lireReponse<{ current_stock: number }>(res)
+            setItems(prev => prev.map(it => it.id === id ? { ...it, current_stock: json.current_stock } : it))
+            setEditingId(null)
+            setFlash('Stock boutique mis à jour.')
+        } catch (e) {
+            setPageError(e instanceof Error ? e.message : 'Mise à jour du stock impossible.')
+        } finally {
+            setSavingStock(false)
         }
-        setSavingStock(false)
-        setEditingId(null)
+    }
+
+    // ─── Article ERP : création / modification ─────────────────────────────
+    const ouvrirCreation = () => {
+        setArticleId(null); setForm(FORM_VIDE); setArticleError(''); setArticleOpen(true)
+    }
+
+    const ouvrirEdition = (it: InventoryItem) => {
+        setArticleId(it.id)
+        setForm({
+            title: it.title, type: it.type, sku: it.sku || '', category: it.category || '',
+            description: it.description || '', base_price: String(it.base_price), cost_price: String(it.cost_price),
+            tax_rate: String(it.tax_rate), track_inventory: it.track_inventory, current_stock: String(it.current_stock),
+            low_stock_threshold: String(it.low_stock_threshold), is_published: it.is_published,
+        })
+        setArticleError(''); setArticleOpen(true)
+    }
+
+    const enregistrerArticle = async () => {
+        if (!form.title.trim()) { setArticleError('Le titre est requis.'); return }
+        const nums = { base_price: form.base_price || '0', cost_price: form.cost_price || '0', tax_rate: form.tax_rate || '0', low_stock_threshold: form.low_stock_threshold || '0' }
+        if (Object.values(nums).some(v => !Number.isFinite(Number(v)) || Number(v) < 0)) { setArticleError('Les montants et seuils doivent être des nombres positifs.'); return }
+        setSavingArticle(true); setArticleError('')
+        const suivi = form.type === 'physical' && form.track_inventory
+        const payload: Record<string, unknown> = {
+            title: form.title.trim(), type: form.type, sku: form.sku.trim() || null,
+            category: form.category.trim() || null, description: form.description.trim() || null,
+            base_price: Number(nums.base_price), cost_price: Number(nums.cost_price), tax_rate: Number(nums.tax_rate),
+            track_inventory: suivi, low_stock_threshold: Math.floor(Number(nums.low_stock_threshold)), is_published: form.is_published,
+        }
+        if (articleId) payload.id = articleId
+        else payload.current_stock = suivi ? Math.max(0, Math.floor(Number(form.current_stock) || 0)) : 0
+        try {
+            const res = await fetch('/api/admin/inventory', {
+                method: articleId ? 'PATCH' : 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify(payload),
+            })
+            await lireReponse<{ item: unknown }>(res)
+            setArticleOpen(false)
+            setFlash(articleId ? 'Article mis à jour.' : 'Article ERP créé.')
+            await fetchAll()
+        } catch (e) {
+            setArticleError(e instanceof Error ? e.message : 'Enregistrement impossible.')
+        } finally {
+            setSavingArticle(false)
+        }
+    }
+
+    // ─── Article ERP : ajustement de stock tracé ───────────────────────────
+    const ouvrirStock = (it: InventoryItem) => {
+        setStockItem(it); setMotif('in_purchase'); setQuantite(''); setStockNotes(''); setStockError('')
+    }
+
+    const ajusterStock = async () => {
+        if (!stockItem) return
+        const q = Number(quantite)
+        const m = MOTIFS.find(x => x.value === motif)!
+        if (!Number.isInteger(q) || q < 0 || (m.sens !== 0 && q === 0)) {
+            setStockError(m.sens === 0 ? 'Indiquez le stock réel compté (entier ≥ 0).' : 'Indiquez une quantité entière supérieure à 0.')
+            return
+        }
+        setAdjusting(true); setStockError('')
+        try {
+            const res = await fetch('/api/admin/inventory/stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify(m.sens === 0
+                    ? { source: 'inventory', id: stockItem.id, mode: 'set', value: q, notes: stockNotes }
+                    : { source: 'inventory', id: stockItem.id, mode: 'delta', value: q * m.sens, movement_type: motif, notes: stockNotes }),
+            })
+            const json = await lireReponse<{ current_stock: number; warning?: string }>(res)
+            setItems(prev => prev.map(it => it.id === stockItem.id ? { ...it, current_stock: json.current_stock } : it))
+            setStockItem(null)
+            setFlash(json.warning || `Stock de « ${stockItem.title} » : ${json.current_stock}.`)
+        } catch (e) {
+            setStockError(e instanceof Error ? e.message : 'Ajustement impossible.')
+        } finally {
+            setAdjusting(false)
+        }
     }
 
     // ─── Filtres ──────────────────────────────────────────────────────────────
@@ -173,10 +324,23 @@ export default function InventoryPage() {
                         Catalogue unifié : Boutique + ERP (Devis/Factures). Les articles boutique apparaissent automatiquement ici.
                     </p>
                 </div>
-                <button type="button" className="bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2">
+                <button type="button" onClick={ouvrirCreation} className="bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2">
                     <Plus size={16} /> Ajouter un Article ERP
                 </button>
             </div>
+
+            {pageError && (
+                <div className="flex items-start gap-2 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-500 text-sm">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" /> <span className="flex-1">{pageError}</span>
+                    <button type="button" onClick={() => setPageError('')} title="Fermer" className="shrink-0"><X size={14} /></button>
+                </div>
+            )}
+            {flash && (
+                <div className="flex items-start gap-2 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 text-sm">
+                    <CheckCircle size={16} className="shrink-0 mt-0.5" /> <span className="flex-1">{flash}</span>
+                    <button type="button" onClick={() => setFlash('')} title="Fermer" className="shrink-0"><X size={14} /></button>
+                </div>
+            )}
 
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -351,7 +515,7 @@ export default function InventoryPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingId(null)}
-                                                            className="w-6 h-6 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)]"
+                                                            className="w-6 h-6 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] flex items-center justify-center text-[var(--panel-text-muted)]"
                                                             title="Annuler"
                                                         >
                                                             <X size={12} />
@@ -369,7 +533,7 @@ export default function InventoryPage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => { setEditingId(item.id); setEditStock(String(item.current_stock)) }}
-                                                                className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-all"
+                                                                className="lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 w-5 h-5 rounded bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-all"
                                                                 title="Modifier le stock"
                                                             >
                                                                 <Edit2 size={10} />
@@ -405,7 +569,7 @@ export default function InventoryPage() {
 
                                         {/* Actions */}
                                         <td className="p-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-2 lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                                 {item.source === 'boutique' ? (
                                                     <a
                                                         href={`/admin/boutique/edit/${item.id}`}
@@ -418,7 +582,8 @@ export default function InventoryPage() {
                                                     <button
                                                         type="button"
                                                         title="Modifier"
-                                                        className="w-8 h-8 rounded-lg bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-alt)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-colors"
+                                                        onClick={() => ouvrirEdition(item as InventoryItem)}
+                                                        className="w-8 h-8 rounded-lg bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] flex items-center justify-center text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)] transition-colors"
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>
@@ -427,6 +592,7 @@ export default function InventoryPage() {
                                                     <button
                                                         type="button"
                                                         title="Ajuster Stock (+/-)"
+                                                        onClick={() => ouvrirStock(item as InventoryItem)}
                                                         className="w-8 h-8 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-center text-emerald-400 transition-colors"
                                                     >
                                                         <ArrowUpRight size={14} />
@@ -451,6 +617,148 @@ export default function InventoryPage() {
                     </table>
                 </div>
             </div>
+
+            {/* ── Modal : création / modification d'un article ERP ── */}
+            {articleOpen && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => !savingArticle && setArticleOpen(false)}>
+                    <div role="dialog" aria-modal="true" aria-label={articleId ? 'Modifier l\'article' : 'Nouvel article ERP'}
+                        onClick={e => e.stopPropagation()}
+                        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--panel-border-strong)] bg-[var(--panel-surface)] text-[var(--panel-text)] shadow-2xl">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--panel-border)]">
+                            <h2 className="font-black text-[var(--panel-text-heading)] flex items-center gap-2">
+                                <Box size={18} className="text-emerald-500" /> {articleId ? 'Modifier l\'article' : 'Nouvel article ERP'}
+                            </h2>
+                            <button type="button" onClick={() => setArticleOpen(false)} disabled={savingArticle} title="Fermer" className="text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)]"><X size={18} /></button>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="sm:col-span-2">
+                                <label className={labelCls} htmlFor="inv-title">Titre *</label>
+                                <input id="inv-title" className={champCls} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex. T-shirt RGB, Accompagnement dossier…" />
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-type">Type</label>
+                                <select id="inv-type" className={champCls} value={form.type}
+                                    onChange={e => { const type = e.target.value as ArticleForm['type']; setForm(f => ({ ...f, type, track_inventory: type === 'physical' ? f.track_inventory : false })) }}>
+                                    <option value="physical">Produit physique</option>
+                                    <option value="service">Service</option>
+                                    <option value="digital">Bien numérique</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-sku">SKU</label>
+                                <input id="inv-sku" className={champCls} value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} placeholder="RGB-TSHIRT-001" />
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-cat">Catégorie</label>
+                                <input id="inv-cat" className={champCls} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-tva">TVA (%)</label>
+                                <input id="inv-tva" type="number" min="0" max="100" step="0.01" className={champCls} value={form.tax_rate} onChange={e => setForm(f => ({ ...f, tax_rate: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-pv">Prix de vente HT (XOF)</label>
+                                <input id="inv-pv" type="number" min="0" step="1" className={champCls} value={form.base_price} onChange={e => setForm(f => ({ ...f, base_price: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="inv-pr">Prix de revient (XOF)</label>
+                                <input id="inv-pr" type="number" min="0" step="1" className={champCls} value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))} />
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className={labelCls} htmlFor="inv-desc">Description</label>
+                                <textarea id="inv-desc" rows={3} className={`${champCls} resize-y`} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                            </div>
+                            {form.type === 'physical' && (
+                                <label className="sm:col-span-2 flex items-center gap-2 text-sm text-[var(--panel-text)] cursor-pointer">
+                                    <input type="checkbox" className="w-4 h-4 accent-emerald-500" checked={form.track_inventory} onChange={e => setForm(f => ({ ...f, track_inventory: e.target.checked }))} />
+                                    Suivre le stock de cet article
+                                </label>
+                            )}
+                            {form.type === 'physical' && form.track_inventory && (
+                                <>
+                                    {!articleId && (
+                                        <div>
+                                            <label className={labelCls} htmlFor="inv-stock">Stock initial</label>
+                                            <input id="inv-stock" type="number" min="0" step="1" className={champCls} value={form.current_stock} onChange={e => setForm(f => ({ ...f, current_stock: e.target.value }))} />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label className={labelCls} htmlFor="inv-seuil">Seuil d&apos;alerte</label>
+                                        <input id="inv-seuil" type="number" min="0" step="1" className={champCls} value={form.low_stock_threshold} onChange={e => setForm(f => ({ ...f, low_stock_threshold: e.target.value }))} />
+                                    </div>
+                                    {articleId && (
+                                        <p className="text-xs text-[var(--panel-text-muted)] self-end">Le stock se modifie via « Ajuster Stock » (mouvement tracé).</p>
+                                    )}
+                                </>
+                            )}
+                            <label className="sm:col-span-2 flex items-center gap-2 text-sm text-[var(--panel-text)] cursor-pointer">
+                                <input type="checkbox" className="w-4 h-4 accent-emerald-500" checked={form.is_published} onChange={e => setForm(f => ({ ...f, is_published: e.target.checked }))} />
+                                Publié (proposé dans les devis et factures)
+                            </label>
+                        </div>
+                        {articleError && (
+                            <p className="mx-5 mb-3 text-sm text-red-500 flex items-center gap-2"><AlertTriangle size={14} /> {articleError}</p>
+                        )}
+                        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[var(--panel-border)]">
+                            <button type="button" onClick={() => setArticleOpen(false)} disabled={savingArticle}
+                                className="px-4 py-2 rounded-xl border border-[var(--panel-border-strong)] bg-[var(--panel-surface-alt)] text-[var(--panel-text)] text-sm font-semibold">Annuler</button>
+                            <button type="button" onClick={enregistrerArticle} disabled={savingArticle}
+                                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-bold flex items-center gap-2 disabled:opacity-60">
+                                {savingArticle ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} {articleId ? 'Enregistrer' : 'Créer l\'article'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Modal : ajustement de stock ERP (mouvement tracé) ── */}
+            {stockItem && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => !adjusting && setStockItem(null)}>
+                    <div role="dialog" aria-modal="true" aria-label="Ajuster le stock" onClick={e => e.stopPropagation()}
+                        className="w-full max-w-md rounded-2xl border border-[var(--panel-border-strong)] bg-[var(--panel-surface)] text-[var(--panel-text)] shadow-2xl">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--panel-border)]">
+                            <div>
+                                <h2 className="font-black text-[var(--panel-text-heading)]">Ajuster le stock</h2>
+                                <p className="text-xs text-[var(--panel-text-muted)]">{stockItem.title} · stock actuel : <strong className="text-[var(--panel-text-heading)]">{stockItem.current_stock}</strong></p>
+                            </div>
+                            <button type="button" onClick={() => setStockItem(null)} disabled={adjusting} title="Fermer" className="text-[var(--panel-text-muted)] hover:text-[var(--panel-text-heading)]"><X size={18} /></button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className={labelCls} htmlFor="stk-motif">Motif</label>
+                                <select id="stk-motif" className={champCls} value={motif} onChange={e => setMotif(e.target.value as typeof motif)}>
+                                    {MOTIFS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="stk-qte">
+                                    {MOTIFS.find(m => m.value === motif)!.sens === 0 ? 'Stock réel compté' : 'Quantité'}
+                                </label>
+                                <input id="stk-qte" type="number" min="0" step="1" className={champCls} value={quantite} onChange={e => setQuantite(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') ajusterStock() }} autoFocus />
+                                {quantite !== '' && Number.isInteger(Number(quantite)) && (() => {
+                                    const m = MOTIFS.find(x => x.value === motif)!
+                                    const apres = m.sens === 0 ? Number(quantite) : stockItem.current_stock + m.sens * Number(quantite)
+                                    return <p className={`text-xs mt-1 ${apres < 0 ? 'text-red-500' : 'text-[var(--panel-text-muted)]'}`}>Stock après : {apres}</p>
+                                })()}
+                            </div>
+                            <div>
+                                <label className={labelCls} htmlFor="stk-notes">Note (facultatif)</label>
+                                <input id="stk-notes" className={champCls} value={stockNotes} onChange={e => setStockNotes(e.target.value)} placeholder="Ex. Livraison fournisseur du 25/09" />
+                            </div>
+                            {stockError && <p className="text-sm text-red-500 flex items-center gap-2"><AlertTriangle size={14} /> {stockError}</p>}
+                        </div>
+                        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[var(--panel-border)]">
+                            <button type="button" onClick={() => setStockItem(null)} disabled={adjusting}
+                                className="px-4 py-2 rounded-xl border border-[var(--panel-border-strong)] bg-[var(--panel-surface-alt)] text-[var(--panel-text)] text-sm font-semibold">Annuler</button>
+                            <button type="button" onClick={ajusterStock} disabled={adjusting}
+                                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-bold flex items-center gap-2 disabled:opacity-60">
+                                {adjusting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} Valider
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

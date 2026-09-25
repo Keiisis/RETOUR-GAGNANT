@@ -526,7 +526,7 @@ export default function AgentDevisPage() {
             const typeLabel = doc.type === 'devis' ? 'Devis' : 'Facture'
             const statusLabel = doc.status === 'paye' ? ' PAYÉ' : doc.status === 'accepte' ? ' ACCEPTÉ' : ''
 
-            await fetch('/api/email/send', {
+            const res = await fetch('/api/email/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -538,20 +538,26 @@ export default function AgentDevisPage() {
                     relatedId: doc.id,
                 }),
             })
+            // Pas de « envoyé » si le serveur mail a refusé.
+            if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`)
 
             // Update status to 'envoye' if still brouillon
             if (doc.status === 'brouillon') {
-                await supabase
+                const { error: statutErr } = await supabase
                     .from('documents_financiers')
                     .update({ status: 'envoye' })
                     .eq('id', doc.id)
                 fetchDocuments()
+                if (statutErr) {
+                    alert(` ${typeLabel} envoyé(e) par email à ${doc.client_email}, mais statut non mis à jour : ${statutErr.message}`)
+                    return
+                }
             }
 
             alert(` ${typeLabel} envoyé(e) par email à ${doc.client_email}`)
         } catch (err) {
             console.error('Email error:', err)
-            alert('Erreur lors de l\'envoi du mail.')
+            alert(`Erreur lors de l'envoi du mail : ${err instanceof Error ? err.message : 'inconnue'}`)
         } finally {
             setSendingEmail(null)
         }

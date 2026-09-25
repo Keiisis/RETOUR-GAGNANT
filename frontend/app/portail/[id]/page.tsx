@@ -46,6 +46,13 @@ interface DocumentFinancier {
     parent_devis_id?: string
 }
 
+async function chargerPortail(id: string): Promise<{ doc: DocumentFinancier; deja_paye: number } | null> {
+    const res = await fetch(`/api/portail/${encodeURIComponent(id)}`, { cache: 'no-store' }).catch(() => null)
+    if (!res?.ok) return null
+    const d = await res.json().catch(() => null)
+    return d?.doc ? { doc: d.doc as DocumentFinancier, deja_paye: Number(d.deja_paye) || 0 } : null
+}
+
 export default function ClientPortalPage() {
     const params = useParams()
     const id = params?.id as string
@@ -99,50 +106,23 @@ export default function ClientPortalPage() {
             }
         }
 
+        // Lecture via le serveur (audit 25/09/2026) : plus de clé publique sur
+        // documents_financiers / paiements_manuels. Héritage de signature du
+        // devis parent et cumul des acomptes calculés côté serveur.
         const fetchDoc = async () => {
             if (!id) return
-            const { data, error } = await supabase
-                .from('documents_financiers')
-                .select('*')
-                .eq('id', id)
-                .single()
-                
-            if (error || !data) {
+            const d = await chargerPortail(id)
+            if (!d) {
                 setError("Document introuvable ou lien invalide.")
             } else {
-                setDoc(data as DocumentFinancier)
-                if (data.signature_url) {
-                    setSignatureUrl(data.signature_url)
-                } else if (data.type === 'facture' && data.parent_devis_id) {
-                    // Héritage de la signature du devis parent
-                    const { data: parentData } = await supabase
-                        .from('documents_financiers')
-                        .select('signature_url, signed_at')
-                        .eq('id', data.parent_devis_id)
-                        .single()
-                    
-                    if (parentData?.signature_url) {
-                        setSignatureUrl(parentData.signature_url)
-                        setDoc(prev => prev ? { 
-                            ...prev, 
-                            signature_url: parentData.signature_url,
-                            signed_at: parentData.signed_at 
-                        } : null)
-                    }
-                }
+                setDoc(d.doc)
+                if (d.doc.signature_url) setSignatureUrl(d.doc.signature_url)
+                setDejaPaye(d.deja_paye)
             }
             setLoading(false)
         }
-        // Encaissements déjà enregistrés (acomptes) → solde restant dû
-        const fetchPaiements = async () => {
-            if (!id) return
-            const { data } = await supabase
-                .from('paiements_manuels').select('montant').eq('document_id', id)
-            setDejaPaye((data || []).reduce((a, p) => a + (Number(p.montant) || 0), 0))
-        }
         fetchSettings()
         fetchDoc()
-        fetchPaiements()
     }, [id])
 
     // ─── Signature Logic ──────────────────────────────────────────
@@ -388,16 +368,8 @@ export default function ClientPortalPage() {
                 setShowPaymentMethods(false)
                 // Recharger le document : un devis payé a été converti en FACTURE
                 // (nouveau n° FAC, type='facture', statut='paye') côté serveur.
-                const { data: fresh } = await supabase
-                    .from('documents_financiers')
-                    .select('*')
-                    .eq('id', id)
-                    .single()
-                if (fresh) setDoc(fresh as DocumentFinancier)
-                const { data: pms } = await supabase
-                    .from('paiements_manuels').select('montant').eq('document_id', id)
-                const cumul = (pms || []).reduce((a, p) => a + (Number(p.montant) || 0), 0)
-                setDejaPaye(cumul)
+                const fresh = await chargerPortail(id)
+                if (fresh) { setDoc(fresh.doc); setDejaPaye(fresh.deja_paye) }
                 setAcompte('')
                 if (data.partial) {
                     alert(`Acompte de ${Number(data.encaisse_xof || 0).toLocaleString('fr-FR')} FCFA bien reçu. Solde restant : ${Number(data.solde_xof || 0).toLocaleString('fr-FR')} FCFA.`)

@@ -77,6 +77,30 @@ export default function AgentPresentationsPage() {
     })
     const [, setIsGenerating] = useState(false)
 
+    /* Pré-remplissage depuis « Demandes de séjour » (même logique que
+       /admin/proposals) : « Créer la proposition » arrive ici avec le contexte
+       du client dans l'URL, le formulaire s'ouvre déjà rempli. */
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const p = new URLSearchParams(window.location.search)
+        if (!p.get('client_name') && !p.get('client_email')) return
+        setFormData(f => ({
+            ...f,
+            client_name: p.get('client_name') || f.client_name,
+            client_email: p.get('client_email') || f.client_email,
+            client_phone: p.get('client_phone') || f.client_phone,
+            destination: p.get('destination') || f.destination,
+            activities: p.get('activities') || f.activities,
+            start_date: p.get('start_date') || f.start_date,
+            end_date: p.get('end_date') || f.end_date,
+            budget: p.get('budget') || f.budget,
+        }))
+        setModalStep('form')
+        setNewModalOpen(true)
+        // Un rechargement ne doit pas rouvrir le formulaire.
+        window.history.replaceState({}, '', window.location.pathname)
+    }, [])
+
     // Scraping results
     const [scrapedCategories, setScrapedCategories] = useState<Record<string, ScrapedItem[]>>({})
     const [, setScrapedImages] = useState<ScrapedImage[]>([])

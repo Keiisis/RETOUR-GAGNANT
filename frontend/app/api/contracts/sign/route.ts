@@ -2,7 +2,9 @@
 //  CONTRAT : Signature électronique
 //  Deux parcours :
 //   - token (lien sécurisé, client sans compte) : GET consultation + POST signature
-//   - contractId + clientEmail (Espace Client, rétro-compatible)
+//   - contractId (Espace Client) : l'email est celui de la SESSION prouvée
+//     (lib/espace-email), jamais celui du corps de la requête — sinon
+//     n'importe qui signait le contrat d'autrui (audit 25/09/2026).
 //  La signature marque AUTOMATIQUEMENT le contrat « signé » avec
 //  horodatage, empreinte SHA-256, IP et entrée d'audit.
 // ══════════════════════════════════════════════════════════════
@@ -15,6 +17,7 @@ import { sendEmail, getEmailConfig } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
 import { normaliserIp, IP_INCONNUE } from '@/lib/net/ip-identity'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { emailProuve } from '@/lib/espace-email'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { token, contractId, clientEmail, signedName, consent } = body
+        const { token, contractId, signedName, consent } = body
         const supabase = createClient(supabaseUrl, serviceKey)
 
         // ── Récupération : par token (public) ou par id+email (Espace Client) ──
@@ -52,10 +55,12 @@ export async function POST(req: NextRequest) {
             }
             const { data } = await supabase.from('contracts').select('*').eq('sign_token', token).single()
             contract = data
-        } else if (contractId && clientEmail) {
-            const { data } = await supabase.from('contracts').select('*')
-                .eq('id', contractId).eq('client_email', String(clientEmail).toLowerCase()).single()
-            contract = data
+        } else if (contractId) {
+            const email = await emailProuve(req)
+            if (!email) return NextResponse.json({ error: 'Session expirée : reconnectez-vous à votre espace.' }, { status: 401 })
+            const { data } = await supabase.from('contracts').select('*').eq('id', contractId).single()
+            // Comparaison insensible à la casse : les emails stockés ne sont pas tous en minuscules.
+            contract = data && String(data.client_email || '').toLowerCase() === email ? data : null
         } else {
             return NextResponse.json({ error: 'Paramètres manquants.' }, { status: 400 })
         }

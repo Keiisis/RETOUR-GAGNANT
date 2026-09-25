@@ -754,8 +754,9 @@ export async function POST(request: Request) {
                 // Écrire le mouvement immuable (audit)
                 await supabase.from('inventory_movements').insert({
                     item_id: invItem.id,
-                    type: 'sale',
-                    quantity_change: -targetQty,
+                    movement_type: 'out_sale',
+                    reference_type: 'orders',
+                    quantity_changed: -targetQty,
                     stock_after: finalStock,
                     reference_id: order_id,
                     notes: `Vente E-Commerce (Ref: ${order_id.slice(0, 8).toUpperCase()}, Pmt: ${method})`

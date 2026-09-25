@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MagnifyingGlass as Search, FileText as FileCheck, Clock, Warning as AlertTriangle, CheckCircle as CheckCircle2, CircleNotch as Loader2, ArrowLeft, Shield, Lightning as Zap, Sparkle as Sparkles, Upload, FileText as FileWarning } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
-import { supabase } from '@/lib/supabase'
 
 interface DossierEtape {
     id: number
@@ -54,36 +53,23 @@ export default function SuiviDossierPage() {
 
     const handleUploadDocument = async (docName: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
-        if (!file || !dossier || !dossier.id) return
+        if (!file || !dossier) return
 
         setUploadingDoc(docName)
 
         try {
-            // Upload to Supabase Storage
-            const ext = file.name.split('.').pop()
-            const fileName = `dossiers/${dossier.num_dossier}/${docName.replace(/\s+/g, '_')}_${Date.now()}.${ext}`
+            // Dépôt côté serveur (bucket privé, couple numéro + email revérifié) :
+            // la pièce ne sort de la liste que si elle est réellement reçue.
+            const fd = new FormData()
+            fd.append('num_dossier', dossier.num_dossier)
+            fd.append('email', email)
+            fd.append('doc_name', docName)
+            fd.append('file', file)
+            const res = await fetch('/api/tracking/piece', { method: 'POST', body: fd })
+            const d = await res.json().catch(() => ({}))
+            if (!res.ok || !d.success) throw new Error(d.error || `HTTP ${res.status}`)
 
-            const { error: uploadError } = await supabase.storage
-                .from('documents') // Assuming 'documents' bucket exists
-                .upload(fileName, file)
-
-            if (uploadError) {
-                console.error("Storage upload error:", uploadError)
-                // Continue if bucket doesn't exist just to remove the block visually for demo
-            }
-
-            // Remove from documents_manquants
-            const newDocs = (dossier.documents_manquants || []).filter((d: string) => d !== docName)
-
-            // Update dossier
-            const { error: updateError } = await supabase
-                .from('dossier_tracking')
-                .update({ documents_manquants: newDocs })
-                .eq('id', dossier.id)
-
-            if (updateError) throw updateError
-
-            setDossier({ ...dossier, documents_manquants: newDocs })
+            setDossier({ ...dossier, documents_manquants: d.documents_manquants || [] })
 
         } catch (error) {
             console.error('Erreur upload:', error)

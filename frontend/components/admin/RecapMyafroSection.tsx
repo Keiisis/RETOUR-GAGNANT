@@ -171,11 +171,13 @@ export default function RecapMyafroSection() {
     }
 
     const majStatut = async (id: string, statut: string) => {
-        await fetch('/api/admin/myafro-recap', {
+        const res = await fetch('/api/admin/myafro-recap', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, statut }),
-        })
+        }).catch(() => null)
+        // Statut affiché seulement s'il a été enregistré.
+        if (!res?.ok) { alert((await res?.json().catch(() => ({})))?.error || 'Changement de statut impossible.'); return }
         setDemandes(l => l.map(d => (d.id === id ? { ...d, statut } : d)))
         setOuverte(o => (o && o.id === id ? { ...o, statut } : o))
     }
@@ -183,11 +185,13 @@ export default function RecapMyafroSection() {
     const enregistrer = async () => {
         if (!ouverte) return
         setEnregistre(false)
-        await fetch('/api/admin/myafro-recap', {
+        const res = await fetch('/api/admin/myafro-recap', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: ouverte.id, recap_ia: brouillon, notes_agent: notes }),
-        })
+        }).catch(() => null)
+        // Pas de « Enregistré » si le serveur a refusé : le brouillon reste à l'écran.
+        if (!res?.ok) { alert((await res?.json().catch(() => ({})))?.error || 'Enregistrement impossible.'); return }
         setDemandes(l => l.map(d => (d.id === ouverte.id ? { ...d, recap_ia: brouillon, notes_agent: notes } : d)))
         setEnregistre(true)
         setTimeout(() => setEnregistre(false), 2500)

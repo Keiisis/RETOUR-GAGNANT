@@ -63,18 +63,27 @@ export default function AdminPageContent() {
 
     const handleSave = async (id: string) => {
         setSaving(true)
+        let parsed: unknown
         try {
-            const parsed = JSON.parse(editContent)
-            await supabase
+            parsed = JSON.parse(editContent)
+        } catch {
+            alert('JSON invalide ! Vérifiez la syntaxe.')
+            setSaving(false)
+            return
+        }
+        try {
+            const { error } = await supabase
                 .from('page_sections')
                 .update({ title: editTitle, content: parsed, updated_at: new Date().toISOString() })
                 .eq('id', id)
+            // Échec d'écriture ≠ JSON invalide : on affiche l'erreur réelle.
+            if (error) throw error
             setEditingId(null)
             await fetchSections()
             setSaveSuccess(id)
             setTimeout(() => setSaveSuccess(null), 2000)
-        } catch {
-            alert('JSON invalide ! Vérifiez la syntaxe.')
+        } catch (e) {
+            alert(`Enregistrement impossible : ${e instanceof Error ? e.message : (e as { message?: string })?.message || 'erreur inconnue'}`)
         }
         setSaving(false)
     }

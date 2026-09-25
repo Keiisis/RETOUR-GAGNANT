@@ -187,10 +187,11 @@ export default function AdminPartenaires() {
     }
 
     const markRead = async (id: string) => {
-        await fetch(`/api/admin/partner-applications/${id}`, {
+        const res = await fetch(`/api/admin/partner-applications/${id}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_read: true }),
         })
+        if (!res.ok) { addToast('error', (await res.json().catch(() => ({}))).error || 'Erreur mise à jour'); return }
         setApplications(prev => prev.map(a => a.id === id ? { ...a, is_read: true } : a))
     }
 

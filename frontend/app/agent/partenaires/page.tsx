@@ -208,16 +208,19 @@ export default function AgentPartenairesPage() {
     }
 
     const markRead = async (id: string) => {
-        await fetch(`/api/admin/partner-applications/${id}`, {
+        const res = await fetch(`/api/admin/partner-applications/${id}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ is_read: true }),
         })
+        if (!res.ok) { addToast('error', (await res.json().catch(() => ({}))).error || 'Erreur mise à jour'); return }
         setApplications(prev => prev.map(a => a.id === id ? { ...a, is_read: true } : a))
     }
 
     const deleteApp = async (id: string) => {
         if (!confirm('Supprimer cette candidature ?')) return
-        await fetch(`/api/admin/partner-applications/${id}`, { method: 'DELETE' })
+        const res = await fetch(`/api/admin/partner-applications/${id}`, { method: 'DELETE' })
+        // Pas de « supprimée » si le serveur a refusé.
+        if (!res.ok) { addToast('error', (await res.json().catch(() => ({}))).error || 'Erreur suppression'); return }
         setApplications(prev => prev.filter(a => a.id !== id))
         addToast('success', 'Candidature supprimée')
     }

@@ -28,15 +28,20 @@ export default function AdminFaqPage() {
     const add = async () => {
         if (!newQ.trim() || !newA.trim()) return
         setSaving(true)
-        await supabase.from('nationality_faq').insert({ question_fr: newQ, answer_fr: newA, sort_order: faqs.length + 1, is_active: true })
-        setNewQ(''); setNewA(''); setAdding(false); setSaving(false); load()
+        const { error } = await supabase.from('nationality_faq').insert({ question_fr: newQ, answer_fr: newA, sort_order: faqs.length + 1, is_active: true })
+        setSaving(false)
+        // Saisie conservée si l'écriture a échoué.
+        if (error) { alert(`Ajout impossible : ${error.message}`); return }
+        setNewQ(''); setNewA(''); setAdding(false); load()
     }
 
     const update = async (id: string) => {
         if (!editQ.trim() || !editA.trim()) return
         setSaving(true)
-        await supabase.from('nationality_faq').update({ question_fr: editQ, answer_fr: editA }).eq('id', id)
-        setEditing(null); setSaving(false); load()
+        const { error } = await supabase.from('nationality_faq').update({ question_fr: editQ, answer_fr: editA }).eq('id', id)
+        setSaving(false)
+        if (error) { alert(`Modification impossible : ${error.message}`); return }
+        setEditing(null); load()
     }
 
     const remove = async (id: string) => {

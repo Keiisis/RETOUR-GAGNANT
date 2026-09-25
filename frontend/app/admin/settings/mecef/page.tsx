@@ -83,27 +83,38 @@ export default function MecefSettingsPage() {
 
     const set = (k: keyof MecefForm) => (v: string) => setForm(f => ({ ...f, [k]: v }))
 
-    const save = async () => {
+    // Renvoie false si un réglage n'a pas été enregistré (erreur affichée dans le bandeau).
+    const save = async (): Promise<boolean> => {
         setSaving(true)
         setSaved(false)
+        let ok = false
         try {
             for (const [key, value] of Object.entries(form)) {
-                await fetch('/api/admin/settings', {
+                const res = await fetch('/api/admin/settings', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key, value, category: 'mecef' }),
                 })
+                if (!res.ok) {
+                    const j = await res.json().catch(() => ({}))
+                    throw new Error(`${key} : ${j.error || `HTTP ${res.status}`}`)
+                }
             }
+            ok = true
             setSaved(true)
             setTimeout(() => setSaved(false), 2500)
-        } catch { /* silencieux */ }
+        } catch (e) {
+            setTestResult({ ok: false, msg: `Enregistrement impossible : ${e instanceof Error ? e.message : 'erreur réseau'}` })
+        }
         setSaving(false)
+        return ok
     }
 
     const testConnection = async () => {
         setTesting(true)
         setTestResult(null)
-        await save() // teste avec les valeurs à l'écran
+        // teste avec les valeurs à l'écran ; inutile si elles n'ont pas été enregistrées
+        if (!(await save())) { setTesting(false); return }
         try {
             const res = await fetch('/api/admin/facturation/mecef/test', { method: 'POST' })
             const data = await res.json()

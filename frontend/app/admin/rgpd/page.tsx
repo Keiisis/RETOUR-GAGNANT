@@ -80,8 +80,8 @@ export default function AdminRgpdPage() {
                 <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 flex items-center justify-center"><ShieldCheck className="w-6 h-6 text-emerald-500" /></div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Centre RGPD</h1>
-                        <p className="text-gray-400 text-sm">Documents officiels, conformité et exercice des droits</p>
+                        <h1 className="text-2xl font-bold text-[var(--panel-text-heading)]">Centre RGPD</h1>
+                        <p className="text-[var(--panel-text-muted)] text-sm">Documents officiels, conformité et exercice des droits</p>
                     </div>
                 </div>
             </header>
@@ -94,34 +94,34 @@ export default function AdminRgpdPage() {
                     { icon: Scale, label: 'Violation 72h', val: 'Procédure définie' },
                     { icon: Trash2, label: 'Effacement', val: 'Opérationnel (self-service)' },
                 ].map(c => (
-                    <div key={c.label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <c.icon className="w-5 h-5 text-emerald-400 mb-2" />
-                        <p className="text-white text-sm font-semibold">{c.label}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">{c.val}</p>
+                    <div key={c.label} className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-4">
+                        <c.icon className="w-5 h-5 text-emerald-500 mb-2" />
+                        <p className="text-[var(--panel-text-heading)] text-sm font-semibold">{c.label}</p>
+                        <p className="text-[var(--panel-text-muted)] text-xs mt-0.5">{c.val}</p>
                     </div>
                 ))}
             </section>
 
             {/* Documents */}
             <section>
-                <h2 className="text-white font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-[#C9A84C]" /> Documents officiels</h2>
+                <h2 className="text-[var(--panel-text-heading)] font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-[#C9A84C]" /> Documents officiels</h2>
                 <div className="space-y-3">
                     {DOCS.map(d => (
-                        <div key={d.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div key={d.id} className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex items-center gap-3 flex-1">
-                                <d.icon className="w-5 h-5 text-emerald-400 shrink-0" />
+                                <d.icon className="w-5 h-5 text-emerald-500 shrink-0" />
                                 <div>
-                                    <p className="text-white font-medium">{d.title}</p>
-                                    <p className="text-gray-400 text-xs">{d.desc}</p>
+                                    <p className="text-[var(--panel-text-heading)] font-medium">{d.title}</p>
+                                    <p className="text-[var(--panel-text-muted)] text-xs">{d.desc}</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => download(d.id, 'pdf')} disabled={downloading === `${d.id}-pdf`}
-                                    className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-1.5 disabled:opacity-60">
+                                    className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-[#fff] text-sm font-medium flex items-center gap-1.5 disabled:opacity-60">
                                     {downloading === `${d.id}-pdf` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} PDF
                                 </button>
                                 <button onClick={() => download(d.id, 'docx')} disabled={downloading === `${d.id}-docx`}
-                                    className="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium flex items-center gap-1.5 disabled:opacity-60">
+                                    className="px-3.5 py-2 rounded-lg bg-[var(--panel-surface-alt)] hover:bg-[var(--panel-surface-active)] border border-[var(--panel-border)] text-[var(--panel-text-heading)] text-sm font-medium flex items-center gap-1.5 disabled:opacity-60">
                                     {downloading === `${d.id}-docx` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} Word
                                 </button>
                             </div>
@@ -131,41 +131,41 @@ export default function AdminRgpdPage() {
             </section>
 
             {/* Outil d'exercice des droits */}
-            <section className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <h2 className="text-white font-semibold mb-1 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-400" /> Droit d&apos;accès & d&apos;effacement</h2>
-                <p className="text-gray-400 text-sm mb-4">Recherchez les données d&apos;un utilisateur par email, puis exportez ou effacez à sa demande.</p>
+            <section className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-5">
+                <h2 className="text-[var(--panel-text-heading)] font-semibold mb-1 flex items-center gap-2"><Search className="w-4 h-4 text-emerald-500" /> Droit d&apos;accès & d&apos;effacement</h2>
+                <p className="text-[var(--panel-text-muted)] text-sm mb-4">Recherchez les données d&apos;un utilisateur par email, puis exportez ou effacez à sa demande.</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemple.com"
-                        className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 outline-none focus:border-emerald-500" />
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--panel-surface-alt)] border border-[var(--panel-border-strong)] text-[var(--panel-text-heading)] placeholder:text-[var(--panel-text-faint)] outline-none focus:border-emerald-500" />
                     <button onClick={lookup} disabled={loading}
-                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[#fff] font-medium flex items-center justify-center gap-2 disabled:opacity-60">
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Rechercher
                     </button>
                 </div>
 
-                {error && <p className="mt-3 text-red-400 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {error}</p>}
-                {done && <p className="mt-3 text-emerald-400 text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {done}</p>}
+                {error && <p className="mt-3 text-red-500 text-sm flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {error}</p>}
+                {done && <p className="mt-3 text-emerald-500 text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {done}</p>}
 
                 {preview && (
                     <div className="mt-5 space-y-3">
                         {!preview.found ? (
-                            <p className="text-gray-400 text-sm">Aucune donnée trouvée pour cet email.</p>
+                            <p className="text-[var(--panel-text-muted)] text-sm">Aucune donnée trouvée pour cet email.</p>
                         ) : (
                             <>
-                                <p className="text-gray-300 text-sm">{preview.totalRecords} enregistrement(s){preview.documentCount > 0 && ` · ${preview.documentCount} document(s)`}</p>
+                                <p className="text-[var(--panel-text)] text-sm">{preview.totalRecords} enregistrement(s){preview.documentCount > 0 && ` · ${preview.documentCount} document(s)`}</p>
                                 <div className="space-y-2">
                                     {preview.sections.map(s => (
-                                        <div key={s.table} className="bg-black/20 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
-                                            <span className="text-white text-sm flex items-center gap-2">
-                                                {s.kind === 'document' ? <FileLock2 className="w-4 h-4 text-[#C9A84C]" /> : <Database className="w-4 h-4 text-emerald-400" />}
+                                        <div key={s.table} className="bg-[var(--panel-surface-alt)] border border-[var(--panel-border)] rounded-xl px-4 py-3 flex items-center justify-between">
+                                            <span className="text-[var(--panel-text-heading)] text-sm flex items-center gap-2">
+                                                {s.kind === 'document' ? <FileLock2 className="w-4 h-4 text-[#C9A84C]" /> : <Database className="w-4 h-4 text-emerald-500" />}
                                                 {s.label}
                                             </span>
-                                            <span className="text-gray-400 text-xs">{s.count}</span>
+                                            <span className="text-[var(--panel-text-muted)] text-xs">{s.count}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <button onClick={erase} disabled={deleting}
-                                    className="mt-2 px-5 py-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-white font-medium flex items-center gap-2 disabled:opacity-60">
+                                    className="mt-2 px-5 py-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-[#fff] font-medium flex items-center gap-2 disabled:opacity-60">
                                     {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Effacer / anonymiser ces données
                                 </button>
                             </>
@@ -174,8 +174,8 @@ export default function AdminRgpdPage() {
                 )}
             </section>
 
-            <p className="text-gray-500 text-xs">
-                Les utilisateurs peuvent aussi exercer leurs droits eux-mêmes via la page publique <span className="text-emerald-400">/mes-donnees</span> (vérification par e-mail).
+            <p className="text-[var(--panel-text-faint)] text-xs">
+                Les utilisateurs peuvent aussi exercer leurs droits eux-mêmes via la page publique <span className="text-emerald-500">/mes-donnees</span> (vérification par e-mail).
             </p>
         </div>
     )

@@ -123,10 +123,20 @@ export default function AdminLogementsPage() {
 
     const persistOrder = async (ordered: Logement[]) => {
         setItems(ordered)
-        await fetch('/api/admin/logements', {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reorder: ordered.map((x, i) => ({ id: x.id, ordre: i })) }),
-        }).catch(() => {})
+        try {
+            const res = await fetch('/api/admin/logements', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reorder: ordered.map((x, i) => ({ id: x.id, ordre: i })) }),
+            })
+            if (!res.ok) {
+                const j = await res.json().catch(() => ({}))
+                throw new Error(j.error || 'Nouvel ordre non enregistré.')
+            }
+        } catch (e) {
+            // Ordre refusé : on revient à l'ordre réellement enregistré.
+            alert(e instanceof Error ? e.message : 'Nouvel ordre non enregistré.')
+            await load()
+        }
     }
 
     const save = async () => {

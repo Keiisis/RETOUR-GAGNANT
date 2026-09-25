@@ -98,18 +98,18 @@ export default function AdminNotificationsPage() {
 
     const toggleReadStatus = async (notif: UnifiedNotification) => {
         const newStatus = !notif.lu
-        if (notif.source === 'messages') {
-            await supabase.from('messages').update({ lu: newStatus }).eq('id', notif.id)
-        } else {
-            await supabase.from('notifications').update({ is_read: newStatus }).eq('id', notif.id)
-        }
+        const { error } = notif.source === 'messages'
+            ? await supabase.from('messages').update({ lu: newStatus }).eq('id', notif.id)
+            : await supabase.from('notifications').update({ is_read: newStatus }).eq('id', notif.id)
+        if (error) { alert(`Mise à jour impossible : ${error.message}`); return }
         setNotifications(notifications.map(n => n.id === notif.id ? { ...n, lu: newStatus } : n))
     }
 
     const deleteNotification = async (notif: UnifiedNotification) => {
         if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette alerte ?")) return
         const table = notif.source === 'messages' ? 'messages' : 'notifications'
-        await supabase.from(table).delete().eq('id', notif.id)
+        const { error } = await supabase.from(table).delete().eq('id', notif.id)
+        if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setNotifications(notifications.filter(n => n.id !== notif.id))
     }
 

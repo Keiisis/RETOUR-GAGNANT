@@ -190,7 +190,8 @@ export default function AdminGenealogyPage() {
       // Update self person account connection as well
       const selfPerson = persons.find(p => p.is_self);
       if (selfPerson) {
-        await supabase.from('persons').update({ user_id: userId || null }).eq('id', selfPerson.id);
+        const { error: selfErr } = await supabase.from('persons').update({ user_id: userId || null }).eq('id', selfPerson.id);
+        if (selfErr) throw selfErr;
       }
 
       alert('Compte client associé avec succès ! ');

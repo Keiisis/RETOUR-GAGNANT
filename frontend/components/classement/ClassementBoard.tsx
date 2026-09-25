@@ -24,7 +24,6 @@ interface ClientRow {
     relances_sent: number[] | null
 }
 
-type Theme = 'dark' | 'light'
 type View = 'category' | 'relances'
 
 // Mapping nom d'icône (lib) → composant lucide (vrais icônes, aucun emoji)
@@ -33,21 +32,24 @@ const CAT_ICONS: Record<string, LucideIcon> = {
 }
 const catIcon = (name: string): LucideIcon => CAT_ICONS[name] || LayoutGrid
 
-function palette(theme: Theme) {
-    const dark = theme === 'dark'
-    return {
-        dark,
-        page: dark ? 'text-white' : 'text-[#1a2332]',
-        sub: dark ? 'text-gray-400' : 'text-gray-500',
-        faint: dark ? 'text-gray-500' : 'text-gray-400',
-        card: dark ? 'bg-white/[0.04] border-white/10' : 'bg-white border-gray-100 shadow-sm',
-        cardHover: dark ? 'hover:bg-white/[0.07]' : 'hover:bg-gray-50',
-        chip: dark ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600',
-        input: dark ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-[#1a2332] placeholder-gray-400',
-        divider: dark ? 'border-white/10' : 'border-gray-100',
-        soft: dark ? 'bg-black/20' : 'bg-[#F8FAF9]',
-    }
-}
+/* Couleurs lues dans les variables du panel ([data-panel][data-theme] posé par
+   ThemeProvider) : la palette suit le thème RÉEL choisi par l'utilisateur.
+   Avant, le thème était figé par page (admin = sombre, agent = clair) : l'agent
+   passé en mode sombre voyait du texte bleu nuit sur fond bleu nuit. */
+const P = {
+    page: 'text-[var(--panel-text-heading)]',
+    sub: 'text-[var(--panel-text-muted)]',
+    faint: 'text-[var(--panel-text-faint)]',
+    card: 'bg-[var(--panel-surface)] border-[var(--panel-border)] shadow-sm',
+    cardHover: 'hover:bg-[var(--panel-surface-alt)]',
+    chip: 'bg-[var(--panel-surface-alt)] border-[var(--panel-border-strong)] text-[var(--panel-text)]',
+    input: 'bg-[var(--panel-surface-alt)] border-[var(--panel-border-strong)] text-[var(--panel-text-heading)] placeholder:text-[var(--panel-text-faint)]',
+    divider: 'border-[var(--panel-border)]',
+    soft: 'bg-[var(--panel-surface-alt)]',
+    modal: 'bg-[var(--panel-surface)] border-[var(--panel-border-strong)]',
+    // Jalon « à venir » de la frise des relances
+    pending: 'var(--panel-text-faint)',
+} as const
 
 async function authHeaders(): Promise<Record<string, string>> {
     const { data: { session } } = await supabase.auth.getSession()
@@ -72,8 +74,8 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day
 
 const PAGE_SIZE = 8 // perf : nb de cartes affichées par catégorie avant « afficher plus »
 
-export default function ClassementBoard({ theme }: { theme: Theme }) {
-    const p = palette(theme)
+export default function ClassementBoard() {
+    const p = P
     const [clients, setClients] = useState<ClientRow[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -287,7 +289,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
         return (
             <motion.div key={c.id} layout className={`rounded-2xl border ${p.card} ${p.cardHover} transition overflow-hidden`}>
                 <button type="button" onClick={() => (isEditing ? setEditingId(null) : openEditor(c))} className="w-full flex items-center gap-4 p-4 text-left">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shrink-0" style={{ backgroundColor: cat.color }}>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-[#fff] shrink-0" style={{ backgroundColor: cat.color }}>
                         {initials(c.full_name, c.email)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -327,7 +329,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                                         {RELANCE_MILESTONES.map(m => {
                                             const done = sent.includes(m)
                                             const overdue = m <= d && !done
-                                            const color = done ? '#10B981' : overdue ? '#EF4444' : (p.dark ? '#475569' : '#CBD5E1')
+                                            const color = done ? '#10B981' : overdue ? '#EF4444' : p.pending
                                             const date = new Date(new Date(c.first_contact_at).getTime() + m * 86400000)
                                             return (
                                                 <div key={m} className="flex-1 flex flex-col items-center gap-1 min-w-0">
@@ -375,7 +377,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
 
                                 <div className="flex gap-2">
                                     <button type="button" onClick={() => saveEditor(c.id)} disabled={saving}
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[#fff] text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer
                                     </button>
                                     <button type="button" onClick={() => setEditingId(null)} className={`px-4 py-2 rounded-xl border text-sm font-medium ${p.chip}`}>Fermer</button>
@@ -410,11 +412,11 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                         {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} Exporter
                     </button>
                     <button type="button" onClick={() => { setAddForm(emptyAdd); setAddError(''); setAddOpen(true) }}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a2332] hover:bg-[#2c3b55] text-white text-sm font-semibold active:scale-[0.98] transition">
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--panel-text-heading)] hover:opacity-90 text-[var(--panel-bg)] text-sm font-semibold active:scale-[0.98] transition">
                         <UserPlus className="w-4 h-4" /> Ajouter un client
                     </button>
                     <button type="button" onClick={backfill} disabled={backfilling}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[#fff] text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
                         {backfilling ? <Loader2 className="w-4 h-4 animate-spin" /> : <DownloadCloud className="w-4 h-4" />} Importer l&apos;existant
                     </button>
                 </div>
@@ -437,9 +439,9 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
             <div className="flex items-center gap-2 mb-4">
                 {([['category', 'Par service', LayoutGrid], ['relances', 'Relances à faire', BellRing]] as const).map(([v, label, Icon]) => (
                     <button key={v} type="button" onClick={() => setView(v)}
-                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition ${view === v ? 'bg-emerald-600 border-emerald-600 text-white' : p.chip}`}>
+                        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition ${view === v ? 'bg-emerald-600 border-emerald-600 text-[#fff]' : p.chip}`}>
                         <Icon className="w-4 h-4" /> {label}
-                        {v === 'relances' && kpis.dues > 0 && <span className="ml-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-red-500 text-white">{kpis.dues}</span>}
+                        {v === 'relances' && kpis.dues > 0 && <span className="ml-1 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-red-500 text-[#fff]">{kpis.dues}</span>}
                     </button>
                 ))}
             </div>
@@ -453,12 +455,12 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                     <button type="button" onClick={() => setStatusFilter('all')}
-                        className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${statusFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : p.chip}`}>
+                        className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${statusFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-[#fff]' : p.chip}`}>
                         Tous statuts
                     </button>
                     {CLIENT_STATUSES.map(s => (
                         <button key={s.value} type="button" onClick={() => setStatusFilter(s.value)}
-                            className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${statusFilter === s.value ? 'text-white' : p.chip}`}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${statusFilter === s.value ? 'text-[#fff]' : p.chip}`}
                             style={statusFilter === s.value ? { backgroundColor: s.color, borderColor: s.color } : undefined}>
                             {s.label}
                         </button>
@@ -467,14 +469,14 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                 {view === 'category' && (
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         <button type="button" onClick={() => setCatFilter('all')}
-                            className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${catFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : p.chip}`}>
+                            className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${catFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-[#fff]' : p.chip}`}>
                             Tous services
                         </button>
                         {SERVICE_CATEGORIES.map(cat => {
                             const Icon = catIcon(cat.icon)
                             return (
                                 <button key={cat.slug} type="button" onClick={() => setCatFilter(cat.slug)}
-                                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${catFilter === cat.slug ? 'text-white' : p.chip}`}
+                                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${catFilter === cat.slug ? 'text-[#fff]' : p.chip}`}
                                     style={catFilter === cat.slug ? { backgroundColor: cat.color, borderColor: cat.color } : undefined}>
                                     <Icon className="w-3.5 h-3.5" /> {cat.label}
                                 </button>
@@ -499,7 +501,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                     <p className="font-semibold mb-1">Aucun client pour l&apos;instant</p>
                     <p className={`text-sm ${p.sub} mb-4`}>Les nouveaux RDV, prospects et messages s&apos;ajouteront automatiquement ici. Vous pouvez aussi importer les clients déjà collectés.</p>
                     <button type="button" onClick={backfill} disabled={backfilling}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60">
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[#fff] text-sm font-semibold disabled:opacity-60">
                         {backfilling ? <Loader2 className="w-4 h-4 animate-spin" /> : <DownloadCloud className="w-4 h-4" />} Importer l&apos;existant
                     </button>
                 </div>
@@ -554,7 +556,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                         className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !adding && setAddOpen(false)}>
                         <motion.div initial={{ scale: 0.95, y: 12, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 220, damping: 22 }} onClick={e => e.stopPropagation()}
-                            className={`w-full max-w-lg rounded-2xl border overflow-hidden ${p.dark ? 'bg-[#0f141e] border-white/10' : 'bg-white border-gray-100'} ${p.page}`}>
+                            className={`w-full max-w-lg rounded-2xl border overflow-hidden ${p.modal} ${p.page}`}>
                             <div className="h-1 w-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />
                             <div className="flex items-center justify-between px-5 py-4">
                                 <h3 className="font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-emerald-500" /> Ajouter un client</h3>
@@ -607,7 +609,7 @@ export default function ClassementBoard({ theme }: { theme: Theme }) {
                                 {addError && <p className="text-sm text-red-500 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {addError}</p>}
                                 <div className="flex gap-2 pt-1">
                                     <button type="button" onClick={submitAdd} disabled={adding}
-                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[#fff] text-sm font-semibold disabled:opacity-60 active:scale-[0.98] transition">
                                         {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer le client
                                     </button>
                                     <button type="button" onClick={() => setAddOpen(false)} disabled={adding} className={`px-4 py-2.5 rounded-xl border text-sm font-medium ${p.chip}`}>Annuler</button>
